@@ -6,7 +6,7 @@
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Callable
+from typing import Any, Callable
 from unittest.mock import MagicMock
 
 import faker
@@ -133,8 +133,8 @@ async def test_get_profile(
     client,
     user_role: UserRole,
     expected: type[web.HTTPException],
-    primary_group: dict[str, str],
-    standard_groups: list[dict[str, str]],
+    primary_group: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
 ):
     url = client.app.router["get_my_profile"].url_for()
@@ -156,7 +156,8 @@ async def test_get_profile(
         assert profile.first_name == logged_user["name"]
         assert profile.last_name == ""
         assert profile.role == user_role.name.capitalize()
-        assert profile.groups == {
+        assert profile.groups
+        assert profile.groups.dict(**RESPONSE_MODEL_POLICY) == {
             "me": primary_group,
             "organizations": standard_groups,
             "all": all_group,
@@ -193,7 +194,7 @@ async def test_update_profile(logged_user, client, user_role, expected):
 # TODO: create parametrize fixture with resource_name
 
 RESOURCE_NAME = "tokens"
-PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
+PREFIX = f"/{API_VERSION}/me/{RESOURCE_NAME}"
 
 
 @pytest.mark.parametrize(

@@ -14,7 +14,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable, Iterator
+from typing import Any, AsyncIterator, Callable, Iterator
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -431,7 +431,7 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user) -> dict[str, str]:
+async def primary_group(client, logged_user) -> dict[str, Any]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
@@ -439,7 +439,7 @@ async def primary_group(client, logged_user) -> dict[str, str]:
 @pytest.fixture
 async def standard_groups(
     client, logged_user: dict
-) -> AsyncIterator[list[dict[str, str]]]:
+) -> AsyncIterator[list[dict[str, Any]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced
