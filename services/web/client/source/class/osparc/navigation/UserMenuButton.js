@@ -22,16 +22,16 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     this.base(arguments);
 
     const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
-    const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
     const menu = new qx.ui.menu.Menu().set({
       font: "text-14"
     });
     this.set({
       font: "text-14",
       icon: osparc.utils.Avatar.getUrl(userEmail, 32),
-      label: userName,
+      label: "bizzy",
       menu
     });
+    osparc.auth.Data.getInstance().bind("firstName", this, "label");
     osparc.utils.Utils.setIdToWidget(this, "userMenuMainBtn");
 
     this.getChildControl("icon").getContentElement().setStyles({

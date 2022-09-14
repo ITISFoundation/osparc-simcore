@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
     this.__userProfileData = null;
     this.__userProfileModel = null;
 
-    this.__getValuesFromServer();
+    this.__getProfile();
 
     this.add(this.__createProfileUser());
   },
@@ -87,6 +87,20 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
 
       box.add(new qx.ui.form.renderer.Single(form));
 
+      const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+        paddingLeft: 16,
+        visibility: "excluded"
+      });
+      expirationLayout.add(new qx.ui.basic.Label(this.tr("Expiration date:")));
+      const expirationDate = new qx.ui.basic.Label();
+      expirationLayout.add(expirationDate);
+      const infoLabel = this.tr("Please, contact us by email:<br>");
+      const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
+      osparc.store.StaticInfo.getInstance().getSupportEmail()
+        .then(supportEmail => infoExtension.setHintText(infoLabel + supportEmail));
+      expirationLayout.add(infoExtension);
+      box.add(expirationLayout);
+
       const img = new qx.ui.basic.Image().set({
         decorator: new qx.ui.decoration.Decorator().set({
           radius: 50
@@ -100,16 +114,16 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
         "firstName": null,
         "lastName": null,
         "email": null,
-        "role": null
+        "role": null,
+        "expirationDate": null
       };
 
       if (qx.core.Environment.get("qx.debug")) {
-        raw = {
-          "firstName": "Bizzy",
-          "lastName": "Zastrow",
-          "email": "bizzy@itis.ethz.ch",
-          "role": "Tester"
-        };
+        raw.firstName = "Bizzy";
+        raw.lastName = "Zastrow";
+        raw.email = "bizzy@itis.swiss";
+        raw.role = "User";
+        raw.expirationDate = null;
       }
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
@@ -122,6 +136,15 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       });
       controller.addTarget(lastName, "value", "lastName", true);
       controller.addTarget(role, "value", "role", false);
+      controller.addTarget(expirationDate, "value", "expirationDate", false, {
+        converter: data => {
+          if (data) {
+            expirationLayout.show();
+            return osparc.utils.Utils.formatDateAndTime(new Date(data));
+          }
+          return "";
+        }
+      });
       controller.addTarget(img, "source", "email", false, {
         converter: function(data) {
           return osparc.utils.Avatar.getUrl(email.getValue(), 150);
@@ -129,62 +152,79 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       });
 
       // validation
-      const manager = new qx.ui.form.validation.Manager();
-      manager.add(email, qx.util.Validate.email());
-      [firstName, lastName].forEach(field => {
-        manager.add(field, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
-      });
+      const emailValidator = new qx.ui.form.validation.Manager();
+      emailValidator.add(email, qx.util.Validate.email());
+
+      const namesValidator = new qx.ui.form.validation.Manager();
+      namesValidator.add(firstName, qx.util.Validate.regExp(/[^\.\d]+/), this.tr("Avoid dots or numbers in text"));
+      namesValidator.add(lastName, qx.util.Validate.regExp(/^$|[^\.\d]+/), this.tr("Avoid dots or numbers in text")); // allow also emtpy last name
 
       const updateBtn = new qx.ui.form.Button("Update Profile").set({
         allowGrowX: false
       });
       box.add(updateBtn);
 
-      // update trigger
       updateBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
           this.__resetDataToModel();
           return;
         }
 
-        if (manager.validate()) {
-          const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
-          emailReq.setRequestData({
-            "email": model.getEmail()
-          });
-
-          const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
-          profileReq.setRequestData({
-            "first_name": model.getFirstName(),
-            "last_name": model.getLastName()
-          });
-
-          [emailReq, profileReq].forEach(req => {
-            // requests
-            req.addListenerOnce("success", e => {
-              const res = e.getTarget().getResponse();
-              if (res && res.data) {
-                osparc.component.message.FlashMessenger.getInstance().log(res.data);
-              }
-            }, this);
-
-            req.addListenerOnce("fail", e => {
-              // FIXME: should revert to old?? or GET? Store might resolve this??
-              this.__resetDataToModel();
-              const error = e.getTarget().getResponse().error;
-              const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            }, this);
-
-            req.send();
-          });
+        const requests = {
+          email: null,
+          names: null
+        };
+        if (this.__userProfileData["login"] !== model.getEmail()) {
+          if (emailValidator.validate()) {
+            const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
+            emailReq.setRequestData({
+              "email": model.getEmail()
+            });
+            requests.email = emailReq;
+          }
         }
+
+        if (this.__userProfileData["first_name"] !== model.getFirstName() || this.__userProfileData["last_name"] !== model.getLastName()) {
+          if (namesValidator.validate()) {
+            const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
+            profileReq.setRequestData({
+              "first_name": model.getFirstName(),
+              "last_name": model.getLastName()
+            });
+            requests.names = profileReq;
+          }
+        }
+
+        Object.keys(requests).forEach(key => {
+          const req = requests[key];
+          if (req === null) {
+            return;
+          }
+
+          req.addListenerOnce("success", e => {
+            const reqData = e.getTarget().getRequestData();
+            this.__setDataToModel(Object.assign(this.__userProfileData, reqData));
+            osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
+            const res = e.getTarget().getResponse();
+            const msg = (res && res.data) ? res.data : this.tr("Profile updated");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+          }, this);
+
+          req.addListenerOnce("fail", e => {
+            this.__resetDataToModel();
+            const error = e.getTarget().getResponse().error;
+            const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          }, this);
+
+          req.send();
+        });
       }, this);
 
       return box;
     },
 
-    __getValuesFromServer: function() {
+    __getProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
           this.__setDataToModel(profile);
@@ -201,7 +241,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
-          "role": data["role"] || ""
+          "role": data["role"] || "",
+          "expirationDate": data["expirationDate"] || null
         });
       }
     },
