@@ -4,11 +4,20 @@
 
 import json
 import logging
-from typing import Union
+from typing import Optional, Union
 
 from aiohttp import web
 from models_library.projects_nodes import NodeID
-from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
+from models_library.services import ServiceKey, ServiceVersion
+
+#
+# projects/*/nodes COLLECTION -------------------------
+#
+from pydantic import BaseModel
+from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -25,9 +34,11 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
-#
-# projects/*/nodes COLLECTION -------------------------
-#
+
+class _CreateNodeBody(BaseModel):
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    service_id: Optional[str] = None
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
@@ -36,23 +47,20 @@ routes = web.RouteTableDef()
 async def create_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    body = await parse_request_body_as(_CreateNodeBody, request)
 
-    try:
-        body = await request.json()
-        for required_key in ["service_key", "service_version"]:
-            if required_key not in body:
-                raise web.HTTPUnprocessableEntity(
-                    reason=f"{required_key} is missing from request body"
-                )
-
-    except json.JSONDecodeError as exc:
-        raise web.HTTPUnprocessableEntity(
-            reason=f"Invalid request body: {exc}"
-        ) from exc
-
+    if await projects_api.is_service_deprecated(
+        request.app,
+        req_ctx.user_id,
+        body.service_key,
+        body.service_version,
+        req_ctx.product_name,
+    ):
+        raise web.HTTPNotAcceptable(
+            reason=f"Service {body.service_key}:{body.service_version} is deprecated"
+        )
     try:
         # ensure the project exists
-
         project_data = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
@@ -64,10 +72,9 @@ async def create_node(request: web.Request) -> web.Response:
                 request,
                 project_data,
                 req_ctx.user_id,
-                body["service_key"],
-                body["service_version"],
-                body["service_id"] if "service_id" in body else None,
-                req_ctx.product_name,
+                body.service_key,
+                body.service_version,
+                body.service_id,
             )
         }
         return web.json_response(

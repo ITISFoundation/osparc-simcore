@@ -181,7 +181,6 @@ async def add_project_node(
     service_key: str,
     service_version: str,
     service_id: Optional[str],
-    product_name: str,
 ) -> str:
     log.debug(
         "starting node %s:%s in project %s for user %s",
@@ -218,32 +217,30 @@ async def add_project_node(
         request.app, user_id, project["uuid"]
     )
 
-    if _is_node_dynamic(service_key):
-        service_resources: ServiceResourcesDict = await get_project_node_resources(
-            request.app,
-            project={
-                "workbench": {
-                    f"{node_uuid}": {"key": service_key, "version": service_version}
-                }
-            },
-            node_id=NodeID(node_uuid),
-        )
-        if not await is_service_deprecated(
-            request.app, user_id, service_key, service_version, product_name
-        ):
-            await director_v2_api.run_dynamic_service(
-                request.app,
-                project_id=project["uuid"],
-                user_id=user_id,
-                service_key=service_key,
-                service_version=service_version,
-                service_uuid=node_uuid,
-                request_dns=extract_dns_without_default_port(request.url),
-                request_scheme=request.headers.get(
-                    "X-Forwarded-Proto", request.url.scheme
-                ),
-                service_resources=service_resources,
-            )
+    if not _is_node_dynamic(service_key):
+        return node_uuid
+
+    # this is a dynamic node, let's gather its resources and start it
+    service_resources: ServiceResourcesDict = await get_project_node_resources(
+        request.app,
+        project={
+            "workbench": {
+                f"{node_uuid}": {"key": service_key, "version": service_version}
+            }
+        },
+        node_id=NodeID(node_uuid),
+    )
+    await director_v2_api.run_dynamic_service(
+        request.app,
+        project_id=project["uuid"],
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        service_uuid=node_uuid,
+        request_dns=extract_dns_without_default_port(request.url),
+        request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+        service_resources=service_resources,
+    )
     return node_uuid
 
 
@@ -730,10 +727,8 @@ async def add_project_states_for_user(
 
 
 #
-# SERVICE RESOURCES -----------------------------------
+# SERVICE DEPRECATION ----------------------------
 #
-
-
 async def is_service_deprecated(
     app: web.Application,
     user_id: UserID,
@@ -762,6 +757,11 @@ async def is_project_node_deprecated(
             app, user_id, project_node["key"], project_node["version"], product_name
         )
     raise NodeNotFoundError(project["uuid"], f"{node_id}")
+
+
+#
+# SERVICE RESOURCES -----------------------------------
+#
 
 
 async def get_project_node_resources(
