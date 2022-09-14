@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Optional
 
 from aiohttp import web
+from yarl import URL
 
 from ..db_models import ConfirmationAction
 from .settings import LoginOptions
@@ -36,8 +37,12 @@ async def validate_confirmation_code(
     return confirmation
 
 
+def _url_for_confirmation(app: web.Application, code: str) -> URL:
+    return app.router["auth_confirmation"].url_for(code=code)
+
+
 def make_confirmation_link(request: web.Request, confirmation: ConfirmationDict) -> str:
-    link = request.app.router["auth_confirmation"].url_for(code=confirmation["code"])
+    link = _url_for_confirmation(request.app, code=confirmation["code"])
     return f"{request.scheme}://{request.host}{link}"
 
 

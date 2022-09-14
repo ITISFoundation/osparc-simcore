@@ -1,7 +1,7 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import asyncio
 from unittest.mock import Mock
@@ -13,6 +13,7 @@ from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
+from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login.registration import get_confirmation_info
 from simcore_service_webserver.login.settings import (
     LoginOptions,
@@ -124,6 +125,35 @@ async def test_registration_with_expired_confirmation(
     await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
 
 
+async def test_registration_with_invalid_confirmation_code(
+    client: TestClient,
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    mocker: Mock,
+):
+    # Checks bug in https://github.com/ITISFoundation/osparc-simcore/pull/3356
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login.settings.get_plugin_settings",
+        return_value=LoginSettings(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+            LOGIN_TWILIO=None,
+        ),
+    )
+
+    confirmation_link = _url_for_confirmation(
+        client.app, code="INVALID_CONFIRMATION_CODE"
+    )
+    r = await client.get(f"{confirmation_link}")
+
+    # Invalid code redirect to root without any error to the login page
+    #
+    assert r.ok
+    assert f"{r.url.relative()}" == cfg.LOGIN_REDIRECT
+    assert r.history[0].status == web.HTTPFound.status_code
+
+
 async def test_registration_without_confirmation(
     client: TestClient,
     cfg: LoginOptions,
@@ -184,10 +214,10 @@ async def test_registration_with_confirmation(
     assert "verification link" in data["message"]
 
     # retrieves sent link by email (see monkeypatch of email in conftest.py)
-    out, err = capsys.readouterr()
-    link = parse_link(out)
-    assert "/auth/confirmation/" in str(link)
-    resp = await client.get(link)
+    out, _ = capsys.readouterr()
+    confirmation_url = parse_link(out)
+    assert "/auth/confirmation/" in str(confirmation_url)
+    resp = await client.get(confirmation_url)
     text = await resp.text()
 
     assert (
@@ -196,8 +226,11 @@ async def test_registration_with_confirmation(
     )
     assert resp.status == 200
 
+    # user is active
     user = await db.get_user({"email": EMAIL})
     assert user["status"] == UserStatus.ACTIVE.name
+
+    # cleanup
     await db.delete_user(user)
 
 
