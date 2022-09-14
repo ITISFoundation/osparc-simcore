@@ -4,8 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
 
-import asyncio
-import time
+import json
 import uuid
 from dataclasses import dataclass
 from typing import Callable
@@ -13,10 +12,20 @@ from typing import Callable
 import docker
 import pytest
 from simcore_service_director import config, exceptions, producer
+from tenacity import Retrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+
+
+@pytest.fixture
+def ensure_service_runs_in_ci(monkeypatch):
+    monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", int(25 * pow(1024, 2)))
+    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(0.01 * pow(10, 9)))
 
 
 @pytest.fixture
 async def run_services(
+    ensure_service_runs_in_ci,
     aiohttp_mock_app,
     configure_registry_access,
     configure_schemas_location,
@@ -24,6 +33,7 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
+    docker_client: docker.client.DockerClient,
 ) -> Callable:
     started_services = []
 
@@ -76,15 +86,29 @@ async def run_services(
             node_details = await producer.get_service_details(
                 aiohttp_mock_app, service_uuid
             )
-            start_time = time.perf_counter()
-            max_time = 2 * 60
-            while node_details["service_state"] != "running":
-                await asyncio.sleep(2)
-                if (time.perf_counter() - start_time) > max_time:
-                    assert True, "waiting too long to start service"
-                node_details = await producer.get_service_details(
-                    aiohttp_mock_app, service_uuid
-                )
+            max_time = 60
+            for attempt in Retrying(
+                wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True
+            ):
+                with attempt:
+                    print(
+                        f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run..."
+                    )
+                    node_details = await producer.get_service_details(
+                        aiohttp_mock_app, service_uuid
+                    )
+                    print(
+                        f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {config.DEFAULT_MAX_MEMORY}Bytes, {config.DEFAULT_MAX_NANO_CPUS}nanocpus"
+                    )
+                    for service in docker_client.services.list():
+                        tasks = service.tasks()
+                        print(
+                            f"service details {service.id}:{service.name}: {json.dumps( tasks, indent=2)}"
+                        )
+                    assert (
+                        node_details["service_state"] == "running"
+                    ), f"current state is {node_details['service_state']}"
+
             started_service["service_state"] = node_details["service_state"]
             started_service["service_message"] = node_details["service_message"]
             assert node_details == started_service
@@ -92,7 +116,6 @@ async def run_services(
         return started_services
 
     yield push_start_services
-
     # teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
@@ -137,12 +160,14 @@ async def test_find_service_tag():
     version = await producer._find_service_tag(list_of_images, my_service_key, "1.2.3")
 
 
-async def test_start_stop_service(run_services):
+async def test_start_stop_service(docker_network, run_services):
     # standard test
     await run_services(number_comp=1, number_dyn=1)
 
 
-async def test_service_assigned_env_variables(run_services, user_id, project_id):
+async def test_service_assigned_env_variables(
+    docker_network, run_services, user_id, project_id
+):
     started_services = await run_services(number_comp=1, number_dyn=1)
     client = docker.from_env()
     for service in started_services:
@@ -180,7 +205,7 @@ async def test_service_assigned_env_variables(run_services, user_id, project_id)
         assert config.CPU_RESOURCE_LIMIT_KEY in envs_dict
 
 
-async def test_interactive_service_published_port(run_services):
+async def test_interactive_service_published_port(docker_network, run_services):
     running_dynamic_services = await run_services(number_comp=0, number_dyn=1)
     assert len(running_dynamic_services) == 1
 
@@ -208,14 +233,24 @@ def docker_network(
     docker_client: docker.client.DockerClient, docker_swarm: None
 ) -> docker.models.networks.Network:
     network = docker_client.networks.create(
-        "test_network", driver="overlay", scope="swarm"
+        "test_network_default", driver="overlay", scope="swarm"
     )
+    print(f"--> docker network '{network.name}' created")
     config.SIMCORE_SERVICES_NETWORK_NAME = network.name
     yield network
 
     # cleanup
+    print(f"<-- removing docker network '{network.name}'...")
     network.remove()
+
+    for attempt in Retrying(stop=stop_after_delay(60), wait=wait_fixed(1)):
+        with attempt:
+            list_networks = docker_client.networks.list(
+                config.SIMCORE_SERVICES_NETWORK_NAME
+            )
+            assert not list_networks
     config.SIMCORE_SERVICES_NETWORK_NAME = None
+    print(f"<-- removed docker network '{network.name}'")
 
 
 async def test_interactive_service_in_correct_network(
@@ -240,7 +275,7 @@ async def test_interactive_service_in_correct_network(
         )
 
 
-async def test_dependent_services_have_common_network(run_services):
+async def test_dependent_services_have_common_network(docker_network, run_services):
     running_dynamic_services = await run_services(
         number_comp=0, number_dyn=2, dependant=True
     )
