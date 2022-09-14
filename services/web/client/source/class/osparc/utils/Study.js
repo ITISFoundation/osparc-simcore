@@ -211,6 +211,7 @@ qx.Class.define("osparc.utils.Study", {
                     const progress = updateData["task_progress"];
                     loadingPage.setMessages([progress["message"]]);
                     const pBar = new qx.ui.indicator.ProgressBar(progress["percent"], 1).set({
+                      width: osparc.ui.message.Loading.LOGO_WIDTH,
                       maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
                     });
                     loadingPage.addWidgetToMessages(pBar);
