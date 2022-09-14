@@ -3,7 +3,15 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, AsyncGenerator, Optional, Protocol, Union, runtime_checkable
+from typing import (
+    IO,
+    AsyncGenerator,
+    Optional,
+    Protocol,
+    Union,
+    cast,
+    runtime_checkable,
+)
 
 import aiofiles
 from aiohttp import (
@@ -11,6 +19,7 @@ from aiohttp import (
     ClientError,
     ClientPayloadError,
     ClientResponse,
+    ClientResponseError,
     ClientSession,
     web,
 )
@@ -20,7 +29,7 @@ from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type
+from tenacity.retry import retry_if_exception, retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 from tqdm import tqdm
@@ -132,6 +141,19 @@ async def download_link_to_file(
                     raise exceptions.TransferError(url) from exc
 
 
+def _check_for_aws_500_issue(exc: BaseException) -> bool:
+    """Sometimes AWS responds with a 500 or 503 which shall be retried
+    see [AWS notes on that](https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/) about 500 and 503 in AWS
+    """
+    if isinstance(exc, ClientResponseError):
+        client_error = cast(ClientResponseError, exc)
+        return client_error.status in (
+            web.HTTPServerError.status_code,
+            web.HTTPServiceUnavailable.status_code,
+        )
+    return False
+
+
 async def _upload_file_part(
     session: ClientSession,
     file_to_upload: Union[Path, UploadableFileObject],
@@ -162,11 +184,13 @@ async def _upload_file_part(
             offset=file_offset,
             total_bytes_to_read=file_part_size,
         )
+
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
-        retry=retry_if_exception_type(ClientConnectionError),
+        retry=retry_if_exception_type(ClientConnectionError)
+        | retry_if_exception(_check_for_aws_500_issue),
         before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
         after=after_log(log, log_level=logging.ERROR),
     ):

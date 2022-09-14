@@ -338,11 +338,8 @@ async def assert_all_services_running(
                 )
             )
 
-            # check that no service has failed
-            for service_state in service_states:
-                assert service_state != "failed"
-
             assert all(x == "running" for x in service_states)
+            print("--> all services are up and running!")
 
 
 async def assert_retrieve_service(
