@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import AnyUrl, BaseModel, EmailStr, Field
 
 #
-# GROUPS
+# GROUPS MODELS defined in OPENAPI specs
 #
 
 
@@ -27,11 +27,18 @@ class GroupAccessRights(BaseModel):
 
 
 class UsersGroup(BaseModel):
-    gid: str = Field(..., description="the group ID")
+    gid: int = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
-    thumbnail: Optional[AnyUrl] = Field(None, description="url to the group thumbnail")
+    thumbnail: Optional[AnyUrl] = Field(
+        default=None, description="url to the group thumbnail"
+    )
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
+    inclusion_rules: dict[str, str] = Field(
+        default_factory=dict,
+        description="Maps user's column and regular expression",
+        alias="inclusionRules",
+    )
 
     class Config:
         schema_extra = {
@@ -44,7 +51,7 @@ class UsersGroup(BaseModel):
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
-                    "gid": "1",
+                    "gid": 1,
                     "label": "ITIS Foundation",
                     "description": "The Foundation for Research on Information Technologies in Society",
                     "accessRights": {"read": True, "write": False, "delete": False},
@@ -54,6 +61,13 @@ class UsersGroup(BaseModel):
                     "label": "All",
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": True, "delete": True},
+                },
+                {
+                    "gid": "5",
+                    "label": "SPARC",
+                    "description": "Stimulating Peripheral Activity to Relieve Conditions",
+                    "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
+                    "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
                 },
             ]
         }
