@@ -207,11 +207,13 @@ async def test_registration_with_invitation(
     expected_response,
     mocker,
 ):
+    assert client.app
     mocker.patch(
         "simcore_service_webserver.login.handlers.get_plugin_settings",
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
+            LOGIN_TWILIO=None,
         ),
     )
 
@@ -227,7 +229,7 @@ async def test_registration_with_invitation(
         url = client.app.router["auth_register"].url_for()
 
         r = await client.post(
-            url,
+            f"{url}",
             json={
                 "email": EMAIL,
                 "password": PASSWORD,
@@ -242,7 +244,7 @@ async def test_registration_with_invitation(
         # check optional fields in body
         if not has_valid_invitation or not is_invitation_required:
             r = await client.post(
-                url, json={"email": "new-user" + EMAIL, "password": PASSWORD}
+                f"{url}", json={"email": "new-user" + EMAIL, "password": PASSWORD}
             )
             await assert_status(r, expected_response)
 
