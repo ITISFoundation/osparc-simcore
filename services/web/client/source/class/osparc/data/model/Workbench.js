@@ -101,7 +101,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           this.getUpstreamNodes(linkNode, recursive, upstreamNodes);
         }
       });
-      return Array.from(upstreamNodes);
+      return Array.from(upstreamNodes).reverse();
     },
 
     isPipelineLinear: function() {
