@@ -52,7 +52,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
   },
 
   events: {
-    "changePreparingNodes": "qx.event.type.Data"
+    "changePreparingNodes": "qx.event.type.Data",
+    "startPartialPipeline": "qx.event.type.Data"
   },
 
   members: {
@@ -97,11 +98,33 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
 
           const runningOpsStack = new qx.ui.container.Stack();
           const rerunBtn = new osparc.ui.form.FetchButton(this.tr("Re-run"));
-          const stopBtn = new osparc.ui.form.FetchButton(this.tr("Stop"));
+          rerunBtn.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
           runningOpsStack.add(rerunBtn);
+          const stopBtn = new qx.ui.form.Button(this.tr("Stop"));
           runningOpsStack.add(stopBtn);
           node.getStatus().bind("running", runningOpsStack, "selection", {
             converter: runningStatus => osparc.data.model.Study.isRunning(runningStatus) ? [stopBtn] : [rerunBtn]
+          });
+          node.getStatus().bind("running", rerunBtn, "enabled", {
+            converter: runningStatus => [
+              "FAILED",
+              "ABORTED",
+              "SUCCESS"
+            ].includes(runningStatus)
+          });
+          node.getStatus().bind("running", stopBtn, "fetching", {
+            converter: runningStatus => [
+              "PUBLISHED",
+              "PENDING",
+              "STARTED"
+            ].includes(runningStatus)
+          });
+          node.getStatus().bind("running", stopBtn, "enabled", {
+            converter: runningStatus => [
+              "PUBLISHED",
+              "PENDING",
+              "STARTED"
+            ].includes(runningStatus)
           });
           nodeLayout.add(runningOpsStack);
 
