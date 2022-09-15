@@ -9,6 +9,7 @@ import re
 from datetime import datetime, timedelta
 from typing import Callable
 
+import pytest
 from models_library.services import ServiceDockerData
 from pydantic import parse_obj_as
 from respx.router import MockRouter
@@ -23,6 +24,11 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
+
+
+@pytest.fixture
+def disable_service_caching(monkeypatch):
+    monkeypatch.setenv("AIOCACHE_DISABLE", 1)
 
 
 async def test_list_services_with_details(
@@ -121,6 +127,7 @@ async def test_list_services_without_details(
 
 
 async def test_list_services_without_details_with_wrong_user_id_returns_403(
+    disable_service_caching,
     mock_catalog_background_task,
     director_mockup: MockRouter,
     client: TestClient,
@@ -151,6 +158,7 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
 
 
 async def test_list_services_without_details_with_another_product_returns_other_services(
+    disable_service_caching,
     mock_catalog_background_task,
     director_mockup: MockRouter,
     client: TestClient,
@@ -188,6 +196,7 @@ async def test_list_services_without_details_with_another_product_returns_other_
 
 
 async def test_list_services_without_details_with_wrong_product_returns_0_service(
+    disable_service_caching,
     mock_catalog_background_task,
     director_mockup: MockRouter,
     client: TestClient,
@@ -225,6 +234,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
 
 
 async def test_list_services_that_are_deprecated(
+    disable_service_caching,
     mock_catalog_background_task,
     director_mockup: MockRouter,
     client: TestClient,
