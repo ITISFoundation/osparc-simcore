@@ -141,7 +141,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sign-out-alt/14").set({
+      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14").set({
         backgroundColor: "transparent",
         toolTipText: this.tr("Outputs")
       });
