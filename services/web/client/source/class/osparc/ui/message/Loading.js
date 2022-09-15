@@ -75,6 +75,10 @@ qx.Class.define("osparc.ui.message.Loading", {
     "maximize" : "qx.event.type.Event"
   },
 
+  statics: {
+    LOGO_WIDTH: 260
+  },
+
   members: {
     __header: null,
     __messages: null,
@@ -83,7 +87,7 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __buildLayout: function(showMaximize) {
       const image = new osparc.ui.basic.Logo().set({
-        width: 260,
+        width: this.self().LOGO_WIDTH,
         height: 110
       });
 
@@ -153,6 +157,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
     },
 
+    addWidgetToMessages: function(widget) {
+      this.__messages.add(widget);
+    },
 
 
     // from osparc.component.widget.PersistentIframe

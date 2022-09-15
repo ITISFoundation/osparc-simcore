@@ -416,7 +416,7 @@ class SimcoreS3DataManager(BaseDataManager):
         src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
         dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
         # Step 1: check access rights (read of src and write of dst)
-        update_task_progress(task_progress, "Checking project access rights...")
+        update_task_progress(task_progress, "Checking study access rights...")
         async with self.engine.acquire() as conn:
             for prj_uuid in [src_project_uuid, dst_project_uuid]:
                 if not await db_projects.project_exists(conn, prj_uuid):
@@ -438,7 +438,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         # Step 2: start copying by listing what to copy
         update_task_progress(
-            task_progress, f"Getting all files of project '{src_project_uuid}'..."
+            task_progress, f"Collecting files of '{src_project['name']}'..."
         )
         async with self.engine.acquire() as conn:
             src_project_files: list[
@@ -455,7 +455,7 @@ class SimcoreS3DataManager(BaseDataManager):
         s3_transfered_data_cb = S3TransferDataCB(
             task_progress,
             src_project_total_data_size,
-            task_progress_message_prefix=f"Copying {len(src_project_files)} files of project '{src_project_uuid}'",
+            task_progress_message_prefix=f"Copying {len(src_project_files)} files to '{dst_project['name']}'",
         )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
