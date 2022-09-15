@@ -86,6 +86,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           const nodeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
+
           const showLoggerBtn = new qx.ui.form.ToggleButton(this.tr("Logs"));
           showLoggerBtn.node = node;
           nodeLayout.add(showLoggerBtn);
@@ -93,6 +94,17 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           if (group.getSelection().length === 0) {
             group.setSelection([showLoggerBtn]);
           }
+
+          const runningOpsStack = new qx.ui.container.Stack();
+          const rerunBtn = new osparc.ui.form.FetchButton(this.tr("Re-run"));
+          const stopBtn = new osparc.ui.form.FetchButton(this.tr("Stop"));
+          runningOpsStack.add(rerunBtn);
+          runningOpsStack.add(stopBtn);
+          node.getStatus().bind("running", runningOpsStack, "selection", {
+            converter: runningStatus => osparc.data.model.Study.Study.isRunning(runningStatus) ? [stopBtn] : [rerunBtn]
+          });
+          nodeLayout.add(runningOpsStack);
+
           const statusUI = new osparc.ui.basic.NodeStatusUI(node);
           nodeLayout.add(statusUI);
           nodeLayout.add(new qx.ui.basic.Label(node.getLabel()), {

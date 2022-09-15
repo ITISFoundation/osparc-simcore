@@ -270,6 +270,15 @@ qx.Class.define("osparc.data.model.Study", {
         return null;
       }
       return overallProgress/nCompNodes;
+    },
+
+    isRunning: function(state) {
+      return [
+        "PUBLISHED",
+        "PENDING",
+        "STARTED",
+        "RETRY"
+      ].includes(state);
     }
   },
 
@@ -407,12 +416,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     isPipelineRunning: function() {
       const pipelineState = this.getPipelineState();
-      return [
-        "PUBLISHED",
-        "PENDING",
-        "STARTED",
-        "RETRY"
-      ].includes(pipelineState);
+      return this.self().isRunning(pipelineState);
     },
 
     isLocked: function() {
