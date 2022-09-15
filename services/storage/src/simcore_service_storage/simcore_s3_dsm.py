@@ -455,7 +455,7 @@ class SimcoreS3DataManager(BaseDataManager):
         s3_transfered_data_cb = S3TransferDataCB(
             task_progress,
             src_project_total_data_size,
-            task_progress_message_prefix=f"Copying from '{src_project['name']}' to '{dst_project['name']}'",
+            task_progress_message_prefix=f"Copying {len(src_project_files)} to '{dst_project['name']}'",
         )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
