@@ -39,6 +39,7 @@ qx.Class.define("osparc.data.PollTask", {
   },
 
   events: {
+    "updateReceived": "qx.event.type.Data",
     "resultReceived": "qx.event.type.Data",
     "pollingError": "qx.event.type.Data"
   },
@@ -92,6 +93,7 @@ qx.Class.define("osparc.data.PollTask", {
           const done = response["done"];
           this.setDone(done);
           if (done === false) {
+            this.fireDataEvent("updateReceived", response);
             // keep polling
             setTimeout(() => this.__pollTaskState(), this.getPollInterval());
           }
