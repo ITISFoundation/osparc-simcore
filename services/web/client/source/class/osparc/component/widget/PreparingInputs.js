@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           runningOpsStack.add(rerunBtn);
           runningOpsStack.add(stopBtn);
           node.getStatus().bind("running", runningOpsStack, "selection", {
-            converter: runningStatus => osparc.data.model.Study.Study.isRunning(runningStatus) ? [stopBtn] : [rerunBtn]
+            converter: runningStatus => osparc.data.model.Study.isRunning(runningStatus) ? [stopBtn] : [rerunBtn]
           });
           nodeLayout.add(runningOpsStack);
 
