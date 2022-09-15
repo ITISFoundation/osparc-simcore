@@ -1,11 +1,11 @@
 import logging
 import re
-from typing import List, Set
 
 from models_library.projects_state import RunningState
 from models_library.services import SERVICE_KEY_RE
 
 from ..models.domains.comp_tasks import CompTaskAtDB
+from ..modules.catalog import CatalogClient
 from ..modules.db.tables import NodeClass
 
 log = logging.getLogger(__name__)
@@ -51,13 +51,13 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
 }
 
 
-def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningState:
+def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningState:
 
     # compute pipeline state from task states
     if not tasks:
         return RunningState.UNKNOWN
     # put in a set of unique values
-    set_states: Set[RunningState] = {task.state for task in tasks}
+    set_states: set[RunningState] = {task.state for task in tasks}
     if len(set_states) == 1:
         # there is only one state, so it's the one
         the_state = next(iter(set_states))
@@ -93,3 +93,10 @@ def is_pipeline_running(pipeline_state: RunningState) -> bool:
 
 def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
     return not pipeline_state.is_running()
+
+
+async def find_deprecated_tasks(
+    comp_tasks: list[CompTaskAtDB], catalog_client: CatalogClient
+) -> list[CompTaskAtDB]:
+    deprecated_tasks = []
+    return deprecated_tasks

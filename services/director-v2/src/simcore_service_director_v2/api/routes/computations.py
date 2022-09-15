@@ -25,7 +25,6 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -40,6 +39,7 @@ from ...core.errors import (
     SchedulerError,
 )
 from ...models.domains.comp_pipelines import CompPipelineAtDB
+from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB
 from ...models.schemas.comp_tasks import (
     ComputationCreate,
@@ -47,6 +47,7 @@ from ...models.schemas.comp_tasks import (
     ComputationGet,
     ComputationStop,
 )
+from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -54,6 +55,7 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...utils.computations import (
+    find_deprecated_tasks,
     get_pipeline_state_from_task_states,
     is_pipeline_running,
     is_pipeline_stopped,
@@ -65,6 +67,7 @@ from ...utils.dags import (
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
+from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
@@ -96,6 +99,7 @@ async def create_computation(
     comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
+    catalog_client: CatalogClient = Depends(get_catalog_client),
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -118,9 +122,6 @@ async def create_computation(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
             )
-
-        if is_any_task_deprecated(comp_tasks):
-            raise HTTPException(status_code=status.HTTP_406)
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
@@ -160,6 +161,14 @@ async def create_computation(
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {computation.project_id} has no computational services",
+                )
+
+            if deprecated_tasks := await find_deprecated_tasks(
+                comp_tasks, catalog_client
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {deprecated_tasks}",
                 )
 
             await scheduler.run_new_pipeline(
