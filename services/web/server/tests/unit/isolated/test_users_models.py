@@ -53,7 +53,7 @@ def test_profile_get_expiration_date(faker: Faker):
     fake_expiration = datetime.utcnow()
 
     profile = ProfileGet(
-        login=faker.email(), role=UserRole.ADMIN, expiration_date=fake_expiration
+        id=1, login=faker.email(), role=UserRole.ADMIN, expiration_date=fake_expiration
     )
 
     assert fake_expiration.date() == profile.expiration_date
@@ -73,3 +73,38 @@ def test_profile_get_role(user_role: str):
         data["role"] = UserRole(user_role)
         m2 = ProfileGet(**data)
         assert m1 == m2
+
+
+def test_parsing_output_of_get_user_profile():
+
+    result_from_db_query_and_composition = {
+        "id": 1,
+        "login": "PtN5Ab0uv@guest-at-osparc.io",
+        "first_name": "PtN5Ab0uv",
+        "last_name": "",
+        "role": "Guest",
+        "gravatar_id": "9d5e02c75fcd4bce1c8861f219f7f8a5",
+        "groups": {
+            "me": {
+                "gid": 2,
+                "label": "PtN5Ab0uv",
+                "description": "primary group",
+                "thumbnail": None,
+                "inclusionRules": {},
+                "accessRights": {"read": True, "write": False, "delete": False},
+            },
+            "organizations": [],
+            "all": {
+                "gid": 1,
+                "label": "Everyone",
+                "description": "all users",
+                "thumbnail": None,
+                "inclusionRules": {},
+                "accessRights": {"read": True, "write": False, "delete": False},
+            },
+        },
+        "password": "secret",  # should be stripped out
+    }
+
+    profile = ProfileGet.parse_obj(result_from_db_query_and_composition)
+    assert "password" not in profile.dict(exclude_unset=True)

@@ -2,6 +2,7 @@ from datetime import date
 from typing import Literal, Optional
 from uuid import UUID
 
+from models_library.basic_types import IdInt
 from pydantic import BaseModel, EmailStr, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
@@ -60,6 +61,7 @@ class ProfileUpdate(_ProfileCommon):
 
 
 class ProfileGet(_ProfileCommon):
+    id: IdInt
     login: EmailStr
     role: Literal["Anonymous", "Guest", "User", "Tester", "Admin"]
     groups: Optional[AllUsersGroups] = None
@@ -79,11 +81,13 @@ class ProfileGet(_ProfileCommon):
         schema_extra = {
             "examples": [
                 {
+                    "id": 1,
                     "login": "bla@foo.com",
                     "role": "Admin",
                     "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
                 },
                 {
+                    "id": 42,
                     "login": "bla@foo.com",
                     "role": UserRole.ADMIN,
                     "expirationDate": "2022-09-14",
