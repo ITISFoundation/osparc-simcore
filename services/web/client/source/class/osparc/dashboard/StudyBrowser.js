@@ -379,7 +379,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const title = osparc.utils.Utils.getUniqueStudyName(templateData.name, this.__studies);
       templateData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
-      osparc.utils.Study.createStudyFromTemplate(templateData)
+      osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
           this.__getStudyAndStart(studyId);
