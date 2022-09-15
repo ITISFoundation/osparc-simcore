@@ -24,6 +24,7 @@
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
 [license]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore
 [Github-CI Push/PR]:https://github.com/ITISFoundation/osparc-simcore/workflows/Github-CI%20Push/PR/badge.svg
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=ITISFoundation_osparc-simcore)](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
 <!------------------------------------------------------>
 
 
