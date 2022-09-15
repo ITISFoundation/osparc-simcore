@@ -92,13 +92,15 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    getUpstreamNodes: function(node, recursive = true, upstreamNodes = new Set()) {
+    getUpstreamCompNodes: function(node, recursive = true, upstreamNodes = new Set()) {
       const links = node.getLinks();
       links.forEach(link => {
         upstreamNodes.add(link["nodeUuid"]);
         if (recursive) {
           const linkNode = this.getNode(link["nodeUuid"]);
-          this.getUpstreamNodes(linkNode, recursive, upstreamNodes);
+          if (linkNode.isComputational()) {
+            this.getUpstreamCompNodes(linkNode, recursive, upstreamNodes);
+          }
         }
       });
       return Array.from(upstreamNodes).reverse();

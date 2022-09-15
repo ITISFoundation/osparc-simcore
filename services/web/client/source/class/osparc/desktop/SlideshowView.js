@@ -161,7 +161,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNeedToRunDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
-      const upstreamNodeIds = wb.getUpstreamNodes(node, false);
+      const upstreamNodeIds = wb.getUpstreamCompNodes(node, false);
       upstreamNodeIds.forEach(upstreamNodeId => {
         const upstreamNode = wb.getNode(upstreamNodeId);
         if (osparc.data.model.NodeStatus.doesCompNodeNeedRun(upstreamNode)) {
@@ -174,7 +174,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNotReadyDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
-      const upstreamNodeIds = wb.getUpstreamNodes(node, true);
+      const upstreamNodeIds = wb.getUpstreamCompNodes(node, true);
       upstreamNodeIds.forEach(upstreamNodeId => {
         if (!this.__isNodeReady(upstreamNodeId)) {
           dependencies.push(upstreamNodeId);

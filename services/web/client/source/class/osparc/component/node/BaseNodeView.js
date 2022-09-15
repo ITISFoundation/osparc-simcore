@@ -256,7 +256,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __areInputsReady: function() {
       const wb = this.getNode().getStudy().getWorkbench();
-      const upstreamNodeIds = wb.getUpstreamNodes(this.getNode(), false);
+      const upstreamNodeIds = wb.getUpstreamCompNodes(this.getNode(), false);
       for (let i=0; i<upstreamNodeIds.length; i++) {
         const upstreamNodeId = upstreamNodeIds[i];
         if (!osparc.data.model.NodeStatus.isCompNodeReady(wb.getNode(upstreamNodeId))) {
