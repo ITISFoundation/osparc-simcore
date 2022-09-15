@@ -251,7 +251,7 @@ async def _create_projects(
     new_project = {}
     copy_file_coro = None
     try:
-        task_progress.update(message=f"creating new study...")
+        task_progress.update(message="creating new study...")
         new_project_was_hidden_before_data_was_copied = query_params.hidden
         if query_params.from_study:
             # 1. prepare copy
