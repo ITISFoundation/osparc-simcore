@@ -1176,13 +1176,20 @@ qx.Class.define("osparc.data.model.Node", {
         .then(data => this.__onNodeState(data))
         .catch(err => {
           const errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
+          if ("status" in err && err.status === 406) {
+            const errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
+          }
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg: errorMsg,
             level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          if (this.__unresponsiveRetries > 0) {
+          if ("status" in err && err.status === 406) {
+            this.getStatus().setInteractive("deprecated");
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr(errorMsg), "ERROR");
+          }
+          else if (this.__unresponsiveRetries > 0) {
             const retryMsg = `Retrying (${this.__unresponsiveRetries})`;
             const retryMsgData = {
               nodeId: this.getNodeId(),
