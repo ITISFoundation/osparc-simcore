@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
@@ -21,17 +21,18 @@ class ComputationCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
     start_pipeline: Optional[bool] = Field(
-        False, description="if True the computation pipeline will start right away"
+        default=False,
+        description="if True the computation pipeline will start right away",
     )
-    subgraph: Optional[List[NodeID]] = Field(
-        None,
+    subgraph: Optional[list[NodeID]] = Field(
+        default=None,
         description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
     )
     force_restart: Optional[bool] = Field(
-        False, description="if True will force re-running all dependent nodes"
+        default=False, description="if True will force re-running all dependent nodes"
     )
     cluster_id: Optional[ClusterID] = Field(
-        None,
+        default=None,
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
 
