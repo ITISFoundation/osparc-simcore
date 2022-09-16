@@ -69,6 +69,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
         });
       });
       this.__updateMonitoredNodesList();
+      this.__updatePreparingNodes();
     },
 
     __updateMonitoredNodesList: function() {

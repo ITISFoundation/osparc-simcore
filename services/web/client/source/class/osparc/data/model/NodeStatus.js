@@ -99,12 +99,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
     isCompNodeReady: function(node) {
       if (node && node.isComputational()) {
-        return (
-          // run if last run was not succesful
-          node.getStatus().getRunning() === "SUCCESS" &&
-          // and outputs up-to-date
-          node.getStatus().getOutput() === "up-to-date"
-        );
+        return node.getStatus().getRunning() === "SUCCESS" && node.getStatus().getOutput() === "up-to-date";
       }
       return true;
     },
