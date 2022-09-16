@@ -267,7 +267,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __enableIframeContent: function(enable) {
-      this._mainView.setEnabled(enable);
+      // this._mainView.setEnabled(enable);
       const iframe = this.getNode().getIFrame();
       if (iframe) {
         // enable/disable user interaction on iframe
@@ -275,6 +275,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         iframe.__iframe.getContentElement().setStyles({
           "pointer-events": enable ? "auto" : "none"
         });
+      }
+      const showInputs = () => this.showPreparingInputs();
+      if (enable) {
+        this._iFrameLayout.removeListener("tap", showInputs);
+      } else if (!this._iFrameLayout.hasListener("tap")) {
+        this._iFrameLayout.addListener("tap", showInputs);
       }
     },
 
