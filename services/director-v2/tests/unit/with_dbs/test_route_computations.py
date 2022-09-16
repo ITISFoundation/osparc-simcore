@@ -135,6 +135,28 @@ def mocked_catalog_service_fcts(
                 r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
             ),
             name="get_service",
+        ).respond(json=fake_service_details.dict(by_alias=True))
+
+        yield respx_mock
+
+
+@pytest.fixture
+def mocked_catalog_service_fcts_deprecated(
+    minimal_app: FastAPI,
+    fake_service_details: ServiceDockerData,
+    fake_service_extras: ServiceExtras,
+):
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get(
+            re.compile(
+                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+            ),
+            name="get_service",
         ).respond(
             json=fake_service_details.copy(
                 update={
@@ -154,6 +176,7 @@ def product_name(faker: Faker) -> str:
 async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -180,7 +203,7 @@ async def test_start_computation(
 async def test_start_computation_with_deprecated_services_raises_406(
     minimal_configuration: None,
     mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
+    mocked_catalog_service_fcts_deprecated,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
