@@ -180,6 +180,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           dependencies.push(upstreamNodeId);
         }
       });
+      return dependencies;
     },
 
     __getUpstreamCompDependencies: function(node) {
