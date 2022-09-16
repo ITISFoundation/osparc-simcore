@@ -1,12 +1,10 @@
-import enum
 from datetime import datetime
 from logging import getLogger
-from typing import TypedDict
+from typing import Literal, Optional, TypedDict
 
 import asyncpg
 from aiohttp import web
 
-from ..db_models import ConfirmationAction, UserRole, UserStatus
 from . import _sql
 from .utils import get_random_string
 
@@ -15,16 +13,20 @@ log = getLogger(__name__)
 APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 
 
-# SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
-class _ConfirmationDictRequired(TypedDict):
+## MODELS
+
+
+class ConfirmationDict(TypedDict):
+    # SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
     code: str
     user_id: int
-    action: str
-
-
-class ConfirmationDict(_ConfirmationDictRequired, total=False):
-    data: dict
+    action: Literal["REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"]
     created_at: datetime
+    # SEE handlers_confirmation.py::email_confirmation to determine what type is associated to each action
+    data: Optional[str]
+
+
+## REPOSITORY
 
 
 class AsyncpgStorage:
@@ -70,7 +72,10 @@ class AsyncpgStorage:
                 "data": data,
                 "created_at": datetime.utcnow(),
             }
-            await _sql.insert(conn, self.confirm_tbl, confirmation, None)
+            c = await _sql.insert(
+                conn, self.confirm_tbl, confirmation, returning="code"
+            )
+            assert code == c  # nosec
             return confirmation
 
     async def get_confirmation(self, filter_dict) -> asyncpg.Record:
@@ -89,29 +94,3 @@ def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
     storage = app.get(APP_LOGIN_STORAGE_KEY)
     assert storage, "login plugin was not initialized"  # nosec
     return storage
-
-
-# helpers ----------------------------
-def _to_enum(data):
-    # FIXME: cannot modify asyncpg.Record:
-
-    # TODO: ensure columns names and types! User tables for that
-    # See https://docs.sqlalchemy.org/en/latest/core/metadata.html
-    if data:
-        for key, enumtype in (
-            ("status", UserStatus),
-            ("role", UserRole),
-            ("action", ConfirmationAction),
-        ):
-            if key in data:
-                data[key] = getattr(enumtype, data[key])
-    return data
-
-
-def _to_name(data):
-    if data:
-        for key in ("status", "role", "action"):
-            if key in data:
-                if isinstance(data[key], enum.Enum):
-                    data[key] = data[key].name
-    return data
