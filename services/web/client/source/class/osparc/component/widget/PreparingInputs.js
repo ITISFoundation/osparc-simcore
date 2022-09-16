@@ -97,8 +97,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           }
 
           const rerunBtn = new osparc.ui.form.FetchButton(this.tr("Re-run")).set({
-            minWdith: 70,
-            maxWdith: 70,
+            minWidth: 70,
+            maxWidth: 70,
             alignX: "center"
           });
           rerunBtn.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);

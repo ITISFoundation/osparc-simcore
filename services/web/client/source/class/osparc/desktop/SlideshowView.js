@@ -171,12 +171,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       return dependencies;
     },
 
-    __getNotReadyDependencies: function(node) {
+    __getUpstreamCompDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
       const upstreamNodeIds = wb.getUpstreamCompNodes(node, true);
       upstreamNodeIds.forEach(upstreamNodeId => {
-        if (!this.__isNodeReady(upstreamNodeId)) {
+        if (wb.getNode(upstreamNodeId).isComputational()) {
           dependencies.push(upstreamNodeId);
         }
       });
