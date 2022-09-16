@@ -267,7 +267,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __enableIframeContent: function(enable) {
-      // this._mainView.setEnabled(enable);
       const iframe = this.getNode().getIFrame();
       if (iframe) {
         // enable/disable user interaction on iframe
