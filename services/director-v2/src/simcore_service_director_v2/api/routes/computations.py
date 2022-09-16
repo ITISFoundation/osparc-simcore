@@ -47,7 +47,6 @@ from ...models.schemas.comp_tasks import (
     ComputationGet,
     ComputationStop,
 )
-from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -66,7 +65,6 @@ from ...utils.dags import (
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
-from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
@@ -98,7 +96,6 @@ async def create_computation(
     comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
-    catalog_client: CatalogClient = Depends(get_catalog_client),
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
