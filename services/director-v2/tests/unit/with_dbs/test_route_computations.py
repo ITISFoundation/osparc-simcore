@@ -121,12 +121,8 @@ async def test_start_computation_with_deprecated_services_raises(
     minimal_configuration: None,
     mocked_director_service_fcts,
     fake_workbench_without_outputs: dict[str, Any],
-    fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    faker: Faker,
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
