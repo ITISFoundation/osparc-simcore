@@ -66,7 +66,7 @@ class CatalogClient:
 
         resp = await self.request(
             "GET",
-            f"/services/{urllib.parse.quote(service_key, safe='')}/{service_version}/specifications",
+            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/specifications",
             params={"user_id": user_id},
         )
         resp.raise_for_status()
