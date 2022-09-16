@@ -21,8 +21,6 @@ from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
 
-# HELPERS  --------------------------------------------------------------------------------
-
 
 def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
     kwargs = {}

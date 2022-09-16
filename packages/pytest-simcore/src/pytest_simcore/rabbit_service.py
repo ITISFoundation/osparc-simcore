@@ -19,8 +19,6 @@ from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
-# HELPERS ------------------------------------------------------------------------------------
-
 log = logging.getLogger(__name__)
 
 

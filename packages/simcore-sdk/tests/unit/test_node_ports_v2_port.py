@@ -35,8 +35,6 @@ from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
-# HELPERS --------------------------------------------------------------------------------------
-
 
 def camel_to_snake(name):
     name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)

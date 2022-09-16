@@ -61,8 +61,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = []
 
 
-# HELPERS ------------------------------------------------------------------------------------
-
 logger = logging.getLogger(__name__)
 
 RabbitMessage = dict[str, Any]

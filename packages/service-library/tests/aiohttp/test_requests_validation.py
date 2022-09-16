@@ -18,7 +18,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 
-# HELPERS -----------------------------------------------------------
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
 

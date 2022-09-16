@@ -73,9 +73,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
-# HELPERS ----------------------------------------------------------------------------
-
-
 class ExpectedResponse(NamedTuple):
     """
     Stores respons status to an API request in function of the user
@@ -203,7 +200,6 @@ def fake_workbench_adjacency_list(tests_data_dir: Path) -> dict[str, Any]:
         return json.load(fp)
 
 
-# HELPERS ----------------------------------
 def _assert_db_contents(
     project_id: str,
     postgres_session: sa.orm.session.Session,

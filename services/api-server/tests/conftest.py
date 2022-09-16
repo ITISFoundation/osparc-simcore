@@ -19,9 +19,6 @@ pytest_plugins = [
 ]
 
 
-## TEST_ENVIRON ---
-
-
 @pytest.fixture(scope="session")
 def project_env_devel_vars(project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"

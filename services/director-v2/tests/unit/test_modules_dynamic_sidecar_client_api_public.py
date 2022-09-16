@@ -32,8 +32,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,
 )
 
-# FIXTURES
-
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
@@ -102,9 +100,6 @@ def get_patched_client(
         yield dynamic_sidecar_client
 
     return wrapper
-
-
-# TESTS
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])

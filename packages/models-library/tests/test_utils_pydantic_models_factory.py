@@ -19,8 +19,6 @@ from pydantic import BaseModel, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
-# HELPERS ---------------------------------------------------------------
-
 
 def assert_same_fields(model_cls, reference_model_cls):
 

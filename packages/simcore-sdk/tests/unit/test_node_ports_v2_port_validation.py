@@ -22,7 +22,6 @@ from simcore_sdk.node_ports_v2.port_validation import (
 )
 
 
-# HELPERS ---------
 def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
     #
     # Taken and adapted from https://github.com/samuelcolvin/pydantic/issues/889#issuecomment-850312496

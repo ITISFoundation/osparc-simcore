@@ -63,8 +63,6 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 
-# HELPERS -----------------------------------------------------------------------------
-
 SERVICE_DELETION_DELAY = 1
 
 

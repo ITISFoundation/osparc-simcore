@@ -77,9 +77,6 @@ def _make_dir_with_files(temp_dir: Path, file_count: int) -> Path:
     return content_dir_path
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def node_uuid() -> str:
     return f"{uuid4()}"

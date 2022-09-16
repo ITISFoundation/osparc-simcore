@@ -325,9 +325,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
         _save_docker_logs_to_folder(failed_test_directory)
 
 
-# HELPERS ---------------------------------------------
-
-
 def _minio_fix(service_environs: dict) -> dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:

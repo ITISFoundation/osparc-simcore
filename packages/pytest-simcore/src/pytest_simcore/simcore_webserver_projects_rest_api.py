@@ -10,8 +10,6 @@ from typing import Any, Literal, Optional
 
 import pytest
 
-# HELPERS ----------------------
-
 
 @dataclass
 class HttpApiCallCapture:

@@ -3,7 +3,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Iterable
 from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
@@ -22,8 +22,8 @@ from simcore_service_director_v2.modules.projects_networks import (
 
 
 class MockedCalls(BaseModel):
-    detach: List[Any]
-    attach: List[Any]
+    detach: list[Any]
+    attach: list[Any]
 
 
 class Example(BaseModel):
@@ -34,10 +34,10 @@ class Example(BaseModel):
     @classmethod
     def using(
         cls,
-        existing: Dict[str, Any],
-        new: Dict[str, Any],
-        detach: List[Any],
-        attach: List[Any],
+        existing: dict[str, Any],
+        new: dict[str, Any],
+        detach: list[Any],
+        attach: list[Any],
     ) -> "Example":
         return cls(
             existing_networks_with_aliases=NetworksWithAliases.parse_obj(existing),
@@ -58,11 +58,8 @@ def _network_name(number: int) -> str:
     return f"network_{number}"
 
 
-# FIXTURES
-
-
 @pytest.fixture
-def examples_factory(mock_scheduler: AsyncMock, project_id: ProjectID) -> List[Example]:
+def examples_factory(mock_scheduler: AsyncMock, project_id: ProjectID) -> list[Example]:
     return [
         # nothing exists
         Example.using(
@@ -203,7 +200,7 @@ def user_id() -> PositiveInt:
 
 
 @pytest.fixture
-def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
+def mock_docker_calls(mocker: MockerFixture) -> Iterable[dict[str, AsyncMock]]:
     requires_dynamic_sidecar_mock = AsyncMock()
     requires_dynamic_sidecar_mock.return_value = True
     class_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler"
@@ -219,14 +216,11 @@ def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
     yield mocked_items
 
 
-# TESTS
-
-
 async def test_send_network_configuration_to_dynamic_sidecar(
     mock_scheduler: AsyncMock,
     project_id: ProjectID,
-    examples_factory: List[Example],
-    mock_docker_calls: Dict[str, AsyncMock],
+    examples_factory: list[Example],
+    mock_docker_calls: dict[str, AsyncMock],
 ) -> None:
     for example in examples_factory:
 
@@ -244,10 +238,10 @@ async def test_send_network_configuration_to_dynamic_sidecar(
 async def test_get_networks_with_aliases_for_default_network_is_json_serializable(
     mock_director_v0_client: AsyncMock,
     fake_project_id: ProjectID,
-    dy_workbench_with_networkable_labels: Dict[str, Any],
+    dy_workbench_with_networkable_labels: dict[str, Any],
     user_id: PositiveInt,
     rabbitmq_client: AsyncMock,
-    mock_docker_calls: Dict[str, AsyncMock],
+    mock_docker_calls: dict[str, AsyncMock],
 ) -> None:
     assert await _get_networks_with_aliases_for_default_network(
         project_id=fake_project_id,

@@ -12,8 +12,6 @@ from pint import UnitRegistry
 from pydantic import Field, create_model
 from simcore_service_webserver.catalog_units import can_connect
 
-# HELPERS ----------
-
 
 def create_port_data(schema: dict[str, Any]):
     description = schema.pop("description", schema["title"])

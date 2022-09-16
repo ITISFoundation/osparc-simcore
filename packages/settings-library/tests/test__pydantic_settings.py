@@ -17,8 +17,6 @@ from typing import Optional
 from pydantic import BaseSettings, validator
 from pydantic.fields import ModelField, Undefined
 
-# HELPERS --------------------------------------------------------------------------------------
-
 
 def assert_field_specs(
     model_cls, name, is_required, is_nullable, explicit_default, defaults

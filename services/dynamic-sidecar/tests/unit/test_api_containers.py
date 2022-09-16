@@ -122,9 +122,6 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
     assert len(started_containers) == expected_services_count
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def app(app: FastAPI) -> FastAPI:
     app.state.shared_store = SharedStore()  # emulate on_startup event
@@ -272,9 +269,6 @@ def mock_dir_watcher_on_any_event(
         app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
     )
     yield mock
-
-
-# TESTS
 
 
 def test_ensure_api_vtag_is_v1():

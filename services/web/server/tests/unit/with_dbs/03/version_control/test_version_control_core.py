@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable
 from uuid import UUID
 
 import pytest
@@ -19,13 +19,7 @@ from simcore_service_webserver.version_control_core import (
 )
 from simcore_service_webserver.version_control_db import HEAD, VersionControlRepository
 
-ProjectDict = Dict[str, Any]
-
-
-# HELPERS
-
-
-# FIXTURES
+ProjectDict = dict[str, Any]
 
 
 @pytest.fixture
@@ -33,9 +27,6 @@ def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
     req = make_mocked_request("GET", "/", app=client.app)
     req[RQT_USERID_KEY] = user_id
     return req
-
-
-# TESTS
 
 
 @pytest.mark.acceptance_test

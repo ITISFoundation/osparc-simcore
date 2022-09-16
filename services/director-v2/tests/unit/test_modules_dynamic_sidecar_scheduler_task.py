@@ -34,8 +34,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
 
 SCHEDULER_INTERVAL_SECONDS: Final[float] = 0.1
 
-# FIXTURES
-
 
 @pytest.fixture
 def mock_env(
@@ -206,9 +204,6 @@ def mocked_dynamic_scheduler_events(
 @pytest.fixture
 def mock_remove_calls(mocker: MockerFixture) -> None:
     mocker.patch.object(_utils, "remove_volumes_from_node")
-
-
-# TESTS
 
 
 async def test_skip_observation_cycle_after_error(

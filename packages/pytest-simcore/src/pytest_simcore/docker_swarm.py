@@ -29,9 +29,6 @@ from .helpers.utils_docker import get_localhost_ip
 log = logging.getLogger(__name__)
 
 
-# HELPERS --------------------------------------------------------------------------------
-
-
 class _ResourceStillNotRemoved(Exception):
     pass
 

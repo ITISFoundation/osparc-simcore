@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Awaitable, Callable, Dict, Type
+from typing import Any, Awaitable, Callable
 from uuid import UUID
 
 import aiohttp
@@ -20,17 +20,12 @@ from simcore_service_webserver.version_control_models import (
     RepoApiModel,
 )
 
-ProjectDict = Dict[str, Any]
-
-# HELPERS
-
-
-# FIXTURES
+ProjectDict = dict[str, Any]
 
 
 async def assert_resp_page(
     resp: aiohttp.ClientResponse,
-    expected_page_cls: Type[Page],
+    expected_page_cls: type[Page],
     expected_total: int,
     expected_count: int,
 ):
@@ -44,14 +39,11 @@ async def assert_resp_page(
 
 
 async def assert_status_and_body(
-    resp, expected_cls: Type[web.HTTPException], expected_model: Type[BaseModel]
+    resp, expected_cls: type[web.HTTPException], expected_model: type[BaseModel]
 ) -> BaseModel:
     data, _ = await assert_status(resp, expected_cls)
     model = expected_model.parse_obj(data)
     return model
-
-
-# TESTS
 
 
 @pytest.mark.acceptance_test

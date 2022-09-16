@@ -3,7 +3,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 from uuid import UUID
 
 import aiodocker
@@ -15,8 +15,6 @@ from models_library.users import UserID
 from simcore_service_director_v2.modules.dynamic_sidecar.volumes import (
     DynamicSidecarVolumesPathsResolver,
 )
-
-# FIXTURES
 
 
 @pytest.fixture(scope="session")
@@ -30,7 +28,7 @@ def node_uuid(faker: Faker) -> UUID:
 
 
 @pytest.fixture
-def state_paths() -> List[Path]:
+def state_paths() -> list[Path]:
     return [Path(f"/tmp/asd/asd/{x}") for x in range(10)]
 
 
@@ -56,8 +54,8 @@ def expected_volume_config(
     run_id: RunID,
     project_id: ProjectID,
     user_id: UserID,
-) -> Callable[[str, str], Dict[str, Any]]:
-    def _callable(source: str, target: str) -> Dict[str, Any]:
+) -> Callable[[str, str], dict[str, Any]]:
+    def _callable(source: str, target: str) -> dict[str, Any]:
         return {
             "Source": source,
             "Target": target,
@@ -77,14 +75,11 @@ def expected_volume_config(
     return _callable
 
 
-# TESTS
-
-
 def test_expected_paths(
     swarm_stack_name: str,
     node_uuid: UUID,
-    state_paths: List[Path],
-    expected_volume_config: Callable[[str, str], Dict[str, Any]],
+    state_paths: list[Path],
+    expected_volume_config: Callable[[str, str], dict[str, Any]],
     run_id: RunID,
     project_id: ProjectID,
     user_id: UserID,

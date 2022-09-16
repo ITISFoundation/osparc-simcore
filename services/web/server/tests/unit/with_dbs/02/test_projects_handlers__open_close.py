@@ -45,9 +45,6 @@ RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
 
 
-# HELPERS -----------------------------------------------------------------------------------------
-
-
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}

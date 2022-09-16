@@ -23,8 +23,6 @@ from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
 
 from .test_utils import print_tree
 
-# FIXTURES
-
 
 @pytest.fixture
 def dir_with_random_content() -> Iterable[Path]:
@@ -253,9 +251,6 @@ def assert_unarchived_paths(
     if unsupported_replace:
         expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
-
-
-# TESTS
 
 
 @pytest.mark.skip(reason="DEV:only for manual tessting")
