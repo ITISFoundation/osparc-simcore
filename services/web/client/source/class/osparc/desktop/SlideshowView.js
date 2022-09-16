@@ -171,6 +171,17 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       return dependencies;
     },
 
+    __getNotReadyDependencies: function(node) {
+      const dependencies = node.getStatus().getDependencies() || [];
+      const wb = this.getStudy().getWorkbench();
+      const upstreamNodeIds = wb.getUpstreamNodes(node, true);
+      upstreamNodeIds.forEach(upstreamNodeId => {
+        if (!this.__isNodeReady(upstreamNodeId)) {
+          dependencies.push(upstreamNodeId);
+        }
+      });
+    },
+
     __getUpstreamCompDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
@@ -290,7 +301,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
         const upstreamDependencies = this.__getUpstreamCompDependencies(node);
         this.__nodeView.setUpstreamDependencies(upstreamDependencies);
-        if (upstreamDependencies && upstreamDependencies.length) {
+
+        const notReadyDependencies = this.__getNotReadyDependencies(node);
+        if (notReadyDependencies && notReadyDependencies.length) {
           this.__nodeView.showPreparingInputs();
         }
 
