@@ -139,6 +139,28 @@ async def test_start_computation(
     assert response.status_code == status.HTTP_201_CREATED, response.text
 
 
+async def test_start_computation_with_deprecated_services_raises_406(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"], project_id=proj.uuid, start_pipeline=True
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
+
+
 async def test_get_computation_from_empty_project(
     minimal_configuration: None,
     fake_workbench_without_outputs: dict[str, Any],
