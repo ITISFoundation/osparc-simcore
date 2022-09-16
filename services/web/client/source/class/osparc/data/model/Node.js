@@ -1175,9 +1175,9 @@ qx.Class.define("osparc.data.model.Node", {
       osparc.data.Resources.fetch("studies", "getNode", params)
         .then(data => this.__onNodeState(data))
         .catch(err => {
-          const errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
+          let errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
           if ("status" in err && err.status === 406) {
-            const errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
+            errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1188,8 +1188,7 @@ qx.Class.define("osparc.data.model.Node", {
           if ("status" in err && err.status === 406) {
             this.getStatus().setInteractive("deprecated");
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr(errorMsg), "ERROR");
-          }
-          else if (this.__unresponsiveRetries > 0) {
+          } else if (this.__unresponsiveRetries > 0) {
             const retryMsg = `Retrying (${this.__unresponsiveRetries})`;
             const retryMsgData = {
               nodeId: this.getNodeId(),
