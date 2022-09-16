@@ -7,6 +7,7 @@
 
 import json
 import re
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -104,7 +105,7 @@ def mocked_director_service_fcts(
             re.compile(
                 r"/services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
             ),
-            name="get_service_version",
+            name="get_service",
         ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
 
         respx_mock.get(
@@ -117,9 +118,43 @@ def mocked_director_service_fcts(
         yield respx_mock
 
 
+@pytest.fixture
+def mocked_catalog_service_fcts(
+    minimal_app: FastAPI,
+    fake_service_details: ServiceDockerData,
+    fake_service_extras: ServiceExtras,
+):
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get(
+            re.compile(
+                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+            ),
+            name="get_service",
+        ).respond(
+            json=fake_service_details.copy(
+                update={
+                    "deprecated": (datetime.utcnow() - timedelta(days=1)).isoformat()
+                }
+            ).dict(by_alias=True)
+        )
+
+        yield respx_mock
+
+
+@pytest.fixture
+def product_name(faker: Faker) -> str:
+    return faker.name()
+
+
 async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts,
+    product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
@@ -132,7 +167,10 @@ async def test_start_computation(
         create_computation_url,
         json=jsonable_encoder(
             ComputationCreate(
-                user_id=user["id"], project_id=proj.uuid, start_pipeline=True
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
             )
         ),
     )
@@ -142,7 +180,10 @@ async def test_start_computation(
 async def test_start_computation_with_deprecated_services_raises_406(
     minimal_configuration: None,
     mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     async_client: httpx.AsyncClient,
@@ -154,7 +195,10 @@ async def test_start_computation_with_deprecated_services_raises_406(
         create_computation_url,
         json=jsonable_encoder(
             ComputationCreate(
-                user_id=user["id"], project_id=proj.uuid, start_pipeline=True
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
             )
         ),
     )

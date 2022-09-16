@@ -1,8 +1,13 @@
 import logging
 import re
+from datetime import datetime
+from typing import Any
 
 from models_library.projects_state import RunningState
 from models_library.services import SERVICE_KEY_RE
+from models_library.users import UserID
+from pydantic import parse_obj_as
+from servicelib.utils import logged_gather
 
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.catalog import CatalogClient
@@ -96,7 +101,35 @@ def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
 
 
 async def find_deprecated_tasks(
-    comp_tasks: list[CompTaskAtDB], catalog_client: CatalogClient
+    user_id: UserID,
+    product_name: str,
+    comp_tasks: list[CompTaskAtDB],
+    catalog_client: CatalogClient,
 ) -> list[CompTaskAtDB]:
-    deprecated_tasks = []
+
+    task_services = await logged_gather(
+        *(
+            catalog_client.get_service(
+                user_id=user_id,
+                service_key=task.image.name,
+                service_version=task.image.tag,
+                product_name=product_name,
+            )
+            for task in comp_tasks
+        )
+    )
+    today = datetime.utcnow()
+
+    def _is_service_deprecated(service: dict[str, Any]) -> bool:
+        if deprecation_date := service.get("deprecated"):
+            deprecation_date = parse_obj_as(datetime, deprecation_date)
+            return today > deprecation_date
+        return False
+
+    deprecated_tasks = [
+        task
+        for task, service in zip(comp_tasks, task_services)
+        if _is_service_deprecated(service)
+    ]
+
     return deprecated_tasks
