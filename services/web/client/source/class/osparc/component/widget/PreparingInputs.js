@@ -139,7 +139,6 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
       return preparingNodes;
     },
 
-
     __updatePreparingNodes: function() {
       this.fireDataEvent("changePreparingNodes", this.getPreparingNodes().length);
     }
