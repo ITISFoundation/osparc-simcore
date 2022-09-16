@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
   members: {
     _header: null,
-    __inputsStateButton: null,
+    __inputsButton: null,
     __preparingInputs: null,
     __nodeStatusUI: null,
     _mainView: null,
@@ -103,11 +103,24 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     _buildHeader: function() {
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
         padding: 6,
         height: this.self().HEADER_HEIGHT
+      });
+
+
+      const inputsStateBtn = this.__inputsButton = new qx.ui.form.Button().set({
+        label: this.tr("Inputs"),
+        icon: "@FontAwesome5Solid/sign-in-alt/14",
+        backgroundColor: "transparent"
+      });
+      inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
+      header.add(inputsStateBtn);
+
+      header.add(new qx.ui.core.Spacer(), {
+        flex: 1
       });
 
       const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
@@ -116,20 +129,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
-
-      header.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const inputsStateBtn = this.__inputsStateButton = new qx.ui.form.Button().set({
-        label: this.tr("Preparing inputs..."),
-        icon: "@FontAwesome5Solid/circle-notch/14",
-        backgroundColor: "transparent",
-        toolTipText: this.tr("The view will remain disabled until the inputs are fetched")
-      });
-      inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
-      inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
-      header.add(inputsStateBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
@@ -141,9 +140,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14").set({
-        backgroundColor: "transparent",
-        toolTipText: this.tr("Outputs")
+      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton().set({
+        label: this.tr("Outputs"),
+        icon: "@FontAwesome5Solid/sign-out-alt/14",
+        backgroundColor: "transparent"
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
@@ -266,7 +266,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return true;
     },
 
-    __enableContent: function(enable) {
+    __enableIframeContent: function(enable) {
       this._mainView.setEnabled(enable);
       const iframe = this.getNode().getIFrame();
       if (iframe) {
@@ -288,8 +288,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __dependeciesChanged: function() {
       const preparingNodes = this.__preparingInputs.getPreparingNodes();
       const waiting = Boolean(preparingNodes && preparingNodes.length);
-      this.__inputsStateButton.setVisibility(waiting ? "visible" : "excluded");
-      this.__enableContent(!waiting);
+      if (waiting) {
+        this.__inputsButton.setIcon("@FontAwesome5Solid/circle-notch/14");
+        this.__inputsButton.getChildControl("icon").getContentElement().addClass("rotate");
+      } else {
+        this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
+        this.__inputsButton.getChildControl("icon").getContentElement().removeClass("rotate");
+      }
+      this.__enableIframeContent(!waiting);
     },
 
     __applyNode: function(node) {
