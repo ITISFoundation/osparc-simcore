@@ -278,10 +278,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
     },
 
-    setNotReadyDependencies: function(notReadyNodeIds = []) {
+    setUpstreamDependencies: function(upstreamDependencies = []) {
       const monitoredNodes = [];
       const workbench = this.getNode().getStudy().getWorkbench();
-      notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
+      upstreamDependencies.forEach(nodeId => monitoredNodes.push(workbench.getNode(nodeId)));
       this.__preparingInputs.setMonitoredNodes(monitoredNodes);
     },
 

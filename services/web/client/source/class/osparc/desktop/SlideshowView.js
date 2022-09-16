@@ -294,9 +294,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           this.fireDataEvent("startPartialPipeline", notStartedDependencies);
         }
 
-        const notReadyDependencies = this.__getNotReadyDependencies(node);
-        if (notReadyDependencies && notReadyDependencies.length) {
-          this.__nodeView.setNotReadyDependencies(notReadyDependencies);
+        const upstreamDependencies = this.__getUpstreamCompDependencies(node);
+        if (upstreamDependencies && upstreamDependencies.length) {
+          this.__nodeView.setUpstreamDependencies(upstreamDependencies);
           this.__nodeView.showPreparingInputs();
         }
       } else if (this.__nodeView) {

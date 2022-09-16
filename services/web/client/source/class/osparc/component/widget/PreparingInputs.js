@@ -96,7 +96,11 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
             group.setSelection([showLoggerBtn]);
           }
 
-          const rerunBtn = new osparc.ui.form.FetchButton(this.tr("Re-run"));
+          const rerunBtn = new osparc.ui.form.FetchButton(this.tr("Re-run")).set({
+            minWdith: 70,
+            maxWdith: 70,
+            alignX: "center"
+          });
           rerunBtn.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
           nodeLayout.add(rerunBtn);
           node.getStatus().bind("running", rerunBtn, "enabled", {
