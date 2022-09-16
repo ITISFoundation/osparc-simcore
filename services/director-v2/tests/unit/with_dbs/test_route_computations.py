@@ -80,9 +80,9 @@ def fake_service_details(mocks_dir: Path) -> ServiceDockerData:
     return ServiceDockerData(**fake_service_data)
 
 
-@pytest.fixture(params=range(len(ServiceExtras.Config.schema_extra["examples"])))
-def fake_service_extras(request) -> ServiceExtras:
-    extra_example = ServiceExtras.Config.schema_extra["examples"][request.param]
+@pytest.fixture
+def fake_service_extras() -> ServiceExtras:
+    extra_example = ServiceExtras.Config.schema_extra["examples"][2]
     random_extras = ServiceExtras(**extra_example)
     assert random_extras is not None
     return random_extras
@@ -117,7 +117,7 @@ def mocked_director_service_fcts(
         yield respx_mock
 
 
-async def test_start_computation_with_deprecated_services_raises(
+async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts,
     fake_workbench_without_outputs: dict[str, Any],
@@ -136,7 +136,7 @@ async def test_start_computation_with_deprecated_services_raises(
             )
         ),
     )
-    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
+    assert response.status_code == status.HTTP_201_CREATED, response.text
 
 
 async def test_get_computation_from_empty_project(
