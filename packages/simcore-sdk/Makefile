@@ -67,7 +67,7 @@ tests-integration: ## runs integration tests against local+production images
 		--failed-first \
 		--keep-docker-up \
 		--pdb \
-		-vv \
+		--verbose \
 		$(CURDIR)/tests/integration
 
 tests-integration-ci: ## runs integration tests against local+production images with CI parameters
@@ -82,9 +82,9 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--durations=10 \
 		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--pdb \
-		--verbose \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--verbose \
+		-m "not heavy_load" \
 		$(CURDIR)/tests/integration
 
 tests: tests-unit tests-integration ## runs all tests
