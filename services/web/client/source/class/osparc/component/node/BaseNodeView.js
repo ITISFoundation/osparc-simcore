@@ -316,7 +316,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       this.__preparingInputs = new osparc.component.widget.PreparingInputs();
       this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
-      this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataevent("startPartialPipeline", e.getData()));
+      this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
       this.__dependeciesChanged();
 
       this._mainView.removeAll();
