@@ -301,6 +301,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
         const upstreamDependencies = this.__getUpstreamCompDependencies(node);
         this.__nodeView.setUpstreamDependencies(upstreamDependencies);
+        if (!this.__nodeView.hasListener("startPartialPipeline")) {
+          this.__nodeView.addListener("startPartialPipeline", e => this.fireDataevent("startPartialPipeline", e.getData()));
+        }
 
         const notReadyDependencies = this.__getNotReadyDependencies(node);
         if (notReadyDependencies && notReadyDependencies.length) {
