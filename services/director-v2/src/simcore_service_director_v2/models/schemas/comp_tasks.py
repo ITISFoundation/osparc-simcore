@@ -20,6 +20,7 @@ class ComputationGet(ComputationTask):
 class ComputationCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
+    product_name: str
     start_pipeline: Optional[bool] = Field(
         default=False,
         description="if True the computation pipeline will start right away",

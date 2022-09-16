@@ -164,7 +164,10 @@ async def create_computation(
                 )
 
             if deprecated_tasks := await find_deprecated_tasks(
-                comp_tasks, catalog_client
+                computation.user_id,
+                computation.product_name,
+                inserted_comp_tasks,
+                catalog_client,
             ):
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
