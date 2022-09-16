@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
             maxWidth: 70,
             alignX: "center"
           });
-          rerunBtn.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
+          rerunBtn.addListener("execute", () => this.fireEvent("startPartialPipeline", [node.getNodeId()]), this);
           nodeLayout.add(rerunBtn);
           node.getStatus().bind("running", rerunBtn, "enabled", {
             converter: runningStatus => [
