@@ -88,7 +88,7 @@ def containers_statues(*args: str) -> dict[str, dict[str, str]]:
 
 
 def _all_states() -> set[ServiceState]:
-    return {x for x in ServiceState}
+    return set(ServiceState)
 
 
 SAMPLE_EXPECTED_STATUSES: list[ExpectedStatus] = [
