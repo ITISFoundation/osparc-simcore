@@ -34,26 +34,6 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     }
   },
 
-  statics: {
-    addClass: function(element, className) {
-      if (element) {
-        const currentClass = element.getAttribute("class");
-        if (currentClass && currentClass.includes(className.trim())) {
-          return;
-        }
-        element.setAttribute("class", ((currentClass || "") + " " + className).trim());
-      }
-    },
-
-    removeClass: function(element, className) {
-      const currentClass = element.getAttribute("class");
-      if (currentClass) {
-        const regex = new RegExp(className.trim(), "g");
-        element.setAttribute("class", currentClass.replace(regex, ""));
-      }
-    }
-  },
-
   members: {
     __node: null,
     __label: null,
@@ -107,14 +87,14 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "SUCCESS":
             case "FAILED":
             case "ABORTED":
-              this.self().removeClass(this.__icon.getContentElement(), "rotate");
+              osparc.utils.Utils.removeClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
             case "RETRY":
-              this.self().addClass(this.__icon.getContentElement(), "rotate");
+              osparc.utils.Utils.addClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "UNKNOWN":
@@ -142,9 +122,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
           if (target.getSource() && target.getSource().includes("circle-notch")) {
-            this.self().addClass(this.__icon.getContentElement(), "rotate");
+            osparc.utils.Utils.addClass(this.__icon.getContentElement(), "rotate");
           } else {
-            this.self().removeClass(this.__icon.getContentElement(), "rotate");
+            osparc.utils.Utils.removeClass(this.__icon.getContentElement(), "rotate");
           }
           if (props["interactive"]["check"].includes(state)) {
             target.setTextColor(osparc.utils.StatusUI.getColor(state));

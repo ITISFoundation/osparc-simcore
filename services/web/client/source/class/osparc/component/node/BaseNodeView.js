@@ -270,10 +270,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._mainView.setEnabled(enable);
       const iframe = this.getNode().getIFrame();
       if (iframe) {
-        // enable/disable user interaction on iframe
-        // eslint-disable-next-line no-underscore-dangle
+        /*
         iframe.__iframe.getContentElement().setStyles({
           "pointer-events": enable ? "auto" : "none"
+        });
+        */
+        // enable/disable user interaction on iframe
+        // eslint-disable-next-line no-underscore-dangle
+        iframe.__iframe.addListener("tap", e => {
+          console.log(e);
+          this.showPreparingInputs();
         });
       }
     },
@@ -288,12 +294,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __dependeciesChanged: function() {
       const preparingNodes = this.__preparingInputs.getPreparingNodes();
       const waiting = Boolean(preparingNodes && preparingNodes.length);
+      const buttonsIcon = this.__inputsButton.getChildControl("icon");
       if (waiting) {
         this.__inputsButton.setIcon("@FontAwesome5Solid/circle-notch/14");
-        this.__inputsButton.getChildControl("icon").getContentElement().addClass("rotate");
+        osparc.utils.Utils.addClass(buttonsIcon.getContentElement(), "rotate");
       } else {
         this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
-        this.__inputsButton.getChildControl("icon").getContentElement().removeClass("rotate");
+        osparc.utils.Utils.removeClass(buttonsIcon.getContentElement(), "rotate");
       }
       this.__enableIframeContent(!waiting);
     },
@@ -354,7 +361,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
               outputCounter++;
             }
           });
-          return `(${outputCounter})`;
+          return this.tr("Outputs") + ` (${outputCounter})`;
         }
       });
       this._outputsBtn.addListener("changeLabel", () => {
