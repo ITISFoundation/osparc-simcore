@@ -270,16 +270,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._mainView.setEnabled(enable);
       const iframe = this.getNode().getIFrame();
       if (iframe) {
-        /*
-        iframe.__iframe.getContentElement().setStyles({
-          "pointer-events": enable ? "auto" : "none"
-        });
-        */
         // enable/disable user interaction on iframe
         // eslint-disable-next-line no-underscore-dangle
-        iframe.__iframe.addListener("tap", e => {
-          console.log(e);
-          this.showPreparingInputs();
+        iframe.__iframe.getContentElement().setStyles({
+          "pointer-events": enable ? "auto" : "none"
         });
       }
     },
