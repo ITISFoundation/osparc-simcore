@@ -5,24 +5,36 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
+import re
+from pathlib import Path
 from typing import Any, Callable
 
 import httpx
 import pytest
+import respx
 from faker import Faker
+from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.services import ServiceDockerData
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
+from simcore_service_director_v2.models.schemas.comp_tasks import (
+    ComputationCreate,
+    ComputationGet,
+)
+from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from starlette import status
 
 pytest_simcore_core_services_selection = [
@@ -34,19 +46,101 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture()
+def mocked_rabbit_mq_client(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_director_v2.core.application.rabbitmq.RabbitMQClient",
+        autospec=True,
+    )
+
+
+@pytest.fixture()
 def minimal_configuration(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
+    mocked_rabbit_mq_client: None,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
+
+
+@pytest.fixture(scope="session")
+def fake_service_details(mocks_dir: Path) -> ServiceDockerData:
+    fake_service_path = mocks_dir / "fake_service.json"
+    assert fake_service_path.exists()
+    fake_service_data = json.loads(fake_service_path.read_text())
+    return ServiceDockerData(**fake_service_data)
+
+
+@pytest.fixture(params=range(len(ServiceExtras.Config.schema_extra["examples"])))
+def fake_service_extras(request) -> ServiceExtras:
+    extra_example = ServiceExtras.Config.schema_extra["examples"][request.param]
+    random_extras = ServiceExtras(**extra_example)
+    assert random_extras is not None
+    return random_extras
+
+
+@pytest.fixture
+def mocked_director_service_fcts(
+    minimal_app: FastAPI,
+    fake_service_details: ServiceDockerData,
+    fake_service_extras: ServiceExtras,
+):
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get(
+            re.compile(
+                r"/services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+            ),
+            name="get_service_version",
+        ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
+
+        respx_mock.get(
+            re.compile(
+                r"/service_extras/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+            ),
+            name="get_service_extras",
+        ).respond(json={"data": fake_service_extras.dict(by_alias=True)})
+
+        yield respx_mock
+
+
+async def test_start_computation_with_deprecated_services_raises(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    pipeline: Callable[..., CompPipelineAtDB],
+    tasks: Callable[..., list[CompTaskAtDB]],
+    faker: Faker,
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"], project_id=proj.uuid, start_pipeline=True
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
 
 
 async def test_get_computation_from_empty_project(
