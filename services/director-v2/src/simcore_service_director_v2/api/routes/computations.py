@@ -55,7 +55,6 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...utils.computations import (
-    find_deprecated_tasks,
     get_pipeline_state_from_task_states,
     is_pipeline_running,
     is_pipeline_stopped,
@@ -161,14 +160,6 @@ async def create_computation(
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {computation.project_id} has no computational services",
-                )
-
-            if deprecated_tasks := await find_deprecated_tasks(
-                comp_tasks, catalog_client
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {deprecated_tasks}",
                 )
 
             await scheduler.run_new_pipeline(
