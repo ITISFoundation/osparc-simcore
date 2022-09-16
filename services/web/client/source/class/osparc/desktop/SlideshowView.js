@@ -295,8 +295,8 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         }
 
         const upstreamDependencies = this.__getUpstreamCompDependencies(node);
+        this.__nodeView.setUpstreamDependencies(upstreamDependencies);
         if (upstreamDependencies && upstreamDependencies.length) {
-          this.__nodeView.setUpstreamDependencies(upstreamDependencies);
           this.__nodeView.showPreparingInputs();
         }
       } else if (this.__nodeView) {
