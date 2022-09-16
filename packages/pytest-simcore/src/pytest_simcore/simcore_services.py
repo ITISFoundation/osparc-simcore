@@ -23,8 +23,6 @@ from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
-# HELPERS --------------------------------------------------------------------------------
-
 
 SERVICES_TO_SKIP = [
     "dask-sidecar",
@@ -99,9 +97,6 @@ class ServiceHealthcheckEndpoint:
             ),
         )
         return obj
-
-
-# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")

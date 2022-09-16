@@ -18,8 +18,6 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pydantic import create_model, parse_obj_as
-
-# TESTS
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
 from servicelib.aiohttp.long_running_tasks._server import (

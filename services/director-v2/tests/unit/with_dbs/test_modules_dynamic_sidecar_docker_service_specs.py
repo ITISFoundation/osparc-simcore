@@ -26,8 +26,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs im
 )
 from simcore_service_director_v2.utils.dict_utils import nested_update
 
-# FIXTURES
-
 
 @pytest.fixture
 def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:

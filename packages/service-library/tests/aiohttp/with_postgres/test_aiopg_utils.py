@@ -234,9 +234,6 @@ async def test_connections(postgres_service_with_fake_data):
     assert engine.size == 0
 
 
-# HELPERS ------------
-
-
 @retry_pg_api
 async def dec_go(*args, **kargs):
     return await go(*args, **kargs)

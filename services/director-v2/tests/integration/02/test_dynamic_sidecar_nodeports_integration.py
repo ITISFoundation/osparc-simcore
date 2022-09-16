@@ -49,8 +49,6 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
-
-# FIXTURES
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet

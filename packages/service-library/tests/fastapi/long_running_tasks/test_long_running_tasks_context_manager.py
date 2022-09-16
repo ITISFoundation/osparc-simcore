@@ -42,9 +42,6 @@ async def _assert_task_removed(
     assert result.status_code == status.HTTP_404_NOT_FOUND
 
 
-# FIXTURES
-
-
 async def a_test_task(task_progress: TaskProgress) -> int:
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     return 42
@@ -94,9 +91,6 @@ async def bg_task_app(
 @pytest.fixture
 def mock_task_id() -> TaskId:
     return parse_obj_as(TaskId, "fake_task_id")
-
-
-# TESTS
 
 
 async def test_task_result(

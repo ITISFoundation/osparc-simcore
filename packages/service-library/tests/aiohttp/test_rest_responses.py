@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import itertools
-from typing import Type
 
 import pytest
 from aiohttp.web_exceptions import (
@@ -20,7 +19,7 @@ from servicelib.aiohttp.rest_responses import (
     get_http_error,
 )
 
-## HELPERS
+#
 
 # SEE https://httpstatuses.com/
 # - below 1xx  -> invalid
@@ -29,12 +28,6 @@ BELOW_1XX = (-5, 0, 5, 99)
 NONE_ERRORS = (HTTPOk.status_code, HTTPNotModified.status_code)
 # - above 599 -> invalid
 ABOVE_599 = (600, 10000.1)
-
-
-## FIXTURES
-
-
-## TESTS
 
 
 @pytest.mark.parametrize(
@@ -54,7 +47,7 @@ def test_get_none_for_invalid_or_not_errors_code(status_code):
 @pytest.mark.parametrize(
     "status_code, http_error_cls", _STATUS_CODE_TO_HTTP_ERRORS.items()
 )
-def test_collected_http_errors_map(status_code: int, http_error_cls: Type[HTTPError]):
+def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPError]):
     assert 399 < status_code < 600, "expected 4XX, 5XX"
     assert http_error_cls.status_code == status_code
 

@@ -6,7 +6,7 @@ import importlib
 import inspect
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any, Callable
 
 import pytest
 from pytest_simcore.helpers.utils_environs import eval_service_environ
@@ -44,7 +44,7 @@ def service_webserver_environ(
 
 
 @pytest.fixture(scope="session")
-def app_submodules_with_setup_funs(package_dir: Path) -> Set[ModuleType]:
+def app_submodules_with_setup_funs(package_dir: Path) -> set[ModuleType]:
     """
     subsystem = all modules in package with a setup function
     """
@@ -74,16 +74,16 @@ def app_submodules_with_setup_funs(package_dir: Path) -> Set[ModuleType]:
 
 @pytest.fixture(scope="session")
 def app_modules_metadata(
-    app_submodules_with_setup_funs: Set[ModuleType],
-) -> List[Dict[str, Any]]:
-    NameFuncPair = Tuple[str, Callable]
+    app_submodules_with_setup_funs: set[ModuleType],
+) -> list[dict[str, Any]]:
+    NameFuncPair = tuple[str, Callable]
 
-    register: Set[str] = set()
-    setup_funcs_metadata: List[Dict[str, Any]] = []
+    register: set[str] = set()
+    setup_funcs_metadata: list[dict[str, Any]] = []
 
     for module in app_submodules_with_setup_funs:
         # SEE packages/service-library/src/servicelib/aiohttp/application_setup.py
-        setup_members: List[NameFuncPair] = inspect.getmembers(
+        setup_members: list[NameFuncPair] = inspect.getmembers(
             module, is_setup_function
         )
         assert (
@@ -109,9 +109,6 @@ def app_modules_metadata(
     return list(setup_funcs_metadata)
 
 
-# TESTS ----------------------------------------------------------------------
-
-
 def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
     for module in app_submodules_with_setup_funs:
         setup_members = inspect.getmembers(module, is_setup_function)
@@ -121,7 +118,7 @@ def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
 
 
 @pytest.mark.skip(reason="DEPRECATED")
-def test_schema_sections(app_config_schema, app_modules_metadata: List[Dict]):
+def test_schema_sections(app_config_schema, app_modules_metadata: list[dict]):
     """
     CONVENTION:
         Every section in the config-file (except for 'version' and 'main')

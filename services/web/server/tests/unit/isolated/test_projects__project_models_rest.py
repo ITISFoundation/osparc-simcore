@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import pytest
 from models_library.generics import Envelope
@@ -18,7 +18,7 @@ from simcore_service_webserver._resources import resources
 from simcore_service_webserver.projects._project_models_rest import ProjectSchema
 from simcore_service_webserver.projects.projects_db import projects as projects_table
 
-## FIXTURES --------------------------------------------------
+#
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def project_jsonschema():
         return json.load(fh)
 
 
-## TESTS ----------------------------------------------------
+#
 #
 # These tests uses requests/reponse calls (pytest_simcore.simcore_webserver_projects_rest_api)
 # captured from the front-end (i.e. copy&pasted from browser devtols) and emulate workflows
@@ -117,9 +117,9 @@ def test_models_when_creating_new_empty_project():
 
 @pytest.mark.skip(reason="DEV")
 def test_generated_model_in_sync_with_json_schema_specs(
-    diff_json_schemas: Callable, project_jsonschema: Dict[str, Any]
+    diff_json_schemas: Callable, project_jsonschema: dict[str, Any]
 ):
-    def assert_equivalent_schemas(lhs: Dict, rhs: Dict):
+    def assert_equivalent_schemas(lhs: dict, rhs: dict):
 
         process_completion = diff_json_schemas(lhs, rhs)
 

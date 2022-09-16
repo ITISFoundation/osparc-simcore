@@ -10,7 +10,7 @@ import urllib.request
 from contextlib import suppress
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, Iterator, Optional
+from typing import Iterator, Optional
 
 import docker
 import jsonschema
@@ -63,9 +63,8 @@ def temporary_path(tmp_path: Path) -> Path:
     return tmp_path
 
 
-# FIXTURES
 @pytest.fixture
-def osparc_service_labels_jsonschema(tmp_path) -> Dict:
+def osparc_service_labels_jsonschema(tmp_path) -> dict:
     def _download_url(url: str, file: Path):
         # Download the file from `url` and save it locally under `file_name`:
         with urllib.request.urlopen(url) as response, file.open("wb") as out_file:
@@ -83,14 +82,14 @@ def osparc_service_labels_jsonschema(tmp_path) -> Dict:
 
 
 @pytest.fixture(scope="session")
-def metadata_labels(metadata_file: Path) -> Dict:
+def metadata_labels(metadata_file: Path) -> dict:
     with metadata_file.open() as fp:
         metadata = yaml.safe_load(fp)
         return metadata
 
 
 @pytest.fixture
-def host_folders(temporary_path: Path) -> Dict:
+def host_folders(temporary_path: Path) -> dict:
     tmp_dir = temporary_path
 
     host_folders = {}
@@ -108,27 +107,27 @@ def host_folders(temporary_path: Path) -> Dict:
 
 
 @pytest.fixture
-def container_variables() -> Dict:
+def container_variables() -> dict:
     # of type INPUT_FOLDER=/home/scu/data/input
     env = {
-        "{}_FOLDER".format(str(folder).upper()): (_CONTAINER_FOLDER / folder).as_posix()
+        f"{str(folder).upper()}_FOLDER": (_CONTAINER_FOLDER / folder).as_posix()
         for folder in _FOLDER_NAMES
     }
     return env
 
 
 @pytest.fixture
-def validation_folders(validation_dir: Path) -> Dict:
+def validation_folders(validation_dir: Path) -> dict:
     return {folder: (validation_dir / folder) for folder in _FOLDER_NAMES}
 
 
 @pytest.fixture
 def docker_container(
-    validation_folders: Dict,
-    host_folders: Dict,
+    validation_folders: dict,
+    host_folders: dict,
     docker_client: docker.DockerClient,
     docker_image_key: str,
-    container_variables: Dict,
+    container_variables: dict,
 ) -> Iterator[Container]:
     # copy files to input folder, copytree needs to not have the input folder around.
     host_folders["input"].rmdir()
@@ -139,7 +138,7 @@ def docker_container(
     try:
         volumes = {
             host_folders[folder]: {
-                "bind": container_variables["{}_FOLDER".format(str(folder).upper())]
+                "bind": container_variables[f"{str(folder).upper()}_FOLDER"]
             }
             for folder in _FOLDER_NAMES
         }
@@ -191,10 +190,7 @@ def docker_container(
                 container.remove()
 
 
-# HELPERS --------------------
-
-
-def convert_to_simcore_labels(image_labels: Dict) -> Dict:
+def convert_to_simcore_labels(image_labels: dict) -> dict:
     io_simcore_labels = {}
     for key, value in image_labels.items():
         if str(key).startswith("io.simcore."):
@@ -209,8 +205,8 @@ def convert_to_simcore_labels(image_labels: Dict) -> Dict:
 
 
 def assert_container_runs(
-    validation_folders: Dict,
-    host_folders: Dict,
+    validation_folders: dict,
+    host_folders: dict,
     docker_container: Container,
 ):
     for folder in _FOLDER_NAMES:
@@ -284,7 +280,7 @@ def assert_container_runs(
 
 
 def assert_docker_io_simcore_labels_against_files(
-    docker_image: docker.models.images.Image, metadata_labels: Dict
+    docker_image: docker.models.images.Image, metadata_labels: dict
 ):
     image_labels = docker_image.labels
     io_simcore_labels = convert_to_simcore_labels(image_labels)
@@ -295,7 +291,7 @@ def assert_docker_io_simcore_labels_against_files(
 
 
 def assert_validate_docker_io_simcore_labels(
-    docker_image: docker.models.images.Image, osparc_service_labels_jsonschema: Dict
+    docker_image: docker.models.images.Image, osparc_service_labels_jsonschema: dict
 ):
     image_labels = docker_image.labels
     # get io labels
@@ -304,8 +300,6 @@ def assert_validate_docker_io_simcore_labels(
     try:
         jsonschema.validate(io_simcore_labels, osparc_service_labels_jsonschema)
     except jsonschema.SchemaError:
-        pytest.fail(
-            "Schema {} contains errors".format(osparc_service_labels_jsonschema)
-        )
+        pytest.fail(f"Schema {osparc_service_labels_jsonschema} contains errors")
     except jsonschema.ValidationError:
         pytest.fail("Failed to validate docker image io labels against schema")

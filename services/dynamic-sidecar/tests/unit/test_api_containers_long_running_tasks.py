@@ -110,9 +110,6 @@ async def _get_container_timestamps(
     return container_timestamps
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def dynamic_sidecar_network_name() -> str:
     return _get_dynamic_sidecar_network_name()
@@ -249,9 +246,6 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
         "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
         side_effect=_mocked,
     )
-
-
-# TESTS
 
 
 async def _get_task_id_create_service_containers(

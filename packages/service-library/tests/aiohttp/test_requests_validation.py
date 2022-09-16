@@ -18,7 +18,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 
-# HELPERS -----------------------------------------------------------
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
 
@@ -77,9 +76,6 @@ class MyBody(BaseModel):
     @classmethod
     def create_fake(cls, faker: Faker):
         return cls(x=faker.pyint(), y=faker.pybool(), z=Sub.create_fake(faker))
-
-
-# FIXTURES ----------------------------------
 
 
 @pytest.fixture
@@ -158,9 +154,6 @@ def query_params(faker: Faker) -> MyRequestQueryParams:
 @pytest.fixture
 def body(faker: Faker) -> MyBody:
     return MyBody.create_fake(faker)
-
-
-# TESTS ------------------------------------------------------
 
 
 async def test_parse_request_as(

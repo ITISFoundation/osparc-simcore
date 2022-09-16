@@ -28,8 +28,6 @@ async def webserver_service(webserver_endpoint: URL, docker_stack: dict) -> URL:
     yield webserver_endpoint
 
 
-# HELPERS --
-
 # TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
 async def wait_till_webserver_responsive(webserver_endpoint: URL):

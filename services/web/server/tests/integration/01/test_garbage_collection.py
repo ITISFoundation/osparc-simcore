@@ -7,7 +7,7 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable, Dict, List, Optional
+from typing import Any, AsyncIterable, Callable, Optional
 from uuid import UUID, uuid4
 
 import aiopg
@@ -176,9 +176,6 @@ def disable_garbage_collector_task(mocker):
     )
 
 
-# UTILS --------------
-
-
 async def login_user(client: TestClient):
     """returns a logged in regular user"""
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
@@ -193,7 +190,7 @@ async def new_project(
     client: TestClient,
     user: UserInfoDict,
     tests_data_dir: Path,
-    access_rights: Optional[Dict[str, Any]] = None,
+    access_rights: Optional[dict[str, Any]] = None,
 ):
     """returns a project for the given user"""
     project_data = empty_project_data()
@@ -256,7 +253,7 @@ async def invite_user_to_group(client, owner, invitee, group):
 
 
 async def change_user_role(
-    aiopg_engine: aiopg.sa.Engine, user: Dict, role: UserRole
+    aiopg_engine: aiopg.sa.Engine, user: dict, role: UserRole
 ) -> None:
     async with aiopg_engine.acquire() as conn:
         await conn.execute(
@@ -319,7 +316,7 @@ async def fetch_user_from_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict):
         return await user_result.first()
 
 
-async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: Dict):
+async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: dict):
     async with aiopg_engine.acquire() as conn:
         project_result = await conn.execute(
             projects.select().where(projects.c.uuid == user_project["uuid"])
@@ -344,7 +341,7 @@ async def assert_user_not_in_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDic
     assert user_db is None
 
 
-async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: Dict):
+async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict):
     project = await fetch_project_from_db(aiopg_engine, user_project)
     assert project
     project_as_dict = dict(project)
@@ -353,7 +350,7 @@ async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: Dict
 
 
 async def assert_user_is_owner_of_project(
-    aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: Dict
+    aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: dict
 ):
     user = await fetch_user_from_db(aiopg_engine, owner_user)
     assert user
@@ -365,7 +362,7 @@ async def assert_user_is_owner_of_project(
 
 
 async def assert_one_owner_for_project(
-    aiopg_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[UserInfoDict]
+    aiopg_engine: aiopg.sa.Engine, project: dict, possible_owners: list[UserInfoDict]
 ):
     q_owners = [
         await fetch_user_from_db(aiopg_engine, owner) for owner in possible_owners
@@ -375,10 +372,7 @@ async def assert_one_owner_for_project(
     q_project = await fetch_project_from_db(aiopg_engine, project)
     assert q_project
 
-    assert q_project.prj_owner in set(user.id for user in q_owners if user)
-
-
-# TESTS ---------------
+    assert q_project.prj_owner in {user.id for user in q_owners if user}
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
@@ -459,7 +453,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     client,
     socketio_client_factory: Callable,
     aiopg_engine,
-    fake_project: Dict,
+    fake_project: dict,
     tests_data_dir: Path,
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""

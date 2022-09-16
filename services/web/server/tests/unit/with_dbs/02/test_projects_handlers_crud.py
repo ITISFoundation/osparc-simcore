@@ -25,9 +25,6 @@ from yarl import URL
 API_PREFIX = "/" + api_version_prefix
 
 
-# HELPERS -----------------------------------------------------------------------------------------
-
-
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
@@ -150,7 +147,6 @@ async def _replace_project(
     return data
 
 
-# TESTS ----------------------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "user_role,expected",
     [

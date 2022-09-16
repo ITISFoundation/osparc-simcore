@@ -17,8 +17,6 @@ from typing import Optional
 from pydantic import BaseSettings, validator
 from pydantic.fields import ModelField, Undefined
 
-# HELPERS --------------------------------------------------------------------------------------
-
 
 def assert_field_specs(
     model_cls, name, is_required, is_nullable, explicit_default, defaults
@@ -34,9 +32,6 @@ def assert_field_specs(
     if field.required:
         # in this case, default is not really used
         assert field.default is None
-
-
-# FIXTURES --------------------------------------------------------------------------------------
 
 
 class Settings(BaseSettings):
@@ -60,9 +55,6 @@ class Settings(BaseSettings):
             if isinstance(v, str) and v.lower() in ("null", "none"):
                 return None
         return v
-
-
-# TESTS --------------------------------------------------------------------------------------
 
 
 def test_fields_declarations():

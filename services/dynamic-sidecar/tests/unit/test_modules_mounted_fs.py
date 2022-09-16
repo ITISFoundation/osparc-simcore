@@ -24,9 +24,6 @@ def _replace_slashes(path: Path) -> str:
     return str(path).replace(os.sep, "_")
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def path_to_transform() -> Path:
     return Path("/some/path/to/transform")
@@ -41,9 +38,6 @@ def app(app: FastAPI) -> FastAPI:
 @pytest.fixture
 def mounted_volumes(app: FastAPI) -> MountedVolumes:
     return AppState(app).mounted_volumes
-
-
-# TESTS
 
 
 def test_name_from_full_path(path_to_transform: Path):

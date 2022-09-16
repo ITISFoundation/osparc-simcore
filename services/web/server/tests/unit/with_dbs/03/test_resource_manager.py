@@ -63,8 +63,6 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 
-# HELPERS -----------------------------------------------------------------------------
-
 SERVICE_DELETION_DELAY = 1
 
 
@@ -78,9 +76,6 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
-
-
-# FIXTURES -----------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -189,9 +184,6 @@ async def empty_user_project2(
 @pytest.fixture(autouse=True)
 async def director_v2_mock(director_v2_service_mock) -> aioresponses:
     return director_v2_service_mock
-
-
-# TESTS -----------------------------------------------------------------------------
 
 
 async def test_anonymous_websocket_connection(

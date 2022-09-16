@@ -15,8 +15,6 @@ from simcore_service_dynamic_sidecar.core.docker_utils import (
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
-# FIXTURES
-
 
 @pytest.fixture(scope="session")
 def volume_name() -> str:
@@ -72,9 +70,6 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
         for container in started_containers:
             await container.stop()
             await container.delete()
-
-
-# TESTS
 
 
 async def test_volume_with_label(

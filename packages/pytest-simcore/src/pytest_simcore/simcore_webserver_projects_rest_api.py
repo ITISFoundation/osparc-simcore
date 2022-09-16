@@ -10,8 +10,6 @@ from typing import Any, Literal, Optional
 
 import pytest
 
-# HELPERS ----------------------
-
 
 @dataclass
 class HttpApiCallCapture:
@@ -705,9 +703,6 @@ SESSION_WORKFLOW = (
     CLOSE_PROJECT,
     LIST_PROJECTS,
 )
-
-
-# FIXTURES ----------------------
 
 
 @pytest.fixture

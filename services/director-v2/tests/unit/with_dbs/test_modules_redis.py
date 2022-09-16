@@ -62,9 +62,6 @@ async def _assert_lock_acquired_and_released(
     return extend_lock
 
 
-# FIXTURES
-
-
 @pytest.fixture
 async def minimal_app(
     project_env_devel_environment: dict[str, Any],
@@ -97,9 +94,6 @@ async def node_rights_manager(minimal_app: FastAPI) -> AsyncIterable[NodeRightsM
 @pytest.fixture
 def docker_node_id(faker: Faker) -> str:
     return faker.uuid4()
-
-
-# TESTS
 
 
 async def test_redis_lock_working_as_expected(

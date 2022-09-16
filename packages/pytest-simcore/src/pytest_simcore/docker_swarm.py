@@ -29,9 +29,6 @@ from .helpers.utils_docker import get_localhost_ip
 log = logging.getLogger(__name__)
 
 
-# HELPERS --------------------------------------------------------------------------------
-
-
 class _ResourceStillNotRemoved(Exception):
     pass
 
@@ -140,9 +137,6 @@ def _fetch_and_print_services(
 
         print(HEADER_STR.format(service_obj.name))  # type: ignore
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
-
-
-# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")

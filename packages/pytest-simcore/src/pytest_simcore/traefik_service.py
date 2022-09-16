@@ -41,8 +41,6 @@ async def traefik_service(
     yield traefik_endpoints
 
 
-# HELPERS --
-
 # TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
 async def wait_till_traefik_responsive(api_endpoint: URL):

@@ -254,9 +254,6 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
     mock.side_effect = _mock_copy_data_from_project
 
 
-# TESTS ----------------------------------------------------------------------------------------------
-
-
 async def test_access_to_invalid_study(client, published_project):
     resp = await client.get("/study/SOME_INVALID_UUID")
     content = await resp.text()

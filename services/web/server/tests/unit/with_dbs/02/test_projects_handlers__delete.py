@@ -17,8 +17,6 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import _delete
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
-# HELPERS -----------------------------------------------------------------------------------------
-
 
 async def _request_delete_project(
     client, project: dict, expected: type[web.HTTPException]
@@ -28,9 +26,6 @@ async def _request_delete_project(
 
     resp = await client.delete(url)
     await assert_status(resp, expected)
-
-
-# TESTS -----------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(*standard_role_response())

@@ -22,9 +22,6 @@ from yarl import URL
 API_PREFIX = "/" + api_version_prefix
 
 
-# HELPERS -----------------------------------------------------------------------------------------
-
-
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
@@ -116,9 +113,6 @@ def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
     all_roles = standard_role_response()
 
     return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
-
-
-# TESTS ----------------------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(

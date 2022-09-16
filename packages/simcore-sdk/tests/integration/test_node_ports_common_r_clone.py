@@ -34,9 +34,6 @@ pytest_simcore_ops_services_selection = [
 WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 
 
-# FIXTURES
-
-
 @pytest.fixture(
     params=[
         f"{uuid4()}.bin",
@@ -114,7 +111,6 @@ def test_s3_url_quote_and_unquote():
     assert truncated_url == f"simcore/{src}"
 
 
-# TESTS
 async def test_sync_local_to_s3(
     r_clone_settings: RCloneSettings,
     file_name: str,

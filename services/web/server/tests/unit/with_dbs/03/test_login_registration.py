@@ -48,9 +48,6 @@ def db(client: TestClient) -> AsyncpgStorage:
     return db
 
 
-# TESTS ---------------------------------------------------------------------------
-
-
 async def test_regitration_availibility(client: TestClient):
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
