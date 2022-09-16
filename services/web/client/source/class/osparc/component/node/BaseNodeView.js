@@ -284,7 +284,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
     },
 
-    setUpstreamDependencies: function(upstreamDependencies = []) {
+    setUpstreamDependencies: function(upstreamDependencies) {
       this.__inputsButton.setVisibility(upstreamDependencies.length > 0 ? "visible" : "excluded");
       const monitoredNodes = [];
       const workbench = this.getNode().getStudy().getWorkbench();
