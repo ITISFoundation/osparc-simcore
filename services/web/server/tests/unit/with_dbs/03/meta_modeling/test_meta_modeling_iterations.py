@@ -111,7 +111,7 @@ async def test_iterators_workflow(
     # TODO: create iterations, so user could explore parametrizations?
 
     # RUN metaproject ----------------------------------------------------------
-    async def _mock_start(project_id, user_id, **options):
+    async def _mock_start(project_id, user_id, product_name, **options):
         return f"{project_id}"
 
     mocker.patch(
