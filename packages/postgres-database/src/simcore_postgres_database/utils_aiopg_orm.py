@@ -10,7 +10,7 @@
 
 import functools
 import operator
-from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -25,7 +25,7 @@ from sqlalchemy.sql.selectable import Select
 RowUId = TypeVar("RowUId", int, str)  # typically id or uuid
 
 
-def _normalize(names: Union[str, List[str], None]) -> List[str]:
+def _normalize(names: Union[str, list[str], None]) -> list[str]:
     if not names:
         return []
     if isinstance(names, str):
@@ -44,8 +44,8 @@ class BaseOrm(Generic[RowUId]):
         table: sa.Table,
         connection: SAConnection,
         *,
-        readonly: Optional[Set] = None,
-        writeonce: Optional[Set] = None,
+        readonly: Optional[set] = None,
+        writeonce: Optional[set] = None,
     ):
         """
         :param readonly: read-only columns typically created in the server side, defaults to None
@@ -53,8 +53,8 @@ class BaseOrm(Generic[RowUId]):
         :raises ValueError: an error in any of the arguments
         """
         self._conn = connection
-        self._readonly: Set = readonly or {"created", "modified", "id"}
-        self._writeonce: Set = writeonce or set()
+        self._readonly: set = readonly or {"created", "modified", "id"}
+        self._writeonce: set = writeonce or set()
 
         # row selection logic
         self._where_clause = None
@@ -69,9 +69,9 @@ class BaseOrm(Generic[RowUId]):
 
     def _compose_select_query(
         self,
-        columns: Union[str, List[str]],
+        columns: Union[str, list[str]],
     ) -> Select:
-        column_names: List[str] = _normalize(columns)
+        column_names: list[str] = _normalize(columns)
 
         if ALL_COLUMNS in column_names:
             query = self._table.select()
@@ -87,9 +87,9 @@ class BaseOrm(Generic[RowUId]):
         return query
 
     def _append_returning(
-        self, columns: Union[str, List[str]], query: UpdateBase
-    ) -> Tuple[UpdateBase, bool]:
-        column_names: List[str] = _normalize(columns)
+        self, columns: Union[str, list[str]], query: UpdateBase
+    ) -> tuple[UpdateBase, bool]:
+        column_names: list[str] = _normalize(columns)
 
         is_scalar: bool = len(column_names) == 1
 
@@ -108,8 +108,8 @@ class BaseOrm(Generic[RowUId]):
         return query, is_scalar
 
     @staticmethod
-    def _check_access_rights(access: Set, values: Dict) -> None:
-        not_allowed: Set[str] = access.intersection(values.keys())
+    def _check_access_rights(access: set, values: dict) -> None:
+        not_allowed: set[str] = access.intersection(values.keys())
         if not_allowed:
             raise ValueError(f"Columns {not_allowed} are read-only")
 
@@ -149,7 +149,7 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetch(
         self,
-        returning_cols: Union[str, List[str]] = ALL_COLUMNS,
+        returning_cols: Union[str, list[str]] = ALL_COLUMNS,
         *,
         rowid: Optional[RowUId] = None,
     ) -> Optional[RowProxy]:
@@ -167,8 +167,8 @@ class BaseOrm(Generic[RowUId]):
 
     async def fetch_all(
         self,
-        returning_cols: Union[str, List[str]] = ALL_COLUMNS,
-    ) -> List[RowProxy]:
+        returning_cols: Union[str, list[str]] = ALL_COLUMNS,
+    ) -> list[RowProxy]:
 
         query = self._compose_select_query(returning_cols)
         if self.is_filter_set():
@@ -176,17 +176,17 @@ class BaseOrm(Generic[RowUId]):
             query = query.where(self._where_clause)
 
         result: ResultProxy = await self._conn.execute(query)
-        rows: List[RowProxy] = await result.fetchall()
+        rows: list[RowProxy] = await result.fetchall()
         return rows
 
     async def fetch_page(
         self,
-        returning_cols: Union[str, List[str]] = ALL_COLUMNS,
+        returning_cols: Union[str, list[str]] = ALL_COLUMNS,
         *,
         offset: int,
         limit: Optional[int] = None,
         sort_by=None,
-    ) -> Tuple[List[RowProxy], int]:
+    ) -> tuple[list[RowProxy], int]:
         """Support for paginated fetchall
 
         IMPORTANT: pages are sorted by primary-key
@@ -206,7 +206,7 @@ class BaseOrm(Generic[RowUId]):
             query = query.order_by(sort_by)
 
         total_count = None
-        if offset > 0 or limit:
+        if offset > 0 or limit is not None:
             # eval total count if pagination options enabled
             total_count = await self._conn.scalar(
                 query.with_only_columns([func.count()])
@@ -217,7 +217,7 @@ class BaseOrm(Generic[RowUId]):
         if offset:
             query = query.offset(offset)
 
-        if limit and limit > 0:
+        if limit is not None and limit > 0:
             query = query.limit(limit)
 
         result: ResultProxy = await self._conn.execute(query)
@@ -227,11 +227,11 @@ class BaseOrm(Generic[RowUId]):
         assert total_count is not None  # nosec
         assert total_count >= 0  # nosec
 
-        rows: List[RowProxy] = await result.fetchall()
+        rows: list[RowProxy] = await result.fetchall()
         return rows, total_count
 
     async def update(
-        self, returning_cols: Union[str, List[str]] = PRIMARY_KEY, **values
+        self, returning_cols: Union[str, list[str]] = PRIMARY_KEY, **values
     ) -> Union[RowUId, RowProxy, None]:
         self._check_access_rights(self._readonly, values)
         self._check_access_rights(self._writeonce, values)
@@ -250,7 +250,7 @@ class BaseOrm(Generic[RowUId]):
         return row
 
     async def insert(
-        self, returning_cols: Union[str, List[str]] = PRIMARY_KEY, **values
+        self, returning_cols: Union[str, list[str]] = PRIMARY_KEY, **values
     ) -> Union[RowUId, RowProxy, None]:
         self._check_access_rights(self._readonly, values)
 
