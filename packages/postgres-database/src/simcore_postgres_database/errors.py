@@ -18,9 +18,6 @@
 """
 # NOTE: psycopg2.errors are created dynamically
 # pylint: disable=no-name-in-module
-
-from typing import Tuple
-
 from psycopg2 import DatabaseError, DataError
 from psycopg2 import Error as DBAPIError
 from psycopg2 import (

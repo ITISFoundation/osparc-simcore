@@ -155,7 +155,7 @@ class TasksManager:
     def add_task(
         self,
         task_name: TaskName,
-        task: Task,
+        task: asyncio.Task,
         task_progress: TaskProgress,
         task_context: TaskContext,
         fire_and_forget: bool,
@@ -275,10 +275,10 @@ class TasksManager:
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
     async def _cancel_asyncio_task(
-        self, task: Task, reference: str, *, reraise_errors: bool
+        self, task: asyncio.Task, reference: str, *, reraise_errors: bool
     ) -> None:
         task.cancel()
-        with suppress(CancelledError):
+        with suppress(asyncio.CancelledError):
             try:
                 try:
                     await asyncio.wait_for(
@@ -293,7 +293,7 @@ class TasksManager:
                     raise
 
     async def _cancel_tracked_task(
-        self, task: Task, task_id: TaskId, *, reraise_errors: bool
+        self, task: asyncio.Task, task_id: TaskId, *, reraise_errors: bool
     ) -> None:
         try:
             await self._cancel_asyncio_task(
