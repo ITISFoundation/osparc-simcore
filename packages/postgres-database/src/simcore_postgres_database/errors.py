@@ -46,7 +46,7 @@ assert issubclass(UniqueViolation, IntegrityError)  # nosec
 #        assert isinstance(e.orig, UniqueViolation)
 
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     "DatabaseError",
     "DataError",
     "DBAPIError",
@@ -59,3 +59,4 @@ __all__: Tuple[str, ...] = (
     "OperationalError",
     "ProgrammingError",
 )
+# nopycln: file
