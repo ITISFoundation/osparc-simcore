@@ -5,7 +5,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
 
 
 class ComputationGet(ComputationTask):
@@ -20,10 +20,12 @@ class ComputationGet(ComputationTask):
 class ComputationCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
-    product_name: str
     start_pipeline: Optional[bool] = Field(
         default=False,
         description="if True the computation pipeline will start right away",
+    )
+    product_name: Optional[str] = Field(
+        default=None, description="required if computation is started"
     )
     subgraph: Optional[list[NodeID]] = Field(
         default=None,
@@ -36,6 +38,13 @@ class ComputationCreate(BaseModel):
         default=None,
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
+
+    @validator("product_name", always=True)
+    @classmethod
+    def ensure_product_name_defined_if_computation_starts(cls, v, values):
+        if "start_pipeline" in values and values["start_pipeline"] and v is None:
+            raise ValueError("product_name must be set if computation shall start!")
+        return v
 
 
 class ComputationStop(BaseModel):

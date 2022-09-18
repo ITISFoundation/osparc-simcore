@@ -173,11 +173,60 @@ def product_name(faker: Faker) -> str:
     return faker.name()
 
 
+async def test_create_computation(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+
+
+async def test_start_computation_without_product_fails(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., ProjectAtDB],
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json={
+            "user_id": f"{user['id']}",
+            "project_id": f"{proj.uuid}",
+            "start_pipeline": f"{True}",
+        },
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+
+
 async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts,
     mocked_catalog_service_fcts,
-    osparc_product_name: str,
+    product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
@@ -193,7 +242,7 @@ async def test_start_computation(
                 user_id=user["id"],
                 project_id=proj.uuid,
                 start_pipeline=True,
-                product_name=osparc_product_name,
+                product_name=product_name,
             )
         ),
     )
@@ -204,7 +253,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
     minimal_configuration: None,
     mocked_director_service_fcts,
     mocked_catalog_service_fcts_deprecated,
-    osparc_product_name: str,
+    product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -221,7 +270,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
                 user_id=user["id"],
                 project_id=proj.uuid,
                 start_pipeline=True,
-                product_name=osparc_product_name,
+                product_name=product_name,
             )
         ),
     )

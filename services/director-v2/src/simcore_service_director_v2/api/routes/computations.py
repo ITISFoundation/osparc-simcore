@@ -162,7 +162,7 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {computation.project_id} has no computational services",
                 )
-
+            assert computation.product_name  # nosec
             if deprecated_tasks := await find_deprecated_tasks(
                 computation.user_id,
                 computation.product_name,
