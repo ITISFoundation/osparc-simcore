@@ -16,7 +16,6 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
-from faker import Faker
 from httpx import AsyncClient
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
@@ -129,9 +128,10 @@ def fake_workbench_computational_pipeline_details_not_started(
     return completed_pipeline_details
 
 
-@pytest.fixture
-def product_name(faker: Faker) -> str:
-    return faker.name()
+@pytest.fixture(scope="session")
+def product_name() -> str:
+    # NOTE: this is the default the catalog currently uses
+    return "osparc"
 
 
 @pytest.mark.parametrize(
