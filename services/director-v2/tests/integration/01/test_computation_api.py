@@ -178,7 +178,7 @@ async def test_start_empty_computation_is_refused(
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     empty_project = project(user)
@@ -187,7 +187,7 @@ async def test_start_empty_computation_is_refused(
         project=empty_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -357,7 +357,7 @@ async def test_run_partial_computation(
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     sleepers_project: ProjectAtDB = project(
@@ -400,7 +400,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
             str(node_id)
@@ -444,7 +444,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         subgraph=[
             str(node_id)
@@ -465,7 +465,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
             str(node_id)
@@ -500,7 +500,7 @@ async def test_run_computation(
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
@@ -510,7 +510,7 @@ async def test_run_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -556,7 +556,7 @@ async def test_run_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -576,7 +576,7 @@ async def test_run_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
         force_restart=True,
     )
@@ -612,7 +612,7 @@ async def test_abort_computation(
     project: Callable,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     # we need long running tasks to ensure cancellation is done properly
@@ -628,7 +628,7 @@ async def test_abort_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -693,7 +693,7 @@ async def test_update_and_delete_computation(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
@@ -703,7 +703,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -724,7 +724,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -745,7 +745,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -766,7 +766,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -798,7 +798,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_403_FORBIDDEN,
     )
 
@@ -825,7 +825,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     registered_user: Callable,
     project: Callable,
     jupyter_service: dict[str, Any],
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     # create a workbench with just a dynamic service
@@ -846,7 +846,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         project=project_with_dynamic_node,
         user_id=user["id"],
         start_pipeline=True,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -856,7 +856,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         project=project_with_dynamic_node,
         user_id=user["id"],
         start_pipeline=False,
-        product_name=product_name,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     assert (
@@ -870,7 +870,7 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     registered_user: Callable,
     project: Callable,
     jupyter_service: dict[str, Any],
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
@@ -940,7 +940,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     project: Callable,
     sleeper_service: dict[str, Any],
     jupyter_service: dict[str, Any],
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
@@ -1024,7 +1024,7 @@ async def test_burst_create_computations(
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
-    product_name: str,
+    osparc_product_name: str,
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)

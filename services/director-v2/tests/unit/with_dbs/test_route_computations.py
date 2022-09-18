@@ -177,7 +177,7 @@ async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts,
     mocked_catalog_service_fcts,
-    product_name: str,
+    osparc_product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., ProjectAtDB],
@@ -193,7 +193,7 @@ async def test_start_computation(
                 user_id=user["id"],
                 project_id=proj.uuid,
                 start_pipeline=True,
-                product_name=product_name,
+                product_name=osparc_product_name,
             )
         ),
     )
@@ -204,7 +204,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
     minimal_configuration: None,
     mocked_director_service_fcts,
     mocked_catalog_service_fcts_deprecated,
-    product_name: str,
+    osparc_product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -221,7 +221,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
                 user_id=user["id"],
                 project_id=proj.uuid,
                 start_pipeline=True,
-                product_name=product_name,
+                product_name=osparc_product_name,
             )
         ),
     )
