@@ -3,7 +3,6 @@ import contextlib
 import json
 import re
 import socket
-from contextlib import asynccontextmanager
 from pathlib import Path
 from pprint import pformat
 from typing import (
@@ -13,11 +12,8 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Dict,
     Final,
-    List,
     Optional,
-    Tuple,
     cast,
 )
 
@@ -53,10 +49,10 @@ async def create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
-    task_max_resources: Dict[str, Any],
+    task_max_resources: dict[str, Any],
 ) -> DockerContainerConfig:
 
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
@@ -93,7 +89,7 @@ async def create_container_config(
     return config
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def managed_container(
     docker_client: Docker, config: DockerContainerConfig, *, name: Optional[str] = None
 ) -> AsyncIterator[DockerContainer]:
@@ -133,7 +129,7 @@ PROGRESS_REGEXP = re.compile(
 DEFAULT_TIME_STAMP = "2000-01-01T00:00:00.000000000Z"
 
 
-async def parse_line(line: str) -> Tuple[LogType, str, str]:
+async def parse_line(line: str) -> tuple[LogType, str, str]:
     match = re.search(DOCKER_LOG_REGEXP, line)
     if not match:
         # default return as log
@@ -427,7 +423,7 @@ async def monitor_container_logs(
         )
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def managed_monitor_container_log_task(
     container: DockerContainer,
     service_key: str,

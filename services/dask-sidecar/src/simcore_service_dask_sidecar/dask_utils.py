@@ -1,10 +1,9 @@
 import asyncio
 import contextlib
 import logging
-from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncIterator, Dict, Optional, cast
+from typing import Any, AsyncIterator, Optional, cast
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -62,10 +61,10 @@ def get_current_task_boot_mode() -> BootMode:
     return BootMode.CPU
 
 
-def get_current_task_resources() -> Dict[str, Any]:
+def get_current_task_resources() -> dict[str, Any]:
     if task := _get_current_task_state():
         if task_resources := task.resource_restrictions:
-            return cast(Dict[str, Any], task_resources)
+            return cast(dict[str, Any], task_resources)
     return {}
 
 
@@ -84,7 +83,7 @@ class TaskPublisher:
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def monitor_task_abortion(
     task_name: str, log_publisher: distributed.Pub
 ) -> AsyncIterator[None]:
