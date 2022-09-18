@@ -911,7 +911,7 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "user_id": user["id"],
             "project_id": str(project_with_dynamic_node.uuid),
             "start_pipeline": True,
-            "product_name": product_name,
+            "product_name": osparc_product_name,
         },
     )
     assert (
@@ -925,7 +925,7 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "user_id": user["id"],
             "project_id": str(project_with_dynamic_node.uuid),
             "start_pipeline": False,
-            "product_name": product_name,
+            "product_name": osparc_product_name,
         },
     )
     assert (
@@ -993,7 +993,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
             "user_id": user["id"],
             "project_id": str(project_with_cycly_and_comp_service.uuid),
             "start_pipeline": True,
-            "product_name": product_name,
+            "product_name": osparc_product_name,
         },
     )
     assert (
@@ -1007,7 +1007,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
             "user_id": user["id"],
             "project_id": str(project_with_cycly_and_comp_service.uuid),
             "start_pipeline": False,
-            "product_name": product_name,
+            "product_name": osparc_product_name,
         },
     )
     assert (
@@ -1037,7 +1037,7 @@ async def test_burst_create_computations(
                 "user_id": user["id"],
                 "project_id": str(project.uuid),
                 "start_pipeline": start_pipeline,
-                "product_name": product_name,
+                "product_name": osparc_product_name,
             },
             timeout=60,
         )
