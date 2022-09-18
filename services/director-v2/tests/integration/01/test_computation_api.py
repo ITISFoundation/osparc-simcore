@@ -16,6 +16,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
+from faker import Faker
 from httpx import AsyncClient
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
@@ -128,19 +129,36 @@ def fake_workbench_computational_pipeline_details_not_started(
     return completed_pipeline_details
 
 
+@pytest.fixture
+def product_name(faker: Faker) -> str:
+    return faker.name()
+
+
 @pytest.mark.parametrize(
     "body,exp_response",
     [
         (
-            {"user_id": "some invalid id", "project_id": "not a uuid"},
+            {
+                "user_id": "some invalid id",
+                "project_id": "not a uuid",
+                "product_name": "not a product",
+            },
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
         (
-            {"user_id": 2, "project_id": "not a uuid"},
+            {
+                "user_id": 2,
+                "project_id": "not a uuid",
+                "product_name": "not a product",
+            },
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
         (
-            {"user_id": 3, "project_id": "16e60a5d-834e-4267-b44d-3af49171bf21"},
+            {
+                "user_id": 3,
+                "project_id": "16e60a5d-834e-4267-b44d-3af49171bf21",
+                "product_name": "not a product",
+            },
             status.HTTP_404_NOT_FOUND,
         ),
     ],
@@ -166,6 +184,7 @@ async def test_start_empty_computation_is_refused(
     async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
+    product_name: str,
 ):
     user = registered_user()
     empty_project = project(user)
@@ -174,6 +193,7 @@ async def test_start_empty_computation_is_refused(
         project=empty_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -343,6 +363,7 @@ async def test_run_partial_computation(
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
+    product_name: str,
 ):
     user = registered_user()
     sleepers_project: ProjectAtDB = project(
@@ -364,7 +385,7 @@ async def test_run_partial_computation(
             NodeID(workbench_node_uuids[n]): NodeState(
                 modified=s["modified"],
                 dependencies={
-                    workbench_node_uuids[dep_n] for dep_n in s["dependencies"]
+                    NodeID(workbench_node_uuids[dep_n]) for dep_n in s["dependencies"]
                 },
                 currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
             )
@@ -385,6 +406,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
             str(node_id)
@@ -428,6 +450,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         subgraph=[
             str(node_id)
@@ -448,6 +471,7 @@ async def test_run_partial_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
             str(node_id)
@@ -482,6 +506,7 @@ async def test_run_computation(
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
+    product_name: str,
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
@@ -491,6 +516,7 @@ async def test_run_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -536,6 +562,7 @@ async def test_run_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -555,6 +582,7 @@ async def test_run_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
         force_restart=True,
     )
@@ -590,6 +618,7 @@ async def test_abort_computation(
     project: Callable,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
+    product_name: str,
 ):
     user = registered_user()
     # we need long running tasks to ensure cancellation is done properly
@@ -605,6 +634,7 @@ async def test_abort_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -669,6 +699,7 @@ async def test_update_and_delete_computation(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
+    product_name: str,
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
@@ -678,6 +709,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -698,6 +730,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -718,6 +751,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -738,6 +772,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())
@@ -769,6 +804,7 @@ async def test_update_and_delete_computation(
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_403_FORBIDDEN,
     )
 
@@ -795,6 +831,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     registered_user: Callable,
     project: Callable,
     jupyter_service: dict[str, Any],
+    product_name: str,
 ):
     user = registered_user()
     # create a workbench with just a dynamic service
@@ -815,6 +852,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         project=project_with_dynamic_node,
         user_id=user["id"],
         start_pipeline=True,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -824,6 +862,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
         project=project_with_dynamic_node,
         user_id=user["id"],
         start_pipeline=False,
+        product_name=product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     assert (
