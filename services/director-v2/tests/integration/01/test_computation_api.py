@@ -128,12 +128,6 @@ def fake_workbench_computational_pipeline_details_not_started(
     return completed_pipeline_details
 
 
-@pytest.fixture(scope="session")
-def product_name() -> str:
-    # NOTE: this is the default the catalog currently uses
-    return "osparc"
-
-
 @pytest.mark.parametrize(
     "body,exp_response",
     [

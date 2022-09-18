@@ -34,3 +34,9 @@ def update_project_workbench_with_comp_tasks(
             )
 
     yield updator
+
+
+@pytest.fixture(scope="session")
+def product_name() -> str:
+    # NOTE: this is the default the catalog currently uses
+    return "osparc"
