@@ -218,7 +218,7 @@ typing-extensions==4.3.0
     #   aioredis
     #   pydantic
     #   starlette
-ujson==5.4.0
+ujson==5.5.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
