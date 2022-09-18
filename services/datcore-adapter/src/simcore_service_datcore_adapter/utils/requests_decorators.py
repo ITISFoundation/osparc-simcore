@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from asyncio import CancelledError
 from contextlib import suppress
 from functools import wraps
 from typing import Any, Callable, Coroutine, Optional
@@ -25,7 +24,7 @@ async def _cancel_task_if_client_disconnected(
                 task.cancel()
                 break
             await asyncio.sleep(interval)
-    except CancelledError:
+    except asyncio.CancelledError:
         logger.debug("task was cancelled")
         raise
     finally:
@@ -57,14 +56,14 @@ def cancellable_request(handler: Callable[..., Coroutine[Any, Any, Optional[Any]
         )
         try:
             return await handler_task
-        except CancelledError:
+        except asyncio.CancelledError:
             logger.warning(
                 "request %s was cancelled by client %s!", request.url, request.client
             )
             return Response("Oh No!", status_code=499)
         finally:
             auto_cancel_task.cancel()
-            with suppress(CancelledError):
+            with suppress(asyncio.CancelledError):
                 await auto_cancel_task
 
     return decorator
