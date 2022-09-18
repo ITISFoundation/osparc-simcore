@@ -7,12 +7,14 @@ import random
 from copy import deepcopy
 from itertools import repeat
 from typing import Any, Callable
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import faker
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
+from faker import Faker
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -40,11 +42,11 @@ API_VERSION = "v0"
 @pytest.fixture
 def client(
     event_loop,
-    aiohttp_client,
+    aiohttp_client: Callable,
     app_cfg,
     postgres_db,
     monkeypatch_setenv_from_app_config: Callable,
-):
+) -> TestClient:
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
@@ -71,29 +73,16 @@ def client(
     return client
 
 
-# WARNING: pytest-asyncio and pytest-aiohttp are not compatible
-#
-# https://github.com/aio-libs/pytest-aiohttp/issues/8#issuecomment-405602020
-# https://github.com/pytest-dev/pytest-asyncio/issues/76
-#
-
-
 @pytest.fixture
-async def tokens_db(logged_user, client):
+async def tokens_db(logged_user, client: TestClient):
+    assert client.app
     engine = client.app[APP_DB_ENGINE_KEY]
     yield engine
     await delete_all_tokens_from_db(engine)
 
 
 @pytest.fixture
-async def fake_tokens(logged_user, tokens_db):
-    # pylint: disable=E1101
-    from faker.providers import lorem
-
-    fake = faker.Factory.create()
-    fake.seed(4567)  # Always the same fakes
-    fake.add_provider(lorem)
-
+async def fake_tokens(logged_user, tokens_db, faker: Faker):
     all_tokens = []
 
     # TODO: automatically create data from oas!
@@ -101,9 +90,9 @@ async def fake_tokens(logged_user, tokens_db):
     for _ in repeat(None, 5):
         # TODO: add tokens from other users
         data = {
-            "service": fake.word(ext_word_list=None),
-            "token_key": fake.md5(raw_output=False),
-            "token_secret": fake.md5(raw_output=False),
+            "service": faker.word(ext_word_list=None),
+            "token_key": faker.md5(raw_output=False),
+            "token_secret": faker.md5(raw_output=False),
         }
         row = await create_token_in_db(
             tokens_db,
@@ -115,8 +104,7 @@ async def fake_tokens(logged_user, tokens_db):
     return all_tokens
 
 
-# --------------------------------------------------------------------------
-PREFIX = "/" + API_VERSION + "/me"
+PREFIX = f"/{API_VERSION}/me"
 
 
 @pytest.mark.parametrize(
@@ -130,13 +118,15 @@ PREFIX = "/" + API_VERSION + "/me"
 )
 async def test_get_profile(
     logged_user: dict,
-    client,
+    client: TestClient,
     user_role: UserRole,
     expected: type[web.HTTPException],
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
 ):
+    assert client.app
+
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
@@ -173,8 +163,15 @@ async def test_get_profile(
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_update_profile(logged_user, client, user_role, expected):
-    url = client.app.router["update_my_profile"].url_for()
+async def test_update_profile(
+    logged_user,
+    client: TestClient,
+    user_role,
+    expected: type[web.HTTPException],
+):
+    assert client.app
+
+    url = f"{client.app.router['update_my_profile'].url_for()}"
     assert str(url) == "/v0/me"
 
     resp = await client.put(url, json={"last_name": "Foo"})
@@ -206,7 +203,14 @@ PREFIX = f"/{API_VERSION}/me/{RESOURCE_NAME}"
         (UserRole.TESTER, web.HTTPCreated),
     ],
 )
-async def test_create_token(client, logged_user, tokens_db, expected):
+async def test_create_token(
+    client: TestClient,
+    logged_user,
+    tokens_db,
+    expected: type[web.HTTPException],
+):
+    assert client.app
+
     url = client.app.router["create_tokens"].url_for()
     assert "/v0/me/tokens" == str(url)
 
@@ -233,9 +237,16 @@ async def test_create_token(client, logged_user, tokens_db, expected):
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_read_token(client, logged_user, tokens_db, fake_tokens, expected):
+async def test_read_token(
+    client: TestClient,
+    logged_user,
+    tokens_db,
+    fake_tokens,
+    expected: type[web.HTTPException],
+):
+    assert client.app
     # list all
-    url = client.app.router["list_tokens"].url_for()
+    url = f"{client.app.router['list_tokens'].url_for()}"
     assert "/v0/me/tokens" == str(url)
 
     resp = await client.get(url)
@@ -264,7 +275,14 @@ async def test_read_token(client, logged_user, tokens_db, fake_tokens, expected)
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_update_token(client, logged_user, tokens_db, fake_tokens, expected):
+async def test_update_token(
+    client: TestClient,
+    logged_user,
+    tokens_db,
+    fake_tokens,
+    expected: type[web.HTTPException],
+):
+    assert client.app
 
     selected = random.choice(fake_tokens)
     sid = selected["service"]
@@ -295,13 +313,17 @@ async def test_update_token(client, logged_user, tokens_db, fake_tokens, expecte
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_delete_token(client, logged_user, tokens_db, fake_tokens, expected):
+async def test_delete_token(
+    client: TestClient, logged_user, tokens_db, fake_tokens, expected
+):
+    assert client.app
+
     sid = fake_tokens[0]["service"]
 
     url = client.app.router["delete_token"].url_for(service=sid)
     assert "/v0/me/tokens/%s" % sid == str(url)
 
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
 
     data, error = await assert_status(resp, expected)
 
@@ -310,7 +332,7 @@ async def test_delete_token(client, logged_user, tokens_db, fake_tokens, expecte
 
 
 @pytest.fixture
-def mock_failing_connection(mocker) -> MagicMock:
+def mock_failing_connection(mocker: Mock) -> MagicMock:
     """
     async with engine.acquire() as conn:
         await conn.execute(query)  --> will raise OperationalError
@@ -331,7 +353,7 @@ def mock_failing_connection(mocker) -> MagicMock:
 )
 async def test_get_profile_with_failing_db_connection(
     logged_user,
-    client,
+    client: TestClient,
     mock_failing_connection: MagicMock,
     expected: type[web.HTTPException],
 ):
