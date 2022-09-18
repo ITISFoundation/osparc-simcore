@@ -2,7 +2,7 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
@@ -17,7 +17,7 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 logger = logging.getLogger(__name__)
 
 
-SolverNameVersionPair = Tuple[SolverKeyId, str]
+SolverNameVersionPair = tuple[SolverKeyId, str]
 
 
 class TruncatedCatalogServiceOut(ServiceDockerData):
@@ -78,12 +78,14 @@ class CatalogApi(BaseServiceClientApi):
     async def list_solvers(
         self,
         user_id: int,
+        *,
+        product_name: str,
         predicate: Optional[Callable[[Solver], bool]] = None,
     ) -> list[Solver]:
         resp = await self.client.get(
             "/services",
             params={"user_id": user_id, "details": True},
-            headers={"x-simcore-products-name": "osparc"},
+            headers={"x-simcore-products-name": product_name},
         )
         resp.raise_for_status()
 
@@ -109,7 +111,7 @@ class CatalogApi(BaseServiceClientApi):
         return solvers
 
     async def get_solver(
-        self, user_id: int, name: SolverKeyId, version: VersionStr
+        self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
@@ -120,7 +122,7 @@ class CatalogApi(BaseServiceClientApi):
         resp = await self.client.get(
             f"/services/{service_key}/{service_version}",
             params={"user_id": user_id},
-            headers={"x-simcore-products-name": "osparc"},
+            headers={"x-simcore-products-name": product_name},
         )
         resp.raise_for_status()
 
@@ -131,8 +133,12 @@ class CatalogApi(BaseServiceClientApi):
 
         return service.to_solver()
 
-    async def list_latest_releases(self, user_id: int) -> list[Solver]:
-        solvers: list[Solver] = await self.list_solvers(user_id)
+    async def list_latest_releases(
+        self, user_id: int, *, product_name: str
+    ) -> list[Solver]:
+        solvers: list[Solver] = await self.list_solvers(
+            user_id, product_name=product_name
+        )
 
         latest_releases = {}
         for solver in solvers:
@@ -143,16 +149,22 @@ class CatalogApi(BaseServiceClientApi):
         return list(latest_releases.values())
 
     async def list_solver_releases(
-        self, user_id: int, solver_key: SolverKeyId
+        self, user_id: int, solver_key: SolverKeyId, *, product_name: str
     ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
 
-        releases: list[Solver] = await self.list_solvers(user_id, _this_solver)
+        releases: list[Solver] = await self.list_solvers(
+            user_id, predicate=_this_solver, product_name=product_name
+        )
         return releases
 
-    async def get_latest_release(self, user_id: int, solver_key: SolverKeyId) -> Solver:
-        releases = await self.list_solver_releases(user_id, solver_key)
+    async def get_latest_release(
+        self, user_id: int, solver_key: SolverKeyId, *, product_name: str
+    ) -> Solver:
+        releases = await self.list_solver_releases(
+            user_id, solver_key, product_name=product_name
+        )
 
         # raises IndexError if None
         latest = sorted(releases, key=attrgetter("pep404_version"))[-1]
