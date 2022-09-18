@@ -2,7 +2,6 @@ import asyncio
 import functools
 import inspect
 import logging
-from logging import Logger
 from typing import Any, Awaitable, Callable, Optional
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
@@ -31,7 +30,9 @@ def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
     )
 
 
-def _after_log(log: Logger, max_retries: int) -> Callable[[RetryCallState], None]:
+def _after_log(
+    log: logging.Logger, max_retries: int
+) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
         # pylint: disable=protected-access
 
