@@ -65,12 +65,18 @@ async def test_unknown_email(
     assert parse_test_marks(out)["reason"] == cfg.MSG_UNKNOWN_EMAIL
 
 
-async def test_banned_user(client: TestClient, cfg: LoginOptions, capsys):
+@pytest.mark.parametrize("user_status", (UserStatus.BANNED, UserStatus.EXPIRED))
+async def test_blocked_user(
+    client: TestClient, cfg: LoginOptions, capsys, user_status: UserStatus
+):
+    assert client.app
+    expected_msg = getattr(cfg, f"MSG_USER_{user_status.name.upper()}")
+
     reset_url = client.app.router["auth_reset_password"].url_for()
 
-    async with NewUser({"status": UserStatus.BANNED.name}, app=client.app) as user:
+    async with NewUser({"status": user_status.name}, app=client.app) as user:
         rp = await client.post(
-            reset_url,
+            f"{reset_url}",
             json={
                 "email": user["email"],
             },
@@ -79,11 +85,12 @@ async def test_banned_user(client: TestClient, cfg: LoginOptions, capsys):
     assert rp.url.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
-    out, err = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == cfg.MSG_USER_BANNED
+    out, _ = capsys.readouterr()
+    assert parse_test_marks(out)["reason"] == expected_msg
 
 
 async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
+    assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     async with NewUser(

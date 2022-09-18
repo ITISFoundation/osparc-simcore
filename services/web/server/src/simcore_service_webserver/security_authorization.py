@@ -1,8 +1,7 @@
 import logging
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 import attr
-import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
 from aiopg.sa import Engine
@@ -37,18 +36,21 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self.app[APP_DB_ENGINE_KEY]
 
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-    async def _pg_query_user(self, identity: str) -> RowProxy:
+    async def _pg_query_user(self, identity: str) -> Optional[RowProxy]:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
         row = self.timed_cache.get(identity)
-        if not row:
+        if row is None:
             query = users.select().where(
-                sa.and_(users.c.email == identity, users.c.status != UserStatus.BANNED)
+                (users.c.email == identity)
+                & (users.c.status != UserStatus.BANNED)
+                & (users.c.status != UserStatus.EXPIRED)
             )
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
-                ret: ResultProxy = await conn.execute(query)
-                row: RowProxy = await ret.fetchone()
-            self.timed_cache[identity] = row
+                res: ResultProxy = await conn.execute(query)
+                row: Optional[RowProxy] = await res.fetchone()
+            if row is not None:
+                self.timed_cache[identity] = row
         return row
 
     async def authorized_userid(self, identity: str) -> Optional[int]:
@@ -64,8 +66,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     async def permits(
         self,
         identity: str,
-        permission: Union[str, Tuple],
-        context: Optional[Dict] = None,
+        permission: Union[str, tuple],
+        context: Optional[dict] = None,
     ) -> bool:
         """Determines whether an identified user has permission
 

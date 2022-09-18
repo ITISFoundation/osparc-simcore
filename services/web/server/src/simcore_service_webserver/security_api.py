@@ -5,7 +5,6 @@
 import logging
 
 import passlib.hash
-import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.api import (
     AUTZ_KEY,
@@ -27,7 +26,9 @@ log = logging.getLogger(__name__)
 async def check_credentials(engine: Engine, email: str, password: str) -> bool:
     async with engine.acquire() as conn:
         query = users.select().where(
-            sa.and_(users.c.email == email, users.c.status != UserStatus.BANNED)
+            (users.c.email == email)
+            & (users.c.status != UserStatus.BANNED)
+            & (users.c.status != UserStatus.EXPIRED)
         )
         ret = await conn.execute(query)
         user = await ret.fetchone()
