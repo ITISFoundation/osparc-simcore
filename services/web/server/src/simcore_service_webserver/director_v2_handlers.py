@@ -6,12 +6,13 @@ from aiohttp import web
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
 from .director_v2_core_computations import ComputationsApi
@@ -26,17 +27,22 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
+class RequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+
+
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def start_computation(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
     computations = ComputationsApi(request.app)
 
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
-    user_id = UserID(request[RQT_USERID_KEY])
     project_id = ProjectID(request.match_info["project_id"])
 
     subgraph: set[str] = set()
@@ -80,7 +86,9 @@ async def start_computation(request: web.Request) -> web.Response:
 
         _started_pipelines_ids: list[str] = await asyncio.gather(
             *[
-                computations.start(pid, user_id, **options)
+                computations.start(
+                    pid, req_ctx.user_id, req_ctx.product_name, **options
+                )
                 for pid in running_project_ids
             ]
         )
@@ -115,11 +123,11 @@ async def start_computation(request: web.Request) -> web.Response:
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def stop_computation(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
     computations = ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
-    user_id = UserID(request[RQT_USERID_KEY])
     project_id = ProjectID(request.match_info["project_id"])
 
     try:
@@ -128,7 +136,9 @@ async def stop_computation(request: web.Request) -> web.Response:
         )
         log.debug("Project %s will stop %d variants", project_id, len(project_ids))
 
-        await asyncio.gather(*[computations.stop(pid, user_id) for pid in project_ids])
+        await asyncio.gather(
+            *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
+        )
 
         # FIXME: our middleware has this issue
         #
