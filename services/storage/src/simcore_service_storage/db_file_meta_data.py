@@ -128,7 +128,9 @@ async def list_valid_uploads(
 ) -> AsyncGenerator[FileMetaDataAtDB, None]:
     """returns all the theoretically valid fmds (e.g. upload_expires_at column is null)"""
     async for row in conn.execute(
-        sa.select([file_meta_data]).where(file_meta_data.c.upload_expires_at == None)
+        sa.select([file_meta_data]).where(
+            file_meta_data.c.upload_expires_at == None  # lgtm [py/test-equals-none]
+        )
     ):
         fmd_at_db = FileMetaDataAtDB.from_orm(row)
         yield fmd_at_db
