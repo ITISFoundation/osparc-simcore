@@ -328,7 +328,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const updateProgress = () => {
           const running = node.getStatus().getRunning();
           const progress = node.getStatus().getProgress();
-          if (["PENDING", "PUBLISHED"].includes(running) ||
+          if (["PUBLISHED", "PENDING", "STARTING"].includes(running) ||
             (["STARTED"].includes(running) && progress === 0)) {
             this.__progressBar.setBackgroundColor("busy-orange");
             this.__progressBar.getContentElement().setStyles({

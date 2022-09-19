@@ -45,7 +45,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     running: {
-      check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
+      check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED", "STARTING"], // starting comes from the frontend
       nullable: true,
       init: null,
       event: "changeRunning",
@@ -159,7 +159,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       const hasOutputs = this.getHasOutputs();
       const modified = this.getModified();
       const hasDependencies = this.hasDependencies();
-      if (["PUBLISHED", "PENDING", "STARTED"].includes(compRunning)) {
+      if (["PUBLISHED", "PENDING", "STARTED", "STARTING"].includes(compRunning)) {
         this.setOutput("busy");
       } else if ([null, false].includes(hasOutputs)) {
         this.setOutput("not-available");

@@ -277,6 +277,7 @@ qx.Class.define("osparc.data.model.Study", {
         "PUBLISHED",
         "PENDING",
         "STARTED",
+        "STARTING",
         "RETRY"
       ].includes(state);
     }
