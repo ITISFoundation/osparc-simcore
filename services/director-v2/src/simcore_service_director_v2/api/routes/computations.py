@@ -24,6 +24,7 @@ from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from starlette import status
@@ -148,7 +149,7 @@ async def create_computation(
             ):
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {deprecated_tasks}",
+                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
                 )
         # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
