@@ -74,5 +74,7 @@ USER ${SC_USER_NAME}
 # bring installed package without build tools
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
+#, "| grep --regexp='^Rev: .* (head)$'" ]
+HEALTHCHECK --interval=5s --timeout=10s --start-period=1ms --retries=3 CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]
