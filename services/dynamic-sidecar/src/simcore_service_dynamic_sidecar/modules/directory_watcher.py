@@ -5,7 +5,6 @@ import time
 from asyncio import AbstractEventLoop
 from collections import deque
 from contextlib import contextmanager
-from functools import wraps
 from os import name
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Deque, Generator, Optional
@@ -57,7 +56,7 @@ def async_run_once_after_event_chain(
     def internal(decorated_function: Callable[..., Awaitable[Any]]):
         last = AsyncLockedFloat(initial_value=None)
 
-        @wraps(decorated_function)
+        @functools.wraps(decorated_function)
         async def wrapper(*args: Any, **kwargs: Any):
             # skipping  the first time the event chain starts
             if await last.get_value() is None:

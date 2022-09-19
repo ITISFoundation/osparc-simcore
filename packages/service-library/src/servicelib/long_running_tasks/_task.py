@@ -3,7 +3,6 @@ import inspect
 import logging
 import traceback
 import urllib.parse
-from asyncio import CancelledError, InvalidStateError, Task
 from collections import deque
 from contextlib import suppress
 from datetime import datetime
@@ -24,7 +23,7 @@ from ._models import TaskId, TaskName, TaskProgress, TaskResult, TaskStatus, Tra
 logger = logging.getLogger(__name__)
 
 
-async def _await_task(task: Task):
+async def _await_task(task: asyncio.Task):
     await task
 
 
@@ -71,7 +70,7 @@ class TasksManager:
 
         self.stale_task_check_interval_s = stale_task_check_interval_s
         self.stale_task_detect_timeout_s = stale_task_detect_timeout_s
-        self._stale_tasks_monitor_task: Task = asyncio.create_task(
+        self._stale_tasks_monitor_task: asyncio.Task = asyncio.create_task(
             self._stale_tasks_monitor_worker(),
             name=f"{__name__}.stale_task_monitor_worker",
         )
@@ -156,7 +155,7 @@ class TasksManager:
     def add_task(
         self,
         task_name: TaskName,
-        task: Task,
+        task: asyncio.Task,
         task_progress: TaskProgress,
         task_context: TaskContext,
         fire_and_forget: bool,
@@ -228,10 +227,10 @@ class TasksManager:
 
         try:
             return tracked_task.task.result()
-        except InvalidStateError as exc:
+        except asyncio.InvalidStateError as exc:
             # the task is not ready
             raise TaskNotCompletedError(task_id=task_id) from exc
-        except CancelledError as exc:
+        except asyncio.CancelledError as exc:
             # the task was cancelled
             raise TaskCancelledError(task_id=task_id) from exc
 
@@ -257,7 +256,7 @@ class TasksManager:
                 )
                 logger.warning("%s", f"{error}")
                 return TaskResult(result=None, error=f"{error}")
-        except CancelledError:
+        except asyncio.CancelledError:
             error = TaskCancelledError(task_id=task_id)
             logger.warning("Task %s was cancelled", task_id)
             return TaskResult(result=None, error=f"{error}")
@@ -276,10 +275,10 @@ class TasksManager:
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
     async def _cancel_asyncio_task(
-        self, task: Task, reference: str, *, reraise_errors: bool
+        self, task: asyncio.Task, reference: str, *, reraise_errors: bool
     ) -> None:
         task.cancel()
-        with suppress(CancelledError):
+        with suppress(asyncio.CancelledError):
             try:
                 try:
                     await asyncio.wait_for(
@@ -294,7 +293,7 @@ class TasksManager:
                     raise
 
     async def _cancel_tracked_task(
-        self, task: Task, task_id: TaskId, *, reraise_errors: bool
+        self, task: asyncio.Task, task_id: TaskId, *, reraise_errors: bool
     ) -> None:
         try:
             await self._cancel_asyncio_task(

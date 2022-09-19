@@ -3,7 +3,7 @@ import logging
 import signal
 import threading
 from pprint import pformat
-from typing import List, Optional
+from typing import Optional
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -131,7 +131,7 @@ def run_computational_sidecar(
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
     log_file_url: AnyUrl,
-    command: List[str],
+    command: list[str],
     s3_settings: Optional[S3Settings],
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
@@ -139,7 +139,7 @@ def run_computational_sidecar(
     # else the loop might get closed by another thread running another task
 
     try:
-        loop = asyncio.get_event_loop()
+        _ = asyncio.get_event_loop()
     except RuntimeError:
         # NOTE: this happens in testing when the dask cluster runs INProcess
         loop = asyncio.new_event_loop()

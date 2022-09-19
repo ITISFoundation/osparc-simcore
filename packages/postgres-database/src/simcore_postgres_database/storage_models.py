@@ -19,3 +19,4 @@ __all__ = [
     "groups",
     "user_to_groups",
 ]
+# nopycln: file

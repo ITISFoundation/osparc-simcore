@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from asyncio import CancelledError
 from contextlib import suppress
 from functools import wraps
 from typing import Any, Callable, Coroutine
@@ -15,7 +14,7 @@ _DEFAULT_CHECK_INTERVAL_S: float = 0.5
 async def _cancel_task_if_client_disconnected(
     request: Request, task: asyncio.Task, interval: float = _DEFAULT_CHECK_INTERVAL_S
 ) -> None:
-    with suppress(CancelledError):
+    with suppress(asyncio.CancelledError):
         while True:
             if await request.is_disconnected():
                 logger.warning("client %s disconnected!", request.client)
@@ -37,7 +36,7 @@ def cancellable_request(handler: Callable[..., Coroutine[Any, Any, Any]]):
         )
         try:
             return await handler_task
-        except CancelledError:
+        except asyncio.CancelledError:
             logger.warning(
                 "request %s was cancelled by client %s!", request.url, request.client
             )
