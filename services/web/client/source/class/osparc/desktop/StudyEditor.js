@@ -376,7 +376,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (notGood.includes(pipelineId)) {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
-        console.log("Update states");
         if (iterationRefIds) {
           this.__reloadSnapshotsAndIterations();
         }

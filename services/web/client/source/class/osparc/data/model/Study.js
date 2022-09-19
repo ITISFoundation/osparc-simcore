@@ -162,10 +162,19 @@ qx.Class.define("osparc.data.model.Study", {
       init: {}
     },
 
+    // ------ ignore for serializing ------
     state: {
       check: "Object",
       nullable: true,
+      apply: "__applyState",
       event: "changeState"
+    },
+
+    pipelineRunning: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changePipelineRunning"
     },
 
     readOnly: {
@@ -174,11 +183,13 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeReadOnly",
       init: true
     }
+    // ------ ignore for serializing ------
   },
 
   statics: {
     IgnoreSerializationProps: [
       "state",
+      "pipelineRunning",
       "readOnly"
     ],
 
@@ -407,18 +418,6 @@ qx.Class.define("osparc.data.model.Study", {
       return overallProgress/nCompNodes;
     },
 
-    getPipelineState: function() {
-      if (this.getState() && "state" in this.getState()) {
-        return this.getState()["state"]["value"];
-      }
-      return null;
-    },
-
-    isPipelineRunning: function() {
-      const pipelineState = this.getPipelineState();
-      return this.self().isRunning(pipelineState);
-    },
-
     isLocked: function() {
       if (this.getState() && "locked" in this.getState()) {
         return this.getState()["locked"]["value"];
@@ -440,6 +439,13 @@ qx.Class.define("osparc.data.model.Study", {
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);
+      }
+    },
+
+    __applyState: function(state) {
+      if ("state" in state) {
+        const pipelineState = state["state"]["value"];
+        this.setPipelineRunning(this.self().isRunning(pipelineState));
       }
     },
 

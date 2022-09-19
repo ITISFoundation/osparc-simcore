@@ -539,12 +539,9 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __applyPropsForm: function() {
-      const checkIsPipelineRunning = () => {
-        const isPipelineRunning = this.getStudy().isPipelineRunning();
-        this.getPropsForm().setEnabled(!isPipelineRunning);
-      };
-      this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
-      checkIsPipelineRunning();
+      this.getStudy().bind("pipelineRunning", this.getPropsForm(), "enabled", {
+        converter: isPipelineRunning => !(isPipelineRunning === true)
+      });
     },
 
     /**
