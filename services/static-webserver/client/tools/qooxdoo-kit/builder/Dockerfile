@@ -47,3 +47,33 @@ RUN node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' &&
   --set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" && \
   ls -la build-output
 # -> /project/build-output
+
+
+FROM joseluisq/static-web-server:1.16.0-alpine as server-base
+
+LABEL maintainer=neagu@itis.swiss
+
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+ENV SC_USER_ID=8004 \
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
+
+RUN adduser -D -u ${SC_USER_ID} -s /bin/sh -h /home/${SC_USER_NAME} ${SC_USER_NAME}
+
+# changing ownership of static-web-server files
+RUN chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /entrypoint.sh && \
+  chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /usr/local/bin/static-web-server && \
+  chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /public
+
+
+USER ${SC_USER_NAME}
+
+FROM server-base as production
+# front-end client last we copy the client application directly inside
+COPY --from=build-client --chown=${SC_USER_NAME}:${SC_USER_NAME} \
+  /project/build-output "/static-content"
+ENV SC_BUILD_TARGET production
+
+FROM server-base as development
+ENV SC_BUILD_TARGET development
