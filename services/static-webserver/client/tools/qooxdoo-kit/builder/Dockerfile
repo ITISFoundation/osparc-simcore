@@ -1,7 +1,7 @@
 #
 # Compiles client's source code within an image based in qooxdoo-kit
 #
-# Note: context at osparc-simcore/services/web/client expected
+# Note: context at osparc-simcore/services/static-webserver/client expected
 #
 ARG tag
 FROM itisfoundation/qooxdoo-kit:${tag} as touch
