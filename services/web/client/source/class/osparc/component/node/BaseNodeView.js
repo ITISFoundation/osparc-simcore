@@ -279,19 +279,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           "pointer-events": enable ? "auto" : "none"
         });
       }
-      const showInputs = () => this.showPreparingInputs();
       if (enable) {
-        console.log("remove listener", this.getNode().getLabel());
-        this._iFrameLayout.removeListener("tap", showInputs);
-        let tries = 0;
-        while (this._iFrameLayout.hasListener("tap") && (tries < 3)) {
-          console.log("remove listener", tries, this.getNode().getLabel());
-          this._iFrameLayout.removeListener("tap", showInputs);
-          tries--;
+        if ("tapListenerId" in this._iFrameLayout) {
+          this._iFrameLayout.removeListenerById(this._iFrameLayout.tapListenerId);
         }
       } else if (!this._iFrameLayout.hasListener("tap")) {
-        console.log("add listener", this.getNode().getLabel());
-        this._iFrameLayout.addListener("tap", showInputs);
+        const tapListenerId = this._iFrameLayout.addListener("tap", () => this.showPreparingInputs());
+        this._iFrameLayout.tapListenerId = tapListenerId;
       }
     },
 
