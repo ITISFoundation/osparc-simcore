@@ -514,15 +514,19 @@ qx.Class.define("osparc.data.model.Node", {
           this.startDynamicService();
         })
         .catch(err => {
-          const errorMsg = "Error when starting " + key + ":" + version + ": " + err.getTarget().getResponse()["error"];
+          let errorMsg = "Error when starting " + key + ":" + version;
+          this.getStatus().setInteractive("failed");
+          if ("status" in err && err.status === 406) {
+            errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
+            this.getStatus().setInteractive("deprecated");
+          }
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg: errorMsg,
             level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          this.getStatus().setInteractive("failed");
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr(errorMsg), "ERROR");
         });
     },
 
@@ -1178,6 +1182,8 @@ qx.Class.define("osparc.data.model.Node", {
           let errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
           if ("status" in err && err.status === 406) {
             errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
+            this.getStatus().setInteractive("deprecated");
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1186,9 +1192,9 @@ qx.Class.define("osparc.data.model.Node", {
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           if ("status" in err && err.status === 406) {
-            this.getStatus().setInteractive("deprecated");
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr(errorMsg), "ERROR");
-          } else if (this.__unresponsiveRetries > 0) {
+            return;
+          }
+          if (this.__unresponsiveRetries > 0) {
             const retryMsg = `Retrying (${this.__unresponsiveRetries})`;
             const retryMsgData = {
               nodeId: this.getNodeId(),
