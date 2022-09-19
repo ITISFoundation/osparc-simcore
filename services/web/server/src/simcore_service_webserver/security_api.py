@@ -1,7 +1,6 @@
 """ API for security subsystem.
 
 """
-# pylint: disable=assignment-from-no-return
 import logging
 
 import passlib.hash
@@ -14,27 +13,11 @@ from aiohttp_security.api import (
     is_anonymous,
     remember,
 )
-from aiopg.sa import Engine
 
-from .db_models import UserStatus, users
 from .security_authorization import AuthorizationPolicy, RoleBasedAccessModel
 from .security_roles import UserRole
 
 log = logging.getLogger(__name__)
-
-
-async def check_credentials(engine: Engine, email: str, password: str) -> bool:
-    async with engine.acquire() as conn:
-        query = users.select().where(
-            (users.c.email == email)
-            & (users.c.status != UserStatus.BANNED)
-            & (users.c.status != UserStatus.EXPIRED)
-        )
-        ret = await conn.execute(query)
-        user = await ret.fetchone()
-        if user is not None:
-            return check_password(password, user["password_hash"])
-    return False
 
 
 def encrypt_password(password: str) -> str:
@@ -55,14 +38,15 @@ def clean_auth_policy_cache(app: web.Application) -> None:
     autz_policy.timed_cache.clear()
 
 
-__all__ = (
-    "encrypt_password",
-    "check_credentials",
+__all__: tuple[str, ...] = (
     "authorized_userid",
-    "forget",
-    "remember",
-    "is_anonymous",
     "check_permission",
+    "encrypt_password",
+    "forget",
     "get_access_model",
+    "is_anonymous",
+    "remember",
     "UserRole",
 )
+
+# nopycln: file

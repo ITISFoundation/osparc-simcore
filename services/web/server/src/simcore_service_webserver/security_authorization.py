@@ -1,20 +1,28 @@
 import logging
-from typing import Optional, Union
+from typing import Optional, TypedDict, Union
 
 import attr
+import sqlalchemy as sa
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
 from aiopg.sa import Engine
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import ResultProxy
 from expiringdict import ExpiringDict
+from models_library.basic_types import IdInt
 from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.models.users import UserRole
 from tenacity import retry
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access
 
 log = logging.getLogger(__name__)
+
+
+class _UserIdentity(TypedDict, total=True):
+    id: IdInt
+    role: UserRole
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -36,22 +44,26 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self.app[APP_DB_ENGINE_KEY]
 
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-    async def _pg_query_user(self, identity: str) -> Optional[RowProxy]:
+    async def _pg_query_user(self, identity: str) -> Optional[_UserIdentity]:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        row = self.timed_cache.get(identity)
-        if row is None:
-            query = users.select().where(
-                (users.c.email == identity)
-                & (users.c.status != UserStatus.BANNED)
-                & (users.c.status != UserStatus.EXPIRED)
-            )
+        user: Optional[_UserIdentity] = self.timed_cache.get(identity)
+        if user is None:
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
-                res: ResultProxy = await conn.execute(query)
-                row: Optional[RowProxy] = await res.fetchone()
+                result: ResultProxy = await conn.execute(
+                    sa.select([users.c.id, users.c.role]).where(
+                        (users.c.email == identity)
+                        & (users.c.status != UserStatus.BANNED)
+                        & (users.c.status != UserStatus.EXPIRED)
+                    )
+                )
+                row = await result.fetchone()
             if row is not None:
-                self.timed_cache[identity] = row
-        return row
+                assert row["id"]  # nosec
+                assert row["role"]  # nosec
+                self.timed_cache[identity] = dict(row.items())
+
+        return user
 
     async def authorized_userid(self, identity: str) -> Optional[int]:
         """Retrieve authorized user id.
@@ -60,7 +72,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         or "None" if no user exists related to the identity.
         """
         # TODO: why users.c.user_login_key!=users.c.email
-        user = await self._pg_query_user(identity)
+        user: Optional[_UserIdentity] = await self._pg_query_user(identity)
         return user["id"] if user else None
 
     async def permits(
@@ -78,9 +90,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         if identity is None or permission is None:
             log.debug(
-                "Invalid indentity [%s] of permission [%s]. Denying access.",
-                identity,
-                permission,
+                "Invalid %s of %s. Denying access.",
+                f"{identity=}",
+                f"{permission=}",
             )
             return False
 
