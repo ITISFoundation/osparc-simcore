@@ -80,10 +80,11 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--cov-report=xml \
 		--cov=simcore_sdk \
 		--durations=10 \
+		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
 		-m "not heavy_load" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
 		$(CURDIR)/tests/integration
 
 tests: tests-unit tests-integration ## runs all tests
