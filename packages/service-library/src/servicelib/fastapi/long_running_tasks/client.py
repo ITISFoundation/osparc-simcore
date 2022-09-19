@@ -26,3 +26,4 @@ __all__: tuple[str, ...] = (
     "TaskId",
     "TaskResult",
 )
+# nopycln: file

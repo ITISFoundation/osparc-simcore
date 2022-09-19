@@ -143,7 +143,7 @@ def retry_pg_api(func):
     return wrapper
 
 
-__all__ = [
+__all__ = (
     "DBAPIError",
     "PostgresRetryPolicyUponOperation",
-]
+)

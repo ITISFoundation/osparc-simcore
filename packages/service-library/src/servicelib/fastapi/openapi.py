@@ -2,7 +2,6 @@
 """
 
 import types
-from types import FunctionType
 from typing import Any
 
 from fastapi.applications import FastAPI
@@ -54,7 +53,7 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
     """
     for route in router.routes:
         if isinstance(route, APIRoute):
-            assert isinstance(route.endpoint, FunctionType)  # nosec
+            assert isinstance(route.endpoint, types.FunctionType)  # nosec
             route.operation_id = (
                 f"{operation_id_prefix}._{route.endpoint.__name__}_handler"
             )

@@ -5,9 +5,8 @@ Revises: 16ee7d73b9cc
 Create Date: 2020-04-22 13:42:06.572011+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "64614dc0fada"
@@ -128,7 +127,7 @@ BEGIN
         INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
-        -- set everyone goup        
+        -- set everyone goup
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
