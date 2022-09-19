@@ -514,10 +514,10 @@ qx.Class.define("osparc.data.model.Node", {
           this.startDynamicService();
         })
         .catch(err => {
-          let errorMsg = "Error when starting " + key + ":" + version;
+          let errorMsg = this.tr("Error when starting ") + key + ":" + version;
           this.getStatus().setInteractive("failed");
           if ("status" in err && err.status === 406) {
-            errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
+            errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is deprecated");
             this.getStatus().setInteractive("deprecated");
           }
           const errorMsgData = {
@@ -526,7 +526,7 @@ qx.Class.define("osparc.data.model.Node", {
             level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr(errorMsg), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         });
     },
 
@@ -618,7 +618,7 @@ qx.Class.define("osparc.data.model.Node", {
         const data = this.__settingsForm.getData();
         form.setData(data);
       }, this);
-      propsForm.addListener("linkFieldModified", e => {
+      propsForm.addListener("linkFieldModified", e => {this.tr(
         const linkFieldModified = e.getData();
         const {
           portId,
