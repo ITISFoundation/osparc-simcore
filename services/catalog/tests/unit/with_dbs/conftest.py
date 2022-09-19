@@ -7,7 +7,7 @@ import itertools
 import random
 from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, Optional
 
 import pytest
 import respx

@@ -618,7 +618,7 @@ qx.Class.define("osparc.data.model.Node", {
         const data = this.__settingsForm.getData();
         form.setData(data);
       }, this);
-      propsForm.addListener("linkFieldModified", e => {this.tr(
+      propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
         const {
           portId,
