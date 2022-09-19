@@ -115,8 +115,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
             converter: runningStatus => [
               "PUBLISHED",
               "PENDING",
-              "STARTED",
-              "STARTING"
+              "STARTED"
             ].includes(runningStatus)
           });
 

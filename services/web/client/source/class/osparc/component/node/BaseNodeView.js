@@ -281,8 +281,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
       const showInputs = () => this.showPreparingInputs();
       if (enable) {
+        console.log("remove listener", this.getNode().getLabel());
         this._iFrameLayout.removeListener("tap", showInputs);
+        let tries = 0;
+        while (this._iFrameLayout.hasListener("tap") && (tries < 3)) {
+          console.log("remove listener", tries, this.getNode().getLabel());
+          this._iFrameLayout.removeListener("tap", showInputs);
+          tries--;
+        }
       } else if (!this._iFrameLayout.hasListener("tap")) {
+        console.log("add listener", this.getNode().getLabel());
         this._iFrameLayout.addListener("tap", showInputs);
       }
     },
@@ -328,7 +336,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const updateProgress = () => {
           const running = node.getStatus().getRunning();
           const progress = node.getStatus().getProgress();
-          if (["PUBLISHED", "PENDING", "STARTING"].includes(running) ||
+          if (["PUBLISHED", "PENDING"].includes(running) ||
             (["STARTED"].includes(running) && progress === 0)) {
             this.__progressBar.setBackgroundColor("busy-orange");
             this.__progressBar.getContentElement().setStyles({

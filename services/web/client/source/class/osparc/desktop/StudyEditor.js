@@ -376,15 +376,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (notGood.includes(pipelineId)) {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
+        console.log("Update states");
         if (iterationRefIds) {
           this.__reloadSnapshotsAndIterations();
         }
         this.__getStudyLogger().info(null, "Pipeline started");
-        /* If no projectStateUpdated comes in 60 seconds, client must
+        /* If no projectStateUpdated comes in 5 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
           osparc.store.Store.getInstance().getStudyState(pipelineId);
-        }, 60000);
+        }, 5000);
         const socket = osparc.wrapper.WebSocket.getInstance();
         socket.getSocket().once("projectStateUpdated", jsonStr => {
           const study = JSON.parse(jsonStr);
