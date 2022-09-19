@@ -14,6 +14,7 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import users_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
+from .users_bg_tasks import run_background_task_to_monitor_expiration_trial_accounts
 
 logger = logging.getLogger(__name__)
 
@@ -36,3 +37,8 @@ def setup_users(app: web.Application):
         strict=True,
     )
     app.router.add_routes(routes)
+
+    # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
+    # not a huge deal but perhaps this task could be registered as a GC task and
+    # run only when that service is active
+    app.cleanup_ctx.append(run_background_task_to_monitor_expiration_trial_accounts)

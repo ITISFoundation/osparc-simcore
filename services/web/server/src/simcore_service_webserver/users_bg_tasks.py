@@ -47,9 +47,7 @@ async def update_expired_users(engine: Engine) -> list[IdInt]:
     wait=wait_exponential(min=5 * _SEC),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
-async def _update_expired_users_periodically(
-    engine: Engine, repeat: float = 0.5 * _DAY
-):
+async def _update_expired_users_periodically(engine: Engine, wait: float = 0.5 * _DAY):
     """Periodically check expiration dates and updates user status
 
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
@@ -59,11 +57,13 @@ async def _update_expired_users_periodically(
         if updated:
             for user_id in updated:
                 logger.info("User account with %s expired", f"{user_id=}")
+        else:
+            logger.info("No users expired")
 
-        asyncio.sleep(repeat)
+        asyncio.sleep(wait)
 
 
-async def run_bg_task_to_monitor_expiration_trial_accounts(
+async def run_background_task_to_monitor_expiration_trial_accounts(
     app: web.Application,
 ):
     engine: Engine = app[APP_DB_ENGINE_KEY]
