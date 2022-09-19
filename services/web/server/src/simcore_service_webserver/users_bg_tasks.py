@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
+from typing import AsyncIterator
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -35,12 +36,12 @@ async def update_expired_users(engine: Engine) -> list[IdInt]:
             .where(
                 (users.c.status == UserStatus.ACTIVE)
                 & (users.c.expires_at != None)
-                & (users.c.expires_at > now)
+                & (users.c.expires_at < now)
             )
             .returning(users.c.id)
         )
-    updated_userids: list[IdInt] = await result.fetchall()
-    return updated_userids
+        updated_userids: list[IdInt] = await result.fetchall()
+        return updated_userids
 
 
 @retry(
@@ -65,7 +66,7 @@ async def _update_expired_users_periodically(engine: Engine, wait: float = 0.5 *
 
 async def run_background_task_to_monitor_expiration_trial_accounts(
     app: web.Application,
-):
+) -> AsyncIterator[None]:
     engine: Engine = app[APP_DB_ENGINE_KEY]
     assert engine  # nosec
 
