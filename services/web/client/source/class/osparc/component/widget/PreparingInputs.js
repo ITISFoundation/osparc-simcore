@@ -112,7 +112,6 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
               "PENDING",
               "STARTED"
             ].includes(nodeRunningStatus);
-            console.log("fetching", fetching);
             rerunBtn.setFetching(fetching);
             const rerunnable = [
               "FAILED",
@@ -120,8 +119,6 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
               "SUCCESS"
             ].includes(nodeRunningStatus);
             const isPipelineRunning = node.getStudy().isPipelineRunning();
-            console.log("rerunnable", rerunnable);
-            console.log("isPipelineRunning", !(isPipelineRunning === true));
             rerunBtn.setEnabled(rerunnable && !(isPipelineRunning === true));
           };
           node.getStatus().addListener("changeRunning", () => checkRerunStatus());
