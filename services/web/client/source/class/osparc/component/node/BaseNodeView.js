@@ -71,7 +71,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   events: {
-    "startPartialPipeline": "qx.event.type.Data"
+    "startPartialPipeline": "qx.event.type.Data",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
@@ -316,9 +317,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__nodeStatusUI.setNode(node);
       }
 
-      this.__preparingInputs = new osparc.component.widget.PreparingInputs();
+      this.__preparingInputs = new osparc.component.widget.PreparingInputs(node.getStudy());
       this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
       this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
+      this.__preparingInputs.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
       this.__dependeciesChanged();
 
       this._mainView.removeAll();

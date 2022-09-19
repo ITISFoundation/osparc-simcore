@@ -60,6 +60,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const partialPipeline = e.getData();
       this.__startPipeline(partialPipeline);
     }, this);
+    slideshowView.addListener("stopPipeline", this.__stopPipeline, this);
 
     [
       workbenchView.getStartStopButtons()

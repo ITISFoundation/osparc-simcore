@@ -111,6 +111,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   events: {
     "slidesStop": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Data",
+    "stopPipeline": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event"
@@ -304,6 +305,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__nodeView.setUpstreamDependencies(upstreamDependencies);
         if (!this.__nodeView.hasListener("startPartialPipeline")) {
           this.__nodeView.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
+        }
+        if (!this.__nodeView.hasListener("stopPipeline")) {
+          this.__nodeView.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
         }
 
         const notReadyDependencies = this.__getNotReadyDependencies(node);
