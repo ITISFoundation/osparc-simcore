@@ -84,7 +84,7 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
 		--verbose \
 		-m "not heavy_load" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		$(CURDIR)/tests/integration
 
 tests: tests-unit tests-integration ## runs all tests
