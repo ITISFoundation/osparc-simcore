@@ -71,4 +71,4 @@ async def test_delete_file_entrypoint(
         headers=pennsieve_api_headers,
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    assert response.num_bytes_donwloaded == 0
+    assert response.num_bytes_downloaded == 0
