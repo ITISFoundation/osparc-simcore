@@ -132,19 +132,11 @@ endef
 rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
-	# Compiling front-end
-	$(MAKE_C) services/static-webserver/client compile
-
 	# Building services
-	$(_docker_compose_build)
 else
-ifeq ($(findstring static-webserver,$(target)),static-webserver)
-	# Compiling front-end
-	$(MAKE_C) services/static-webserver/client clean compile
-endif
 	# Building service $(target)
-	$(_docker_compose_build)
 endif
+	$(_docker_compose_build)
 
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
