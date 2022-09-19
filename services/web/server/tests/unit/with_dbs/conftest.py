@@ -30,6 +30,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -254,7 +255,7 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(mocker) -> dict[str, MagicMock]:
+async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     mock = {}
 
     #
