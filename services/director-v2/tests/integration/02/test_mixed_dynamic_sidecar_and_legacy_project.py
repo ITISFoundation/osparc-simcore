@@ -37,8 +37,6 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 
-# FIXTURES ----------------------------------------------------------------------------------
-
 pytest_simcore_core_services_selection = [
     "catalog",
     "director",
@@ -237,9 +235,6 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.periodic_task_result",
         side_effect=_mocked_context_manger,
     )
-
-
-# TESTS ----------------------------------------------------------------------------------------
 
 
 async def test_legacy_and_dynamic_sidecar_run(

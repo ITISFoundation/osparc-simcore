@@ -25,8 +25,6 @@ from simcore_service_dynamic_sidecar.modules.directory_watcher import (
 
 TICK_INTERVAL = 0.001
 
-# FIXTURES
-
 
 @pytest.fixture
 def patch_directory_watcher(monkeypatch: MonkeyPatch) -> Iterator[AsyncMock]:
@@ -56,9 +54,6 @@ async def _generate_event_burst(tmp_path: Path, subfolder: str = None) -> None:
     file_path_2.unlink()
     # let fs events trigger
     await asyncio.sleep(TICK_INTERVAL)
-
-
-# TESTS
 
 
 async def test_run_observer(

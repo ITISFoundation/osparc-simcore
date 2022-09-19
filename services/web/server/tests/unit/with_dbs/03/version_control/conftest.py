@@ -31,11 +31,6 @@ from tenacity import AsyncRetrying, stop_after_delay
 
 ProjectDict = dict[str, Any]
 
-# HELPERS
-
-
-# FIXTURES
-
 
 @pytest.fixture
 def user_role() -> UserRole:

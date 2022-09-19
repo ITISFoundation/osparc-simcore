@@ -96,9 +96,6 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
     }
 
 
-# TESTS ---------------------------------------------------------------------------
-
-
 async def test_2fa_code_operations(
     client: TestClient, mocked_twilio_service: dict[str, Mock]
 ):

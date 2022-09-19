@@ -13,8 +13,6 @@ from simcore_service_webserver import director_v2_core_dynamic_services
 from simcore_service_webserver.application_settings import setup_settings
 from yarl import URL
 
-# FIXTURES
-
 
 @pytest.fixture
 def app(mock_env_devel_environment: dict[str, str]) -> Application:
@@ -31,9 +29,6 @@ def mocked_director_v2_request(mocker: MockerFixture) -> Iterable[MagicMock]:
 @pytest.fixture
 def node_uuid(faker: Faker) -> str:
     return faker.uuid4()
-
-
-# TESTS
 
 
 @pytest.mark.parametrize("can_save", [True, False])

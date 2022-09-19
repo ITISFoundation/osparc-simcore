@@ -48,9 +48,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
-# FIXTURES ---------------------------------------
-
-
 @pytest.fixture(scope="function")
 def mock_env(
     monkeypatch: MonkeyPatch,
@@ -129,9 +126,6 @@ def fake_workbench_computational_pipeline_details_not_started(
         node_state.modified = True
         node_state.current_status = RunningState.NOT_STARTED
     return completed_pipeline_details
-
-
-# TESTS ---------------------------------------
 
 
 @pytest.mark.parametrize(

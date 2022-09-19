@@ -20,8 +20,6 @@ pytest_simcore_ops_services_selection = [
     "adminer",
 ]
 
-# FIXTURES
-
 
 @pytest.fixture()
 def minimal_configuration(
@@ -84,9 +82,6 @@ def mock_save_service_state_as_failing(mocker: MockerFixture) -> None:
 @pytest.fixture
 def node_id(faker: Faker) -> NodeID:
     return faker.uuid4(cast_to=None)
-
-
-# TESTS
 
 
 def test_project_save_state_ok(

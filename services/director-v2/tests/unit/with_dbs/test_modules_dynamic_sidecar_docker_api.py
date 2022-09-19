@@ -61,7 +61,7 @@ MAX_INT64 = sys.maxsize
 
 logger = logging.getLogger(__name__)
 
-# FIXTURES
+
 pytest_simcore_core_services_selection = [
     "postgres",
 ]
@@ -382,9 +382,6 @@ async def mock_service(
     yield service_name
 
     await docker.services.delete(service_data["ID"])
-
-
-# TESTS
 
 
 @pytest.mark.parametrize(

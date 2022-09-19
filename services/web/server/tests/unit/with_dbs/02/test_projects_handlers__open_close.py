@@ -45,9 +45,6 @@ RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
 
 
-# HELPERS -----------------------------------------------------------------------------------------
-
-
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
@@ -204,7 +201,6 @@ async def _delete_project(client, project: dict) -> ClientResponse:
     return resp
 
 
-# TESTS ----------------------------------------------------------------------------------------------------
 @pytest.mark.parametrize(*standard_role_response())
 @pytest.mark.parametrize(
     "share_rights",

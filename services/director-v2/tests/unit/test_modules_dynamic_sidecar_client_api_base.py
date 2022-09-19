@@ -49,9 +49,6 @@ def _assert_messages(messages: list[str], retry_count: int) -> None:
         unexpected_counter += 1
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def thick_client() -> FakeThickClient:
     return FakeThickClient(request_max_retries=1)
@@ -60,9 +57,6 @@ def thick_client() -> FakeThickClient:
 @pytest.fixture
 def test_url() -> AnyHttpUrl:
     return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
-
-
-# TESTS
 
 
 async def test_base_with_async_context_manager(test_url: AnyHttpUrl) -> None:

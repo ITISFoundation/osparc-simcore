@@ -4,7 +4,6 @@
 
 import sys
 from pathlib import Path
-from typing import Tuple
 
 import pytest
 
@@ -64,10 +63,7 @@ def metadata_file(project_slug_dir: Path) -> Path:
     return metadata_file
 
 
-# HELPERS -----------
-
-
-def get_expected_files(docker_name: str) -> Tuple[str, ...]:
+def get_expected_files(docker_name: str) -> tuple[str, ...]:
     return (
         ".cookiecutterrc",
         ".dockerignore",

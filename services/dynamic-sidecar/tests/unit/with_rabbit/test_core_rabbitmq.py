@@ -26,8 +26,6 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-# FIXTURE
-
 
 @pytest.fixture
 def mock_environment(

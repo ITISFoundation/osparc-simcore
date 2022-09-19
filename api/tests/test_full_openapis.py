@@ -5,7 +5,6 @@ from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 from utils import is_openapi_schema, list_files_in_api_specs, load_specs
 
-# TESTS ----------------------------------------------------------
 # NOTE: parametrizing tests per file makes more visible which file failed
 # NOTE: to debug use the wildcard and select problematic file, e.g. list_files_in_api_specs("*log_message.y*ml"))
 

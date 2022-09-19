@@ -35,8 +35,6 @@ from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
-# HELPERS --------------------------------------------------------------------------------------
-
 
 def camel_to_snake(name):
     name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
@@ -77,9 +75,6 @@ def datcore_store_id() -> LocationID:
 
 def e_tag() -> str:
     return "1212132546546321-1"
-
-
-# FIXTURES --------------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -236,9 +231,6 @@ class PortParams(NamedTuple):
     new_value: Union[int, float, bool, str, Path, None]
     exp_new_value: Union[int, float, bool, str, Path, FileLink, None]
     exp_new_get_value: Union[int, float, bool, str, Path, None]
-
-
-# TESTS --------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(

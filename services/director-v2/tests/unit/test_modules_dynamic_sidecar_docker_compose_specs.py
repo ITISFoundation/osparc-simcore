@@ -15,8 +15,6 @@ from pydantic import parse_obj_as
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
-# TESTS
-
 
 def test_parse_and_export_of_compose_environment_section():
     # sample from https://docs.docker.com/compose/compose-file/compose-file-v3/#environment

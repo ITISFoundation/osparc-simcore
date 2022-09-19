@@ -16,8 +16,6 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
     stop_log_fetching,
 )
 
-# FIXTURES
-
 
 @pytest.fixture
 def mock_environment(monkeypatch: MonkeyPatch, mock_environment: None) -> None:
@@ -39,9 +37,6 @@ async def container_name() -> AsyncIterable[str]:
         yield container_inspect["Name"][1:]
 
         await container.delete()
-
-
-# TESTS
 
 
 async def test_background_log_fetcher(

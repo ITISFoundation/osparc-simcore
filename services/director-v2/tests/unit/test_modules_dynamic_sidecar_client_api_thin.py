@@ -33,9 +33,6 @@ def assert_responses(mocked: Response, result: Optional[Response]) -> None:
     assert mocked.text == result.text
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
     monkeypatch.setenv("S3_ENDPOINT", "")
@@ -83,9 +80,6 @@ def mock_request(
         ).mock(return_value=return_value, side_effect=side_effect)
 
     return request_mock
-
-
-# TESTS
 
 
 async def test_get_health(

@@ -9,8 +9,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.cli import main
 from typer.testing import CliRunner
 
-# FIXTURES
-
 
 @pytest.fixture
 def cli_runner(mock_environment: EnvVarsDict) -> CliRunner:
@@ -36,9 +34,6 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         "simcore_service_dynamic_sidecar.modules.long_running_tasks.nodeports",
         spec=True,
     )
-
-
-# TESTS
 
 
 def test_list_state_dirs(

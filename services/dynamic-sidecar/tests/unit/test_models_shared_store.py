@@ -17,8 +17,6 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
     SharedStore,
 )
 
-# FIXTURES
-
 
 @pytest.fixture
 def trigger_setup_shutdown_events(
@@ -41,9 +39,6 @@ def fake_compose_spec(faker: Faker) -> str:
 @pytest.fixture
 def mock_docker_compose(mocker: MockerFixture) -> None:
     mocker.patch.object(application, "docker_compose_down")
-
-
-# TESTS
 
 
 @dataclass

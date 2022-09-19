@@ -18,12 +18,10 @@ from typing import Iterable, Iterator, Optional
 
 import pytest
 from faker import Faker
-from servicelib.archiving_utils import archive_dir, unarchive_dir, ArchiveError
 from servicelib import archiving_utils
+from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
 
 from .test_utils import print_tree
-
-# FIXTURES
 
 
 @pytest.fixture
@@ -253,9 +251,6 @@ def assert_unarchived_paths(
     if unsupported_replace:
         expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
-
-
-# TESTS
 
 
 @pytest.mark.skip(reason="DEV:only for manual tessting")
@@ -541,6 +536,5 @@ async def test_unarchive_dir_raises_error(
         compress=True,
     )
 
-    with pytest.raises(ArchiveError) as err_info:
+    with pytest.raises(ArchiveError, match=r"^.*raised as requested.*$"):
         await archiving_utils.unarchive_dir(archive_file, temp_dir_two)
-    assert "raised as requested" in f"{err_info.value}"

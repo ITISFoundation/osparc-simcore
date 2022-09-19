@@ -17,8 +17,6 @@ from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
-
-# FIXTURES
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_director_v2.core.settings import AppSettings
@@ -253,9 +251,6 @@ async def manually_trigger_scheduler(
         await apply_observation_cycle(minimal_app, scheduler, scheduler_data)
 
     return _triggerer
-
-
-# TESTS
 
 
 async def test_scheduler_add_remove(

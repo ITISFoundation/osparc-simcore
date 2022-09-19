@@ -61,8 +61,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = []
 
 
-# HELPERS ------------------------------------------------------------------------------------
-
 logger = logging.getLogger(__name__)
 
 RabbitMessage = dict[str, Any]
@@ -150,9 +148,6 @@ async def _publish_in_rabbit(
     )
 
     return (log_messages, progress_messages, instrumentation_messages)
-
-
-# FIXTURES ------------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -290,7 +285,6 @@ def user_role() -> UserRole:
     return UserRole.USER
 
 
-# TESTS ------------------------------------------------------------------------------------
 #
 #   publisher ---> (rabbitMQ)  ---> webserver --- (socketio) ---> front-end pages
 #

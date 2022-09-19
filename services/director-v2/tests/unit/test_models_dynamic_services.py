@@ -2,7 +2,6 @@
 import random
 import string
 from collections import namedtuple
-from typing import Dict, List, Set
 
 import pytest
 from simcore_service_director_v2.models.schemas.dynamic_services import (
@@ -35,7 +34,7 @@ CNT_STS_RUNNING = "running"
 CNT_STS_REMOVING = "removing"
 CNT_STS_EXITED = "exited"
 
-ALL_CONTAINER_STATUSES: Set[str] = {
+ALL_CONTAINER_STATUSES: set[str] = {
     CNT_STS_RESTARTING,
     CNT_STS_DEAD,
     CNT_STS_PAUSED,
@@ -49,8 +48,6 @@ RANDOM_STRING_DATASET = string.ascii_letters + string.digits
 
 ExpectedStatus = namedtuple("ExpectedStatus", "containers_statuses, expected_state")
 
-# FIXTURES
-
 
 @pytest.fixture
 def service_message() -> str:
@@ -63,7 +60,7 @@ def service_state() -> ServiceState:
 
 
 @pytest.fixture
-def mock_containers_statuses() -> Dict[str, Dict[str, str]]:
+def mock_containers_statuses() -> dict[str, dict[str, str]]:
     return {
         "container_id_1": {"Status": "created"},
         "container_id_2": {"Status": "dead", "Error": "something"},
@@ -78,7 +75,7 @@ def _random_string(length: int = 4) -> str:
     return "".join(random.choices(RANDOM_STRING_DATASET, k=length))
 
 
-def _make_status_dict(status: str) -> Dict[str, str]:
+def _make_status_dict(status: str) -> dict[str, str]:
     assert status in ALL_CONTAINER_STATUSES
     status_dict = {"Status": status}
     if status in CONTAINER_STATUSES_FAILED:
@@ -86,15 +83,15 @@ def _make_status_dict(status: str) -> Dict[str, str]:
     return status_dict
 
 
-def containers_statues(*args: str) -> Dict[str, Dict[str, str]]:
+def containers_statues(*args: str) -> dict[str, dict[str, str]]:
     return {_random_string(): _make_status_dict(x) for x in args}
 
 
-def _all_states() -> Set[ServiceState]:
-    return set(x for x in ServiceState)
+def _all_states() -> set[ServiceState]:
+    return set(ServiceState)
 
 
-SAMPLE_EXPECTED_STATUSES: List[ExpectedStatus] = [
+SAMPLE_EXPECTED_STATUSES: list[ExpectedStatus] = [
     ExpectedStatus(
         containers_statuses=containers_statues(
             CNT_STS_RESTARTING, CNT_STS_RUNNING, CNT_STS_EXITED
@@ -117,7 +114,7 @@ SAMPLE_EXPECTED_STATUSES: List[ExpectedStatus] = [
     ),
 ]
 
-# TESTS
+
 def test_running_service_details_make_status(
     scheduler_data: SchedulerData, service_message: str, service_state: ServiceState
 ):
@@ -151,8 +148,8 @@ def test_running_service_details_make_status(
 
 
 def test_all_states_are_mapped():
-    service_state_defined: Set[ServiceState] = _all_states()
-    comparison_mapped: Set[ServiceState] = set(ServiceState.comparison_order().keys())
+    service_state_defined: set[ServiceState] = _all_states()
+    comparison_mapped: set[ServiceState] = set(ServiceState.comparison_order().keys())
     assert (
         service_state_defined == comparison_mapped
     ), "entries from _COMPARISON_ORDER do not match all states in ServiceState"
@@ -184,7 +181,7 @@ def test_min_service_state_is_lowerst_in_expected_order():
     ids=[x.expected_state.name for x in SAMPLE_EXPECTED_STATUSES],
 )
 def test_extract_containers_minimim_statuses(
-    containers_statuses: Dict[str, Dict[str, str]], expected_state: ServiceState
+    containers_statuses: dict[str, dict[str, str]], expected_state: ServiceState
 ):
     service_state, _ = extract_containers_minimim_statuses(containers_statuses)
     assert service_state == expected_state

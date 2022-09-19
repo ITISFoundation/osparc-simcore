@@ -82,9 +82,6 @@ def access_model() -> RoleBasedAccessModel:
     return rbac
 
 
-# TESTS -------------------------------------------------------------------------
-
-
 def test_unique_permissions():
     # Limit for scalability. Test that unnecessary resources and/or actions are used
     # Enforce reusable permission layouts
@@ -97,7 +94,7 @@ def test_unique_permissions():
         for permission in can:
             assert (
                 permission not in used
-            ), "'%s' in %s is repeated in security_roles.ROLES_PERMISSIONS" % (
+            ), "'{}' in {} is repeated in security_roles.ROLES_PERMISSIONS".format(
                 permission,
                 role,
             )
