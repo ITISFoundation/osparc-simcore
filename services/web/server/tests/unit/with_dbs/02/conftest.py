@@ -16,9 +16,19 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from simcore_service_webserver import catalog
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+) -> dict[str, str]:
+    # NOTE: overrides app_environment
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
+    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
 
 
 @pytest.fixture
