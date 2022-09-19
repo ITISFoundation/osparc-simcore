@@ -5,7 +5,6 @@
 
 import json
 from pathlib import Path
-from typing import Dict
 
 import psycopg2.errors
 import pytest
@@ -20,21 +19,26 @@ from sqlalchemy import func, literal_column
 @pytest.fixture
 def web_client_resource_folder(osparc_simcore_root_dir: Path) -> Path:
     wcrf_path = (
-        osparc_simcore_root_dir / "services" / "web" / "client" / "source" / "resource"
+        osparc_simcore_root_dir
+        / "services"
+        / "static-webserver"
+        / "client"
+        / "source"
+        / "resource"
     )
     assert wcrf_path.exists()
     return wcrf_path
 
 
 @pytest.fixture
-def classifiers_bundle(web_client_resource_folder: Path) -> Dict:
+def classifiers_bundle(web_client_resource_folder: Path) -> dict:
     bundle_path = web_client_resource_folder / "dev" / "classifiers.json"
     assert bundle_path.exists()
     return json.loads(bundle_path.read_text())
 
 
 async def test_operations_on_group_classifiers(
-    pg_engine: Engine, classifiers_bundle: Dict
+    pg_engine: Engine, classifiers_bundle: dict
 ):
     # NOTE: mostly for TDD
     async with pg_engine.acquire() as conn:
