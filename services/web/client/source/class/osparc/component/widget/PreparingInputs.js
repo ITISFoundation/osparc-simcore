@@ -104,20 +104,29 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           });
           rerunBtn.addListener("execute", () => this.fireDataEvent("startPartialPipeline", [node.getNodeId()]), this);
           nodeLayout.add(rerunBtn);
-          node.getStatus().bind("running", rerunBtn, "enabled", {
-            converter: runningStatus => [
-              "FAILED",
-              "ABORTED",
-              "SUCCESS"
-            ].includes(runningStatus)
-          });
-          node.getStatus().bind("running", rerunBtn, "fetching", {
-            converter: runningStatus => [
+
+          const checkRerunStatus = () => {
+            const nodeRunningStatus = node.getStatus().getRunning();
+            const fetching = [
               "PUBLISHED",
               "PENDING",
               "STARTED"
-            ].includes(runningStatus)
-          });
+            ].includes(nodeRunningStatus);
+            console.log("fetching", fetching);
+            rerunBtn.setFetching(fetching);
+            const rerunnable = [
+              "FAILED",
+              "ABORTED",
+              "SUCCESS"
+            ].includes(nodeRunningStatus);
+            const isPipelineRunning = node.getStudy().isPipelineRunning();
+            console.log("rerunnable", rerunnable);
+            console.log("isPipelineRunning", !(isPipelineRunning === true));
+            rerunBtn.setEnabled(rerunnable && !(isPipelineRunning === true));
+          };
+          node.getStatus().addListener("changeRunning", () => checkRerunStatus());
+          node.getStudy().addListener("changePipelineRunning", () => checkRerunStatus());
+          checkRerunStatus();
 
           const statusUI = new osparc.ui.basic.NodeStatusUI(node);
           nodeLayout.add(statusUI);
