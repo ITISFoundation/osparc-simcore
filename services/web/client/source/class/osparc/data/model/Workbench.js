@@ -87,9 +87,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     initWorkbench: function() {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        node.startDynamicService();
-      }
+      nodes.forEach(node => node.startDynamicService());
     },
 
     getUpstreamCompNodes: function(node, recursive = true, upstreamNodes = new Set()) {
