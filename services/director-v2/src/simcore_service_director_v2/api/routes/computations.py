@@ -22,6 +22,7 @@ import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
@@ -134,6 +135,21 @@ async def create_computation(
             )
         )
 
+        if computation.start_pipeline:
+            assert computation.product_name  # nosec
+            if deprecated_tasks := await find_deprecated_tasks(
+                computation.user_id,
+                computation.product_name,
+                [
+                    ServiceKeyVersion(key=node[1]["key"], version=node[1]["version"])
+                    for node in minimal_computational_dag.nodes.data()
+                ],
+                catalog_client,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {deprecated_tasks}",
+                )
         # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
             project.uuid,
@@ -161,17 +177,6 @@ async def create_computation(
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {computation.project_id} has no computational services",
-                )
-            assert computation.product_name  # nosec
-            if deprecated_tasks := await find_deprecated_tasks(
-                computation.user_id,
-                computation.product_name,
-                inserted_comp_tasks,
-                catalog_client,
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                    detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {deprecated_tasks}",
                 )
 
             await scheduler.run_new_pipeline(
