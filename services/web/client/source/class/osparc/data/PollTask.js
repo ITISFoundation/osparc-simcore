@@ -91,6 +91,7 @@ qx.Class.define("osparc.data.PollTask", {
 
   members: {
     __result: null,
+    __aborting: null,
 
     __pollTaskState: function() {
       fetch(this.getStatusHref())
@@ -98,11 +99,17 @@ qx.Class.define("osparc.data.PollTask", {
           if (resp.status === 200) {
             return resp.json();
           }
+          if (this.__aborting) {
+            return null;
+          }
           const errMsg = this.tr("Failed polling status");
           this.fireDataEvent("pollingError", errMsg);
           throw new Error(errMsg);
         })
         .then(data => {
+          if (data === null) {
+            return;
+          }
           const response = data["data"];
           const done = response["done"];
           this.setDone(done);
@@ -141,13 +148,17 @@ qx.Class.define("osparc.data.PollTask", {
     },
 
     abortRequested: function() {
-      fetch(this.getAbortHref(), {
-        method: "DELETE"
-      })
-        .then(() => this.fireEvent("taskAborted"))
-        .catch(err => {
-          throw err;
-        });
+      const abortHref = this.getAbortHref();
+      if (abortHref) {
+        this.__aborting = true;
+        fetch(abortHref, {
+          method: "DELETE"
+        })
+          .then(() => this.fireEvent("taskAborted"))
+          .catch(err => {
+            throw err;
+          });
+      }
     }
   }
 });

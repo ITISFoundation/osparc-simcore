@@ -658,6 +658,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const msg = this.tr("Duplication aborted");
               osparc.component.message.FlashMessenger.logAs(msg, "INFO");
               duplicateTask.stop();
+              this._resourcesContainer.remove(duplicatingStudyCard);
             });
           }
           task.addListener("updateReceived", e => {
