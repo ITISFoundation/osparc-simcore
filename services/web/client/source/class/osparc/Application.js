@@ -434,6 +434,7 @@ qx.Class.define("osparc.Application", {
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
       }
+      osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();
       this.__restart();
     },

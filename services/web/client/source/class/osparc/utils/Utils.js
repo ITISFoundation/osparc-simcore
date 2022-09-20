@@ -715,6 +715,16 @@ qx.Class.define("osparc.utils.Utils", {
         const regex = new RegExp(className.trim(), "g");
         element.setAttribute("class", currentClass.replace(regex, ""));
       }
+    },
+
+    closeHangingWindows: function() {
+      // close windows
+      const children = qx.core.Init.getApplication().getRoot().getChildren();
+      children.forEach(child => {
+        if (child.classname === "osparc.ui.window.Window") {
+          child.close();
+        }
+      });
     }
   }
 });

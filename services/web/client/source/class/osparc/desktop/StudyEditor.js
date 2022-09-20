@@ -621,6 +621,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);
       }
+      osparc.utils.Utils.closeHangingWindows();
     },
 
     /**
