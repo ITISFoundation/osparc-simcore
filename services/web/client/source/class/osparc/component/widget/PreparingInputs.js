@@ -18,28 +18,40 @@
 qx.Class.define("osparc.component.widget.PreparingInputs", {
   extend: qx.ui.core.Widget,
 
-  construct: function(monitoredNodes = []) {
+  construct: function(study) {
     this.base(arguments);
 
     osparc.utils.Utils.setIdToWidget(this, "preparingInputsView");
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const text = this.tr("In order to move to this step, we need to prepare some inputs for you.<br>This might take a while, so enjoy checking the logs down here:");
+    const text = this.tr("In order to move to this step, we need to prepare some inputs for you.<br>Here you can check the logs of the progress:");
     const title = new qx.ui.basic.Label(text).set({
       font: "text-14",
       rich: true
     });
     this._add(title);
 
+    const startStopButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+      marginLeft: 50
+    });
+    const runAllButton = this.__getRunAllButton();
+    startStopButtons.add(runAllButton);
+    const stopButton = this.__getStopButton();
+    startStopButtons.add(stopButton);
+    this._add(startStopButtons);
+
     const list = this.__monitoredNodesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(list);
-    this.setMonitoredNodes(monitoredNodes);
+    this.setMonitoredNodes([]);
 
     const loggerLayout = this.__loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     this._add(loggerLayout, {
       flex: 1
     });
+
+    study.addListener("changePipelineRunning", () => this.__updateRunButtonsStatus(study));
+    this.__updateRunButtonsStatus(study);
   },
 
   properties: {
@@ -52,11 +64,47 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
   },
 
   events: {
-    "changePreparingNodes": "qx.event.type.Data"
+    "changePreparingNodes": "qx.event.type.Data",
+    "startPartialPipeline": "qx.event.type.Data",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
     __monitoredNodesList: null,
+    __runAllButton: null,
+    __stopButton: null,
+
+    __getRunAllButton: function() {
+      const runAllButton = this.__runAllButton = new osparc.ui.form.FetchButton(this.tr("Run all")).set({
+        minWidth: 80,
+        maxWidth: 80,
+        alignX: "center"
+      });
+      runAllButton.addListener("execute", () => {
+        const monitoredNodes = this.getMonitoredNodes();
+        if (monitoredNodes && monitoredNodes.length) {
+          const moniteoredNodesIds = monitoredNodes.map(monitoredNode => monitoredNode.getNodeId());
+          this.fireDataEvent("startPartialPipeline", moniteoredNodesIds);
+        }
+      });
+      return runAllButton;
+    },
+
+    __getStopButton: function() {
+      const stopButton = this.__stopButton = new osparc.ui.form.FetchButton(this.tr("Stop")).set({
+        minWidth: 80,
+        maxWidth: 80,
+        alignX: "center"
+      });
+      stopButton.addListener("execute", () => this.fireEvent("stopPipeline"), this);
+      return stopButton;
+    },
+
+    __updateRunButtonsStatus: function(study) {
+      const isPipelineRunning = study.isPipelineRunning();
+      this.__runAllButton.setFetching(isPipelineRunning);
+      this.__stopButton.setEnabled(isPipelineRunning);
+    },
 
     __applyMonitoredNodes: function(monitoredNodes) {
       monitoredNodes.forEach(monitoredNode => {
@@ -68,6 +116,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
         });
       });
       this.__updateMonitoredNodesList();
+      this.__updatePreparingNodes();
     },
 
     __updateMonitoredNodesList: function() {
@@ -86,6 +135,7 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           const nodeLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
+
           const showLoggerBtn = new qx.ui.form.ToggleButton(this.tr("Logs"));
           showLoggerBtn.node = node;
           nodeLayout.add(showLoggerBtn);
@@ -93,6 +143,35 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
           if (group.getSelection().length === 0) {
             group.setSelection([showLoggerBtn]);
           }
+
+          const rerunBtn = new osparc.ui.form.FetchButton(this.tr("Re-run")).set({
+            minWidth: 80,
+            maxWidth: 80,
+            alignX: "center"
+          });
+          rerunBtn.addListener("execute", () => this.fireDataEvent("startPartialPipeline", [node.getNodeId()]), this);
+          nodeLayout.add(rerunBtn);
+
+          const checkRerunStatus = () => {
+            const nodeRunningStatus = node.getStatus().getRunning();
+            const fetching = [
+              "PUBLISHED",
+              "PENDING",
+              "STARTED"
+            ].includes(nodeRunningStatus);
+            rerunBtn.setFetching(fetching);
+            const rerunnable = [
+              "FAILED",
+              "ABORTED",
+              "SUCCESS"
+            ].includes(nodeRunningStatus);
+            const isPipelineRunning = node.getStudy().isPipelineRunning();
+            rerunBtn.setEnabled(rerunnable && !(isPipelineRunning === true));
+          };
+          node.getStatus().addListener("changeRunning", () => checkRerunStatus());
+          node.getStudy().addListener("changePipelineRunning", () => checkRerunStatus());
+          checkRerunStatus();
+
           const statusUI = new osparc.ui.basic.NodeStatusUI(node);
           nodeLayout.add(statusUI);
           nodeLayout.add(new qx.ui.basic.Label(node.getLabel()), {
@@ -113,7 +192,6 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
       });
       return preparingNodes;
     },
-
 
     __updatePreparingNodes: function() {
       this.fireDataEvent("changePreparingNodes", this.getPreparingNodes().length);

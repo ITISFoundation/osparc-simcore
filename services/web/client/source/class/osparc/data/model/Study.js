@@ -162,10 +162,19 @@ qx.Class.define("osparc.data.model.Study", {
       init: {}
     },
 
+    // ------ ignore for serializing ------
     state: {
       check: "Object",
       nullable: true,
-      event: "changeState"
+      event: "changeState",
+      apply: "__applyState"
+    },
+
+    pipelineRunning: {
+      check: "Boolean",
+      nullable: true,
+      init: false,
+      event: "changePipelineRunning"
     },
 
     readOnly: {
@@ -174,11 +183,13 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeReadOnly",
       init: true
     }
+    // ------ ignore for serializing ------
   },
 
   statics: {
     IgnoreSerializationProps: [
       "state",
+      "pipelineRunning",
       "readOnly"
     ],
 
@@ -270,6 +281,15 @@ qx.Class.define("osparc.data.model.Study", {
         return null;
       }
       return overallProgress/nCompNodes;
+    },
+
+    isRunning: function(state) {
+      return [
+        "PUBLISHED",
+        "PENDING",
+        "STARTED",
+        "RETRY"
+      ].includes(state);
     }
   },
 
@@ -398,23 +418,6 @@ qx.Class.define("osparc.data.model.Study", {
       return overallProgress/nCompNodes;
     },
 
-    getPipelineState: function() {
-      if (this.getState() && "state" in this.getState()) {
-        return this.getState()["state"]["value"];
-      }
-      return null;
-    },
-
-    isPipelineRunning: function() {
-      const pipelineState = this.getPipelineState();
-      return [
-        "PUBLISHED",
-        "PENDING",
-        "STARTED",
-        "RETRY"
-      ].includes(pipelineState);
-    },
-
     isLocked: function() {
       if (this.getState() && "locked" in this.getState()) {
         return this.getState()["locked"]["value"];
@@ -436,6 +439,15 @@ qx.Class.define("osparc.data.model.Study", {
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);
+      }
+    },
+
+    __applyState: function(value) {
+      if ("state" in value) {
+        const isRunning = this.self().isRunning(value["state"]["value"]);
+        this.setPipelineRunning(isRunning);
+      } else {
+        this.setPipelineRunning(false);
       }
     },
 

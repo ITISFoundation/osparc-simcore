@@ -60,6 +60,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const partialPipeline = e.getData();
       this.__startPipeline(partialPipeline);
     }, this);
+    slideshowView.addListener("stopPipeline", this.__stopPipeline, this);
 
     [
       workbenchView.getStartStopButtons()
@@ -305,26 +306,24 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
-      startStopButtonsWB.setRunning(true);
+      this.getStudy().setPipelineRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
         .catch(() => {
           this.__getStudyLogger().error(null, "Run failed");
-          startStopButtonsWB.setRunning(false);
+          this.getStudy().setPipelineRunning(false);
         });
     },
 
     __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", () => {
         this.__getStudyLogger().error(null, "Error submitting pipeline");
-        startStopButtonsWB.setRunning(false);
+        this.getStudy().setPipelineRunning(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getStatus() == "403") {
@@ -346,13 +345,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else {
           this.__getStudyLogger().error(null, "Failed submitting pipeline");
         }
-        startStopButtonsWB.setRunning(false);
+        this.getStudy().setPipelineRunning(false);
       }, this);
 
       const requestData = {
         "subgraph": partialPipeline,
         "force_restart": forceRestart
       };
+      const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
       if (startStopButtonsWB.getClusterId() !== null) {
         requestData["cluster_id"] = startStopButtonsWB.getClusterId();
       }
@@ -621,6 +621,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);
       }
+      osparc.utils.Utils.closeHangingWindows();
     },
 
     /**

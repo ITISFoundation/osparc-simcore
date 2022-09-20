@@ -697,6 +697,34 @@ qx.Class.define("osparc.utils.Utils", {
 
     isObject: function(v) {
       return typeof v === "object" && v !== null;
+    },
+
+    addClass: function(element, className) {
+      if (element) {
+        const currentClass = element.getAttribute("class");
+        if (currentClass && currentClass.includes(className.trim())) {
+          return;
+        }
+        element.setAttribute("class", ((currentClass || "") + " " + className).trim());
+      }
+    },
+
+    removeClass: function(element, className) {
+      const currentClass = element.getAttribute("class");
+      if (currentClass) {
+        const regex = new RegExp(className.trim(), "g");
+        element.setAttribute("class", currentClass.replace(regex, ""));
+      }
+    },
+
+    closeHangingWindows: function() {
+      // close windows
+      const children = qx.core.Init.getApplication().getRoot().getChildren();
+      children.forEach(child => {
+        if (child.classname === "osparc.ui.window.Window") {
+          child.close();
+        }
+      });
     }
   }
 });

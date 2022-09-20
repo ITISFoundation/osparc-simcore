@@ -90,9 +90,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           onUpdate: (source, target) => {
             const elem = target.getContentElement();
             if (target.getSource() && target.getSource().includes("circle-notch")) {
-              osparc.ui.basic.NodeStatusUI.addClass(elem, "rotate");
+              osparc.utils.Utils.addClass(elem, "rotate");
             } else {
-              osparc.ui.basic.NodeStatusUI.removeClass(elem, "rotate");
+              osparc.utils.Utils.removeClass(elem, "rotate");
             }
           }
         });

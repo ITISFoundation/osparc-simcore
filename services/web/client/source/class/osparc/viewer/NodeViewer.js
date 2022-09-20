@@ -126,6 +126,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           break;
         }
         case "starting":
+        case "connecting":
         case "pulling": {
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
@@ -154,6 +155,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         }
         case "complete":
           break;
+        case "deprecated":
         case "failed": {
           const msg = this.tr("Service failed: ") + data["service_message"];
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");

@@ -103,16 +103,16 @@ async function runTutorial() {
     await buttonsExportToS4L[0].click();
     await tutorial.waitFor(5000, "Export to S4L");
     await tutorial.takeScreenshot("postpro_export_to_s4l");
-    // Click on the "Export to S4L" buttons
+    // Click on the "Export Report" button
     const buttonsExportReport = await utils.getButtonsWithText(postProIframe, "Export Report");
     await buttonsExportReport[0].click();
-    await tutorial.waitFor(5000, "Export to S4L");
-    await tutorial.takeScreenshot("postpro_export_to_s4l");
+    await tutorial.waitFor(5000, "Export Report");
+    await tutorial.takeScreenshot("postpro_export_report");
 
     const outFiles = [
       "temp_ti_field.cache",
       "TIP_report.pdf",
-      "table.csv"
+      "results.csv"
     ];
     await tutorial.checkNodeOutputsAppMode(workbenchData["nodeIds"][2], outFiles, true, false);
 
@@ -124,6 +124,7 @@ async function runTutorial() {
   catch (err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
+    throw "Tutorial Failed";
   }
   finally {
     if (studyId) {

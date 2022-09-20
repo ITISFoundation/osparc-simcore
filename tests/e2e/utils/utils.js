@@ -273,8 +273,7 @@ async function isServiceReady(page, studyId, nodeId) {
   console.log("Status:", nodeId, status);
   const stopListening = [
     "running",
-    "complete",
-    "failed"
+    "complete"
   ];
   return stopListening.includes(status);
 }

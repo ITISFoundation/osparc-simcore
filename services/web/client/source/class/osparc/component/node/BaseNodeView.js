@@ -70,9 +70,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     }
   },
 
+  events: {
+    "startPartialPipeline": "qx.event.type.Data",
+    "stopPipeline": "qx.event.type.Event"
+  },
+
   members: {
     _header: null,
-    __inputsStateButton: null,
+    __inputsButton: null,
     __preparingInputs: null,
     __nodeStatusUI: null,
     _mainView: null,
@@ -103,11 +108,24 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     _buildHeader: function() {
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
         padding: 6,
         height: this.self().HEADER_HEIGHT
+      });
+
+
+      const inputsStateBtn = this.__inputsButton = new qx.ui.form.Button().set({
+        label: this.tr("Inputs"),
+        icon: "@FontAwesome5Solid/sign-in-alt/14",
+        backgroundColor: "transparent"
+      });
+      inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
+      header.add(inputsStateBtn);
+
+      header.add(new qx.ui.core.Spacer(), {
+        flex: 1
       });
 
       const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
@@ -116,20 +134,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
-
-      header.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const inputsStateBtn = this.__inputsStateButton = new qx.ui.form.Button().set({
-        label: this.tr("Preparing inputs..."),
-        icon: "@FontAwesome5Solid/circle-notch/14",
-        backgroundColor: "transparent",
-        toolTipText: this.tr("The view will remain disabled until the inputs are fetched")
-      });
-      inputsStateBtn.getChildControl("icon").getContentElement().addClass("rotate");
-      inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
-      header.add(inputsStateBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
@@ -141,9 +145,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sign-out-alt/14").set({
-        backgroundColor: "transparent",
-        toolTipText: this.tr("Outputs")
+      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton().set({
+        label: this.tr("Outputs"),
+        icon: "@FontAwesome5Solid/sign-out-alt/14",
+        backgroundColor: "transparent"
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
@@ -256,7 +261,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __areInputsReady: function() {
       const wb = this.getNode().getStudy().getWorkbench();
-      const upstreamNodeIds = wb.getUpstreamNodes(this.getNode(), false);
+      const upstreamNodeIds = wb.getUpstreamCompNodes(this.getNode(), false);
       for (let i=0; i<upstreamNodeIds.length; i++) {
         const upstreamNodeId = upstreamNodeIds[i];
         if (!osparc.data.model.NodeStatus.isCompNodeReady(wb.getNode(upstreamNodeId))) {
@@ -266,8 +271,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return true;
     },
 
-    __enableContent: function(enable) {
-      this._mainView.setEnabled(enable);
+    __enableIframeContent: function(enable) {
       const iframe = this.getNode().getIFrame();
       if (iframe) {
         // enable/disable user interaction on iframe
@@ -276,20 +280,36 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           "pointer-events": enable ? "auto" : "none"
         });
       }
+      if (enable) {
+        if ("tapListenerId" in this._iFrameLayout) {
+          this._iFrameLayout.removeListenerById(this._iFrameLayout.tapListenerId);
+        }
+      } else if (!this._iFrameLayout.hasListener("tap")) {
+        const tapListenerId = this._iFrameLayout.addListener("tap", () => this.showPreparingInputs());
+        this._iFrameLayout.tapListenerId = tapListenerId;
+      }
     },
 
-    setNotReadyDependencies: function(notReadyNodeIds = []) {
+    setUpstreamDependencies: function(upstreamDependencies) {
+      this.__inputsButton.setVisibility(upstreamDependencies.length > 0 ? "visible" : "excluded");
       const monitoredNodes = [];
       const workbench = this.getNode().getStudy().getWorkbench();
-      notReadyNodeIds.forEach(notReadyNodeId => monitoredNodes.push(workbench.getNode(notReadyNodeId)));
+      upstreamDependencies.forEach(nodeId => monitoredNodes.push(workbench.getNode(nodeId)));
       this.__preparingInputs.setMonitoredNodes(monitoredNodes);
     },
 
     __dependeciesChanged: function() {
       const preparingNodes = this.__preparingInputs.getPreparingNodes();
       const waiting = Boolean(preparingNodes && preparingNodes.length);
-      this.__inputsStateButton.setVisibility(waiting ? "visible" : "excluded");
-      this.__enableContent(!waiting);
+      const buttonsIcon = this.__inputsButton.getChildControl("icon");
+      if (waiting) {
+        this.__inputsButton.setIcon("@FontAwesome5Solid/circle-notch/14");
+        osparc.utils.Utils.addClass(buttonsIcon.getContentElement(), "rotate");
+      } else {
+        this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
+        osparc.utils.Utils.removeClass(buttonsIcon.getContentElement(), "rotate");
+      }
+      this.__enableIframeContent(!waiting);
     },
 
     __applyNode: function(node) {
@@ -297,8 +317,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__nodeStatusUI.setNode(node);
       }
 
-      this.__preparingInputs = new osparc.component.widget.PreparingInputs();
+      this.__preparingInputs = new osparc.component.widget.PreparingInputs(node.getStudy());
       this.__preparingInputs.addListener("changePreparingNodes", () => this.__dependeciesChanged());
+      this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
+      this.__preparingInputs.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
       this.__dependeciesChanged();
 
       this._mainView.removeAll();
@@ -310,7 +332,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const updateProgress = () => {
           const running = node.getStatus().getRunning();
           const progress = node.getStatus().getProgress();
-          if (["PENDING", "PUBLISHED"].includes(running) ||
+          if (["PUBLISHED", "PENDING"].includes(running) ||
             (["STARTED"].includes(running) && progress === 0)) {
             this.__progressBar.setBackgroundColor("busy-orange");
             this.__progressBar.getContentElement().setStyles({
@@ -348,7 +370,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
               outputCounter++;
             }
           });
-          return `(${outputCounter})`;
+          return this.tr("Outputs") + ` (${outputCounter})`;
         }
       });
       this._outputsBtn.addListener("changeLabel", () => {
