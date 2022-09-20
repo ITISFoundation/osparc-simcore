@@ -163,10 +163,6 @@ WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
-# NOTE: declaring VOLUMEs here makes troubles mounting
-#       the client's output folder to /devel/services/static-webserver/client.
-#       The latter ls no files
-
 ENTRYPOINT [ "/bin/sh", "services/storage/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/storage/docker/boot.sh"]
 # -------------------------- -------------------------------
