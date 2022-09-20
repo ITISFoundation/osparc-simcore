@@ -50,12 +50,16 @@ qx.Class.define("osparc.component.task.Task", {
       event: "changeSubtitle"
     },
 
-    abortHref: {
-      check: "String",
-      init: null,
-      nullable: true,
-      event: "changeAbortHref"
+    stopSupported: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeStopSupported"
     }
+  },
+
+  events: {
+    "abortRequested": "qx.event.type.Event"
   },
 
   statics: {
@@ -93,7 +97,7 @@ qx.Class.define("osparc.component.task.Task", {
             width: 25,
             cursor: "pointer"
           });
-          this.bind("abortHref", control, "visibility", {
+          this.bind("stopSupported", control, "visibility", {
             converter: value => value ? "visible" : "excluded"
           }, this);
           control.addListener("tap", () => this.__requestAbort(), this);
@@ -121,9 +125,8 @@ qx.Class.define("osparc.component.task.Task", {
     },
 
     __requestAbort: function() {
-      const abortHref = this.getAbortHref();
-      if (abortHref) {
-        console.log(abortHref);
+      if (this.isStopSupported()) {
+        this.fireEvent("abortRequested");
       }
     }
   }

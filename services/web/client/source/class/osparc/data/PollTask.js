@@ -47,6 +47,7 @@ qx.Class.define("osparc.data.PollTask", {
   events: {
     "updateReceived": "qx.event.type.Data",
     "resultReceived": "qx.event.type.Data",
+    "taskAborted": "qx.event.type.Event",
     "pollingError": "qx.event.type.Data"
   },
 
@@ -137,6 +138,16 @@ qx.Class.define("osparc.data.PollTask", {
             throw err;
           });
       }
+    },
+
+    abortRequested: function() {
+      fetch(this.getAbortHref(), {
+        method: "DELETE"
+      })
+        .then(() => this.fireEvent("taskAborted"))
+        .catch(err => {
+          throw err;
+        });
     }
   }
 });

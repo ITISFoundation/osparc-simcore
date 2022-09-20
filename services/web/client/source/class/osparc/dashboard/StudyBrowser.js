@@ -649,7 +649,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => {
-          task.bind("abortHref", duplicateTask, "abortHref");
+          if (task.getAbortHref()) {
+            task.bind("abortHref", duplicateTask, "stopSupported", {
+              converter: abortHref => Boolean(abortHref)
+            });
+            duplicateTask.addListener("abortRequested", () => task.abortRequested());
+            task.addListener("taskAborted", () => {
+              const msg = this.tr("Duplication aborted");
+              osparc.component.message.FlashMessenger.logAs(msg, "INFO");
+              duplicateTask.stop();
+            });
+          }
           task.addListener("updateReceived", e => {
             const updateData = e.getData();
             if ("task_progress" in updateData && duplicatingStudyCard) {
