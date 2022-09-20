@@ -4,8 +4,32 @@
 
 import time
 from textwrap import dedent
+from typing import Final
 
 from .core.settings import AwsSettings
+
+AWS_EC2: Final = [
+    {"name": "t2.xlarge", "CPUs": 4, "RAM": 16},
+    {"name": "t2.2xlarge", "CPUs": 8, "RAM": 32},
+    {"name": "r5n.4xlarge", "CPUs": 16, "RAM": 128},
+    {"name": "r5n.8xlarge", "CPUs": 32, "RAM": 256},
+]
+
+ALL_AWS_EC2: Final = (
+    [
+        {"name": "t2.nano", "CPUs": 1, "RAM": 0.5},
+        {"name": "t2.micro", "CPUs": 1, "RAM": 1},
+        {"name": "t2.small", "CPUs": 1, "RAM": 2},
+        {"name": "t2.medium", "CPUs": 2, "RAM": 4},
+        {"name": "t2.large", "CPUs": 2, "RAM": 8},
+    ]
+    + AWS_EC2
+    + [
+        {"name": "r5n.12xlarge", "CPUs": 48, "RAM": 384},
+        {"name": "r5n.16xlarge", "CPUs": 64, "RAM": 512},
+        {"name": "r5n.24xlarge", "CPUs": 96, "RAM": 768},
+    ]
+)
 
 
 def compose_user_data(settings: AwsSettings) -> str:
