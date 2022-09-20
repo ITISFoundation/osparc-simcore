@@ -111,7 +111,7 @@ DOCKER_TARGET_PLATFORMS ?= linux/amd64
 comma := ,
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,production) &&\
 pushd services &&\
 $(foreach service, $(SERVICES_LIST),\
 	$(if $(push),\
@@ -125,7 +125,7 @@ docker buildx bake \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
 	$(if $(push),--push,) \
 	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
-	$(if $(findstring -nc,$@),--no-cache,--set *.cache-to=type=gha,mode=max --set *.cache-from=type=gha) &&\
+	$(if $(findstring -nc,$@),--no-cache,--set *.cache-to=type=gha$(comma)mode=max --set *.cache-from=type=gha) &&\
 popd;
 endef
 
