@@ -40,6 +40,7 @@ qx.Class.define("osparc.data.PollTask", {
         });
       }
 
+      this.__retries = 3;
       this.__pollTaskState();
     }
   },
@@ -91,6 +92,7 @@ qx.Class.define("osparc.data.PollTask", {
 
   members: {
     __result: null,
+    __retries: null,
     __aborting: null,
 
     __pollTaskState: function() {
@@ -120,6 +122,11 @@ qx.Class.define("osparc.data.PollTask", {
           }
         })
         .catch(err => {
+          if (this.__retries > 0) {
+            this.__retries--;
+            this.__pollTaskState();
+            return;
+          }
           this.fireDataEvent("pollingError", err);
           throw err;
         });
