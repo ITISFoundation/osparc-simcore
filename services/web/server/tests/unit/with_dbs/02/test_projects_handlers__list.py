@@ -139,7 +139,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 ):
     await _list_projects(
         client,
-        web.HTTPBadRequest,
+        web.HTTPUnprocessableEntity,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
         expected_error_code="value_error.number.not_ge",

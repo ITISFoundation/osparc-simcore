@@ -8,6 +8,7 @@ import asyncio
 import json
 import time
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Iterator, Optional, Union
 from unittest import mock
 from unittest.mock import call
@@ -30,6 +31,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
@@ -43,6 +45,15 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+) -> dict[str, str]:
+    # disable the garbage collector
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
+    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
 
 
 def assert_replaced(current_project, update_data):
@@ -220,12 +231,11 @@ async def test_share_project(
     user_role: UserRole,
     expected: ExpectedResponse,
     storage_subsystem_mock,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     catalog_subsystem_mock,
     share_rights: dict,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
-    disable_gc_manual_guest_users,
 ):
     # Use-case: the user shares some projects with a group
 
@@ -294,11 +304,10 @@ async def test_open_project(
     user_project,
     client_session_id_factory: Callable,
     expected,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services,
-    mock_catalog_api: None,
-    disable_gc_manual_guest_users,
+    mock_catalog_api: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -335,6 +344,35 @@ async def test_open_project(
         )
 
 
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynamic_services(
+    client,
+    logged_user,
+    user_project,
+    client_session_id_factory: Callable,
+    expected,
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services,
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    mock_catalog_api["get_service"].return_value["deprecated"] = (
+        datetime.utcnow() - timedelta(days=1)
+    ).isoformat()
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(url, json=client_session_id_factory())
+    await assert_status(resp, expected)
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client,
@@ -342,9 +380,8 @@ async def test_close_project(
     user_project,
     client_session_id_factory: Callable,
     expected,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     fake_services,
-    disable_gc_manual_guest_users,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = fake_services(number_services=5)
@@ -417,9 +454,8 @@ async def test_get_active_project(
     client_session_id_factory: Callable,
     expected,
     socketio_client_factory: Callable,
-    mocked_director_v2_api,
-    mock_catalog_api: None,
-    disable_gc_manual_guest_users,
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
 ):
     # login with socket using client session id
     client_id1 = client_session_id_factory()
@@ -482,18 +518,6 @@ async def test_get_active_project(
     "user_role, expected_response_on_Create, expected_response_on_Get, expected_response_on_Delete",
     [
         (
-            UserRole.ANONYMOUS,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-            web.HTTPUnauthorized,
-        ),
-        (
-            UserRole.GUEST,
-            web.HTTPForbidden,
-            web.HTTPOk,
-            web.HTTPForbidden,
-        ),
-        (
             UserRole.USER,
             web.HTTPCreated,
             web.HTTPOk,
@@ -514,12 +538,11 @@ async def test_project_node_lifetime(
     expected_response_on_Create,
     expected_response_on_Get,
     expected_response_on_Delete,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     storage_subsystem_mock,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     mocker,
     faker: Faker,
-    disable_gc_manual_guest_users,
 ):
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
@@ -532,9 +555,7 @@ async def test_project_node_lifetime(
     body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
-    node_id = (
-        faker.uuid4()
-    )  # NOTE: this is a fake node_id that is not in the project, but it does not matter because director_v2 is patched
+    node_id = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
             "director_v2_api.run_dynamic_service"
@@ -555,7 +576,7 @@ async def test_project_node_lifetime(
     }
     resp = await client.post(url, json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
-    node_id_2 = node_id
+    node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
         mocked_director_v2_api[
             "director_v2_api.run_dynamic_service"
@@ -694,10 +715,9 @@ async def test_open_shared_project_2_users_locked(
     user_role: UserRole,
     expected: ExpectedResponse,
     mocker,
-    disable_gc_manual_guest_users,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -875,10 +895,9 @@ async def test_open_shared_project_at_same_time(
     client_session_id_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
-    disable_gc_manual_guest_users,
-    mocked_director_v2_api,
+    mocked_director_v2_api: dict[str, mock.Mock],
     mock_orphaned_services,
-    mock_catalog_api: None,
+    mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 20
@@ -962,8 +981,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_orphaned_services,
-    mock_catalog_api: None,
-    disable_gc_manual_guest_users,
+    mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
 ):
     """Simulating a refresh goes as follows:

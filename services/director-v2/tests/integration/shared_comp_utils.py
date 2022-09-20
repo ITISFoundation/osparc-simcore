@@ -1,6 +1,6 @@
 import json
 import time
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import httpx
@@ -27,6 +27,7 @@ async def create_pipeline(
     *,
     project: ProjectAtDB,
     user_id: UserID,
+    product_name: str,
     start_pipeline: bool,
     expected_response_status_code: int,
     **kwargs,
@@ -37,6 +38,7 @@ async def create_pipeline(
             "user_id": user_id,
             "project_id": str(project.uuid),
             "start_pipeline": start_pipeline,
+            "product_name": product_name,
             **kwargs,
         },
     )
@@ -78,7 +80,7 @@ async def assert_and_wait_for_pipeline_status(
     url: AnyHttpUrl,
     user_id: UserID,
     project_uuid: UUID,
-    wait_for_states: Optional[List[RunningState]] = None,
+    wait_for_states: Optional[list[RunningState]] = None,
 ) -> ComputationGet:
     if not wait_for_states:
         wait_for_states = [

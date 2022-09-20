@@ -47,6 +47,7 @@ from shared_comp_utils import (
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
+from simcore_postgres_database.models.services import services_access_rights
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
@@ -128,12 +129,29 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
+    osparc_product_name: str,
 ) -> Iterator[None]:
 
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
         conn.execute(comp_pipeline.delete())
+        # NOTE: ensure access to services to everyone [catalog access needed]
+        for service in (
+            dy_static_file_server_dynamic_sidecar_service,
+            dy_static_file_server_dynamic_sidecar_compose_spec_service,
+        ):
+            service_image = service["image"]
+            conn.execute(
+                services_access_rights.insert().values(
+                    key=service_image["name"],
+                    version=service_image["tag"],
+                    gid=1,
+                    execute_access=1,
+                    write_access=0,
+                    product_name=osparc_product_name,
+                )
+            )
         yield
 
 
@@ -231,6 +249,7 @@ async def current_study(
     project: Callable[..., ProjectAtDB],
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
+    osparc_product_name: str,
 ) -> ProjectAtDB:
 
     project_at_db = project(current_user, workbench=fake_dy_workbench)
@@ -241,6 +260,7 @@ async def current_study(
         project=project_at_db,
         user_id=current_user["id"],
         start_pipeline=False,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
 
@@ -808,6 +828,7 @@ async def test_nodeports_integration(
     fake_dy_published: dict[str, Any],
     temp_dir: Path,
     mocker: MockerFixture,
+    osparc_product_name: str,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -853,6 +874,7 @@ async def test_nodeports_integration(
         project=current_study,
         user_id=current_user["id"],
         start_pipeline=True,
+        product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
     task_out = ComputationGet.parse_obj(response.json())

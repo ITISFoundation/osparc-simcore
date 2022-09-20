@@ -192,7 +192,7 @@ async def test_parse_request_with_invalid_path_params(
         params=query_params.as_params(),
         json=body.dict(),
     )
-    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
     errors = await r.json()
     assert errors["error"].pop("resource")
@@ -221,7 +221,7 @@ async def test_parse_request_with_invalid_query_params(
         params={},
         json=body.dict(),
     )
-    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
     errors = await r.json()
     assert errors["error"].pop("resource")
@@ -250,7 +250,7 @@ async def test_parse_request_with_invalid_body(
         params=query_params.as_params(),
         json={"invalid": "body"},
     )
-    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
     errors = await r.json()
 

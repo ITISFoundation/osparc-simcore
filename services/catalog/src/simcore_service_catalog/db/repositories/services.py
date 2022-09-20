@@ -206,16 +206,12 @@ class ServicesRepository(BaseRepository):
                 raise ValueError(
                     f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 )
-        # Set the deprecation datetime to None (will be converted top sql's null) if not given
-        new_service_dict = new_service.dict(by_alias=True)
-        if "deprecated" not in new_service_dict:
-            new_service_dict["deprecated"] = None
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
-                .values(**new_service_dict)
+                .values(**new_service.dict(by_alias=True))
                 .returning(literal_column("*"))
             )
             row = result.first()

@@ -118,7 +118,7 @@ class DirectorV2Api(BaseServiceClientApi):
         return computation_task
 
     async def start_computation(
-        self, project_id: UUID, user_id: PositiveInt
+        self, project_id: UUID, user_id: PositiveInt, product_name: str
     ) -> ComputationTaskGet:
 
         with handle_errors_context(project_id):
@@ -128,6 +128,7 @@ class DirectorV2Api(BaseServiceClientApi):
                     "user_id": user_id,
                     "project_id": str(project_id),
                     "start_pipeline": True,
+                    "product_name": product_name,
                 },
             )
             resp.raise_for_status()

@@ -2,7 +2,6 @@
 
 """
 import logging
-from typing import List, Tuple
 
 from aiohttp import web
 from aiohttp.web_routedef import RouteDef
@@ -36,7 +35,7 @@ def setup_catalog(app: web.Application):
     # TODO: remove option disable_auth and replace by mocker.patch
 
     # resolve url
-    exclude: List[str] = []
+    exclude: list[str] = []
     route_def: RouteDef
     for route_def in catalog_handlers.routes:
         route_def.kwargs["name"] = operation_id = route_def.handler.__name__
@@ -60,7 +59,7 @@ def setup_catalog(app: web.Application):
     app[UnitRegistry.__name__] = UnitRegistry()
 
 
-__all__: Tuple[str] = (
+__all__ = (
     "get_services_for_user_in_product",
     "is_catalog_service_responsive",
     "setup_catalog",
