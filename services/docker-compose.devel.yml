@@ -71,7 +71,6 @@ services:
     volumes:
       &webserver-volumes-dev
       - ./web/server:/devel/services/web/server
-      - ./static-webserver/client/source-output:/devel/services/static-webserver/client
       - ../packages:/devel/packages
     environment:
       &webserver-environment-dev
