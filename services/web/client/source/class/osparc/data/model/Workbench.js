@@ -87,21 +87,21 @@ qx.Class.define("osparc.data.model.Workbench", {
     initWorkbench: function() {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
-      for (const node of nodes) {
-        node.startDynamicService();
-      }
+      nodes.forEach(node => node.startDynamicService());
     },
 
-    getUpstreamNodes: function(node, recursive = true, upstreamNodes = new Set()) {
+    getUpstreamCompNodes: function(node, recursive = true, upstreamNodes = new Set()) {
       const links = node.getLinks();
       links.forEach(link => {
         upstreamNodes.add(link["nodeUuid"]);
         if (recursive) {
           const linkNode = this.getNode(link["nodeUuid"]);
-          this.getUpstreamNodes(linkNode, recursive, upstreamNodes);
+          if (linkNode.isComputational()) {
+            this.getUpstreamCompNodes(linkNode, recursive, upstreamNodes);
+          }
         }
       });
-      return Array.from(upstreamNodes);
+      return Array.from(upstreamNodes).reverse();
     },
 
     isPipelineLinear: function() {

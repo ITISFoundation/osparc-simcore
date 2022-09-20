@@ -63,7 +63,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __startAllButton: null,
     __stopButton: null,
 
-    setRunning: function(running) {
+    __setRunning: function(running) {
       this.__getStartButtons().forEach(startBtn => startBtn.setFetching(running));
 
       this.__stopButton.setEnabled(running);
@@ -202,7 +202,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     __applyStudy: async function(study) {
       study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
-      study.addListener("changeState", this.__updateRunButtonsStatus, this);
+      study.addListener("changePipelineRunning", this.__updateRunButtonsStatus, this);
       this.__populateClustersSelectBox();
       this.__checkButtonsVisible();
       this.__getComputations();
@@ -224,7 +224,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __updateRunButtonsStatus: function() {
       const study = this.getStudy();
       if (study) {
-        this.setRunning(study.isPipelineRunning());
+        this.__setRunning(study.isPipelineRunning());
       }
     },
 

@@ -111,6 +111,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   events: {
     "slidesStop": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Data",
+    "stopPipeline": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event"
@@ -161,7 +162,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNeedToRunDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
-      const upstreamNodeIds = wb.getUpstreamNodes(node, false);
+      const upstreamNodeIds = wb.getUpstreamCompNodes(node, false);
       upstreamNodeIds.forEach(upstreamNodeId => {
         const upstreamNode = wb.getNode(upstreamNodeId);
         if (osparc.data.model.NodeStatus.doesCompNodeNeedRun(upstreamNode)) {
@@ -174,9 +175,21 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __getNotReadyDependencies: function(node) {
       const dependencies = node.getStatus().getDependencies() || [];
       const wb = this.getStudy().getWorkbench();
-      const upstreamNodeIds = wb.getUpstreamNodes(node, false);
+      const upstreamNodeIds = wb.getUpstreamCompNodes(node, true);
       upstreamNodeIds.forEach(upstreamNodeId => {
         if (!this.__isNodeReady(upstreamNodeId)) {
+          dependencies.push(upstreamNodeId);
+        }
+      });
+      return dependencies;
+    },
+
+    __getUpstreamCompDependencies: function(node) {
+      const dependencies = node.getStatus().getDependencies() || [];
+      const wb = this.getStudy().getWorkbench();
+      const upstreamNodeIds = wb.getUpstreamCompNodes(node, true);
+      upstreamNodeIds.forEach(upstreamNodeId => {
+        if (wb.getNode(upstreamNodeId).isComputational()) {
           dependencies.push(upstreamNodeId);
         }
       });
@@ -288,16 +301,24 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           this.__nodeView = view;
         }
 
-        // check if upstream has to be run
-        const notStartedDependencies = this.__getNeedToRunDependencies(node);
-        if (notStartedDependencies && notStartedDependencies.length) {
-          this.fireDataEvent("startPartialPipeline", notStartedDependencies);
+        const upstreamDependencies = this.__getUpstreamCompDependencies(node);
+        this.__nodeView.setUpstreamDependencies(upstreamDependencies);
+        if (!this.__nodeView.hasListener("startPartialPipeline")) {
+          this.__nodeView.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
+        }
+        if (!this.__nodeView.hasListener("stopPipeline")) {
+          this.__nodeView.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
         }
 
         const notReadyDependencies = this.__getNotReadyDependencies(node);
         if (notReadyDependencies && notReadyDependencies.length) {
-          this.__nodeView.setNotReadyDependencies(notReadyDependencies);
           this.__nodeView.showPreparingInputs();
+        }
+
+        // check if upstream has to be run
+        const notStartedDependencies = this.__getNeedToRunDependencies(node);
+        if (notStartedDependencies && notStartedDependencies.length) {
+          this.fireDataEvent("startPartialPipeline", notStartedDependencies);
         }
       } else if (this.__nodeView) {
         this.__mainView.remove(this.__nodeView);

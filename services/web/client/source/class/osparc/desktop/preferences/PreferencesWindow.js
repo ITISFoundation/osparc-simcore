@@ -92,10 +92,15 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
     tabView.add(clustersPage);
     clustersBtn.exclude();
-    osparc.data.Resources.get("clusters")
-      .then(clusters => {
-        if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-          clustersBtn.show();
+    osparc.utils.DisabledPlugins.isClustersDisabled()
+      .then(isDisabled => {
+        if (isDisabled === false) {
+          osparc.data.Resources.get("clusters")
+            .then(clusters => {
+              if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
+                clustersBtn.show();
+              }
+            });
         }
       });
 

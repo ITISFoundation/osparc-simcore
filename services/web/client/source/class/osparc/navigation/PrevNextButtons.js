@@ -183,9 +183,9 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
         }
         const btnIcon = this.__nextBtn.getChildControl("icon").getContentElement();
         if (animate) {
-          osparc.ui.basic.NodeStatusUI.addClass(btnIcon, "rotate");
+          osparc.utils.Utils.addClass(btnIcon, "rotate");
         } else {
-          osparc.ui.basic.NodeStatusUI.removeClass(btnIcon, "rotate");
+          osparc.utils.Utils.removeClass(btnIcon, "rotate");
         }
       }
     },
