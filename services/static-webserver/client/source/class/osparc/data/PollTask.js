@@ -104,7 +104,7 @@ qx.Class.define("osparc.data.PollTask", {
           if (this.__aborting) {
             return null;
           }
-          const errMsg = this.tr("Failed polling status");
+          const errMsg = qx.locale.Manager.tr("Failed polling status");
           this.fireDataEvent("pollingError", errMsg);
           throw new Error(errMsg);
         })
