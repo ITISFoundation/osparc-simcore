@@ -38,7 +38,7 @@ def mock_env_makefile(monkeypatch):
     monkeypatch.setenv("CATALOG_API_VERSION", "0.3.2")
     monkeypatch.setenv(
         "CLIENT_WEB_OUTPUT",
-        "/home/crespo/devp/osparc-simcore/services/web/client/source-output",
+        "/home/crespo/devp/osparc-simcore/services/static-webserver/client/source-output",
     )
     monkeypatch.setenv("DATCORE_ADAPTER_API_VERSION", "0.1.0-alpha")
     monkeypatch.setenv("DIRECTOR_API_VERSION", "0.1.0")

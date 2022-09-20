@@ -63,7 +63,7 @@ services:
 
   static-webserver:
     volumes:
-      - ./web/client/source-output:/static-content
+      - ./static-webserver/client/source-output:/static-content
     environment:
       - SERVER_LOG_LEVEL=info
 
@@ -71,7 +71,6 @@ services:
     volumes:
       &webserver-volumes-dev
       - ./web/server:/devel/services/web/server
-      - ./web/client/source-output:/devel/services/web/client
       - ../packages:/devel/packages
     environment:
       &webserver-environment-dev

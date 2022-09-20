@@ -57,7 +57,7 @@ def osparc_simcore_scripts_dir(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def osparc_simcore_web_client_dir(services_dir: Path) -> Path:
-    wbc_dir = services_dir / "web/client"
+    wbc_dir = services_dir / "static-webserver/client"
     assert wbc_dir.exists()
     return wbc_dir
 

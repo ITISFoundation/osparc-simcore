@@ -137,8 +137,14 @@ services:
   static-webserver:
     image: local/static-webserver:${BUILD_TARGET:?build_target_required}
     build:
-      context: ../
-      dockerfile: services/static-webserver/Dockerfile
+      context: ./static-webserver/client
+      dockerfile: tools/qooxdoo-kit/builder/Dockerfile
+      args:
+        - tag=latest
+        - VCS_REF=${VCS_REF}
+        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
+        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
+        - VCS_URL=${VCS_URL}
       cache_from:
         - local/static-webserver:${BUILD_TARGET:?build_target_required}
         - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:master-github-latest
