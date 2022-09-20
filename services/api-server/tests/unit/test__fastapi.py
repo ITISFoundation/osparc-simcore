@@ -115,7 +115,7 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
 
 def test_fastapi_route_name_parsing(client: TestClient, faker: Faker):
     #
-    # Ensures colon are allowed in routes
+    # Ensures ':' is allowed in routes
     # SEE https://github.com/encode/starlette/pull/1657
 
     solver_key = Solver.Config.schema_extra["example"]["id"]
