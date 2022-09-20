@@ -14,5 +14,6 @@
 
 
 aiodocker
+aioboto3 # s3 storage
 fastapi
 packaging

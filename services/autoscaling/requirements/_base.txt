@@ -4,6 +4,10 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
+aioboto3==10.0.0
+    # via -r requirements/_base.in
+aiobotocore==2.3.4
+    # via aioboto3
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -21,7 +25,10 @@ aiohttp==3.8.1
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
     #   aiodocker
+aioitertools==0.11.0
+    # via aiobotocore
 aiosignal==1.2.0
     # via aiohttp
 anyio==3.6.1
@@ -36,6 +43,13 @@ attrs==21.4.0
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   jsonschema
+boto3==1.21.21
+    # via aiobotocore
+botocore==1.24.21
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
 certifi==2022.6.15.1
     # via
     #   httpcore
@@ -83,6 +97,10 @@ idna==3.3
     #   yarl
 jaeger-client==4.8.0
     # via fastapi-contrib
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 jsonschema==3.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
@@ -118,6 +136,8 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
+python-dateutil==2.8.2
+    # via botocore
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -131,9 +151,12 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 rfc3986==1.5.0
     # via httpx
+s3transfer==0.5.2
+    # via boto3
 six==1.16.0
     # via
     #   jsonschema
+    #   python-dateutil
     #   thrift
 sniffio==1.3.0
     # via
@@ -164,10 +187,21 @@ typing-extensions==4.3.0
     # via
     #   aiodebug
     #   aiodocker
+    #   aioitertools
     #   pydantic
     #   starlette
+urllib3==1.26.12
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   botocore
 uvicorn==0.18.3
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+wrapt==1.14.1
+    # via aiobotocore
 yarl==1.8.1
     # via aiohttp
 
