@@ -34,6 +34,12 @@ qx.Class.define("osparc.data.PollTask", {
         resultHref: taskData["result_href"]
       });
 
+      if ("abort_href" in taskData) {
+        this.set({
+          abortHref: taskData["abort_href"]
+        });
+      }
+
       this.__pollTaskState();
     }
   },
@@ -64,6 +70,13 @@ qx.Class.define("osparc.data.PollTask", {
     resultHref: {
       check: "String",
       nullable: false
+    },
+
+    abortHref: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeAbortHref"
     },
 
     done: {

@@ -44,11 +44,6 @@ qx.Class.define("osparc.component.task.Import", {
       this.getChildControl("stop");
 
       this.setTitle(this.tr("Importing Study"));
-    },
-
-    // overridden
-    _requestStop: function() {
-      console.log("Not yet implemented");
     }
   }
 });

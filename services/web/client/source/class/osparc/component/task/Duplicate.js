@@ -51,11 +51,6 @@ qx.Class.define("osparc.component.task.Duplicate", {
       this.getChildControl("stop");
 
       this.setTitle(this.tr("Duplicating ") + this.__study.name);
-    },
-
-    // overridden
-    _requestStop: function() {
-      console.log("Not yet implemented");
     }
   }
 });

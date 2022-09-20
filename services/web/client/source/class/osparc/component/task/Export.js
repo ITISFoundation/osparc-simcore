@@ -55,11 +55,6 @@ qx.Class.define("osparc.component.task.Export", {
       this.getChildControl("stop");
 
       this.setTitle(this.tr("Exporting ") + this.__study.name);
-    },
-
-    // overridden
-    _requestStop: function() {
-      console.log("Not yet implemented");
     }
   }
 });

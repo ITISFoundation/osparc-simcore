@@ -50,11 +50,11 @@ qx.Class.define("osparc.component.task.Task", {
       event: "changeSubtitle"
     },
 
-    stopSupported: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeStopSupported"
+    abortHref: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeAbortHref"
     }
   },
 
@@ -93,16 +93,21 @@ qx.Class.define("osparc.component.task.Task", {
             width: 25,
             cursor: "pointer"
           });
-          this.bind("stopSupported", control, "visibility", {
+          this.bind("abortHref", control, "visibility", {
             converter: value => value ? "visible" : "excluded"
           }, this);
-          control.addListener("tap", () => {
-            this._requestStop();
-          }, this);
+          control.addListener("tap", () => this.__requestAbort(), this);
           this._add(control);
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    /**
+      * @abstract
+      */
+    _buildLayout: function() {
+      throw new Error("Abstract method called!");
     },
 
     start: function() {
@@ -115,18 +120,11 @@ qx.Class.define("osparc.component.task.Task", {
       tasks.removeTask(this);
     },
 
-    /**
-      * @abstract
-      */
-    _buildLayout: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    /**
-      * @abstract
-      */
-    _requestStop: function() {
-      throw new Error("Abstract method called!");
+    __requestAbort: function() {
+      const abortHref = this.getAbortHref();
+      if (abortHref) {
+        console.log(abortHref);
+      }
     }
   }
 });

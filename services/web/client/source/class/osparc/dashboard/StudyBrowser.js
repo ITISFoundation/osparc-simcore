@@ -649,6 +649,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => {
+          task.bind("abortHref", duplicateTask, "abortHref");
           task.addListener("updateReceived", e => {
             const updateData = e.getData();
             if ("task_progress" in updateData && duplicatingStudyCard) {
