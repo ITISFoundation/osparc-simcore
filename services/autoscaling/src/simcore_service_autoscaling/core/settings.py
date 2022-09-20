@@ -14,6 +14,17 @@ from settings_library.utils_logging import MixinLoggingSettings
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
+class AwsSettings(BaseCustomSettings):
+    AWS_KEY_NAME: str
+    AWS_DNS: str
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+
+    # TODO: review thees
+    AWS_SECURITY_GROUP_IDS: list[str]
+    AWS_SUBNET_ID: str
+
+
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
@@ -51,6 +62,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @cached_property
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL
+
+    AUTOSCALING_AWS: AwsSettings = Field(auto_default_from_env=True)
 
     @validator("AUTOSCALING_LOGLEVEL")
     @classmethod
