@@ -1,3 +1,7 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from pydantic import ByteSize, parse_obj_as
 from simcore_service_autoscaling.utils import bytesto
 
