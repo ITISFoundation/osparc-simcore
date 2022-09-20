@@ -38,4 +38,4 @@ def setup_remote_debugging(force_enabled=False, *, boot_mode=None):
         )
 
 
-__all__ = ["setup_remote_debugging"]
+__all__ = ("setup_remote_debugging",)
