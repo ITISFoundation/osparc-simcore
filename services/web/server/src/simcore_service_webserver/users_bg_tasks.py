@@ -61,7 +61,7 @@ async def _update_expired_users_periodically(engine: Engine, wait: float = 0.5 *
         else:
             logger.info("No users expired")
 
-        asyncio.sleep(wait)
+        await asyncio.sleep(wait)
 
 
 async def run_background_task_to_monitor_expiration_trial_accounts(
