@@ -72,7 +72,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: Expose GitHub Runtime
-        uses: crazy-max/ghaction-github-runtime@v3
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
