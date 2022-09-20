@@ -2,9 +2,9 @@ import logging
 import math
 from datetime import datetime, timedelta
 
-from .aws_utils import AWS_EC2, compose_user_data, start_instance_aws
 from .core.settings import AwsSettings
-from .docker_utils import check_node_resources, check_tasks_resources, need_resources
+from .utils_aws import AWS_EC2, compose_user_data, start_instance_aws
+from .utils_docker import check_node_resources, check_tasks_resources, need_resources
 
 logger = logging.getLogger(__name__)
 

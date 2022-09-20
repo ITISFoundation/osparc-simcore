@@ -3,8 +3,8 @@
 # pylint: disable=unused-variable
 
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
-from simcore_service_autoscaling.aws_utils import compose_user_data
 from simcore_service_autoscaling.core.settings import AwsSettings
+from simcore_service_autoscaling.utils_aws import compose_user_data
 
 
 def test_compose_user_data(app_environment: EnvVarsDict):

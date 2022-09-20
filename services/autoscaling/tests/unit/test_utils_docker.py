@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from simcore_service_autoscaling.docker_utils import (
+from simcore_service_autoscaling.utils_docker import (
     check_node_resources,
     need_resources,
 )
