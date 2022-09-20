@@ -125,7 +125,7 @@ docker buildx bake \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
 	$(if $(push),--push,) \
 	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
-	$(if $(findstring -nc,$@),--no-cache,) &&\
+	$(if $(findstring -nc,$@),--no-cache,--set *.cache-to=type=gha,mode=max --set *.cache-from=type=gha) &&\
 popd;
 endef
 
@@ -618,6 +618,8 @@ clean-more: ## cleans containers and unused volumes
 	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
 	docker volume prune --force
+	# pruning buildx cache
+	docker buildx prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
