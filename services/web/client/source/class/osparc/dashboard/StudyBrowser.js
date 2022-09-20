@@ -632,7 +632,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyData["name"],
-        "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24"
+        "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24",
+        null,
+        true
       );
       duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
       this._resourcesContainer.addAt(duplicatingStudyCard, 1);
@@ -647,6 +649,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => {
+          task.addListener("updateReceived", e => {
+            const updateData = e.getData();
+            if ("task_progress" in updateData && duplicatingStudyCard) {
+              const progress = updateData["task_progress"];
+              duplicatingStudyCard.getChildControl("progress-bar").set({
+                value: progress["percent"]*100
+              });
+              duplicatingStudyCard.getChildControl("state-label").set({
+                value: progress["message"]
+              });
+            }
+          }, this);
           task.addListener("resultReceived", e => {
             const duplicatedStudyData = e.getData();
             this.reloadStudy(duplicatedStudyData["uuid"]);
