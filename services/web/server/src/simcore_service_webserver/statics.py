@@ -3,7 +3,7 @@
     - The client-side runs a RIA (Rich Interface Application) so the server does not
     need to render pages upon request but only serve once the code to the client.
     - The client application then interacts with the server via a http and/or socket API
-    - The client application is under ``services/web/client`` and the ``webclient`` service
+    - The client application is under ``services/static-webserver/client`` and the ``webclient`` service
     is used to build it.
 """
 import logging

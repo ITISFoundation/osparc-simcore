@@ -1,4 +1,4 @@
-# these are the apps built right now by web/client
+# these are the apps built right now by static-webserver/client
 
 FRONTEND_APPS_AVAILABLE = frozenset({"osparc", "tis", "s4l"})
 FRONTEND_APP_DEFAULT = "osparc"
