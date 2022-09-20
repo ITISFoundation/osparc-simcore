@@ -21,7 +21,9 @@ certifi==2022.6.15.1
     #   httpx
     #   requests
 charset-normalizer==2.1.1
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
 coverage==6.4.4

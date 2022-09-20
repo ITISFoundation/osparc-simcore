@@ -35,6 +35,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     env_file:
       - ../.env
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       - default
 
