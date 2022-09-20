@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 #
 # Moved by pcrespov from allexandre/osparc-dask-auto-scaling/-/blob/master/script.py
 #
@@ -43,7 +45,7 @@ aws_EC2 = [
 ]
 
 # THanks to https://gist.github.com/shawnbutts/3906915
-def bytesto(bytes, to, bsize=1024):
+def bytesto(bytes_size, to, bsize=1024):
     """convert bytes to megabytes, etc.
     sample code:
         print('mb= ' + str(bytesto(314575262000000, 'm')))
@@ -51,8 +53,8 @@ def bytesto(bytes, to, bsize=1024):
         mb= 300002347.946
     """
     a = {"k": 1, "m": 2, "g": 3, "t": 4, "p": 5, "e": 6}
-    r = float(bytes)
-    for i in range(a[to]):
+    r = float(bytes_size)
+    for _ in range(a[to]):
         r = r / bsize
     return r
 
@@ -414,21 +416,6 @@ def check_computationnal():
     # future.result()
 
 
-# THanks to https://gist.github.com/shawnbutts/3906915
-def bytesto(bytes, to, bsize=1024):
-    """convert bytes to megabytes, etc.
-    sample code:
-        print('mb= ' + str(bytesto(314575262000000, 'm')))
-    sample output:
-        mb= 300002347.946
-    """
-    a = {"k": 1, "m": 2, "g": 3, "t": 4, "p": 5, "e": 6}
-    r = float(bytes)
-    for i in range(a[to]):
-        r = r / bsize
-    return r
-
-
 def add(x, y):
     time.sleep(120)
     return x + y
@@ -502,7 +489,7 @@ def scale_up(CPUs, RAM):
     )
 
 
-def start_instance_aws(ami_id, instance_type, tag, type, user_data):
+def start_instance_aws(ami_id, instance_type, tag, service_type, user_data):
     ec2Client = boto3.client(
         "ec2",
         aws_access_key_id=env.str("AWS_ACCESS_KEY_ID"),
@@ -530,7 +517,7 @@ def start_instance_aws(ami_id, instance_type, tag, type, user_data):
     instanceDict = instanceDict[0]
     print(
         "New instance launched for "
-        + type
+        + service_type
         + " services. Estimated time to launch and join the cluster : 2mns"
     )
     print("Pausing for 10mns before next check")
