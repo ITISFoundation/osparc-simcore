@@ -12,15 +12,14 @@ ProfileCommon:
 ProfileUpdate:
   allOf:
     - $ref: "#/ProfileCommon"
-  example:
-    first_name: Pedro
-    last_name: Crespo
 
 ProfileGet:
   allOf:
     - $ref: "#/ProfileCommon"
     - type: object
       properties:
+        id:
+          type: integer
         login:
           type: string
           format: email
@@ -34,10 +33,6 @@ ProfileGet:
           type: string
           format: date
           description: "If user has a trial account, it sets the expiration date, otherwise None"
-  example:
-    login: pcrespov@foo.com
-    role: Admin
-    gravatar_id: 205e460b479e2e5b48aec07710c08d50
 
 ProfileEnveloped:
   type: object
@@ -67,9 +62,6 @@ Token:
   required:
     - service
     - token_key
-  example:
-    service: "github-api-v1"
-    token_key: N1BP5ZSpB
 
 TokenId:
   description: toke identifier

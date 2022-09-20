@@ -664,6 +664,8 @@ paths:
                       - $ref: '#/paths/~1me/put/requestBody/content/application~1json/schema/allOf/0'
                       - type: object
                         properties:
+                          id:
+                            type: integer
                           login:
                             type: string
                             format: email
@@ -677,10 +679,6 @@ paths:
                             type: string
                             format: date
                             description: 'If user has a trial account, it sets the expiration date, otherwise None'
-                    example:
-                      login: pcrespov@foo.com
-                      role: Admin
-                      gravatar_id: 205e460b479e2e5b48aec07710c08d50
                   error:
                     nullable: true
                     default: null
@@ -704,9 +702,6 @@ paths:
                   example:
                     first_name: Pedro
                     last_name: Crespo
-              example:
-                first_name: Pedro
-                last_name: Crespo
       responses:
         '204':
           description: updated profile
@@ -767,9 +762,6 @@ paths:
                   required:
                     - service
                     - token_key
-                  example:
-                    service: github-api-v1
-                    token_key: N1BP5ZSpB
                 error:
                   nullable: true
                   default: null
