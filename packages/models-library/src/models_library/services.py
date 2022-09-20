@@ -566,7 +566,10 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
-    deprecated: Optional[datetime]
+    deprecated: Optional[datetime] = Field(
+        default=None,
+        description="If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
+    )
 
     # user-defined metatada
     classifiers: Optional[list[str]]

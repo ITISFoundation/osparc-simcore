@@ -1,10 +1,9 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import sqlalchemy as sa
-from aiopg.sa.result import RowProxy
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
@@ -34,7 +33,7 @@ logger = logging.getLogger(__name__)
 #
 # Examples are nodes like file-picker or parameter/*
 #
-_FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
+_FRONTEND_SERVICES_CATALOG: dict[str, ServiceDockerData] = {
     meta.key: meta for meta in iter_service_docker_data()
 }
 
@@ -42,8 +41,8 @@ _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
     director_client: DirectorV0Client,
-    published_nodes: List[NodeID],
-) -> List[CompTaskAtDB]:
+    published_nodes: list[NodeID],
+) -> list[CompTaskAtDB]:
 
     list_comp_tasks = []
     for internal_id, node_id in enumerate(project.workbench, 1):
@@ -68,7 +67,7 @@ async def _generate_tasks_list_from_project(
             continue
 
         # aggregates node_details amd node_extras into Image
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "name": service_key_version.key,
             "tag": service_key_version.version,
         }
@@ -109,12 +108,12 @@ class CompTasksRepository(BaseRepository):
     async def get_all_tasks(
         self,
         project_id: ProjectID,
-    ) -> List[CompTaskAtDB]:
-        tasks: List[CompTaskAtDB] = []
+    ) -> list[CompTaskAtDB]:
+        tasks: list[CompTaskAtDB] = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_tasks]).where(
-                    (comp_tasks.c.project_id == f"{project_id}")
+                    comp_tasks.c.project_id == f"{project_id}"
                 )
             ):
                 task_db = CompTaskAtDB.from_orm(row)
@@ -125,8 +124,8 @@ class CompTasksRepository(BaseRepository):
     async def get_comp_tasks(
         self,
         project_id: ProjectID,
-    ) -> List[CompTaskAtDB]:
-        tasks: List[CompTaskAtDB] = []
+    ) -> list[CompTaskAtDB]:
+        tasks: list[CompTaskAtDB] = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_tasks]).where(
@@ -153,17 +152,17 @@ class CompTasksRepository(BaseRepository):
         self,
         project: ProjectAtDB,
         director_client: DirectorV0Client,
-        published_nodes: List[NodeID],
-    ) -> List[CompTaskAtDB]:
+        published_nodes: list[NodeID],
+    ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
-        list_of_comp_tasks_in_project: List[
+        list_of_comp_tasks_in_project: list[
             CompTaskAtDB
         ] = await _generate_tasks_list_from_project(
             project, director_client, published_nodes
         )
         async with self.db_engine.acquire() as conn:
             # get current tasks
-            result: RowProxy = await conn.execute(
+            result = await conn.execute(
                 sa.select([comp_tasks.c.node_id]).where(
                     comp_tasks.c.project_id == str(project.uuid)
                 )
@@ -185,7 +184,7 @@ class CompTasksRepository(BaseRepository):
             # insert or update the remaining tasks
             # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
-            inserted_comp_tasks_db: List[CompTaskAtDB] = []
+            inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
 
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
@@ -202,7 +201,8 @@ class CompTasksRepository(BaseRepository):
                     set_=comp_task_db.to_db_model(exclude=exclusion_rule),
                 ).returning(literal_column("*"))
                 result = await conn.execute(on_update_stmt)
-                row: RowProxy = await result.fetchone()
+                row = await result.fetchone()
+                assert row  # nosec
                 inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
             logger.debug(
                 "inserted the following tasks in comp_tasks: %s",
@@ -248,9 +248,9 @@ class CompTasksRepository(BaseRepository):
     async def set_project_tasks_state(
         self,
         project_id: ProjectID,
-        tasks: List[NodeID],
+        tasks: list[NodeID],
         state: RunningState,
-        errors: Optional[List[ErrorDict]] = None,
+        errors: Optional[list[ErrorDict]] = None,
     ) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(

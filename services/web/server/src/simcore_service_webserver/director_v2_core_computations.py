@@ -50,13 +50,20 @@ class ComputationsApi:
         assert isinstance(computation_task_out, dict)  # nosec
         return computation_task_out
 
-    async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
+    async def start(
+        self, project_id: ProjectID, user_id: UserID, product_name: str, **options
+    ) -> str:
         computation_task_out = await request_director_v2(
             self._app,
             "POST",
             self._settings.base_url / "computations",
             expected_status=web.HTTPCreated,
-            data={"user_id": user_id, "project_id": project_id, **options},
+            data={
+                "user_id": user_id,
+                "project_id": project_id,
+                "product_name": product_name,
+                **options,
+            },
         )
         assert isinstance(computation_task_out, dict)  # nosec
         return computation_task_out["id"]
@@ -90,12 +97,15 @@ def set_client(app: web.Application, obj: ComputationsApi):
 
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
-    app: web.Application, user_id: PositiveInt, project_id: UUID
+    app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> Optional[DataType]:
     settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / "computations"
-    body = {"user_id": user_id, "project_id": f"{project_id}"}
+    body = {
+        "user_id": user_id,
+        "project_id": f"{project_id}",
+    }
     # request to director-v2
     try:
         computation_task_out = await request_director_v2(

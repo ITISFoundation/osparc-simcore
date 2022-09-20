@@ -51,6 +51,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "pulling":
         case "connecting":
           return "@FontAwesome5Solid/circle-notch/12";
+        case "deprecated":
         case "failed":
           return "@FontAwesome5Solid/exclamation-circle/12";
 
@@ -90,6 +91,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return qx.locale.Manager.tr("Ready");
         case "failed":
           return qx.locale.Manager.tr("Error");
+        case "deprecated":
+          return qx.locale.Manager.tr("Deprecated");
         case "starting":
           return qx.locale.Manager.tr("Starting...");
         case "pending":
@@ -131,6 +134,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "pending":
         case "connecting":
           return "busy-orange";
+        case "deprecated":
         case "failed":
           return "failed-red";
 
