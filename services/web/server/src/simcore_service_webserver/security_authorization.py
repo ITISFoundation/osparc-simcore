@@ -44,7 +44,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self.app[APP_DB_ENGINE_KEY]
 
     @retry(**PostgresRetryPolicyUponOperation(log).kwargs)
-    async def _pg_query_user(self, identity: str) -> Optional[_UserIdentity]:
+    async def _get_active_user_with(self, identity: str) -> Optional[_UserIdentity]:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
         user: Optional[_UserIdentity] = self.timed_cache.get(identity)
         if user is None:
@@ -53,15 +53,14 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
                 result: ResultProxy = await conn.execute(
                     sa.select([users.c.id, users.c.role]).where(
                         (users.c.email == identity)
-                        & (users.c.status != UserStatus.BANNED)
-                        & (users.c.status != UserStatus.EXPIRED)
+                        & (users.c.status == UserStatus.ACTIVE)
                     )
                 )
                 row = await result.fetchone()
             if row is not None:
                 assert row["id"]  # nosec
                 assert row["role"]  # nosec
-                self.timed_cache[identity] = dict(row.items())
+                self.timed_cache[identity] = user = dict(row.items())
 
         return user
 
@@ -72,7 +71,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         or "None" if no user exists related to the identity.
         """
         # TODO: why users.c.user_login_key!=users.c.email
-        user: Optional[_UserIdentity] = await self._pg_query_user(identity)
+        user: Optional[_UserIdentity] = await self._get_active_user_with(identity)
         return user["id"] if user else None
 
     async def permits(
@@ -96,7 +95,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        user = await self._pg_query_user(identity)
+        user = await self._get_active_user_with(identity)
         if user:
             role = user.get("role")
             return await check_access(self.access_model, role, permission, context)
