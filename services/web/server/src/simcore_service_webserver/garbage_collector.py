@@ -7,6 +7,9 @@ from .garbage_collector_task import run_background_task
 from .login.plugin import setup_login_storage
 from .projects.plugin import setup_projects_db, setup_projects_model_schema
 from .socketio.plugin import setup_socketio_server
+from .users_garbage_collector_tasks import (
+    run_background_task_to_monitor_expiration_trial_accounts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,3 +35,9 @@ def setup_garbage_collector(app: web.Application):
     setup_login_storage(app)
 
     app.cleanup_ctx.append(run_background_task)
+
+    # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
+    # not a huge deal. Instead this task runs in the GC.
+    # If more tasks of this nature are needed, we should setup some sort of registration mechanism
+    # with a interface such that plugins can pass tasks to the GC plugin to handle them
+    app.cleanup_ctx.append(run_background_task_to_monitor_expiration_trial_accounts)

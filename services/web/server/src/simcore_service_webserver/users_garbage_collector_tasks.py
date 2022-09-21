@@ -34,14 +34,14 @@ async def update_expired_users(engine: Engine) -> list[IdInt]:
             users.update()
             .values(status=UserStatus.EXPIRED)
             .where(
-                (users.c.status == UserStatus.ACTIVE)
-                & (users.c.expires_at != None)
+                (users.c.expires_at != None)
+                & (users.c.status == UserStatus.ACTIVE)
                 & (users.c.expires_at < now)
             )
             .returning(users.c.id)
         )
-        updated_userids: list[IdInt] = await result.fetchall()
-        return updated_userids
+        expired = [r.id for r in await result.fetchall()]
+        return expired
 
 
 @retry(

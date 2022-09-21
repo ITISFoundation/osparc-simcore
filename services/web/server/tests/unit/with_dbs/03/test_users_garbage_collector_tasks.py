@@ -3,56 +3,54 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime, timedelta
+from typing import Optional
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest import MonkeyPatch
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users_bg_tasks import (
+from simcore_service_webserver.users_garbage_collector_tasks import (
     APP_DB_ENGINE_KEY,
     update_expired_users,
 )
 
+_NOW = datetime.utcnow()
+YESTERDAY = _NOW - timedelta(days=1)
+TOMORROW = _NOW + timedelta(days=1)
+
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch, mocker: MockerFixture
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
 ) -> EnvVarsDict:
-    # disables bg task in users!
-    async def _fake_on_cleanup(app: web.Application):
-        yield
-
-    mocker.patch(
-        "simcore_service_webserver.users.run_background_task_to_monitor_expiration_trial_accounts",
-        autospec=True,
-        side_effect=_fake_on_cleanup,
-    )
-
     # disables GC
     return app_environment | setenvs_from_dict(
         monkeypatch, {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
     )
 
 
-async def test_update_expired_users(client: TestClient, faker: Faker):
-
-    yesterday = datetime.utcnow() - timedelta(days=1)
+@pytest.mark.parametrize("expires_at", (YESTERDAY, TOMORROW, None))
+async def test_update_expired_users(
+    expires_at: Optional[datetime], client: TestClient, faker: Faker
+):
+    has_expired = expires_at == YESTERDAY
     async with NewUser(
         {
             "email": faker.email(),
             "status": UserStatus.ACTIVE.name,
-            "expires_at": yesterday,
+            "expires_at": expires_at,
         },
         client.app,
     ) as user:
+        assert client.app
 
         async def _rq_login():
+            assert client.app
             return await client.post(
                 f"{client.app.router['auth_login'].url_for()}",
                 json={
@@ -61,10 +59,17 @@ async def test_update_expired_users(client: TestClient, faker: Faker):
                 },
             )
 
+        # before update
         r1 = await _rq_login()
         await assert_status(r1, web.HTTPOk)
 
-        await update_expired_users(client.app[APP_DB_ENGINE_KEY])
+        # apply update
+        expired = await update_expired_users(client.app[APP_DB_ENGINE_KEY])
+        if has_expired:
+            assert expired == [user["id"]]
+        else:
+            assert not expired
 
+        # after update
         r2 = await _rq_login()
-        await assert_status(r2, web.HTTPUnauthorized)
+        await assert_status(r2, web.HTTPUnauthorized if has_expired else web.HTTPOk)

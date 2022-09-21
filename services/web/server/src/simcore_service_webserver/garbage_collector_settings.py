@@ -18,6 +18,8 @@ class GarbageCollectorSettings(BaseCustomSettings):
         ],
     )
 
+    GARBAGE_COLLECTOR_UPDATE_EXPIRED_USERS_INTERVAL_S: PositiveInt = Field()
+
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_GARBAGE_COLLECTOR
