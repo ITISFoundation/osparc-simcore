@@ -7,9 +7,9 @@ from simcore_service_webserver.db_models import UserRole, UserStatus
 from simcore_service_webserver.login.registration import create_invitation
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
-from simcore_service_webserver.login.utils import encrypt_password, get_random_string
 from yarl import URL
 
+from .rawdata_fakers import FAKE, random_user
 from .utils_assert import assert_status
 
 
@@ -50,20 +50,16 @@ def parse_link(text):
     return URL(link).path
 
 
-async def create_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
+async def create_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
+    """Creates a fake user and inserts it in the users table in the database"""
     data = data or {}
-    password = get_random_string(10)
-    params = {
-        "name": get_random_string(10),
-        "email": f"{get_random_string(10)}@gmail.com",
-        "password_hash": encrypt_password(password),
-    }
-    params.update(data)
-    params.setdefault("status", UserStatus.ACTIVE.name)
-    params.setdefault("role", UserRole.USER.name)
-    params.setdefault("created_ip", "127.0.0.1")
+    data.setdefault("password", "secret")
+    data.setdefault("status", UserStatus.ACTIVE.name)
+    data.setdefault("role", UserRole.USER.name)
+    params = random_user(**data)
+
     user = await db.create_user(params)
-    user["raw_password"] = password
+    user["raw_password"] = data["password"]
     return user
 
 
@@ -75,7 +71,7 @@ async def log_client_in(
     db: AsyncpgStorage = get_plugin_storage(client.app)
     cfg: LoginOptions = get_plugin_options(client.app)
 
-    user = await create_user(db, user_data)
+    user = await create_fake_user(db, user_data)
 
     # login
     url = client.app.router["auth_login"].url_for()
@@ -101,7 +97,7 @@ class NewUser:
         self.db = get_plugin_storage(app)
 
     async def __aenter__(self):
-        self.user = await create_user(self.db, self.params)
+        self.user = await create_fake_user(self.db, self.params)
         return self.user
 
     async def __aexit__(self, *args):
@@ -125,14 +121,14 @@ class NewInvitation(NewUser):
     def __init__(
         self,
         client: TestClient,
-        guest="",
-        host=None,
+        guest_email: Optional[str] = None,
+        host: Optional[dict] = None,
         trial_days: Optional[int] = None,
     ):
         assert client.app
         super().__init__(params=host, app=client.app)
         self.client = client
-        self.guest = guest or get_random_string(10)
+        self.guest = guest_email or FAKE.email()
         self.confirmation = None
         self.trial_days = trial_days
 
@@ -140,7 +136,7 @@ class NewInvitation(NewUser):
         # creates host user
         assert self.client.app
         db: AsyncpgStorage = get_plugin_storage(self.client.app)
-        self.user = await create_user(db, self.params)
+        self.user = await create_fake_user(db, self.params)
 
         self.confirmation = await create_invitation(
             self.user, self.guest, self.db, self.trial_days

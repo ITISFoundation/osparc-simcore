@@ -128,9 +128,9 @@ async def test_get_profile(
     assert client.app
 
     url = client.app.router["get_my_profile"].url_for()
-    assert str(url) == "/v0/me"
+    assert f"{url}" == "/v0/me"
 
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
     # check enveloped
@@ -288,9 +288,11 @@ async def test_update_token(
     sid = selected["service"]
 
     url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == str(url)
+    assert "/v0/me/tokens/%s" % sid == f"{url}"
 
-    resp = await client.put(url, json={"token_secret": "some completely new secret"})
+    resp = await client.put(
+        f"{url}", json={"token_secret": "some completely new secret"}
+    )
     data, error = await assert_status(resp, expected)
 
     if not error:

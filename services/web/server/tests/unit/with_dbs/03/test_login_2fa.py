@@ -247,7 +247,7 @@ async def test_register_phone_fails_with_used_number(
     """
 
     # some user ALREADY registered with the same phone
-    await utils_login.create_user(db, data={"phone": PHONE})
+    await utils_login.create_fake_user(db, data={"phone": PHONE})
 
     # new registration with same phone
     # 1. submit
