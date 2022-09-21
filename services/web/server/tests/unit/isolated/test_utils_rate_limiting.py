@@ -9,7 +9,7 @@ from typing import Callable
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aiohttp.web_exceptions import HTTPTooManyRequests
+from aiohttp.web_exceptions import HTTPOk, HTTPTooManyRequests
 from pydantic import ValidationError, conint, parse_obj_as
 from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 
@@ -55,7 +55,11 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
     while len(tasks) < num_requests:
         t1 = time.time()
         tasks.append(asyncio.create_task(client.get("/")))
-        time.sleep(time_between_requests - (time.time() - t1))
+        elapsed_on_creation = time.time() - t1  # ANE is really precise here ;-)
+
+        # NOTE: I am not sure why using asyncio.sleep here would make some tests fail the check "after"
+        # await asyncio.sleep(time_between_requests - create_gap)
+        time.sleep(time_between_requests - elapsed_on_creation)
 
     elapsed = time.time() - t0
     count = len(tasks)
@@ -74,19 +78,19 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
     msg = []
     for i, task in enumerate(tasks):
         while not task.done():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
         assert not task.cancelled()
         assert not task.exception()
         msg.append(
             (
-                "%2d" % i,
+                "request # %2d" % i,
                 f"status={task.result().status}",
                 f"retry-after={task.result().headers.get('Retry-After')}",
             )
         )
         print(*msg[-1])
 
-    expected_status = 200
+    expected_status = HTTPOk.status_code
 
     # first requests are OK
     assert all(
