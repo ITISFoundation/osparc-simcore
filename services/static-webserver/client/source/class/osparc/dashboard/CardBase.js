@@ -414,7 +414,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTip += this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          image = osparc.component.task.Export.EXPORT_ICON+"/";
+          image = osparc.component.task.Export.ICON+"/";
           toolTip += this.tr(" is exporting it...");
           break;
         case "OPENING":

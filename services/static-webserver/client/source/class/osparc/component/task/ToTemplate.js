@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2022 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.task.Duplicate", {
+qx.Class.define("osparc.component.task.ToTemplate", {
   extend: osparc.component.task.Task,
 
   construct: function(studyName) {
@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.task.Duplicate", {
       this.getChildControl("subtitle");
       this.getChildControl("stop");
 
-      this.setTitle(this.tr("Duplicating ") + this.__studyName);
+      this.setTitle(this.tr("To Template ") + this.__studyName);
     }
   }
 });

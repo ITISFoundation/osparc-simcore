@@ -633,7 +633,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyName,
-        "@FontAwesome5Solid/copy/" + (isGrid ? "60" : "24"),
+        osparc.component.task.Duplicate.ICON + (isGrid ? "60" : "24"),
         null,
         true
       );

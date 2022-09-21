@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.task.Export", {
   },
 
   statics: {
-    EXPORT_ICON: "@FontAwesome5Solid/cloud-download-alt" // "@FontAwesome5Solid/file-export"
+    ICON: "@FontAwesome5Solid/cloud-download-alt"
   },
 
   members: {
@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.task.Export", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image(this.self().EXPORT_ICON+"/14").set({
+          control = new qx.ui.basic.Image(this.self().ICON+"/14").set({
             alignY: "middle",
             alignX: "center",
             paddingLeft: 3,
