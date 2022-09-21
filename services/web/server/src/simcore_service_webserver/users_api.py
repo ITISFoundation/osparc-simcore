@@ -129,7 +129,7 @@ async def update_user_profile(
                 sa.select([users.c.name]).where(users.c.id == user_id)
             )
             try:
-                first_name, last_name = name.split(".") + [""]
+                first_name, last_name = name.rsplit(".", maxsplit=2)
             except ValueError:
                 first_name = name
 

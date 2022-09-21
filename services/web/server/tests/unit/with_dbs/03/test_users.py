@@ -259,7 +259,7 @@ async def test_read_token(
         # get one
         url = client.app.router["get_token"].url_for(service=sid)
         assert "/v0/me/tokens/%s" % sid == str(url)
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
 
         data, error = await assert_status(resp, expected)
 
