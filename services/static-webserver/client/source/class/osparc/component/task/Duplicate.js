@@ -18,14 +18,14 @@
 qx.Class.define("osparc.component.task.Duplicate", {
   extend: osparc.component.task.Task,
 
-  construct: function(study) {
-    this.__study = study;
+  construct: function(studyName) {
+    this.__studyName = studyName;
 
     this.base(arguments);
   },
 
   members: {
-    __study: null,
+    __studyName: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.task.Duplicate", {
       this.getChildControl("subtitle");
       this.getChildControl("stop");
 
-      this.setTitle(this.tr("Duplicating ") + this.__study.name);
+      this.setTitle(this.tr("Duplicating ") + this.__studyName);
     }
   }
 });

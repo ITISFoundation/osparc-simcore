@@ -33,7 +33,7 @@ qx.Class.define("osparc.data.PollTasks", {
   },
 
   members: {
-    createTask: function(taskData, interval) {
+    addTask: function(taskData, interval) {
       const task = new osparc.data.PollTask(taskData, interval);
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.PollTasks", {
         fetchPromise
           .then(taskData => {
             if ("status_href" in taskData) {
-              const task = this.createTask(taskData, interval);
+              const task = this.addTask(taskData, interval);
               resolve(task);
             } else {
               throw Error("Status missing");

@@ -628,89 +628,80 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.createTask(taskData, interval);
-        if (task === null) {
-          return;
-        }
-
-        const idk = {
-          name: "I don't know"
-        };
-        const duplicateTask = new osparc.component.task.Duplicate(idk);
-        duplicateTask.start();
-
-        const isGrid = this._resourcesContainer.getMode() === "grid";
-        const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
-        duplicatingStudyCard.buildLayout(
-          this.tr("Duplicating ") + idk["name"],
-          "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24",
-          null,
-          true
-        );
-        duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
-        this._resourcesContainer.addAt(duplicatingStudyCard, 1);
-
-        if (task.getAbortHref()) {
-          task.bind("abortHref", duplicateTask, "stopSupported", {
-            converter: abortHref => Boolean(abortHref)
-          });
-          duplicateTask.addListener("abortRequested", () => task.abortRequested());
-          task.addListener("taskAborted", () => {
-            const msg = this.tr("Duplication aborted");
-            osparc.component.message.FlashMessenger.logAs(msg, "INFO");
-            duplicateTask.stop();
-            this._resourcesContainer.remove(duplicatingStudyCard);
-          });
-        }
-        task.addListener("updateReceived", e => {
-          const updateData = e.getData();
-          if ("task_progress" in updateData && duplicatingStudyCard) {
-            const progress = updateData["task_progress"];
-            duplicatingStudyCard.getChildControl("progress-bar").set({
-              value: progress["percent"]*100
-            });
-            duplicatingStudyCard.getChildControl("state-label").set({
-              value: progress["message"]
-            });
-          }
-        }, this);
-        task.addListener("resultReceived", e => {
-          const duplicatedStudyData = e.getData();
-          this.reloadStudy(duplicatedStudyData["uuid"]);
-          duplicateTask.stop();
-          this._resourcesContainer.remove(duplicatingStudyCard);
-        });
-        task.addListener("pollingError", e => {
-          const errMsg = e.getData();
-          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-          duplicateTask.stop();
-          this._resourcesContainer.remove(duplicatingStudyCard);
-        });
-      });
-    },
-
-    __duplicateStudy: function(studyData) {
-      const text = this.tr("Duplicate process started and added to the background tasks");
-      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-
-      const duplicateTask = new osparc.component.task.Duplicate(studyData);
-      duplicateTask.start();
-
+    __createDuplicateCard: function(studyName) {
       const isGrid = this._resourcesContainer.getMode() === "grid";
       const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
-        this.tr("Duplicating ") + studyData["name"],
+        this.tr("Duplicating ") + studyName,
         "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24",
         null,
         true
       );
       duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
       this._resourcesContainer.addAt(duplicatingStudyCard, 1);
+      return duplicatingStudyCard;
+    },
+
+    __attachDuplicateEventHandler: function(task, studyCard, taskUI) {
+      if (task.getAbortHref()) {
+        task.bind("abortHref", taskUI, "stopSupported", {
+          converter: abortHref => Boolean(abortHref)
+        });
+        taskUI.addListener("abortRequested", () => task.abortRequested());
+        task.addListener("taskAborted", () => {
+          const msg = this.tr("Duplication aborted");
+          osparc.component.message.FlashMessenger.logAs(msg, "INFO");
+          taskUI.stop();
+          this._resourcesContainer.remove(taskUI);
+        });
+      }
+      task.addListener("updateReceived", e => {
+        const updateData = e.getData();
+        if ("task_progress" in updateData && studyCard) {
+          const progress = updateData["task_progress"];
+          studyCard.getChildControl("progress-bar").set({
+            value: progress["percent"]*100
+          });
+          studyCard.getChildControl("state-label").set({
+            value: progress["message"]
+          });
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        const duplicatedStudyData = e.getData();
+        this.reloadStudy(duplicatedStudyData["uuid"]);
+        taskUI.stop();
+        this._resourcesContainer.remove(studyCard);
+      });
+      task.addListener("pollingError", e => {
+        const errMsg = e.getData();
+        const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+        taskUI.stop();
+        this._resourcesContainer.remove(studyCard);
+      });
+    },
+
+    __tasksReceived: function(tasks) {
+      tasks.forEach(taskData => {
+        const interval = 1000;
+        const pollTasks = osparc.data.PollTasks.getInstance();
+        const task = pollTasks.addTask(taskData, interval);
+        if (task === null) {
+          return;
+        }
+
+        const studyName = "";
+        const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
+        duplicateTaskUI.start();
+        const duplicatingStudyCard = this.__createDuplicateCard(studyName);
+        this.__attachDuplicateEventHandler(task, duplicatingStudyCard, duplicateTaskUI);
+      });
+    },
+
+    __duplicateStudy: function(studyData) {
+      const text = this.tr("Duplicate process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const params = {
         url: {
@@ -722,49 +713,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => {
-          if (task.getAbortHref()) {
-            task.bind("abortHref", duplicateTask, "stopSupported", {
-              converter: abortHref => Boolean(abortHref)
-            });
-            duplicateTask.addListener("abortRequested", () => task.abortRequested());
-            task.addListener("taskAborted", () => {
-              const msg = this.tr("Duplication aborted");
-              osparc.component.message.FlashMessenger.logAs(msg, "INFO");
-              duplicateTask.stop();
-              this._resourcesContainer.remove(duplicatingStudyCard);
-            });
-          }
-          task.addListener("updateReceived", e => {
-            const updateData = e.getData();
-            if ("task_progress" in updateData && duplicatingStudyCard) {
-              const progress = updateData["task_progress"];
-              duplicatingStudyCard.getChildControl("progress-bar").set({
-                value: progress["percent"]*100
-              });
-              duplicatingStudyCard.getChildControl("state-label").set({
-                value: progress["message"]
-              });
-            }
-          }, this);
-          task.addListener("resultReceived", e => {
-            const duplicatedStudyData = e.getData();
-            this.reloadStudy(duplicatedStudyData["uuid"]);
-            duplicateTask.stop();
-            this._resourcesContainer.remove(duplicatingStudyCard);
-          });
-          task.addListener("pollingError", e => {
-            const errMsg = e.getData();
-            const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-            osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-            duplicateTask.stop();
-            this._resourcesContainer.remove(duplicatingStudyCard);
-          });
+          const duplicateTaskUI = new osparc.component.task.Duplicate(studyData["name"]);
+          duplicateTaskUI.start();
+          const duplicatingStudyCard = this.__createDuplicateCard(studyData["name"]);
+          this.__attachDuplicateEventHandler(task, duplicatingStudyCard, duplicateTaskUI);
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-          duplicateTask.stop();
-          this._resourcesContainer.remove(duplicatingStudyCard);
         });
     },
 
