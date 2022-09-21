@@ -238,18 +238,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.addTask(taskData, interval);
-        if (task === null) {
-          return;
-        }
-
-        // ask backend for studyData?
-        const studyName = "";
-        this._taskReceived(task, studyName);
-      });
+      tasks.forEach(taskData => this._taskDataReceived(taskData));
     },
 
     __getNextRequest: function(templates) {
@@ -303,7 +292,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return item;
     },
 
-    _taskReceived: function(task, studyName) {
+    _taskDataReceived: function(taskData) {
       throw new Error("Abstract method called!");
     },
 

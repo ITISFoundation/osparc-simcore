@@ -306,9 +306,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this.__attachToTemplateEventHandler(task, toTemaplateTaskUI, toTemplateCard);
     },
 
-    _taskReceived: function(task, studyName) {
+    _taskDataReceived: function(taskData) {
       // a bit hacky
-      if (task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template")) {
+      if (taskData["task_id"].includes("from_study") && taskData["task_id"].includes("as_template")) {
+        const interval = 1000;
+        const pollTasks = osparc.data.PollTasks.getInstance();
+        const task = pollTasks.addTask(taskData, interval);
+        if (task === null) {
+          return;
+        }
+        // ask backend for studyData?
+        const studyName = "";
         this.taskToTemplateReceived(task, studyName);
       }
     },
