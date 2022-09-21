@@ -133,20 +133,24 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     _addResourcesToList: function(newTemplatesList) {
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(newTemplatesList);
-      const templatesList = this._resourcesContainer.getChildren();
+      // sort first
       newTemplatesList.forEach(template => {
         if (this.__templates.indexOf(template) === -1) {
           this.__templates.push(template);
         }
+      });
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(this.__templates);
 
+      const templatesList = this._resourcesContainer.getChildren();
+      newTemplatesList.forEach(template => {
         template["resourceType"] = "template";
-        const idx = templatesList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
-        if (idx !== -1) {
+        const exists = templatesList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
+        if (exists !== -1) {
           return;
         }
         const templateItem = this.__createTemplateItem(template, this._resourcesContainer.getMode());
-        this._resourcesContainer.add(templateItem);
+        const idx = this.__templates.indexOf(template);
+        this._resourcesContainer.addAt(templateItem, idx);
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
       const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.GridButtonLoadMore);
@@ -253,13 +257,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return toTemplateCard;
     },
 
-    __attachToTemplateEventHandler: function(task, taskUI, templateCard) {
+    __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
           osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
         }
         taskUI.stop();
-        this._resourcesContainer.remove(templateCard);
+        this._resourcesContainer.remove(toTemplateCard);
       };
 
       if (task.getAbortHref()) {
@@ -274,12 +278,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
-        if ("task_progress" in updateData && templateCard) {
+        if ("task_progress" in updateData && toTemplateCard) {
           const progress = updateData["task_progress"];
-          templateCard.getChildControl("progress-bar").set({
+          toTemplateCard.getChildControl("progress-bar").set({
             value: progress["percent"]*100
           });
-          templateCard.getChildControl("state-label").set({
+          toTemplateCard.getChildControl("state-label").set({
             value: progress["message"]
           });
         }
