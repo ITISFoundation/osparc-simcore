@@ -141,23 +141,30 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(this.__templates);
 
-      const templatesList = this._resourcesContainer.getChildren();
+      const cardsList = this._resourcesContainer.getChildren();
       newTemplatesList.forEach(template => {
         template["resourceType"] = "template";
-        const exists = templatesList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
+        const exists = cardsList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
         if (exists !== -1) {
           return;
         }
         const templateItem = this.__createTemplateItem(template, this._resourcesContainer.getMode());
         const idx = this.__templates.indexOf(template);
-        this._resourcesContainer.addAt(templateItem, idx);
+        const offset = this.__getNonTemplateCards().length;
+        this._resourcesContainer.addAt(templateItem, idx+offset);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
-      const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.GridButtonLoadMore);
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(cardsList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
+      const idx = cardsList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
       if (idx !== -1) {
-        templatesList.push(templatesList.splice(idx, 1)[0]);
+        cardsList.push(cardsList.splice(idx, 1)[0]);
       }
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+    },
+
+    __getNonTemplateCards: function() {
+      const cardsList = this._resourcesContainer.getChildren();
+      const nonTemplateCards = cardsList.filter(card => !osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card));
+      return nonTemplateCards;
     },
 
     __removeFromTemplateList: function(studyId) {
@@ -247,7 +254,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const isGrid = this._resourcesContainer.getMode() === "grid";
       const toTemplateCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       toTemplateCard.buildLayout(
-        this.tr("To Template ") + studyName,
+        this.tr("Publishing ") + studyName,
         osparc.component.task.ToTemplate.ICON + (isGrid ? "60" : "24"),
         null,
         true

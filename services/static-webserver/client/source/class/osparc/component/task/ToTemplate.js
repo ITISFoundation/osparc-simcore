@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.task.ToTemplate", {
       this.getChildControl("subtitle");
       this.getChildControl("stop");
 
-      this.setTitle(this.tr("To Template ") + this.__studyName);
+      this.setTitle(this.tr("Publishing ") + this.__studyName);
     }
   }
 });
