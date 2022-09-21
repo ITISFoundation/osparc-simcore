@@ -1,20 +1,56 @@
 import logging
 import uuid as uuidlib
 from copy import deepcopy
+from datetime import timedelta
+from typing import Optional
 
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.basic_types import IdInt
+from pydantic import BaseModel
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
+from sqlalchemy.sql import func
 
 from ..security_api import check_permission
 from .decorators import RQT_USERID_KEY, login_required
 from .utils import get_random_string
 
 log = logging.getLogger(__name__)
+
+
+# TODO: schedule task that periodically runs prune in the Garbage collector service
+
+
+async def prune_expired_api_keys(app: web.Application):
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        stmt = (
+            orm.api_keys.delete()
+            .where(
+                (orm.api_keys.c.expires_at != None)
+                & (orm.api_keys.c.expires_at < func.now())
+            )
+            .returning(orm.api_keys.c.display_name)
+        )
+
+        result: ResultProxy = await conn.execute(stmt)
+        deleted = [r.display_name for r in await result.fetchall()]
+        return deleted
+
+
+class ApiKeyCreate(BaseModel):
+    # TODO: bigger than 3 letters
+    display_name: str
+    expiration: Optional[timedelta] = None
+    # TODO: add update OAS!!
+
+
+# TODO: class ApiKeyGet(BaseModel): for the response
 
 
 def generate_api_credentials() -> dict[str, str]:
@@ -29,7 +65,7 @@ class CRUD:
     # pylint: disable=no-value-for-parameter
 
     def __init__(self, request: web.Request):
-        self.engine = request.app.get(APP_DB_ENGINE_KEY)
+        self.engine = request.app[APP_DB_ENGINE_KEY]
         self.userid: int = request.get(RQT_USERID_KEY, -1)
 
     async def list_api_key_names(self):
@@ -42,20 +78,32 @@ class CRUD:
 
             res: ResultProxy = await conn.execute(stmt)
             rows: list[RowProxy] = await res.fetchall()
+            # TODO: improve this
             return [row.get(0) for row in rows] if rows else []
 
-    async def create(self, name: str, *, api_key: str, api_secret: str):
-
+    async def create(
+        self,
+        rq: ApiKeyCreate,
+        *,
+        api_key: str,
+        api_secret: str,
+    ) -> list[IdInt]:
         async with self.engine.acquire() as conn:
-            stmt = orm.api_keys.insert().values(
-                display_name=name,
-                user_id=self.userid,
-                api_key=api_key,
-                api_secret=api_secret,
+            stmt = (
+                orm.api_keys.insert()
+                .values(
+                    display_name=rq.display_name,
+                    user_id=self.userid,
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    expires_at=func.now() + rq.expiration if rq.expiration else None,
+                )
+                .returning(orm.api_keys.c.id)
             )
 
-            res: ResultProxy = await conn.execute(stmt)
-            print(res)
+            result: ResultProxy = await conn.execute(stmt)
+            created = [r.id for r in await result.fetchall()]
+            return created
 
     async def delete_api_key(self, name: str):
         async with self.engine.acquire() as conn:
@@ -87,19 +135,17 @@ async def create_api_key(request: web.Request):
     """
     await check_permission(request, "user.apikey.*")
 
-    body = await request.json()
-    display_name = body.get("display_name")
-
+    apikey = await parse_request_body_as(ApiKeyCreate, request)
     credentials = generate_api_credentials()
     try:
         crud = CRUD(request)
-        await crud.create(display_name, **credentials)
+        await crud.create(apikey, **credentials)
     except DatabaseError as err:
-        log.warning("Failed to create API key %d", display_name, exc_info=err)
+        log.warning("Failed to create API key %d", apikey.display_name, exc_info=err)
         raise web.HTTPBadRequest(reason="Invalid API key name: already exists") from err
 
     return {
-        "display_name": display_name,
+        "display_name": apikey.display_name,
         "api_key": credentials["api_key"],
         "api_secret": credentials["api_secret"],
     }

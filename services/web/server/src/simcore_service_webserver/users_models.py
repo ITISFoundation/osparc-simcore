@@ -13,7 +13,7 @@ from .groups_models import AllUsersGroups
 # TOKENS resource
 #
 
-
+# TODO: rename ApiKey
 class Token(BaseModel):
     """
     api keys for third party services
