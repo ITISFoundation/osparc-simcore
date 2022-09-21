@@ -84,8 +84,16 @@ jobs:
           export VCS_STATUS_CLIENT="clean"
           export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           export BUILD_TARGET=production
-          docker buildx bake --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --file docker-compose-build.yml --print
-          docker buildx bake --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --file docker-compose-build.yml
+          docker buildx bake --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
+            --set dask-scheduler.cache-to=type=gha,mode=max,scope=dask-scheduler \
+            --set dask-sidecar.cache-from=type=gha,scope=dask-sidecar \
+            --set dask-sidecar.cache-to=type=gha,mode=max,scope=dask-sidecar \
+            --file docker-compose-build.yml --print
+          docker buildx bake --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
+            --set dask-scheduler.cache-to=type=gha,mode=max,scope=dask-scheduler \
+            --set dask-sidecar.cache-from=type=gha,scope=dask-sidecar \
+            --set dask-sidecar.cache-to=type=gha,mode=max,scope=dask-sidecar \
+            --file docker-compose-build.yml
       # - name: build images
       #   run: ./ci/build/test-images.bash build_images
       - name: set owner variable
