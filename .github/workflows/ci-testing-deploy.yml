@@ -84,6 +84,7 @@ jobs:
           export VCS_STATUS_CLIENT="clean"
           export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           export BUILD_TARGET=production
+          docker buildx bake --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --file docker-compose-build.yml --print
           docker buildx bake --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --file docker-compose-build.yml
       # - name: build images
       #   run: ./ci/build/test-images.bash build_images
