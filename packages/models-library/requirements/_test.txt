@@ -61,7 +61,10 @@ isort==5.10.1
 lazy-object-proxy==1.7.1
     # via astroid
 mako==1.2.2
-    # via alembic
+    # via
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 markupsafe==2.1.1
     # via mako
 mccabe==0.7.0
