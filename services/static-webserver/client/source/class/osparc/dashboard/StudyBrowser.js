@@ -64,12 +64,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.data.Resources.get("tasks")
-          .then(tasks => {
-            if (tasks && tasks.length) {
-              this.__tasksReceived(tasks);
-            }
-          });
         this._requestResources(false);
       } else {
         this._resetResourcesList([]);
@@ -682,25 +676,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => {
-        const interval = 1000;
-        const pollTasks = osparc.data.PollTasks.getInstance();
-        const task = pollTasks.addTask(taskData, interval);
-        if (task === null) {
-          return;
-        }
-
-        const studyName = "";
-        this.__taskDuplicateReceived(task, studyName);
-      });
-    },
-
-    __taskDuplicateReceived: function(task, studyName) {
+    taskDuplicateReceived: function(task, studyName) {
       const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
       duplicateTaskUI.start();
       const duplicatingStudyCard = this.__createDuplicateCard(studyName);
       this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
+    },
+
+    _taskReceived: function(task, studyName) {
+      // a bit hacky
+      if (task.getTaskId().includes("from_study") && !task.getTaskId().includes("as_template")) {
+        this.taskDuplicateReceived(task, studyName);
+      }
     },
 
     __duplicateStudy: function(studyData) {
@@ -716,7 +703,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
-        .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
+        .then(task => this.taskDuplicateReceived(task, studyData["name"]))
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");

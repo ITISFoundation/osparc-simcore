@@ -200,6 +200,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
+      osparc.data.Resources.get("tasks")
+        .then(tasks => {
+          if (tasks && tasks.length) {
+            this.__tasksReceived(tasks);
+          }
+        });
       this._loadingResourcesBtn.setFetching(true);
       const request = this.__getNextRequest(templates);
       request
@@ -229,6 +235,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
           this._moreResourcesRequired();
         });
+    },
+
+    __tasksReceived: function(tasks) {
+      tasks.forEach(taskData => {
+        const interval = 1000;
+        const pollTasks = osparc.data.PollTasks.getInstance();
+        const task = pollTasks.addTask(taskData, interval);
+        if (task === null) {
+          return;
+        }
+
+        // ask backend for studyData?
+        const studyName = "";
+        this._taskReceived(task, studyName);
+      });
     },
 
     __getNextRequest: function(templates) {
@@ -280,6 +301,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       item.subscribeToFilterGroup("searchBarFilter");
 
       return item;
+    },
+
+    _taskReceived: function() {
+      throw new Error("Abstract method called!");
     },
 
     _getResourceItemMenu: function(resourceData, item) {

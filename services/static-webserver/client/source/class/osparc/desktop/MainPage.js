@@ -211,7 +211,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         .then(task => {
           const templateBrowser = this.__dashboard.getTemplateBrowser();
           if (templateBrowser) {
-            templateBrowser.taskToTemplateReceived(data["studyData"].name, task);
+            templateBrowser.taskToTemplateReceived(task, data["studyData"].name);
           }
         })
         .catch(errMsg => {

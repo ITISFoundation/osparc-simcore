@@ -299,11 +299,18 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
     },
 
-    taskToTemplateReceived: function(studyName, task) {
+    taskToTemplateReceived: function(task, studyName) {
       const toTemaplateTaskUI = new osparc.component.task.ToTemplate(studyName);
       toTemaplateTaskUI.start();
       const toTemplateCard = this.__createToTemplateCard(studyName);
       this.__attachToTemplateEventHandler(task, toTemaplateTaskUI, toTemplateCard);
+    },
+
+    _taskReceived: function(task, studyName) {
+      // a bit hacky
+      if (task.getTaskId().includes("from_study") && task.getTaskId().includes("as_template")) {
+        this.taskToTemplateReceived(task, studyName);
+      }
     },
 
     __deleteTemplate: function(studyData) {
