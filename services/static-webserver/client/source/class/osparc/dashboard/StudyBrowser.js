@@ -643,6 +643,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __attachDuplicateEventHandler: function(task, studyCard, taskUI) {
+      const finished = (msg, msgLevel) => {
+        if (msg) {
+          osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
+        }
+        taskUI.stop();
+        this._resourcesContainer.remove(studyCard);
+      };
+
       if (task.getAbortHref()) {
         task.bind("abortHref", taskUI, "stopSupported", {
           converter: abortHref => Boolean(abortHref)
@@ -650,9 +658,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         taskUI.addListener("abortRequested", () => task.abortRequested());
         task.addListener("taskAborted", () => {
           const msg = this.tr("Duplication aborted");
-          osparc.component.message.FlashMessenger.logAs(msg, "INFO");
-          taskUI.stop();
-          this._resourcesContainer.remove(taskUI);
+          finished(msg, "INFO");
         });
       }
       task.addListener("updateReceived", e => {
@@ -670,15 +676,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       task.addListener("resultReceived", e => {
         const duplicatedStudyData = e.getData();
         this.reloadStudy(duplicatedStudyData["uuid"]);
-        taskUI.stop();
-        this._resourcesContainer.remove(studyCard);
+        finished();
       });
       task.addListener("pollingError", e => {
         const errMsg = e.getData();
         const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
-        taskUI.stop();
-        this._resourcesContainer.remove(studyCard);
+        finished(msg, "ERROR");
       });
     },
 
