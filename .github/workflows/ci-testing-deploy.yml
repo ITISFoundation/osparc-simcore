@@ -78,6 +78,11 @@ jobs:
       - name: build images
         working-directory: services
         run: |
+          export VCS_URL=$(git config --get remote.origin.url)
+          export VCS_REF=$(git rev-parse --short HEAD)
+          export VCS_REF_CLIENT=$(git log --pretty=tformat:"%h" -n1 static-webserver/client)
+          export VCS_STATUS_CLIENT=clean
+          export BUILD_DATE= $(date -u +"%Y-%m-%dT%H:%M:%SZ")
           export BUILD_TARGET=production
           docker buildx bake --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --file docker-compose-build.yml
       # - name: build images
