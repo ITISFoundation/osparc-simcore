@@ -12,11 +12,6 @@ services:
     build:
       context: ../
       dockerfile: services/api-server/Dockerfile
-      cache_from:
-        - local/api-server:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/api-server:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/api-server:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/api-server:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -30,11 +25,6 @@ services:
     build:
       context: ../
       dockerfile: services/autoscaling/Dockerfile
-      cache_from:
-        - local/autoscaling:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -48,11 +38,6 @@ services:
     build:
       context: ../
       dockerfile: services/catalog/Dockerfile
-      cache_from:
-        - local/catalog:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/catalog:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/catalog:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/catalog:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -66,11 +51,6 @@ services:
     build:
       context: ../
       dockerfile: services/director/Dockerfile
-      cache_from:
-        - local/director:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/director:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -85,11 +65,7 @@ services:
     build:
       context: ../
       dockerfile: services/dask-sidecar/Dockerfile
-      cache_from:
-        - local/dask-sidecar:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:release-github-latest
+
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -104,11 +80,6 @@ services:
     build:
       context: ../
       dockerfile: services/director-v2/Dockerfile
-      cache_from:
-        - local/director-v2:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -122,11 +93,6 @@ services:
     build:
       context: ../
       dockerfile: services/migration/Dockerfile
-      cache_from:
-        - local/migration:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/migration:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/migration:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/migration:release-github-latest
       target: production
       labels:
         org.label-schema.schema-version: "1.0"
@@ -145,11 +111,6 @@ services:
         - VCS_REF_CLIENT=${VCS_REF_CLIENT}
         - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
         - VCS_URL=${VCS_URL}
-      cache_from:
-        - local/static-webserver:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -162,11 +123,6 @@ services:
     build:
       context: ../
       dockerfile: services/web/Dockerfile
-      cache_from:
-        - local/webserver:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/webserver:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       args:
         - BUILD_DATE=${BUILD_DATE}
@@ -184,11 +140,6 @@ services:
     build:
       context: ../
       dockerfile: services/dynamic-sidecar/Dockerfile
-      cache_from:
-        - local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -201,11 +152,6 @@ services:
     build:
       context: ../
       dockerfile: services/datcore-adapter/Dockerfile
-      cache_from:
-        - local/datcore-adapter:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
@@ -219,11 +165,6 @@ services:
     build:
       context: ../
       dockerfile: services/storage/Dockerfile
-      cache_from:
-        - local/storage:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/storage:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/storage:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/storage:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
