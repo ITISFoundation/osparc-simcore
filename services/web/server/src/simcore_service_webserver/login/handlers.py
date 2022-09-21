@@ -427,7 +427,7 @@ async def logout(request: web.Request) -> web.Response:
     return response
 
 
-@global_rate_limit_route(number_of_requests=5, interval_seconds=HOUR)
+@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def reset_password(request: web.Request):
     """
         1. confirm user exists

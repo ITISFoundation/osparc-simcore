@@ -17,6 +17,15 @@ from yarl import URL
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 
+#
+# NOTE: theses tests are hitting a 'global_rate_limit_route' decorated entrypoint: 'auth_reset_password'
+#       and might fail with 'HTTPTooManyRequests' error.
+#       At this point we did not find a clean solution to mock 'global_rate_limit_route'
+#       and therefore disable the rate-limiting for tests. We ended up raising a bit the
+#       request rate threashold.
+#       SEE 'simcore_service_webserver.loging.handlers.py:reset_password'
+#
+
 
 @pytest.fixture
 def client(
@@ -31,6 +40,7 @@ def client(
 
 @pytest.fixture
 def cfg(client: TestClient) -> LoginOptions:
+    assert client.app
     cfg = get_plugin_options(client.app)
     assert cfg
     return cfg
@@ -38,6 +48,7 @@ def cfg(client: TestClient) -> LoginOptions:
 
 @pytest.fixture
 def db(client: TestClient) -> AsyncpgStorage:
+    assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
     return db
@@ -48,10 +59,11 @@ async def test_unknown_email(
     cfg: LoginOptions,
     capsys,
 ):
+    assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     rp = await client.post(
-        reset_url,
+        f"{reset_url}",
         json={
             "email": EMAIL,
         },
@@ -70,9 +82,9 @@ async def test_blocked_user(
     client: TestClient, cfg: LoginOptions, capsys, user_status: UserStatus
 ):
     assert client.app
-    expected_msg = getattr(cfg, f"MSG_USER_{user_status.name.upper()}")
-
     reset_url = client.app.router["auth_reset_password"].url_for()
+
+    expected_msg = getattr(cfg, f"MSG_USER_{user_status.name.upper()}")
 
     async with NewUser({"status": user_status.name}, app=client.app) as user:
         rp = await client.post(
@@ -97,7 +109,7 @@ async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
         {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
     ) as user:
         rp = await client.post(
-            reset_url,
+            f"{reset_url}",
             json={
                 "email": user["email"],
             },
@@ -113,6 +125,7 @@ async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
 async def test_too_often(
     client: TestClient, cfg: LoginOptions, db: AsyncpgStorage, capsys
 ):
+    assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
     async with NewUser(app=client.app) as user:
@@ -120,7 +133,7 @@ async def test_too_often(
             user, ConfirmationAction.RESET_PASSWORD.name
         )
         rp = await client.post(
-            reset_url,
+            f"{reset_url}",
             json={
                 "email": user["email"],
             },
@@ -135,10 +148,12 @@ async def test_too_often(
 
 
 async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
+    assert client.app
+
     async with NewUser(app=client.app) as user:
         reset_url = client.app.router["auth_reset_password"].url_for()
         rp = await client.post(
-            reset_url,
+            f"{reset_url}",
             json={
                 "email": user["email"],
             },
@@ -166,7 +181,7 @@ async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
         )
         new_password = get_random_string(5, 10)
         rp = await client.post(
-            reset_allowed_url,
+            f"{reset_allowed_url}",
             json={
                 "password": new_password,
                 "confirm": new_password,
@@ -180,13 +195,13 @@ async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
 
         # Try new password
         logout_url = client.app.router["auth_logout"].url_for()
-        rp = await client.post(logout_url)
+        rp = await client.post(f"{logout_url}")
         assert rp.url.path == logout_url.path
         await assert_status(rp, web.HTTPUnauthorized, "Unauthorized")
 
         login_url = client.app.router["auth_login"].url_for()
         rp = await client.post(
-            login_url,
+            f"{login_url}",
             json={
                 "email": user["email"],
                 "password": new_password,
