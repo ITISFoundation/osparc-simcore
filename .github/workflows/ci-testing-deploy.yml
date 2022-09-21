@@ -83,8 +83,6 @@ jobs:
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
