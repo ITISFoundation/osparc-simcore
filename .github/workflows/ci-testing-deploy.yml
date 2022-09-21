@@ -84,15 +84,61 @@ jobs:
           export VCS_STATUS_CLIENT="clean"
           export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           export BUILD_TARGET=production
-          docker buildx bake --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
+          docker buildx bake \
+            --set api-server.cache-from=type=gha,scope=api-server \
+            --set api-server.cache-to=type=gha,mode=max,scope=api-server \
+            --set autoscaling.cache-from=type=gha,scope=autoscaling \
+            --set autoscaling.cache-to=type=gha,mode=max,scope=autoscaling \
+            --set catalog.cache-from=type=gha,scope=catalog \
+            --set catalog.cache-to=type=gha,mode=max,scope=catalog \
+            --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
             --set dask-scheduler.cache-to=type=gha,mode=max,scope=dask-scheduler \
             --set dask-sidecar.cache-from=type=gha,scope=dask-sidecar \
             --set dask-sidecar.cache-to=type=gha,mode=max,scope=dask-sidecar \
+            --set datcore-adapter.cache-from=type=gha,scope=datcore-adapter \
+            --set datcore-adapter.cache-to=type=gha,mode=max,scope=datcore-adapter \
+            --set director.cache-from=type=gha,scope=director \
+            --set director.cache-to=type=gha,mode=max,scope=director \
+            --set director-v2.cache-from=type=gha,scope=director-v2 \
+            --set director-v2.cache-to=type=gha,mode=max,scope=director-v2 \
+            --set dynamic-sidecar.cache-from=type=gha,scope=dynamic-sidecar \
+            --set dynamic-sidecar.cache-to=type=gha,mode=max,scope=dynamic-sidecar \
+            --set migration.cache-from=type=gha,scope=migration \
+            --set migration.cache-to=type=gha,mode=max,scope=migration \
+            --set static-webserver.cache-from=type=gha,scope=static-webserver \
+            --set static-webserver.cache-to=type=gha,mode=max,scope=static-webserver \
+            --set storage.cache-from=type=gha,scope=storage \
+            --set storage.cache-to=type=gha,mode=max,scope=storage \
+            --set webserver.cache-from=type=gha,scope=webserver \
+            --set webserver.cache-to=type=gha,mode=max,scope=webserver \
             --file docker-compose-build.yml --print
-          docker buildx bake --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
+          docker buildx bake \
+            --set api-server.cache-from=type=gha,scope=api-server \
+            --set api-server.cache-to=type=gha,mode=max,scope=api-server \
+            --set autoscaling.cache-from=type=gha,scope=autoscaling \
+            --set autoscaling.cache-to=type=gha,mode=max,scope=autoscaling \
+            --set catalog.cache-from=type=gha,scope=catalog \
+            --set catalog.cache-to=type=gha,mode=max,scope=catalog \
+            --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
             --set dask-scheduler.cache-to=type=gha,mode=max,scope=dask-scheduler \
             --set dask-sidecar.cache-from=type=gha,scope=dask-sidecar \
             --set dask-sidecar.cache-to=type=gha,mode=max,scope=dask-sidecar \
+            --set datcore-adapter.cache-from=type=gha,scope=datcore-adapter \
+            --set datcore-adapter.cache-to=type=gha,mode=max,scope=datcore-adapter \
+            --set director.cache-from=type=gha,scope=director \
+            --set director.cache-to=type=gha,mode=max,scope=director \
+            --set director-v2.cache-from=type=gha,scope=director-v2 \
+            --set director-v2.cache-to=type=gha,mode=max,scope=director-v2 \
+            --set dynamic-sidecar.cache-from=type=gha,scope=dynamic-sidecar \
+            --set dynamic-sidecar.cache-to=type=gha,mode=max,scope=dynamic-sidecar \
+            --set migration.cache-from=type=gha,scope=migration \
+            --set migration.cache-to=type=gha,mode=max,scope=migration \
+            --set static-webserver.cache-from=type=gha,scope=static-webserver \
+            --set static-webserver.cache-to=type=gha,mode=max,scope=static-webserver \
+            --set storage.cache-from=type=gha,scope=storage \
+            --set storage.cache-to=type=gha,mode=max,scope=storage \
+            --set webserver.cache-from=type=gha,scope=webserver \
+            --set webserver.cache-to=type=gha,mode=max,scope=webserver \
             --file docker-compose-build.yml
       # - name: build images
       #   run: ./ci/build/test-images.bash build_images
