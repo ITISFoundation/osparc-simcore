@@ -34,10 +34,10 @@ qx.Class.define("osparc.data.PollTasks", {
 
   members: {
     addTask: function(taskData, interval) {
-      const task = new osparc.data.PollTask(taskData, interval);
       const tasks = this.getTasks();
       const index = tasks.findIndex(t => t.getTaskId() === taskData["task_id"]);
       if (index === -1) {
+        const task = new osparc.data.PollTask(taskData, interval);
         tasks.push(task);
         return task;
       }

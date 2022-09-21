@@ -91,18 +91,17 @@ qx.Class.define("osparc.data.PollTask", {
   },
 
   members: {
-    __result: null,
     __retries: null,
     __aborting: null,
 
     __pollTaskState: function() {
       fetch(this.getStatusHref())
         .then(resp => {
+          if (this.__aborting || this.getDone()) {
+            return null;
+          }
           if (resp.status === 200) {
             return resp.json();
-          }
-          if (this.__aborting) {
-            return null;
           }
           const errMsg = qx.locale.Manager.tr("Failed polling status");
           this.fireDataEvent("pollingError", errMsg);
