@@ -80,12 +80,14 @@ class AsyncpgStorage:
             assert code == c  # nosec
             return confirmation
 
-    async def get_confirmation(self, filter_dict) -> asyncpg.Record:
+    async def get_confirmation(self, filter_dict) -> Optional[ConfirmationTokenDict]:
         if "user" in filter_dict:
             filter_dict["user_id"] = filter_dict.pop("user")["id"]
         async with self.pool.acquire() as conn:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
-            return confirmation
+            return (
+                ConfirmationTokenDict(**confirmation) if confirmation else confirmation
+            )
 
     async def delete_confirmation(self, confirmation: ConfirmationTokenDict):
         async with self.pool.acquire() as conn:

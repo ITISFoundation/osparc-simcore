@@ -4,9 +4,8 @@
     - invitation code
 """
 import logging
-from copy import deepcopy
 from datetime import datetime
-from typing import Optional, cast
+from typing import Any, Optional
 
 from aiohttp import web
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, parse_raw_as
@@ -24,6 +23,12 @@ from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
 
 log = logging.getLogger(__name__)
+
+
+class ConfirmationTokenInfoDict(ConfirmationTokenDict):
+    # TODO: as pydantic model?
+    expires: datetime
+    url: str
 
 
 class InvitationData(BaseModel):
@@ -89,7 +94,7 @@ async def check_registration(
 
 
 async def create_invitation(
-    host: dict,
+    host: dict[str, Any],
     guest: str,
     db: AsyncpgStorage,
     trial_days: Optional[PositiveInt] = None,
@@ -120,7 +125,7 @@ async def create_invitation(
 
 async def check_invitation(
     invitation: Optional[str], db: AsyncpgStorage, cfg: LoginOptions
-):
+) -> Optional[ConfirmationTokenInfoDict]:
     """
     :raise web.HTTPForbidden if invalid
     """
@@ -130,7 +135,9 @@ async def check_invitation(
 
     if confirmation:
         invitation_token_info = get_confirmation_info(cfg, confirmation)
-        assert invitation_token_info["action"] == ConfirmationAction.INVITATION  # nosec
+        assert (
+            invitation_token_info["action"] == ConfirmationAction.INVITATION.name
+        )  # nosec
         log.info(
             "Invitation token used. Deleting %s",
             json_dumps(invitation_token_info, indent=1),
@@ -149,11 +156,6 @@ async def check_invitation(
         )
 
 
-class ConfirmationTokenInfoDict(ConfirmationTokenDict):
-    expires: datetime
-    url: str
-
-
 def get_confirmation_info(
     cfg: LoginOptions, confirmation: ConfirmationTokenDict
 ) -> ConfirmationTokenInfoDict:
@@ -161,8 +163,7 @@ def get_confirmation_info(
     Extends ConfirmationTokenDict by adding extra info and
     deserializing action's data entry
     """
-
-    info = cast(ConfirmationTokenInfoDict, deepcopy(confirmation))
+    info = ConfirmationTokenInfoDict(**confirmation)
 
     action = ConfirmationAction(confirmation["action"])
     if (data_type := ACTION_TO_DATA_TYPE[action]) and (data := confirmation["data"]):

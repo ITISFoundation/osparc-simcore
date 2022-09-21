@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta
 
 from aiohttp import web
 from servicelib import observer
@@ -30,7 +31,7 @@ from .settings import (
     get_plugin_options,
     get_plugin_settings,
 )
-from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
+from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
     ACTIVE,
     ANONYMOUS,
@@ -98,9 +99,19 @@ async def register(request: web.Request):
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
+    expires_at = None
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
-        invitation = body.invitation if hasattr(body, "invitation") else None
-        await check_invitation(invitation, db, cfg)
+        # FIXME: improve this make it more explicit to Invitation
+        c = await check_invitation(
+            invitation=getattr(body, "invitation", None), db=db, cfg=cfg
+        )
+        if (
+            c
+            and c["data"]
+            and (expiration_interval := getattr(c["data"], "trial_account_days"))
+        ):
+            # FIXME:  aiopg does not understand BinaryExpression expires_at = sqlalchemy.sql.func.now() + timedelta(expiration_interval)
+            expires_at = datetime.utcnow() + timedelta(expiration_interval)
 
     await check_registration(email, password, confirm, db, cfg)
 
@@ -115,6 +126,7 @@ async def register(request: web.Request):
                 else ACTIVE
             ),
             "role": USER,
+            "expires_at": expires_at,
             "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
         }
     )
@@ -130,7 +142,9 @@ async def register(request: web.Request):
         await remember(request, response, identity)
         return response
 
-    confirmation_: ConfirmationDict = await db.create_confirmation(user, REGISTRATION)
+    confirmation_: ConfirmationTokenDict = await db.create_confirmation(
+        user, REGISTRATION
+    )
     link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(

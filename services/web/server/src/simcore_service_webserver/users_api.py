@@ -98,11 +98,10 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     if not user_profile:
         raise UserNotFoundError(uid=user_id)
 
-    user_profile["groups"] = {
-        "me": user_primary_group,
-        "organizations": user_standard_groups,
-        "all": all_group,
-    }
+    # TODO: conversion from db fields to ProfileGet is error-prone. Add ProfileGet.from_db_model() ??
+    if expires_at := user_profile.get("expires_at"):
+        user_profile["expiration_date"] = expires_at.date()
+
     return ProfileGet.parse_obj(user_profile)
 
 

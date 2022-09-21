@@ -4,23 +4,29 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from unittest.mock import Mock
+from datetime import datetime, timedelta
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
-from simcore_service_webserver.login.registration import get_confirmation_info
+from simcore_service_webserver.login.registration import (
+    InvitationData,
+    get_confirmation_info,
+)
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettings,
     get_plugin_options,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.users_models import ProfileGet
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 
@@ -94,7 +100,7 @@ async def test_registration_with_expired_confirmation(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    mocker: Mock,
+    mocker: MockerFixture,
 ):
     assert client.app
     mocker.patch(
@@ -129,7 +135,7 @@ async def test_registration_with_invalid_confirmation_code(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    mocker: Mock,
+    mocker: MockerFixture,
 ):
     # Checks bug in https://github.com/ITISFoundation/osparc-simcore/pull/3356
     assert client.app
@@ -158,7 +164,7 @@ async def test_registration_without_confirmation(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    mocker: Mock,
+    mocker: MockerFixture,
 ):
     assert client.app
     mocker.patch(
@@ -250,7 +256,7 @@ async def test_registration_with_invitation(
     is_invitation_required: bool,
     has_valid_invitation: bool,
     expected_response: type[web.HTTPError],
-    mocker: Mock,
+    mocker: MockerFixture,
 ):
     assert client.app
     mocker.patch(
@@ -295,3 +301,74 @@ async def test_registration_with_invitation(
 
         if is_invitation_required and has_valid_invitation:
             assert not await db.get_confirmation(confirmation)
+
+
+# async def test_registraton_with_invitation_for_trial_account(
+async def test_it(
+    client: TestClient,
+    cfg: LoginOptions,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        return_value=LoginSettings(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
+            LOGIN_TWILIO=None,
+        ),
+    )
+
+    # creates a invitation to register a TRIAL account
+    TRIAL_DAYS = 1
+    async with NewInvitation(
+        client, guest=faker.email(), trial_days=TRIAL_DAYS
+    ) as confirmation:
+
+        # checks that invitation is correct
+        info = get_confirmation_info(cfg, confirmation)
+        print(info)
+        assert info["data"]
+        assert isinstance(info["data"], InvitationData)
+
+        # use register using the invitation code
+        url = client.app.router["auth_register"].url_for()
+        r = await client.post(
+            f"{url}",
+            json={
+                "email": EMAIL,
+                "password": PASSWORD,
+                "confirm": PASSWORD,
+                "invitation": confirmation["code"],
+            },
+        )
+        await assert_status(r, web.HTTPOk)
+
+        # login
+        url = client.app.router["auth_login"].url_for()
+        r = await client.post(
+            f"{url}",
+            json={
+                "email": EMAIL,
+                "password": PASSWORD,
+            },
+        )
+        await assert_status(r, web.HTTPOk)
+
+        # get profile
+        url = client.app.router["get_my_profile"].url_for()
+        r = await client.get(f"{url}")
+        data, _ = await assert_status(r, web.HTTPOk)
+        profile = ProfileGet.parse_obj(data)
+
+        assert profile.expiration_date
+        assert profile.expiration_date == datetime.today() + timedelta(days=TRIAL_DAYS)
+
+        # - user uses the invitation link
+        # - redirects to the registration page
+        # - user fills the registration and presses OK
+        # - front-end requests auto_registration including invitation code in the request body
+        # - invitation is for a trial account so create user with an expiration date.
+        # - expiration date is decided upon the invitation creation
+        #

@@ -122,12 +122,19 @@ class LoggedUser(NewUser):
 
 
 class NewInvitation(NewUser):
-    def __init__(self, client: TestClient, guest="", host=None):
+    def __init__(
+        self,
+        client: TestClient,
+        guest="",
+        host=None,
+        trial_days: Optional[int] = None,
+    ):
         assert client.app
         super().__init__(params=host, app=client.app)
         self.client = client
         self.guest = guest or get_random_string(10)
         self.confirmation = None
+        self.trial_days = trial_days
 
     async def __aenter__(self):
         # creates host user
@@ -135,7 +142,9 @@ class NewInvitation(NewUser):
         db: AsyncpgStorage = get_plugin_storage(self.client.app)
         self.user = await create_user(db, self.params)
 
-        self.confirmation = await create_invitation(self.user, self.guest, self.db)
+        self.confirmation = await create_invitation(
+            self.user, self.guest, self.db, self.trial_days
+        )
         return self.confirmation
 
     async def __aexit__(self, *args):
