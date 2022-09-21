@@ -633,7 +633,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyName,
-        "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24",
+        "@FontAwesome5Solid/copy/" + (isGrid ? "60" : "24"),
         null,
         true
       );
@@ -757,7 +757,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       importingStudyCard.buildLayout(
         this.tr("Importing Study..."),
-        "@FontAwesome5Solid/cloud-upload-alt/" + isGrid ? "60" : "24",
+        "@FontAwesome5Solid/cloud-upload-alt/" + (isGrid ? "60" : "24"),
         uploadingLabel,
         true
       );
