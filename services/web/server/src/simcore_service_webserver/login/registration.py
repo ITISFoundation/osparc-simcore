@@ -3,12 +3,13 @@
     - registration code
     - invitation code
 """
-import json
 import logging
+from copy import deepcopy
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 
 from aiohttp import web
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, parse_raw_as
 from servicelib.json_serialization import json_dumps
 from yarl import URL
 
@@ -20,9 +21,25 @@ from ._confirmation import (
     validate_confirmation_code,
 )
 from .settings import LoginOptions
-from .storage import AsyncpgStorage, ConfirmationDict
+from .storage import AsyncpgStorage, ConfirmationTokenDict
 
 log = logging.getLogger(__name__)
+
+
+class InvitationData(BaseModel):
+    created_by: EmailStr
+    guest: EmailStr
+    trial_account_days: Optional[PositiveInt] = Field(
+        None,
+        description="If set, this invitation will activate a trial account."
+        "Sets the number of days from creation until the account expires",
+    )
+
+
+ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
+    ConfirmationAction.INVITATION: InvitationData,
+    ConfirmationAction.REGISTRATION: None,
+}
 
 
 async def check_registration(
@@ -54,7 +71,7 @@ async def check_registration(
     if user:
         # Resets pending confirmation if re-registers?
         if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
-            _confirmation: ConfirmationDict = await db.get_confirmation(
+            _confirmation: ConfirmationTokenDict = await db.get_confirmation(
                 {"user": user, "action": ConfirmationAction.REGISTRATION.value}
             )
 
@@ -71,8 +88,13 @@ async def check_registration(
     log.debug("Registration data validated")
 
 
-async def create_invitation(host: dict, guest: str, db: AsyncpgStorage):
-    """Creates an invitation token for a guest to register in the platform
+async def create_invitation(
+    host: dict,
+    guest: str,
+    db: AsyncpgStorage,
+    trial_days: Optional[PositiveInt] = None,
+) -> ConfirmationTokenDict:
+    """Creates an invitation token for a guest to register in the platform and returns
 
         Creates and injects an invitation token in the confirmation table associated
         to the host user
@@ -81,10 +103,17 @@ async def create_invitation(host: dict, guest: str, db: AsyncpgStorage):
     :type host: Dict-like
     :param guest: some description of the guest, e.g. email, name or a json
     """
+    data_model = InvitationData.parse_obj(
+        {
+            "created_by": host["email"],
+            "guest": guest,
+            "trial_account_days": trial_days,
+        }
+    )
     confirmation = await db.create_confirmation(
         user=host,
         action=ConfirmationAction.INVITATION.name,
-        data=json.dumps({"created_by": host["email"], "guest": guest}),
+        data=data_model.json(),
     )
     return confirmation
 
@@ -92,18 +121,25 @@ async def create_invitation(host: dict, guest: str, db: AsyncpgStorage):
 async def check_invitation(
     invitation: Optional[str], db: AsyncpgStorage, cfg: LoginOptions
 ):
+    """
+    :raise web.HTTPForbidden if invalid
+    """
     confirmation = None
     if invitation:
         confirmation = await validate_confirmation_code(invitation, db, cfg)
 
     if confirmation:
-        # FIXME: check if action=invitation??
+        invitation_token_info = get_confirmation_info(cfg, confirmation)
+        assert invitation_token_info["action"] == ConfirmationAction.INVITATION  # nosec
         log.info(
-            "Invitation code used. Deleting %s",
-            json_dumps(get_confirmation_info(cfg, confirmation), indent=1),
+            "Invitation token used. Deleting %s",
+            json_dumps(invitation_token_info, indent=1),
         )
         await db.delete_confirmation(confirmation)
+        return invitation_token_info
+
     else:
+
         raise web.HTTPForbidden(
             reason=(
                 "Invalid invitation code."
@@ -113,21 +149,24 @@ async def check_invitation(
         )
 
 
-class ConfirmationInfoDict(ConfirmationDict):
+class ConfirmationTokenInfoDict(ConfirmationTokenDict):
     expires: datetime
     url: str
 
 
 def get_confirmation_info(
-    cfg: LoginOptions, confirmation: ConfirmationDict
-) -> ConfirmationInfoDict:
+    cfg: LoginOptions, confirmation: ConfirmationTokenDict
+) -> ConfirmationTokenInfoDict:
+    """
+    Extends ConfirmationTokenDict by adding extra info and
+    deserializing action's data entry
+    """
 
-    info = dict(confirmation)
-    try:
-        # data column is a string
-        info["data"] = json.loads(confirmation["data"])
-    except json.decoder.JSONDecodeError:
-        log.warning("Failed to load data from confirmation. Skipping 'data' field.")
+    info = cast(ConfirmationTokenInfoDict, deepcopy(confirmation))
+
+    action = ConfirmationAction(confirmation["action"])
+    if (data_type := ACTION_TO_DATA_TYPE[action]) and (data := confirmation["data"]):
+        info["data"] = parse_raw_as(data_type, data)
 
     # extra
     info["expires"] = get_expiration_date(cfg, confirmation)
@@ -139,8 +178,17 @@ def get_confirmation_info(
 
 
 def get_invitation_url(
-    confirmation: ConfirmationDict, origin: Optional[URL] = None
+    confirmation: ConfirmationTokenDict, origin: Optional[URL] = None
 ) -> URL:
+    """Creates a URL to invite a user for registration
+
+    This URL is sent to the user via email
+
+    The user clicks URL link and ends up in the front-end
+
+    This URL appends a fragment for front-end that interprets as open registration page
+    and append the invitation code in the API request body together with the data added by the user
+    """
     code = confirmation["code"]
     is_invitation = confirmation["action"] == ConfirmationAction.INVITATION.name
 
@@ -148,4 +196,5 @@ def get_invitation_url(
         origin = URL()
 
     # https://some-web-url.io/#/registration/?invitation={code}
+    # NOTE: Uniform encoding in front-end fragments https://github.com/ITISFoundation/osparc-simcore/issues/1975
     return origin.with_fragment(f"/registration/?invitation={code}")
