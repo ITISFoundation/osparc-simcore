@@ -130,10 +130,9 @@ async def check_invitation(
     :raise web.HTTPForbidden if invalid
     """
     confirmation = None
-    if invitation:
-        confirmation = await validate_confirmation_code(invitation, db, cfg)
-
-    if confirmation:
+    if invitation and (
+        confirmation := await validate_confirmation_code(invitation, db, cfg)
+    ):
         invitation_token_info = get_confirmation_info(cfg, confirmation)
         assert (
             invitation_token_info["action"] == ConfirmationAction.INVITATION.name
@@ -145,15 +144,13 @@ async def check_invitation(
         await db.delete_confirmation(confirmation)
         return invitation_token_info
 
-    else:
-
-        raise web.HTTPForbidden(
-            reason=(
-                "Invalid invitation code."
-                "Your invitation was already used or might have expired."
-                "Please contact our support team to get a new one."
-            )
+    raise web.HTTPForbidden(
+        reason=(
+            "Invalid invitation code."
+            "Your invitation was already used or might have expired."
+            "Please contact our support team to get a new one."
         )
+    )
 
 
 def get_confirmation_info(
