@@ -75,8 +75,8 @@ jobs:
         uses: crazy-max/ghaction-github-runtime@v2
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
-      - name: build webserver
-        run: docker buildx build --cache-from=type=gha --cache-to=type=gha,mode=max -f services/web/Dockerfile .
+      - name: build images
+        run: docker buildx bake --set *.cache-from=type=gha --set *.cache-to=type=gha,mode=max --file services/docker-compose-build.yml
       # - name: build images
       #   run: ./ci/build/test-images.bash build_images
       - name: set owner variable
