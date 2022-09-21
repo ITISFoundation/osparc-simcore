@@ -202,7 +202,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           "study_id": data["studyData"].uuid,
           "copy_data": data["copyData"]
         },
-        data: this.__studyDataClone
+        data: data["studyData"]
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params);
       const pollTasks = osparc.data.PollTasks.getInstance();
