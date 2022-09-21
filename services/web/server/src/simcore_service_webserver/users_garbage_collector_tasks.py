@@ -13,6 +13,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
 from ._constants import APP_DB_ENGINE_KEY
+from .security_api import clean_auth_policy_cache
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +46,20 @@ async def update_expired_users(engine: Engine) -> list[IdInt]:
     wait=wait_exponential(min=5 * _SEC),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
-async def _update_expired_users_periodically(engine: Engine, wait_s: float):
+async def _update_expired_users_periodically(app: web.Application, wait_s: float):
     """Periodically check expiration dates and updates user status
 
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
     """
+    engine: Engine = app[APP_DB_ENGINE_KEY]
+    assert engine  # nosec
+
     while True:
-        updated = await update_expired_users(engine)
-        if updated:
+        if updated := await update_expired_users(engine):
+            # expired usersr might be cached in the auth. If so, any request
+            # with this user-id will get thru producing unexpected side-effects
+            clean_auth_policy_cache(app)
+
             for user_id in updated:
                 logger.info("User account with %s expired", f"{user_id=}")
         else:
@@ -67,12 +74,10 @@ def create_background_task_for_trial_accounts(
     async def _cleanup_ctx_fun(
         app: web.Application,
     ) -> AsyncIterator[None]:
-        engine: Engine = app[APP_DB_ENGINE_KEY]
-        assert engine  # nosec
 
         # setup
         task = asyncio.create_task(
-            _update_expired_users_periodically(engine, wait_s),
+            _update_expired_users_periodically(app, wait_s),
             name=task_name,
         )
         app[_APP_TASK_KEY] = task
