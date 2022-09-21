@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from aiohttp import web
 from pydantic import EmailStr, parse_obj_as
@@ -9,7 +10,7 @@ from yarl import URL
 from ..security_api import encrypt_password
 from ._confirmation import validate_confirmation_code
 from .settings import LoginOptions, get_plugin_options
-from .storage import AsyncpgStorage, get_plugin_storage
+from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
 from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_response
 
 log = logging.getLogger(__name__)
@@ -38,7 +39,9 @@ async def email_confirmation(request: web.Request):
 
     code = params["code"]
 
-    confirmation = await validate_confirmation_code(code, db, cfg)
+    confirmation: Optional[ConfirmationDict] = await validate_confirmation_code(
+        code, db, cfg
+    )
     redirect_url = URL(cfg.LOGIN_REDIRECT)
 
     if confirmation and (action := confirmation["action"]):

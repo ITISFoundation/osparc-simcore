@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, Optional, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -22,6 +22,7 @@ from .groups_utils import convert_groups_db_to_schema
 from .login.storage import AsyncpgStorage, get_plugin_storage
 from .security_api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
+from .users_models import ProfileGet, ProfileUpdate
 from .users_utils import convert_user_db_to_schema
 
 logger = logging.getLogger(__name__)
@@ -43,13 +44,13 @@ def _parse_as_user(user_id: Any) -> UserID:
 # USERS  API ----------------------------------------------------------------------------
 
 
-async def get_user_profile(app: web.Application, user_id: UserID) -> Dict[str, Any]:
+async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     """
     :raises UserNotFoundError:
     """
 
     engine: Engine = app[APP_DB_ENGINE_KEY]
-    user_profile: Dict[str, Any] = {}
+    user_profile: dict[str, Any] = {}
     user_primary_group = all_group = {}
     user_standard_groups = []
     user_id = _parse_as_user(user_id)
@@ -102,11 +103,11 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> Dict[str, A
         "organizations": user_standard_groups,
         "all": all_group,
     }
-    return user_profile
+    return ProfileGet.parse_obj(user_profile)
 
 
 async def update_user_profile(
-    app: web.Application, user_id: int, profile: Dict
+    app: web.Application, user_id: int, profile_update: ProfileUpdate
 ) -> None:
     """
     :raises UserNotFoundError:
@@ -116,15 +117,20 @@ async def update_user_profile(
     user_id = _parse_as_user(user_id)
 
     async with engine.acquire() as conn:
-        default_name = await conn.scalar(
-            sa.select([users.c.name]).where(users.c.id == user_id)
-        )
-        parts = default_name.split(".") + [""]
-        name = (
-            profile.get("first_name", parts[0])
-            + "."
-            + profile.get("last_name", parts[1])
-        )
+        first_name = profile_update.first_name
+        last_name = profile_update.last_name
+        if not first_name or not last_name:
+            name = await conn.scalar(
+                sa.select([users.c.name]).where(users.c.id == user_id)
+            )
+            try:
+                first_name, last_name = name.split(".") + [""]
+            except ValueError:
+                first_name = name
+
+        # update name
+        name = f"{profile_update.first_name or first_name}"
+        name += f".{profile_update.last_name or last_name}"
         resp = await conn.execute(
             # pylint: disable=no-value-for-parameter
             users.update()
@@ -150,7 +156,7 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
         return UserRole(user_role)
 
 
-async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:
+async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:
     engine: Engine = app[APP_DB_ENGINE_KEY]
     result = deque()
     async with engine.acquire() as conn:
@@ -203,7 +209,7 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
         return UserNameDict(first_name=parts[0], last_name=parts[1])
 
 
-async def get_user(app: web.Application, user_id: int) -> Dict:
+async def get_user(app: web.Application, user_id: int) -> dict:
     """
     :raises UserNotFoundError:
     """
@@ -229,8 +235,8 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> int:
 
 
 async def create_token(
-    app: web.Application, user_id: int, token_data: Dict[str, str]
-) -> Dict[str, str]:
+    app: web.Application, user_id: int, token_data: dict[str, str]
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         await conn.execute(
@@ -244,7 +250,7 @@ async def create_token(
         return token_data
 
 
-async def list_tokens(app: web.Application, user_id: int) -> List[Dict[str, str]]:
+async def list_tokens(app: web.Application, user_id: int) -> list[dict[str, str]]:
     engine = app[APP_DB_ENGINE_KEY]
     user_tokens = []
     async with engine.acquire() as conn:
@@ -257,7 +263,7 @@ async def list_tokens(app: web.Application, user_id: int) -> List[Dict[str, str]
 
 async def get_token(
     app: web.Application, user_id: int, service_id: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
@@ -270,8 +276,8 @@ async def get_token(
 
 
 async def update_token(
-    app: web.Application, user_id: int, service_id: str, token_data: Dict[str, str]
-) -> Dict[str, str]:
+    app: web.Application, user_id: int, service_id: str, token_data: dict[str, str]
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     # TODO: optimize to a single call?
     async with engine.acquire() as conn:

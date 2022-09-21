@@ -37,6 +37,7 @@ from .utils import (
     BANNED,
     CHANGE_EMAIL,
     CONFIRMATION_PENDING,
+    EXPIRED,
     REGISTRATION,
     RESET_PASSWORD,
     USER,
@@ -54,6 +55,28 @@ def _get_user_name(email: str) -> str:
     username = email.split("@")[0]
     # TODO: this has to be unique and add this in user registration!
     return username
+
+
+def _validate_user_status(user: dict, cfg):
+    user_status: str = user["status"]
+
+    if user_status == BANNED or user["role"] == ANONYMOUS:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
+        )  # 401
+
+    if user_status == EXPIRED:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_USER_EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
+        )  # 401
+
+    if user_status == CONFIRMATION_PENDING:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_ACTIVATION_REQUIRED,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )  # 401
+
+    assert user_status == ACTIVE  # nosec
 
 
 async def register(request: web.Request):
@@ -268,24 +291,17 @@ async def login(request: web.Request):
     password = body.password
 
     user = await db.get_user({"email": email})
+
     if not user:
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    if user["status"] == BANNED or user["role"] == ANONYMOUS:
-        raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
-        )
+    _validate_user_status(user, cfg)
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
-        )
-
-    if user["status"] == CONFIRMATION_PENDING:
-        raise web.HTTPUnauthorized(
-            reason=cfg.MSG_ACTIVATION_REQUIRED, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
@@ -411,7 +427,7 @@ async def logout(request: web.Request) -> web.Response:
     return response
 
 
-@global_rate_limit_route(number_of_requests=5, interval_seconds=HOUR)
+@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -439,16 +455,7 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        if user["status"] == BANNED:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
-            )  # 401
-
-        if user["status"] == CONFIRMATION_PENDING:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_ACTIVATION_REQUIRED,
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )  # 401
+        _validate_user_status(user, cfg)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == email  # nosec
@@ -458,6 +465,7 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_OFTEN_RESET_PASSWORD,
                 content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
+
     except web.HTTPError as err:
         # Email wiht be an explanation and suggest alternative approaches or ways to contact support for help
         try:
