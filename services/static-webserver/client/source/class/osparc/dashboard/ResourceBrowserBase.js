@@ -303,7 +303,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return item;
     },
 
-    _taskReceived: function() {
+    _taskReceived: function(task, studyName) {
       throw new Error("Abstract method called!");
     },
 
