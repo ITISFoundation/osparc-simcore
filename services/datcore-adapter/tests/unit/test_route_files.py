@@ -1,8 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-from typing import Dict
+from typing import Iterator
+from unittest.mock import Mock
 
 import httpx
 import pytest
@@ -14,7 +15,9 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def pennsieve_files_mock(pennsieve_subsystem_mock, pennsieve_file_id: str):
+async def pennsieve_files_mock(
+    pennsieve_subsystem_mock: Mock, pennsieve_file_id: str
+) -> Iterator[Mock]:
     mock = pennsieve_subsystem_mock
     if mock:
         FAKE_FILE_ID = "123434"
@@ -39,9 +42,9 @@ async def pennsieve_files_mock(pennsieve_subsystem_mock, pennsieve_file_id: str)
 
 async def test_download_file_entrypoint(
     async_client: httpx.AsyncClient,
-    pennsieve_subsystem_mock,
-    pennsieve_files_mock,
-    pennsieve_api_headers: Dict[str, str],
+    pennsieve_subsystem_mock: Mock,
+    pennsieve_files_mock: Mock,
+    pennsieve_api_headers: dict[str, str],
     pennsieve_file_id: str,
 ):
     file_id = pennsieve_file_id
@@ -57,9 +60,9 @@ async def test_download_file_entrypoint(
 
 async def test_delete_file_entrypoint(
     async_client: httpx.AsyncClient,
-    pennsieve_subsystem_mock,
-    pennsieve_files_mock,
-    pennsieve_api_headers: Dict[str, str],
+    pennsieve_subsystem_mock: Mock,
+    pennsieve_files_mock: Mock,
+    pennsieve_api_headers: dict[str, str],
     pennsieve_file_id: str,
 ):
     file_id = pennsieve_file_id
@@ -68,5 +71,4 @@ async def test_delete_file_entrypoint(
         headers=pennsieve_api_headers,
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    data = response.json()
-    assert not data
+    assert response.num_bytes_downloaded == 0

@@ -121,7 +121,7 @@ email-validator==1.2.1
     # via
     #   fastapi
     #   pydantic
-fastapi==0.71.0
+fastapi==0.85.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -370,7 +370,7 @@ sqlalchemy==1.4.37
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.17.1
+starlette==0.20.4
     # via fastapi
 tblib==1.7.0
     # via
@@ -416,8 +416,23 @@ typing-extensions==4.3.0
     #   aiodocker
     #   aioredis
     #   pydantic
-ujson==4.3.0
-    # via fastapi
+    #   starlette
+ujson==5.5.0
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
