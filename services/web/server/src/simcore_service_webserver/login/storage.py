@@ -16,7 +16,7 @@ APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 ## MODELS
 
 
-class ConfirmationDict(TypedDict):
+class ConfirmationTokenDict(TypedDict):
     # SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
     code: str
     user_id: int
@@ -59,13 +59,15 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
-    async def create_confirmation(self, user, action, data=None) -> ConfirmationDict:
+    async def create_confirmation(
+        self, user, action, data=None
+    ) -> ConfirmationTokenDict:
         async with self.pool.acquire() as conn:
             while True:
                 code = get_random_string(30)
                 if not await _sql.find_one(conn, self.confirm_tbl, {"code": code}):
                     break
-            confirmation: ConfirmationDict = {
+            confirmation: ConfirmationTokenDict = {
                 "code": code,
                 "user_id": user["id"],
                 "action": action,
@@ -85,7 +87,7 @@ class AsyncpgStorage:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
             return confirmation
 
-    async def delete_confirmation(self, confirmation: ConfirmationDict):
+    async def delete_confirmation(self, confirmation: ConfirmationTokenDict):
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
 

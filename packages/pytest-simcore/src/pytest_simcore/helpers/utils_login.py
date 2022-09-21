@@ -124,7 +124,7 @@ class LoggedUser(NewUser):
 class NewInvitation(NewUser):
     def __init__(self, client: TestClient, guest="", host=None):
         assert client.app
-        super().__init__(host, client.app)
+        super().__init__(params=host, app=client.app)
         self.client = client
         self.guest = guest or get_random_string(10)
         self.confirmation = None
