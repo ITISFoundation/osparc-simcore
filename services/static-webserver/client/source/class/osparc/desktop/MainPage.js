@@ -190,8 +190,34 @@ qx.Class.define("osparc.desktop.MainPage", {
           }, this);
         }
       });
+      studyBrowser.addListener("publishTemplate", e => this.__publishTemplate(e.getData()));
+    },
 
-      studyBrowser.addListener("updateTemplates", () => templateBrowser.reloadResources(), this);
+    __publishTemplate: function(data) {
+      const text = this.tr("Templating process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+
+      const params = {
+        url: {
+          "study_id": data["studyData"].uuid,
+          "copy_data": data["copyData"]
+        },
+        data: this.__studyDataClone
+      };
+      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params);
+      const pollTasks = osparc.data.PollTasks.getInstance();
+      const interval = 1000;
+      pollTasks.createPollingTask(fetchPromise, interval)
+        .then(task => {
+          const templateBrowser = this.__dashboard.getTemplateBrowser();
+          if (templateBrowser) {
+            templateBrowser.taskToTemplateReceived(data["studyData"].name, task);
+          }
+        })
+        .catch(errMsg => {
+          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+        });
     },
 
     __showDashboard: function() {

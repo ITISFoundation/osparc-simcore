@@ -239,6 +239,69 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         });
     },
 
+    __createToTemplateCard: function(studyName) {
+      const isGrid = this._resourcesContainer.getMode() === "grid";
+      const toTemplateCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
+      toTemplateCard.buildLayout(
+        this.tr("To Template ") + studyName,
+        osparc.component.task.ToTemplate.ICON + (isGrid ? "60" : "24"),
+        null,
+        true
+      );
+      toTemplateCard.subscribeToFilterGroup("searchBarFilter");
+      this._resourcesContainer.addAt(toTemplateCard, 0);
+      return toTemplateCard;
+    },
+
+    __attachToTemplateEventHandler: function(task, taskUI, templateCard) {
+      const finished = (msg, msgLevel) => {
+        if (msg) {
+          osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
+        }
+        taskUI.stop();
+        this._resourcesContainer.remove(templateCard);
+      };
+
+      if (task.getAbortHref()) {
+        task.bind("abortHref", taskUI, "stopSupported", {
+          converter: abortHref => Boolean(abortHref)
+        });
+        taskUI.addListener("abortRequested", () => task.abortRequested());
+        task.addListener("taskAborted", () => {
+          const msg = this.tr("Study to Template aborted");
+          finished(msg, "INFO");
+        });
+      }
+      task.addListener("updateReceived", e => {
+        const updateData = e.getData();
+        if ("task_progress" in updateData && templateCard) {
+          const progress = updateData["task_progress"];
+          templateCard.getChildControl("progress-bar").set({
+            value: progress["percent"]*100
+          });
+          templateCard.getChildControl("state-label").set({
+            value: progress["message"]
+          });
+        }
+      }, this);
+      task.addListener("resultReceived", e => {
+        finished();
+        this.reloadResources();
+      });
+      task.addListener("pollingError", e => {
+        const errMsg = e.getData();
+        const msg = this.tr("Something went wrong Publishing the study<br>") + errMsg;
+        finished(msg, "ERROR");
+      });
+    },
+
+    taskToTemplateReceived: function(studyName, task) {
+      const toTemaplateTaskUI = new osparc.component.task.ToTemplate(studyName);
+      toTemaplateTaskUI.start();
+      const toTemplateCard = this.__createToTemplateCard(studyName);
+      this.__attachToTemplateEventHandler(task, toTemaplateTaskUI, toTemplateCard);
+    },
+
     __deleteTemplate: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);

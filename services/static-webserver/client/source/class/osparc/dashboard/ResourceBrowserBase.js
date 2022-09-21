@@ -40,7 +40,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data"
+    "startStudy": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data"
   },
 
   statics: {
@@ -323,6 +324,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         moreOpts.addListener("updateService", e => {
           const updatedServiceData = e.getData();
           this._resetServiceItem(updatedServiceData);
+        });
+        moreOpts.addListener("publishTemplate", e => {
+          win.close();
+          this.fireDataEvent("publishTemplate", e.getData());
         });
         moreOpts.addListener("openService", e => {
           win.close();

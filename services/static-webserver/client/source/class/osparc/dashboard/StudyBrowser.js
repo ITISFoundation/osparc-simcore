@@ -35,10 +35,6 @@
 qx.Class.define("osparc.dashboard.StudyBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
-  events: {
-    "updateTemplates": "qx.event.type.Event"
-  },
-
   properties: {
     multiSelection: {
       check: "Boolean",
@@ -498,6 +494,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         updatedStudyData["resourceType"] = "study";
         this._resetStudyItem(updatedStudyData);
       }, this);
+      item.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       return item;
     },
 
@@ -642,7 +639,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return duplicatingStudyCard;
     },
 
-    __attachDuplicateEventHandler: function(task, studyCard, taskUI) {
+    __attachDuplicateEventHandler: function(task, taskUI, studyCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
           osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
@@ -674,9 +671,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
       task.addListener("resultReceived", e => {
+        finished();
         const duplicatedStudyData = e.getData();
         this.reloadStudy(duplicatedStudyData["uuid"]);
-        finished();
       });
       task.addListener("pollingError", e => {
         const errMsg = e.getData();
@@ -695,11 +692,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
 
         const studyName = "";
-        const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
-        duplicateTaskUI.start();
-        const duplicatingStudyCard = this.__createDuplicateCard(studyName);
-        this.__attachDuplicateEventHandler(task, duplicatingStudyCard, duplicateTaskUI);
+        this.__taskDuplicateReceived(task, studyName);
       });
+    },
+
+    __taskDuplicateReceived: function(task, studyName) {
+      const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
+      duplicateTaskUI.start();
+      const duplicatingStudyCard = this.__createDuplicateCard(studyName);
+      this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
     },
 
     __duplicateStudy: function(studyData) {
@@ -715,12 +716,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
-        .then(task => {
-          const duplicateTaskUI = new osparc.component.task.Duplicate(studyData["name"]);
-          duplicateTaskUI.start();
-          const duplicatingStudyCard = this.__createDuplicateCard(studyData["name"]);
-          this.__attachDuplicateEventHandler(task, duplicatingStudyCard, duplicateTaskUI);
-        })
+        .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
