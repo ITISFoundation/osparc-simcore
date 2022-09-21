@@ -77,8 +77,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: build webserver
         run: docker buildx build --cache-from=type=gha --cache-to=type=gha,mode=max -f services/web/Dockerfile .
-      - name: build images
-        run: ./ci/build/test-images.bash build_images
+      # - name: build images
+      #   run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
