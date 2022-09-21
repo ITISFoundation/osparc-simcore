@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from aiohttp import web
@@ -274,7 +274,10 @@ async def test_registration_with_invitation(
     #
     # Front end then creates the following request
     #
-    async with NewInvitation(client) as confirmation:
+    async with NewInvitation(client) as f:
+        confirmation = f.confirmation
+        assert confirmation
+
         print(get_confirmation_info(cfg, confirmation))
 
         url = client.app.router["auth_register"].url_for()
@@ -303,8 +306,7 @@ async def test_registration_with_invitation(
             assert not await db.get_confirmation(confirmation)
 
 
-# async def test_registraton_with_invitation_for_trial_account(
-async def test_it(
+async def test_registraton_with_invitation_for_trial_account(
     client: TestClient,
     cfg: LoginOptions,
     faker: Faker,
@@ -320,19 +322,34 @@ async def test_it(
         ),
     )
 
-    # creates a invitation to register a TRIAL account
+    # User story:
+    # 1. app-team creates an invitation link for a trial account
+    # 2. user clicks the invitation link
+    #   - redirects to the registration page
+    # 3. user fills the registration and presses OK
+    #   - requests API 'auth_register' w/ invitation code (passed in the invitation link above)
+    #   - trial account is created:
+    #         - invitation is validated
+    #         - expiration date = created_at + trial_days (in invitation)
+    #         - creates a user with an expiration date
+    # 4. user can login
+    # 5. GET profile response includes expiration date
+    #
+
+    # (1) creates a invitation to register a TRIAL account
     TRIAL_DAYS = 1
     async with NewInvitation(
-        client, guest=faker.email(), trial_days=TRIAL_DAYS
-    ) as confirmation:
+        client, guest_email=faker.email(), trial_days=TRIAL_DAYS
+    ) as invitation:
+        assert invitation.confirmation
 
         # checks that invitation is correct
-        info = get_confirmation_info(cfg, confirmation)
+        info = get_confirmation_info(cfg, invitation.confirmation)
         print(info)
         assert info["data"]
         assert isinstance(info["data"], InvitationData)
 
-        # use register using the invitation code
+        # (3) use register using the invitation code
         url = client.app.router["auth_register"].url_for()
         r = await client.post(
             f"{url}",
@@ -340,12 +357,12 @@ async def test_it(
                 "email": EMAIL,
                 "password": PASSWORD,
                 "confirm": PASSWORD,
-                "invitation": confirmation["code"],
+                "invitation": invitation.confirmation["code"],
             },
         )
         await assert_status(r, web.HTTPOk)
 
-        # login
+        # (4) login
         url = client.app.router["auth_login"].url_for()
         r = await client.post(
             f"{url}",
@@ -356,19 +373,12 @@ async def test_it(
         )
         await assert_status(r, web.HTTPOk)
 
-        # get profile
+        # (5) get profile
         url = client.app.router["get_my_profile"].url_for()
         r = await client.get(f"{url}")
         data, _ = await assert_status(r, web.HTTPOk)
         profile = ProfileGet.parse_obj(data)
 
+        expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)
         assert profile.expiration_date
-        assert profile.expiration_date == datetime.today() + timedelta(days=TRIAL_DAYS)
-
-        # - user uses the invitation link
-        # - redirects to the registration page
-        # - user fills the registration and presses OK
-        # - front-end requests auto_registration including invitation code in the request body
-        # - invitation is for a trial account so create user with an expiration date.
-        # - expiration date is decided upon the invitation creation
-        #
+        assert profile.expiration_date == expected.date()

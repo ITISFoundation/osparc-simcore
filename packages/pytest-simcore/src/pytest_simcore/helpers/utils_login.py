@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Optional, TypedDict
 
 from aiohttp import web
@@ -25,6 +26,7 @@ class _UserInfoDictRequired(TypedDict, total=True):
 
 
 class UserInfoDict(_UserInfoDictRequired, total=False):
+    created_at: datetime
     created_ip: int
     password_hash: str
 
@@ -132,7 +134,7 @@ class NewInvitation(NewUser):
         self.confirmation = None
         self.trial_days = trial_days
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "NewInvitation":
         # creates host user
         assert self.client.app
         db: AsyncpgStorage = get_plugin_storage(self.client.app)
@@ -141,7 +143,7 @@ class NewInvitation(NewUser):
         self.confirmation = await create_invitation(
             self.user, self.guest, self.db, self.trial_days
         )
-        return self.confirmation
+        return self
 
     async def __aexit__(self, *args):
         if await self.db.get_confirmation(self.confirmation):
