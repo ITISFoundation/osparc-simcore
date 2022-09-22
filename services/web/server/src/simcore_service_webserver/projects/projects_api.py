@@ -42,6 +42,7 @@ from servicelib.aiohttp.application_keys import (
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog_client, director_v2_api, storage_api
@@ -275,6 +276,14 @@ async def delete_project_node(
     )
 
 
+async def update_project_linked_product(
+    app: web.Application, project_id: ProjectID, product_name: str
+) -> None:
+    with log_context(log, level=logging.DEBUG, msg="updating project linked product"):
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        await db.upsert_project_linked_product(project_id, product_name)
+
+
 async def update_project_node_state(
     app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
 ) -> dict:
@@ -488,7 +497,7 @@ async def _clean_user_disconnected_clients(
 
 
 async def try_open_project_for_user(
-    user_id: int, project_uuid: str, client_session_id: str, app: web.Application
+    user_id: UserID, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
         async with lock_with_notification(
