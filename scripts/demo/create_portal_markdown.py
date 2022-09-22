@@ -16,7 +16,7 @@ from pathlib import Path
 from string import ascii_uppercase
 from typing import Optional
 
-from simcore_service_webserver.login.registration import get_invitation_url
+from simcore_service_webserver.login._registration import get_invitation_url
 from simcore_service_webserver.login.utils import get_random_string
 from yarl import URL
 
@@ -131,7 +131,7 @@ def main(mock_codes, *, trial_account_days: Optional[int] = None, uid: int = 1):
                 f'""tag"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
                 file=fh,
             )
-            print('""issuer"" : ""support@osparc.io""', file=fh)
+            print('""issuer"" : ""support@osparc.io"" ,', file=fh)
             print(f'""trial_account_days"" : ""{trial_account_days}""', file=fh)
             print('}",%s' % datetime.now().isoformat(sep=" "), file=fh)
 

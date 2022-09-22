@@ -16,7 +16,7 @@ from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_lin
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
-from simcore_service_webserver.login.registration import (
+from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
 )

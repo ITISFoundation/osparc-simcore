@@ -5,7 +5,7 @@ from typing import Optional, TypedDict
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from simcore_service_webserver.db_models import UserRole, UserStatus
-from simcore_service_webserver.login.registration import create_invitation_token
+from simcore_service_webserver.login._registration import create_invitation_token
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 from yarl import URL

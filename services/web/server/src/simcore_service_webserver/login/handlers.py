@@ -23,8 +23,8 @@ from ._2fa import (
     set_2fa_code,
 )
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._registration import check_invitation, check_registration
 from .decorators import RQT_USERID_KEY, login_required
-from .registration import check_invitation, check_registration
 from .settings import (
     LoginOptions,
     LoginSettings,
