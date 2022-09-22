@@ -365,6 +365,9 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildProvideFileLayout: function() {
+      const uploadFileSection = this.__getUploadFileSection();
+      this._add(uploadFileSection);
+
       const fileDrop = this.__getFileDropSection();
       this._add(fileDrop, {
         flex: 1
@@ -372,6 +375,19 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const downloadLinkSection = this.__getDownloadLinkSection();
       this._add(downloadLinkSection);
+    },
+
+    __getUploadFileSection: function() {
+      const uploadFileSection = new osparc.ui.form.FileInput();
+      uploadFileSection.addListener("selectionChanged", () => {
+        const file = uploadFileSection.getFile();
+        if (file) {
+          if (this.uploadPendingFiles([file])) {
+            setTimeout(() => this.fireEvent("itemSelected"), 500);
+          }
+        }
+      });
+      return uploadFileSection;
     },
 
     __getFileDropSection: function() {
