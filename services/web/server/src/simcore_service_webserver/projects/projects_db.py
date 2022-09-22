@@ -200,7 +200,7 @@ class ProjectDBAPI:
         :return: inserted project
         """
         # pylint: disable=no-value-for-parameter
-        async with self.engine.acquire() as conn, conn.begin():
+        async with self.engine.acquire() as conn:
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
@@ -258,7 +258,7 @@ class ProjectDBAPI:
 
             # insert projects_to_product entry
             await self.upsert_project_linked_product(
-                ProjectID(kargs["uuid"]), product_name, conn=conn
+                ProjectID(f"{kargs['uuid']}"), product_name, conn=conn
             )
 
             # Updated values
