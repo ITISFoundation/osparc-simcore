@@ -194,7 +194,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __publishTemplate: function(data) {
-      const text = this.tr("Templating process started and added to the background tasks");
+      const text = this.tr("Started template creation and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const params = {
