@@ -1217,6 +1217,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1283,6 +1285,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1349,6 +1353,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1418,6 +1424,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1486,6 +1494,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1552,6 +1562,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/public-api/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1605,6 +1617,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1664,6 +1678,8 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
