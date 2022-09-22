@@ -431,6 +431,8 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildTreeLayout: function() {
+      this.setMargin(5);
+
       const reloadButton = new qx.ui.form.Button().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/sync-alt/16",
