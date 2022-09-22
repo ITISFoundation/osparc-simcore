@@ -297,7 +297,6 @@ qx.Class.define("osparc.file.FilePicker", {
         // APP mode WITHOUT output
         this.__addProgressBar();
         this.__buildAppModeLayout();
-        }
       }
     },
 
