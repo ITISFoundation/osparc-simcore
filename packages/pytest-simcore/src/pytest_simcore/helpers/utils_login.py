@@ -130,7 +130,7 @@ class NewInvitation(NewUser):
         assert client.app
         super().__init__(params=host, app=client.app)
         self.client = client
-        self.guest = guest_email or FAKE.email()
+        self.tag = f"Created by {guest_email or FAKE.email()}"
         self.confirmation = None
         self.trial_days = trial_days
 
@@ -142,8 +142,9 @@ class NewInvitation(NewUser):
 
         self.confirmation = await create_invitation_token(
             self.db,
-            issuer_email=self.user["email"],
-            tag=self.guest,
+            user_id=self.user["id"],
+            user_email=self.user["email"],
+            tag=self.tag,
             trial_days=self.trial_days,
         )
         return self

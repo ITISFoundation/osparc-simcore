@@ -116,7 +116,7 @@ async def test_registration_with_expired_confirmation(
 
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
         confirmation = await db.create_confirmation(
-            user, ConfirmationAction.REGISTRATION.name
+            user["id"], ConfirmationAction.REGISTRATION.name
         )
         r = await client.post(
             f"{url}",

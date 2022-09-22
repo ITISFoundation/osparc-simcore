@@ -143,7 +143,7 @@ async def register(request: web.Request):
         return response
 
     confirmation_: ConfirmationTokenDict = await db.create_confirmation(
-        user, REGISTRATION
+        user["id"], REGISTRATION
     )
     link = make_confirmation_link(request, confirmation_)
     try:
@@ -496,7 +496,7 @@ async def reset_password(request: web.Request):
             log.exception("Cannot send email")
             raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err2
     else:
-        confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
+        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
@@ -545,7 +545,7 @@ async def change_email(request: web.Request):
         await db.delete_confirmation(confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
+    confirmation = await db.create_confirmation(user["id"], CHANGE_EMAIL, email)
     link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(

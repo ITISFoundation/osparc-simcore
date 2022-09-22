@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Optional
 
 from aiohttp import web
+from models_library.basic_types import IdInt
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, parse_raw_as
 from servicelib.json_serialization import json_dumps
 from yarl import URL
@@ -100,7 +101,8 @@ async def check_registration(
 async def create_invitation_token(
     db: AsyncpgStorage,
     *,
-    issuer_email: Optional[EmailStr] = None,
+    user_id: IdInt,
+    user_email: Optional[EmailStr] = None,
     tag: Optional[str] = None,
     trial_days: Optional[PositiveInt] = None,
 ) -> ConfirmationTokenDict:
@@ -115,13 +117,13 @@ async def create_invitation_token(
     """
     data_model = InvitationData.parse_obj(
         {
-            "issuer": issuer_email,
+            "issuer": user_email,
             "guest": tag,
             "trial_account_days": trial_days,
         }
     )
     confirmation = await db.create_confirmation(
-        user=issuer_email,
+        user_id=user_id,
         action=ConfirmationAction.INVITATION.name,
         data=data_model.json(),
     )

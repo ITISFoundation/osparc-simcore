@@ -130,7 +130,7 @@ async def test_too_often(
 
     async with NewUser(app=client.app) as user:
         confirmation = await db.create_confirmation(
-            user, ConfirmationAction.RESET_PASSWORD.name
+            user["id"], ConfirmationAction.RESET_PASSWORD.name
         )
         rp = await client.post(
             f"{reset_url}",

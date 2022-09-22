@@ -15,12 +15,16 @@ APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 
 ## MODELS
 
+ActionLiteralStr = Literal[
+    "REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"
+]
+
 
 class ConfirmationTokenDict(TypedDict):
     # SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
     code: str
     user_id: int
-    action: Literal["REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"]
+    action: ActionLiteralStr
     created_at: datetime
     # SEE handlers_confirmation.py::email_confirmation to determine what type is associated to each action
     data: Optional[str]
@@ -60,7 +64,7 @@ class AsyncpgStorage:
             await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
     async def create_confirmation(
-        self, user, action, data=None
+        self, user_id, action: ActionLiteralStr, data=None
     ) -> ConfirmationTokenDict:
         async with self.pool.acquire() as conn:
             while True:
@@ -69,7 +73,7 @@ class AsyncpgStorage:
                     break
             confirmation: ConfirmationTokenDict = {
                 "code": code,
-                "user_id": user["id"],
+                "user_id": user_id,
                 "action": action,
                 "data": data,
                 "created_at": datetime.utcnow(),
