@@ -398,7 +398,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._hideLoadingPage();
           this.__startStudy(studyData);
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          this._hideLoadingPage();
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
+        });
     },
 
     __startStudy: function(studyData, pageContext) {
