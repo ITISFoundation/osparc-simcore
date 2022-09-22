@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.task.Duplicate", {
-  extend: osparc.component.task.Task,
+  extend: osparc.component.task.TaskUI,
 
   construct: function(studyName) {
     this.__studyName = studyName;

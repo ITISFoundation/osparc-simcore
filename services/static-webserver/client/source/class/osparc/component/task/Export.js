@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.task.Export", {
-  extend: osparc.component.task.Task,
+  extend: osparc.component.task.TaskUI,
 
   construct: function(study) {
     this.__study = study;

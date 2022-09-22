@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.task.Task", {
+qx.Class.define("osparc.component.task.TaskUI", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
