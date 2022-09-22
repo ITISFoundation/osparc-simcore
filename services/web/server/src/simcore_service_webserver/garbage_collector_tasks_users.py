@@ -1,15 +1,16 @@
+"""
+    Scheduled tasks addressing users
+
+"""
+
 import asyncio
 import logging
-from datetime import datetime
 from typing import AsyncIterator, Callable
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
-from aiopg.sa.result import ResultProxy
-from models_library.basic_types import IdInt
 from models_library.users import UserID
 from servicelib.logging_utils import log_context
-from simcore_postgres_database.models.users import UserStatus, users
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
@@ -17,6 +18,7 @@ from tenacity.wait import wait_exponential
 from ._constants import APP_DB_ENGINE_KEY
 from .login.utils import notify_user_logout
 from .security_api import clean_auth_policy_cache
+from .users_db import update_expired_users
 
 logger = logging.getLogger(__name__)
 
@@ -28,26 +30,10 @@ _PERIODIC_TASK_NAME = f"{__name__}.update_expired_users_periodically"
 _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 
-async def update_expired_users(engine: Engine) -> list[IdInt]:
-    now = datetime.utcnow()
-    async with engine.acquire() as conn:
-        result: ResultProxy = await conn.execute(
-            users.update()
-            .values(status=UserStatus.EXPIRED)
-            .where(
-                (users.c.expires_at != None)
-                & (users.c.status == UserStatus.ACTIVE)
-                & (users.c.expires_at < now)
-            )
-            .returning(users.c.id)
-        )
-        expired = [r.id for r in await result.fetchall()]
-        return expired
-
-
 async def notify_user_logout_all_sessions(
     app: web.Application, user_id: UserID
 ) -> None:
+    #  NOTE kept here for convenience
     with log_context(
         logger,
         logging.INFO,

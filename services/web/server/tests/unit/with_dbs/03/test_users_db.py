@@ -13,11 +13,9 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users_garbage_collector_tasks import (
-    APP_DB_ENGINE_KEY,
-    update_expired_users,
-)
+from simcore_service_webserver.users_db import update_expired_users
 
 _NOW = datetime.utcnow()
 YESTERDAY = _NOW - timedelta(days=1)
