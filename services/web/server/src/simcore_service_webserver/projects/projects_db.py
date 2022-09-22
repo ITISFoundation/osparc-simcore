@@ -9,6 +9,7 @@ import logging
 import textwrap
 import uuid as uuidlib
 from collections import deque
+from contextlib import AsyncExitStack
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
@@ -21,6 +22,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
@@ -38,6 +40,7 @@ from ..utils import format_datetime, now_str
 from .project_models import ProjectDict, ProjectProxy
 from .projects_exceptions import (
     NodeNotFoundError,
+    ProjectDeleteError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectsException,
@@ -254,10 +257,8 @@ class ProjectDBAPI:
                     retry = True
 
             # insert projects_to_product entry
-            await conn.execute(
-                projects_to_products.insert().values(
-                    project_uuid=kargs["uuid"], product_name=product_name
-                )
+            await self.upsert_project_linked_product(
+                ProjectID(kargs["uuid"]), product_name, conn=conn
             )
 
             # Updated values
@@ -268,9 +269,15 @@ class ProjectDBAPI:
             return prj
 
     async def upsert_project_linked_product(
-        self, project_id: ProjectID, product_name: str
+        self,
+        project_id: ProjectID,
+        product_name: str,
+        conn: Optional[SAConnection] = None,
     ) -> None:
-        async with self.engine.acquire() as conn:
+        async with AsyncExitStack() as stack:
+            if not conn:
+                conn = await stack.enter_async_context(self.engine.acquire())
+                assert conn  # nosec
             await conn.execute(
                 pg_insert(projects_to_products)
                 .values(project_uuid=f"{project_id}", product_name=product_name)
@@ -618,7 +625,8 @@ class ProjectDBAPI:
     async def replace_user_project(
         self,
         new_project_data: dict[str, Any],
-        user_id: int,
+        user_id: UserID,
+        product_name: str,
         project_uuid: str,
         include_templates: Optional[bool] = False,
     ) -> dict[str, Any]:
@@ -692,6 +700,9 @@ class ProjectDBAPI:
                 )
                 project: RowProxy = await result.fetchone()
 
+                await self.upsert_project_linked_product(
+                    ProjectID(project_uuid), product_name, conn=conn
+                )
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),
@@ -739,6 +750,19 @@ class ProjectDBAPI:
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
+
+    async def check_project_has_only_one_product(self, project_uuid: ProjectID) -> None:
+        async with self.engine.acquire() as conn:
+            num_products_linked_to_project = await conn.scalar(
+                sa.select(func.count())
+                .select_from(projects_to_products)
+                .where(projects_to_products.c.project_uuid == f"{project_uuid}")
+            )
+        if num_products_linked_to_project > 1:
+            raise ProjectDeleteError(
+                project_uuid=project_uuid,
+                reason="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
+            )
 
     async def make_unique_project_uuid(self) -> str:
         """Generates a project identifier still not used in database
