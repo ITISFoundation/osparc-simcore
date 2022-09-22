@@ -82,6 +82,30 @@ get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=
 S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
+
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
 
 
 .PHONY: help
@@ -123,12 +147,18 @@ docker buildx bake \
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
-		--set *.output="type=docker$(comma)push=false") \
+		$(if $(local-dest),\
+			$(foreach service, $(SERVICES_LIST),\
+				--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
+			,--load\
+		)\
+	)\
 	$(if $(push),--push,) \
 	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_LIST),\
-			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) --set $(service).cache-from=type=gha$(comma)scope=$(service)) \
+			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
+			--set $(service).cache-from=type=gha$(comma)scope=$(service)) \
 	) &&\
 popd;
 endef
@@ -138,6 +168,14 @@ build build-nc: .env ## Builds production images and tags them as 'local/{servic
 	# Building service$(if $(target),,s) $(target)
 	@$(_docker_compose_build)
 
+
+load-images: guard-local-src ## loads images from local-src
+	# loading from images from $(local-src)...
+	@$(foreach service, $(SERVICES_LIST),\
+		docker load --input $(local-src)/$(service).tar; \
+	)
+	# all images loaded
+	@docker images
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
