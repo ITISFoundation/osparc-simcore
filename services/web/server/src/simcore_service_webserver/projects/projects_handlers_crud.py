@@ -134,8 +134,8 @@ async def create_projects(request: web.Request):
         _create_projects,
         task_context=jsonable_encoder(req_ctx),
         app=request.app,
+        request_context=req_ctx,
         query_params=query_params,
-        user_id=req_ctx.user_id,
         predefined_project=predefined_project,
         fire_and_forget=True,
     )
@@ -236,7 +236,7 @@ async def _create_projects(
     task_progress: TaskProgress,
     app: web.Application,
     query_params: _ProjectCreateParams,
-    user_id: UserID,
+    request_context: RequestContext,
     predefined_project: Optional[ProjectDict],
 ):
     """
@@ -257,7 +257,7 @@ async def _create_projects(
             # 1. prepare copy
             new_project, copy_file_coro = await _prepare_project_copy(
                 app,
-                user_id=user_id,
+                user_id=request_context.user_id,
                 src_project_uuid=query_params.from_study,
                 as_template=query_params.as_template,
                 deep_copy=query_params.copy_data,
@@ -278,7 +278,8 @@ async def _create_projects(
         # 3. save new project in DB
         new_project = await db.add_project(
             new_project,
-            user_id,
+            request_context.user_id,
+            request_context.product_name,
             force_as_template=query_params.as_template,
             hidden=query_params.copy_data,
         )
@@ -301,12 +302,12 @@ async def _create_projects(
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            app, user_id, new_project["uuid"]
+            app, request_context.user_id, new_project["uuid"]
         )
 
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
-            user_id=user_id,
+            user_id=request_context.user_id,
             project=new_project,
             is_template=query_params.as_template,
             app=app,
@@ -325,12 +326,14 @@ async def _create_projects(
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
         log.warning(
-            "cancelled creation of project for user '%s', cleaning up",
-            f"{user_id=}",
+            "cancelled creation of project for '%s', cleaning up",
+            f"{request_context.user_id=}",
         )
         # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
         if prj_uuid := new_project.get("uuid"):
-            await projects_api.submit_delete_project_task(app, prj_uuid, user_id)
+            await projects_api.submit_delete_project_task(
+                app, prj_uuid, request_context.user_id
+            )
         raise
 
 
