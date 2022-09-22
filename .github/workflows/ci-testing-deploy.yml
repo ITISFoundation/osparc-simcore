@@ -78,11 +78,10 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          echo $DOCKER_IMAGE_TAG
           make build
       - name: show build info
         run: make info-images
-      # - name: build images
-      #   run: ./ci/build/test-images.bash build_images
       - name: set owner variable
         if: github.event_name == 'push'
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
