@@ -36,6 +36,13 @@ qx.Class.define("osparc.component.task.TaskUI", {
   },
 
   properties: {
+    task: {
+      check: "osparc.data.PollTask",
+      init: null,
+      nullable: false,
+      apply: "__applyTask"
+    },
+
     title: {
       check: "String",
       init: "",
@@ -48,18 +55,7 @@ qx.Class.define("osparc.component.task.TaskUI", {
       init: "",
       nullable: true,
       event: "changeSubtitle"
-    },
-
-    stopSupported: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeStopSupported"
     }
-  },
-
-  events: {
-    "abortRequested": "qx.event.type.Event"
   },
 
   statics: {
@@ -95,23 +91,21 @@ qx.Class.define("osparc.component.task.TaskUI", {
             alignY: "middle",
             alignX: "center",
             width: 25,
-            cursor: "pointer"
+            cursor: "pointer",
+            visibility: "excluded"
           });
-          this.bind("stopSupported", control, "visibility", {
-            converter: value => value ? "visible" : "excluded"
-          }, this);
-          control.addListener("tap", () => this.__requestAbort(), this);
           this._add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    /**
-      * @abstract
-      */
-    _buildLayout: function() {
-      throw new Error("Abstract method called!");
+    __applyTask: function(task) {
+      const stopButton = this.getChildControl("stop");
+      task.bind("abortHref", stopButton, "visibility", {
+        converter: abortHref => abortHref ? "visible" : "excluded"
+      });
+      stopButton.addListener("tap", () => task.abortRequested(), this);
     },
 
     start: function() {
@@ -124,10 +118,11 @@ qx.Class.define("osparc.component.task.TaskUI", {
       tasks.removeTask(this);
     },
 
-    __requestAbort: function() {
-      if (this.isStopSupported()) {
-        this.fireEvent("abortRequested");
-      }
+    /**
+      * @abstract
+      */
+    _buildLayout: function() {
+      throw new Error("Abstract method called!");
     }
   }
 });

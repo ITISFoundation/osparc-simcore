@@ -273,16 +273,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         this._resourcesContainer.remove(toTemplateCard);
       };
 
-      if (task.getAbortHref()) {
-        task.bind("abortHref", taskUI, "stopSupported", {
-          converter: abortHref => Boolean(abortHref)
-        });
-        taskUI.addListener("abortRequested", () => task.abortRequested());
-        task.addListener("taskAborted", () => {
-          const msg = this.tr("Study to Template aborted");
-          finished(msg, "INFO");
-        });
-      }
+      task.addListener("taskAborted", () => {
+        const msg = this.tr("Study to Template aborted");
+        finished(msg, "INFO");
+      });
       task.addListener("updateReceived", e => {
         const updateData = e.getData();
         if ("task_progress" in updateData && toTemplateCard) {
@@ -308,8 +302,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     taskToTemplateReceived: function(task, studyName) {
       const toTemaplateTaskUI = new osparc.component.task.ToTemplate(studyName);
+      toTemaplateTaskUI.setTask(task);
       toTemaplateTaskUI.start();
       const toTemplateCard = this.__createToTemplateCard(studyName);
+      toTemplateCard.setTask(task);
       this.__attachToTemplateEventHandler(task, toTemaplateTaskUI, toTemplateCard);
     },
 

@@ -642,28 +642,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resourcesContainer.remove(studyCard);
       };
 
-      if (task.getAbortHref()) {
-        task.bind("abortHref", taskUI, "stopSupported", {
-          converter: abortHref => Boolean(abortHref)
-        });
-        taskUI.addListener("abortRequested", () => task.abortRequested());
-        task.addListener("taskAborted", () => {
-          const msg = this.tr("Duplication aborted");
-          finished(msg, "INFO");
-        });
-      }
-      task.addListener("updateReceived", e => {
-        const updateData = e.getData();
-        if ("task_progress" in updateData && studyCard) {
-          const progress = updateData["task_progress"];
-          studyCard.getChildControl("progress-bar").set({
-            value: progress["percent"]*100
-          });
-          studyCard.getChildControl("state-label").set({
-            value: progress["message"]
-          });
-        }
-      }, this);
+      task.addListener("taskAborted", () => {
+        const msg = this.tr("Duplication aborted");
+        finished(msg, "INFO");
+      });
       task.addListener("resultReceived", e => {
         finished();
         const duplicatedStudyData = e.getData();
@@ -678,8 +660,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     taskDuplicateReceived: function(task, studyName) {
       const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
+      duplicateTaskUI.setTask(task);
       duplicateTaskUI.start();
       const duplicatingStudyCard = this.__createDuplicateCard(studyName);
+      duplicatingStudyCard.setTask(task);
       this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
     },
 
