@@ -390,10 +390,7 @@ qx.Class.define("osparc.file.FilePicker", {
         this.fireEvent("itemSelected");
         fileDrop.resetDropAction();
       });
-
-      this._add(fileDrop, {
-        flex: 1
-      });
+      return fileDrop;
     },
 
     __getDownloadLinkSection: function() {
