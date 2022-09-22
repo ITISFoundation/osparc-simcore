@@ -1,16 +1,16 @@
-"""add projects_to_products table
+"""add projects_to_product table
 
-Revision ID: 8d63b227e3ff
-Revises: 9d477e20d06e
-Create Date: 2022-09-20 06:56:27.554826+00:00
+Revision ID: 044d12c035ae
+Revises: ead667546b12
+Create Date: 2022-09-22 08:04:32.733615+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "8d63b227e3ff"
-down_revision = "9d477e20d06e"
+revision = "044d12c035ae"
+down_revision = "ead667546b12"
 branch_labels = None
 depends_on = None
 
