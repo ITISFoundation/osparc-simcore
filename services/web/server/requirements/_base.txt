@@ -167,8 +167,20 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 lazy-object-proxy==1.7.1
     # via openapi-core
-mako==1.2.0
-    # via alembic
+mako==1.2.2
+    # via
+    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   alembic
 markupsafe==2.1.1
     # via
     #   jinja2

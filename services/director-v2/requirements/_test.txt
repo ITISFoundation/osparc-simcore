@@ -151,8 +151,9 @@ jmespath==1.0.1
     #   botocore
 lazy-object-proxy==1.7.1
     # via astroid
-mako==1.1.5
+mako==1.2.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
 markupsafe==2.1.1

@@ -4,11 +4,15 @@ import json
 import logging
 
 from aiohttp import web
+from models_library.generics import Envelope
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from . import users_api
 from .login.decorators import RQT_USERID_KEY, login_required
+from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
+from .users_models import ProfileGet, ProfileUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +23,12 @@ async def get_my_profile(request: web.Request):
     # NOTE: ONLY login required to see its profile. E.g. anonymous can never see its profile
     uid = request[RQT_USERID_KEY]
     try:
-        return await users_api.get_user_profile(request.app, uid)
+        profile: ProfileGet = await users_api.get_user_profile(request.app, uid)
+        return web.Response(
+            text=Envelope[ProfileGet](data=profile).json(**RESPONSE_MODEL_POLICY),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
     except UserNotFoundError as exc:
         # NOTE: invalid user_id could happen due to timed-cache in AuthorizationPolicy
         raise web.HTTPNotFound(reason="Could not find profile!") from exc
@@ -29,12 +38,11 @@ async def get_my_profile(request: web.Request):
 @permission_required("user.profile.update")
 async def update_my_profile(request: web.Request):
     uid = request[RQT_USERID_KEY]
-
-    # TODO: validate
     body = await request.json()
+    updates = ProfileUpdate.parse_obj(body)
 
-    await users_api.update_user_profile(request.app, uid, body)
-    raise web.HTTPNoContent(content_type="application/json")
+    await users_api.update_user_profile(request.app, uid, updates)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 # me/tokens/ ------------------------------------------------------
@@ -50,7 +58,7 @@ async def create_tokens(request: web.Request):
     # TODO: if service already, then IntegrityError is raised! How to deal with db exceptions??
     await users_api.create_token(request.app, uid, body)
     raise web.HTTPCreated(
-        text=json.dumps({"data": body}), content_type="application/json"
+        text=json.dumps({"data": body}), content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
@@ -87,7 +95,7 @@ async def update_token(request: web.Request):
 
     await users_api.update_token(request.app, uid, service_id, body)
 
-    raise web.HTTPNoContent(content_type="application/json")
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @login_required
@@ -98,6 +106,6 @@ async def delete_token(request: web.Request):
 
     try:
         await users_api.delete_token(request.app, uid, service_id)
-        raise web.HTTPNoContent(content_type="application/json")
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except TokenNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Token for {service_id} not found") from exc

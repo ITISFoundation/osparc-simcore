@@ -12,6 +12,7 @@ aiohttp>=3.7.4                                # https://github.com/advisories/GH
 cryptography>=3.3.2                           # https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
+mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
 paramiko>=2.10.1                              # https://github.com/advisories/GHSA-f8q4-jwww-x3wv
 pydantic>=1.8.2                               # https://github.com/advisories/GHSA-5jqp-qgf6-3pvh
 pyyaml>=5.4                                   # https://github.com/advisories/GHSA-8q59-q68h-6hv4

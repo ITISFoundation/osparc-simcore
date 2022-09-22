@@ -76,13 +76,18 @@ async def test_login_with_wrong_password(
     assert login_options.MSG_WRONG_PASSWORD in await r.text()
 
 
-async def test_login_banned_user(client: TestClient, login_options: LoginOptions):
+@pytest.mark.parametrize("user_status", (UserStatus.BANNED, UserStatus.EXPIRED))
+async def test_login_blocked_user(
+    client: TestClient, login_options: LoginOptions, user_status: UserStatus
+):
+    expected_msg: str = getattr(login_options, f"MSG_USER_{user_status.name.upper()}")
+
     assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(f"{url}")
-    assert login_options.MSG_USER_BANNED not in await r.text()
+    assert expected_msg not in await r.text()
 
-    async with NewUser({"status": UserStatus.BANNED.name}, app=client.app) as user:
+    async with NewUser({"status": user_status.name}, app=client.app) as user:
         r = await client.post(
             f"{url}", json={"email": user["email"], "password": user["raw_password"]}
         )
@@ -90,7 +95,7 @@ async def test_login_banned_user(client: TestClient, login_options: LoginOptions
 
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
     assert r.url.path == url.path
-    assert login_options.MSG_USER_BANNED in payload["error"]["errors"][0]["message"]
+    assert expected_msg in payload["error"]["errors"][0]["message"]
 
 
 async def test_login_inactive_user(client: TestClient, login_options: LoginOptions):

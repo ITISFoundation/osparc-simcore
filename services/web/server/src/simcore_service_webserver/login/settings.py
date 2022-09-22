@@ -97,7 +97,8 @@ class LoginOptions(BaseModel):
     MSG_UNKNOWN_EMAIL: str = "This email is not registered"
     MSG_WRONG_PASSWORD: str = "Wrong password"
     MSG_PASSWORD_MISMATCH: str = "Password and confirmation do not match"
-    MSG_USER_BANNED: str = "This user is banned"
+    MSG_USER_BANNED: str = "This user does not have anymore access"
+    MSG_USER_EXPIRED: str = "This account has expired and does not have anymore access. Please contact support for further details."
     MSG_ACTIVATION_REQUIRED: str = (
         "You have to activate your account via email, before you can login"
     )
