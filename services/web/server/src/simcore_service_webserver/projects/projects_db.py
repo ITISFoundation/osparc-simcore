@@ -26,8 +26,10 @@ from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
@@ -176,47 +178,26 @@ class ProjectDBAPI:
         assert self._engine  # nosec
         return self._engine
 
-    async def add_projects(self, projects_list: list[dict], user_id: int) -> list[str]:
-        """
-            adds all projects and assigns to a user
-
-        If user_id is None, then project is added as Template
-        """
-        log.info("adding projects to database for user %s", user_id)
-        uuids = []
-        for prj in projects_list:
-            prj = await self.add_project(prj, user_id)
-            uuids.append(prj["uuid"])
-        return uuids
-
     async def add_project(
         self,
         prj: dict[str, Any],
-        user_id: Optional[int],
+        user_id: int,
+        product_name: str,
         *,
         force_project_uuid: bool = False,
         force_as_template: bool = False,
         hidden: bool = False,
     ) -> dict[str, Any]:
-        """Inserts a new project in the database and, if a user is specified, it assigns ownership
+        """Inserts a new project in the database
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
-        :param prj: schema-compliant project data
-        :type prj: dict
-        :param user_id: database's user identifier
-        :type user_id: int
-        :param force_project_uuid: enforces valid uuid, defaults to False
-        :type force_project_uuid: bool, optional
-        :param force_as_template: adds data as template, defaults to False
-        :type force_as_template: bool, optional
         :raises ProjectInvalidRightsError: ssigning project to an unregistered user
-        :return: newly assigned project UUID
-        :rtype: str
+        :return: inserted project
         """
         # pylint: disable=no-value-for-parameter
-        async with self.engine.acquire() as conn:
+        async with self.engine.acquire() as conn, conn.begin():
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
@@ -240,13 +221,10 @@ class ProjectDBAPI:
                 kargs["hidden"] = True
 
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
-            if user_id:
-                primary_gid = await self._get_user_primary_group_gid(conn, user_id)
-                kargs.setdefault("access_rights", {}).update(
-                    _create_project_access_rights(
-                        primary_gid, ProjectAccessRights.OWNER
-                    )
-                )
+            primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+            kargs.setdefault("access_rights", {}).update(
+                _create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
+            )
             # ensure we have the minimal amount of data here
             kargs.setdefault("name", "New Study")
             kargs.setdefault("description", "")
@@ -264,8 +242,7 @@ class ProjectDBAPI:
             while retry:
                 try:
                     query = projects.insert().values(**kargs)
-                    result = await conn.execute(query)
-                    await result.first()
+                    await conn.execute(query)
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
                     if (
@@ -276,12 +253,29 @@ class ProjectDBAPI:
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True
 
+            # insert projects_to_product entry
+            await conn.execute(
+                projects_to_products.insert().values(
+                    project_uuid=kargs["uuid"], product_name=product_name
+                )
+            )
+
             # Updated values
             user_email = await self._get_user_email(conn, user_id)
             prj = _convert_to_schema_names(kargs, user_email)
             if not "tags" in prj:
                 prj["tags"] = []
             return prj
+
+    async def upsert_project_linked_product(
+        self, project_id: ProjectID, product_name: str
+    ) -> None:
+        async with self.engine.acquire() as conn:
+            await conn.execute(
+                pg_insert(projects_to_products)
+                .values(project_uuid=f"{project_id}", product_name=product_name)
+                .on_conflict_do_nothing()
+            )
 
     async def load_projects(
         self,
