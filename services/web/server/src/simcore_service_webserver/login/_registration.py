@@ -5,12 +5,20 @@
 """
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from aiohttp import web
 from models_library.basic_types import IdInt
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, parse_raw_as
-from servicelib.json_serialization import json_dumps
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field,
+    PositiveInt,
+    ValidationError,
+    parse_obj_as,
+    parse_raw_as,
+)
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
 from ..db_models import UserStatus
@@ -27,7 +35,6 @@ log = logging.getLogger(__name__)
 
 
 class ConfirmationTokenInfoDict(ConfirmationTokenDict):
-    # TODO: as pydantic model?
     expires: datetime
     url: str
 
@@ -62,23 +69,28 @@ async def check_registration(
     # email : required & formats
     # password: required & secure[min length, ...]
 
-    # If the email field is missing, return a 400 - HTTPBadRequest
     if email is None or password is None:
         raise web.HTTPBadRequest(
-            reason="Email and password required", content_type="application/json"
+            reason="Both email and password are required",
+            content_type=MIMETYPE_APPLICATION_JSON,
         )
 
     if confirm and password != confirm:
         raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
+            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    # TODO: If the email field isn’t a valid email, return a 422 - HTTPUnprocessableEntity
-    # TODO: If the password field is too short, return a 422 - HTTPUnprocessableEntity
-    # TODO: use passwordmeter to enforce good passwords, but first create helper in front-end
+    try:
+        parse_obj_as(EmailStr, email)
+    except ValidationError as err:
+        raise web.HTTPUnprocessableEntity(
+            reason="Invalid email", content_type=MIMETYPE_APPLICATION_JSON
+        ) from err
 
-    user = await db.get_user({"email": email})
-    if user:
+    # NOTE: Extra requirements on passwords
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
+
+    if user := await db.get_user({"email": email}):
         # Resets pending confirmation if re-registers?
         if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
             _confirmation: ConfirmationTokenDict = await db.get_confirmation(
@@ -92,7 +104,7 @@ async def check_registration(
 
         # If the email is already taken, return a 409 - HTTPConflict
         raise web.HTTPConflict(
-            reason=cfg.MSG_EMAIL_EXISTS, content_type="application/json"
+            reason=cfg.MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     log.debug("Registration data validated")
@@ -131,32 +143,34 @@ async def create_invitation_token(
 
 
 async def check_invitation(
-    invitation: Optional[str], db: AsyncpgStorage, cfg: LoginOptions
-) -> Optional[ConfirmationTokenInfoDict]:
+    invitation_code: str, db: AsyncpgStorage, cfg: LoginOptions
+) -> InvitationData:
     """
     :raise web.HTTPForbidden if invalid
     """
-    confirmation = None
-    if invitation and (
-        confirmation := await validate_confirmation_code(invitation, db, cfg)
-    ):
-        invitation_token_info = get_confirmation_info(cfg, confirmation)
-        assert (
-            invitation_token_info["action"] == ConfirmationAction.INVITATION.name
-        )  # nosec
-        log.info(
-            "Invitation token used. Deleting %s",
-            json_dumps(invitation_token_info, indent=1),
-        )
-        await db.delete_confirmation(confirmation)
-        return invitation_token_info
+    if confirmation := await validate_confirmation_code(invitation_code, db, cfg):
+        try:
+            parse_obj_as(Literal[ConfirmationAction.INVITATION], confirmation["action"])
+            return parse_raw_as(InvitationData, confirmation["data"])
+
+        except ValidationError as err:
+            log.warning(
+                "%s is associated with an invalid %s.\n" "Details: %s",
+                f"{invitation_code=}",
+                f"{confirmation=}",
+                f"{err=}",
+            )
+
+        finally:
+            await db.delete_confirmation(confirmation)
 
     raise web.HTTPForbidden(
         reason=(
-            "Invalid invitation code."
+            f"Invalid invitation code [{invitation_code=}]."
             "Your invitation was already used or might have expired."
             "Please contact our support team to get a new one."
-        )
+        ),
+        content_type=MIMETYPE_APPLICATION_JSON,
     )
 
 

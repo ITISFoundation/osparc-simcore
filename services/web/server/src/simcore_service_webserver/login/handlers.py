@@ -101,17 +101,17 @@ async def register(request: web.Request):
 
     expires_at = None
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
-        # FIXME: improve this make it more explicit to Invitation
-        c = await check_invitation(
-            invitation=getattr(body, "invitation", None), db=db, cfg=cfg
-        )
-        if (
-            c
-            and c["data"]
-            and (expiration_interval := getattr(c["data"], "trial_account_days"))
-        ):
-            # FIXME:  aiopg does not understand BinaryExpression expires_at = sqlalchemy.sql.func.now() + timedelta(expiration_interval)
-            expires_at = datetime.utcnow() + timedelta(expiration_interval)
+        try:
+            invitation_code = body.invitation
+        except AttributeError as e:
+            raise web.HTTPBadRequest(
+                reason="invitation field is required",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from e
+
+        invitation = await check_invitation(invitation_code, db=db, cfg=cfg)
+        if invitation.trial_account_days:
+            expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
     await check_registration(email, password, confirm, db, cfg)
 
