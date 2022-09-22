@@ -178,7 +178,8 @@ def get_delete_project_task(
 async def add_project_node(
     request: web.Request,
     project: dict[str, Any],
-    user_id: int,
+    user_id: UserID,
+    product_name: str,
     service_key: str,
     service_version: str,
     service_id: Optional[str],
@@ -210,6 +211,7 @@ async def add_project_node(
     await db.replace_user_project(
         new_project_data=project,
         user_id=user_id,
+        product_name=product_name,
         project_uuid=project["uuid"],
     )
     # also ensure the project is updated by director-v2 since services
