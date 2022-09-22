@@ -568,8 +568,6 @@ ifeq ($(target),)
 			docker images */$(service):*;\
 			$(call show-meta,$(service))\
 		)
-	## Client images:
-	@$(MAKE_C) services/static-webserver/client info
 else
 	## $(target) images:
 	@$(call show-meta,$(target))
