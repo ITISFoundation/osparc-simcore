@@ -42,7 +42,7 @@ qx.Class.define("osparc.file.FilePicker", {
   construct: function(node, pageContext = "workbench") {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.set({
       node,
@@ -283,15 +283,15 @@ qx.Class.define("osparc.file.FilePicker", {
       const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
       if (isWorkbenchContext) {
         if (hasOutput) {
-          // WORKBECH mode WITH output
+          // WORKBENCH mode WITH output
           this.__buildInfoLayout();
         } else {
-          // WORKBECH mode WITHOUT output
+          // WORKBENCH mode WITHOUT output
           this.__addProgressBar();
           this.__buildNoFileWBLayout();
         }
       } else {
-        this.setMargin(5);
+        this.setMargin(10);
         if (hasOutput) {
           // APP mode WITH output
           this.__buildInfoLayout();
@@ -436,6 +436,34 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __buildNoFileAppLayout: function() {
+      let msg = this.tr("In order to Select a file you have three options:");
+      const options = [
+        this.tr("- Upload a file"),
+        this.tr("- Select a file from tree"),
+        this.tr("- Provide Download Link")
+      ];
+      for (let i=0; i<options.length; i++) {
+        msg += "<br>" + options[i];
+      }
+      const intro = new qx.ui.basic.Label(msg).set({
+        font: "text-16",
+        rich: true
+      });
+      this._add(intro);
+
+      const uploadFileSection = this.__getUploadFileSection();
+      this._add(uploadFileSection);
+
+      const fileBrowserLayout = this.__getFileBrowserLayout();
+      this._add(fileBrowserLayout, {
+        flex: 1
+      });
+
+      const downloadLinkSection = this.__getDownloadLinkSection();
+      this._add(downloadLinkSection);
+    },
+
+    __getFileBrowserLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const reloadButton = new qx.ui.form.Button().set({
@@ -509,13 +537,7 @@ qx.Class.define("osparc.file.FilePicker", {
       // eslint-disable-next-line no-underscore-dangle
       folderViewer._add(selectBtn);
 
-      this._add(treeFolderLayout, {
-        flex: 1
-      });
-
-
-      const downloadLinkSection = this.__getDownloadLinkSection();
-      this._add(downloadLinkSection);
+      return treeFolderLayout;
     },
 
     init: function() {
