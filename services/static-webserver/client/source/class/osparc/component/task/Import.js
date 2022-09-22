@@ -18,6 +18,12 @@
 qx.Class.define("osparc.component.task.Import", {
   extend: osparc.component.task.TaskUI,
 
+  construct: function(study) {
+    this.__study = study;
+
+    this.base(arguments);
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
