@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timedelta
 
 from aiohttp import web
-from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -46,6 +45,7 @@ from .utils import (
     flash_response,
     get_client_ip,
     get_template_path,
+    notify_user_logout,
     render_and_send_mail,
 )
 
@@ -433,9 +433,7 @@ async def logout(request: web.Request) -> web.Response:
     with log_context(
         log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
     ):
-        await observer.emit(
-            "SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app
-        )
+        await notify_user_logout(request.app, user_id, client_session_id)
         await forget(request, response)
 
     return response

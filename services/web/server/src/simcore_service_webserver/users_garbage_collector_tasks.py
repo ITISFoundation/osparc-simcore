@@ -7,12 +7,14 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
+from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserStatus, users
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
 from ._constants import APP_DB_ENGINE_KEY
+from .login.utils import notify_user_logout
 from .security_api import clean_auth_policy_cache
 
 logger = logging.getLogger(__name__)
@@ -56,12 +58,22 @@ async def _update_expired_users_periodically(app: web.Application, wait_s: float
 
     while True:
         if updated := await update_expired_users(engine):
-            # expired usersr might be cached in the auth. If so, any request
+            # expired users might be cached in the auth. If so, any request
             # with this user-id will get thru producing unexpected side-effects
             clean_auth_policy_cache(app)
 
+            # broadcast force logout of user_id
             for user_id in updated:
                 logger.info("User account with %s expired", f"{user_id=}")
+
+                with log_context(
+                    logger,
+                    logging.INFO,
+                    "Forcing logout of %s from all sessions",
+                    f"{user_id=}",
+                ):
+                    await notify_user_logout(app, user_id, client_session_id=None)
+
         else:
             logger.info("No users expired")
 
