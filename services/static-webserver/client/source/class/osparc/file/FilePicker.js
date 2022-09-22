@@ -285,15 +285,16 @@ qx.Class.define("osparc.file.FilePicker", {
     __buildLayout: function() {
       this._removeAll();
       const isWorkbenchContext = this.getPageContext() === "workbench";
-      const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
-      if (isWorkbenchContext && hasOutput) {
-        this.__buildInfoLayout();
-        return;
-      }
-      this.__addProgressBar();
       if (isWorkbenchContext) {
-        this.__buildProvideFileLayout();
+        const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
+        if (hasOutput) {
+          this.__buildInfoLayout();
+        } else {
+          this.__addProgressBar();
+          this.__buildProvideFileLayout();
+        }
       } else {
+        this.__addProgressBar();
         this.__buildAppModeLayout();
       }
     },
