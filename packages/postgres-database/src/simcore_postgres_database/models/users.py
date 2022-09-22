@@ -59,20 +59,37 @@ class UserStatus(Enum):
     """
     pending: user registered but not confirmed
     active: user is confirmed and can use the platform
+    expired: user is not authorized because it expired after a trial period
     banned: user is not authorized
     """
 
     CONFIRMATION_PENDING = "PENDING"
     ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
     BANNED = "BANNED"
 
 
 users = sa.Table(
     "users",
     metadata,
-    sa.Column("id", sa.BigInteger, nullable=False),
-    sa.Column("name", sa.String, nullable=False),
-    sa.Column("email", sa.String, nullable=False),
+    sa.Column(
+        "id",
+        sa.BigInteger,
+        nullable=False,
+        doc="Primary key for user identifier",
+    ),
+    sa.Column(
+        "name",
+        sa.String,
+        nullable=False,
+        doc="Display name. NOTE: this is NOT a user name since uniqueness is NOT guaranteed",
+    ),
+    sa.Column(
+        "email",
+        sa.String,
+        nullable=False,
+        doc="User email is used as username since it is a unique human-readable identifier",
+    ),
     sa.Column(
         "phone",
         sa.String,
@@ -89,30 +106,57 @@ users = sa.Table(
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
+        doc="User's group ID",
     ),
     sa.Column(
         "status",
         sa.Enum(UserStatus),
         nullable=False,
         default=UserStatus.CONFIRMATION_PENDING,
+        doc="Status of the user account. SEE UserStatus",
     ),
-    sa.Column("role", sa.Enum(UserRole), nullable=False, default=UserRole.USER),
-    sa.Column("created_at", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "role",
+        sa.Enum(UserRole),
+        nullable=False,
+        default=UserRole.USER,
+        doc="Use for role-base authorization",
+    ),
+    sa.Column(
+        "created_at",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Registration timestamp",
+    ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
+        doc="Last modification timestamp",
     ),
-    sa.Column("created_ip", sa.String(), nullable=True),
-    #
+    sa.Column(
+        "expires_at",
+        sa.DateTime(),
+        nullable=True,
+        doc="Sets the expiration date for trial accounts."
+        "If set to NULL then the account does not expire.",
+    ),
+    sa.Column(
+        "created_ip",
+        sa.String(),
+        nullable=True,
+        doc="User IP from which use was created",
+    ),
+    # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("email", name="user_login_key"),
     sa.UniqueConstraint(
         "phone",
         name="user_phone_unique_constraint",
-        # cannot use same phone for two users
+        # NOTE: that cannot use same phone for two user accounts
     ),
 )
 

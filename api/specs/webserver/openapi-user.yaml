@@ -21,7 +21,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/me.yaml#/ProfileInput"
+              $ref: "./components/schemas/me.yaml#/ProfileUpdate"
       responses:
         "204":
           description: updated profile

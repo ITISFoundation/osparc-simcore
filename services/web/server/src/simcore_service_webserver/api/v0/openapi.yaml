@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.7.0
+  version: 0.8.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -664,6 +664,8 @@ paths:
                       - $ref: '#/paths/~1me/put/requestBody/content/application~1json/schema/allOf/0'
                       - type: object
                         properties:
+                          id:
+                            type: integer
                           login:
                             type: string
                             format: email
@@ -673,10 +675,10 @@ paths:
                             $ref: '#/paths/~1groups/get/responses/200/content/application~1json/schema/properties/data'
                           gravatar_id:
                             type: string
-                    example:
-                      login: pcrespov@foo.com
-                      role: Admin
-                      gravatar_id: 205e460b479e2e5b48aec07710c08d50
+                          expirationDate:
+                            type: string
+                            format: date
+                            description: 'If user has a trial account, it sets the expiration date, otherwise None'
                   error:
                     nullable: true
                     default: null
@@ -700,9 +702,6 @@ paths:
                   example:
                     first_name: Pedro
                     last_name: Crespo
-              example:
-                first_name: Pedro
-                last_name: Crespo
       responses:
         '204':
           description: updated profile
@@ -763,9 +762,6 @@ paths:
                   required:
                     - service
                     - token_key
-                  example:
-                    service: github-api-v1
-                    token_key: N1BP5ZSpB
                 error:
                   nullable: true
                   default: null
@@ -2470,12 +2466,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:

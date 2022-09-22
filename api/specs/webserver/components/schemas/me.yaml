@@ -9,18 +9,17 @@ ProfileCommon:
     first_name: Pedro
     last_name: Crespo
 
-ProfileInput:
+ProfileUpdate:
   allOf:
     - $ref: "#/ProfileCommon"
-  example:
-    first_name: Pedro
-    last_name: Crespo
 
-ProfileOutput:
+ProfileGet:
   allOf:
     - $ref: "#/ProfileCommon"
     - type: object
       properties:
+        id:
+          type: integer
         login:
           type: string
           format: email
@@ -30,10 +29,10 @@ ProfileOutput:
           $ref: "./group.yaml#/AllUsersGroups"
         gravatar_id:
           type: string
-  example:
-    login: pcrespov@foo.com
-    role: Admin
-    gravatar_id: 205e460b479e2e5b48aec07710c08d50
+        expirationDate:
+          type: string
+          format: date
+          description: "If user has a trial account, it sets the expiration date, otherwise None"
 
 ProfileEnveloped:
   type: object
@@ -41,7 +40,7 @@ ProfileEnveloped:
     - data
   properties:
     data:
-      $ref: "#/ProfileOutput"
+      $ref: "#/ProfileGet"
     error:
       nullable: true
       default: null
@@ -63,9 +62,6 @@ Token:
   required:
     - service
     - token_key
-  example:
-    service: "github-api-v1"
-    token_key: N1BP5ZSpB
 
 TokenId:
   description: toke identifier

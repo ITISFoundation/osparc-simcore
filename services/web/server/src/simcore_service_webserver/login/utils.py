@@ -33,9 +33,14 @@ def _to_names(enum_cls, names):
     return [getattr(enum_cls, att).name for att in names.split()]
 
 
-CONFIRMATION_PENDING, ACTIVE, BANNED = _to_names(
-    UserStatus, "CONFIRMATION_PENDING ACTIVE BANNED"
+CONFIRMATION_PENDING, ACTIVE, BANNED, EXPIRED = (
+    UserStatus.CONFIRMATION_PENDING.name,
+    UserStatus.ACTIVE.name,
+    UserStatus.BANNED.name,
+    UserStatus.EXPIRED.name,
 )
+assert len(UserStatus) == 4  # nosec
+
 
 ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
 
