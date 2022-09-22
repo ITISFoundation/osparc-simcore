@@ -2,7 +2,7 @@ import sqlalchemy as sa
 
 from .base import metadata
 
-cluster_to_groups = sa.Table(
+projects_to_products = sa.Table(
     "projects_to_products",
     metadata,
     sa.Column(
