@@ -62,10 +62,13 @@ qx.Class.define("osparc.component.node.FilePickerSSView", {
       }
 
       const filePicker = new osparc.file.FilePicker(node, "app");
-      filePicker.addListener("itemSelected", () => this.fireEvent("itemSelected"));
+      filePicker.addListener("itemSelected", () => {
+        this.fireEvent("itemSelected");
+        // eslint-disable-next-line no-underscore-dangle
+        filePicker.__buildLayout();
+      });
       [
         "itemReset",
-        "itemSelected",
         "fileUploaded"
       // eslint-disable-next-line no-underscore-dangle
       ].forEach(ev => filePicker.addListener(ev, () => filePicker.__buildLayout()));
