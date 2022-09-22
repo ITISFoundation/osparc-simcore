@@ -294,7 +294,7 @@ qx.Class.define("osparc.file.FilePicker", {
       if (isWorkbenchContext) {
         this.__buildProvideFileLayout();
       } else {
-        this.__buildTreeLayout();
+        this.__buildAppModeLayout();
       }
     },
 
@@ -430,7 +430,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return layout;
     },
 
-    __buildTreeLayout: function() {
+    __buildAppModeLayout: function() {
       this.setMargin(5);
 
       const reloadButton = new qx.ui.form.Button().set({
@@ -509,6 +509,7 @@ qx.Class.define("osparc.file.FilePicker", {
       input.addListener("change", () => {
         input.getDomElement().files.forEach(file => this.__retrieveUrlAndUpload(file));
       }, this);
+      fileUploader.add(btn);
       mainButtonsLayout.add(fileUploader);
 
       const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions().set({
