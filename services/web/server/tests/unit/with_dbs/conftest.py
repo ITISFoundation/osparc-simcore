@@ -160,6 +160,11 @@ def client(
     return cli
 
 
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
+
+
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
 #
 # Mocks entirely or part of the calls to the web-server subsystems

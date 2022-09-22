@@ -23,7 +23,6 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from simcore_service_webserver import catalog
 
 
-
 @pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
     return parse_obj_as(
@@ -94,15 +93,13 @@ def mock_catalog_api(
 
 @pytest.fixture
 async def user_project(
-    client,
-    fake_project,
-    logged_user,
-    tests_data_dir: Path,
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
 ):
     async with NewProject(
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
@@ -117,6 +114,7 @@ async def shared_project(
     logged_user,
     all_group,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     fake_project.update(
         {
@@ -129,6 +127,7 @@ async def shared_project(
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
@@ -143,6 +142,7 @@ async def template_project(
     logged_user,
     all_group: dict[str, str],
     tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterable[dict[str, Any]]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -154,9 +154,11 @@ async def template_project(
     async with NewProject(
         project_data,
         client.app,
-        user_id=None,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
+        as_template=True,
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project
