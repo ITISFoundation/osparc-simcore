@@ -214,12 +214,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
-        60.0,
+        5 * MINS,
         description=(
-            "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
-            "is required. If something goes wrong timeout and do not wait forever in a loop. "
-            "This is used to scheduler the status of the service via aiodocker and not http requests "
-            "twards the dynamic-sidecar, as is the case with the above timeout field."
+            "After starting the dynamic-sidecar its docker_node_id is required. "
+            "This operation can be slow based on system load, sometimes docker "
+            "swarm takes more than seconds to assign the node."
         ),
     )
     DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
