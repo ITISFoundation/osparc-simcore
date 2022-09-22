@@ -34,6 +34,13 @@ qx.Class.define("osparc.data.PollTask", {
         resultHref: taskData["result_href"]
       });
 
+      if ("abort_href" in taskData) {
+        this.set({
+          abortHref: taskData["abort_href"]
+        });
+      }
+
+      this.__retries = 3;
       this.__pollTaskState();
     }
   },
@@ -41,6 +48,7 @@ qx.Class.define("osparc.data.PollTask", {
   events: {
     "updateReceived": "qx.event.type.Data",
     "resultReceived": "qx.event.type.Data",
+    "taskAborted": "qx.event.type.Event",
     "pollingError": "qx.event.type.Data"
   },
 
@@ -66,6 +74,13 @@ qx.Class.define("osparc.data.PollTask", {
       nullable: false
     },
 
+    abortHref: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeAbortHref"
+    },
+
     done: {
       check: "Boolean",
       nullable: false,
@@ -76,19 +91,26 @@ qx.Class.define("osparc.data.PollTask", {
   },
 
   members: {
-    __result: null,
+    __retries: null,
+    __aborting: null,
 
     __pollTaskState: function() {
       fetch(this.getStatusHref())
         .then(resp => {
+          if (this.__aborting || this.getDone()) {
+            return null;
+          }
           if (resp.status === 200) {
             return resp.json();
           }
-          const errMsg = this.tr("Failed polling status");
+          const errMsg = qx.locale.Manager.tr("Failed polling status");
           this.fireDataEvent("pollingError", errMsg);
           throw new Error(errMsg);
         })
         .then(data => {
+          if (data === null) {
+            return;
+          }
           const response = data["data"];
           const done = response["done"];
           this.setDone(done);
@@ -99,6 +121,11 @@ qx.Class.define("osparc.data.PollTask", {
           }
         })
         .catch(err => {
+          if (this.__retries > 0) {
+            this.__retries--;
+            this.__pollTaskState();
+            return;
+          }
           this.fireDataEvent("pollingError", err);
           throw err;
         });
@@ -121,6 +148,20 @@ qx.Class.define("osparc.data.PollTask", {
           })
           .catch(err => {
             this.fireDataEvent("pollingError", err);
+            throw err;
+          });
+      }
+    },
+
+    abortRequested: function() {
+      const abortHref = this.getAbortHref();
+      if (abortHref) {
+        this.__aborting = true;
+        fetch(abortHref, {
+          method: "DELETE"
+        })
+          .then(() => this.fireEvent("taskAborted"))
+          .catch(err => {
             throw err;
           });
       }

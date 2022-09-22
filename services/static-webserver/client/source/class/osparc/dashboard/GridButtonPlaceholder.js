@@ -26,6 +26,15 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
     });
   },
 
+  properties: {
+    task: {
+      check: "osparc.data.PollTask",
+      init: null,
+      nullable: true,
+      apply: "__applyTask"
+    }
+  },
+
   statics: {
     POS: {
       STATE: osparc.dashboard.GridButtonBase.THUMBNAIL + 1,
@@ -44,6 +53,9 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
             height: 10
+          });
+          control.getChildControl("progress").set({
+            backgroundColor: "strong-main"
           });
           this._mainLayout.addAt(control, this.self().POS.PROGRESS);
           break;
@@ -92,6 +104,21 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         }
       }
       return false;
+    },
+
+    __applyTask: function(task) {
+      task.addListener("updateReceived", e => {
+        const updateData = e.getData();
+        if ("task_progress" in updateData) {
+          const progress = updateData["task_progress"];
+          this.getChildControl("progress-bar").set({
+            value: progress["percent"]*100
+          });
+          this.getChildControl("state-label").set({
+            value: progress["message"]
+          });
+        }
+      }, this);
     }
   }
 });

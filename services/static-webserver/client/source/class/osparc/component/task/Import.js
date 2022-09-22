@@ -16,7 +16,13 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.task.Import", {
-  extend: osparc.component.task.Task,
+  extend: osparc.component.task.TaskUI,
+
+  construct: function(study) {
+    this.__study = study;
+
+    this.base(arguments);
+  },
 
   members: {
     _createChildControlImpl: function(id) {
@@ -44,11 +50,6 @@ qx.Class.define("osparc.component.task.Import", {
       this.getChildControl("stop");
 
       this.setTitle(this.tr("Importing Study"));
-    },
-
-    // overridden
-    _requestStop: function() {
-      console.log("Not yet implemented");
     }
   }
 });

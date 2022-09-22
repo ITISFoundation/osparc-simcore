@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "updateTemplates": "qx.event.type.Event",
+    "publishTemplate": "qx.event.type.Data",
     "openService": "qx.event.type.Data"
   },
 
@@ -387,14 +387,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (isCurrentUserOwner && canCreateTemplate) {
         const title = this.tr("Save as Template");
         const icon = "@FontAwesome5Solid/copy";
-        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(this.__resourceData);
-        saveAsTemplateView.addListener("finished", e => {
-          const template = e.getData();
-          if (template) {
-            this.fireEvent("updateTemplates");
-          }
-        }, this);
-        const page = this.__createPage(title, saveAsTemplateView, icon, id);
+        const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);
+        saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
+        const page = this.__createPage(title, saveAsTemplate, icon, id);
         return page;
       }
       return null;

@@ -147,6 +147,10 @@ qx.Class.define("osparc.store.Store", {
       init: null,
       nullable: true,
       event: "changeClassifiers"
+    },
+    tasks: {
+      check: "Array",
+      init: []
     }
   },
 

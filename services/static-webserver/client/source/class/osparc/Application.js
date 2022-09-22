@@ -430,6 +430,7 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function() {
+      osparc.data.PollTasks.getInstance().removeTasks();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();

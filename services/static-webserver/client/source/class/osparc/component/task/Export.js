@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.task.Export", {
-  extend: osparc.component.task.Task,
+  extend: osparc.component.task.TaskUI,
 
   construct: function(study) {
     this.__study = study;
@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.task.Export", {
   },
 
   statics: {
-    EXPORT_ICON: "@FontAwesome5Solid/cloud-download-alt" // "@FontAwesome5Solid/file-export"
+    ICON: "@FontAwesome5Solid/cloud-download-alt"
   },
 
   members: {
@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.task.Export", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image(this.self().EXPORT_ICON+"/14").set({
+          control = new qx.ui.basic.Image(this.self().ICON+"/14").set({
             alignY: "middle",
             alignX: "center",
             paddingLeft: 3,
@@ -55,11 +55,6 @@ qx.Class.define("osparc.component.task.Export", {
       this.getChildControl("stop");
 
       this.setTitle(this.tr("Exporting ") + this.__study.name);
-    },
-
-    // overridden
-    _requestStop: function() {
-      console.log("Not yet implemented");
     }
   }
 });
