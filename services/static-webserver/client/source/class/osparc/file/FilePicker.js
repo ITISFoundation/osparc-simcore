@@ -383,7 +383,7 @@ qx.Class.define("osparc.file.FilePicker", {
         alignY: "middle"
       }));
 
-      layout.add(new qx.ui.basic.Label(this.tr("Or provide a Download Link")));
+      layout.add(new qx.ui.basic.Label(this.tr("Provide Download Link")));
 
       const fileDownloadLink = this.__fileDownloadLink = new osparc.file.FileDownloadLink().set({
         allowGrowY: false
