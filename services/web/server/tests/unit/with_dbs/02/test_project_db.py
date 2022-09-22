@@ -18,6 +18,7 @@ from uuid import UUID, uuid5
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
@@ -327,10 +328,13 @@ async def test_add_project_to_db(
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
     db_api: ProjectDBAPI,
+    faker: Faker,
 ):
     original_project = deepcopy(fake_project)
     # add project without user id -> by default creates a template
-    new_project = await db_api.add_project(prj=fake_project, user_id=None)
+    new_project = await db_api.add_project(
+        prj=fake_project, user_id=logged_user["id"], product_name=faker.name()
+    )
 
     _assert_added_project(
         original_project,
@@ -342,15 +346,22 @@ async def test_add_project_to_db(
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
-        await db_api.add_project(prj=fake_project, user_id=fake_user_id)
+        await db_api.add_project(
+            prj=fake_project, user_id=fake_user_id, product_name=faker.name()
+        )
         # adding a project with a fake user but forcing as template should still raise
         await db_api.add_project(
-            prj=fake_project, user_id=fake_user_id, force_as_template=True
+            prj=fake_project,
+            user_id=fake_user_id,
+            force_as_template=True,
+            product_name=faker.name(),
         )
 
     # adding a project with a logged user does not raise and creates a STANDARD project
     # since we already have a project with that uuid, it shall be updated
-    new_project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    new_project = await db_api.add_project(
+        prj=fake_project, user_id=logged_user["id"], product_name=faker.name()
+    )
     assert new_project["uuid"] != original_project["uuid"]
     _assert_added_project(
         original_project,
@@ -374,7 +385,10 @@ async def test_add_project_to_db(
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
     new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], force_as_template=True
+        prj=fake_project,
+        user_id=logged_user["id"],
+        product_name=faker.name(),
+        force_as_template=True,
     )
     assert new_project["uuid"] != original_project["uuid"]
     _assert_added_project(
@@ -400,19 +414,28 @@ async def test_add_project_to_db(
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
         await db_api.add_project(
-            prj=fake_project, user_id=logged_user["id"], force_project_uuid=True
+            prj=fake_project,
+            user_id=logged_user["id"],
+            product_name=faker.name(),
+            force_project_uuid=True,
         )
 
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
     fake_project["uuid"] = "some bad uuid"
     with pytest.raises(ValueError):
         await db_api.add_project(
-            prj=fake_project, user_id=logged_user["id"], force_project_uuid=True
+            prj=fake_project,
+            user_id=logged_user["id"],
+            product_name=faker.name(),
+            force_project_uuid=True,
         )
 
     # add a project with a bad uuid that is already present, shall not raise
     new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], force_project_uuid=False
+        prj=fake_project,
+        user_id=logged_user["id"],
+        product_name=faker.name(),
+        force_project_uuid=False,
     )
     _assert_added_project(
         original_project,
@@ -449,6 +472,7 @@ async def test_patch_user_project_workbench_concurrently(
     primary_group: dict[str, str],
     db_api: ProjectDBAPI,
     number_of_nodes: int,
+    faker: Faker,
 ):
     _NUMBER_OF_NODES = number_of_nodes
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
@@ -467,7 +491,9 @@ async def test_patch_user_project_workbench_concurrently(
 
     # add the project
     original_project = deepcopy(fake_project)
-    new_project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    new_project = await db_api.add_project(
+        prj=fake_project, user_id=logged_user["id"], product_name=faker.name()
+    )
     _assert_added_project(
         original_project,
         new_project,
@@ -495,7 +521,7 @@ async def test_patch_user_project_workbench_concurrently(
     for n in range(_NUMBER_OF_NODES):
         expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
 
-    patched_projects: tuple[
+    patched_projects: list[
         tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
@@ -604,6 +630,7 @@ async def lots_of_projects_and_nodes(
     logged_user: dict[str, Any],
     fake_project: dict[str, Any],
     db_api: ProjectDBAPI,
+    faker: Faker,
 ) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
     """Will create >1000 projects with each between 200-1434 nodes"""
     NUMBER_OF_PROJECTS = 1245
@@ -627,7 +654,9 @@ async def lots_of_projects_and_nodes(
         new_project.update(uuid=project_uuid, name=f"project {p}", workbench=workbench)
         # add the project
         project_creation_tasks.append(
-            db_api.add_project(prj=new_project, user_id=logged_user["id"])
+            db_api.add_project(
+                prj=new_project, user_id=logged_user["id"], product_name=faker.name()
+            )
         )
     await asyncio.gather(*project_creation_tasks)
     print(f"---> created {len(all_created_projects)} projects in the database")
