@@ -45,7 +45,11 @@ from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_exceptions import (
+    ProjectDeleteError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
     NodesMap,
@@ -613,6 +617,7 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project,
             req_ctx.user_id,
+            req_ctx.product_name,
             f"{path_params.project_id}",
             include_templates=True,
         )
@@ -714,5 +719,7 @@ async def delete_project(request: web.Request):
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
         ) from err
+    except ProjectDeleteError as err:
+        raise web.HTTPConflict(reason=f"{err}") from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
