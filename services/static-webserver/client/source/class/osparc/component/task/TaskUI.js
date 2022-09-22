@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.task.Task", {
+qx.Class.define("osparc.component.task.TaskUI", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -36,6 +36,13 @@ qx.Class.define("osparc.component.task.Task", {
   },
 
   properties: {
+    task: {
+      check: "osparc.data.PollTask",
+      init: null,
+      nullable: false,
+      apply: "__applyTask"
+    },
+
     title: {
       check: "String",
       init: "",
@@ -48,13 +55,6 @@ qx.Class.define("osparc.component.task.Task", {
       init: "",
       nullable: true,
       event: "changeSubtitle"
-    },
-
-    stopSupported: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeStopSupported"
     }
   },
 
@@ -91,18 +91,21 @@ qx.Class.define("osparc.component.task.Task", {
             alignY: "middle",
             alignX: "center",
             width: 25,
-            cursor: "pointer"
+            cursor: "pointer",
+            visibility: "excluded"
           });
-          this.bind("stopSupported", control, "visibility", {
-            converter: value => value ? "visible" : "excluded"
-          }, this);
-          control.addListener("tap", () => {
-            this._requestStop();
-          }, this);
           this._add(control);
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __applyTask: function(task) {
+      const stopButton = this.getChildControl("stop");
+      task.bind("abortHref", stopButton, "visibility", {
+        converter: abortHref => abortHref ? "visible" : "excluded"
+      });
+      stopButton.addListener("tap", () => task.abortRequested(), this);
     },
 
     start: function() {
@@ -119,13 +122,6 @@ qx.Class.define("osparc.component.task.Task", {
       * @abstract
       */
     _buildLayout: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    /**
-      * @abstract
-      */
-    _requestStop: function() {
       throw new Error("Abstract method called!");
     }
   }
