@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from string import ascii_uppercase
+from typing import Optional
 
 from simcore_service_webserver.login.registration import get_invitation_url
 from simcore_service_webserver.login.utils import get_random_string
@@ -60,7 +61,7 @@ def _open(filepath):
 def write_list(hostname, url, data, fh):
     origin = URL(url)
 
-    print("## studies available @{}".format(hostname), file=fh)
+    print(f"## studies available @{hostname}", file=fh)
     print("", file=fh)
     for prj in data:
         prj["msg"] = ""
@@ -78,7 +79,7 @@ def write_list(hostname, url, data, fh):
     print("", file=fh)
 
 
-def main(mock_codes, *, uid: int = 1):
+def main(mock_codes, *, trial_account_days: Optional[int] = None, uid: int = 1):
     data = {}
 
     with open(current_dir / "template-projects/templates_in_master.json") as fp:
@@ -106,7 +107,7 @@ def main(mock_codes, *, uid: int = 1):
 
         print("# INVITATIONS Samples:", file=fh)
         for hostname, url in HOST_URLS_MAPS:
-            print("## urls for @{}".format(hostname), file=fh)
+            print(f"## urls for @{hostname}", file=fh)
             for code in mock_codes:
                 print(
                     "- {}".format(
@@ -127,10 +128,11 @@ def main(mock_codes, *, uid: int = 1):
         for n, code in enumerate(mock_codes, start=1):
             print(f'{code},{uid},INVITATION,"{{', file=fh)
             print(
-                f'""guest"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
+                f'""tag"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
                 file=fh,
             )
             print('""issuer"" : ""support@osparc.io""', file=fh)
+            print(f'""trial_account_days"" : ""{trial_account_days}""', file=fh)
             print('}",%s' % datetime.now().isoformat(sep=" "), file=fh)
 
 
@@ -143,6 +145,7 @@ if __name__ == "__main__":
         help="Regenerates codes for invitations",
     )
     parser.add_argument("--user-id", "-u", default=1)
+    parser.add_argument("--trial-days", "-t", default=7)
 
     args = parser.parse_args()
 
@@ -150,4 +153,4 @@ if __name__ == "__main__":
     if args.renew_invitation_codes:
         codes = [get_random_string(len(c)) for c in default_mock_codes]
 
-    main(codes, uid=args.user_id)
+    main(codes, uid=args.user_id, trial_account_days=args.trial_days)

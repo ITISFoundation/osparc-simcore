@@ -5,7 +5,7 @@
 """
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, EmailStr, Field, PositiveInt, parse_raw_as
@@ -32,8 +32,12 @@ class ConfirmationTokenInfoDict(ConfirmationTokenDict):
 
 
 class InvitationData(BaseModel):
-    created_by: EmailStr
-    guest: EmailStr
+    issuer: Optional[EmailStr] = Field(
+        None, description="email of the person that issues this invitation"
+    )
+    guest: Optional[str] = Field(
+        None, description="Reference tag for this invitation", deprecated=True
+    )
     trial_account_days: Optional[PositiveInt] = Field(
         None,
         description="If set, this invitation will activate a trial account."
@@ -93,10 +97,11 @@ async def check_registration(
     log.debug("Registration data validated")
 
 
-async def create_invitation(
-    host: dict[str, Any],
-    guest: str,
+async def create_invitation_token(
     db: AsyncpgStorage,
+    *,
+    issuer_email: Optional[EmailStr] = None,
+    tag: Optional[str] = None,
     trial_days: Optional[PositiveInt] = None,
 ) -> ConfirmationTokenDict:
     """Creates an invitation token for a guest to register in the platform and returns
@@ -110,13 +115,13 @@ async def create_invitation(
     """
     data_model = InvitationData.parse_obj(
         {
-            "created_by": host["email"],
-            "guest": guest,
+            "issuer": issuer_email,
+            "guest": tag,
             "trial_account_days": trial_days,
         }
     )
     confirmation = await db.create_confirmation(
-        user=host,
+        user=issuer_email,
         action=ConfirmationAction.INVITATION.name,
         data=data_model.json(),
     )

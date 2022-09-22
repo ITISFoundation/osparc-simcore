@@ -5,7 +5,7 @@ from typing import Optional, TypedDict
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from simcore_service_webserver.db_models import UserRole, UserStatus
-from simcore_service_webserver.login.registration import create_invitation
+from simcore_service_webserver.login.registration import create_invitation_token
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 from yarl import URL
@@ -140,8 +140,11 @@ class NewInvitation(NewUser):
         db: AsyncpgStorage = get_plugin_storage(self.client.app)
         self.user = await create_fake_user(db, self.params)
 
-        self.confirmation = await create_invitation(
-            self.user, self.guest, self.db, self.trial_days
+        self.confirmation = await create_invitation_token(
+            self.db,
+            issuer_email=self.user["email"],
+            tag=self.guest,
+            trial_days=self.trial_days,
         )
         return self
 
