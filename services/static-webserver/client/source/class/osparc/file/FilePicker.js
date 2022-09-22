@@ -288,15 +288,18 @@ qx.Class.define("osparc.file.FilePicker", {
         } else {
           // WORKBECH mode WITHOUT output
           this.__addProgressBar();
-          this.__buildProvideFileLayout();
+          this.__buildNoFileWBLayout();
         }
-      } else if (hasOutput) {
-        // APP mode WITH output
-        this.__buildInfoLayout();
       } else {
-        // APP mode WITHOUT output
-        this.__addProgressBar();
-        this.__buildAppModeLayout();
+        this.setMargin(5);
+        if (hasOutput) {
+          // APP mode WITH output
+          this.__buildInfoLayout();
+        } else {
+          // APP mode WITHOUT output
+          this.__addProgressBar();
+          this.__buildNoFileAppLayout();
+        }
       }
     },
 
@@ -366,7 +369,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return resetFileBtn;
     },
 
-    __buildProvideFileLayout: function() {
+    __buildNoFileWBLayout: function() {
       const uploadFileSection = this.__getUploadFileSection();
       this._add(uploadFileSection);
 
@@ -432,10 +435,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return layout;
     },
 
-    __buildAppModeLayout: function() {
-      this.setMargin(5);
-
-
+    __buildNoFileAppLayout: function() {
       const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const reloadButton = new qx.ui.form.Button().set({
