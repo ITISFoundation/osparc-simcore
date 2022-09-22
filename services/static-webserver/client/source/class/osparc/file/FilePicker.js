@@ -283,15 +283,21 @@ qx.Class.define("osparc.file.FilePicker", {
       const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
       if (isWorkbenchContext) {
         if (hasOutput) {
+          // WORKBECH mode WITH output
           this.__buildInfoLayout();
         } else {
+          // WORKBECH mode WITHOUT output
           this.__addProgressBar();
           this.__buildProvideFileLayout();
         }
+      } else if (hasOutput) {
+        // APP mode WITH output
+        this.__buildInfoLayout();
       } else {
-        console.log("hasOutput", hasOutput);
+        // APP mode WITHOUT output
         this.__addProgressBar();
         this.__buildAppModeLayout();
+        }
       }
     },
 
@@ -431,13 +437,15 @@ qx.Class.define("osparc.file.FilePicker", {
       this.setMargin(5);
 
 
+      const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
       const reloadButton = new qx.ui.form.Button().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/sync-alt/16",
         allowGrowX: false
       });
       reloadButton.addListener("execute", () => this.__reloadFilesTree(), this);
-      this._add(reloadButton);
+      treeLayout.add(reloadButton);
 
       const treeFolderLayout = new qx.ui.splitpane.Pane("horizontal");
       treeFolderLayout.getChildControl("splitter").set({
@@ -449,7 +457,10 @@ qx.Class.define("osparc.file.FilePicker", {
         minWidth: 150,
         width: 250
       });
-      treeFolderLayout.add(filesTree, 0);
+      treeLayout.add(filesTree, {
+        flex: 1
+      });
+      treeFolderLayout.add(treeLayout, 0);
       const folderViewer = new osparc.file.FolderViewer();
       treeFolderLayout.add(folderViewer, 1);
 
