@@ -71,75 +71,16 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: Expose GitHub Runtime
+      - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
-        working-directory: services
         run: |
-          export VCS_URL="$(git config --get remote.origin.url)"
-          export VCS_REF="$(git rev-parse --short HEAD)"
-          export VCS_REF_CLIENT="$(git log --pretty=tformat:"%h" -n1 static-webserver/client)"
-          export VCS_STATUS_CLIENT="clean"
-          export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          export BUILD_TARGET=production
-          docker buildx bake \
-            --set api-server.cache-from=type=gha,scope=api-server \
-            --set api-server.cache-to=type=gha,mode=max,scope=api-server \
-            --set autoscaling.cache-from=type=gha,scope=autoscaling \
-            --set autoscaling.cache-to=type=gha,mode=max,scope=autoscaling \
-            --set catalog.cache-from=type=gha,scope=catalog \
-            --set catalog.cache-to=type=gha,mode=max,scope=catalog \
-            --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
-            --set dask-scheduler.cache-to=type=gha,mode=max,scope=dask-scheduler \
-            --set dask-sidecar.cache-from=type=gha,scope=dask-sidecar \
-            --set dask-sidecar.cache-to=type=gha,mode=max,scope=dask-sidecar \
-            --set datcore-adapter.cache-from=type=gha,scope=datcore-adapter \
-            --set datcore-adapter.cache-to=type=gha,mode=max,scope=datcore-adapter \
-            --set director.cache-from=type=gha,scope=director \
-            --set director.cache-to=type=gha,mode=max,scope=director \
-            --set director-v2.cache-from=type=gha,scope=director-v2 \
-            --set director-v2.cache-to=type=gha,mode=max,scope=director-v2 \
-            --set dynamic-sidecar.cache-from=type=gha,scope=dynamic-sidecar \
-            --set dynamic-sidecar.cache-to=type=gha,mode=max,scope=dynamic-sidecar \
-            --set migration.cache-from=type=gha,scope=migration \
-            --set migration.cache-to=type=gha,mode=max,scope=migration \
-            --set static-webserver.cache-from=type=gha,scope=static-webserver \
-            --set static-webserver.cache-to=type=gha,mode=max,scope=static-webserver \
-            --set storage.cache-from=type=gha,scope=storage \
-            --set storage.cache-to=type=gha,mode=max,scope=storage \
-            --set webserver.cache-from=type=gha,scope=webserver \
-            --set webserver.cache-to=type=gha,mode=max,scope=webserver \
-            --file docker-compose-build.yml --print
-          docker buildx bake \
-            --set api-server.cache-from=type=gha,scope=api-server \
-            --set api-server.cache-to=type=gha,mode=max,scope=api-server \
-            --set autoscaling.cache-from=type=gha,scope=autoscaling \
-            --set autoscaling.cache-to=type=gha,mode=max,scope=autoscaling \
-            --set catalog.cache-from=type=gha,scope=catalog \
-            --set catalog.cache-to=type=gha,mode=max,scope=catalog \
-            --set dask-scheduler.cache-from=type=gha,scope=dask-scheduler \
-            --set dask-scheduler.cache-to=type=gha,mode=max,scope=dask-scheduler \
-            --set dask-sidecar.cache-from=type=gha,scope=dask-sidecar \
-            --set dask-sidecar.cache-to=type=gha,mode=max,scope=dask-sidecar \
-            --set datcore-adapter.cache-from=type=gha,scope=datcore-adapter \
-            --set datcore-adapter.cache-to=type=gha,mode=max,scope=datcore-adapter \
-            --set director.cache-from=type=gha,scope=director \
-            --set director.cache-to=type=gha,mode=max,scope=director \
-            --set director-v2.cache-from=type=gha,scope=director-v2 \
-            --set director-v2.cache-to=type=gha,mode=max,scope=director-v2 \
-            --set dynamic-sidecar.cache-from=type=gha,scope=dynamic-sidecar \
-            --set dynamic-sidecar.cache-to=type=gha,mode=max,scope=dynamic-sidecar \
-            --set migration.cache-from=type=gha,scope=migration \
-            --set migration.cache-to=type=gha,mode=max,scope=migration \
-            --set static-webserver.cache-from=type=gha,scope=static-webserver \
-            --set static-webserver.cache-to=type=gha,mode=max,scope=static-webserver \
-            --set storage.cache-from=type=gha,scope=storage \
-            --set storage.cache-to=type=gha,mode=max,scope=storage \
-            --set webserver.cache-from=type=gha,scope=webserver \
-            --set webserver.cache-to=type=gha,mode=max,scope=webserver \
-            --file docker-compose-build.yml
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          make build
+      - name: show build info
+        run: make info-images
       # - name: build images
       #   run: ./ci/build/test-images.bash build_images
       - name: set owner variable
