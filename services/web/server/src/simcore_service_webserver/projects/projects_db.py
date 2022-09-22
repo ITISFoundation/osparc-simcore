@@ -287,6 +287,7 @@ class ProjectDBAPI:
     async def load_projects(
         self,
         user_id: PositiveInt,
+        product_name: str,
         *,
         filter_by_project_type: Optional[ProjectType] = None,
         filter_by_services: Optional[list[dict]] = None,
@@ -300,7 +301,7 @@ class ProjectDBAPI:
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
 
             query = (
-                select([projects])
+                select([projects.join(projects_to_products, isouter=True)])
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -323,13 +324,21 @@ class ProjectDBAPI:
                             f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
                         )
                     )
+                    & (
+                        (projects_to_products.c.product_name == product_name)
+                        | (projects_to_products.c.product_name == None)
+                    )
                 )
                 .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
 
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns([func.count()])
-                .select_from(projects)
+                .select_from(projects.join(projects_to_products, isouter=True))
+                .where(
+                    (projects_to_products.c.product_name == product_name)
+                    | (projects_to_products.c.product_name == None)
+                )
                 .order_by(None)
             )
 
@@ -392,7 +401,11 @@ class ProjectDBAPI:
             prj = dict(row.items())
 
             if filter_by_services:
-                if not await project_uses_available_services(prj, filter_by_services):
+                if row[
+                    projects_to_products.c.product_name
+                ] is None and not await project_uses_available_services(
+                    prj, filter_by_services
+                ):
                     log.warning(
                         "Project %s will not be listed for user %s since it has no access rights"
                         " for one or more of the services that includes.",

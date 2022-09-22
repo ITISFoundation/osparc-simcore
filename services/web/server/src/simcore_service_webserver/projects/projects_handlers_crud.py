@@ -403,6 +403,7 @@ async def list_projects(request: web.Request):
 
     projects, project_types, total_number_projects = await db.load_projects(
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
             query_params.project_type
         ),
