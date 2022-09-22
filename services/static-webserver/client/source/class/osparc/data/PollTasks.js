@@ -57,6 +57,11 @@ qx.Class.define("osparc.data.PollTasks", {
           })
           .catch(errMsg => reject(errMsg));
       });
+    },
+
+    removeTasks: function() {
+      const tasks = this.getTasks();
+      tasks.forEach(task => task.dispose());
     }
   }
 });
