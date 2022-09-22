@@ -7,6 +7,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
+from models_library.users import UserID
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserStatus, users
 from tenacity import retry
@@ -44,6 +45,25 @@ async def update_expired_users(engine: Engine) -> list[IdInt]:
         return expired
 
 
+async def notify_user_logout_all_sessions(
+    app: web.Application, user_id: UserID
+) -> None:
+    with log_context(
+        logger,
+        logging.INFO,
+        "Forcing logout of %s from all sessions",
+        f"{user_id=}",
+    ):
+        try:
+            await notify_user_logout(app, user_id, client_session_id=None)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(
+                "Ignored error while notifying logout for %s",
+                f"{user_id=}",
+                exec_info=True,
+            )
+
+
 @retry(
     wait=wait_exponential(min=5 * _SEC),
     before_sleep=before_sleep_log(logger, logging.WARNING),
@@ -66,13 +86,10 @@ async def _update_expired_users_periodically(app: web.Application, wait_s: float
             for user_id in updated:
                 logger.info("User account with %s expired", f"{user_id=}")
 
-                with log_context(
-                    logger,
-                    logging.INFO,
-                    "Forcing logout of %s from all sessions",
-                    f"{user_id=}",
-                ):
-                    await notify_user_logout(app, user_id, client_session_id=None)
+                # TODO: this notification will never reach sockets because it runs in the GC!!
+                # We need a mechanism to send messages from GC to the webservers
+                # OR a way to notify from the database changes back to the web-servers (similar to compuational services)
+                # await notify_user_logout_all_sessions(app, user_id)
 
         else:
             logger.info("No users expired")

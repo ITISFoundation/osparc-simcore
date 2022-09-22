@@ -52,7 +52,7 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 
 
 async def notify_user_logout(
-    app: web.Application, user_id: UserID, client_session_id: Optional[Any]
+    app: web.Application, user_id: UserID, client_session_id: Optional[Any] = None
 ):
     """Broadcasts logout of 'user_id' in 'client_session_id'.
 
