@@ -63,6 +63,11 @@ async def open_project(request: web.Request) -> web.Response:
         ):
             raise HTTPLocked(reason="Project is locked, try later")
 
+        # the project can be opened, let's update its product links
+        await projects_api.update_project_linked_product(
+            request.app, path_params.project_id, req_ctx.product_name
+        )
+
         # user id opened project uuid
         await projects_api.run_project_dynamic_services(
             request, project, req_ctx.user_id, req_ctx.product_name
