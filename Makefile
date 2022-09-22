@@ -122,17 +122,21 @@ docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
-	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
+	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
+		--set *.output="type=docker$(comma)push=false") \
 	$(if $(push),--push,) \
 	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
-	$(if $(findstring -nc,$@),--no-cache,--set *.cache-to=type=gha$(comma)mode=max --set *.cache-from=type=gha) &&\
+	$(if $(findstring -nc,$@),--no-cache,\
+		$(foreach service, $(SERVICES_LIST),\
+			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) --set $(service).cache-from=type=gha$(comma)scope=$(service)) \
+	) &&\
 popd;
 endef
 
 rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 	# Building service$(if $(target),,s) $(target)
-	$(_docker_compose_build)
+	@$(_docker_compose_build)
 
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
