@@ -304,11 +304,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const buttonsIcon = this.__inputsButton.getChildControl("icon");
       if (waiting) {
         this.__inputsButton.setIcon("@FontAwesome5Solid/circle-notch/14");
-        osparc.utils.Utils.addClass(buttonsIcon.getContentElement(), "rotate");
       } else {
         this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
-        osparc.utils.Utils.removeClass(buttonsIcon.getContentElement(), "rotate");
       }
+      osparc.utils.StatusUI.updateIconAnimation(buttonsIcon);
       this.__enableIframeContent(!waiting);
     },
 

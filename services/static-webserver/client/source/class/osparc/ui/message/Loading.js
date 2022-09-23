@@ -76,7 +76,8 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   statics: {
-    LOGO_WIDTH: 260
+    LOGO_WIDTH: 260,
+    STATUS_ICON_SIZE: 32
   },
 
   members: {
@@ -92,13 +93,14 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const atom = this.__header = new qx.ui.basic.Atom().set({
-        icon: "@FontAwesome5Solid/circle-notch/32",
+        icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
         font: "nav-bar-label",
         alignX: "center",
         gap: 15,
         allowGrowX: false
       });
-      atom.getChildControl("icon").getContentElement().addClass("rotate");
+      const icon = atom.getChildControl("icon").getContentElement();
+      osparc.utils.StatusUI.updateIconAnimation(icon);
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
@@ -143,8 +145,17 @@ qx.Class.define("osparc.ui.message.Loading", {
       }
     },
 
-    __applyHeader: function(value, old) {
+    __applyHeader: function(value) {
       this.__header.setLabel(value);
+      const words = value.split(" ");
+      if (words.length) {
+        const state = words[0];
+        const iconSource = osparc.utils.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
+        if (iconSource) {
+          this.__header.setIcon(iconSource);
+          osparc.utils.StatusUI.updateIconAnimation(this.__header.getChildControl("icon"));
+        }
+      }
     },
 
     __applyMessages: function(msgs, old) {
