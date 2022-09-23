@@ -9,13 +9,14 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
 from sqlalchemy.sql import func
 
+from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from .decorators import RQT_USERID_KEY, login_required
 from .utils import get_random_string
@@ -29,13 +30,37 @@ log = logging.getLogger(__name__)
 
 
 class ApiKeyCreate(BaseModel):
-    # TODO: bigger than 3 letters
-    display_name: str
-    expiration: Optional[timedelta] = None
-    # TODO: add update OAS!!
+    display_name: str = Field(..., min_length=3)
+    expiration: Optional[timedelta] = Field(
+        None,
+        description="Time delta from creation time to expiration. If None, then it does not expire.",
+    )
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {
+                    "display_name": "test-api-forever",
+                },
+                {
+                    "display_name": "test-api-for-one-day",
+                    "expiration": 60 * 60 * 24,
+                },
+            ]
+        }
 
 
-# TODO: class ApiKeyGet(BaseModel): for the response
+class ApiKeyGet(BaseModel):
+    display_name: str = Field(..., min_length=3)
+    api_key: str
+    api_secret: str
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
+            ]
+        }
 
 
 #
@@ -142,11 +167,13 @@ async def create_api_key(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
-    return {
-        "display_name": api_key.display_name,
-        "api_key": credentials["api_key"],
-        "api_secret": credentials["api_secret"],
-    }
+    return ApiKeyGet.parse_obj(
+        {
+            "display_name": api_key.display_name,
+            "api_key": credentials["api_key"],
+            "api_secret": credentials["api_secret"],
+        }
+    ).json(**RESPONSE_MODEL_POLICY)
 
 
 @login_required
