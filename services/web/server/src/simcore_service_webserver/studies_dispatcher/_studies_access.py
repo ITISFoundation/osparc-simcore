@@ -185,7 +185,9 @@ async def copy_study_to_account(
 
         # add project model + copy data TODO: guarantee order and atomicity
         # TODO: PC: I need to have the product name here...
-        await db.add_project(project, user["id"], "osparc", force_project_uuid=True)
+        await db.add_project(
+            project, user["id"], product_name="osparc", force_project_uuid=True
+        )
         async for lr_task in copy_data_folders_from_project(
             request.app,
             template_project,
