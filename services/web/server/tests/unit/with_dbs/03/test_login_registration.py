@@ -296,7 +296,7 @@ async def test_registration_with_invitation(
         await assert_status(r, expected_response)
 
         # check optional fields in body
-        if not has_valid_invitation or not is_invitation_required:
+        if not has_valid_invitation and not is_invitation_required:
             r = await client.post(
                 f"{url}", json={"email": "new-user" + EMAIL, "password": PASSWORD}
             )

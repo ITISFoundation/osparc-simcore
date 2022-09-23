@@ -13,10 +13,12 @@ from pydantic import (
     BaseModel,
     EmailStr,
     Field,
+    Json,
     PositiveInt,
     ValidationError,
     parse_obj_as,
     parse_raw_as,
+    validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
@@ -51,6 +53,18 @@ class InvitationData(BaseModel):
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
     )
+
+
+class _InvitationValidator(BaseModel):
+    action: Literal[ConfirmationAction.INVITATION]
+    data: Json[InvitationData]  # pylint: disable=unsuscriptable-object
+
+    @validator("action", pre=True)
+    @classmethod
+    def ensure_enum(cls, v):
+        if isinstance(v, ConfirmationAction):
+            return v
+        return ConfirmationAction(v)
 
 
 ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
@@ -150,8 +164,8 @@ async def check_invitation(
     """
     if confirmation := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            parse_obj_as(Literal[ConfirmationAction.INVITATION], confirmation["action"])
-            return parse_raw_as(InvitationData, confirmation["data"])
+            invitation = _InvitationValidator.parse_obj(confirmation)
+            return invitation.data
 
         except ValidationError as err:
             log.warning(
@@ -166,7 +180,7 @@ async def check_invitation(
 
     raise web.HTTPForbidden(
         reason=(
-            f"Invalid invitation code [{invitation_code=}]."
+            "Invalid invitation code."
             "Your invitation was already used or might have expired."
             "Please contact our support team to get a new one."
         ),
