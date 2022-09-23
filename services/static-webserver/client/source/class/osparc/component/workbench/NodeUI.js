@@ -109,6 +109,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           });
           control.addListener("tap", () => this.fireDataEvent("markerClicked", this.getNode().getNodeId()));
           break;
+        case "deprecated-icon":
+          control = new qx.ui.basic.Image().set({
+            source: "@MaterialIcons/update/14",
+            padding: 4
+          });
+          this.getChildControl("captionbar").add(control, {
+            row: 0,
+            column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.DEPRECATED
+          });
+          break;
         case "chips": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
             alignY: "middle"
@@ -243,6 +253,23 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+
+      const srvMetadata = node.getMetaData();
+      if (srvMetadata && osparc.utils.Services.isDeprecated(srvMetadata)) {
+        const deprecatedIcon = this.getChildControl("deprecated-icon");
+        let deprecatedTTMsg = this.tr("Service deprecated<br>");
+        if (node.isDynamic()) {
+          deprecatedTTMsg += this.tr("Please, download the artifacts and");
+          deprecatedTTMsg += "<br>";
+          deprecatedTTMsg += this.tr("upload them to an updated version");
+        } else if (node.isComputational()) {
+          deprecatedTTMsg += this.tr("Please, instantiate an updated version");
+        }
+        deprecatedIcon.set({
+          toolTipText: deprecatedTTMsg,
+          textColor: "failed-red"
+        });
+      }
     },
 
     __applyType: function(type) {
