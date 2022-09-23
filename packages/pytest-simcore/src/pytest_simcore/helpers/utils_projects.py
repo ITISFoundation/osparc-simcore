@@ -68,7 +68,7 @@ async def create_project(
     new_project = await db.add_project(
         project_data,
         user_id,
-        product_name,
+        product_name=product_name,
         force_project_uuid=force_uuid,
         force_as_template=as_template,
     )
