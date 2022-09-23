@@ -24,6 +24,24 @@ qx.Class.define("osparc.utils.StatusUI", {
   type: "static",
 
   statics: {
+    setupFilePickerIcon: function(fpNode, icon) {
+      fpNode.bind("outputs", icon, "source", {
+        converter: outputs => {
+          if (osparc.file.FilePicker.getOutput(outputs)) {
+            return "@FontAwesome5Solid/check/12";
+          }
+          return "@FontAwesome5Solid/file/12";
+        },
+        onUpdate: (source, target) => {
+          if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
+            target.setTextColor("ready-green");
+          } else {
+            target.resetTextColor();
+          }
+        }
+      });
+    },
+
     getIconSource: function(state) {
       switch (state) {
         // computationals

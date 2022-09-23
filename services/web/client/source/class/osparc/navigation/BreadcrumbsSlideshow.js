@@ -84,21 +84,25 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
         });
 
         const statusIcon = new qx.ui.basic.Image();
-        const check = node.isDynamic() ? "interactive" : "output";
-        node.getStatus().bind(check, statusIcon, "source", {
-          converter: output => osparc.utils.StatusUI.getIconSource(output),
-          onUpdate: (source, target) => {
-            const elem = target.getContentElement();
-            if (target.getSource() && target.getSource().includes("circle-notch")) {
-              osparc.ui.basic.NodeStatusUI.addClass(elem, "rotate");
-            } else {
-              osparc.ui.basic.NodeStatusUI.removeClass(elem, "rotate");
+        if (node.isFilePicker()) {
+          osparc.utils.StatusUI.setupFilePickerIcon(node, statusIcon);
+        } else {
+          const check = node.isDynamic() ? "interactive" : "output";
+          node.getStatus().bind(check, statusIcon, "source", {
+            converter: output => osparc.utils.StatusUI.getIconSource(output),
+            onUpdate: (source, target) => {
+              const elem = target.getContentElement();
+              if (target.getSource() && target.getSource().includes("circle-notch")) {
+                osparc.utils.Utils.addClass(elem, "rotate");
+              } else {
+                osparc.utils.Utils.removeClass(elem, "rotate");
+              }
             }
-          }
-        });
-        node.getStatus().bind(check, statusIcon, "textColor", {
-          converter: output => osparc.utils.StatusUI.getColor(output)
-        }, this);
+          });
+          node.getStatus().bind(check, statusIcon, "textColor", {
+            converter: output => osparc.utils.StatusUI.getColor(output)
+          }, this);
+        }
         // eslint-disable-next-line no-underscore-dangle
         btn._addAt(statusIcon, 0);
 
