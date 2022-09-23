@@ -54,7 +54,9 @@ async def notify_user_logout_all_sessions(
     wait=wait_exponential(min=5 * _SEC),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
-async def _update_expired_users_periodically(app: web.Application, wait_s: float):
+async def _update_expired_users_periodically(
+    app: web.Application, wait_interval_s: float
+):
     """Periodically check expiration dates and updates user status
 
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
@@ -72,15 +74,16 @@ async def _update_expired_users_periodically(app: web.Application, wait_s: float
             for user_id in updated:
                 logger.info("User account with %s expired", f"{user_id=}")
 
-                # TODO: this notification will never reach sockets because it runs in the GC!!
+                # NOTE: : this notification will never reach sockets because it runs in the GC!!
                 # We need a mechanism to send messages from GC to the webservers
                 # OR a way to notify from the database changes back to the web-servers (similar to compuational services)
+                # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3387
                 # await notify_user_logout_all_sessions(app, user_id)
 
         else:
             logger.info("No users expired")
 
-        await asyncio.sleep(wait_s)
+        await asyncio.sleep(wait_interval_s)
 
 
 def create_background_task_for_trial_accounts(

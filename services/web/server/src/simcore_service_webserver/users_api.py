@@ -104,7 +104,6 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
         "all": all_group,
     }
 
-    # TODO: conversion from db fields to ProfileGet is error-prone. Add ProfileGet.from_db_model() ??
     if expires_at := user_profile.get("expires_at"):
         user_profile["expiration_date"] = expires_at.date()
 
