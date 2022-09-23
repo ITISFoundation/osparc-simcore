@@ -28,6 +28,11 @@ class GarbageCollectorSettings(BaseCustomSettings):
         description="Time period between checks of expiration dates for trial users",
     )
 
+    GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S: PositiveInt = Field(
+        _HOUR,
+        description="Wait time between periodic pruning of expired API keys",
+    )
+
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_GARBAGE_COLLECTOR
