@@ -283,7 +283,7 @@ async def _create_projects(
         new_project = await db.add_project(
             new_project,
             request_context.user_id,
-            request_context.product_name,
+            product_name=request_context.product_name,
             force_as_template=query_params.as_template,
             hidden=query_params.copy_data,
         )
@@ -618,8 +618,8 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project,
             req_ctx.user_id,
-            req_ctx.product_name,
-            f"{path_params.project_id}",
+            project_uuid=f"{path_params.project_id}",
+            product_name=req_ctx.product_name,
             include_templates=True,
         )
 

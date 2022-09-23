@@ -154,7 +154,7 @@ async def template_project(
     async with NewProject(
         project_data,
         client.app,
-        user_id=logged_user["id"],
+        user_id=None,
         product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,

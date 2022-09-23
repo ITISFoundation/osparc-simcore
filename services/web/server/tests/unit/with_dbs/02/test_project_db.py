@@ -330,31 +330,18 @@ async def test_add_project_to_db(
     osparc_product_name: str,
 ):
     original_project = deepcopy(fake_project)
-    # add project without user id -> by default creates a study
+    # add project without user id -> by default creates a template
     new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], product_name=osparc_product_name
+        prj=fake_project, user_id=None, product_name=osparc_product_name
     )
 
     _assert_added_project(
         original_project,
         new_project,
-        exp_overrides={
-            "prjOwner": logged_user["email"],
-            "accessRights": {
-                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-            },
-        },
+        exp_overrides={"prjOwner": "not_a_user@unknown.com"},
     )
 
-    _assert_project_db_row(
-        postgres_db,
-        new_project,
-        type="STANDARD",
-        prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
-    )
+    _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
