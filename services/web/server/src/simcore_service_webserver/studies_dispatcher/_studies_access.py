@@ -19,8 +19,9 @@ from aiohttp import web
 from aiohttp_session import get_session
 from servicelib.error_codes import create_error_code
 
-from .._constants import INDEX_RESOURCE_NAME
+from .._constants import INDEX_RESOURCE_NAME, RQ_PRODUCT_FRONTEND_KEY
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
+from ..projects.projects_db import ProjectDBAPI
 from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
@@ -151,7 +152,7 @@ async def copy_study_to_account(
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
 
     # assign id to copy
@@ -182,11 +183,12 @@ async def copy_study_to_account(
             project = (
                 substitute_parameterized_inputs(project, template_parameters) or project
             )
-
         # add project model + copy data TODO: guarantee order and atomicity
-        # TODO: PC: I need to have the product name here...
         await db.add_project(
-            project, user["id"], product_name="osparc", force_project_uuid=True
+            project,
+            user["id"],
+            product_name=request[RQ_PRODUCT_FRONTEND_KEY],
+            force_project_uuid=True,
         )
         async for lr_task in copy_data_folders_from_project(
             request.app,
