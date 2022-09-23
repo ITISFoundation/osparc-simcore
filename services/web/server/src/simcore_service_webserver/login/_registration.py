@@ -157,27 +157,32 @@ async def create_invitation_token(
     return confirmation
 
 
-async def check_invitation(
+async def check_and_consume_invitation(
     invitation_code: str, db: AsyncpgStorage, cfg: LoginOptions
 ) -> InvitationData:
+    """Consumes invitation: the code is validated, the invitation retrieives and then deleted
+       since it only has one use
+
+    If valid, it returns InvitationData, otherwise it raises web.HTTPForbidden
+
+    :raises web.HTTPForbidden
     """
-    :raise web.HTTPForbidden if invalid
-    """
-    if confirmation := await validate_confirmation_code(invitation_code, db, cfg):
+    if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            invitation = _InvitationValidator.parse_obj(confirmation)
+            invitation = _InvitationValidator.parse_obj(confirmation_token)
             return invitation.data
 
         except ValidationError as err:
             log.warning(
                 "%s is associated with an invalid %s.\nDetails: %s",
                 f"{invitation_code=}",
-                f"{confirmation=}",
+                f"{confirmation_token=}",
                 f"{err=}",
             )
 
         finally:
-            await db.delete_confirmation(confirmation)
+            await db.delete_confirmation(confirmation_token)
+            log.info("Invitation with %s was consumed", f"{confirmation_token=}")
 
     raise web.HTTPForbidden(
         reason=(

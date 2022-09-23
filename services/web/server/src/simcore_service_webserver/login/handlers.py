@@ -22,7 +22,7 @@ from ._2fa import (
     set_2fa_code,
 )
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
-from ._registration import check_invitation, check_registration
+from ._registration import check_and_consume_invitation, check_registration
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import (
     LoginOptions,
@@ -109,7 +109,7 @@ async def register(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from e
 
-        invitation = await check_invitation(invitation_code, db=db, cfg=cfg)
+        invitation = await check_and_consume_invitation(invitation_code, db=db, cfg=cfg)
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
