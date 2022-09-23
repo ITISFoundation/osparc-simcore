@@ -228,6 +228,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           paddingBottom: 0
         });
       }
+      if (node.isFilePicker()) {
+        view.getMainView().set({
+          backgroundColor: "background-main-2"
+        });
+      }
     },
 
     __getNodeView: function(node) {
