@@ -11,11 +11,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.login.api_keys_db import prune_expired_api_keys
 from simcore_service_webserver.login.api_keys_handlers import CRUD as ApiKeysCRUD
-from simcore_service_webserver.login.api_keys_handlers import (
-    ApiKeyCreate,
-    prune_expired_api_keys,
-)
+from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate
 
 
 @pytest.fixture()

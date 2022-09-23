@@ -23,24 +23,9 @@ from .utils import get_random_string
 log = logging.getLogger(__name__)
 
 
-# TODO: schedule task that periodically runs prune in the Garbage collector service
-
-
-async def prune_expired_api_keys(app: web.Application):
-    engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        stmt = (
-            orm.api_keys.delete()
-            .where(
-                (orm.api_keys.c.expires_at != None)
-                & (orm.api_keys.c.expires_at < func.now())
-            )
-            .returning(orm.api_keys.c.display_name)
-        )
-
-        result: ResultProxy = await conn.execute(stmt)
-        deleted = [r.display_name for r in await result.fetchall()]
-        return deleted
+#
+# MODELS
+#
 
 
 class ApiKeyCreate(BaseModel):
@@ -51,6 +36,11 @@ class ApiKeyCreate(BaseModel):
 
 
 # TODO: class ApiKeyGet(BaseModel): for the response
+
+
+#
+# HANDLERS / helpers
+#
 
 
 def generate_api_credentials() -> dict[str, str]:
@@ -115,6 +105,11 @@ class CRUD:
                 )
             )
             await conn.execute(stmt)
+
+
+#
+# HANDLERS
+#
 
 
 @login_required
