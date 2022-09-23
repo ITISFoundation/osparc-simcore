@@ -184,9 +184,9 @@ class ProjectDBAPI:
     async def add_project(
         self,
         prj: dict[str, Any],
-        user_id: int,
-        product_name: str,
+        user_id: Optional[int],
         *,
+        product_name: str,
         force_project_uuid: bool = False,
         force_as_template: bool = False,
         hidden: bool = False,
@@ -224,10 +224,13 @@ class ProjectDBAPI:
                 kargs["hidden"] = True
 
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
-            primary_gid = await self._get_user_primary_group_gid(conn, user_id)
-            kargs.setdefault("access_rights", {}).update(
-                _create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
-            )
+            if user_id:
+                primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+                kargs.setdefault("access_rights", {}).update(
+                    _create_project_access_rights(
+                        primary_gid, ProjectAccessRights.OWNER
+                    )
+                )
             # ensure we have the minimal amount of data here
             kargs.setdefault("name", "New Study")
             kargs.setdefault("description", "")
@@ -287,8 +290,8 @@ class ProjectDBAPI:
     async def load_projects(
         self,
         user_id: PositiveInt,
-        product_name: str,
         *,
+        product_name: str,
         filter_by_project_type: Optional[ProjectType] = None,
         filter_by_services: Optional[list[dict]] = None,
         only_published: Optional[bool] = False,
@@ -341,6 +344,7 @@ class ProjectDBAPI:
                 )
                 .order_by(None)
             )
+            assert total_number_of_projects  # nosec
 
             prjs, prj_types = await self.__load_projects(
                 conn,
@@ -620,7 +624,8 @@ class ProjectDBAPI:
                     .where(projects.c.id == current_project[projects.c.id.key])
                     .returning(literal_column("*"))
                 )
-                project: RowProxy = await result.fetchone()
+                project = await result.fetchone()
+                assert project  # nosec
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),
@@ -639,6 +644,7 @@ class ProjectDBAPI:
         self,
         new_project_data: dict[str, Any],
         user_id: UserID,
+        *,
         product_name: str,
         project_uuid: str,
         include_templates: Optional[bool] = False,
@@ -711,8 +717,8 @@ class ProjectDBAPI:
                     .where(projects.c.id == current_project[projects.c.id.key])
                     .returning(literal_column("*"))
                 )
-                project: RowProxy = await result.fetchone()
-
+                project = await result.fetchone()
+                assert project  # nosec
                 await self.upsert_project_linked_product(
                     ProjectID(project_uuid), product_name, conn=conn
                 )
@@ -771,6 +777,7 @@ class ProjectDBAPI:
                 .select_from(projects_to_products)
                 .where(projects_to_products.c.project_uuid == f"{project_uuid}")
             )
+            assert num_products_linked_to_project  # nosec
         if num_products_linked_to_project > 1:
             raise ProjectDeleteError(
                 project_uuid=project_uuid,
