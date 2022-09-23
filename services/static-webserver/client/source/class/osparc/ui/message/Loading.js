@@ -99,7 +99,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         gap: 15,
         allowGrowX: false
       });
-      const icon = atom.getChildControl("icon").getContentElement();
+      const icon = atom.getChildControl("icon");
       osparc.utils.StatusUI.updateIconAnimation(icon);
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
