@@ -30,6 +30,7 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 from settings_library.redis import RedisSettings
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users_api import delete_user, get_user_role
 
@@ -94,7 +95,10 @@ def app_cfg(
 
 @pytest.fixture
 async def published_project(
-    client, fake_project, tests_data_dir: Path
+    client: TestClient,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[dict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
@@ -105,6 +109,7 @@ async def published_project(
         project_data,
         client.app,
         user_id=None,
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
@@ -112,7 +117,12 @@ async def published_project(
 
 
 @pytest.fixture
-async def unpublished_project(client, fake_project, tests_data_dir: Path):
+async def unpublished_project(
+    client: TestClient,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Template Unpublished project"
     project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
@@ -122,8 +132,10 @@ async def unpublished_project(client, fake_project, tests_data_dir: Path):
         project_data,
         client.app,
         user_id=None,
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
+        as_template=True,
     ) as template_project:
         yield template_project
 
