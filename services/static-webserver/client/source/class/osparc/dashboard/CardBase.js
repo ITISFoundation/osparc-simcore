@@ -363,7 +363,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         updateStudy.show();
         updateStudy.set({
           toolTipText: this.tr("Service(s) deprecated, please update"),
-          textColor: "red"
+          textColor: "failed-red"
         });
       } else {
         osparc.utils.Study.isWorkbenchUpdatable(workbench)
