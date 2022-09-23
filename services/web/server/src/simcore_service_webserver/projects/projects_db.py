@@ -404,19 +404,18 @@ class ProjectDBAPI:
 
             prj = dict(row.items())
 
-            if filter_by_services:
-                if row[
-                    projects_to_products.c.product_name
-                ] is None and not await project_uses_available_services(
-                    prj, filter_by_services
-                ):
-                    log.warning(
-                        "Project %s will not be listed for user %s since it has no access rights"
-                        " for one or more of the services that includes.",
-                        f"{row.id=}",
-                        f"{user_id=}",
-                    )
-                    continue
+            if (
+                filter_by_services
+                and row[projects_to_products.c.product_name] is None
+                and not await project_uses_available_services(prj, filter_by_services)
+            ):
+                log.warning(
+                    "Project %s will not be listed for user %s since it has no access rights"
+                    " for one or more of the services that includes.",
+                    f"{row.id=}",
+                    f"{user_id=}",
+                )
+                continue
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
