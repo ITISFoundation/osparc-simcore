@@ -42,7 +42,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     __applyNode: function(node) {
       this.show();
       if (node.isFilePicker()) {
-        this.__setupFilepicker();
+        this.__setupFilePicker();
       } else if (node.isComputational()) {
         this.__setupComputational();
       } else if (node.isDynamic()) {
@@ -135,22 +135,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       });
     },
 
-    __setupFilepicker: function() {
-      this.getNode().bind("outputs", this.__icon, "source", {
-        converter: outputs => {
-          if (osparc.file.FilePicker.getOutput(outputs)) {
-            return "@FontAwesome5Solid/check/12";
-          }
-          return "@FontAwesome5Solid/file/12";
-        },
-        onUpdate: (source, target) => {
-          if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
-            target.setTextColor("ready-green");
-          } else {
-            target.resetTextColor();
-          }
-        }
-      });
+    __setupFilePicker: function() {
+      osparc.utils.StatusUI.setupFilePickerIcon(this.getNode(), this.__icon);
 
       this.getNode().bind("outputs", this.__label, "value", {
         converter: outputs => {
