@@ -24,6 +24,7 @@ from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.groups import GroupType
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
@@ -283,6 +284,19 @@ def _assert_added_project(
     assert added_prj == original_prj
 
 
+def _assert_projects_to_product_db_row(
+    postgres_db: sa.engine.Engine, project: dict[str, Any], product_name: str
+):
+    rows = postgres_db.execute(
+        sa.select([projects_to_products]).where(
+            projects_to_products.c.project_uuid == f"{project['uuid']}"
+        )
+    ).fetchall()
+    assert rows
+    assert len(rows) == 1
+    assert rows[0][projects_to_products.c.product_name] == product_name
+
+
 def _assert_project_db_row(
     postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs
 ):
@@ -340,8 +354,8 @@ async def test_add_project_to_db(
         new_project,
         exp_overrides={"prjOwner": "not_a_user@unknown.com"},
     )
-
     _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
+    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
@@ -381,6 +395,7 @@ async def test_add_project_to_db(
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
     )
+    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
     new_project = await db_api.add_project(
@@ -410,6 +425,7 @@ async def test_add_project_to_db(
         },
         type="TEMPLATE",
     )
+    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
         await db_api.add_project(
@@ -455,6 +471,7 @@ async def test_add_project_to_db(
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
     )
+    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
 
 
 @pytest.mark.parametrize(
