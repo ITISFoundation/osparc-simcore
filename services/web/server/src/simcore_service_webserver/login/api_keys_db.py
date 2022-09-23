@@ -9,9 +9,6 @@ from sqlalchemy.sql import func
 log = logging.getLogger(__name__)
 
 
-# TODO: schedule task that periodically runs prune in the Garbage collector service
-
-
 async def prune_expired_api_keys(app: web.Application):
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:

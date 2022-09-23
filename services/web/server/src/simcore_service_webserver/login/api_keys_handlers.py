@@ -92,7 +92,7 @@ class CRUD:
             ).where(orm.api_keys.c.user_id == self.user_id)
 
             result: ResultProxy = await conn.execute(stmt)
-            listed = [r.display_name for r in result.fetchall()]
+            listed = [r.display_name for r in await result.fetchall()]
             return listed
 
     async def create(
@@ -167,13 +167,11 @@ async def create_api_key(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
-    return ApiKeyGet.parse_obj(
-        {
-            "display_name": api_key.display_name,
-            "api_key": credentials["api_key"],
-            "api_secret": credentials["api_secret"],
-        }
-    ).json(**RESPONSE_MODEL_POLICY)
+    return ApiKeyGet(
+        display_name=api_key.display_name,
+        api_key=credentials["api_key"],
+        api_secret=credentials["api_secret"],
+    ).dict(**RESPONSE_MODEL_POLICY)
 
 
 @login_required
