@@ -4,7 +4,7 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import AsyncIterator, Callable, Optional, Union
 
 import pytest
 from aioresponses import aioresponses
@@ -87,16 +87,14 @@ def client(
 
 @pytest.fixture
 async def user_project(
-    client,
-    fake_project,
-    logged_user,
-    tests_data_dir: Path,
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
 ):
     async with NewProject(
         fake_project,
         client.app,
         user_id=logged_user["id"],
         tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -110,6 +108,7 @@ async def shared_project(
     logged_user,
     all_group,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     fake_project.update(
         {
@@ -123,6 +122,7 @@ async def shared_project(
         client.app,
         user_id=logged_user["id"],
         tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -134,8 +134,9 @@ async def template_project(
     client,
     fake_project,
     logged_user,
-    all_group: Dict[str, str],
+    all_group: dict[str, str],
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -150,6 +151,7 @@ async def template_project(
         user_id=None,
         clear_all=True,
         tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project
@@ -158,7 +160,7 @@ async def template_project(
 
 @pytest.fixture
 def fake_services():
-    def create_fakes(number_services: int) -> List[Dict]:
+    def create_fakes(number_services: int) -> list[dict]:
         fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
         return fake_services
 
@@ -174,10 +176,10 @@ async def project_db_cleaner(client):
 @pytest.fixture
 async def catalog_subsystem_mock(
     monkeypatch,
-) -> Callable[[Optional[Union[List[Dict], Dict]]], None]:
+) -> Callable[[Optional[Union[list[dict], dict]]], None]:
     services_in_project = []
 
-    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
+    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
         for proj in projects or []:
             services_in_project.extend(
                 [
@@ -199,5 +201,5 @@ async def catalog_subsystem_mock(
 @pytest.fixture()
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
-) -> aioresponses:
+) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock

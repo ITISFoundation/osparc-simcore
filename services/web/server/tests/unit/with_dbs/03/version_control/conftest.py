@@ -27,7 +27,8 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
-from tenacity import AsyncRetrying, stop_after_delay
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
 
 ProjectDict = dict[str, Any]
 
@@ -140,17 +141,26 @@ def project_uuid(user_project: ProjectDict) -> ProjectID:
 
 @pytest.fixture
 async def user_project(
-    client: TestClient, fake_project: ProjectDict, user_id: int, tests_data_dir: Path
+    client: TestClient,
+    fake_project: ProjectDict,
+    user_id: int,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
     # pylint: disable=no-value-for-parameter
 
     async with NewProject(
-        fake_project, client.app, user_id=user_id, tests_data_dir=tests_data_dir
+        fake_project,
+        client.app,
+        user_id=user_id,
+        tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as project:
 
         yield project
 
         # cleanup repos
+        assert client.app
         engine = client.app[APP_DB_ENGINE_KEY]
         async with engine.acquire() as conn:
 
