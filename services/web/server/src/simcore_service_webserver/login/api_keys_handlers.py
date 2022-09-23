@@ -7,7 +7,7 @@ from typing import Optional
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
 from pydantic import BaseModel
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -66,7 +66,7 @@ class CRUD:
 
     def __init__(self, request: web.Request):
         self.engine = request.app[APP_DB_ENGINE_KEY]
-        self.userid: int = request.get(RQT_USERID_KEY, -1)
+        self.user_id: int = request.get(RQT_USERID_KEY, -1)
 
     async def list_api_key_names(self):
         async with self.engine.acquire() as conn:
@@ -74,16 +74,15 @@ class CRUD:
                 [
                     orm.api_keys.c.display_name,
                 ]
-            ).where(orm.api_keys.c.user_id == self.userid)
+            ).where(orm.api_keys.c.user_id == self.user_id)
 
-            res: ResultProxy = await conn.execute(stmt)
-            rows: list[RowProxy] = await res.fetchall()
-            # TODO: improve this
-            return [row.get(0) for row in rows] if rows else []
+            result: ResultProxy = await conn.execute(stmt)
+            listed = [r.display_name for r in result.fetchall()]
+            return listed
 
     async def create(
         self,
-        rq: ApiKeyCreate,
+        request_data: ApiKeyCreate,
         *,
         api_key: str,
         api_secret: str,
@@ -92,11 +91,13 @@ class CRUD:
             stmt = (
                 orm.api_keys.insert()
                 .values(
-                    display_name=rq.display_name,
-                    user_id=self.userid,
+                    display_name=request_data.display_name,
+                    user_id=self.user_id,
                     api_key=api_key,
                     api_secret=api_secret,
-                    expires_at=func.now() + rq.expiration if rq.expiration else None,
+                    expires_at=func.now() + request_data.expiration
+                    if request_data.expiration
+                    else None,
                 )
                 .returning(orm.api_keys.c.id)
             )
@@ -109,7 +110,7 @@ class CRUD:
         async with self.engine.acquire() as conn:
             stmt = orm.api_keys.delete().where(
                 sa.and_(
-                    orm.api_keys.c.user_id == self.userid,
+                    orm.api_keys.c.user_id == self.user_id,
                     orm.api_keys.c.display_name == name,
                 )
             )
@@ -135,17 +136,19 @@ async def create_api_key(request: web.Request):
     """
     await check_permission(request, "user.apikey.*")
 
-    apikey = await parse_request_body_as(ApiKeyCreate, request)
+    api_key = await parse_request_body_as(ApiKeyCreate, request)
     credentials = generate_api_credentials()
     try:
         crud = CRUD(request)
-        await crud.create(apikey, **credentials)
+        await crud.create(api_key, **credentials)
     except DatabaseError as err:
-        log.warning("Failed to create API key %d", apikey.display_name, exc_info=err)
-        raise web.HTTPBadRequest(reason="Invalid API key name: already exists") from err
+        raise web.HTTPBadRequest(
+            reason="Invalid API key name: already exists",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from err
 
     return {
-        "display_name": apikey.display_name,
+        "display_name": api_key.display_name,
         "api_key": credentials["api_key"],
         "api_secret": credentials["api_secret"],
     }
@@ -166,7 +169,7 @@ async def delete_api_key(request: web.Request):
         await crud.delete_api_key(display_name)
     except DatabaseError as err:
         log.warning(
-            "Failed to delete API key %d. Ignoring error", display_name, exc_info=err
+            "Failed to delete API key %s. Ignoring error", display_name, exc_info=err
         )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

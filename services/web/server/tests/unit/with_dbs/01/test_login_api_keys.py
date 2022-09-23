@@ -113,8 +113,7 @@ async def test_delete_api_keys(
 
 
 @pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
-# async def test_create_api_key_with_expiration(
-async def test_it(
+async def test_create_api_key_with_expiration(
     client: TestClient, logged_user, user_role, expected, disable_gc_manual_guest_users
 ):
     assert client.app
