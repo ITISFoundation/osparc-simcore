@@ -14,6 +14,6 @@
 
 
 aiodocker
-aioboto3 # s3 storage
+boto3 # note that aioboto/core does not support yet ec2!
 fastapi
 packaging
