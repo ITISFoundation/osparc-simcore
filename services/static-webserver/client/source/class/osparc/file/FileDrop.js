@@ -36,8 +36,24 @@ qx.Class.define("osparc.file.FileDrop", {
       }
     }, this);
 
-    const dropHere = this.__dropHere = new qx.ui.basic.Label(this.tr("Drop file here")).set({
-      font: "title-14",
+    let msg = "<center>";
+    const options = [
+      this.tr("Upload file"),
+      this.tr("Drop file from explorer"),
+      this.tr("Drop file from tree"),
+      this.tr("Provide Download Link")
+    ];
+    for (let i=0; i<options.length; i++) {
+      msg += options[i];
+      if (i < options.length-1) {
+        msg += "<br>" + this.tr("or") + "<br>";
+      }
+    }
+    msg += "</center>";
+
+    const dropHere = this.__dropHere = new qx.ui.basic.Label(msg).set({
+      font: "text-14",
+      rich: true,
       alignX: "center",
       alignY: "middle"
     });
