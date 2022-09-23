@@ -304,7 +304,8 @@ class ProjectDBAPI:
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
 
             query = (
-                select([projects.join(projects_to_products, isouter=True)])
+                sa.select([projects, projects_to_products.c.product_name])
+                .select_from(projects.join(projects_to_products, isouter=True))
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -336,13 +337,7 @@ class ProjectDBAPI:
             )
 
             total_number_of_projects = await conn.scalar(
-                query.with_only_columns([func.count()])
-                .select_from(projects.join(projects_to_products, isouter=True))
-                .where(
-                    (projects_to_products.c.product_name == product_name)
-                    | (projects_to_products.c.product_name == None)
-                )
-                .order_by(None)
+                query.with_only_columns([func.count()]).order_by(None)
             )
             assert total_number_of_projects  # nosec
 
@@ -402,7 +397,8 @@ class ProjectDBAPI:
                 )
                 continue
 
-            prj = dict(row.items())
+            prj: dict[str, Any] = dict(row.items())
+            prj.pop("product_name", None)
 
             if (
                 filter_by_services
