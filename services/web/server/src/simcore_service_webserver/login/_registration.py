@@ -3,6 +3,7 @@
     - registration code
     - invitation code
 """
+
 import logging
 from datetime import datetime
 from typing import Literal, Optional
@@ -57,7 +58,7 @@ class InvitationData(BaseModel):
 
 class _InvitationValidator(BaseModel):
     action: Literal[ConfirmationAction.INVITATION]
-    data: Json[InvitationData]  # pylint: disable=unsuscriptable-object
+    data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
 
     @validator("action", pre=True)
     @classmethod
@@ -169,7 +170,7 @@ async def check_invitation(
 
         except ValidationError as err:
             log.warning(
-                "%s is associated with an invalid %s.\n" "Details: %s",
+                "%s is associated with an invalid %s.\nDetails: %s",
                 f"{invitation_code=}",
                 f"{confirmation=}",
                 f"{err=}",
