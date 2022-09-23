@@ -309,14 +309,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiKeyName"
+              $ref: "#/components/schemas/ApiKeyCreate"
       responses:
         "200":
           description: Authorization granted returning API key
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiKeyGranted"
+                $ref: "#/components/schemas/ApiKeyGet"
         "400":
           description: key name requested is invalid
         "401":
@@ -334,7 +334,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApiKeyName"
+              $ref: "#/components/schemas/ApiKeyCreate"
       responses:
         "204":
           description: api key successfully deleted
@@ -354,12 +354,17 @@ components:
         client_session_id:
           type: string
           example: 5ac57685-c40f-448f-8711-70be1936fd63
-    ApiKeyName:
+    ApiKeyCreate:
       type: object
+      required:
+        - display_name
       properties:
         display_name:
           type: string
-    ApiKeyGranted:
+        expiration:
+          type: number
+          description: expiration delta in seconds
+    ApiKeyGet:
       type: object
       properties:
         display_name:

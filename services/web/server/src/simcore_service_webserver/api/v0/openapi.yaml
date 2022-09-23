@@ -603,9 +603,14 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - display_name
               properties:
                 display_name:
                   type: string
+                expiration:
+                  type: number
+                  description: expiration delta in seconds
       responses:
         '200':
           description: Authorization granted returning API key
