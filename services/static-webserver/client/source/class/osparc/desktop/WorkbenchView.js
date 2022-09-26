@@ -1052,6 +1052,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
+
+      if (node.hasOutputs() && node.isDynamic() && node.isDeprecated()) {
+        const deprecatedMsg = new qx.ui.basic.Label(osparc.utils.Services.DEPRECATED_DYNAMIC_TEXT).set({
+          rich: true
+        });
+        this.__outputsPage.add(deprecatedMsg);
+
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
+      }
     },
 
     getLogger: function() {
