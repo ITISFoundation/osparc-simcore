@@ -103,6 +103,10 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
         "organizations": user_standard_groups,
         "all": all_group,
     }
+
+    if expires_at := user_profile.get("expires_at"):
+        user_profile["expiration_date"] = expires_at.date()
+
     return ProfileGet.parse_obj(user_profile)
 
 
@@ -124,7 +128,7 @@ async def update_user_profile(
                 sa.select([users.c.name]).where(users.c.id == user_id)
             )
             try:
-                first_name, last_name = name.split(".") + [""]
+                first_name, last_name = name.rsplit(".", maxsplit=2)
             except ValueError:
                 first_name = name
 

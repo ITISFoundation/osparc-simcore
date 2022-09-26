@@ -15,7 +15,9 @@ import attr
 import passlib.hash
 from aiohttp import web
 from aiohttp_jinja2 import render_string
+from models_library.users import UserID
 from passlib import pwd
+from servicelib import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.products import get_product_template_path
@@ -47,6 +49,18 @@ ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTE
 REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
     ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
 )
+
+
+async def notify_user_logout(
+    app: web.Application, user_id: UserID, client_session_id: Optional[Any] = None
+):
+    """Broadcasts logout of 'user_id' in 'client_session_id'.
+
+    If 'client_session_id' is None, then all sessions are considered
+
+    Listeners (e.g. sockets) will trigger logout mechanisms
+    """
+    await observer.emit("SIGNAL_USER_LOGOUT", user_id, client_session_id, app)
 
 
 def encrypt_password(password: str) -> str:

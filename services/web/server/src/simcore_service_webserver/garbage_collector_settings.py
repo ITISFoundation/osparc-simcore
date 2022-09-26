@@ -24,7 +24,7 @@ class GarbageCollectorSettings(BaseCustomSettings):
     )
 
     GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S: PositiveInt = Field(
-        6 * _HOUR,
+        1 * _HOUR,
         description="Time period between checks of expiration dates for trial users",
     )
 
