@@ -5,7 +5,7 @@
 
 import random
 from copy import deepcopy
-from typing import Callable, Dict, List
+from typing import Callable
 
 import pytest
 from _helpers import standard_role_response
@@ -77,7 +77,7 @@ def create_user(client: TestClient) -> Callable:
     db: AsyncpgStorage = get_login_plugin_storage(client.app)
 
     async def do(data=None):
-        return await utils_login.create_user(db, data)
+        return await utils_login.create_fake_user(db, data)
 
     return do
 
@@ -86,7 +86,7 @@ def create_user(client: TestClient) -> Callable:
 PREFIX = "/" + API_VERSION + "/groups"
 
 
-def _assert_group(group: Dict[str, str]):
+def _assert_group(group: dict[str, str]):
     properties = ["gid", "label", "description", "thumbnail", "accessRights"]
     assert all(x in group for x in properties)
     access_rights = group["accessRights"]
@@ -95,7 +95,7 @@ def _assert_group(group: Dict[str, str]):
 
 
 def _assert__group_user(
-    expected_user: Dict, expected_access_rights: Dict[str, bool], actual_user: Dict
+    expected_user: dict, expected_access_rights: dict[str, bool], actual_user: dict
 ):
     assert "first_name" in actual_user
     parts = expected_user["name"].split(".") + [""]
@@ -119,9 +119,9 @@ async def test_list_groups(
     logged_user,
     user_role,
     expected,
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    all_group: dict[str, str],
 ):
     url = client.app.router["list_groups"].url_for()
     assert str(url) == f"{PREFIX}"
@@ -546,7 +546,7 @@ async def test_group_access_rights(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_add_user_gets_added_to_group(
-    client, standard_groups: List[Dict[str, str]], user_role, expected
+    client, standard_groups: list[dict[str, str]], user_role, expected
 ):
     emails = [
         "good@sparc.io",
