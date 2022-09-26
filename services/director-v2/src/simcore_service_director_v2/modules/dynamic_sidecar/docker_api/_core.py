@@ -1,7 +1,5 @@
-import asyncio
 import json
 import logging
-from multiprocessing.resource_sharer import stop
 from typing import Any, Mapping, Optional, Union
 
 import aiodocker
@@ -18,7 +16,7 @@ from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed, wait_random_exponential
+from tenacity.wait import wait_exponential, wait_random_exponential
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.constants import (
