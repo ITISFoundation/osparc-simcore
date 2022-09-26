@@ -2,6 +2,8 @@
 
 """
 
+from typing import Any, TypedDict
+
 import aiodocker
 from pydantic import BaseModel, PositiveInt
 
@@ -81,84 +83,80 @@ class TasksResources(BaseModel):
     count_tasks_pending: PositiveInt
 
 
-async def check_tasks_resources(nodes_ids) -> TasksResources:
-    # TODO discuss with the team consideration between limits and reservations on dy services
+class ReservedResources(TypedDict):
+    RAM: float
+    CPU: int
+
+
+def _get_reserved_resources(reservations: dict[str, Any]) -> ReservedResources:
+    ram = 0
+    cpu = 0
+    if "MemoryBytes" in reservations:
+        ram = bytesto(
+            reservations["MemoryBytes"],
+            "g",
+            bsize=1024,
+        )
+    if "NanoCPUs" in reservations:
+        cpu = int(reservations["NanoCPUs"]) / 1000000000
+    return {"RAM": ram, "CPU": cpu}
+
+
+async def check_tasks_resources(nodes_ids: list[str]) -> TasksResources:
     total_tasks_cpus = 0
     total_tasks_ram = 0
-    tasks_ressources = []
+    tasks_resources = []
     total_pending_tasks_cpus = 0
     total_pending_tasks_ram = 0
-    tasks_pending_ressources = []
+    tasks_pending_resources = []
 
     async with aiodocker.Docker() as docker:
+
         services = await docker.services.list()
-        count_tasks_pending = 0
         for service in services:
             tasks = service.tasks()
             for task in tasks:
-
-                if task["Status"]["State"] == "running" and task["NodeID"] in nodes_ids:
-                    if (
+                if (
+                    task["Status"]["State"] == "running"
+                    and task["NodeID"] in nodes_ids
+                    and (
                         reservations := task["Spec"]
                         .get("Resources", {})
                         .get("Reservations")
-                    ):
-                        ram = 0
-                        cpu = 0
-                        if "MemoryBytes" in reservations:
-                            ram = bytesto(
-                                reservations["MemoryBytes"],
-                                "g",
-                                bsize=1024,
-                            )
-                        if "NanoCPUs" in reservations:
-                            cpu = int(reservations["NanoCPUs"]) / 1000000000
-
-                        tasks_ressources.append(
-                            {"ID": task["ID"], "RAM": ram, "CPU": cpu}
-                        )
+                    )
+                ):
+                    tasks_resources.append(
+                        {"ID": task["ID"], **_get_reserved_resources(reservations)}
+                    )
 
                 elif (
                     task["Status"]["State"] == "pending"
                     and task["Status"]["Message"] == "pending task scheduling"
                     and "insufficient resources on" in task["Status"]["Err"]
-                ):
-                    count_tasks_pending = count_tasks_pending + 1
-
-                    if (
+                    and (
                         reservations := task["Spec"]
                         .get("Resources", {})
                         .get("Reservations")
-                    ):
-                        ram = 0
-                        cpu = 0
-                        if "MemoryBytes" in reservations:
-                            ram = bytesto(
-                                reservations["MemoryBytes"],
-                                "g",
-                                bsize=1024,
-                            )
-                        if "NanoCPUs" in reservations:
-                            cpu = int(reservations["NanoCPUs"]) / 1000000000
-                        tasks_pending_ressources.append(
-                            {"ID": task["ID"], "RAM": ram, "CPU": cpu}
-                        )
+                    )
+                ):
+                    tasks_pending_resources.append(
+                        {"ID": task["ID"], **_get_reserved_resources(reservations)}
+                    )
 
         total_tasks_cpus = 0
         total_tasks_ram = 0
-        for task in tasks_ressources:
-            total_tasks_cpus = total_tasks_cpus + task["CPU"]
-            total_tasks_ram = total_tasks_ram + task["RAM"]
+        for task in tasks_resources:
+            total_tasks_cpus += task["CPU"]
+            total_tasks_ram += task["RAM"]
 
-        for task in tasks_pending_ressources:
-            total_pending_tasks_cpus = total_pending_tasks_cpus + task["CPU"]
-            total_pending_tasks_ram = total_pending_tasks_ram + task["RAM"]
-        return TasksResources.parse_obj(
-            {
-                "total_cpus_running_tasks": total_tasks_cpus,
-                "total_ram_running_tasks": total_tasks_ram,
-                "total_cpus_pending_tasks": total_pending_tasks_cpus,
-                "total_ram_pending_tasks": total_pending_tasks_ram,
-                "count_tasks_pending": count_tasks_pending,
-            }
+        for task in tasks_pending_resources:
+            total_pending_tasks_cpus += task["CPU"]
+            total_pending_tasks_ram += task["RAM"]
+
+        return TasksResources(
+            total_cpus_running_tasks=total_tasks_cpus,
+            total_ram_running_tasks=total_tasks_ram,
+            total_cpus_pending_tasks=total_pending_tasks_cpus,
+            total_ram_pending_tasks=total_pending_tasks_ram,
+            count_tasks_pending=len(tasks_pending_resources),
         )
