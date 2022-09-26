@@ -2,11 +2,18 @@
 
 """
 
+import logging
 import time
+from datetime import datetime
 from textwrap import dedent
 from typing import Final
 
+import boto3
+
 from .core.settings import AwsSettings
+
+logger = logging.getLogger(__name__)
+
 
 AWS_EC2: Final = [
     {"name": "t2.xlarge", "CPUs": 4, "RAM": 16},
@@ -50,20 +57,18 @@ def compose_user_data(settings: AwsSettings) -> str:
 
 
 def start_instance_aws(ami_id, instance_type, tag, service_type, settings: AwsSettings):
-    # TODO: translate to aioboto https://github.com/terrycain/aioboto3
     user_data = compose_user_data(settings)
 
-    ec2Client = boto3.client(
+    ec2_client = boto3.client(
         "ec2",
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name="us-east-1",
     )
-    ec2Resource = boto3.resource("ec2", region_name="us-east-1")
+
     ec2 = boto3.resource("ec2", region_name="us-east-1")
-    # TODO check bug on the auto-terminate ?
-    # Create the instance
-    instanceDict = ec2.create_instances(
+
+    instance = ec2.create_instances(
         ImageId=ami_id,
         KeyName=settings.AWS_KEY_NAME,
         InstanceType=instance_type,
@@ -76,15 +81,62 @@ def start_instance_aws(ami_id, instance_type, tag, service_type, settings: AwsSe
             {"ResourceType": "instance", "Tags": [{"Key": "Name", "Value": tag}]}
         ],
         UserData=user_data,
+    )[0]
+
+    logger.debug(
+        "New instance launched for %s services. Estimated time to launch and join the cluster : 2mns",
+        service_type,
     )
-    instanceDict = instanceDict[0]
-    print(
-        "New instance launched for "
-        + service_type
-        + " services. Estimated time to launch and join the cluster : 2mns"
-    )
-    print("Pausing for 10mns before next check")
+    logger.debug("Pausing for 10mns before next check")
+
     time.sleep(600)
-    # print("Instance state: %s" % instanceDict.state)
-    # print("Public dns: %s" % instanceDict.public_dns_name)
-    # print("Instance id: %s" % instanceDict.id)
+    logger.debug("Instance state: %s", instance.state)
+    logger.debug("Public dns: %s", instance.public_dns_name)
+    logger.debug("Instance id: %s", instance.id)
+
+    return instance
+
+
+def scale_up(CPUs, RAM, settings: AwsSettings):
+    print("Processing the new instance on AWS..")
+
+    # Has to be disccused
+    for host in AWS_EC2:
+        if host["CPUs"] >= CPUs and host["RAM"] >= RAM:
+            new_host = host
+
+    # Do we pass our scaling limits ?
+    # if total_worker_CPUs + host["CPUs"] >= int(env.str("MAX_CPUs_CLUSTER")) or total_worker_RAM + host["RAM"] >= int(env.str("MAX_RAM_CLUSTER")):
+    #    print("Error : We would pass the defined cluster limits in term of RAM/CPUs. We can't scale up")
+    # else:
+
+    now = datetime.utcnow()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    user_data = compose_user_data(settings)
+
+    user_data += dedent(
+        """\
+    "docker node update --label-add sidecar=true $label"
+    reboot_hour=$(last reboot | head -1 | awk '{print $8}')
+    reboot_mn="${reboot_hour: -2}"
+    if [ $reboot_mn -gt 4 ]
+    then
+            cron_mn=$((${reboot_mn} - 5))
+    else
+            cron_mn=55
+    fi
+    echo ${cron_mn}
+    cron_mn+=" * * * * /home/ubuntu/cron_terminate.bash"
+    cron_mn="*/10 * * * * /home/ubuntu/cron_terminate.bash"
+    echo "${cron_mn}"
+    (crontab -u ubuntu -l; echo "$cron_mn" ) | crontab -u ubuntu -
+    """
+    )
+
+    start_instance_aws(
+        "ami-0699f9dc425967eba",
+        "t2.2xlarge",
+        "Autoscaling node " + dt_string,
+        "computational",
+        user_data,
+    )
