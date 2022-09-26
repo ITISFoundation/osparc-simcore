@@ -494,6 +494,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       if (this.__workbenchUIConnected === null) {
         workbenchUI.addListener("changeSelectedNode", e => {
+          // one click
           const nodeId = e.getData();
           if (nodeId) {
             studyTreeItem.resetSelection();
@@ -509,33 +510,38 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
         });
         workbenchUI.addListener("nodeSelected", e => {
-          studyTreeItem.resetSelection();
+          // double click
           const nodeId = e.getData();
-          this.__nodesTree.nodeSelected(nodeId);
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          this.__populateSecondPanel(node);
-          this.__openIframeTab(node);
-          this.__loggerView.setCurrentNodeId(nodeId);
+          if (nodeId) {
+            studyTreeItem.resetSelection();
+            this.__nodesTree.nodeSelected(nodeId);
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            this.__populateSecondPanel(node);
+            this.__openIframeTab(node);
+            this.__loggerView.setCurrentNodeId(nodeId);
+          }
         }, this);
       }
 
       nodesTree.addListener("fullscreenNode", e => {
-        studyTreeItem.resetSelection();
         const nodeId = e.getData();
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        if (node) {
-          this.__populateSecondPanel(node);
-          this.__openIframeTab(node);
-          node.getLoadingPage().maximizeIFrame(true);
-          node.getIFrame().maximizeIFrame(true);
-        }
-        this.__loggerView.setCurrentNodeId(nodeId);
-        const nodeUI = workbenchUI.getNodeUI(nodeId);
-        if (nodeUI) {
-          if (nodeUI.classname.includes("NodeUI")) {
-            workbenchUI.activeNodeChanged(nodeUI);
+        if (nodeId) {
+          studyTreeItem.resetSelection();
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            this.__populateSecondPanel(node);
+            this.__openIframeTab(node);
+            node.getLoadingPage().maximizeIFrame(true);
+            node.getIFrame().maximizeIFrame(true);
+          }
+          this.__loggerView.setCurrentNodeId(nodeId);
+          const nodeUI = workbenchUI.getNodeUI(nodeId);
+          if (nodeUI) {
+            if (nodeUI.classname.includes("NodeUI")) {
+              workbenchUI.activeNodeChanged(nodeUI);
+            }
           }
         }
       }, this);
