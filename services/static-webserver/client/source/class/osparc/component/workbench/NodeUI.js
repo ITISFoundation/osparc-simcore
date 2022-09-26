@@ -254,8 +254,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
-      const srvMetadata = node.getMetaData();
-      if (srvMetadata && osparc.utils.Services.isDeprecated(srvMetadata)) {
+      if (node.isDeprecated()) {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
         let deprecatedTTMsg = this.tr("Service deprecated<br>");
         if (node.isDynamic()) {
