@@ -6,18 +6,21 @@ import typer
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
-from ._registration import get_invitation_url
+from ._registration import InvitationData, get_invitation_url
 from .utils import get_random_string
 
 
 def invitations(
     base_url: str,
+    issuer_email: str,
     trial_days: Optional[int] = None,
     user_id: int = 1,
     num_codes: int = 15,
     code_length: int = 30,
 ):
     """Generates a list of invitation links for registration"""
+
+    invitation = InvitationData(issuer=issuer_email, trial_account_days=trial_days)
 
     codes = [get_random_string(code_length) for _ in range(num_codes)]
 
@@ -50,11 +53,14 @@ def invitations(
     for n, code in enumerate(codes, start=1):
         print(f'{code},{user_id},INVITATION,"{{', file=sys.stdout)
         print(
-            f'""tag"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
+            f'""guest"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
             file=sys.stdout,
         )
-        print('""issuer"" : ""support@osparc.io"" ,', file=sys.stdout)
-        print(f'""trial_account_days"" : ""{trial_days}""', file=sys.stdout)
+        print(f'""issuer"" : ""{invitation.issuer}"" ,', file=sys.stdout)
+        print(
+            f'""trial_account_days"" : ""{invitation.trial_account_days}""',
+            file=sys.stdout,
+        )
         print('}",%s' % utcnow.isoformat(sep=" "), file=sys.stdout)
 
     typer.secho(
