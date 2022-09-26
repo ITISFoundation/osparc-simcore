@@ -16,7 +16,7 @@ from .groups_models import AllUsersGroups
 
 class Token(BaseModel):
     """
-    api keys for third party services
+    Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
     """
 
     service: str = Field(
