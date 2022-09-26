@@ -145,6 +145,13 @@ async def get_dynamic_sidecar_placement(
     is in `running` state.
     """
 
+    # NOTE: `wait_random_exponential` is key for reducing pressure on docker swarm
+    # The idea behind it is to avoid having concurrent retrying calls
+    # when the system is having issues to respond. If the system
+    # is failing clients are retrying at the same time,
+    # it makes harder to recover.
+    # Ideally you'd like to distribute the retries uniformly in time.
+    # For more details see `wait_random_exponential` documentation.
     @retry(
         wait=wait_random_exponential(multiplier=2, min=1, max=20),
         stop=stop_after_delay(
