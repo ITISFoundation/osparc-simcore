@@ -19,8 +19,6 @@ class AwsSettings(BaseCustomSettings):
     AWS_DNS: str
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
-
-    # TODO: review thees
     AWS_SECURITY_GROUP_IDS: list[str]
     AWS_SUBNET_ID: str
 
