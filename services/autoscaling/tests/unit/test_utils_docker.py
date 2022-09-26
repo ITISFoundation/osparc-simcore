@@ -3,16 +3,14 @@
 # pylint: disable=unused-variable
 
 from simcore_service_autoscaling.utils_docker import (
-    check_node_resources,
+    ClusterResources,
+    eval_cluster_resources,
     need_resources,
 )
 
 
-async def test_it():
-
-    # fixture: docker_client.containers.run("ubuntu:latest", "echo hello world")
-
+async def test_eval_cluster_resource_without_swarm():
     assert not await need_resources()
 
-    nodes = await check_node_resources()
-    assert len(nodes.node_ids) == 1
+    resources: ClusterResources = await eval_cluster_resources()
+    assert not resources.nodes_ids

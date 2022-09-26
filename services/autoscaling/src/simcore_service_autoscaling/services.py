@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from .core.settings import AwsSettings
 from .utils_aws import AWS_EC2, compose_user_data, start_instance_aws
-from .utils_docker import check_node_resources, check_tasks_resources, need_resources
+from .utils_docker import check_tasks_resources, eval_cluster_resources, need_resources
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,6 @@ async def check_dynamic(settings: AwsSettings):
     """
     Check if the swarm need to scale up
 
-    TODO: currently the script has to be executed directly on the manager. Implenting a version that connect with ssh and handle the case when one manager is down to be able to have redundancy
     """
     user_data = compose_user_data(settings.AUTOSCALING_AWS)
 
@@ -22,10 +21,9 @@ async def check_dynamic(settings: AwsSettings):
     resources_are_scarce = await need_resources()
 
     # We compile RAM and CPU capabilities of each node who have the label sidecar
-    # TODO take in account personalized workers
     # Total resources of the cluster
     if resources_are_scarce:
-        total_nodes = await check_node_resources()
+        total_nodes = await eval_cluster_resources()
         total_tasks = await check_tasks_resources(total_nodes.nodes_ids)
         available_cpus = total_nodes.total_cpus - total_tasks.total_cpus_running_tasks
         available_ram = total_nodes.total_ram - total_tasks.total_ram_running_tasks
@@ -85,5 +83,3 @@ async def check_dynamic(settings: AwsSettings):
                 break
     else:
         logger.info("No pending task(s) on the swarm detected.")
-
-        # TODO Better algorythm

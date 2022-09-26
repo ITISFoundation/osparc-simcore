@@ -9,13 +9,15 @@ from .utils import bytesto
 
 
 async def need_resources() -> bool:
+    """
+    We need the data of each task and the data of each node to know if we need to scale up or not
+    Test if some tasks are in a pending mode because of a lack of resources
+    """
     # SEE  https://github.com/aio-libs/aiodocker
 
     async with aiodocker.Docker() as docker:
-        serv = await docker.services.list()
-        # We need the data of each task and the data of each node to know if we need to scale up or not
-        # Test if some tasks are in a pending mode because of a lack of resources
-        for service in serv:
+        services = await docker.services.list()
+        for service in services:
             tasks = service.tasks()
             for task in tasks:
                 if (
@@ -27,52 +29,47 @@ async def need_resources() -> bool:
         return False
 
 
-class NodesResources(BaseModel):
+class ClusterResources(BaseModel):
     total_cpus: int
     total_ram: int
-    node_ids: list[str]
+    nodes_ids: list[str]
 
 
-async def check_node_resources() -> NodesResources:
+async def eval_cluster_resources() -> ClusterResources:
+    """
+    We compile RAM and CPU capabilities of each node who have the label sidecar
+    Total resources of the cluster
+    """
 
     async with aiodocker.Docker() as docker:
-        nodes = await docker.nodes.list()
-        # We compile RAM and CPU capabilities of each node who have the label sidecar
-        # TODO take in account personalized workers
-        # Total resources of the cluster
+        nodes = await docker.nodes.list(filters={"label": "sidecar"})
         nodes_sidecar_data = []
         for node in nodes:
-            for label in node.get("Spec", {}).get("Labels", {}):
-                if label == "sidecar":
-                    nodes_sidecar_data.append(
-                        {
-                            "ID": node.attrs["ID"],
-                            "RAM": bytesto(
-                                node.attrs["Description"]["Resources"]["MemoryBytes"],
-                                "g",
-                                bsize=1024,
-                            ),
-                            "CPU": int(
-                                node.attrs["Description"]["Resources"]["NanoCPUs"]
-                            )
-                            / 1000000000,
-                        }
-                    )
+            nodes_sidecar_data.append(
+                {
+                    "ID": node["ID"],
+                    "RAM": bytesto(
+                        node["Description"]["Resources"]["MemoryBytes"],
+                        "g",
+                        bsize=1024,
+                    ),
+                    "CPU": int(node["Description"]["Resources"]["NanoCPUs"])
+                    / 1000000000,
+                }
+            )
 
         total_nodes_cpus = 0
         total_nodes_ram = 0
         nodes_ids = []
         for node in nodes_sidecar_data:
-            total_nodes_cpus = total_nodes_cpus + node["CPU"]
-            total_nodes_ram = total_nodes_ram + node["RAM"]
+            total_nodes_cpus += node["CPU"]
+            total_nodes_ram += node["RAM"]
             nodes_ids.append(node["ID"])
 
-        return NodesResources.parse_obj(
-            {
-                "total_cpus": total_nodes_cpus,
-                "total_ram": total_nodes_ram,
-                "nodes_ids": nodes_ids,
-            }
+        return ClusterResources(
+            total_cpus=total_nodes_cpus,
+            total_ram=total_nodes_ram,
+            nodes_ids=nodes_ids,
         )
 
 
