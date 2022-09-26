@@ -61,7 +61,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL
 
-    AUTOSCALING_AWS: AwsSettings = Field(auto_default_from_env=True)
+    AUTOSCALING_AWS: Optional[AwsSettings] = Field(auto_default_from_env=True)
 
     @validator("AUTOSCALING_LOGLEVEL")
     @classmethod
