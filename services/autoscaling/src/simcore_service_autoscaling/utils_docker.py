@@ -42,7 +42,7 @@ async def check_node_resources() -> NodesResources:
         # Total resources of the cluster
         nodes_sidecar_data = []
         for node in nodes:
-            for label in node.attrs["Spec"]["Labels"]:
+            for label in node.get("Spec", {}).get("Labels", {}):
                 if label == "sidecar":
                     nodes_sidecar_data.append(
                         {
@@ -94,36 +94,29 @@ async def check_tasks_resources(nodes_ids) -> TasksResources:
     tasks_pending_ressources = []
 
     async with aiodocker.Docker() as docker:
-        serv = await docker.services.list()
+        services = await docker.services.list()
         count_tasks_pending = 0
-        for service in serv:
+        for service in services:
             tasks = service.tasks()
             for task in tasks:
+
                 if task["Status"]["State"] == "running" and task["NodeID"] in nodes_ids:
-                    if "Resources" in task["Spec"] and task["Spec"]["Resources"] != {}:
+                    if (
+                        reservations := task["Spec"]
+                        .get("Resources", {})
+                        .get("Reservations")
+                    ):
                         ram = 0
                         cpu = 0
-                        if "Reservations" in task["Spec"]["Resources"]:
-                            if (
-                                "MemoryBytes"
-                                in task["Spec"]["Resources"]["Reservations"]
-                            ):
-                                ram = bytesto(
-                                    task["Spec"]["Resources"]["Reservations"][
-                                        "MemoryBytes"
-                                    ],
-                                    "g",
-                                    bsize=1024,
-                                )
-                            if "NanoCPUs" in task["Spec"]["Resources"]["Reservations"]:
-                                cpu = (
-                                    int(
-                                        task["Spec"]["Resources"]["Reservations"][
-                                            "NanoCPUs"
-                                        ]
-                                    )
-                                    / 1000000000
-                                )
+                        if "MemoryBytes" in reservations:
+                            ram = bytesto(
+                                reservations["MemoryBytes"],
+                                "g",
+                                bsize=1024,
+                            )
+                        if "NanoCPUs" in reservations:
+                            cpu = int(reservations["NanoCPUs"]) / 1000000000
+
                         tasks_ressources.append(
                             {"ID": task["ID"], "RAM": ram, "CPU": cpu}
                         )
@@ -134,30 +127,22 @@ async def check_tasks_resources(nodes_ids) -> TasksResources:
                     and "insufficient resources on" in task["Status"]["Err"]
                 ):
                     count_tasks_pending = count_tasks_pending + 1
-                    if "Resources" in task["Spec"] and task["Spec"]["Resources"] != {}:
+
+                    if (
+                        reservations := task["Spec"]
+                        .get("Resources", {})
+                        .get("Reservations")
+                    ):
                         ram = 0
                         cpu = 0
-                        if "Reservations" in task["Spec"]["Resources"]:
-                            if (
-                                "MemoryBytes"
-                                in task["Spec"]["Resources"]["Reservations"]
-                            ):
-                                ram = bytesto(
-                                    task["Spec"]["Resources"]["Reservations"][
-                                        "MemoryBytes"
-                                    ],
-                                    "g",
-                                    bsize=1024,
-                                )
-                            if "NanoCPUs" in task["Spec"]["Resources"]["Reservations"]:
-                                cpu = (
-                                    int(
-                                        task["Spec"]["Resources"]["Reservations"][
-                                            "NanoCPUs"
-                                        ]
-                                    )
-                                    / 1000000000
-                                )
+                        if "MemoryBytes" in reservations:
+                            ram = bytesto(
+                                reservations["MemoryBytes"],
+                                "g",
+                                bsize=1024,
+                            )
+                        if "NanoCPUs" in reservations:
+                            cpu = int(reservations["NanoCPUs"]) / 1000000000
                         tasks_pending_ressources.append(
                             {"ID": task["ID"], "RAM": ram, "CPU": cpu}
                         )

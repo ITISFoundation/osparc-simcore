@@ -4,7 +4,6 @@
 
 import logging
 import time
-from datetime import datetime
 from textwrap import dedent
 from typing import Final
 
@@ -56,18 +55,25 @@ def compose_user_data(settings: AwsSettings) -> str:
     )
 
 
-def start_instance_aws(ami_id, instance_type, tag, service_type, settings: AwsSettings):
-    user_data = compose_user_data(settings)
-
-    ec2_client = boto3.client(
+def create_ec2_client(settings: AwsSettings):
+    return boto3.client(
         "ec2",
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name="us-east-1",
     )
 
-    ec2 = boto3.resource("ec2", region_name="us-east-1")
 
+def start_instance_aws(
+    settings: AwsSettings,
+    ami_id,
+    instance_type: str,
+    tag: str,
+    service_type: str,
+):
+    user_data = compose_user_data(settings)
+
+    ec2 = boto3.resource("ec2", region_name="us-east-1")
     instance = ec2.create_instances(
         ImageId=ami_id,
         KeyName=settings.AWS_KEY_NAME,
@@ -95,48 +101,3 @@ def start_instance_aws(ami_id, instance_type, tag, service_type, settings: AwsSe
     logger.debug("Instance id: %s", instance.id)
 
     return instance
-
-
-def scale_up(CPUs, RAM, settings: AwsSettings):
-    print("Processing the new instance on AWS..")
-
-    # Has to be disccused
-    for host in AWS_EC2:
-        if host["CPUs"] >= CPUs and host["RAM"] >= RAM:
-            new_host = host
-
-    # Do we pass our scaling limits ?
-    # if total_worker_CPUs + host["CPUs"] >= int(env.str("MAX_CPUs_CLUSTER")) or total_worker_RAM + host["RAM"] >= int(env.str("MAX_RAM_CLUSTER")):
-    #    print("Error : We would pass the defined cluster limits in term of RAM/CPUs. We can't scale up")
-    # else:
-
-    now = datetime.utcnow()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    user_data = compose_user_data(settings)
-
-    user_data += dedent(
-        """\
-    "docker node update --label-add sidecar=true $label"
-    reboot_hour=$(last reboot | head -1 | awk '{print $8}')
-    reboot_mn="${reboot_hour: -2}"
-    if [ $reboot_mn -gt 4 ]
-    then
-            cron_mn=$((${reboot_mn} - 5))
-    else
-            cron_mn=55
-    fi
-    echo ${cron_mn}
-    cron_mn+=" * * * * /home/ubuntu/cron_terminate.bash"
-    cron_mn="*/10 * * * * /home/ubuntu/cron_terminate.bash"
-    echo "${cron_mn}"
-    (crontab -u ubuntu -l; echo "$cron_mn" ) | crontab -u ubuntu -
-    """
-    )
-
-    start_instance_aws(
-        "ami-0699f9dc425967eba",
-        "t2.2xlarge",
-        "Autoscaling node " + dt_string,
-        "computational",
-        user_data,
-    )
