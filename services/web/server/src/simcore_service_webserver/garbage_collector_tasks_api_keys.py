@@ -24,25 +24,31 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 
 @retry(
-    wait=wait_exponential(min=5 * _SEC),
+    wait=wait_exponential(min=5 * _SEC, max=30 * _SEC),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
+async def _run_task(app: web.Application):
+    """Periodically check expiration dates and updates user status
+
+    It is resilient, i.e. if update goes wrong, it waits a bit and retries
+    """
+    if deleted := await prune_expired_api_keys(app):
+
+        # broadcast force logout of user_id
+        for api_key in deleted:
+            logger.info("API-key %s expired and was removed", f"{api_key=}")
+
+    else:
+        logger.info("No API keys expired")
+
+
 async def _run_periodically(app: web.Application, wait_period_s: float):
     """Periodically check expiration dates and updates user status
 
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
     """
-
     while True:
-        if deleted := await prune_expired_api_keys(app):
-
-            # broadcast force logout of user_id
-            for api_key in deleted:
-                logger.info("API-key %s expired and was removed", f"{api_key=}")
-
-        else:
-            logger.info("No API keys expired")
-
+        await _run_task(app)
         await asyncio.sleep(wait_period_s)
 
 
