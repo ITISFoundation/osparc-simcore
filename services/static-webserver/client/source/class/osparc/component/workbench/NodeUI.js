@@ -256,11 +256,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
       if (node.isDeprecated()) {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
-        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
         deprecatedIcon.set({
-          toolTipText: osparc.utils.Services.DEPRECATED_SERVICE + "<br>" + deprecatedTTMsg,
           textColor: "failed-red"
         });
+        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        const toolTip = new qx.ui.tooltip.ToolTip().set({
+          label: osparc.utils.Services.DEPRECATED_SERVICE + "<br>" + deprecatedTTMsg,
+          icon: "@FontAwesome5Solid/exclamation-triangle/12",
+          rich: true,
+          maxWidth: 250
+        });
+        deprecatedIcon.setToolTip(toolTip);
       }
     },
 
