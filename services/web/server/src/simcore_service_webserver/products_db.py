@@ -83,9 +83,9 @@ class Product(BaseModel):
                     "short_name": "TIPI",
                     "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
                     "support_email": "support@foo.com",
-                    "manual_url": "http://foo.com",
+                    "manual_url": "https://foo.com",
                     "issues_login_url": None,
-                    "issues_new_url": "http://foo.com/new",
+                    "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
                 },
             ]
