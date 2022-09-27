@@ -41,7 +41,12 @@ async def apply_observation_cycle(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
         )
-    await get_dynamic_sidecar_service_health(app, scheduler_data)
+
+    # TODO: ANE this can be moved to a handler in the future scheduled
+    # to all the correct cases
+    scheduler_data.dynamic_sidecar.is_available = (
+        await get_dynamic_sidecar_service_health(app, scheduler_data)
+    )
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(
