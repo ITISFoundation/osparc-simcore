@@ -1155,6 +1155,7 @@ qx.Class.define("osparc.data.model.Node", {
           break;
       }
     },
+
     __nodeState: function() {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
@@ -1174,24 +1175,31 @@ qx.Class.define("osparc.data.model.Node", {
       osparc.data.Resources.fetch("studies", "getNode", params)
         .then(data => this.__onNodeState(data))
         .catch(err => {
-          if ("status" in err && err.status === 503 && this.__unresponsiveRetries > 0) {
-            this.__unresponsiveRetries--;
-            const interval = Math.floor(Math.random() * 5000) + 3000;
-            console.log(this.getNodeId(), "node unresponive, trying again in", interval, this.__unresponsiveRetries);
-            setTimeout(() => this.__nodeState(), interval);
-            return;
-          }
-          const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + " status: " + err;
+          const errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg: errorMsg,
             level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          this.getStatus().setInteractive("failed");
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+          if (this.__unresponsiveRetries > 0) {
+            const retryMsg = `Retrying (${this.__unresponsiveRetries})`;
+            const retryMsgData = {
+              nodeId: this.getNodeId(),
+              msg: retryMsg,
+              level: "ERROR"
+            };
+            this.fireDataEvent("showInLogger", retryMsgData);
+            this.__unresponsiveRetries--;
+            const interval = Math.floor(Math.random() * 5000) + 3000;
+            setTimeout(() => this.__nodeState(), interval);
+          } else {
+            this.getStatus().setInteractive("failed");
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+          }
         });
     },
+
     __onInteractiveNodeStarted: function(e) {
       let req = e.getTarget();
       const {
