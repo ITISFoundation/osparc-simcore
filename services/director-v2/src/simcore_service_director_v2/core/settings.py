@@ -214,11 +214,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
-        5 * MINS,
+        60 * MINS,
         description=(
             "After starting the dynamic-sidecar its docker_node_id is required. "
             "This operation can be slow based on system load, sometimes docker "
             "swarm takes more than seconds to assign the node."
+            "Autoscaling of nodes takes time, it is required to wait longer"
+            "for nodes to be assigned."
         ),
     )
     DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(

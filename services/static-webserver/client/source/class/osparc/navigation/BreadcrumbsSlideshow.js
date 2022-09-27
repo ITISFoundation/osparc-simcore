@@ -90,14 +90,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           const check = node.isDynamic() ? "interactive" : "output";
           node.getStatus().bind(check, statusIcon, "source", {
             converter: output => osparc.utils.StatusUI.getIconSource(output),
-            onUpdate: (source, target) => {
-              const elem = target.getContentElement();
-              if (target.getSource() && target.getSource().includes("circle-notch")) {
-                osparc.utils.Utils.addClass(elem, "rotate");
-              } else {
-                osparc.utils.Utils.removeClass(elem, "rotate");
-              }
-            }
+            onUpdate: (_, target) => osparc.utils.StatusUI.updateIconAnimation(target)
           });
           node.getStatus().bind(check, statusIcon, "textColor", {
             converter: output => osparc.utils.StatusUI.getColor(output)
