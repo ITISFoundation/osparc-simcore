@@ -204,6 +204,17 @@ qx.Class.define("osparc.utils.StatusUI", {
         default:
           return "no-border";
       }
-    }
+    },
+
+    createServiceDeprecatedChip: function() {
+      const chip = new osparc.ui.basic.Chip().set({
+        label: osparc.utils.Services.DEPRECATED_SERVICE,
+        icon: "@FontAwesome5Solid/exclamation-triangle/12",
+        textColor: "contrasted-text-dark",
+        backgroundColor: "failed-red",
+        allowGrowX: false
+      });
+      return chip;
+    },
   }
 });

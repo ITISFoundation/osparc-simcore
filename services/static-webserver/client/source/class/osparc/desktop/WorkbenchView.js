@@ -1054,6 +1054,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__outputsPage.add(outputFilesBtn);
 
       if (node.hasOutputs() && node.isDynamic() && node.isDeprecated()) {
+        const chip = osparc.utils.StatusUI.createServiceDeprecatedChip();
+        this.__outputsPage.add(chip);
+
         const deprecatedMsg = new qx.ui.basic.Label(osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS).set({
           rich: true
         });

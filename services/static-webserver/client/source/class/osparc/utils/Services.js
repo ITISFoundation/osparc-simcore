@@ -305,8 +305,8 @@ qx.Class.define("osparc.utils.Services", {
       return false;
     },
 
-    DEPRECATED_SERICE: qx.locale.Manager.tr("Service deprecated"),
-    DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please, download the artifacts and") + "<br>" + qx.locale.Manager.tr("upload them to an updated version"),
+    DEPRECATED_SERVICE: qx.locale.Manager.tr("Service deprecated"),
+    DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please, download the artifacts and upload them to an updated version"),
     DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please, instantiate an updated version"),
 
     getFilePicker: function() {
