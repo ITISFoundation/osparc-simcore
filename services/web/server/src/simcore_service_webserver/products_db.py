@@ -10,7 +10,7 @@ from models_library.basic_regex import (
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator
 from simcore_postgres_database.models.products import jinja2_templates
 
 from .db_base_repository import BaseRepository
@@ -38,7 +38,7 @@ class Product(BaseModel):
     host_regex: Pattern
 
     # EMAILS/PHONE
-    support_email: str
+    support_email: EmailStr
     twilio_messaging_sid: Optional[str] = Field(
         default=None,
         min_length=34,
@@ -76,6 +76,18 @@ class Product(BaseModel):
                         if c.server_default and isinstance(c.server_default.arg, str)
                     },
                 },
+                # urls with blanks
+                {
+                    "name": "tis",
+                    "display_name": "TI PT",
+                    "short_name": "TIPI",
+                    "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
+                    "support_email": "support@foo.com",
+                    "manual_url": "http://foo.com",
+                    "issues_login_url": None,
+                    "issues_new_url": "http://foo.com/new",
+                    "feedback_form_url": "",  # <--
+                },
             ]
         }
 
@@ -86,6 +98,20 @@ class Product(BaseModel):
             raise ValueError(
                 f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             )
+        return v
+
+    @validator(
+        "manual_extra_url",
+        "issues_login_url",
+        "issues_new_url",
+        "feedback_form_url",
+        pre=True,
+    )
+    @classmethod
+    def parse_empty_string_url_as_null(cls, v):
+        """Safe measure: database entries are sometimes left blank instead of null"""
+        if isinstance(v, str) and len(v.strip()) == 0:
+            return None
         return v
 
     @property
