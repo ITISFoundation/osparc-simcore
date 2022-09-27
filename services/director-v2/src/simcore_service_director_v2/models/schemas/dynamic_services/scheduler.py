@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from enum import Enum
 from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
@@ -239,6 +240,15 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
+    datetime_dy_sidecar_became_unreachable: Optional[datetime] = Field(
+        None,
+        description=(
+            "Set when the dy-sidecar can no longer be reached by the "
+            "director-v2. If it will be possible to reach the dy-sidecar again, "
+            "this value will be set to None."
+        ),
+    )
+
     class Config:
         validate_assignment = True
 
@@ -295,6 +305,10 @@ class DynamicSidecarNamesHelper(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
+    # TODO: ANE this object is just the context of the dy-sidecar. Should
+    # be called like so and subcontexts for different handlers should
+    # also be added. It will make keeping track of env vars more easily
+
     service_name: ServiceName = Field(
         ...,
         description="Name of the current dynamic-sidecar being observed",
