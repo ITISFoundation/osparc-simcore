@@ -166,6 +166,7 @@ qx.Class.define("osparc.auth.Manager", {
       };
       xhr.open("POST", url, true);
       xhr.setRequestHeader("Content-Type", "application/json");
+      osparc.io.rest.Resource.setTesterUserNameHeader(xhr);
       xhr.send(JSON.stringify(params));
     },
 
