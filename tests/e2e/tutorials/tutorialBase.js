@@ -48,6 +48,9 @@ class TutorialBase {
     this.__browser = await startPuppe.getBrowser(this.__demo);
     this.__page = await startPuppe.getPage(this.__browser);
     this.__responsesQueue = new responses.ResponsesQueue(this.__page);
+
+    this.__page.evaluate(() => osparc.auth.Data.getInstance().setTesterUserName("puppeteer"));
+
     return this.__page;
   }
 

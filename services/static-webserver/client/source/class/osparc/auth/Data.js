@@ -83,6 +83,7 @@ qx.Class.define("osparc.auth.Data", {
       check: "String"
     },
 
+    // used for adding "tester" info to the request's headers
     testerUserName: {
       init: null,
       nullable: true,
