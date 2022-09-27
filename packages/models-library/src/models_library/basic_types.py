@@ -26,6 +26,10 @@ UUIDStr = constr(regex=UUID_RE)
 # auto-incremented primary-key IDs
 IdInt = PrimaryKeyInt = PositiveInt
 
+# https e.g. https://techterms.com/definition/https
+class HttpSecureUrl(HttpUrl):
+    allowed_schemes = {"https"}
+
 
 class LogLevel(str, Enum):
     DEBUG = "DEBUG"
@@ -62,7 +66,3 @@ class BuildTargetEnum(str, Enum):
     CACHE = "cache"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
-
-
-class HttpSecureUrl(HttpUrl):
-    allowed_schemes = {"https"}
