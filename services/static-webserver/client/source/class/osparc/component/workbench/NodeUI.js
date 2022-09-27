@@ -258,7 +258,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
         const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
         deprecatedIcon.set({
-          toolTipText: osparc.utils.Services.DEPRECATED + "<br>" + deprecatedTTMsg,
+          toolTipText: osparc.utils.Services.DEPRECATED_SERVICE + "<br>" + deprecatedTTMsg,
           textColor: "failed-red"
         });
       }
