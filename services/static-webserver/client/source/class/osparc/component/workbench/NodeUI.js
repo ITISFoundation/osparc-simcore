@@ -256,9 +256,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
       if (node.isDeprecated()) {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
-        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_TEXT : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_TEXT;
+        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
         deprecatedIcon.set({
-          toolTipText: deprecatedTTMsg,
+          toolTipText: osparc.utils.Services.DEPRECATED + "<br>" + deprecatedTTMsg,
           textColor: "failed-red"
         });
       }
