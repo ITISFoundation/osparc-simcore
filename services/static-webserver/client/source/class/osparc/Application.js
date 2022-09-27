@@ -354,9 +354,18 @@ qx.Class.define("osparc.Application", {
         .then(profile => {
           if ("expirationDate" in profile) {
             const now = new Date();
-            const daysToExpiration = osparc.utils.Utils.daysBetween(now, new Date(profile["expirationDate"]));
+            const today = new Date(now.toISOString().slice(0, 10));
+            const expirationDay = new Date(profile["expirationDate"]);
+            const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
             if (daysToExpiration < 7) {
-              let msg = this.tr("This account will expire in ") + daysToExpiration + (daysToExpiration < 2 ? this.tr(" day") : this.tr(" days"));
+              let msg = "";
+              if (daysToExpiration === 0) {
+                msg = this.tr("This account will expire Today.");
+              } else if (daysToExpiration === 1) {
+                msg = this.tr("This account will expire Tomorrow.");
+              } else {
+                msg = this.tr("This account will expire in ") + daysToExpiration + this.tr(" days.");
+              }
               msg += "</br>";
               msg += this.tr("Please, contact us by email:");
               msg += "</br>";

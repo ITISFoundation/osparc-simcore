@@ -274,11 +274,11 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
-    daysBetween: function(date1, date2) {
+    daysBetween: function(day1, day2) {
       // The number of milliseconds in one day
       const ONE_DAY = 1000 * 60 * 60 * 24;
       // Calculate the difference in milliseconds
-      const differenceMs = date2 - date1;
+      const differenceMs = day2 - day1;
       // Convert back to days and return
       return Math.round(differenceMs / ONE_DAY);
     },
