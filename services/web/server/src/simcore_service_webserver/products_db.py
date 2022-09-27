@@ -76,7 +76,7 @@ class Product(BaseModel):
                         if c.server_default and isinstance(c.server_default.arg, str)
                     },
                 },
-                # urls with blanks
+                # Example of data in the dabase with a url set with blanks
                 {
                     "name": "tis",
                     "display_name": "TI PT",
@@ -86,7 +86,7 @@ class Product(BaseModel):
                     "manual_url": "http://foo.com",
                     "issues_login_url": None,
                     "issues_new_url": "http://foo.com/new",
-                    "feedback_form_url": "",  # <--
+                    "feedback_form_url": "",  # <-- blanks
                 },
             ]
         }
