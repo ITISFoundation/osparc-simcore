@@ -9,8 +9,9 @@ from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
+from models_library.basic_types import HttpSecureUrl
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator
+from pydantic import BaseModel, EmailStr, Field, validator
 from simcore_postgres_database.models.products import jinja2_templates
 
 from .db_base_repository import BaseRepository
@@ -23,6 +24,8 @@ log = logging.getLogger(__name__)
 #
 # MODEL
 #
+
+
 class Product(BaseModel):
     """
     Pydantic model associated to db_models.Products table
@@ -46,13 +49,13 @@ class Product(BaseModel):
     )
 
     # MANUALS
-    manual_url: HttpUrl
-    manual_extra_url: Optional[HttpUrl] = None
+    manual_url: HttpSecureUrl
+    manual_extra_url: Optional[HttpSecureUrl] = None
 
     # ISSUE TRACKER
-    issues_login_url: Optional[HttpUrl] = None
-    issues_new_url: Optional[HttpUrl] = None
-    feedback_form_url: Optional[HttpUrl] = None
+    issues_login_url: Optional[HttpSecureUrl] = None
+    issues_new_url: Optional[HttpSecureUrl] = None
+    feedback_form_url: Optional[HttpSecureUrl] = None
 
     # TEMPLATES
     registration_email_template: Optional[str] = Field(

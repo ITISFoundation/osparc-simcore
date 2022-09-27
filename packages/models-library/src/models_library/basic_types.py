@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import PositiveInt, conint, constr
+from pydantic import HttpUrl, PositiveInt, conint, constr
 
 from .basic_regex import UUID_RE, VERSION_RE
 
@@ -62,3 +62,7 @@ class BuildTargetEnum(str, Enum):
     CACHE = "cache"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
+
+
+class HttpSecureUrl(HttpUrl):
+    allowed_schemes = {"https"}
