@@ -1046,7 +1046,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__outputsPage.add(nodeOutputs);
       }
 
-      const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
+      const outputFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
         allowGrowX: false
       });
       osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
