@@ -1,7 +1,7 @@
 import logging
+from datetime import datetime, timedelta
 
 from aiohttp import web
-from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -22,15 +22,15 @@ from ._2fa import (
     set_2fa_code,
 )
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._registration import check_and_consume_invitation, check_registration
 from .decorators import RQT_USERID_KEY, login_required
-from .registration import check_invitation, check_registration
 from .settings import (
     LoginOptions,
     LoginSettings,
     get_plugin_options,
     get_plugin_settings,
 )
-from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
+from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
     ACTIVE,
     ANONYMOUS,
@@ -45,6 +45,7 @@ from .utils import (
     flash_response,
     get_client_ip,
     get_template_path,
+    notify_user_logout,
     render_and_send_mail,
 )
 
@@ -98,9 +99,19 @@ async def register(request: web.Request):
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
+    expires_at = None
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
-        invitation = body.invitation if hasattr(body, "invitation") else None
-        await check_invitation(invitation, db, cfg)
+        try:
+            invitation_code = body.invitation
+        except AttributeError as e:
+            raise web.HTTPBadRequest(
+                reason="invitation field is required",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from e
+
+        invitation = await check_and_consume_invitation(invitation_code, db=db, cfg=cfg)
+        if invitation.trial_account_days:
+            expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
     await check_registration(email, password, confirm, db, cfg)
 
@@ -115,6 +126,7 @@ async def register(request: web.Request):
                 else ACTIVE
             ),
             "role": USER,
+            "expires_at": expires_at,
             "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
         }
     )
@@ -130,7 +142,9 @@ async def register(request: web.Request):
         await remember(request, response, identity)
         return response
 
-    confirmation_: ConfirmationDict = await db.create_confirmation(user, REGISTRATION)
+    confirmation_: ConfirmationTokenDict = await db.create_confirmation(
+        user["id"], REGISTRATION
+    )
     link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
@@ -419,9 +433,7 @@ async def logout(request: web.Request) -> web.Response:
     with log_context(
         log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
     ):
-        await observer.emit(
-            "SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app
-        )
+        await notify_user_logout(request.app, user_id, client_session_id)
         await forget(request, response)
 
     return response
@@ -484,7 +496,7 @@ async def reset_password(request: web.Request):
             log.exception("Cannot send email")
             raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err2
     else:
-        confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
+        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
@@ -533,7 +545,7 @@ async def change_email(request: web.Request):
         await db.delete_confirmation(confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
+    confirmation = await db.create_confirmation(user["id"], CHANGE_EMAIL, email)
     link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(

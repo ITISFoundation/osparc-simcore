@@ -24,8 +24,13 @@ class GarbageCollectorSettings(BaseCustomSettings):
     )
 
     GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S: PositiveInt = Field(
-        6 * _HOUR,
+        1 * _HOUR,
         description="Time period between checks of expiration dates for trial users",
+    )
+
+    GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S: PositiveInt = Field(
+        _HOUR,
+        description="Wait time between periodic pruning of expired API keys",
     )
 
 
