@@ -81,6 +81,12 @@ qx.Class.define("osparc.auth.Data", {
       init: "",
       nullable: true,
       check: "String"
+    },
+
+    testerUserName: {
+      init: null,
+      nullable: true,
+      check: "String"
     }
   },
 
