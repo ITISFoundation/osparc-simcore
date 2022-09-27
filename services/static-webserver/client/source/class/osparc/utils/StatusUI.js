@@ -215,6 +215,6 @@ qx.Class.define("osparc.utils.StatusUI", {
         allowGrowX: false
       });
       return chip;
-    },
+    }
   }
 });
