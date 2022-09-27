@@ -111,10 +111,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-icon");
 
       this.getChildControl("tasks-button");
+      this.getChildControl("expiration-icon");
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
-      this.getChildControl("expiration-icon");
       this.getChildControl("user-menu");
 
       this.setPageContext("dashboard");
