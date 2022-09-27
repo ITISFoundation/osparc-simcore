@@ -5,12 +5,12 @@
 import asyncio
 import logging
 import sys
-from typing import Any, AsyncIterable, AsyncIterator
+from datetime import datetime
+from typing import Any, AsyncIterable, AsyncIterator, Optional
 from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
-from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
@@ -20,6 +20,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_obj_as
+from pytest import FixtureRequest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
@@ -338,7 +339,12 @@ def service_name() -> str:
         for example in SimcoreServiceLabels.Config.schema_extra["examples"]
     ],
 )
-def labels_example(request) -> SimcoreServiceLabels:
+def labels_example(request: FixtureRequest) -> SimcoreServiceLabels:
+    return request.param
+
+
+@pytest.fixture(params=[None, datetime.utcnow()])
+def time_dy_sidecar_became_unreachable(request: FixtureRequest) -> Optional[datetime]:
     return request.param
 
 
@@ -346,6 +352,7 @@ def labels_example(request) -> SimcoreServiceLabels:
 def mock_scheduler_data(
     labels_example: SimcoreServiceLabels,
     scheduler_data: SchedulerData,
+    time_dy_sidecar_became_unreachable: Optional[datetime],
     service_name: str,
 ) -> SchedulerData:
     # test all possible cases
@@ -354,6 +361,10 @@ def mock_scheduler_data(
     scheduler_data.compose_spec = labels_example.compose_spec
     scheduler_data.container_http_entry = labels_example.container_http_entry
     scheduler_data.restart_policy = labels_example.restart_policy
+
+    scheduler_data.dynamic_sidecar.datetime_dy_sidecar_became_unreachable = (
+        time_dy_sidecar_became_unreachable
+    )
 
     scheduler_data.dynamic_sidecar.containers_inspect = [
         DockerContainerInspect.from_container(
