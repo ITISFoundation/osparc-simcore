@@ -101,7 +101,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       TITLE: 1, // from qooxdoo
       LOCK: 2,
       MARKER: 3,
-      MENU: 4
+      DEPRECATED: 4,
+      MENU: 5
     },
 
     captionHeight: function() {

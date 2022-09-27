@@ -109,6 +109,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           });
           control.addListener("tap", () => this.fireDataEvent("markerClicked", this.getNode().getNodeId()));
           break;
+        case "deprecated-icon":
+          control = new qx.ui.basic.Image().set({
+            source: "@MaterialIcons/update/14",
+            padding: 4
+          });
+          this.getChildControl("captionbar").add(control, {
+            row: 0,
+            column: osparc.component.workbench.BaseNodeUI.CAPTION_POS.DEPRECATED
+          });
+          break;
         case "chips": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
             alignY: "middle"
@@ -243,6 +253,21 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+
+      if (node.isDeprecated()) {
+        const deprecatedIcon = this.getChildControl("deprecated-icon");
+        deprecatedIcon.set({
+          textColor: "failed-red"
+        });
+        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        const toolTip = new qx.ui.tooltip.ToolTip().set({
+          label: osparc.utils.Services.DEPRECATED_SERVICE + "<br>" + deprecatedTTMsg,
+          icon: "@FontAwesome5Solid/exclamation-triangle/12",
+          rich: true,
+          maxWidth: 250
+        });
+        deprecatedIcon.setToolTip(toolTip);
+      }
     },
 
     __applyType: function(type) {
