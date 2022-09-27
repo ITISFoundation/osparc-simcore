@@ -358,19 +358,8 @@ qx.Class.define("osparc.Application", {
             const expirationDay = new Date(profile["expirationDate"]);
             const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
             if (daysToExpiration < 7) {
-              let msg = "";
-              if (daysToExpiration === 0) {
-                msg = this.tr("This account will expire Today.");
-              } else if (daysToExpiration === 1) {
-                msg = this.tr("This account will expire Tomorrow.");
-              } else {
-                msg = this.tr("This account will expire in ") + daysToExpiration + this.tr(" days.");
-              }
-              msg += "</br>";
-              msg += this.tr("Please, contact us by email:");
-              msg += "</br>";
-              osparc.store.StaticInfo.getInstance().getSupportEmail()
-                .then(supportEmail => osparc.component.message.FlashMessenger.getInstance().logAs(msg + supportEmail, "WARNING"));
+              osparc.utils.Utils.expirationMessage(daysToExpiration)
+                .then(msg => osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING"));
             }
           }
           if (studyId) {
