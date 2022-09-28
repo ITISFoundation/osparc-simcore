@@ -141,16 +141,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function(mode = "grid") {
-      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
-      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      newStudyBtn.addListener("execute", () => this.__newStudyBtnClicked(newStudyBtn));
-      if (this._resourcesContainer.getMode() === "list") {
-        const width = this._resourcesContainer.getBounds().width - 15;
-        newStudyBtn.setWidth(width);
-      }
-      this._resourcesContainer.addAt(newStudyBtn, 0);
-
+      this.__addNewStudyButton(mode);
       if (osparc.utils.Utils.isProduct("tis")) {
         this.__replaceNewStudyWithNewPlanButton(mode);
       } else if (osparc.utils.Utils.isProduct("s4l")) {
@@ -168,7 +159,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __replaceNewStudyWithNewPlanButton: function(mode = "grid") {
+    __addNewStudyButton: function(mode) {
+      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
+      newStudyBtn.addListener("execute", () => this.__newStudyBtnClicked(newStudyBtn));
+      if (this._resourcesContainer.getMode() === "list") {
+        const width = this._resourcesContainer.getBounds().width - 15;
+        newStudyBtn.setWidth(width);
+      }
+      this._resourcesContainer.addAt(newStudyBtn, 0);
+    },
+
+    __replaceNewStudyWithNewPlanButton: function(mode) {
       osparc.data.Resources.get("templates")
         .then(templates => {
           // replace if a "TI Planning Tool" template exists
@@ -189,7 +192,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(mode = "grid") {
+    __addNewStudyFromServiceButtons: function(mode) {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly(false)
         .then(services => {
@@ -202,7 +205,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const desc = newButtonInfo.decription;
               const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
               osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-              newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServeiceBtnClicked(serviceKey, versions[versions.length-1]));
+              newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServeiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
               if (this._resourcesContainer.getMode() === "list") {
                 const width = this._resourcesContainer.getBounds().width - 15;
                 newStudyFromServiceButton.setWidth(width);
