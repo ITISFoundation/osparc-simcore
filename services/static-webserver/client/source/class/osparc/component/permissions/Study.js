@@ -97,13 +97,13 @@ qx.Class.define("osparc.component.permissions.Study", {
       return delete studyData["accessRights"][gid];
     },
 
-    getEveryoneObj: function(isStudy = true) {
+    getEveryoneObj: function(isResourceStudy) {
       return {
         "gid": 1,
         "label": "Everyone",
         "description": "",
         "thumbnail": null,
-        "accessRights": isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
+        "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
         "collabType": 0
       };
     }
