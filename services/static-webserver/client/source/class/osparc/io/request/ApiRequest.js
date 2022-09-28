@@ -30,5 +30,6 @@ qx.Class.define("osparc.io.request.ApiRequest", {
     });
 
     this.setRequestHeader("Content-Type", "application/json");
+    osparc.io.rest.Resource.setTesterUserNameHeader(this);
   }
 });
