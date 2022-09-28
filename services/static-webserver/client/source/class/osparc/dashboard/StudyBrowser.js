@@ -38,16 +38,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   statics: {
     EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
     EXPECTED_S4L_SERVICE_KEYS: {
-      // "simcore/services/dynamic/sim4life-dy": {
-      "simcore/services/dynamic/raw-graphs": {
-        title: "Start Sim4Life",
-        decription: "Start Sim4Life blah",
-        idToWidget: "startS4LButton"
-      },
       "simcore/services/dynamic/jupyter-smash": {
-        title: "Start Jupyter Smash",
-        decription: "Start Jupyter Smash blah",
+        title: "Start sim4life lab",
+        decription: "jupyter powered by s4l",
         idToWidget: "startJSmashButton"
+      },
+      "simcore/services/dynamic/sim4life-dy": {
+        title: "Start sim4life",
+        decription: "New sim4life project",
+        idToWidget: "startS4LButton"
       }
     }
   },
@@ -205,7 +204,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const desc = newButtonInfo.decription;
               const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
               osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-              newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServeiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
+              newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
               if (this._resourcesContainer.getMode() === "list") {
                 const width = this._resourcesContainer.getBounds().width - 15;
                 newStudyFromServiceButton.setWidth(width);
@@ -444,9 +443,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServeiceBtnClicked: function(button, serviceKey, serviceVersion) {
+    __newStudyFromServiceBtnClicked: function(button, key, version) {
       button.setValue(false);
-      console.log(serviceKey, serviceVersion);
+      console.log(key, version);
+      this._showLoadingPage(this.tr("Creating Study"));
+      osparc.utils.Study.createStudyFromService(key, version)
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudyById(studyId);
+        })
+        .catch(err => {
+          this._hideLoadingPage();
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
+        });
     },
 
     __createStudy: function(minStudyData) {
@@ -471,7 +481,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (pageContext === undefined) {
         pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
       }
-      const studyId = studyData["uuid"];
+      this.__startStudyById(studyData["uuid"], pageContext);
+    },
+
+    __startStudyById: function(studyId, pageContext = "workbench") {
+      if (!this._checkLoggedIn()) {
+        return;
+      }
+
       const data = {
         studyId,
         pageContext
