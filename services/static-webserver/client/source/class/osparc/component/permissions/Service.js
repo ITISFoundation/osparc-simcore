@@ -81,7 +81,7 @@ qx.Class.define("osparc.component.permissions.Service", {
         "label": "Everyone",
         "description": "",
         "thumbnail": null,
-        "accessRights": this.getViewerAccessRight(),
+        "accessRights": this.getCollaboratorAccessRight(),
         "collabType": 0
       };
     }
