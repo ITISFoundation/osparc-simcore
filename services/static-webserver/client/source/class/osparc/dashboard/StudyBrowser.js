@@ -35,6 +35,20 @@
 qx.Class.define("osparc.dashboard.StudyBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
+  statics: {
+    EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
+    EXPECTED_S4L_SERVICE_KEYS: {
+      "simcore/services/dynamic/sim4life-dy": {
+        title: "Start Sim4Life",
+        decription: "Start Sim4Life blah"
+      },
+      "simcore/services/dynamic/jupyter-smash": {
+        title: "Start Jupyter Smash",
+        decription: "Start Jupyter Smash blah"
+      }
+    }
+  },
+
   properties: {
     multiSelection: {
       check: "Boolean",
@@ -135,6 +149,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       if (osparc.utils.Utils.isProduct("tis")) {
         this.__replaceNewStudyWithNewPlanButton(mode);
+      } else if (osparc.utils.Utils.isProduct("s4l")) {
+        this.__addNewStudyButtons(mode);
       }
       return newStudyBtn;
     },
@@ -143,7 +159,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.get("templates")
         .then(templates => {
           // replace if a "TI Planning Tool" template exists
-          const templateData = templates.find(t => t.name === "TI Planning Tool");
+          const templateData = templates.find(t => t.name === this.self().EXPECTED_TI_TEMPLATE_TITLE);
           if (templateData) {
             this._resourcesContainer.remove(this.__newStudyBtn);
             const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNewPlan() : new osparc.dashboard.ListButtonNewPlan();
@@ -156,6 +172,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
             this._resourcesContainer.addAt(newPlanButton, 0);
           }
+        });
+    },
+
+    __addNewStudyButtons: function(mode = "grid") {
+      const store = osparc.store.Store.getInstance();
+      store.getServicesOnly()
+        .then(services => {
+          console.log(services);
+          // add new plus buttons if key services exists
         });
     },
 
