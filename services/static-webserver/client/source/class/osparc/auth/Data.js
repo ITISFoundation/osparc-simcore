@@ -89,7 +89,7 @@ qx.Class.define("osparc.auth.Data", {
       check: "Date",
       event: "changeExpirationDate"
     },
-  
+
     // used for adding "tester" info to the request's headers
     testerUserName: {
       init: null,
