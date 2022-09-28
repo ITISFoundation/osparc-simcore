@@ -38,7 +38,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   statics: {
     EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
     EXPECTED_S4L_SERVICE_KEYS: {
-      "simcore/services/dynamic/sim4life-dy": {
+      // "simcore/services/dynamic/sim4life-dy": {
+      "simcore/services/dynamic/raw-graphs": {
         title: "Start Sim4Life",
         decription: "Start Sim4Life blah",
         idToWidget: "startS4LButton"
@@ -164,7 +165,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const templateData = templates.find(t => t.name === this.self().EXPECTED_TI_TEMPLATE_TITLE);
           if (templateData) {
             this._resourcesContainer.remove(this.__newStudyBtn);
-            const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNewPlan() : new osparc.dashboard.ListButtonNewPlan();
+            const title = this.tr("New Plan");
+            const desc = this.tr("Start a new plan");
+            const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
             osparc.utils.Utils.setIdToWidget(newPlanButton, "newPlanButton");
             newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(templateData));
             this.__newStudyBtn = newPlanButton;
@@ -185,15 +188,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           Object.keys(this.self().EXPECTED_S4L_SERVICE_KEYS).forEach(serviceKey => {
             const versions = osparc.utils.Services.getVersions(services, serviceKey);
             if (versions.length) {
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNewPlan() : new osparc.dashboard.ListButtonNewPlan();
-              osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, this.self().EXPECTED_S4L_SERVICE_KEYS[serviceKey].idToWidget);
-              // newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(templateData));
-              // this.__newStudyBtn = newStudyFromServiceButton;
-              if (this._resourcesContainer.getMode() === "list") {
-                const width = this._resourcesContainer.getBounds().width - 15;
-                newStudyFromServiceButton.setWidth(width);
-              }
-              this._resourcesContainer.addAt(newStudyFromServiceButton, 1);
+              
             }
           });
         });
