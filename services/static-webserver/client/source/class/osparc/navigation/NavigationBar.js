@@ -111,6 +111,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-icon");
 
       this.getChildControl("tasks-button");
+      this.getChildControl("expiration-icon");
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
@@ -195,6 +196,30 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
+          this.getChildControl("right-items").add(control);
+          break;
+        case "expiration-icon":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/hourglass-end/22").set({
+            visibility: "excluded",
+            textColor: "danger-red",
+            cursor: "pointer"
+          });
+          control.addListener("tap", () => osparc.navigation.UserMenuButton.openPreferences(), this);
+          osparc.auth.Data.getInstance().bind("expirationDate", control, "visibility", {
+            converter: expirationDay => {
+              if (expirationDay) {
+                const now = new Date();
+                const today = new Date(now.toISOString().slice(0, 10));
+                const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
+                if (daysToExpiration < 7) {
+                  osparc.utils.Utils.expirationMessage(daysToExpiration)
+                    .then(msg => control.setToolTipText(msg));
+                  return "visible";
+                }
+              }
+              return "excluded";
+            }
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "manual":
