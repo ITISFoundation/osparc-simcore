@@ -1076,7 +1076,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
     strategy:
