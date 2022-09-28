@@ -121,7 +121,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       }
 
       gids.forEach(gid => {
-        this.__studyData["accessRights"][gid] = osparc.utils.Resources.isStudy(this.__studyData) ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
+        this.__studyData["accessRights"][gid] = osparc.utils.Resources.isStudy(this.__studyData) ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
       const params = {
         url: {
