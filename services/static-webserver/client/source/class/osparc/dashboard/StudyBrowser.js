@@ -188,7 +188,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           Object.keys(this.self().EXPECTED_S4L_SERVICE_KEYS).forEach(serviceKey => {
             const versions = osparc.utils.Services.getVersions(services, serviceKey);
             if (versions.length) {
-              
+              const newButtonInfo = this.self().EXPECTED_S4L_SERVICE_KEYS[serviceKey];
+              const title = newButtonInfo.title;
+              const desc = newButtonInfo.decription;
+              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+              osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
+              newStudyFromServiceButton.addListener("execute", () => console.log(serviceKey, versions[versions.length-1]));
+              if (this._resourcesContainer.getMode() === "list") {
+                const width = this._resourcesContainer.getBounds().width - 15;
+                newStudyFromServiceButton.setWidth(width);
+              }
+              this._resourcesContainer.addAt(newStudyFromServiceButton, 1);
             }
           });
         });
