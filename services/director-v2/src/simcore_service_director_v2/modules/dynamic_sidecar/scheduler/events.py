@@ -1,6 +1,5 @@
 import json
 import logging
-from datetime import datetime
 from typing import Any, Final, Optional, cast
 from uuid import uuid4
 
@@ -234,6 +233,9 @@ class GetStatus(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
+        scheduler_data.dynamic_sidecar.inspect_error_handler.delay_for = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S
+        )
 
         try:
             containers_inspect: dict[
@@ -241,7 +243,7 @@ class GetStatus(DynamicSchedulerEvent):
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except BaseClientHTTPError:
+        except BaseClientHTTPError as e:
             were_service_containers_detected_before = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
             )
@@ -253,41 +255,7 @@ class GetStatus(DynamicSchedulerEvent):
                 # be temporarily unreachable.
                 # Adding a delay between when the error is first seen and when the
                 # error is raised to avoid random shutdowns of dynamic-sidecar services.
-
-                utc_now = datetime.utcnow()
-                if (
-                    scheduler_data.dynamic_sidecar.datetime_dy_sidecar_became_unreachable
-                    is None
-                ):
-                    # mark when dy-sidecar first became unreachable
-                    scheduler_data.dynamic_sidecar.datetime_dy_sidecar_became_unreachable = (
-                        utc_now
-                    )
-                else:
-                    # while the sidecar is still unreachable check if the network issues
-                    # tolerance was surpassed, in that case raise an error
-                    time_since_first_error = (
-                        utc_now
-                        - scheduler_data.dynamic_sidecar.datetime_dy_sidecar_became_unreachable
-                    )
-                    if (
-                        time_since_first_error.total_seconds()
-                        > dynamic_sidecar_settings.DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S
-                    ):
-                        logger.error(
-                            "It was still not possible to reach %s after %s seconds",
-                            scheduler_data.service_name,
-                            time_since_first_error,
-                        )
-                        raise
-
-                    logger.warning(
-                        "Could not contact %s after %s seconds",
-                        scheduler_data.service_name,
-                        time_since_first_error,
-                    )
-
-                ##### TODO: TEST if this behavior works as expected!!
+                scheduler_data.dynamic_sidecar.inspect_error_handler.try_to_raise(e)
 
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
@@ -297,9 +265,8 @@ class GetStatus(DynamicSchedulerEvent):
                 scheduler_data.service_name,
             )
             return
-
-        # reset since the dy-sidecar is reachable again
-        scheduler_data.dynamic_sidecar.datetime_dy_sidecar_became_unreachable = None
+        else:
+            scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
 
         # parse and store data from container
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(

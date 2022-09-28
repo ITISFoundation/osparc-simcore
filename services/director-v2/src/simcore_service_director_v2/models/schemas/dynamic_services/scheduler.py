@@ -1,6 +1,5 @@
 import json
 import logging
-from datetime import datetime
 from enum import Enum
 from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
@@ -16,6 +15,7 @@ from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
+from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -240,8 +240,8 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
-    datetime_dy_sidecar_became_unreachable: Optional[datetime] = Field(
-        None,
+    inspect_error_handler: DelayedExceptionHandler = Field(
+        DelayedExceptionHandler(delay_for=0),
         description=(
             "Set when the dy-sidecar can no longer be reached by the "
             "director-v2. If it will be possible to reach the dy-sidecar again, "

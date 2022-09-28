@@ -362,10 +362,6 @@ def mock_scheduler_data(
     scheduler_data.container_http_entry = labels_example.container_http_entry
     scheduler_data.restart_policy = labels_example.restart_policy
 
-    scheduler_data.dynamic_sidecar.datetime_dy_sidecar_became_unreachable = (
-        time_dy_sidecar_became_unreachable
-    )
-
     scheduler_data.dynamic_sidecar.containers_inspect = [
         DockerContainerInspect.from_container(
             {"State": {"Status": "dead"}, "Name": "mock_name", "Id": "mock_id"}

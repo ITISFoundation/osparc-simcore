@@ -31,7 +31,7 @@ def workflow(*, stop_raising_after: PositiveInt) -> int:
         try:
             function_which_can_raise()
         except TargetException as e:
-            delayed_handler_external_service.except_delay_raise(e)
+            delayed_handler_external_service.try_to_raise(e)
         else:
             delayed_handler_external_service.else_reset()
 
