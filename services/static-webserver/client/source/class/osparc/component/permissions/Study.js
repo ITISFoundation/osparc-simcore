@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.permissions.Study", {
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneObj());
+      initCollabs.push(this.self().getEveryoneObj(studyData));
     }
     this.base(arguments, this.__studyData, initCollabs);
   },
@@ -95,13 +95,13 @@ qx.Class.define("osparc.component.permissions.Study", {
       return delete studyData["accessRights"][gid];
     },
 
-    getEveryoneObj: function() {
+    getEveryoneObj: function(studyData) {
       return {
         "gid": 1,
         "label": "Everyone",
         "description": "",
         "thumbnail": null,
-        "accessRights": this.getCollaboratorAccessRight(),
+        "accessRights": osparc.utils.Resources.isStudy(studyData) ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
         "collabType": 0
       };
     }
@@ -121,7 +121,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       }
 
       gids.forEach(gid => {
-        this.__studyData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
+        this.__studyData["accessRights"][gid] = osparc.utils.Resources.isStudy(this.__studyData) ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
       });
       const params = {
         url: {
