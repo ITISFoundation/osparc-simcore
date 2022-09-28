@@ -278,9 +278,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S: PositiveFloat = Field(
         1 * MINS,
         description=(
-            "Connectivity between director-v2 and a dy-sidecar can be temporarily if network between "
-            "swarm nodes has issues. To avoid the sidecar being marked as failed, allow for some "
-            "time to pass before declaring it failed."
+            "Connectivity between director-v2 and a dy-sidecar can be "
+            "temporarily disrupted if network between swarm nodes has "
+            "issues. To avoid the sidecar being marked as failed, "
+            "allow for some time to pass before declaring it failed."
         ),
     )
 
