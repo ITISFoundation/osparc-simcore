@@ -5,6 +5,7 @@ Each folder contains a services that is part of the platform's main stack. There
 
 ## Development Workflow
 
+
 To build images for development
 
 ```!bash
@@ -59,5 +60,5 @@ See details in [docker-compose.local.yml](docker-compose.local.yml).
 ##### Local registry
 
 ```!bash
-  make local-registry 
+  make local-registry
 ```
