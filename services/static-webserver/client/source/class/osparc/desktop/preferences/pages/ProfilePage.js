@@ -137,10 +137,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       controller.addTarget(lastName, "value", "lastName", true);
       controller.addTarget(role, "value", "role", false);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
-        converter: data => {
-          if (data) {
+        converter: expirationDay => {
+          if (expirationDay) {
             expirationLayout.show();
-            return osparc.utils.Utils.formatDateAndTime(new Date(data));
+            return osparc.utils.Utils.formatDate(new Date(expirationDay));
           }
           return "";
         }
