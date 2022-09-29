@@ -31,11 +31,13 @@ qx.Class.define("osparc.component.permissions.Study", {
     * @param studyData {Object} Object containing the serialized Study Data
     */
   construct: function(studyData) {
+    // this info is lost when we deepCloneStudyObject
+    this.__resourceType = studyData["resourceType"];
     this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneObj());
+      initCollabs.push(this.self().getEveryoneObj(this.__resourceType === "study"));
     }
     this.base(arguments, this.__studyData, initCollabs);
   },
@@ -95,13 +97,13 @@ qx.Class.define("osparc.component.permissions.Study", {
       return delete studyData["accessRights"][gid];
     },
 
-    getEveryoneObj: function() {
+    getEveryoneObj: function(isResourceStudy) {
       return {
         "gid": 1,
         "label": "Everyone",
         "description": "",
         "thumbnail": null,
-        "accessRights": this.getCollaboratorAccessRight(),
+        "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
         "collabType": 0
       };
     }
@@ -109,6 +111,7 @@ qx.Class.define("osparc.component.permissions.Study", {
 
   members: {
     __studyData: null,
+    __resourceType: null,
 
     _isUserOwner: function() {
       return osparc.data.model.Study.isOwner(this.__studyData);
@@ -121,7 +124,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       }
 
       gids.forEach(gid => {
-        this.__studyData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
+        this.__studyData["accessRights"][gid] = this.__resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
       const params = {
         url: {
