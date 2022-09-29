@@ -27,10 +27,20 @@
 qx.Class.define("osparc.dashboard.GridButtonNew", {
   extend: osparc.dashboard.GridButtonBase,
 
-  construct: function() {
+  construct: function(title, description) {
     this.base(arguments);
 
     this._buildLayout();
+
+    if (title) {
+      const titleLabel = this.getChildControl("title");
+      titleLabel.setValue(title);
+    }
+
+    if (description) {
+      const descLabel = this.getChildControl("subtitle-text");
+      descLabel.setValue(description.toString());
+    }
   },
 
   members: {

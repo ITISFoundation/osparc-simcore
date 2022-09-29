@@ -65,6 +65,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       studyList.sort(sortByProperty("lastChangeDate"));
     },
 
+    isCardNewItem: function(card) {
+      return (card instanceof osparc.dashboard.GridButtonNew || card instanceof osparc.dashboard.ListButtonNew);
+    },
+
     isCardButtonItem: function(card) {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
