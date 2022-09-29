@@ -58,17 +58,19 @@ def _get_user_name(email: str) -> str:
     return username
 
 
-def _validate_user_status(user: dict, cfg):
+def _validate_user_status(user: dict, cfg, support_email: str):
     user_status: str = user["status"]
 
     if user_status == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
+            reason=cfg.MSG_USER_BANNED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON
         )  # 401
 
     if user_status == EXPIRED:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
+            reason=cfg.MSG_USER_EXPIRED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON
         )  # 401
 
     if user_status == CONFIRMATION_PENDING:
@@ -311,7 +313,8 @@ async def login(request: web.Request):
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    _validate_user_status(user, cfg)
+    product: Product = get_current_product(request)
+    _validate_user_status(user, cfg, product.support_email)
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
@@ -467,7 +470,8 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        _validate_user_status(user, cfg)
+        product: Product = get_current_product(request)
+        _validate_user_status(user, cfg, product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == email  # nosec
