@@ -82,8 +82,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
             maxHeight: 34, // two lines
             rich: true,
-            wrap: true,
-            breakWithinWords: true
+            wrap: true
           });
           this._mainLayout.addAt(control, this.self().POS.TITLE);
           break;
