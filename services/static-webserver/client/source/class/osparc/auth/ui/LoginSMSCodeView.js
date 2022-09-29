@@ -112,6 +112,15 @@ qx.Class.define("osparc.auth.ui.LoginSMSCodeView", {
 
       const manager = osparc.auth.Manager.getInstance();
       manager.validateCodeLogin(this.getUserEmail(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
+    },
+
+    _onAppear: function() {
+      const command = new qx.ui.command.Command("Enter");
+      this.__validateCodeBtn.setCommand(command);
+    },
+
+    _onDisappear: function() {
+      this.__validateCodeBtn.setCommand(null);
     }
   }
 });
