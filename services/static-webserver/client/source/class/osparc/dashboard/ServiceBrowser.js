@@ -129,12 +129,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         return;
       }
 
-      const defaultContext = "workbench";
-      let pageContext = defaultContext;
-
       const data = {
         studyId,
-        pageContext
+        pageContext: "workbench"
       };
       this.fireDataEvent("startStudy", data);
     },
