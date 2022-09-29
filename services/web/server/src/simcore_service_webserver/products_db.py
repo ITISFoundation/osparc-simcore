@@ -9,8 +9,9 @@ from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
+from models_library.basic_types import HttpSecureUrl
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, EmailStr, Field, validator
 from simcore_postgres_database.models.products import jinja2_templates
 
 from .db_base_repository import BaseRepository
@@ -23,6 +24,8 @@ log = logging.getLogger(__name__)
 #
 # MODEL
 #
+
+
 class Product(BaseModel):
     """
     Pydantic model associated to db_models.Products table
@@ -38,7 +41,7 @@ class Product(BaseModel):
     host_regex: Pattern
 
     # EMAILS/PHONE
-    support_email: str
+    support_email: EmailStr
     twilio_messaging_sid: Optional[str] = Field(
         default=None,
         min_length=34,
@@ -46,13 +49,13 @@ class Product(BaseModel):
     )
 
     # MANUALS
-    manual_url: HttpUrl
-    manual_extra_url: Optional[HttpUrl] = None
+    manual_url: HttpSecureUrl
+    manual_extra_url: Optional[HttpSecureUrl] = None
 
     # ISSUE TRACKER
-    issues_login_url: Optional[HttpUrl] = None
-    issues_new_url: Optional[HttpUrl] = None
-    feedback_form_url: Optional[HttpUrl] = None
+    issues_login_url: Optional[HttpSecureUrl] = None
+    issues_new_url: Optional[HttpSecureUrl] = None
+    feedback_form_url: Optional[HttpSecureUrl] = None
 
     # TEMPLATES
     registration_email_template: Optional[str] = Field(
@@ -76,6 +79,18 @@ class Product(BaseModel):
                         if c.server_default and isinstance(c.server_default.arg, str)
                     },
                 },
+                # Example of data in the dabase with a url set with blanks
+                {
+                    "name": "tis",
+                    "display_name": "TI PT",
+                    "short_name": "TIPI",
+                    "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
+                    "support_email": "support@foo.com",
+                    "manual_url": "https://foo.com",
+                    "issues_login_url": None,
+                    "issues_new_url": "https://foo.com/new",
+                    "feedback_form_url": "",  # <-- blanks
+                },
             ]
         }
 
@@ -86,6 +101,20 @@ class Product(BaseModel):
             raise ValueError(
                 f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             )
+        return v
+
+    @validator(
+        "manual_extra_url",
+        "issues_login_url",
+        "issues_new_url",
+        "feedback_form_url",
+        pre=True,
+    )
+    @classmethod
+    def parse_empty_string_url_as_null(cls, v):
+        """Safe measure: database entries are sometimes left blank instead of null"""
+        if isinstance(v, str) and len(v.strip()) == 0:
+            return None
         return v
 
     @property
