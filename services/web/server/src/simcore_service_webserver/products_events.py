@@ -54,3 +54,4 @@ async def load_products_on_startup(app: web.Application):
         log.warning("Default front-end app is not in the products table")
 
     app[APP_PRODUCTS_KEY] = app_products
+    log.debug("Product loaded: %s", [p.name for p in app_products.values()])
