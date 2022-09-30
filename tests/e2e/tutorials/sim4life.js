@@ -34,7 +34,7 @@ async function runTutorial() {
       false
     );
 
-    await tutorial.waitFor(35000, 'Wait for some time');
+    await tutorial.waitFor(15000, 'Wait for some time');
   }
   catch (err) {
     await tutorial.setTutorialFailed(true);
