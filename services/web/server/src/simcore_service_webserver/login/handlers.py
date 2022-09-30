@@ -302,6 +302,7 @@ async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
     password = body.password
@@ -313,7 +314,6 @@ async def login(request: web.Request):
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    product: Product = get_current_product(request)
     _validate_user_status(user, cfg, product.support_email)
 
     if not check_password(password, user["password_hash"]):
@@ -325,8 +325,6 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED and UserRole(user["role"]) <= UserRole.USER:
-        product: Product = get_current_product(request)
-
         if not user["phone"]:
             rsp = envelope_response(
                 {
@@ -460,6 +458,7 @@ async def reset_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
 
@@ -470,7 +469,6 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        product: Product = get_current_product(request)
         _validate_user_status(user, cfg, product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
