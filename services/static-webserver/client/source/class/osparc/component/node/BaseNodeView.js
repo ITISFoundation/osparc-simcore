@@ -374,8 +374,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       this._outputsBtn.addListener("changeLabel", () => {
         // make it "blink"
-        this._outputsBtn.setTextColor("ready-green");
-        setTimeout(() => this._outputsBtn.setTextColor("text"), 1000);
+        this._outputsBtn.getChildControl("label").setTextColor("ready-green");
+        this._outputsBtn.getChildControl("icon").setTextColor("ready-green");
+        setTimeout(() => {
+          this._outputsBtn.getChildControl("label").setTextColor("text");
+          this._outputsBtn.getChildControl("icon").setTextColor("text");
+        }, 1000);
       });
 
       this._addLogger();

@@ -36,7 +36,7 @@ async function runTutorial() {
     for (let j = 1; j < 3; j++) {
       // open JLab
       await tutorial.openNode(j);
-      await tutorial.waitFor(35000);
+      await tutorial.waitFor(10000);
 
       // Run the jlab nbook
       const jLabIframe = await tutorial.getIframe(workbenchData["nodeIds"][j]);
@@ -63,9 +63,10 @@ async function runTutorial() {
       await tutorial.takeScreenshot("after_run_all_menu");
 
       if (j === 2) {
-        await tutorial.waitFor(40000); // we are solving an em problem
-      } else {
-        await tutorial.waitFor(5000); // we are not solving an em problem
+        await tutorial.waitFor(30000); // we are solving an em problem
+      }
+      else {
+        await tutorial.waitFor(5000); // we are NOT solving an em problem
       }
 
       const outFiles = [
