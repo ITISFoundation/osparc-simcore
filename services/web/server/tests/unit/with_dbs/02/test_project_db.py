@@ -738,6 +738,7 @@ async def test_replace_user_project(
     user_project: ProjectDict,
     logged_user: UserInfoDict,
     osparc_product_name: str,
+    postgres_db: sa.engine.Engine,
 ):
     PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
     original_project = user_project
@@ -751,6 +752,9 @@ async def test_replace_user_project(
     assert copy_from_dict_ex(
         original_project, PROJECT_DICT_IGNORE_FIELDS
     ) == copy_from_dict_ex(working_project, PROJECT_DICT_IGNORE_FIELDS)
+    _assert_projects_to_product_db_row(
+        postgres_db, working_project, osparc_product_name
+    )
 
     # now let's create some outputs (similar to what happens when running services)
     NODE_INDEX = 1  # this is not the file-picker
@@ -778,6 +782,9 @@ async def test_replace_user_project(
     assert copy_from_dict_ex(
         working_project, PROJECT_DICT_IGNORE_FIELDS
     ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
+    _assert_projects_to_product_db_row(
+        postgres_db, replaced_project, osparc_product_name
+    )
 
     # the frontend sends project without some fields, but for FRONTEND type of nodes
     # replacing should keep the values
