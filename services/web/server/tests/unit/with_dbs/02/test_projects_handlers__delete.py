@@ -4,15 +4,19 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
+import sqlalchemy as sa
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
+from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import _delete
@@ -133,3 +137,33 @@ async def test_delete_multiple_opened_project_forbidden(
             pytest.fail("socket io connection should not fail")
 
     await _request_delete_project(client, user_project, expected_forbidden)
+
+
+@pytest.fixture
+def user_project_in_2_products(
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    postgres_db: sa.engine.Engine,
+    faker: Faker,
+) -> Iterator[dict[str, Any]]:
+    fake_product_name = faker.name()
+    postgres_db.execute(products.insert().values(name=fake_product_name, host_regex=""))
+    postgres_db.execute(
+        projects_to_products.insert().values(
+            project_uuid=user_project["uuid"], product_name=fake_product_name
+        )
+    )
+    yield user_project
+    # cleanup
+    postgres_db.execute(products.delete().where(products.c.name == fake_product_name))
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_delete_project_in_multiple_products_forbidden(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    user_project_in_2_products: dict[str, Any],
+    expected: ExpectedResponse,
+):
+    assert client.app
+    await _request_delete_project(client, user_project_in_2_products, expected.conflict)
