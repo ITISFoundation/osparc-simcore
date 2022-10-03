@@ -10,9 +10,9 @@ projects_to_products = sa.Table(
         sa.String,
         sa.ForeignKey(
             "projects.uuid",
-            name="fk_projects_to_products_project_uuid_projects",
             onupdate="CASCADE",
             ondelete="CASCADE",
+            name="fk_projects_to_products_product_uuid",
         ),
         nullable=False,
         doc="Project unique ID",
@@ -22,9 +22,9 @@ projects_to_products = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            name="fk_projects_to_products_name_products",
             onupdate="CASCADE",
             ondelete="CASCADE",
+            name="fk_projects_to_products_product_name",
         ),
         nullable=False,
         doc="Products unique name",

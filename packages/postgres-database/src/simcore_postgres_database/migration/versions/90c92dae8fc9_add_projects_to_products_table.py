@@ -1,15 +1,15 @@
 """add_projects_to_products_table
 
-Revision ID: 43d48e0f38b7
+Revision ID: 90c92dae8fc9
 Revises: 90fa6f02cbc0
-Create Date: 2022-10-03 20:06:07.559398+00:00
+Create Date: 2022-10-03 20:20:12.070407+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "43d48e0f38b7"
+revision = "90c92dae8fc9"
 down_revision = "90fa6f02cbc0"
 branch_labels = None
 depends_on = None
@@ -30,14 +30,14 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["product_name"],
             ["products.name"],
-            name="fk_projects_to_products_name_products",
+            name="fk_projects_to_products_product_name",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
             ["projects.uuid"],
-            name="fk_projects_to_products_project_uuid_projects",
+            name="fk_projects_to_products_product_uuid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
