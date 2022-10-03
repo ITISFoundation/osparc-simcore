@@ -29,4 +29,5 @@ networkx
 orjson
 pydantic[dotenv]
 redis
+rich
 tenacity
