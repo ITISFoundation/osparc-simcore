@@ -339,7 +339,7 @@ class ProjectDBAPI:
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns([func.count()]).order_by(None)
             )
-            assert total_number_of_projects  # nosec
+            assert total_number_of_projects is not None  # nosec
 
             prjs, prj_types = await self.__load_projects(
                 conn,
@@ -401,7 +401,7 @@ class ProjectDBAPI:
             prj.pop("product_name", None)
 
             if (
-                filter_by_services
+                filter_by_services is not None
                 and row[projects_to_products.c.product_name] is None
                 and not await project_uses_available_services(prj, filter_by_services)
             ):
