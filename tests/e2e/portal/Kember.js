@@ -43,15 +43,8 @@ async function runTutorial () {
     await tutorial.openNode(1);
 
     await tutorial.waitFor(2000);
-    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
-    const iframeHandles = await page.$$("iframe");
-    const iframes = [];
-    for (let i=0; i<iframeHandles.length; i++) {
-      const frame = await iframeHandles[i].contentFrame();
-      iframes.push(frame);
-    }
-    // url/x/nodeIdViewer
-    const frame = iframes.find(iframe => iframe._url.includes(nodeIdViewer));
+
+    const frame = tutorial.getIframe(nodeIdViewer);
 
     // restart kernel: click restart and accept
     const restartSelector = "#run_int > button:nth-child(3)";
