@@ -7,15 +7,19 @@
 import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Awaitable, Callable, Iterator, Optional, Union
 
 import pytest
+import sqlalchemy as sa
 from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
+from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -44,6 +48,7 @@ async def _list_projects(
     client,
     expected: type[web.HTTPException],
     query_parameters: Optional[dict] = None,
+    headers: Optional[dict] = None,
     expected_error_msg: Optional[str] = None,
     expected_error_code: Optional[str] = None,
 ) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
@@ -55,7 +60,10 @@ async def _list_projects(
     if query_parameters:
         url = url.with_query(**query_parameters)
 
-    resp = await client.get(url)
+    if headers is None:
+        headers = {}
+
+    resp = await client.get(url, headers=headers)
     data, errors, meta, links = await assert_status(
         resp,
         expected,
@@ -64,7 +72,7 @@ async def _list_projects(
         include_meta=True,
         include_links=True,
     )
-    if data:
+    if data is not None:
         assert meta is not None
         # see [api/specs/webserver/openapi-projects.yaml] for defaults
         exp_offset = max(int(query_parameters.get("offset", 0)), 0)
@@ -203,6 +211,29 @@ async def test_list_projects(
         ).locked.value, "Templates are not locked"
 
 
+@pytest.fixture(scope="session")
+def s4l_product_name() -> str:
+    return "s4l"
+
+
+@pytest.fixture
+def s4l_products_db_name(
+    postgres_db: sa.engine.Engine, s4l_product_name: str
+) -> Iterator[str]:
+    postgres_db.execute(
+        products.insert().values(
+            name=s4l_product_name, host_regex="pytest", display_name="pytest"
+        )
+    )
+    yield s4l_product_name
+    postgres_db.execute(products.delete().where(products.c.name == s4l_product_name))
+
+
+@pytest.fixture
+def s4l_product_headers(s4l_products_db_name: str) -> dict[str, str]:
+    return {X_PRODUCT_NAME_HEADER: s4l_products_db_name}
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -210,6 +241,7 @@ async def test_list_projects(
     ],
 )
 async def test_list_projects_with_innaccessible_services(
+    s4l_products_db_name: str,
     client: TestClient,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
@@ -217,21 +249,31 @@ async def test_list_projects_with_innaccessible_services(
     expected: type[web.HTTPException],
     catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
     director_v2_service_mock: aioresponses,
+    postgres_db: sa.engine.Engine,
+    s4l_product_headers: dict[str, Any],
 ):
-    catalog_subsystem_mock([])
+    # use-case 1: calling with correct product name returns 2 projects
+    # projects are linked to osparc
     data, *_ = await _list_projects(client, expected)
-    import pdb
-
-    pdb.set_trace()
     assert len(data) == 2
-
-    project_state = data[0].pop("state")
-    assert data[0] == template_project
-    assert not ProjectState(**project_state).locked.value, "Templates are not locked"
-
-    project_state = data[1].pop("state")
-    assert data[1] == user_project
-    assert ProjectState(**project_state)
+    # use-case 2: calling with another product name returns 0 projects
+    # because projects are linked to osparc product in projects_to_products table
+    data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
+    assert len(data) == 0
+    # use-case 3: remove the links to products
+    # shall still return 0 because the user has no access to the services
+    postgres_db.execute(projects_to_products.delete())
+    data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
+    assert len(data) == 0
+    data, *_ = await _list_projects(client, expected)
+    assert len(data) == 0
+    # use-case 4: give user access to services
+    # shall return the projects for any product
+    catalog_subsystem_mock([user_project, template_project])
+    data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
+    assert len(data) == 2
+    data, *_ = await _list_projects(client, expected)
+    assert len(data) == 2
 
 
 @pytest.mark.parametrize(
