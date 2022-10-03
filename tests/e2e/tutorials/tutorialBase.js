@@ -205,10 +205,10 @@ class TutorialBase {
   }
 
   async waitForOpen() {
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
@@ -219,13 +219,13 @@ class TutorialBase {
   async startNewPlan() {
     await this.takeScreenshot("startNewPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
       await auto.dashboardNewPlan(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
@@ -239,7 +239,7 @@ class TutorialBase {
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
 
     let resp = null;
     try {
@@ -259,13 +259,13 @@ class TutorialBase {
   async openTemplate(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
@@ -280,12 +280,12 @@ class TutorialBase {
 
   async openService(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenService_before");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }

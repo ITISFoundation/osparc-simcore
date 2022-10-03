@@ -44,14 +44,7 @@ async function runTutorial () {
     // Some time for setting up service's frontend
     await tutorial.waitFor(3000);
 
-    const iframeHandles = await page.$$("iframe");
-    const iframes = [];
-    for (let i=0; i<iframeHandles.length; i++) {
-      const frame = await iframeHandles[i].contentFrame();
-      iframes.push(frame);
-    }
-    // url/x/nodeIdViewer
-    const frame = iframes.find(iframe => iframe._url.includes(nodeIdViewer));
+    const frame = tutorial.getIframe(nodeIdViewer);
 
     // inside the iFrame, click on document icon on top
     const docSelector = '/html/body/div/div/div[1]/div[1]/div[2]/div[1]/div[1]/i[2]';
