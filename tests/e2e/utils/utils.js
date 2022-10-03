@@ -32,7 +32,7 @@ function parseCommandLineArguments(args) {
 }
 
 function parseCommandLineArgumentsTemplate(args) {
-  // node $template.js [url] [template_uuid] [--demo]
+  // node $template.js [url] [template_uuid] [start_timeout] [--demo]
 
   if (args.length < 3) {
     console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [start_timeout] [--demo]');
