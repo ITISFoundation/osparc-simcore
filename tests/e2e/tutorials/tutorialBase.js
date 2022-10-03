@@ -244,7 +244,7 @@ class TutorialBase {
     let resp = null;
     try {
       await this.__goTo();
-      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+      resp = await this.__responsesQueue.waitUntilResponse(":open", openStudyTimeout);
       await this.__printMe();
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
