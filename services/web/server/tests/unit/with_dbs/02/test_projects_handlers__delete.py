@@ -112,6 +112,7 @@ async def test_delete_multiple_opened_project_forbidden(
     user_role,
     expected_ok,
     expected_forbidden,
+    redis_client,
 ):
     # service in project
     service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
