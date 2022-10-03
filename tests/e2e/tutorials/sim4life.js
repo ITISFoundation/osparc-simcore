@@ -27,9 +27,10 @@ async function runTutorial() {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
+    const s4lNodeId = workbenchData["nodeIds"][0];
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [workbenchData["nodeIds"][0]],
+      [s4lNodeId],
       startTimeout,
       false
     );
