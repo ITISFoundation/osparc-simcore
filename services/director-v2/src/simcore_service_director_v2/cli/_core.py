@@ -1,19 +1,19 @@
 import asyncio
 import sys
-import urllib.parse
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import AsyncIterator, Optional
-from uuid import UUID
 
 import typer
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
 from models_library.projects import NodeIDStr, ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceType
 from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
 from rich.live import Live
 from rich.table import Table
+from servicelib.services_utils import get_service_from_key
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
@@ -57,7 +57,7 @@ async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
 def _get_dynamic_sidecar_endpoint(
     settings: AppSettings, node_id: NodeIDStr
 ) -> AnyHttpUrl:
-    dynamic_sidecar_names = DynamicSidecarNamesHelper.make(UUID(node_id))
+    dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
     return parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
@@ -66,14 +66,14 @@ def _get_dynamic_sidecar_endpoint(
 async def _save_node_state(
     app,
     dynamic_sidecar_client: api_client.DynamicSidecarClient,
-    retry_save: int,
+    save_retry_times: int,
     node_uuid: NodeIDStr,
-    label: str = "",
+    label: str,
 ) -> None:
     typer.echo(f"Saving state for {node_uuid} {label}")
     async for attempt in AsyncRetrying(
         wait=wait_random_exponential(),
-        stop=stop_after_attempt(retry_save),
+        stop=stop_after_attempt(save_retry_times),
         reraise=True,
     ):
         with attempt:
@@ -83,7 +83,9 @@ async def _save_node_state(
             )
 
 
-async def async_project_save_state(project_id: ProjectID, retry_save: int) -> None:
+async def async_project_save_state(
+    project_id: ProjectID, save_retry_times: int
+) -> None:
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(
             app, ProjectsRepository
@@ -107,7 +109,7 @@ async def async_project_save_state(project_id: ProjectID, retry_save: int) -> No
                 await _save_node_state(
                     app,
                     dynamic_sidecar_client,
-                    retry_save,
+                    save_retry_times,
                     node_uuid,
                     node_content.label,
                 )
@@ -133,19 +135,13 @@ async def async_node_save_state(node_id: NodeID, retry_save: int) -> None:
     async with _initialized_app() as app:
         dynamic_sidecar_client = api_client.get_dynamic_sidecar_client(app)
         await _save_node_state(
-            app, dynamic_sidecar_client, retry_save, NodeIDStr(f"{node_id}")
+            app, dynamic_sidecar_client, retry_save, NodeIDStr(f"{node_id}"), ""
         )
 
     typer.echo(f"Node {node_id} save completed")
 
 
 ### PROJECT STATE
-
-
-class ServiceType(str, Enum):
-    COMP = "comp"
-    DYNAMIC = "dynamic"
-    FRONTEND = "frontend"
 
 
 class StatusIcon(str, Enum):
@@ -161,12 +157,6 @@ class RenderData(BaseModel):
     label: str
     status_icon: StatusIcon
     state: str
-
-
-def _get_service_type(service_key: str) -> ServiceType:
-    decoded_service_key = urllib.parse.unquote_plus(service_key)
-    service_type = decoded_service_key.split("/")[2]
-    return ServiceType(service_type)
 
 
 async def _get_dy_service_state(
@@ -201,7 +191,7 @@ async def _to_render_data(
             state="",
         )
 
-    if service_type == ServiceType.COMP:
+    if service_type == ServiceType.COMPUTATIONAL:
         return RenderData(
             node_uuid=node_uuid,
             label=label,
@@ -251,7 +241,7 @@ async def _get_nodes_render_data(
     render_data = []
     async with AsyncClient() as client:
         for node_uuid, node_content in project_at_db.workbench.items():
-            service_type = _get_service_type(service_key=node_content.key)
+            service_type = get_service_from_key(service_key=node_content.key)
             render_data.append(
                 await _to_render_data(
                     client, node_uuid, node_content.label, service_type

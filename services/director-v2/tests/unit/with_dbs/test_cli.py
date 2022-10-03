@@ -12,7 +12,7 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_RETRY, main
+from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_RETRY_TIMES, main
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceOut,
 )
@@ -63,7 +63,7 @@ def project_at_db(
 @pytest.fixture
 def mock_requires_dynamic_sidecar(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.cli.core.requires_dynamic_sidecar",
+        "simcore_service_director_v2.cli._core.requires_dynamic_sidecar",
         spec=True,
     )
 
@@ -95,7 +95,7 @@ def node_id(faker: Faker) -> NodeID:
 @pytest.fixture
 def mock_get_node_state(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.cli.core._get_dy_service_state",
+        "simcore_service_director_v2.cli._core._get_dy_service_state",
         return_value=DynamicServiceOut.parse_obj(
             RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         ),
@@ -137,7 +137,7 @@ def test_project_save_state_retry_3_times_and_fails(
     for node_uuid in project_at_db.workbench.keys():
         assert (
             result.stdout.count(f"Attempting to save {node_uuid}")
-            == DEFAULT_NODE_SAVE_RETRY
+            == DEFAULT_NODE_SAVE_RETRY_TIMES
         )
         assert result.stdout.count(f"- {node_uuid}") == 1
     assert result.stdout.endswith("Please try to save them individually!\n")
@@ -168,7 +168,8 @@ def test_node_save_state_retry_3_times_and_fails(
     assert result.exit_code == 1, _format_cli_error(result)
     assert f"Saving state for {node_id}" in result.stdout
     assert (
-        result.stdout.count(f"Attempting to save {node_id}") == DEFAULT_NODE_SAVE_RETRY
+        result.stdout.count(f"Attempting to save {node_id}")
+        == DEFAULT_NODE_SAVE_RETRY_TIMES
     )
 
 
