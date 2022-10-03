@@ -36,6 +36,20 @@ async function runTutorial() {
     );
 
     await tutorial.waitFor(15000, 'Wait for some time');
+
+    // do some basic interaction
+    const s4lIframe = await tutorial.getIframe(s4lNodeId);
+    const modelTree = await s4lIframe.$('.model-tree');
+    const modelItems = await modelTree.$$('.MuiTreeItem-label');
+    const nLabels = modelItems.length;
+    if (nLabels > 1) {
+      modelItems[0].click();
+      await tutorial.waitFor(2000, 'Model clicked');
+      await tutorial.takeScreenshot('ModelClicked');
+      modelItems[1].click();
+      await tutorial.waitFor(2000, 'Grid clicked');
+      await tutorial.takeScreenshot('GridlClicked');
+    }
   }
   catch (err) {
     await tutorial.setTutorialFailed(true);
