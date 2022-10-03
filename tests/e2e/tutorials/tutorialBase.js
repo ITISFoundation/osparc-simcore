@@ -205,7 +205,7 @@ class TutorialBase {
   }
 
   async waitForOpen() {
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       resp = await this.__responsesQueue.waitUntilResponse("open");
@@ -219,7 +219,7 @@ class TutorialBase {
   async startNewPlan() {
     await this.takeScreenshot("startNewPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
@@ -239,7 +239,7 @@ class TutorialBase {
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
 
     let resp = null;
     try {
@@ -259,7 +259,7 @@ class TutorialBase {
   async openTemplate(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
@@ -280,7 +280,7 @@ class TutorialBase {
 
   async openService(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenService_before");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
