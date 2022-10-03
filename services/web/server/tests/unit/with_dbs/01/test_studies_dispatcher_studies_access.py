@@ -28,7 +28,6 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from settings_library.redis import RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
@@ -208,21 +207,6 @@ async def assert_redirected_to_study(
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, published_project):
-    services_in_project = [
-        {"key": s["key"], "version": s["version"]}
-        for _, s in published_project["workbench"].items()
-    ]
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-
-@pytest.fixture
 def mocks_on_projects_api(mocker) -> None:
     """
     All projects in this module are UNLOCKED
@@ -296,6 +280,7 @@ async def test_access_study_anonymously(
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     assert not is_user_authenticated(client.session), "Is anonymous"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -342,6 +327,7 @@ async def test_access_study_by_logged_user(
     auto_delete_projects,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     assert is_user_authenticated(client.session), "Is already logged-in"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -369,6 +355,7 @@ async def test_access_cookie_of_expired_user(
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     # emulates issue #1570
     app: web.Application = client.app
 
@@ -435,6 +422,7 @@ async def test_guest_user_is_not_garbage_collected(
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
     async def _test_guest_user_workflow(request_index):

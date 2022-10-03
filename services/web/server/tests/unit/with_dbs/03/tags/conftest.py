@@ -4,13 +4,12 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable, Optional, Union
+from typing import AsyncIterator, Callable
 
 import pytest
 from aioresponses import aioresponses
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver import catalog
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director.plugin import setup_director
@@ -171,31 +170,6 @@ def fake_services():
 async def project_db_cleaner(client):
     yield
     await delete_all_projects(client.app)
-
-
-@pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch,
-) -> Callable[[Optional[Union[list[dict], dict]]], None]:
-    services_in_project = []
-
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
-        for proj in projects or []:
-            services_in_project.extend(
-                [
-                    {"key": s["key"], "version": s["version"]}
-                    for _, s in proj["workbench"].items()
-                ]
-            )
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-    return creator
 
 
 @pytest.fixture()

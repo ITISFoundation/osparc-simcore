@@ -206,6 +206,37 @@ async def test_list_projects(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
+        (UserRole.USER, web.HTTPOk),
+    ],
+)
+async def test_list_projects_with_innaccessible_services(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    template_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
+    director_v2_service_mock: aioresponses,
+):
+    catalog_subsystem_mock([])
+    data, *_ = await _list_projects(client, expected)
+    import pdb
+
+    pdb.set_trace()
+    assert len(data) == 2
+
+    project_state = data[0].pop("state")
+    assert data[0] == template_project
+    assert not ProjectState(**project_state).locked.value, "Templates are not locked"
+
+    project_state = data[1].pop("state")
+    assert data[1] == user_project
+    assert ProjectState(**project_state)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
