@@ -58,17 +58,19 @@ def _get_user_name(email: str) -> str:
     return username
 
 
-def _validate_user_status(user: dict, cfg):
+def _validate_user_status(user: dict, cfg, support_email: str):
     user_status: str = user["status"]
 
     if user_status == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
+            reason=cfg.MSG_USER_BANNED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON
         )  # 401
 
     if user_status == EXPIRED:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
+            reason=cfg.MSG_USER_EXPIRED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON
         )  # 401
 
     if user_status == CONFIRMATION_PENDING:
@@ -300,6 +302,7 @@ async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
     password = body.password
@@ -311,7 +314,7 @@ async def login(request: web.Request):
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    _validate_user_status(user, cfg)
+    _validate_user_status(user, cfg, product.support_email)
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
@@ -322,8 +325,6 @@ async def login(request: web.Request):
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
     if settings.LOGIN_2FA_REQUIRED and UserRole(user["role"]) <= UserRole.USER:
-        product: Product = get_current_product(request)
-
         if not user["phone"]:
             rsp = envelope_response(
                 {
@@ -457,6 +458,7 @@ async def reset_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
 
@@ -467,7 +469,7 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        _validate_user_status(user, cfg)
+        _validate_user_status(user, cfg, product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == email  # nosec
