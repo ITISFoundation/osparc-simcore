@@ -14,6 +14,7 @@ projects_to_products = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        nullable=False,
         doc="Project unique ID",
     ),
     sa.Column(
@@ -25,6 +26,7 @@ projects_to_products = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        nullable=False,
         doc="Products unique name",
     ),
     # -----
