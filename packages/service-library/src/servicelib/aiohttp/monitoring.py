@@ -112,7 +112,7 @@ kPROCESS_COLLECTOR = f"{__name__}.collector_process"
 kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"
 kGC_COLLECTOR = f"{__name__}.collector_gc"
 
-SIMCORE_USER_AGENT_HEADER: Final[str] = "X-SIMCORE_USER_AGENT"
+SIMCORE_USER_AGENT_HEADER: Final[str] = "X-Simcore-User-Agent"
 UNDEFINED_REGULAR_USER_AGENT: Final[str] = "undefined"
 
 
