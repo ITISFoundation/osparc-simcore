@@ -72,11 +72,16 @@ class ExtendedClientResponseError(ClientResponseError):
         self.body = body
 
     def __str__(self) -> str:
+        # When dealing with errors coming from S3 it is hard to conclude
+        # what is wrong from a generic `400 Bad Request` extending
+        # stacktrace with body. SEE links below for details:
+        # - https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+        # - https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingRESTError.html
         return (
             f"status={self.status}, "
             f"message={self.message}, "
             f"url={self.request_info.real_url}, "
-            f"body={self.body=}"
+            f"body={self.body}"
         )
 
 
