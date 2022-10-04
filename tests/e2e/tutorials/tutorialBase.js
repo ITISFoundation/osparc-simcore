@@ -47,6 +47,9 @@ class TutorialBase {
   async beforeScript() {
     this.__browser = await startPuppe.getBrowser(this.__demo);
     this.__page = await startPuppe.getPage(this.__browser);
+    this.__page.setExtraHTTPHeaders({
+      "X-Simcore-User-Agent": "puppeteer"
+    });
     this.__responsesQueue = new responses.ResponsesQueue(this.__page);
 
     return this.__page;
