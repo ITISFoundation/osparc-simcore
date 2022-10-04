@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
@@ -11,6 +11,7 @@ from pydantic import (
     BaseModel,
     Extra,
     Field,
+    HttpUrl,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -26,7 +27,7 @@ class PortSchema(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: Dict[str, Any] = {
+        schema_extra: dict[str, Any] = {
             "examples": [
                 {
                     "required": True,
@@ -89,8 +90,8 @@ PortValue = Union[
     StrictFloat,
     StrictStr,
     FileUrl,
-    List[Any],
-    Dict[str, Any],
+    list[Any],
+    dict[str, Any],
     None,
 ]
 
@@ -190,5 +191,22 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
                     "string_output": "nobody thinks like a string",
                     "file_output": {"url": "s3://yet_another_file_url"},
                 },
+            ]
+        }
+
+
+class TaskOsparcAPISettings(BaseModel):
+    api_key: str
+    api_secret: str
+    osparc_api_endpoint: HttpUrl
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {
+                    "api_key": "some_fake_api_key",
+                    "api_secret": "some_fake_api_secret",
+                    "osparc_api_endpoint": "https://api.osparc.io",
+                }
             ]
         }

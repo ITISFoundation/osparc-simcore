@@ -10,6 +10,7 @@ from dask_task_models_library.container_tasks.io import (
     FileUrl,
     PortSchema,
     TaskInputData,
+    TaskOsparcAPISettings,
     TaskOutputData,
     TaskOutputDataSchema,
 )
@@ -25,6 +26,7 @@ from faker import Faker
         TaskInputData,
         TaskOutputDataSchema,
         TaskOutputData,
+        TaskOsparcAPISettings,
     ),
 )
 def test_io_models_examples(model_cls, model_cls_examples):
@@ -76,6 +78,7 @@ def test_create_task_output_from_task_with_optional_fields_as_required(
         outputs_file_name = _create_fake_outputs(
             task_output_schema, tmp_path, optional_fields_set, faker
         )
+        assert outputs_file_name
         task_output_data = TaskOutputData.from_task_output(
             schema=task_output_schema,
             output_folder=tmp_path,
@@ -172,11 +175,7 @@ def test_create_task_output_from_task_does_not_throw_when_there_are_optional_ent
 
 @pytest.mark.parametrize(
     "model_cls",
-    (
-        TaskInputData,
-        TaskOutputDataSchema,
-        TaskOutputData,
-    ),
+    (TaskInputData, TaskOutputDataSchema, TaskOutputData, TaskOsparcAPISettings),
 )
 def test_objects_are_compatible_with_dask_requirements(model_cls, model_cls_examples):
     # NOTE: fcts could also be passed through the same test
