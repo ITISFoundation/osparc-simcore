@@ -40,8 +40,6 @@ qx.Class.define("osparc.io.rest.Resource", {
 
       const productName = qx.core.Environment.get("product.name");
       request.setRequestHeader("X-Simcore-Products-Name", productName);
-
-      this.self().setTesterUserNameHeader(request);
     });
   },
 
@@ -50,13 +48,6 @@ qx.Class.define("osparc.io.rest.Resource", {
 
     setAutheticationHeader: function(usernameOrToken, password=null) {
       osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
-    },
-
-    setTesterUserNameHeader: function(request) {
-      const tester = osparc.auth.Data.getInstance().getTesterUserName();
-      if (tester) {
-        request.setRequestHeader("X-Simcore-User-Agent", tester);
-      }
     }
   },
 
