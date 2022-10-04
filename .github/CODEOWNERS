@@ -11,6 +11,7 @@ Makefile                                  @pcrespov @sanderegg
 
 
 # NOTE: '/' denotes the root of the repository
+/.github/                                 @sanderegg @pcrespov
 /api/                                     @sanderegg @pcrespov
 /ci/                                      @sanderegg @pcrespov
 /docs/                                    @pcrespov
