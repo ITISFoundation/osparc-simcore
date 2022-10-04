@@ -5,14 +5,13 @@ import threading
 from pprint import pformat
 from typing import Optional
 
-import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed.worker import logger
+from distributed.worker import Worker, logger
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 
@@ -40,7 +39,7 @@ class GracefulKiller:
     worker = None
     task = None
 
-    def __init__(self, worker: distributed.Worker):
+    def __init__(self, worker: Worker):
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
         self.worker = worker
@@ -58,7 +57,7 @@ class GracefulKiller:
         )
 
 
-async def dask_setup(worker: distributed.Worker) -> None:
+async def dask_setup(worker: Worker) -> None:
     """This is a special function recognized by the dask worker when starting with flag --preload"""
     settings = Settings.create_from_envs()
     # set up logging
@@ -79,7 +78,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
         GracefulKiller(worker)
 
 
-async def dask_teardown(_worker: distributed.Worker) -> None:
+async def dask_teardown(_worker: Worker) -> None:
     logger.warning("Tearing down worker!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
