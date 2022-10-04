@@ -44,7 +44,7 @@ async function runTutorial () {
     // Some time for setting up service's frontend
     await tutorial.waitFor(3000);
 
-    const frame = tutorial.getIframe(nodeIdViewer);
+    const frame = await tutorial.getIframe(nodeIdViewer);
 
     // inside the iFrame, click on document icon on top
     const docSelector = '/html/body/div/div/div[1]/div[1]/div[2]/div[1]/div[1]/i[2]';
