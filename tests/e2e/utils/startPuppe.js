@@ -14,13 +14,15 @@ async function getBrowser(demo) {
     Object.assign(options, visibleOptions);
   }
   else {
+    // https://github.com/puppeteer/puppeteer/issues/4889 : adding extra headers make CORS fail
     const woSandbox = {
       defaultViewport: null,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--start-maximized'
+        '--start-maximized',
+        '--disable-web-security'
       ]
     };
     Object.assign(options, woSandbox);
