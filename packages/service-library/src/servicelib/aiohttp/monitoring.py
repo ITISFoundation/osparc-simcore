@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Final, Optional
 
 import prometheus_client
 from aiohttp import web
@@ -112,6 +112,9 @@ kPROCESS_COLLECTOR = f"{__name__}.collector_process"
 kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"
 kGC_COLLECTOR = f"{__name__}.collector_gc"
 
+SIMCORE_USER_AGENT_HEADER: Final[str] = "X-SIMCORE_USER_AGENT"
+UNDEFINED_REGULAR_USER_AGENT: Final[str] = "undefined"
+
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
     return app[kCOLLECTOR_REGISTRY]
@@ -162,9 +165,19 @@ def middleware_factory(
             response_summary = request.app[kRESPONSELATENCY]
 
             with in_flight_gauge.labels(
-                app_name, request.method, canonical_endpoint
+                app_name,
+                request.method,
+                canonical_endpoint,
+                request.headers.get(
+                    SIMCORE_USER_AGENT_HEADER, UNDEFINED_REGULAR_USER_AGENT
+                ),
             ).track_inprogress(), response_summary.labels(
-                app_name, request.method, canonical_endpoint
+                app_name,
+                request.method,
+                canonical_endpoint,
+                request.headers.get(
+                    SIMCORE_USER_AGENT_HEADER, UNDEFINED_REGULAR_USER_AGENT
+                ),
             ).time():
                 resp = await handler(request)
 
@@ -200,6 +213,9 @@ def middleware_factory(
                 request.method,
                 canonical_endpoint,
                 resp.status,
+                request.headers.get(
+                    SIMCORE_USER_AGENT_HEADER, UNDEFINED_REGULAR_USER_AGENT
+                ),
             ).inc()
 
             if exit_middleware_cb:
@@ -254,21 +270,27 @@ def setup_monitoring(
     app[kREQUEST_COUNT] = Counter(
         name="http_requests",
         documentation="Total requests count",
-        labelnames=["app_name", "method", "endpoint", "http_status"],
+        labelnames=[
+            "app_name",
+            "method",
+            "endpoint",
+            "http_status",
+            "simcore_user_agent",
+        ],
         registry=reg,
     )
 
     app[kINFLIGHTREQUESTS] = Gauge(
         name="http_in_flight_requests",
         documentation="Number of requests in process",
-        labelnames=["app_name", "method", "endpoint"],
+        labelnames=["app_name", "method", "endpoint", "simcore_user_agent"],
         registry=reg,
     )
 
     app[kRESPONSELATENCY] = Summary(
         name="http_request_latency_seconds",
         documentation="Time processing a request",
-        labelnames=["app_name", "method", "endpoint"],
+        labelnames=["app_name", "method", "endpoint", "simcore_user_agent"],
         registry=reg,
     )
 
