@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Callable, Final, Optional, TypedDict, cast
 import aiofiles
 import aiofiles.tempfile
 import fsspec
+from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from pydantic import ByteSize, FileUrl, parse_obj_as
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
@@ -163,6 +164,12 @@ async def pull_file_from_remote(
         dst_path.unlink()
 
 
+async def _push_file_to_osparc_api(
+    file_to_upload, osparc_api_settings, log_publishing_cb
+) -> str:
+    ...
+
+
 async def _push_file_to_http_link(
     file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
 ):
@@ -208,8 +215,8 @@ async def _push_file_to_remote(
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
     await _copy_file(
-        parse_obj_as(FileUrl, file_to_upload.as_uri()),
-        dst_url,
+        src_url=parse_obj_as(FileUrl, file_to_upload.as_uri()),
+        dst_url=dst_url,
         dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
         text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
@@ -224,6 +231,7 @@ async def push_file_to_remote(
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     if not src_path.exists():
         raise ValueError(f"{src_path=} does not exist")
@@ -254,8 +262,11 @@ async def push_file_to_remote(
 
         await log_publishing_cb(f"Uploading '{file_to_upload.name}' to '{dst_url}'...")
 
-        if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
-            logger.debug("destination is a http presigned link")
+        if osparc_api_settings is not None:
+            await _push_file_to_osparc_api(
+                file_to_upload, osparc_api_settings, log_publishing_cb
+            )
+        elif dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
             await _push_file_to_remote(

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Coroutine, Dict, List, Optional, Type, cast
+from typing import Any, Coroutine, Optional, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -15,6 +15,7 @@ from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskSt
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
+    TaskOsparcAPISettings,
     TaskOutputData,
     TaskOutputDataSchema,
 )
@@ -54,9 +55,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
     boot_mode: BootMode
-    task_max_resources: Dict[str, Any]
+    task_max_resources: dict[str, Any]
     task_publishers: TaskPublisher
     s3_settings: Optional[S3Settings]
+    osparc_api_settings: Optional[TaskOsparcAPISettings]
 
     async def _write_input_data(
         self,
@@ -140,6 +142,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             output_params.url,
                             self._publish_sidecar_log,
                             self.s3_settings,
+                            self.osparc_api_settings,
                         )
                     )
             await asyncio.gather(*upload_tasks)
@@ -170,7 +173,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             TaskStateEvent.from_dask_worker(state=state, msg=msg),
         )
 
-    async def run(self, command: List[str]) -> TaskOutputData:
+    async def run(self, command: list[str]) -> TaskOutputData:
         await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
@@ -262,7 +265,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> None:

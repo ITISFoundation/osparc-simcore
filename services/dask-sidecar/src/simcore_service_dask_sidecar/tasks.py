@@ -8,6 +8,7 @@ from typing import Optional
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
+    TaskOsparcAPISettings,
     TaskOutputData,
     TaskOutputDataSchema,
 )
@@ -91,6 +92,7 @@ async def _run_computational_sidecar_async(
     log_file_url: AnyUrl,
     command: list[str],
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> TaskOutputData:
 
     task_publishers = TaskPublisher()
@@ -117,6 +119,7 @@ async def _run_computational_sidecar_async(
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
             s3_settings=s3_settings,
+            osparc_api_settings=osparc_api_settings,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
         log.debug("completed run of sidecar with result %s", f"{output_data=}")
@@ -132,6 +135,7 @@ def run_computational_sidecar(
     log_file_url: AnyUrl,
     command: list[str],
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -154,6 +158,7 @@ def run_computational_sidecar(
             log_file_url,
             command,
             s3_settings,
+            osparc_api_settings,
         )
     )
     return result
