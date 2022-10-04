@@ -43,7 +43,7 @@ async function runTutorial () {
     await tutorial.openNode(1);
 
     await tutorial.waitFor(2000);
-    const frame = tutorial.getIframe(nodeIdViewer);
+    const frame = await tutorial.getIframe(nodeIdViewer);
 
     // restart kernel: click restart and accept
     const restartSelector = "#run_int > button:nth-child(3)";
