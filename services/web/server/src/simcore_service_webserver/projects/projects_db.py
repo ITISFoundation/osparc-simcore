@@ -774,6 +774,12 @@ class ProjectDBAPI:
             )
             assert num_products_linked_to_project  # nosec
         if num_products_linked_to_project > 1:
+            # NOTE:
+            # in agreement with @odeimaiz :
+            #
+            # we decided that this precise use-case where we have a project in 2 products at the same time does not exist now and its chances to ever come is small -> therefore we do not treat it for now
+            # nevertheless in case it would be done this way (which would by the way need a manual intervention already to set it up), at least it would not be possible to delete the project in one product to prevent some unwanted deletion.
+            # reduce time to develop by not implementing something that might never be necessary
             raise ProjectDeleteError(
                 project_uuid=project_uuid,
                 reason="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
