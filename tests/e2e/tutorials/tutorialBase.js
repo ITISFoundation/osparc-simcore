@@ -47,6 +47,9 @@ class TutorialBase {
   async beforeScript() {
     this.__browser = await startPuppe.getBrowser(this.__demo);
     this.__page = await startPuppe.getPage(this.__browser);
+    this.__page.setExtraHTTPHeaders({
+      "X-Simcore-User-Agent": "puppeteer"
+    });
     this.__responsesQueue = new responses.ResponsesQueue(this.__page);
 
     return this.__page;
@@ -71,20 +74,6 @@ class TutorialBase {
     // eslint-disable-next-line no-undef
     const commit = await this.__page.evaluate(() => qx.core.Environment.get("osparc.vcsRef"));
     console.log("commit", commit);
-
-    await this.__page.evaluate((user, newUser) => {
-      let testerUserName = "";
-      if (newUser) {
-        testerUserName = "registered";
-      }
-      else if (user === null) {
-        testerUserName = "anonymous";
-      }
-      else {
-        testerUserName = user;
-      }
-      osparc.auth.Data.getInstance().setTesterUserName(testerUserName);
-    }, this.__user, this.__newUser);
   }
 
   async __printMe() {

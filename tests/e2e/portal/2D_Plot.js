@@ -32,7 +32,7 @@ async function runTutorial () {
     await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
 
-    const frame = tutorial.getIframe(nodeIdViewer);
+    const frame = await tutorial.getIframe(nodeIdViewer);
 
     // inside the iFrame, click on "oSPARC inputs"
     const oSPARCInputsSelector = '#load-data > div > div:nth-child(2) > div.col-lg-2 > ul > li:nth-child(5)';

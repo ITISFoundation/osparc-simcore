@@ -30,7 +30,7 @@ async function runTutorial () {
     await tutorial.waitFor(40000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    const frame = tutorial.getIframe(voilaIdViewer);
+    const frame = await tutorial.getIframe(voilaIdViewer);
 
     // check title says "VISUALIZATION"
     const titleSelector = '#VISUALIZATION';
