@@ -14,7 +14,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Iterator
+from typing import Any, AsyncIterator, Callable, Iterator, Optional, Union
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -38,6 +38,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings
+from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.groups_api import (
@@ -160,10 +161,40 @@ def client(
     return cli
 
 
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
+
+
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
 #
 # Mocks entirely or part of the calls to the web-server subsystems
 #
+
+
+@pytest.fixture
+async def catalog_subsystem_mock(
+    monkeypatch,
+) -> Callable[[Optional[Union[list[dict], dict]]], None]:
+    services_in_project = []
+
+    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
+        for proj in projects or []:
+            services_in_project.extend(
+                [
+                    {"key": s["key"], "version": s["version"]}
+                    for _, s in proj["workbench"].items()
+                ]
+            )
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+    return creator
 
 
 @pytest.fixture

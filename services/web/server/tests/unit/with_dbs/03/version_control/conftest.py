@@ -5,7 +5,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, Optional, Union
 from unittest import mock
 from uuid import UUID
 
@@ -22,12 +22,12 @@ from simcore_postgres_database.models.projects_version_control import (
     projects_vc_repos,
     projects_vc_snapshots,
 )
-from simcore_service_webserver import catalog
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.log import setup_logging
-from tenacity import AsyncRetrying, stop_after_delay
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
 
 ProjectDict = dict[str, Any]
 
@@ -55,18 +55,11 @@ def fake_project(faker: Faker) -> ProjectDict:
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, fake_project) -> None:
-    services_in_project = [
-        {"key": s["key"], "version": s["version"]}
-        for _, s in fake_project["workbench"].items()
-    ]
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+async def catalog_subsystem_mock(
+    catalog_subsystem_mock: Callable[[Optional[Union[list[dict], dict]]], None],
+    fake_project,
+) -> None:
+    catalog_subsystem_mock([fake_project])
 
 
 @pytest.fixture
@@ -140,17 +133,26 @@ def project_uuid(user_project: ProjectDict) -> ProjectID:
 
 @pytest.fixture
 async def user_project(
-    client: TestClient, fake_project: ProjectDict, user_id: int, tests_data_dir: Path
+    client: TestClient,
+    fake_project: ProjectDict,
+    user_id: int,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
     # pylint: disable=no-value-for-parameter
 
     async with NewProject(
-        fake_project, client.app, user_id=user_id, tests_data_dir=tests_data_dir
+        fake_project,
+        client.app,
+        user_id=user_id,
+        tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as project:
 
         yield project
 
         # cleanup repos
+        assert client.app
         engine = client.app[APP_DB_ENGINE_KEY]
         async with engine.acquire() as conn:
 

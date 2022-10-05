@@ -7,7 +7,7 @@ NOTE: this entire module is protected within the `projects` package
 
 import asyncio
 import logging
-from typing import List, Optional, Protocol
+from typing import Optional, Protocol
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -55,6 +55,8 @@ async def mark_project_as_deleted(
     # Even if any of the steps below fail, the project will remain invisible
     # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
     await db.check_delete_project_permission(user_id, f"{project_uuid}")
+
+    await db.check_project_has_only_one_product(project_uuid)
 
     # TODO: note that if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
@@ -171,7 +173,7 @@ def schedule_task(
     return task
 
 
-def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> List[asyncio.Task]:
+def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> list[asyncio.Task]:
     """Returns tasks matching delete-project task's name."""
     return [
         task
