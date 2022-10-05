@@ -13,20 +13,22 @@ async function getBrowser(demo) {
       slowMo: 80, // Slows down Puppeteer operations by the specified amount of milliseconds.
       args: [
         // https://github.com/puppeteer/puppeteer/issues/4889 : adding extra headers make CORS fail
+        // https://github.com/ITISFoundation/osparc-simcore/pull/3410
         '--disable-web-security',
       ],
     };
     Object.assign(options, visibleOptions);
   }
   else {
-    // https://github.com/puppeteer/puppeteer/issues/4889 : adding extra headers make CORS fail
     const woSandbox = {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--start-maximized',
-        '--disable-web-security'
+        // https://github.com/puppeteer/puppeteer/issues/4889 : adding extra headers make CORS fail
+        // https://github.com/ITISFoundation/osparc-simcore/pull/3410
+        '--disable-web-security',
       ]
     };
     Object.assign(options, woSandbox);
