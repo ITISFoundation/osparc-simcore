@@ -40,7 +40,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data"
+    "startStudy": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data"
   },
 
   statics: {
@@ -62,6 +63,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         };
       };
       studyList.sort(sortByProperty("lastChangeDate"));
+    },
+
+    isCardNewItem: function(card) {
+      return (card instanceof osparc.dashboard.GridButtonNew || card instanceof osparc.dashboard.ListButtonNew);
     },
 
     isCardButtonItem: function(card) {
@@ -199,6 +204,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
+      osparc.data.Resources.get("tasks")
+        .then(tasks => {
+          if (tasks && tasks.length) {
+            this.__tasksReceived(tasks);
+          }
+        });
       this._loadingResourcesBtn.setFetching(true);
       const request = this.__getNextRequest(templates);
       request
@@ -228,6 +239,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
           this._moreResourcesRequired();
         });
+    },
+
+    __tasksReceived: function(tasks) {
+      tasks.forEach(taskData => this._taskDataReceived(taskData));
     },
 
     __getNextRequest: function(templates) {
@@ -281,6 +296,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return item;
     },
 
+    _taskDataReceived: function(taskData) {
+      throw new Error("Abstract method called!");
+    },
+
     _getResourceItemMenu: function(resourceData, item) {
       throw new Error("Abstract method called!");
     },
@@ -323,6 +342,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         moreOpts.addListener("updateService", e => {
           const updatedServiceData = e.getData();
           this._resetServiceItem(updatedServiceData);
+        });
+        moreOpts.addListener("publishTemplate", e => {
+          win.close();
+          this.fireDataEvent("publishTemplate", e.getData());
         });
         moreOpts.addListener("openService", e => {
           win.close();

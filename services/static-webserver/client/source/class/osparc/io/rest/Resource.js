@@ -21,19 +21,11 @@
 qx.Class.define("osparc.io.rest.Resource", {
   extend: qx.io.rest.Resource,
 
-  statics: {
-    AUTHENTICATION: null,
-
-    setAutheticationHeader: function(usernameOrToken, password=null) {
-      osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
-    }
-  },
-
   construct: function(description) {
     this.base(arguments, description);
 
-    this.configureRequest(function(request, action, params, data) {
-      let headers = [{
+    this.configureRequest(request => {
+      const headers = [{
         key: "Accept",
         value: "application/json"
       }];
@@ -42,15 +34,21 @@ qx.Class.define("osparc.io.rest.Resource", {
         headers.concat(this.AUTHENTICATION.getAuthHeaders());
       }
 
-      headers.forEach(function(item, index, array) {
-        request.setRequestHeader(item.key, item.value);
-      });
+      headers.forEach(item => request.setRequestHeader(item.key, item.value));
 
       request.setRequestHeader("Content-Type", "application/json");
 
       const productName = qx.core.Environment.get("product.name");
       request.setRequestHeader("X-Simcore-Products-Name", productName);
     });
+  },
+
+  statics: {
+    AUTHENTICATION: null,
+
+    setAutheticationHeader: function(usernameOrToken, password=null) {
+      osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
+    }
   },
 
   members: {

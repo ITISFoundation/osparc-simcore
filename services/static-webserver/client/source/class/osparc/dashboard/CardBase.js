@@ -38,7 +38,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
   events: {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
-    "updateService": "qx.event.type.Data"
+    "updateService": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data"
   },
 
   statics: {
@@ -362,7 +363,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         updateStudy.show();
         updateStudy.set({
           toolTipText: this.tr("Service(s) deprecated, please update"),
-          textColor: "red"
+          textColor: "failed-red"
         });
       } else {
         osparc.utils.Study.isWorkbenchUpdatable(workbench)
@@ -414,7 +415,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTip += this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          image = osparc.component.task.Export.EXPORT_ICON+"/";
+          image = osparc.component.task.Export.ICON+"/";
           toolTip += this.tr(" is exporting it...");
           break;
         case "OPENING":
@@ -502,13 +503,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const resourceData = this.getResourceData();
       const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
       const title = this.tr("More options");
-      osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
       [
         "updateStudy",
         "updateTemplate",
         "updateService"
       ].forEach(ev => {
         moreOpts.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
+      });
+      moreOpts.addListener("publishTemplate", e => {
+        win.close();
+        this.fireDataEvent("publishTemplate", e.getData());
       });
       return moreOpts;
     },

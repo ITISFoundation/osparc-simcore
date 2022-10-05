@@ -44,7 +44,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     });
 
     this.bind("folder", this.getChildControl("folder-path"), "value", {
-      converter: folder => folder ? folder.getPathLabel().join(" / ") : "Select folder"
+      converter: folder => folder ? folder.getPathLabel().join(" / ") : this.tr("Select folder")
     });
   },
 
@@ -118,8 +118,8 @@ qx.Class.define("osparc.file.FolderViewer", {
         }
         case "folder-path": {
           const header = this.getChildControl("header");
-          control = new qx.ui.basic.Label(this.tr("Select Folder")).set({
-            font: "text-16",
+          control = new qx.ui.basic.Label(this.tr("Select folder")).set({
+            font: "text-14",
             allowGrowX: true,
             alignY: "middle",
             marginLeft: 10,

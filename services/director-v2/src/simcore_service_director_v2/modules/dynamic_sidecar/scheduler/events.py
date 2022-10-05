@@ -38,7 +38,7 @@ from ..docker_api import (
     constrain_service_to_node,
     create_network,
     create_service_and_get_id,
-    get_service_placement,
+    get_dynamic_sidecar_placement,
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
 )
@@ -185,15 +185,17 @@ class CreateSidecars(DynamicSchedulerEvent):
             dynamic_sidecar_service_final_spec
         )
         # constrain service to the same node
-        scheduler_data.dynamic_sidecar.docker_node_id = await get_service_placement(
-            dynamic_sidecar_id, dynamic_sidecar_settings
+        scheduler_data.dynamic_sidecar.docker_node_id = (
+            await get_dynamic_sidecar_placement(
+                dynamic_sidecar_id, dynamic_sidecar_settings
+            )
         )
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
             docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
         )
 
-        # update service_port and assing it to the status
+        # update service_port and assign it to the status
         # needed by CreateUserServices action
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
             dynamic_sidecar_service_final_spec
@@ -228,6 +230,12 @@ class GetStatus(DynamicSchedulerEvent):
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+        scheduler_data.dynamic_sidecar.inspect_error_handler.delay_for = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S
+        )
 
         try:
             containers_inspect: dict[
@@ -235,16 +243,19 @@ class GetStatus(DynamicSchedulerEvent):
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except BaseClientHTTPError:
+        except BaseClientHTTPError as e:
             were_service_containers_detected_before = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
             )
             if were_service_containers_detected_before:
                 # Containers disappeared after they were started.
                 # for now just mark as error and remove the sidecar
-                # NOTE: this is the correct place where to try and
-                # restart them (future use case).
-                raise
+
+                # NOTE: Network performance can degrade and the sidecar might
+                # be temporarily unreachable.
+                # Adding a delay between when the error is first seen and when the
+                # error is raised to avoid random shutdowns of dynamic-sidecar services.
+                scheduler_data.dynamic_sidecar.inspect_error_handler.try_to_raise(e)
 
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
@@ -254,11 +265,18 @@ class GetStatus(DynamicSchedulerEvent):
                 scheduler_data.service_name,
             )
             return
+        else:
+            scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
 
         # parse and store data from container
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
             containers_inspect
         )
+
+        # TODO: ANE using `were_service_containers_detected_before` together with
+        # how many containers to expect, it can be detected if containers
+        # died and these can be restarted. Best way to go about it is
+        # to have a different handler trigger in this case registered for idling!
 
 
 class PrepareServicesEnvironment(DynamicSchedulerEvent):

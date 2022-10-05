@@ -24,7 +24,25 @@ qx.Class.define("osparc.utils.StatusUI", {
   type: "static",
 
   statics: {
-    getIconSource: function(state) {
+    setupFilePickerIcon: function(fpNode, icon) {
+      fpNode.bind("outputs", icon, "source", {
+        converter: outputs => {
+          if (osparc.file.FilePicker.getOutput(outputs)) {
+            return "@FontAwesome5Solid/check/12";
+          }
+          return "@FontAwesome5Solid/file/12";
+        },
+        onUpdate: (source, target) => {
+          if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
+            target.setTextColor("ready-green");
+          } else {
+            target.resetTextColor();
+          }
+        }
+      });
+    },
+
+    getIconSource: function(state, size = 12) {
       switch (state) {
         // computationals
         case "UNKNOWN":
@@ -34,47 +52,56 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "PENDING":
         case "STARTED":
         case "RETRY":
-          return "@FontAwesome5Solid/circle-notch/12";
+          return "@FontAwesome5Solid/circle-notch/"+size;
         case "SUCCESS":
-          return "@FontAwesome5Solid/check/12";
+          return "@FontAwesome5Solid/check/"+size;
         case "FAILED":
         case "ABORTED":
-          return "@FontAwesome5Solid/exclamation-circle/12";
+          return "@FontAwesome5Solid/exclamation-circle/"+size;
 
         // dynamics
         case "idle":
           return "";
         case "ready":
-          return "@FontAwesome5Solid/check/12";
+          return "@FontAwesome5Solid/check/"+size;
         case "starting":
         case "pending":
         case "pulling":
         case "connecting":
-          return "@FontAwesome5Solid/circle-notch/12";
+          return "@FontAwesome5Solid/circle-notch/"+size;
         case "deprecated":
         case "failed":
-          return "@FontAwesome5Solid/exclamation-circle/12";
+          return "@FontAwesome5Solid/exclamation-circle/"+size;
 
         // ports
         case "modified":
-          return "@FontAwesome5Solid/exclamation-circle/12";
+          return "@FontAwesome5Solid/exclamation-circle/"+size;
         case "up-to-date":
-          return "@FontAwesome5Solid/check/12";
+          return "@FontAwesome5Solid/check/"+size;
         case "running":
-          return "@FontAwesome5Solid/circle-notch/12";
+          return "@FontAwesome5Solid/circle-notch/"+size;
 
         // outputs
         case "busy":
-          return "@FontAwesome5Solid/circle-notch/12";
+          return "@FontAwesome5Solid/circle-notch/"+size;
         case "out-of-date":
-          return "@FontAwesome5Solid/exclamation-circle/12";
+          return "@FontAwesome5Solid/exclamation-circle/"+size;
           /*
         case "up-to-date":
-          return "@FontAwesome5Solid/check/12";
+          return "@FontAwesome5Solid/check/"+size;
           */
 
         default:
           return "";
+      }
+    },
+
+    updateIconAnimation: function(target) {
+      const elem = target.getContentElement();
+      if (target.getSource() && target.getSource().includes("circle-notch")) {
+        osparc.utils.Utils.addClass(elem, "rotate");
+      } else {
+        osparc.utils.Utils.removeClass(elem, "rotate");
       }
     },
 
@@ -177,6 +204,17 @@ qx.Class.define("osparc.utils.StatusUI", {
         default:
           return "no-border";
       }
+    },
+
+    createServiceDeprecatedChip: function() {
+      const chip = new osparc.ui.basic.Chip().set({
+        label: osparc.utils.Services.DEPRECATED_SERVICE,
+        icon: "@FontAwesome5Solid/exclamation-triangle/12",
+        textColor: "contrasted-text-dark",
+        backgroundColor: "failed-red",
+        allowGrowX: false
+      });
+      return chip;
     }
   }
 });

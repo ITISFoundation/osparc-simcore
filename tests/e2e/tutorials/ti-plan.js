@@ -120,6 +120,21 @@ async function runTutorial() {
     await tutorial.waitAndClick("AppMode_NextBtn");
     await tutorial.waitFor(5000, "Starting s4l");
     await tutorial.takeScreenshot("s4l");
+    const s4lIframe = await tutorial.getIframe(workbenchData["nodeIds"][3]);
+    const postProTree = await s4lIframe.$('.algorithm-tree');
+    const postProItems = await postProTree.$$('.MuiTreeItem-label');
+    const nLabels = postProItems.length;
+    if (nLabels > 1) {
+      postProItems[0].click();
+      await tutorial.waitFor(2000, 'Importer clicked');
+      await tutorial.takeScreenshot('ImporterClicked');
+      postProItems[1].click();
+      await tutorial.waitFor(2000, 'Algorithm clicked');
+      await tutorial.takeScreenshot('AlgorithmClicked');
+    }
+    else {
+      throw("Post Pro tree missing");
+    }
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

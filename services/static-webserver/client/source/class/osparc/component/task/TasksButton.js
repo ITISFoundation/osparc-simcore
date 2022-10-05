@@ -95,6 +95,15 @@ qx.Class.define("osparc.component.task.TasksButton", {
       };
 
       const bounds = this.getBounds();
+      const cel = this.getContentElement();
+      if (cel) {
+        const domeEle = cel.getDomElement();
+        if (domeEle) {
+          const rect = domeEle.getBoundingClientRect();
+          bounds.left = parseInt(rect.x);
+          bounds.top = parseInt(rect.y);
+        }
+      }
       const tasks = osparc.component.task.Tasks.getInstance();
       tasks.setTasksContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
       tasks.getTasksContainer().show();

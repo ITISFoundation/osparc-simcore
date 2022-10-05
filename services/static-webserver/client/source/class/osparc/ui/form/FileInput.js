@@ -42,6 +42,7 @@ qx.Class.define("osparc.ui.form.FileInput", {
 
     this.__attachEventHandlers();
   },
+
   properties: {
     extensions: {
       check: "Array",
@@ -52,6 +53,11 @@ qx.Class.define("osparc.ui.form.FileInput", {
       init: false
     }
   },
+
+  events: {
+    "selectionChanged": "qx.event.type.Event"
+  },
+
   members: {
     __input: null,
     __selectBtn: null,
@@ -65,6 +71,7 @@ qx.Class.define("osparc.ui.form.FileInput", {
           fileNames.push(files[i].name);
         }
         this.__selectedFiles.setValue(fileNames.join("; "));
+        this.fireEvent("selectionChanged");
       }, this);
       this.__selectBtn.addListener("execute", () => {
         this.__input.getDomElement().click();

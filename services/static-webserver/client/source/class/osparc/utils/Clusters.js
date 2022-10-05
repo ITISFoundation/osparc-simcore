@@ -27,8 +27,8 @@ qx.Class.define("osparc.utils.Clusters", {
 
   construct: function() {
     this.base(arguments);
+
     this.__clusterIds = [];
-    this.__fetchDetailsTimers = [];
   },
 
   statics: {
@@ -90,7 +90,6 @@ qx.Class.define("osparc.utils.Clusters", {
 
   members: {
     __clusterIds: null,
-    __fetchDetailsTimers: null,
 
     __fetchDetails: function(cid) {
       const params = {

@@ -15,7 +15,7 @@ import itertools
 import json
 import random
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import Any, Callable, Final
 from uuid import uuid4
 
 import faker
@@ -33,7 +33,7 @@ STATES = [
 ]
 
 
-_faker = faker.Faker()
+FAKE: Final = faker.Faker()
 
 
 def _compute_hash(password: str) -> str:
@@ -58,11 +58,11 @@ _DEFAULT_HASH = _compute_hash("secret")
 
 def random_user(**overrides) -> dict[str, Any]:
     data = dict(
-        name=_faker.name(),
-        email=_faker.email(),
+        name=FAKE.name(),
+        email=FAKE.email(),
         password_hash=_DEFAULT_HASH,
         status=UserStatus.ACTIVE,
-        created_ip=_faker.ipv4(),
+        created_ip=FAKE.ipv4(),
     )
     assert set(data.keys()).issubset({c.name for c in users.columns})  # nosec
 
@@ -78,11 +78,11 @@ def random_user(**overrides) -> dict[str, Any]:
 def random_project(**overrides) -> dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
     data = dict(
-        uuid=_faker.uuid4(),
-        name=_faker.word(),
-        description=_faker.sentence(),
-        prj_owner=_faker.pyint(),
-        thumbnail=_faker.image_url(width=120, height=120),
+        uuid=FAKE.uuid4(),
+        name=FAKE.word(),
+        description=FAKE.sentence(),
+        prj_owner=FAKE.pyint(),
+        thumbnail=FAKE.image_url(width=120, height=120),
         access_rights={},
         workbench={},
         published=False,
@@ -95,7 +95,9 @@ def random_project(**overrides) -> dict[str, Any]:
 
 def random_group(**overrides) -> dict[str, Any]:
     data = dict(
-        name=_faker.company(), description=_faker.text(), type=ProjectType.STANDARD.name
+        name=FAKE.company(),
+        description=FAKE.text(),
+        type=ProjectType.STANDARD.name,
     )
     data.update(overrides)
     return data

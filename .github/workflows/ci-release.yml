@@ -51,13 +51,10 @@ jobs:
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
-      - if: contains(env.BRANCH_NAME, 'remotes/origin/master')
-        env:
-          FROM_TAG_PREFIX: staging-github
-        name: deploy
-        run: ./ci/deploy/dockerhub-tag-version.bash
+      - name: source image is staging
+        run: echo "FROM_TAG_PREFIX=staging-github" >> $GITHUB_ENV
       - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_v')
-        env:
-          FROM_TAG_PREFIX: hotfix-github
-        name: deploy from hotfix image
+        name: source image is hotfix (instead of staging)
+        run: echo "FROM_TAG_PREFIX=hotfix-github" >> $GITHUB_ENV
+      - name: deploy
         run: ./ci/deploy/dockerhub-tag-version.bash

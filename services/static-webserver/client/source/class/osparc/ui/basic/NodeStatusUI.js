@@ -42,7 +42,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     __applyNode: function(node) {
       this.show();
       if (node.isFilePicker()) {
-        this.__setupFilepicker();
+        this.__setupFilePicker();
       } else if (node.isComputational()) {
         this.__setupComputational();
       } else if (node.isDynamic()) {
@@ -119,13 +119,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.getNode().getStatus().bind("interactive", this.__icon, "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
+          osparc.utils.StatusUI.updateIconAnimation(this.__icon);
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
-          if (target.getSource() && target.getSource().includes("circle-notch")) {
-            osparc.utils.Utils.addClass(this.__icon.getContentElement(), "rotate");
-          } else {
-            osparc.utils.Utils.removeClass(this.__icon.getContentElement(), "rotate");
-          }
           if (props["interactive"]["check"].includes(state)) {
             target.setTextColor(osparc.utils.StatusUI.getColor(state));
           } else {
@@ -135,22 +131,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       });
     },
 
-    __setupFilepicker: function() {
-      this.getNode().bind("outputs", this.__icon, "source", {
-        converter: outputs => {
-          if (osparc.file.FilePicker.getOutput(outputs)) {
-            return "@FontAwesome5Solid/check/12";
-          }
-          return "@FontAwesome5Solid/file/12";
-        },
-        onUpdate: (source, target) => {
-          if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
-            target.setTextColor("ready-green");
-          } else {
-            target.resetTextColor();
-          }
-        }
-      });
+    __setupFilePicker: function() {
+      osparc.utils.StatusUI.setupFilePickerIcon(this.getNode(), this.__icon);
 
       this.getNode().bind("outputs", this.__label, "value", {
         converter: outputs => {

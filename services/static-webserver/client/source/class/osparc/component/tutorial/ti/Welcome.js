@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.tutorial.ti.Welcome", {
   members: {
     _populateCard: function() {
       const welcome = new qx.ui.basic.Label().set({
-        value: this.tr("Welcome onboard") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",",
+        value: this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUserName()) + ",",
         rich: true,
         wrap: true,
         font: "text-14"

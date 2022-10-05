@@ -81,6 +81,13 @@ qx.Class.define("osparc.auth.Data", {
       init: "",
       nullable: true,
       check: "String"
+    },
+
+    expirationDate: {
+      init: null,
+      nullable: true,
+      check: "Date",
+      event: "changeExpirationDate"
     }
   },
 

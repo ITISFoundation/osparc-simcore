@@ -275,6 +275,19 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * TASKS
+       */
+      "tasks": {
+        useCache: false,
+        idField: "id",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/tasks"
+          }
+        }
+      },
+      /*
        * SERVICES
        */
       "services": {

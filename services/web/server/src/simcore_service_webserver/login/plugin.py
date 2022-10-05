@@ -12,6 +12,7 @@ from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email
 from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
+from ..products import setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest
 from .routes import create_routes
@@ -74,6 +75,7 @@ def setup_login(app: web.Application):
 
     setup_db(app)
     setup_redis(app)
+    setup_products(app)
     setup_rest(app)
     setup_email(app)
 

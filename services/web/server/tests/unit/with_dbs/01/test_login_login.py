@@ -95,7 +95,8 @@ async def test_login_blocked_user(
 
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
     assert r.url.path == url.path
-    assert expected_msg in payload["error"]["errors"][0]["message"]
+    # expected_msg contains {support_email} at the end of the string
+    assert expected_msg[:-20] in payload["error"]["errors"][0]["message"]
 
 
 async def test_login_inactive_user(client: TestClient, login_options: LoginOptions):
