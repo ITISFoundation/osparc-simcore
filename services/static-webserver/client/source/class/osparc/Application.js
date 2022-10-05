@@ -354,21 +354,12 @@ qx.Class.define("osparc.Application", {
         .then(profile => {
           if ("expirationDate" in profile) {
             const now = new Date();
-            const daysToExpiration = osparc.utils.Utils.daysBetween(now, new Date(profile["expirationDate"]));
-            console.log("daysToExpiration", daysToExpiration);
-            if (daysToExpiration < 1) {
-              // Will not get here. Backend should not allow
-              let msg = this.tr("This account is expired.<br>");
-              msg += this.tr("Please, contact us by email:<br>");
-              osparc.store.StaticInfo.getInstance().getSupportEmail()
-                .then(supportEmail => osparc.component.message.FlashMessenger.getInstance().logAs(msg+supportEmail, "ERROR"));
-              this.logout();
-              return;
-            } else if (daysToExpiration < 7) {
-              let msg = this.tr("This account will expire in ") + daysToExpiration + this.tr(" days<br>");
-              msg += this.tr("Please, contact us by email:<br>");
-              osparc.store.StaticInfo.getInstance().getSupportEmail()
-                .then(supportEmail => osparc.component.message.FlashMessenger.getInstance().logAs(msg+supportEmail, "WARNING"));
+            const today = new Date(now.toISOString().slice(0, 10));
+            const expirationDay = new Date(profile["expirationDate"]);
+            const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
+            if (daysToExpiration < 7) {
+              osparc.utils.Utils.expirationMessage(daysToExpiration)
+                .then(msg => osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING"));
             }
           }
           if (studyId) {

@@ -246,10 +246,14 @@ qx.Class.define("osparc.utils.Utils", {
       const today = new Date();
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
       if (today.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
       } else if (yesterday.toDateString() === value.toDateString()) {
         dateStr = qx.locale.Manager.tr("Yesterday");
+      } else if (tomorrow.toDateString() === value.toDateString()) {
+        dateStr = qx.locale.Manager.tr("Tomorrow");
       } else {
         dateStr = dateFormat.format(value);
       }
@@ -274,13 +278,32 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
-    daysBetween: function(date1, date2) {
+    daysBetween: function(day1, day2) {
       // The number of milliseconds in one day
       const ONE_DAY = 1000 * 60 * 60 * 24;
       // Calculate the difference in milliseconds
-      const differenceMs = date2 - date1;
+      const differenceMs = day2 - day1;
       // Convert back to days and return
-      return Math.round(differenceMs / ONE_DAY);
+      const daysBetween = Math.round(differenceMs / ONE_DAY);
+      return daysBetween;
+    },
+
+    expirationMessage: function(daysToExpiration) {
+      let msg = "";
+      if (daysToExpiration === 0) {
+        msg = qx.locale.Manager.tr("This account will expire Today.");
+      } else if (daysToExpiration === 1) {
+        msg = qx.locale.Manager.tr("This account will expire Tomorrow.");
+      } else {
+        msg = qx.locale.Manager.tr("This account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
+      }
+      msg += "</br>";
+      msg += qx.locale.Manager.tr("Please, contact us by email:");
+      msg += "</br>";
+      return new Promise(resolve => {
+        osparc.store.StaticInfo.getInstance().getSupportEmail()
+          .then(supportEmail => resolve(msg + supportEmail));
+      });
     },
 
     getNameFromEmail: function(email) {

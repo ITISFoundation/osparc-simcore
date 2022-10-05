@@ -267,25 +267,15 @@ async function deleteFirstStudy(page, studyName) {
   }
 
   await page.waitForSelector('[osparc-test-id="studiesList"]')
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
+  const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
 
-  // filter out the cards that are not studies
-  [
-    "newStudyBtn",
-    "newPlanButton",
-    "studiesLoading"
-  ].forEach(notAStudy => {
-    const idx = children.indexOf(notAStudy);
-    if (idx > -1) {
-      children.splice(idx, 1);
-    }
-  });
-  if (children.length === 0) {
+  const studyIDs = childrenIDs.filter(childId => childId.includes("studyBrowserListItem_"));
+  if (studyIDs.length === 0) {
     console.log("Deleting first Study: no study found");
     return false;
   }
 
-  const studyCardId = children[0];
+  const studyCardId = studyIDs[0];
   const firstChildId = '[osparc-test-id="' + studyCardId + '"]';
   const studyCardStyle = await utils.getStyle(page, firstChildId);
   if (studyCardStyle.cursor === "not-allowed") {

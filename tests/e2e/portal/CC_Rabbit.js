@@ -1,4 +1,4 @@
-// node CC_Rabbit.js [url_prefix] [template_uuid] [--demo]
+// node CC_Rabbit.js [url_prefix] [template_uuid] [start_timeout] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');

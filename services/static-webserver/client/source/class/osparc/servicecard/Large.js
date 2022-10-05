@@ -182,14 +182,7 @@ qx.Class.define("osparc.servicecard.Large", {
     __createDeprecated: function() {
       const isDeprecated = osparc.utils.Services.isDeprecated(this.getService());
       if (isDeprecated) {
-        const chip = new osparc.ui.basic.Chip().set({
-          label: this.tr("Service deprecated"),
-          icon: "@FontAwesome5Solid/exclamation-triangle/12",
-          textColor: "contrasted-text-dark",
-          backgroundColor: "failed-red",
-          allowGrowX: false
-        });
-        return chip;
+        return osparc.utils.StatusUI.createServiceDeprecatedChip();
       }
       return null;
     },

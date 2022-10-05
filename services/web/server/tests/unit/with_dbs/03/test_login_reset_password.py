@@ -84,7 +84,7 @@ async def test_blocked_user(
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
-    expected_msg = getattr(cfg, f"MSG_USER_{user_status.name.upper()}")
+    expected_msg: str = getattr(cfg, f"MSG_USER_{user_status.name.upper()}")
 
     async with NewUser({"status": user_status.name}, app=client.app) as user:
         rp = await client.post(
@@ -98,7 +98,8 @@ async def test_blocked_user(
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
     out, _ = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == expected_msg
+    # expected_msg contains {support_email} at the end of the string
+    assert expected_msg[:-20] in parse_test_marks(out)["reason"]
 
 
 async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
@@ -130,7 +131,7 @@ async def test_too_often(
 
     async with NewUser(app=client.app) as user:
         confirmation = await db.create_confirmation(
-            user, ConfirmationAction.RESET_PASSWORD.name
+            user["id"], ConfirmationAction.RESET_PASSWORD.name
         )
         rp = await client.post(
             f"{reset_url}",

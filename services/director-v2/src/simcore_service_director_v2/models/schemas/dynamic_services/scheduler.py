@@ -15,6 +15,7 @@ from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
+from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -239,6 +240,15 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
+    inspect_error_handler: DelayedExceptionHandler = Field(
+        DelayedExceptionHandler(delay_for=0),
+        description=(
+            "Set when the dy-sidecar can no longer be reached by the "
+            "director-v2. If it will be possible to reach the dy-sidecar again, "
+            "this value will be set to None."
+        ),
+    )
+
     class Config:
         validate_assignment = True
 
@@ -295,6 +305,10 @@ class DynamicSidecarNamesHelper(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
+    # TODO: ANE this object is just the context of the dy-sidecar. Should
+    # be called like so and subcontexts for different handlers should
+    # also be added. It will make keeping track of env vars more easily
+
     service_name: ServiceName = Field(
         ...,
         description="Name of the current dynamic-sidecar being observed",
