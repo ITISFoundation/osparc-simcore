@@ -86,11 +86,13 @@ class TasksResources(BaseModel):
 class ReservedResources(TypedDict):
     RAM: float
     CPU: int
+    # NOTE: future add VRAM, AIRAM
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987821694
 
 
 def _get_reserved_resources(reservations: dict[str, Any]) -> ReservedResources:
-    ram = 0
-    cpu = 0
+    ram: float = 0.0
+    cpu: int = 0
     if "MemoryBytes" in reservations:
         ram = bytesto(
             reservations["MemoryBytes"],
@@ -98,7 +100,7 @@ def _get_reserved_resources(reservations: dict[str, Any]) -> ReservedResources:
             bsize=1024,
         )
     if "NanoCPUs" in reservations:
-        cpu = int(reservations["NanoCPUs"]) / 1000000000
+        cpu = int(reservations["NanoCPUs"]) / 1_000_000_000
     return {"RAM": ram, "CPU": cpu}
 
 
