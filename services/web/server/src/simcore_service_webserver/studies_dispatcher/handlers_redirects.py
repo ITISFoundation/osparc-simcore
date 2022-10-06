@@ -13,7 +13,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
-from .._constants import INDEX_RESOURCE_NAME
+from .._constants import INDEX_RESOURCE_NAME, RQ_PRODUCT_FRONTEND_KEY
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
@@ -155,7 +155,11 @@ async def get_redirection_to_viewer(request: web.Request):
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await acquire_project_with_viewer(
-            request.app, user, viewer, params.download_link
+            request.app,
+            user,
+            viewer,
+            params.download_link,
+            product_name=request[RQ_PRODUCT_FRONTEND_KEY],
         )
         log.debug("Project acquired '%s'", project_id)
 

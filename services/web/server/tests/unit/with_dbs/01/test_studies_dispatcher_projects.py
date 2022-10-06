@@ -87,9 +87,7 @@ def app_cfg(
     "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
 )
 async def test_add_new_project_from_model_instance(
-    view,
-    client,
-    mocker,
+    view, client, mocker, osparc_product_name: str
 ):
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
@@ -127,7 +125,9 @@ async def test_add_new_project_from_model_instance(
                 viewer_info=viewer,
             )
 
-            await add_new_project(client.app, project, user)
+            await add_new_project(
+                client.app, project, user, product_name=osparc_product_name
+            )
 
             # checks start here   ---
             assert mock_func.called

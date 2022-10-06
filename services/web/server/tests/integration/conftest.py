@@ -18,7 +18,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from string import Template
-from typing import AsyncIterable, Dict, List
+from typing import AsyncIterable
 from unittest import mock
 
 import pytest
@@ -44,8 +44,8 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
 def webserver_environ(
-    request, docker_stack: Dict, simcore_docker_compose: Dict
-) -> Dict[str, str]:
+    request, docker_stack: dict, simcore_docker_compose: dict
+) -> dict[str, str]:
     """
     Started already swarm with integration stack (via dependency with 'docker_stack')
 
@@ -106,7 +106,7 @@ def default_app_config_integration_file(tests_data_dir: Path) -> Path:
 @pytest.fixture(scope="module")
 def _default_app_config_for_integration_tests(
     default_app_config_integration_file: Path,
-    webserver_environ: Dict,
+    webserver_environ: dict,
     osparc_simcore_root_dir: Path,
 ) -> ConfigDict:
     """
@@ -176,7 +176,7 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user: UserInfoDict) -> Dict[str, str]:
+async def primary_group(client, logged_user: UserInfoDict) -> dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
@@ -184,7 +184,7 @@ async def primary_group(client, logged_user: UserInfoDict) -> Dict[str, str]:
 @pytest.fixture
 async def standard_groups(
     client, logged_user: UserInfoDict
-) -> AsyncIterable[List[Dict[str, str]]]:
+) -> AsyncIterable[list[dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced
@@ -230,6 +230,11 @@ async def standard_groups(
 
 
 @pytest.fixture
-async def all_group(client, logged_user) -> Dict[str, str]:
+async def all_group(client, logged_user) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
+
+
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
