@@ -66,7 +66,7 @@ def create_ec2_client(settings: AwsSettings):
 
 def start_instance_aws(
     settings: AwsSettings,
-    ami_id,
+    ami_id: str,
     instance_type: str,
     tag: str,
     service_type: str,
