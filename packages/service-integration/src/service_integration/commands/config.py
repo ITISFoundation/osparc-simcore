@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
-from typing import Dict, Final
+from typing import Final
 
-import click
+import rich
+import typer
 import yaml
 from pydantic import ValidationError
 from pydantic.main import BaseModel
@@ -16,7 +17,7 @@ def create_osparc_specs(
     io_specs_path: Path = Path("metadata.yml"),
     service_specs_path: Path = Path("runtime-spec.yml"),
 ):
-    click.echo(f"Creating osparc config files from {compose_spec_path}")
+    rich.print(f"Creating osparc config files from {compose_spec_path}")
 
     compose_spec = ComposeSpecification.parse_obj(
         yaml.safe_load(compose_spec_path.read_text())
@@ -32,7 +33,7 @@ def create_osparc_specs(
                 output_path = filename.parent / service_name / filename.name
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            click.echo(f"Creating {output_path} ...", nl=False)
+            rich.print(f"Creating {output_path} ...", end="")
 
             with output_path.open("wt") as fh:
                 data = json.loads(
@@ -40,14 +41,14 @@ def create_osparc_specs(
                 )
                 yaml.safe_dump(data, fh, sort_keys=False)
 
-            click.echo("DONE")
+            rich.print("DONE")
 
         for service_name in compose_spec.services:
             try:
                 labels = compose_spec.services[service_name].build.labels
                 if labels:
                     if isinstance(labels, list):
-                        labels: Dict[str, str] = dict(
+                        labels: dict[str, str] = dict(
                             item.strip().split("=") for item in labels
                         )
                     # TODO: there must be a better way for this ...
@@ -69,25 +70,20 @@ def create_osparc_specs(
                 )
 
             except (AttributeError, ValidationError, TypeError) as err:
-                click.echo(
+                rich.print(
                     f"WARNING: failure producing specs for {service_name}: {err}"
                 )
 
-        click.echo("osparc config files created")
+        rich.print("osparc config files created")
 
 
-@click.command()
-@click.option(
-    "-f",
-    "--from-spec-file",
-    "compose_spec_path",
-    help="docker-compose used to deduce osparc config",
-    type=Path,
-    required=True,
-    default=Path("docker-compose.yml"),
-)
 def main(
-    compose_spec_path: Path,
+    compose_spec_path: Path = typer.Option(
+        Path("docker-compose.yml"),
+        "-f",
+        "--to-spec-file",
+        help="Output docker-compose image spec",
+    ),
 ):
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
@@ -97,11 +93,6 @@ def main(
 
     meta_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
-    click.echo(f"Creating {config_dir} from {compose_spec_path} ...")
+    rich.print(f"Creating {config_dir} from {compose_spec_path} ...")
 
     create_osparc_specs(compose_spec_path, meta_cfg_path, runtime_cfg_path)
-
-
-if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
-    main()

@@ -4,17 +4,17 @@
 
 import os
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable
 
 import pytest
 import yaml
-from service_integration.commands.metadata import TARGET_VERSION_CHOICES
+from service_integration.commands.metadata import TargetVersionChoices
 
 
 @pytest.fixture
 def current_metadata(
     metadata_file_path: Path, target_version: str, current_version: str
-) -> Dict:
+) -> dict:
 
     metadata = yaml.safe_load(metadata_file_path.read_text())
     metadata[target_version] = current_version
@@ -31,7 +31,9 @@ BUMP_PARAMS = [
 ]
 
 
-CMD_PARAMS = [(t, b, c, n) for t in TARGET_VERSION_CHOICES for b, c, n in BUMP_PARAMS]
+CMD_PARAMS = [
+    (t.value, b, c, n) for t in TargetVersionChoices for b, c, n in BUMP_PARAMS
+]
 
 
 @pytest.mark.parametrize("target_version,bump,current_version,new_version", CMD_PARAMS)
@@ -40,7 +42,7 @@ def test_make_version(
     bump: str,
     current_version: str,
     new_version: str,
-    current_metadata: Dict,
+    current_metadata: dict,
     metadata_file_path: Path,
     run_program_with_args: Callable,
 ):

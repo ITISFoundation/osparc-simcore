@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Optional
 
-import click
+import rich
+import typer
 import yaml
 
 from ..compose_spec_model import ComposeSpecification
@@ -13,7 +14,7 @@ from ..osparc_image_specs import create_image_spec
 
 def create_docker_compose_image_spec(
     io_config_path: Path,
-    service_config_path: Path = None,
+    service_config_path: Optional[Path] = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
@@ -29,7 +30,7 @@ def create_docker_compose_image_spec(
             # TODO: should include default?
             runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
         except FileNotFoundError:
-            click.echo("No runtime config found (optional), using default.")
+            rich.print("No runtime config found (optional), using default.")
 
     # OCI annotations (optional)
     extra_labels = {}
@@ -53,7 +54,7 @@ def create_docker_compose_image_spec(
             extra_labels.update(ls_labels)
 
         except FileNotFoundError:
-            click.echo(
+            rich.print(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
 
@@ -62,28 +63,19 @@ def create_docker_compose_image_spec(
     return compose_spec
 
 
-@click.command()
-@click.option(
-    "-m",
-    "--metadata",
-    "config_path",
-    help="osparc config file or folder",
-    type=Path,
-    required=False,
-    default="metadata.yml",
-)
-@click.option(
-    "-f",
-    "--to-spec-file",
-    "compose_spec_path",
-    help="Output docker-compose image spec",
-    type=Path,
-    required=False,
-    default=Path("docker-compose.yml"),
-)
 def main(
-    config_path: Path,
-    compose_spec_path: Path,
+    config_path: Path = typer.Option(
+        "metadata.yml",
+        "-m",
+        "--metadata",
+        help="osparc config file or folder",
+    ),
+    compose_spec_path: Path = typer.Option(
+        Path("docker-compose.yml"),
+        "-f",
+        "--to-spec-file",
+        help="Output docker-compose image spec",
+    ),
 ):
     """create docker image/runtime compose-specs from an osparc config"""
 
@@ -98,7 +90,7 @@ def main(
             basedir = config_path.parent
             meta_filename = config_path.name
 
-    config_filenames: Dict[str, List[Path]] = {}
+    config_filenames: dict[str, list[Path]] = {}
     if basedir.exists():
         for meta_cfg in basedir.rglob(meta_filename):
             config_name = meta_cfg.parent.name
@@ -133,8 +125,3 @@ def main(
             default_flow_style=False,
             sort_keys=False,
         )
-
-
-if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
-    main()
