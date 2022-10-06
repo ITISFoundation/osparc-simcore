@@ -17,11 +17,18 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 class AwsSettings(BaseCustomSettings):
     AWS_KEY_NAME: str
     AWS_DNS: str
+
     AWS_ACCESS_KEY_ID: str
-    AWS_REGION_NAME: str = "us-east-1"
     AWS_SECRET_ACCESS_KEY: str
+    AWS_REGION_NAME: str = "us-east-1"  # see https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html
+
+    # EC2 instance paramaters
     AWS_SECURITY_GROUP_IDS: list[str]
     AWS_SUBNET_ID: str
+
+    AWS_MAX_CPUs_CLUSTER: PositiveInt = 20
+    AWS_MAX_RAM_CLUSTER: PositiveInt = 50
+    AWS_INTERVAL_CHECK: PositiveInt = 5
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
