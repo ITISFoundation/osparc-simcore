@@ -5,7 +5,7 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, Union
+from typing import Any, AsyncIterable, AsyncIterator, Callable
 from unittest import mock
 
 import pytest
@@ -20,8 +20,6 @@ from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from simcore_service_webserver import catalog
-
 
 
 @pytest.fixture
@@ -94,15 +92,13 @@ def mock_catalog_api(
 
 @pytest.fixture
 async def user_project(
-    client,
-    fake_project,
-    logged_user,
-    tests_data_dir: Path,
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
 ):
     async with NewProject(
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
@@ -117,6 +113,7 @@ async def shared_project(
     logged_user,
     all_group,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     fake_project.update(
         {
@@ -129,6 +126,7 @@ async def shared_project(
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
@@ -143,6 +141,7 @@ async def template_project(
     logged_user,
     all_group: dict[str, str],
     tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterable[dict[str, Any]]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -155,8 +154,10 @@ async def template_project(
         project_data,
         client.app,
         user_id=None,
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
+        as_template=True,
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project
@@ -176,31 +177,6 @@ def fake_services():
 async def project_db_cleaner(client):
     yield
     await delete_all_projects(client.app)
-
-
-@pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch,
-) -> Callable[[Optional[Union[list[dict], dict]]], None]:
-    services_in_project = []
-
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
-        for proj in projects or []:
-            services_in_project.extend(
-                [
-                    {"key": s["key"], "version": s["version"]}
-                    for _, s in proj["workbench"].items()
-                ]
-            )
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-    return creator
 
 
 @pytest.fixture(autouse=True)

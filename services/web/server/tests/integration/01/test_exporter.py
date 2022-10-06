@@ -454,12 +454,16 @@ async def get_checksums_for_files_in_storage(
 ################ end utils
 
 
-async def import_study_from_file(client, file_path: Path) -> str:
+async def import_study_from_file(
+    client, file_path: Path, headers: dict[str, Any]
+) -> str:
     url_import = client.app.router["import_project"].url_for()
     assert url_import == URL(API_PREFIX + "/projects:import")
 
     data = {"fileName": open(file_path, mode="rb")}
-    async with client.post(url_import, data=data, timeout=10) as import_response:
+    async with client.post(
+        url_import, data=data, headers=headers, timeout=10
+    ) as import_response:
         assert import_response.status == 200, await import_response.text()
         reply_data = await import_response.json()
         assert reply_data.get("data") is not None
@@ -495,9 +499,11 @@ async def test_import_export_import_duplicate(
     )
     assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
 
-    imported_project_uuid = await import_study_from_file(client, export_version)
-
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
+
+    imported_project_uuid = await import_study_from_file(
+        client, export_version, headers
+    )
 
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(
@@ -522,7 +528,7 @@ async def test_import_export_import_duplicate(
                 log.info("output_path %s", downloaded_file_path)
 
             reimported_project_uuid = await import_study_from_file(
-                client, downloaded_file_path
+                client, downloaded_file_path, headers=headers
             )
 
     # duplicate newly imported project
@@ -638,9 +644,11 @@ async def test_download_error_reporting(
     )
     assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
 
-    imported_project_uuid = await import_study_from_file(client, export_version)
-
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
+
+    imported_project_uuid = await import_study_from_file(
+        client, export_version, headers=headers
+    )
 
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(

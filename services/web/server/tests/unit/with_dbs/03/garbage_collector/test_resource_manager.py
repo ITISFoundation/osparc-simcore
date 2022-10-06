@@ -155,10 +155,15 @@ async def empty_user_project(
     empty_project,
     logged_user,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[dict[str, Any]]:
     project = empty_project()
     async with NewProject(
-        project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
+        project,
+        client.app,
+        user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -171,10 +176,15 @@ async def empty_user_project2(
     empty_project,
     logged_user,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[dict[str, Any]]:
     project = empty_project()
     async with NewProject(
-        project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
+        project,
+        client.app,
+        user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
+        product_name=osparc_product_name,
     ) as project:
         print("-----> added project", project["name"])
         yield project
