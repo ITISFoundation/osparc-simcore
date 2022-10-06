@@ -18,7 +18,7 @@ install() {
   make install-ci
   popd
   .venv/bin/pip list --verbose
-  (make pull-version tag-local) || (make build tag-version)
+  # (make pull-version tag-local) || (make build tag-version)
   make info-images
 }
 
