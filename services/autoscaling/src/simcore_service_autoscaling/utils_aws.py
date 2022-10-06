@@ -13,7 +13,8 @@ from .core.settings import AwsSettings
 
 logger = logging.getLogger(__name__)
 
-
+# NOTE: Possible future improvement: Get this list programmatically instead of hardcoded
+# SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987819879
 AWS_EC2: Final = [
     {"name": "t2.xlarge", "CPUs": 4, "RAM": 16},
     {"name": "t2.2xlarge", "CPUs": 8, "RAM": 32},
@@ -39,6 +40,8 @@ ALL_AWS_EC2: Final = (
 
 
 def compose_user_data(settings: AwsSettings) -> str:
+    # NOTE: docker swarm commands might be done with aioboto?
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987820674
     return dedent(
         f"""\
     #!/bin/bash
@@ -60,7 +63,7 @@ def create_ec2_client(settings: AwsSettings):
         "ec2",
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name="us-east-1",
+        region_name=settings.AWS_REGION_NAME,
     )
 
 

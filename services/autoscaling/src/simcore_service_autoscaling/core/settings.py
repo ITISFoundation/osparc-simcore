@@ -18,6 +18,7 @@ class AwsSettings(BaseCustomSettings):
     AWS_KEY_NAME: str
     AWS_DNS: str
     AWS_ACCESS_KEY_ID: str
+    AWS_REGION_NAME: str = "us-east-1"
     AWS_SECRET_ACCESS_KEY: str
     AWS_SECURITY_GROUP_IDS: list[str]
     AWS_SUBNET_ID: str
