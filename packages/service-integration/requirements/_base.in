@@ -10,4 +10,4 @@ docker # pytest-plugin
 jsonschema # pytest-plugin
 pytest # pytest-plugin
 pyyaml
-## TODO: typer[all]
+typer[all]
