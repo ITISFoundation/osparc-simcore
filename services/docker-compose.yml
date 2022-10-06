@@ -189,8 +189,8 @@ services:
         # see [#2718](https://github.com/ITISFoundation/osparc-simcore/issues/2718)
         # catchall for modern services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.service=${SWARM_STACK_NAME}_modern_services_catchall
-        # the priority is set the same as the webserver, the webserver is the fallback to everything and has prio 2
-        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=2
+        # the priority is a bit higher than webserver, the webserver is the fallback to everything and has prio 2
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.entrypoints=http
         # in theory the pattern should be uuid.services.OSPARC_DOMAIN, but anything could go through.. so let's catch everything
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.rule=hostregexp(`{node_uuid:.+}.services.{host:.+}`)
