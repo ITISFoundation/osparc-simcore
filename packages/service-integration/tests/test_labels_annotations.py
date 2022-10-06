@@ -4,7 +4,7 @@
 
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import yaml
@@ -21,7 +21,7 @@ def metadata_config(tests_data_dir: Path):
 
 
 @pytest.mark.parametrize("trim_key_head", (True, False))
-def test_to_and_from_labels(metadata_config: Dict[str, Any], trim_key_head: bool):
+def test_to_and_from_labels(metadata_config: dict[str, Any], trim_key_head: bool):
 
     metadata_labels = to_labels(
         metadata_config, prefix_key="swiss.itisfoundation", trim_key_head=trim_key_head

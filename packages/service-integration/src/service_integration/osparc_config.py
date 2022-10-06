@@ -13,7 +13,7 @@ integrates with osparc.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 from models_library.service_settings_labels import ContainerSpec, RestartPolicy
 from models_library.services import (
@@ -83,13 +83,13 @@ class MetaConfig(ServiceDockerData):
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "MetaConfig":
+    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetaConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
         return cls.parse_obj(data)
 
-    def to_labels_annotations(self) -> Dict[str, str]:
+    def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
@@ -121,7 +121,7 @@ class PathsMapping(BaseModel):
         ...,
         description="folder path where the service is expected to provide all its outputs",
     )
-    state_paths: List[Path] = Field(
+    state_paths: list[Path] = Field(
         [],
         description="optional list of paths which contents need to be persisted",
     )
@@ -176,7 +176,7 @@ class RuntimeConfig(BaseModel):
 
     paths_mapping: Optional[PathsMapping] = None
 
-    settings: List[SettingsItem] = []
+    settings: list[SettingsItem] = []
 
     class Config:
         alias_generator = lambda field_name: field_name.replace("_", "-")
@@ -190,11 +190,11 @@ class RuntimeConfig(BaseModel):
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "RuntimeConfig":
+    def from_labels_annotations(cls, labels: dict[str, str]) -> "RuntimeConfig":
         data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
         return cls.parse_obj(data)
 
-    def to_labels_annotations(self) -> Dict[str, str]:
+    def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
@@ -221,7 +221,7 @@ class ConfigFilesStructure:
             basedir = Path.home()
         return basedir / ".osparc" / "service-integration.json"
 
-    def search(self, start_dir: Path) -> Dict[str, Path]:
+    def search(self, start_dir: Path) -> dict[str, Path]:
         """Tries to match of any of file layouts
         and returns associated config files
         """
