@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         openMode: "none",
         contentPadding: 0,
         padding: 0,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       return tree;
     },
