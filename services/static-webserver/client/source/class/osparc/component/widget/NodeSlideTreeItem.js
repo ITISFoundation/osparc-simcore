@@ -43,6 +43,14 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       apply: "_applySkipNode",
       init: false,
       nullable: true
+    },
+
+    editMode: {
+      check: "Boolean",
+      event: "changeEditMode",
+      apply: "_applyEditMode",
+      init: false,
+      nullable: false
     }
   },
 
@@ -89,9 +97,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
         marginRight: 5,
         appearance: "no-shadow-button"
       });
-      hideBtn.addListener("execute", () => {
-        this.fireEvent("showNode");
-      }, this);
+      hideBtn.addListener("execute", () => this.fireEvent("showNode"), this);
       this.bind("skipNode", hideBtn, "visibility", {
         converter: val => {
           if (val === null) {
@@ -109,9 +115,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
         marginRight: 5,
         appearance: "no-shadow-button"
       });
-      showBtn.addListener("execute", () => {
-        this.fireEvent("hideNode");
-      }, this);
+      showBtn.addListener("execute", () => this.fireEvent("hideNode"), this);
       this.bind("skipNode", showBtn, "visibility", {
         converter: val => {
           if (val === null) {
@@ -128,9 +132,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
         appearance: "no-shadow-button"
       });
-      moveUpBtn.addListener("execute", () => {
-        this.fireEvent("moveUp");
-      }, this);
+      moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
       this.bind("position", moveUpBtn, "visibility", {
         converter: val => {
           if (val === null) {
@@ -144,9 +146,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
         appearance: "no-shadow-button"
       });
-      moveDownBtn.addListener("execute", () => {
-        this.fireEvent("moveDown");
-      }, this);
+      moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
       this.bind("position", moveDownBtn, "visibility", {
         converter: val => {
           if (val === null) {
@@ -156,6 +156,12 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
         }
       });
       this.addWidget(moveDownBtn);
+
+      const moveBtn = new qx.ui.form.Button(null, "@MaterialIcons/drag_handle/14").set({
+        marginRight: 5,
+        appearance: "no-shadow-button"
+      });
+      this.addWidget(moveBtn);
 
       if (osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
         const nodeIdWidget = new qx.ui.basic.Label().set({
