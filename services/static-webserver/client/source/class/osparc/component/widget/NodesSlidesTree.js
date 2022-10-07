@@ -141,9 +141,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
         },
         sorter: (a, b) => {
-          console.log("--- sort ---");
-          console.log(a);
-          console.log(b);
           const aPos = a.getPosition();
           if (aPos === -1) {
             return 1;
