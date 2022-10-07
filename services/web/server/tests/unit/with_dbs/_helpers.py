@@ -40,6 +40,9 @@ class ExpectedResponse(NamedTuple):
     not_acceptable: Union[
         type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNotAcceptable]
     ]
+    conflict: Union[
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPConflict]
+    ]
 
     def __str__(self) -> str:
         items = ",".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
@@ -62,6 +65,7 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     accepted=web.HTTPUnauthorized,
                     unprocessable=web.HTTPUnauthorized,
                     not_acceptable=web.HTTPUnauthorized,
+                    conflict=web.HTTPUnauthorized,
                 ),
             ),
             (
@@ -76,6 +80,7 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     accepted=web.HTTPForbidden,
                     unprocessable=web.HTTPForbidden,
                     not_acceptable=web.HTTPForbidden,
+                    conflict=web.HTTPForbidden,
                 ),
             ),
             (
@@ -90,6 +95,7 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     accepted=web.HTTPAccepted,
                     unprocessable=web.HTTPUnprocessableEntity,
                     not_acceptable=web.HTTPNotAcceptable,
+                    conflict=web.HTTPConflict,
                 ),
             ),
             (
@@ -104,6 +110,7 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     accepted=web.HTTPAccepted,
                     unprocessable=web.HTTPUnprocessableEntity,
                     not_acceptable=web.HTTPNotAcceptable,
+                    conflict=web.HTTPConflict,
                 ),
             ),
         ],

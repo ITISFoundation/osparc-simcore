@@ -1,7 +1,6 @@
 import logging
 import urllib.parse
 from pathlib import Path
-from typing import Type
 
 import aiofiles
 from aiohttp import web
@@ -22,7 +21,7 @@ async def study_export(
     user_id: int,
     product_name: str,
     archive: bool = False,
-    formatter_class: Type[BaseFormatter] = FormatterV2,
+    formatter_class: type[BaseFormatter] = FormatterV2,
 ) -> Path:
     """
     Generates a folder with all the data necessary for exporting a project.
@@ -59,6 +58,7 @@ async def study_import(
     temp_dir: str,
     file_field: FileField,
     user_id: int,
+    product_name: str,
     chunk_size: int = 2**16,
 ) -> str:
     """
@@ -99,11 +99,15 @@ async def study_import(
     )
 
     formatter: BaseFormatter = await validate_manifest(unzipped_root_folder)
-    return await formatter.validate_and_import_directory(app=app, user_id=user_id)
+    return await formatter.validate_and_import_directory(
+        app=app, user_id=user_id, product_name=product_name
+    )
 
 
 async def study_duplicate(
-    app: web.Application, user_id: int, exported_project_path: Path
+    app: web.Application, user_id: int, product_name: str, exported_project_path: Path
 ) -> str:
     formatter: BaseFormatter = await validate_manifest(exported_project_path)
-    return await formatter.validate_and_import_directory(app=app, user_id=user_id)
+    return await formatter.validate_and_import_directory(
+        app=app, user_id=user_id, product_name=product_name
+    )

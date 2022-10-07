@@ -42,6 +42,7 @@ from servicelib.aiohttp.application_keys import (
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog_client, director_v2_api, storage_api
@@ -177,7 +178,8 @@ def get_delete_project_task(
 async def add_project_node(
     request: web.Request,
     project: dict[str, Any],
-    user_id: int,
+    user_id: UserID,
+    product_name: str,
     service_key: str,
     service_version: str,
     service_id: Optional[str],
@@ -209,6 +211,7 @@ async def add_project_node(
     await db.replace_user_project(
         new_project_data=project,
         user_id=user_id,
+        product_name=product_name,
         project_uuid=project["uuid"],
     )
     # also ensure the project is updated by director-v2 since services
@@ -273,6 +276,14 @@ async def delete_project_node(
     await storage_api.delete_data_folders_of_project_node(
         request.app, project_uuid, node_uuid, user_id
     )
+
+
+async def update_project_linked_product(
+    app: web.Application, project_id: ProjectID, product_name: str
+) -> None:
+    with log_context(log, level=logging.DEBUG, msg="updating project linked product"):
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        await db.upsert_project_linked_product(project_id, product_name)
 
 
 async def update_project_node_state(
@@ -488,7 +499,7 @@ async def _clean_user_disconnected_clients(
 
 
 async def try_open_project_for_user(
-    user_id: int, project_uuid: str, client_session_id: str, app: web.Application
+    user_id: UserID, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
         async with lock_with_notification(
