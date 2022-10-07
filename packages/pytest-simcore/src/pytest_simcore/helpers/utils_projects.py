@@ -14,6 +14,7 @@ from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
+    ProjectDBAPI,
 )
 from simcore_service_webserver.utils import now_str
 
@@ -38,8 +39,10 @@ async def create_project(
     params_override: Optional[dict[str, Any]] = None,
     user_id: Optional[int] = None,
     *,
+    product_name: str,
     default_project_json: Optional[Path] = None,
     force_uuid: bool = False,
+    as_template: bool = False,
 ) -> ProjectDict:
     """Injects new project in database for user or as template
 
@@ -60,10 +63,14 @@ async def create_project(
 
     project_data.update(params_override)
 
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     new_project = await db.add_project(
-        project_data, user_id, force_project_uuid=force_uuid
+        project_data,
+        user_id,
+        product_name=product_name,
+        force_project_uuid=force_uuid,
+        force_as_template=as_template,
     )
     try:
         uuidlib.UUID(str(project_data["uuid"]))
@@ -96,18 +103,22 @@ class NewProject:
         clear_all: bool = True,
         user_id: Optional[int] = None,
         *,
+        product_name: str,
         tests_data_dir: Path,
         force_uuid: bool = False,
+        as_template: bool = False,
     ):
         assert app  # nosec
 
         self.params_override = params_override
         self.user_id = user_id
+        self.product_name = product_name
         self.app = app
         self.prj = {}
         self.clear_all = clear_all
         self.force_uuid = force_uuid
         self.tests_data_dir = tests_data_dir
+        self.as_template = as_template
 
         assert tests_data_dir.exists()
         assert tests_data_dir.is_dir()
@@ -125,8 +136,10 @@ class NewProject:
             self.app,
             self.params_override,
             self.user_id,
+            product_name=self.product_name,
             force_uuid=self.force_uuid,
             default_project_json=self.tests_data_dir / "fake-project.json",
+            as_template=self.as_template,
         )
         return self.prj
 

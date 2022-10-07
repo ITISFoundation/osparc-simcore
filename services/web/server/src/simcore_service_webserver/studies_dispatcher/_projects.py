@@ -7,7 +7,6 @@
 """
 import json
 import logging
-from typing import Dict, Tuple
 
 from aiohttp import web
 from models_library.projects import AccessRights, Node, Project, StudyUI
@@ -15,6 +14,7 @@ from models_library.projects_nodes_io import DownloadLink, PortLink
 from pydantic import HttpUrl
 
 from ..projects.projects_api import get_project_for_user
+from ..projects.projects_db import ProjectDBAPI
 from ..projects.projects_exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
@@ -27,8 +27,13 @@ log = logging.getLogger(__name__)
 
 
 async def acquire_project_with_viewer(
-    app: web.Application, user: UserInfo, viewer: ViewerInfo, download_link: HttpUrl
-) -> Tuple[str, str]:
+    app: web.Application,
+    user: UserInfo,
+    viewer: ViewerInfo,
+    download_link: HttpUrl,
+    *,
+    product_name: str,
+) -> tuple[str, str]:
     #
     # Generate one project per user + download_link + viewer
     #   - if user requests several times, the same project is reused
@@ -40,7 +45,7 @@ async def acquire_project_with_viewer(
     file_picker_id, viewer_id = generate_nodeids(project_id)
 
     try:
-        project_db: Dict = await get_project_for_user(
+        project_db: dict = await get_project_for_user(
             app, project_id, user.id, include_templates=False, include_state=False
         )
 
@@ -69,7 +74,7 @@ async def acquire_project_with_viewer(
         project = create_viewer_project_model(
             project_id, file_picker_id, viewer_id, user, str(download_link), viewer
         )
-        await add_new_project(app, project, user)
+        await add_new_project(app, project, user, product_name=product_name)
 
     return project_id, viewer_id
 
@@ -77,7 +82,7 @@ async def acquire_project_with_viewer(
 # UTILITIES -------------------------------------------------
 
 
-def generate_nodeids(project_id: str) -> Tuple[str, str]:
+def generate_nodeids(project_id: str) -> tuple[str, str]:
     file_picker_id = compose_uuid_from(
         project_id, "4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343"
     )
@@ -151,21 +156,23 @@ def create_viewer_project_model(
     return project
 
 
-async def add_new_project(app: web.Application, project: Project, user: UserInfo):
+async def add_new_project(
+    app: web.Application, project: Project, user: UserInfo, *, product_name: str
+):
     # TODO: move this to projects_api
     # TODO: this piece was taking fromt the end of projects.projects_handlers.create_projects
 
     from ..director_v2_api import create_or_update_pipeline
     from ..projects.projects_db import APP_PROJECT_DBAPI
 
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    project_in: dict = json.loads(project.json(exclude_none=True, by_alias=True))
 
     # update metadata (uuid, timestamps, ownership) and save
-    _project_db: Dict = await db.add_project(
-        project_in, user.id, force_as_template=False
+    _project_db: dict = await db.add_project(
+        project_in, user.id, product_name=product_name, force_as_template=False
     )
     assert _project_db["uuid"] == str(project.uuid)  # nosec
 

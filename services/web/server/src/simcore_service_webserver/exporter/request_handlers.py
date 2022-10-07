@@ -97,6 +97,7 @@ async def import_project(request: web.Request):
     post_contents = await request.post()
     log.info("POST body %s", post_contents)
     user_id = request[RQT_USERID_KEY]
+    product_name = request[RQ_PRODUCT_KEY]
     file_name_field: FileField = post_contents.get("fileName", None)
 
     if file_name_field is None:
@@ -107,7 +108,11 @@ async def import_project(request: web.Request):
     temp_dir: str = await get_empty_tmp_dir()
 
     imported_project_uuid = await study_import(
-        app=request.app, temp_dir=temp_dir, file_field=file_name_field, user_id=user_id
+        app=request.app,
+        temp_dir=temp_dir,
+        file_field=file_name_field,
+        user_id=user_id,
+        product_name=product_name,
     )
     await remove_dir(directory=temp_dir)
 
@@ -118,6 +123,7 @@ async def import_project(request: web.Request):
 @permission_required("project.duplicate")
 async def duplicate_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
+    product_name = request[RQ_PRODUCT_KEY]
     project_uuid = request.match_info.get("project_id")
     assert project_uuid  # nosec
     try:
@@ -147,6 +153,7 @@ async def duplicate_project(request: web.Request):
                 duplicated_project_uuid = await study_duplicate(
                     app=request.app,
                     user_id=user_id,
+                    product_name=product_name,
                     exported_project_path=exported_project_path,
                 )
             return dict(uuid=duplicated_project_uuid)

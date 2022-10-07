@@ -15,6 +15,12 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 Have a look at `Pylint`'s configuration file [.pylintrc](.pylintrc).
 
 
+## Posgres
+
+### Foreign keys
+
+- name pattern: ```fk_$(this_table)_$(this_column)```, for example ```fk_projects_to_product_product_name```
+
 <!-- Add below this line coding agreed coding conventions and give them a number !-->
 
 ###  CC1: Can I use ``TODO:``, ``FIXME:``?

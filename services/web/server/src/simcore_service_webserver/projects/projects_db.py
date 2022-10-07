@@ -9,6 +9,7 @@ import logging
 import textwrap
 import uuid as uuidlib
 from collections import deque
+from contextlib import AsyncExitStack
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
@@ -21,13 +22,16 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
@@ -36,6 +40,7 @@ from ..utils import format_datetime, now_str
 from .project_models import ProjectDict, ProjectProxy
 from .projects_exceptions import (
     NodeNotFoundError,
+    ProjectDeleteError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectsException,
@@ -176,44 +181,23 @@ class ProjectDBAPI:
         assert self._engine  # nosec
         return self._engine
 
-    async def add_projects(self, projects_list: list[dict], user_id: int) -> list[str]:
-        """
-            adds all projects and assigns to a user
-
-        If user_id is None, then project is added as Template
-        """
-        log.info("adding projects to database for user %s", user_id)
-        uuids = []
-        for prj in projects_list:
-            prj = await self.add_project(prj, user_id)
-            uuids.append(prj["uuid"])
-        return uuids
-
     async def add_project(
         self,
         prj: dict[str, Any],
         user_id: Optional[int],
         *,
+        product_name: str,
         force_project_uuid: bool = False,
         force_as_template: bool = False,
         hidden: bool = False,
     ) -> dict[str, Any]:
-        """Inserts a new project in the database and, if a user is specified, it assigns ownership
+        """Inserts a new project in the database
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
-        :param prj: schema-compliant project data
-        :type prj: dict
-        :param user_id: database's user identifier
-        :type user_id: int
-        :param force_project_uuid: enforces valid uuid, defaults to False
-        :type force_project_uuid: bool, optional
-        :param force_as_template: adds data as template, defaults to False
-        :type force_as_template: bool, optional
         :raises ProjectInvalidRightsError: ssigning project to an unregistered user
-        :return: newly assigned project UUID
-        :rtype: str
+        :return: inserted project
         """
         # pylint: disable=no-value-for-parameter
         async with self.engine.acquire() as conn:
@@ -264,8 +248,7 @@ class ProjectDBAPI:
             while retry:
                 try:
                     query = projects.insert().values(**kargs)
-                    result = await conn.execute(query)
-                    await result.first()
+                    await conn.execute(query)
                     retry = False
                 except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
                     if (
@@ -276,6 +259,11 @@ class ProjectDBAPI:
                     kargs["uuid"] = str(uuidlib.uuid1())
                     retry = True
 
+            # insert projects_to_product entry
+            await self.upsert_project_linked_product(
+                ProjectID(f"{kargs['uuid']}"), product_name, conn=conn
+            )
+
             # Updated values
             user_email = await self._get_user_email(conn, user_id)
             prj = _convert_to_schema_names(kargs, user_email)
@@ -283,10 +271,27 @@ class ProjectDBAPI:
                 prj["tags"] = []
             return prj
 
+    async def upsert_project_linked_product(
+        self,
+        project_id: ProjectID,
+        product_name: str,
+        conn: Optional[SAConnection] = None,
+    ) -> None:
+        async with AsyncExitStack() as stack:
+            if not conn:
+                conn = await stack.enter_async_context(self.engine.acquire())
+                assert conn  # nosec
+            await conn.execute(
+                pg_insert(projects_to_products)
+                .values(project_uuid=f"{project_id}", product_name=product_name)
+                .on_conflict_do_nothing()
+            )
+
     async def load_projects(
         self,
         user_id: PositiveInt,
         *,
+        product_name: str,
         filter_by_project_type: Optional[ProjectType] = None,
         filter_by_services: Optional[list[dict]] = None,
         only_published: Optional[bool] = False,
@@ -299,7 +304,8 @@ class ProjectDBAPI:
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
 
             query = (
-                select([projects])
+                sa.select([projects, projects_to_products.c.product_name])
+                .select_from(projects.join(projects_to_products, isouter=True))
                 .where(
                     (
                         (projects.c.type == filter_by_project_type.value)
@@ -322,15 +328,18 @@ class ProjectDBAPI:
                             f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
                         )
                     )
+                    & (
+                        (projects_to_products.c.product_name == product_name)
+                        | (projects_to_products.c.product_name == None)
+                    )
                 )
                 .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
 
             total_number_of_projects = await conn.scalar(
-                query.with_only_columns([func.count()])
-                .select_from(projects)
-                .order_by(None)
+                query.with_only_columns([func.count()]).order_by(None)
             )
+            assert total_number_of_projects is not None  # nosec
 
             prjs, prj_types = await self.__load_projects(
                 conn,
@@ -388,17 +397,21 @@ class ProjectDBAPI:
                 )
                 continue
 
-            prj = dict(row.items())
+            prj: dict[str, Any] = dict(row.items())
+            prj.pop("product_name", None)
 
-            if filter_by_services:
-                if not await project_uses_available_services(prj, filter_by_services):
-                    log.warning(
-                        "Project %s will not be listed for user %s since it has no access rights"
-                        " for one or more of the services that includes.",
-                        f"{row.id=}",
-                        f"{user_id=}",
-                    )
-                    continue
+            if (
+                filter_by_services is not None
+                and row[projects_to_products.c.product_name] is None
+                and not await project_uses_available_services(prj, filter_by_services)
+            ):
+                log.warning(
+                    "Project %s will not be listed for user %s since it has no access rights"
+                    " for one or more of the services that includes.",
+                    f"{row.id=}",
+                    f"{user_id=}",
+                )
+                continue
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
@@ -606,7 +619,8 @@ class ProjectDBAPI:
                     .where(projects.c.id == current_project[projects.c.id.key])
                     .returning(literal_column("*"))
                 )
-                project: RowProxy = await result.fetchone()
+                project = await result.fetchone()
+                assert project  # nosec
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),
@@ -624,7 +638,9 @@ class ProjectDBAPI:
     async def replace_user_project(
         self,
         new_project_data: dict[str, Any],
-        user_id: int,
+        user_id: UserID,
+        *,
+        product_name: str,
         project_uuid: str,
         include_templates: Optional[bool] = False,
     ) -> dict[str, Any]:
@@ -696,8 +712,11 @@ class ProjectDBAPI:
                     .where(projects.c.id == current_project[projects.c.id.key])
                     .returning(literal_column("*"))
                 )
-                project: RowProxy = await result.fetchone()
-
+                project = await result.fetchone()
+                assert project  # nosec
+                await self.upsert_project_linked_product(
+                    ProjectID(project_uuid), product_name, conn=conn
+                )
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),
@@ -745,6 +764,26 @@ class ProjectDBAPI:
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
+
+    async def check_project_has_only_one_product(self, project_uuid: ProjectID) -> None:
+        async with self.engine.acquire() as conn:
+            num_products_linked_to_project = await conn.scalar(
+                sa.select(func.count())
+                .select_from(projects_to_products)
+                .where(projects_to_products.c.project_uuid == f"{project_uuid}")
+            )
+            assert num_products_linked_to_project  # nosec
+        if num_products_linked_to_project > 1:
+            # NOTE:
+            # in agreement with @odeimaiz :
+            #
+            # we decided that this precise use-case where we have a project in 2 products at the same time does not exist now and its chances to ever come is small -> therefore we do not treat it for now
+            # nevertheless in case it would be done this way (which would by the way need a manual intervention already to set it up), at least it would not be possible to delete the project in one product to prevent some unwanted deletion.
+            # reduce time to develop by not implementing something that might never be necessary
+            raise ProjectDeleteError(
+                project_uuid=project_uuid,
+                reason="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
+            )
 
     async def make_unique_project_uuid(self) -> str:
         """Generates a project identifier still not used in database
