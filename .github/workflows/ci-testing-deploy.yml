@@ -76,15 +76,23 @@ jobs:
       - name: show system environs
         run: ./ci/helpers/show_system_versions.bash
       - name: cache built docker images
+        # NOTE: this cache step allows to share the built images with the other jobs (cache is some order of magnitude faster than upload artifact gh action)
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            docker-builds-${{ runner.os }}-
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /tmp/build
-          make build local-dest=/tmp/build
+          mkdir --parents /tmp/build-new
+          make build local-dest=/tmp/build-new
+      - name: move build cache to prevent forever growing cache
+        # NOTE: this is a trick to prevent github cache to grow forever
+        run: |
+          rm -rf /tmp/build
+          mv /tmp/build-new /tmp/build
 
   unit-test-webserver-01:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
