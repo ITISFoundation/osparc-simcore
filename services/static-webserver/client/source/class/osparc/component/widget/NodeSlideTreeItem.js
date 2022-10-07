@@ -47,8 +47,6 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
   members: {
     // overridden
     _addWidgets: function() {
-      this.addSpacer();
-      this.addOpenButton();
       this.addIcon();
       this.addLabel();
       const label = this.getChildControl("label");

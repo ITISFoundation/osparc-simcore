@@ -300,6 +300,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         modal: false,
         clickAwayClose: false
       });
+      nodesSlidesTree.addListener("changeSelectedNode", e => {
+        const nodeId = e.getData();
+        console.log(nodeId);
+      });
       nodesSlidesTree.addListener("finished", () => {
         const slideshow = study.getUi().getSlideshow();
         slideshow.fireEvent("changeSlideshow");

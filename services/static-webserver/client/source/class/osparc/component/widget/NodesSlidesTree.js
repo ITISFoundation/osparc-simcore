@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   events: {
+    "changeSelectedNode": "qx.event.type.Data",
     "finished": "qx.event.type.Event"
   },
 
@@ -139,6 +140,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           item.addListener("hideNode", () => this.__itemActioned(item, "hide"), this);
           item.addListener("moveUp", () => this.__itemActioned(item, "moveUp"), this);
           item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
+          item.addListener("tap", () => this.fireDataEvent("changeSelectedNode", item.getNodeId()), this);
         },
         sorter: (a, b) => {
           const aPos = a.getPosition();
