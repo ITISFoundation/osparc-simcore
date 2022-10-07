@@ -467,14 +467,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const nodesTree = this.__nodesTree;
       const workbenchUI = this.__workbenchUI;
 
-      studyTreeItem.addListener("nodeSelected", () => {
+      studyTreeItem.addListener("changeSelectedNode", () => {
         nodesTree.resetSelection();
         this.__populateSecondPanel(this.getStudy());
         this.__evalIframe();
         this.__openWorkbenchTab();
         this.__loggerView.setCurrentNodeId(null);
       });
-      nodesTree.addListener("nodeSelected", e => {
+      nodesTree.addListener("changeSelectedNode", e => {
         studyTreeItem.resetSelection();
         const nodeId = e.getData();
         const workbench = this.getStudy().getWorkbench();
