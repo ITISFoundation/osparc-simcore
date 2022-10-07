@@ -110,7 +110,7 @@ def by_service_creation(service):
 
 
 def wait_for_services() -> int:
-    expected_services = core_services()
+    expected_services = core_services() + ops_services()
     started_services = []
     client = docker.from_env()
     try:
