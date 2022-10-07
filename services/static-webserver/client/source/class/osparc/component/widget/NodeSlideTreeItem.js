@@ -23,34 +23,17 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
 
   properties: {
-    nodeId : {
-      check : "String",
+    nodeId: {
+      check: "String",
       event: "changeNodeId",
-      nullable : true
+      nullable: false
     },
 
     position: {
       check: "Number",
       event: "changePosition",
-      apply: "_applyPosition",
       init: -1,
       nullable: true
-    },
-
-    skipNode: {
-      check: "Boolean",
-      event: "changeSkipNode",
-      apply: "_applySkipNode",
-      init: false,
-      nullable: true
-    },
-
-    editMode: {
-      check: "Boolean",
-      event: "changeEditMode",
-      apply: "_applyEditMode",
-      init: false,
-      nullable: false
     }
   },
 
@@ -81,109 +64,49 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
         marginRight: 5
       });
       this.bind("position", posLbl, "value", {
-        converter: val => {
-          if (val === null) {
-            return "";
-          }
-          return (val+1).toString();
-        }
+        converter: val => (val+1).toString()
       });
-      this.bind("skipNode", posLbl, "visibility", {
-        converter: val => val ? "excluded" : "visible"
+      this.bind("position", posLbl, "visibility", {
+        converter: val => val > -1 ? "visible" : "excluded"
       });
       this.addWidget(posLbl);
 
-      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
+      const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
         marginRight: 5,
         appearance: "no-shadow-button"
       });
-      showBtn.addListener("execute", () => this.fireEvent("hideNode"), this);
-      this.bind("skipNode", showBtn, "visibility", {
-        converter: val => {
-          if (val === null) {
-            return "excluded";
-          }
-          if (val === true) {
-            return "excluded";
-          }
-          return "visible";
-        }
+      hideBtn.addListener("execute", () => this.fireEvent("hideNode"), this);
+      this.bind("position", hideBtn, "visibility", {
+        converter: val => val > -1 ? "visible" : "excluded"
+      });
+      this.addWidget(hideBtn);
+
+      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
+        marginRight: 5,
+        appearance: "no-shadow-button"
+      });
+      showBtn.addListener("execute", () => this.fireEvent("showNode"), this);
+      this.bind("position", showBtn, "visibility", {
+        converter: val => val > -1 ? "excluded" : "visible"
       });
       this.addWidget(showBtn);
-
-      const skippedBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
-        marginRight: 5,
-        appearance: "no-shadow-button"
-      });
-      skippedBtn.addListener("execute", () => this.fireEvent("showNode"), this);
-      this.bind("skipNode", skippedBtn, "visibility", {
-        converter: val => {
-          if (val === null) {
-            return "excluded";
-          }
-          if (val === false) {
-            return "excluded";
-          }
-          return "visible";
-        }
-      });
-      this.addWidget(skippedBtn);
 
       const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
         appearance: "no-shadow-button"
       });
       moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
       this.bind("position", moveUpBtn, "visibility", {
-        converter: val => {
-          if (val === null) {
-            return "excluded";
-          }
-          return "visible";
-        }
+        converter: val => val > -1 ? "visible" : "excluded"
       });
       this.addWidget(moveUpBtn);
 
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
         appearance: "no-shadow-button"
       });
-      moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
       this.bind("position", moveDownBtn, "visibility", {
-        converter: val => {
-          if (val === null) {
-            return "excluded";
-          }
-          return "visible";
-        }
+        converter: val => val > -1 ? "visible" : "excluded"
       });
       this.addWidget(moveDownBtn);
-
-      const moveBtn = new qx.ui.form.Button(null, "@MaterialIcons/drag_handle/14").set({
-        marginRight: 5,
-        appearance: "no-shadow-button"
-      });
-      this.addWidget(moveBtn);
-
-      if (osparc.data.Permissions.getInstance().canDo("study.nodestree.uuid.read")) {
-        const nodeIdWidget = new qx.ui.basic.Label().set({
-          alignX: "right",
-          minWidth: 260,
-          maxWidth: 260
-        });
-        this.bind("nodeId", nodeIdWidget, "value");
-        this.addWidget(nodeIdWidget);
-      }
-    },
-
-    _applyPosition: function(val) {
-      if (val === null) {
-        return;
-      }
-    },
-
-    _applySkipNode: function(val) {
-      if (val === null) {
-        return;
-      }
     }
   }
 });

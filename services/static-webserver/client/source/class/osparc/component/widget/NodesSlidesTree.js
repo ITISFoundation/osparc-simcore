@@ -37,8 +37,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this.__tree.setModel(model);
 
     this.__initTree();
-    this.__recalculatePositions();
-
     this.__initData();
   },
 
@@ -106,6 +104,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     __buildTree: function() {
       const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
+        hideRoot: true,
         decorator: "service-tree",
         openMode: "none",
         contentPadding: 0,
@@ -121,7 +120,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         label: study.getName(),
         children: [],
         nodeId: study.getUuid(),
-        skipNode: null,
         position: null
       };
       return qx.data.marshal.Json.createModel(rootData, true);
@@ -129,23 +127,12 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     __initTree: function() {
       this.__tree.setDelegate({
-        createItem: () => {
-          const nodeSlideTreeItem = new osparc.component.widget.NodeSlideTreeItem();
-          nodeSlideTreeItem.set({
-            skipNode: false
-          });
-          return nodeSlideTreeItem;
-        },
+        createItem: () => new osparc.component.widget.NodeSlideTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("nodeId", "nodeId", null, item, id);
-          const node = this.__study.getWorkbench().getNode(item.getModel().getNodeId());
-          if (node) {
-            node.bind("label", item.getModel(), "label");
-          }
           c.bindProperty("label", "label", null, item, id);
           c.bindProperty("position", "position", null, item, id);
-          c.bindProperty("skipNode", "skipNode", null, item, id);
         },
         configureItem: item => {
           item.addListener("showNode", () => this.__itemActioned(item, "show"), this);
@@ -154,14 +141,14 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
         },
         sorter: (a, b) => {
-          const aPos = a.getPosition();
-          const bPos = b.getPosition();
-          console.log("---- sort ----");
+          console.log("--- sort ---");
           console.log(a);
           console.log(b);
+          const aPos = a.getPosition();
           if (aPos === -1) {
             return 1;
           }
+          const bPos = b.getPosition();
           if (bPos === -1) {
             return -1;
           }
@@ -172,9 +159,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     /**
      * Converts an object of nodes into an array of children to be consumed by the tree model.
-     * The tree is expecting to bind the children into NodeSlideTreeItem with nodeId, position and skipNode as props.
+     * The tree is expecting to bind the children into NodeSlideTreeItem with nodeId and position as props.
      * @param {Object.<Nodes>} nodes Object with nodes <nodeId: node>
-     * @returns {Array} Array of objects with label, nodeId, position and skipNode fields.
+     * @returns {Array} Array of objects with label, nodeId and position.
      */
     __convertToModel: function(nodes) {
       const children = [];
@@ -186,7 +173,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         };
         const pos = this.__study.getUi().getSlideshow().getPosition(nodeId);
         nodeInTree.position = pos;
-        nodeInTree.skipNode = pos === -1;
         children.push(nodeInTree);
       }
       return children;
@@ -221,7 +207,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       if (fnct) {
         this.__tree.setSelection(new qx.data.Array([item.getModel()]));
         fnct.call(this, item.getModel());
-        this.__recalculatePositions();
+        this.__tree.refresh();
       }
     },
 
@@ -229,15 +215,13 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const children = this.__tree.getModel().getChildren().toArray();
       const last = children.filter(elem => elem.getPosition() !== -1).length;
       itemMdl.set({
-        position: last,
-        skipNode: false
+        position: last
       });
     },
 
     __hide: function(itemMdl) {
       itemMdl.set({
-        position: -1,
-        skipNode: true
+        position: -1
       });
     },
 
@@ -246,7 +230,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > 0) {
-        this.self().moveElement(children, idx, idx-1);
+        const oldPos = children[idx].getPosition();
+        children[idx].setPosition(oldPos-1);
+        children[idx-1].setPosition(oldPos);
       }
     },
 
@@ -255,24 +241,10 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx < children.length-1) {
-        this.self().moveElement(children, idx, idx+1);
+        const oldPos = children[idx].getPosition();
+        children[idx].setPosition(oldPos+1);
+        children[idx-1].setPosition(oldPos);
       }
-    },
-
-    __recalculatePositions: function() {
-      const rootModel = this.__tree.getModel();
-      let children = [];
-      this.self().getItemsInTree(rootModel, children);
-      children.shift();
-      let pos = 0;
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
-        if (child.getSkipNode() === false) {
-          child.setPosition(pos);
-          pos++;
-        }
-      }
-      this.__tree.refresh();
     },
 
     __serialize: function() {
@@ -280,7 +252,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const model = this.__tree.getModel();
       const children = model.getChildren().toArray();
       children.forEach(child => {
-        if (child.getSkipNode() === false) {
+        if (child.getPosition() !== -1) {
           slideshow[child.getNodeId()] = {
             "position": child.getPosition()
           };
