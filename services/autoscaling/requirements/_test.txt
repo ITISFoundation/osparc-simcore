@@ -8,20 +8,24 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
-astroid==2.12.9
+astroid==2.12.10
     # via pylint
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-certifi==2022.6.15.1
+botocore-stubs==1.27.80
+    # via types-aiobotocore
+certifi==2022.9.14
     # via
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
 charset-normalizer==2.1.1
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
 coverage==6.4.4
@@ -36,7 +40,7 @@ dill==0.3.5.1
     # via pylint
 docopt==0.6.2
     # via coveralls
-faker==14.2.0
+faker==14.2.1
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -51,7 +55,7 @@ httpx==0.23.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-idna==3.3
+idna==3.4
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -75,7 +79,7 @@ pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pylint==2.15.2
+pylint==2.15.3
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
@@ -96,12 +100,16 @@ pytest-mock==3.8.2
 pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
+python-dotenv==0.21.0
+    # via -r requirements/_test.in
 requests==2.28.1
     # via
     #   codecov
     #   coveralls
-respx==0.19.2
+respx==0.20.0
     # via -r requirements/_test.in
 rfc3986==1.5.0
     # via
@@ -124,14 +132,23 @@ tomli==2.0.1
     #   pytest
 tomlkit==0.11.4
     # via pylint
+types-aiobotocore==2.4.0
+    # via -r requirements/_test.in
+types-aiobotocore-s3==2.4.0
+    # via types-aiobotocore
+types-awscrt==0.14.6
+    # via botocore-stubs
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
+    #   types-aiobotocore
+    #   types-aiobotocore-s3
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   requests
 wrapt==1.14.1
     # via astroid
