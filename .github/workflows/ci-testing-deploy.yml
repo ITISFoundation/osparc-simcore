@@ -1223,14 +1223,14 @@ jobs:
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
-        run: exit 1-${{ runner.os }}-${{ github.sha }}
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1302,13 +1302,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
@@ -1381,13 +1381,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
@@ -1463,13 +1463,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
@@ -1544,13 +1544,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
@@ -1623,13 +1623,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
@@ -1689,13 +1689,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
@@ -1761,13 +1761,13 @@ jobs:
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: download test images from cache
-        id: build-cache
+        id: cache
         uses: actions/cache@v3
         with:
           path: /tmp/build
           key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: fail job if cache not present
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: exit 1
       - name: load docker images
         run: make load-images local-src=/tmp/build
