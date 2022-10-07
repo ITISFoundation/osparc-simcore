@@ -71,6 +71,24 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(posLbl);
 
+      const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
+        appearance: "no-shadow-button"
+      });
+      moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
+      this.bind("position", moveUpBtn, "visibility", {
+        converter: val => val > -1 ? "visible" : "excluded"
+      });
+      this.addWidget(moveUpBtn);
+
+      const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
+        appearance: "no-shadow-button"
+      });
+      moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
+      this.bind("position", moveDownBtn, "visibility", {
+        converter: val => val > -1 ? "visible" : "excluded"
+      });
+      this.addWidget(moveDownBtn);
+
       const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
         marginRight: 5,
         appearance: "no-shadow-button"
@@ -90,24 +108,6 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
         converter: val => val > -1 ? "excluded" : "visible"
       });
       this.addWidget(showBtn);
-
-      const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
-        appearance: "no-shadow-button"
-      });
-      moveUpBtn.addListener("execute", () => this.fireEvent("moveUp"), this);
-      this.bind("position", moveUpBtn, "visibility", {
-        converter: val => val > -1 ? "visible" : "excluded"
-      });
-      this.addWidget(moveUpBtn);
-
-      const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
-        appearance: "no-shadow-button"
-      });
-      moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
-      this.bind("position", moveDownBtn, "visibility", {
-        converter: val => val > -1 ? "visible" : "excluded"
-      });
-      this.addWidget(moveDownBtn);
     }
   }
 });
