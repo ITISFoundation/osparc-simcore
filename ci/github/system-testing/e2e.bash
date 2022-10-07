@@ -12,7 +12,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   pushd tests/e2e
-  make install-ci-no-build ops_disabled=1
+  make install-ci-no-build
   popd
 }
 
