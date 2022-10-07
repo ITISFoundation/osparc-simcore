@@ -154,7 +154,7 @@ docker buildx bake \
 		)\
 	)\
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(push),--file docker-bake.hcml,) --file docker-compose-build.yml $(if $(target),$(target),) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_LIST),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
@@ -666,7 +666,7 @@ clean-images: ## removes all created images
 	-$(foreach service,$(SERVICES_LIST)\
 		,docker image rm --force $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
-	@$(MAKE_C) services/static-webserver/client clean-images
+	-@$(MAKE_C) services/static-webserver/client clean-images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
