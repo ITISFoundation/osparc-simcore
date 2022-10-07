@@ -185,7 +185,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       this.__tree.refresh();
     },
 
-    nodeSelected: function(nodeId) {
+    changeSelectedNode: function(nodeId) {
       const children = this.__tree.getModel().getChildren().toArray();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
@@ -209,7 +209,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      this.nodeSelected(item.getModel().getNodeId());
+      this.changeSelectedNode(item.getModel().getNodeId());
       if (fnct.call(this, item.getModel())) {
         this.__tree.refresh();
       }

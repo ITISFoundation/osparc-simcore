@@ -63,6 +63,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
+    "changeSelectedNode": "qx.event.type.Data",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
@@ -490,6 +491,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             workbenchUI.activeNodeChanged(nodeUI);
           }
         }
+        this.fireDataEvent("changeSelectedNode", nodeId);
       });
 
       if (this.__workbenchUIConnected === null) {
@@ -504,6 +506,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__populateSecondPanel(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
+            this.fireDataEvent("changeSelectedNode", nodeId);
           } else {
             // empty selection
             this.__studyTreeItem.selectStudyItem();
