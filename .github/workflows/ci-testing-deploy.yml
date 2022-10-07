@@ -84,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          paths: /tmp/build
+          path: /tmp/build
 
   unit-test-webserver-01:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
