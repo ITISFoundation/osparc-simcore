@@ -65,7 +65,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   members: {
     __study: null,
     __tree: null,
-    __exposedSettings: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -157,6 +156,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         sorter: (a, b) => {
           const aPos = a.getPosition();
           const bPos = b.getPosition();
+          console.log("---- sort ----");
+          console.log(a);
+          console.log(b);
           if (aPos === -1) {
             return 1;
           }
@@ -224,38 +226,36 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     },
 
     __show: function(itemMdl) {
+      const children = this.__tree.getModel().getChildren().toArray();
+      const last = children.filter(elem => elem.getPosition() !== -1).length;
       itemMdl.set({
-        skipNode: true
+        position: last,
+        skipNode: false
       });
     },
 
     __hide: function(itemMdl) {
       itemMdl.set({
-        skipNode: false
+        position: -1,
+        skipNode: true
       });
     },
 
     __moveUp: function(itemMdl) {
+      const children = this.__tree.getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
-      const rootModel = this.__tree.getModel();
-      if (rootModel) {
-        const children = rootModel.getChildren().toArray();
-        const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
-        if (idx > 0) {
-          this.self().moveElement(children, idx, idx-1);
-        }
+      const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
+      if (idx > 0) {
+        this.self().moveElement(children, idx, idx-1);
       }
     },
 
     __moveDown: function(itemMdl) {
+      const children = this.__tree.getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
-      const rootModel = this.__tree.getModel();
-      if (rootModel) {
-        const children = rootModel.getChildren().toArray();
-        const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
-        if (idx < children.length-1) {
-          this.self().moveElement(children, idx, idx+1);
-        }
+      const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
+      if (idx < children.length-1) {
+        this.self().moveElement(children, idx, idx+1);
       }
     },
 

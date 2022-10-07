@@ -93,12 +93,12 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       });
       this.addWidget(posLbl);
 
-      const hideBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
+      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
         marginRight: 5,
         appearance: "no-shadow-button"
       });
-      hideBtn.addListener("execute", () => this.fireEvent("showNode"), this);
-      this.bind("skipNode", hideBtn, "visibility", {
+      showBtn.addListener("execute", () => this.fireEvent("hideNode"), this);
+      this.bind("skipNode", showBtn, "visibility", {
         converter: val => {
           if (val === null) {
             return "excluded";
@@ -109,14 +109,14 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
           return "visible";
         }
       });
-      this.addWidget(hideBtn);
+      this.addWidget(showBtn);
 
-      const showBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
+      const skippedBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
         marginRight: 5,
         appearance: "no-shadow-button"
       });
-      showBtn.addListener("execute", () => this.fireEvent("hideNode"), this);
-      this.bind("skipNode", showBtn, "visibility", {
+      skippedBtn.addListener("execute", () => this.fireEvent("showNode"), this);
+      this.bind("skipNode", skippedBtn, "visibility", {
         converter: val => {
           if (val === null) {
             return "excluded";
@@ -127,7 +127,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
           return "visible";
         }
       });
-      this.addWidget(showBtn);
+      this.addWidget(skippedBtn);
 
       const moveUpBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
         appearance: "no-shadow-button"
