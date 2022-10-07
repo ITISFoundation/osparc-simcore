@@ -80,7 +80,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds-${{ runner.os }}-${{ github.sha }}
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             docker-builds-${{ runner.os }}-
       - name: build images
@@ -1226,7 +1226,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1301,7 +1301,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1376,7 +1376,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1454,7 +1454,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1531,7 +1531,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1606,7 +1606,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1668,7 +1668,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
@@ -1736,7 +1736,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/build
-          key: docker-builds
+          key: docker-builds-${{ runner.os }}-${{ github.sha }}
       - name: load docker images
         run: make load-images local-src=/tmp/build
       - name: show system version
