@@ -485,12 +485,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__openIframeTab(node);
         }
         this.__loggerView.setCurrentNodeId(nodeId);
-        const nodeUI = workbenchUI.getNodeUI(nodeId);
-        if (nodeUI) {
-          if (nodeUI.classname.includes("NodeUI")) {
-            workbenchUI.activeNodeChanged(nodeUI);
-          }
-        }
+        this.__workbenchUI.nodeSelected(nodeId);
         this.fireDataEvent("changeSelectedNode", nodeId);
       });
 
@@ -540,12 +535,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             node.getIFrame().maximizeIFrame(true);
           }
           this.__loggerView.setCurrentNodeId(nodeId);
-          const nodeUI = workbenchUI.getNodeUI(nodeId);
-          if (nodeUI) {
-            if (nodeUI.classname.includes("NodeUI")) {
-              workbenchUI.activeNodeChanged(nodeUI);
-            }
-          }
+          this.__workbenchUI.nodeSelected(nodeId);
         }
       }, this);
       nodesTree.addListener("removeNode", e => {
