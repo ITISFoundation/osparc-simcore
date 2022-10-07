@@ -201,47 +201,74 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      if (fnct) {
-        this.__tree.setSelection(new qx.data.Array([item.getModel()]));
-        fnct.call(this, item.getModel());
+      this.__tree.setSelection(new qx.data.Array([item.getModel()]));
+      if (fnct.call(this, item.getModel())) {
         this.__tree.refresh();
       }
     },
 
-    __show: function(itemMdl) {
+    __getVisibleItems: function() {
       const children = this.__tree.getModel().getChildren().toArray();
-      const last = children.filter(elem => elem.getPosition() !== -1).length;
-      itemMdl.set({
-        position: last
-      });
+      return children.filter(elem => elem.getPosition() !== -1);
+    },
+
+    __show: function(itemMdl) {
+      const last = this.__getVisibleItems().length;
+      itemMdl.setPosition(last);
+      return true;
     },
 
     __hide: function(itemMdl) {
-      itemMdl.set({
-        position: -1
+      const oldPos = itemMdl.getPosition();
+      itemMdl.setPosition(-1);
+      // the rest moves one pos up
+      this.__getVisibleItems().forEach(item => {
+        const p = item.getPosition();
+        if (p >= oldPos) {
+          item.setPosition(p-1);
+        }
       });
+      return true;
     },
 
     __moveUp: function(itemMdl) {
       const children = this.__tree.getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
-      if (idx > 0) {
+      if (idx > -1) {
         const oldPos = children[idx].getPosition();
-        children[idx].setPosition(oldPos-1);
-        children[idx-1].setPosition(oldPos);
+        const newPos = oldPos-1;
+        if (newPos === -1) {
+          return false;
+        }
+        const idx2 = children.findIndex(elem => elem.getPosition() === newPos);
+        if (idx2 > -1) {
+          children[idx].setPosition(newPos);
+          children[idx2].setPosition(oldPos);
+          return true;
+        }
       }
+      return false;
     },
 
     __moveDown: function(itemMdl) {
       const children = this.__tree.getModel().getChildren().toArray();
       const nodeId = itemMdl.getNodeId();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
-      if (idx < children.length-1) {
+      if (idx > -1) {
         const oldPos = children[idx].getPosition();
-        children[idx].setPosition(oldPos+1);
-        children[idx-1].setPosition(oldPos);
+        const newPos = oldPos+1;
+        if (newPos === this.__getVisibleItems().length) {
+          return false;
+        }
+        const idx2 = children.findIndex(elem => elem.getPosition() === newPos);
+        if (idx2 > -1) {
+          children[idx].setPosition(newPos);
+          children[idx2].setPosition(oldPos);
+          return true;
+        }
       }
+      return false;
     },
 
     __serialize: function() {

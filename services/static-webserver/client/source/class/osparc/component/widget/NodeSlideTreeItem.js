@@ -103,6 +103,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       const moveDownBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
         appearance: "no-shadow-button"
       });
+      moveDownBtn.addListener("execute", () => this.fireEvent("moveDown"), this);
       this.bind("position", moveDownBtn, "visibility", {
         converter: val => val > -1 ? "visible" : "excluded"
       });
