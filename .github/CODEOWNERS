@@ -27,13 +27,14 @@ Makefile                                  @pcrespov @sanderegg
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @Surfict @sanderegg @pcrespov
 /services/catalog/                        @pcrespov @sanderegg
-/services/director*/                      @sanderegg @pcrespov
+/services/datcore-adapter/                @sanderegg
+/services/director*/                      @sanderegg @pcrespov @GitHK
 /services/docker-compose*.yml             @sanderegg @Surfict @mrnicegyu11
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
 /services/static-webserver                @GitHK
-/services/storage/                        @mguidon @pcrespov
 /services/static-webserver/client/        @odeimaiz
+/services/storage/                        @sanderegg @pcrespov
 /services/web/server/                     @pcrespov @sanderegg @GitHK
 /tests/environment-setup/                 @pcrespov
 /tests/performance/                       @pcrespov

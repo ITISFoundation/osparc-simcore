@@ -35,8 +35,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     env_file:
       - ../.env
-    networks:
-      - default
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
