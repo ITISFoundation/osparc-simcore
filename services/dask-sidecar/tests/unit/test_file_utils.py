@@ -4,6 +4,7 @@
 
 import asyncio
 import mimetypes
+import re
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,8 @@ from unittest import mock
 import fsspec
 import pytest
 from _pytest.fixtures import FixtureRequest
+from aiohttp import web
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
@@ -100,6 +103,15 @@ def remote_parameters(
     ]
 
 
+@pytest.fixture
+def fake_api_server(aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:
+    upload_file_pattern = re.compile(r"^https?:\/\/(.*?)\/v0\/files\/content")
+    aioresponses_mocker.put(
+        upload_file_pattern, status=web.HTTPOk.status_code, repeat=True
+    )
+    return aioresponses_mocker
+
+
 async def test_push_file_to_remote(
     remote_parameters: StorageParameters,
     tmp_path: Path,
@@ -117,7 +129,6 @@ async def test_push_file_to_remote(
         dst_url=remote_parameters.remote_file_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
-        osparc_api_settings=None,
     )
 
     # check the remote is actually having the file in
@@ -156,7 +167,6 @@ async def test_push_file_to_remote_s3_http_presigned_link(
         dst_url=s3_presigned_link_remote_file_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
-        osparc_api_settings=None,
     )
 
     # check the remote is actually having the file in, but we need s3 access now
@@ -172,6 +182,26 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     ) as fp:
         assert fp.read() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
+
+
+async def test_push_file_to_osparc_api_single_presigned_link(
+    fake_api_server: AioResponsesMock,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # let's create some file with text inside
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+    # push it to the remote
+    await push_file_to_remote(
+        src_path=src_path,
+        dst_url=s3_presigned_link_remote_file_url,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
+    )
 
 
 async def test_push_file_to_remote_compresses_if_zip_destination(
@@ -191,7 +221,6 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
         dst_url=destination_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
-        osparc_api_settings=None,
     )
 
     storage_kwargs = {}

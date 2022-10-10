@@ -24,6 +24,7 @@ from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_setti
 from yarl import URL
 
 pytest_plugins = [
+    "pytest_simcore.aioresponses_mocker",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",

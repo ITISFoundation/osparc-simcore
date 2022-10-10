@@ -9,6 +9,7 @@
 --constraint _packages.txt
 
 # testing
+aioresponses
 coverage
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
