@@ -7,7 +7,7 @@ SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md
 
 import os
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from models_library.basic_types import SHA1Str, VersionStr
 from pydantic import BaseModel, Field
@@ -109,12 +109,12 @@ class OciImageSpecAnnotations(BaseModel):
 
     @classmethod
     def from_labels_annotations(
-        cls, labels: Dict[str, str]
+        cls, labels: dict[str, str]
     ) -> "OciImageSpecAnnotations":
         data = from_labels(labels, prefix_key=OCI_LABEL_PREFIX, trim_key_head=False)
         return cls.parse_obj(data)
 
-    def to_labels_annotations(self) -> Dict[str, str]:
+    def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OCI_LABEL_PREFIX,
@@ -146,7 +146,7 @@ class LabelSchemaAnnotations(BaseModel):
                 data[field_name] = value
         return cls(**data)
 
-    def to_oci_data(self) -> Dict[str, Any]:
+    def to_oci_data(self) -> dict[str, Any]:
         """Collects data that be converted to OCI labels.
 
         WARNING: label-schema has be deprecated in favor of OCI image specs

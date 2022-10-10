@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 from pydantic import BaseSettings
 from pydantic.main import BaseModel
@@ -13,7 +13,7 @@ class Registry(BaseModel):
 
 class UserSettings(BaseSettings):
 
-    DOCKER_REGISTRIES: Dict[str, Registry] = {
+    DOCKER_REGISTRIES: dict[str, Registry] = {
         "local": Registry(url_or_prefix="registry:5000")
     }
     DEFAULT_REGISTRY: str = "local"
