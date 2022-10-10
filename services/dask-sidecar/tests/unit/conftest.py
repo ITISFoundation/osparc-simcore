@@ -122,8 +122,21 @@ def s3_settings(minio_config: dict[str, Any], minio_service: Minio) -> S3Setting
 
 
 @pytest.fixture
-def osparc_api_settings() -> Optional[TaskOsparcAPISettings]:
-    return None
+def osparc_api_endpoint(faker: Faker) -> str:
+    return faker.url()
+
+
+@pytest.fixture
+def osparc_api_settings(
+    osparc_api_endpoint: str, faker: Faker
+) -> Optional[TaskOsparcAPISettings]:
+    return TaskOsparcAPISettings.parse_obj(
+        dict(
+            api_key=faker.uuid4(),
+            api_secret=faker.password(),
+            osparc_api_endpoint=osparc_api_endpoint,
+        ),
+    )
 
 
 @pytest.fixture

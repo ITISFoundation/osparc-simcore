@@ -16,8 +16,10 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
+from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from faker import Faker
 from minio import Minio
+from osparc.models.file import File
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
@@ -104,10 +106,23 @@ def remote_parameters(
 
 
 @pytest.fixture
-def fake_api_server(aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:
-    upload_file_pattern = re.compile(r"^https?:\/\/(.*?)\/v0\/files\/content")
+def fake_api_server(
+    osparc_api_endpoint: str,
+    aioresponses_mocker: AioResponsesMock,
+    s3_presigned_link_remote_file_url: AnyUrl,
+    faker: Faker,
+) -> AioResponsesMock:
+    upload_file_pattern = re.compile(rf"^{osparc_api_endpoint}/v0\/files\/content")
     aioresponses_mocker.put(
-        upload_file_pattern, status=web.HTTPOk.status_code, repeat=True
+        upload_file_pattern,
+        status=web.HTTPOk.status_code,
+        repeat=True,
+        payload=File(
+            id=faker.uuid4(),
+            filename=faker.file_name(),
+            content_type="application:*/*",
+            checksum=faker.uuid4(),
+        ).to_dict(),
     )
     return aioresponses_mocker
 
@@ -184,7 +199,8 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     mocked_log_publishing_cb.assert_called()
 
 
-async def test_push_file_to_osparc_api_single_presigned_link(
+async def test_push_file_to_osparc_api(
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
     fake_api_server: AioResponsesMock,
     tmp_path: Path,
     faker: Faker,
@@ -195,10 +211,17 @@ async def test_push_file_to_osparc_api_single_presigned_link(
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
+
+    assert osparc_api_settings
+
+    dst_url = parse_obj_as(
+        AnyUrl, f"{osparc_api_settings.osparc_api_endpoint}/v0/files/content"
+    )
+
     # push it to the remote
     await push_file_to_remote(
         src_path=src_path,
-        dst_url=s3_presigned_link_remote_file_url,
+        dst_url=dst_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
     )
