@@ -216,6 +216,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return control || this.base(arguments, id);
     },
 
+    getNodesTree: function() {
+      return this.__nodesTree;
+    },
+
+    getWorkbenchUI: function() {
+      return this.__workbenchUI;
+    },
+
     __getSidePanelsNewWidth: function(collapsing, sidePanels, collapsibleView) {
       let sidePanelsNewWidth = null;
       const sidePanelsWidth = sidePanels.getBounds().width;
@@ -670,10 +678,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
     },
 
-    getSelectedNodes: function() {
-      return this.__workbenchUI.getSelectedNodes();
-    },
-
     getSelectedNodeIDs: function() {
       if (this.__workbenchPanel.getMainView() === this.__workbenchUI) {
         return this.__workbenchUI.getSelectedNodeIDs();
@@ -1073,19 +1077,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       }
       return null;
-    },
-
-    __editSlides: function() {
-      const uiData = this.getStudy().getUi();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
-      const title = this.tr("Edit Slideshow");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
-        modal: false,
-        clickAwayClose: false
-      });
-      nodesSlidesTree.addListener("finished", () => {
-        win.close();
-      });
     },
 
     __attachEventHandlers: function() {

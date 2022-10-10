@@ -302,7 +302,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
       nodesSlidesTree.addListener("changeSelectedNode", e => {
         const nodeId = e.getData();
-        console.log(nodeId);
+        this.__workbenchView.getNodesTree().nodeSelected(nodeId);
+        this.__workbenchView.getWorkbenchUI().nodeSelected(nodeId);
       });
       nodesSlidesTree.addListener("finished", () => {
         const slideshow = study.getUi().getSlideshow();
