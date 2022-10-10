@@ -82,6 +82,30 @@ get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=
 S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
+
+# Check that given variables are set and all have non-empty values,
+# exit with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
 
 
 .PHONY: help
@@ -111,7 +135,7 @@ DOCKER_TARGET_PLATFORMS ?= linux/amd64
 comma := ,
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,production) &&\
 pushd services &&\
 $(foreach service, $(SERVICES_LIST),\
 	$(if $(push),\
@@ -122,18 +146,36 @@ docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
-	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
+	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
+		$(if $(local-dest),\
+			$(foreach service, $(SERVICES_LIST),\
+				--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
+			,--load\
+		)\
+	)\
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
-	$(if $(findstring -nc,$@),--no-cache,) &&\
+	$(if $(push),--file docker-bake.hcml,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(findstring -nc,$@),--no-cache,\
+		$(foreach service, $(SERVICES_LIST),\
+			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
+			--set $(service).cache-from=type=gha$(comma)scope=$(service)) \
+	) &&\
 popd;
 endef
 
 rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 	# Building service$(if $(target),,s) $(target)
-	$(_docker_compose_build)
+	@$(_docker_compose_build)
 
+
+load-images: guard-local-src ## loads images from local-src
+	# loading from images from $(local-src)...
+	@$(foreach service, $(SERVICES_LIST),\
+		docker load --input $(local-src)/$(service).tar; \
+	)
+	# all images loaded
+	@docker images
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
@@ -564,8 +606,6 @@ ifeq ($(target),)
 			docker images */$(service):*;\
 			$(call show-meta,$(service))\
 		)
-	## Client images:
-	@$(MAKE_C) services/static-webserver/client info
 else
 	## $(target) images:
 	@$(call show-meta,$(target))
@@ -617,14 +657,16 @@ clean-more: ## cleans containers and unused volumes
 	# stops and deletes running containers
 	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
-	docker volume prune --force
+	-@docker volume prune --force
+	# pruning buildx cache
+	-@docker buildx prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
 		,docker image rm --force $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
-	@$(MAKE_C) services/static-webserver/client clean-images
+	-@$(MAKE_C) services/static-webserver/client clean-images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 

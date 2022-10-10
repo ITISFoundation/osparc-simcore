@@ -120,14 +120,6 @@ ARG BUILD_DATE
 ARG VCS_URL
 ARG VCS_REF
 
-ENV SC_BUILD_TARGET=production \
-  SC_BOOT_MODE=production \
-  SC_BUILD_DATE=${BUILD_DATE} \
-  SC_VCS_URL=${VCS_URL} \
-  SC_VCS_REF=${VCS_REF}
-
-ENV PYTHONOPTIMIZE=TRUE
-
 WORKDIR /home/scu
 
 # bring installed package without build tools
@@ -152,6 +144,15 @@ HEALTHCHECK --interval=30s \
   --start-period=30s \
   --retries=3 \
   CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
+
+
+ENV SC_BUILD_TARGET=production \
+  SC_BOOT_MODE=production \
+  SC_BUILD_DATE=${BUILD_DATE} \
+  SC_VCS_URL=${VCS_URL} \
+  SC_VCS_REF=${VCS_REF}
+
+ENV PYTHONOPTIMIZE=TRUE
 
 ENTRYPOINT [ "services/web/server/docker/entrypoint.sh" ]
 CMD ["services/web/server/docker/boot.sh"]
