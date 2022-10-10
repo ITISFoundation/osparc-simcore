@@ -8,7 +8,9 @@
 --constraint _base.txt
 --constraint _packages.txt
 
+
 # testing
+--requirement ../../api-server/requirements/_base.in # to ensure we are faking the right models
 aioresponses
 coverage
 pytest
