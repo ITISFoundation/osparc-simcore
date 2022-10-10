@@ -196,7 +196,7 @@ async def _parse_container_log_file(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
+    _osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -245,7 +245,6 @@ async def _parse_container_log_file(
             log_file_url,
             log_publishing_cb=log_publishing_cb,
             s3_settings=s3_settings,
-            osparc_api_settings=osparc_api_settings,
         )
 
         logger.debug(
@@ -264,7 +263,7 @@ async def _parse_container_docker_logs(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
+    _osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -346,7 +345,6 @@ async def _parse_container_docker_logs(
             log_file_url,
             log_publishing_cb,
             s3_settings=s3_settings,
-            osparc_api_settings=osparc_api_settings,
         )
 
     logger.debug(
