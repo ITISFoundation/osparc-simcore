@@ -4,45 +4,12 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiocache==0.11.1
-    # via -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
-aiodebug==2.3.0
-    # via
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/_packages.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-aiofiles==0.8.0
-    # via
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/_base.in
 aiohttp==3.8.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aioresponses
     #   pytest-aiohttp
-aiopg==1.3.5
-    # via
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/_base.in
 aioresponses==0.7.3
     # via -r requirements/_test.in
 aiosignal==1.2.0
@@ -55,23 +22,17 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   aiopg
 attrs==21.4.0
     # via
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-    #   jsonschema
     #   pytest
 certifi==2022.5.18.1
     # via
     #   -c requirements/_base.txt
-    #   httpcore
-    #   httpx
     #   minio
+    #   osparc
     #   requests
 cffi==1.15.0
     # via
@@ -92,190 +53,60 @@ coveralls==3.3.1
 cryptography==38.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../api-server/requirements/_base.in
     #   pyopenssl
 dill==0.3.5.1
     # via pylint
-dnspython==2.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   email-validator
 docker==6.0.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
 faker==15.1.0
     # via -r requirements/_test.in
-fastapi==0.85.0
-    # via
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/../../api-server/requirements/_base.in
-    #   fastapi-contrib
-fastapi-contrib==0.2.11
-    # via -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_fastapi.in
 frozenlist==1.3.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==1.1.3
-    # via sqlalchemy
-h11==0.12.0
-    # via
-    #   httpcore
-    #   uvicorn
-httpcore==0.15.0
-    # via httpx
-httptools==0.5.0
-    # via uvicorn
-httpx==0.23.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   -r requirements/../../api-server/requirements/_base.in
 icdiff==2.0.5
     # via pytest-icdiff
 idna==2.10
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
-    #   anyio
-    #   email-validator
     #   requests
-    #   rfc3986
     #   yarl
 iniconfig==1.1.1
     # via pytest
 isort==5.10.1
     # via pylint
-itsdangerous==2.1.2
-    # via fastapi
-jaeger-client==4.8.0
-    # via fastapi-contrib
-jinja2==3.1.2
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   fastapi
-jsonschema==3.2.0
-    # via
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../api-server/requirements/./constraints.txt
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
 lazy-object-proxy==1.7.1
     # via astroid
-mako==1.2.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
-    #   alembic
-markupsafe==2.1.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   jinja2
-    #   mako
 mccabe==0.7.0
     # via pylint
 minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-opentracing==2.4.0
-    # via
-    #   fastapi-contrib
-    #   jaeger-client
-orjson==3.8.0
-    # via
-    #   -r requirements/../../api-server/requirements/_base.in
-    #   fastapi
+osparc==0.4.3
+    # via -r requirements/_test.in
 packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/_base.in
     #   docker
     #   pytest
     #   pytest-sugar
-pint==0.19.2
-    # via -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.9.4
-    # via
-    #   aiopg
-    #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
@@ -295,11 +126,6 @@ pyparsing==3.0.9
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
-pyrsistent==0.18.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   jsonschema
 pytest==7.1.3
     # via
     #   -r requirements/_test.in
@@ -331,62 +157,25 @@ python-dateutil==2.8.1
     # via
     #   -c requirements/_base.txt
     #   faker
+    #   osparc
 python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-    #   pydantic
-    #   uvicorn
-python-multipart==0.0.5
-    # via fastapi
-pyyaml==5.4.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/././constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/_base.in
-    #   fastapi
-    #   uvicorn
 requests==2.27.1
     # via
     #   -c requirements/_base.txt
     #   coveralls
     #   docker
-    #   fastapi
-rfc3986==1.5.0
-    # via httpx
 six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
-    #   jsonschema
+    #   osparc
     #   python-dateutil
-    #   python-multipart
-    #   thrift
     #   websocket-client
 termcolor==2.0.1
     # via pytest-sugar
-threadloop==1.0.2
-    # via jaeger-client
-thrift==0.16.0
-    # via jaeger-client
 tomli==2.0.1
     # via
     #   coverage
@@ -394,81 +183,25 @@ tomli==2.0.1
     #   pytest
 tomlkit==0.11.5
     # via pylint
-tornado==6.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_packages.txt
-    #   jaeger-client
-    #   threadloop
-tqdm==4.64.0
-    # via
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/_packages.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.6.1
-    # via
-    #   -r requirements/../../api-server/requirements/../../../packages/settings-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/_base.in
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
-    #   aiodebug
     #   astroid
-    #   pydantic
     #   pylint
-    #   starlette
-ujson==5.5.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
-    #   fastapi
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../api-server/requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   docker
     #   minio
+    #   osparc
     #   requests
-uvicorn==0.18.3
-    # via
-    #   -r requirements/../../api-server/requirements/../../../packages/service-library/requirements/_fastapi.in
-    #   fastapi
-uvloop==0.17.0
-    # via uvicorn
-watchfiles==0.17.0
-    # via uvicorn
 websocket-client==0.59.0
     # via
     #   -c requirements/_base.txt
     #   docker
-websockets==10.3
-    # via uvicorn
 wrapt==1.14.1
     # via
     #   -c requirements/_base.txt
@@ -476,9 +209,4 @@ wrapt==1.14.1
 yarl==1.7.2
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/../../api-server/requirements/../../../packages/postgres-database/requirements/_base.in
-    #   -r requirements/../../api-server/requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

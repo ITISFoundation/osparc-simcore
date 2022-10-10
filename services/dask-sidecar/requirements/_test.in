@@ -10,9 +10,9 @@
 
 
 # testing
---requirement ../../api-server/requirements/_base.in # to ensure we are faking the right models
 aioresponses
 coverage
+osparc
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
