@@ -6,5 +6,5 @@ def test_cli_app(run_program_with_args: Callable):
         "--help",
     )
     assert result.exit_code == 0
-    assert "--version" in result.stdout
-    assert "bump-version " in result.stdout
+    assert "--version" in result.output
+    assert "bump-version " in result.output
