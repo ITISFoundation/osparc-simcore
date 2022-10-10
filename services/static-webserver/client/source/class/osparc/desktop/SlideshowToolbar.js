@@ -51,13 +51,13 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            toolTipText: this.tr("Edit Slideshow"),
+            toolTipText: this.tr("Edit App Mode"),
             visibility: osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? "visible" : "excluded"
           });
           editBtn.editing = false;
           const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            toolTipText: this.tr("Save Slideshow")
+            toolTipText: this.tr("Save App Mode")
           });
           saveBtn.editing = true;
           editBtn.addListener("execute", () => {
