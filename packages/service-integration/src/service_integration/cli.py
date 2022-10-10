@@ -24,15 +24,20 @@ def version_callback(value: bool):
 def main(
     ctx: typer.Context,
     version: Optional[bool] = typer.Option(
-        None, "--version", callback=version_callback
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
     ),
     registry_name: str = typer.Option(
-        DEFAULTS.REGISTRY_NAME, "--REGISTRY_NAME", help="overwrite docker registry"
+        DEFAULTS.REGISTRY_NAME,
+        "--REGISTRY_NAME",
+        help="sets docker registry",
     ),
     compose_version: str = typer.Option(
-        DEFAULTS.REGISTRY_NAME,
+        DEFAULTS.COMPOSE_VERSION,
         "--COMPOSE_VERSION",
-        help="overwrite docker-compose spec version",
+        help="sets docker-compose spec version",
     ),
 ):
     """o2s2parc service integration library"""

@@ -1,15 +1,15 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from service_integration.context import IntegrationContext
 
-CONTEXT_DEFAULTS: Dict[str, Any] = {
+CONTEXT_DEFAULTS: dict[str, Any] = {
     k: x.default for k, x in IntegrationContext.__fields__.items()
 }
-CONTEXT_ARGS: List[Dict[str, Any]] = [
+CONTEXT_ARGS: list[dict[str, Any]] = [
     CONTEXT_DEFAULTS,
     {"REGISTRY_NAME": "registry:5000"},
 ]
@@ -22,7 +22,7 @@ def env(request, monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize("context_kwargs", CONTEXT_ARGS)
-def test_context_from_args(context_kwargs: Dict[str, Any]) -> None:
+def test_context_from_args(context_kwargs: dict[str, Any]) -> None:
     context = IntegrationContext(**context_kwargs)
     assert context
 

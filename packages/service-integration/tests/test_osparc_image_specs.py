@@ -10,8 +10,8 @@ from pydantic import BaseModel
 from service_integration.compose_spec_model import BuildItem, Service
 from service_integration.context import IntegrationContext
 from service_integration.osparc_config import (
-    MetaConfig,
     DockerComposeOverwriteCfg,
+    MetaConfig,
     RuntimeConfig,
 )
 from service_integration.osparc_image_specs import create_image_spec
