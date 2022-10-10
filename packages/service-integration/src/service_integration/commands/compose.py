@@ -1,11 +1,11 @@
+import subprocess
 from datetime import datetime
 from pathlib import Path
-from subprocess import CalledProcessError, check_output
-from typing import Optional
 
 import rich
 import typer
 import yaml
+from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
 from ..context import IntegrationContext
@@ -14,16 +14,32 @@ from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
-
-def _utc_timestamp() -> str:
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+error_console = Console(stderr=True)
 
 
-def _command_output(command: str, *, default: Optional[str] = None) -> Optional[str]:
+def _run_git(*args) -> str:
+    """:raises CalledProcessError"""
+    return subprocess.run(
+        [
+            "git",
+        ]
+        + list(args),
+        capture_output=True,
+        encoding="utf8",
+        check=True,
+    ).stdout.strip()
+
+
+def _run_git_or_empty_string(*args) -> str:
     try:
-        return check_output(command, shell=True).decode().strip()
-    except CalledProcessError:
-        return default
+        return _run_git(*args)
+    except subprocess.CalledProcessError as err:
+        error_console.print(
+            "WARNING: Defaulting label to emtpy string",
+            "due to:",
+            err.stderr,
+        )
+        return ""
 
 
 def create_docker_compose_image_spec(
@@ -78,13 +94,16 @@ def create_docker_compose_image_spec(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
     # add required labels
-    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = _utc_timestamp()
-    extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
-    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _command_output(
-        "git describe --always", default=""
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
     )
-    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _command_output(
-        "git config --get remote.origin.url", default=""
+    extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
+
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
+        "rev-parse", "HEAD"
+    )
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _run_git_or_empty_string(
+        "config", "--get", "remote.origin.url"
     )
 
     compose_spec = create_image_spec(
@@ -101,7 +120,7 @@ def create_docker_compose_image_spec(
 def main(
     ctx: typer.Context,
     config_path: Path = typer.Option(
-        "metadata.yml",
+        ".osparc/metadata.yml",
         "-m",
         "--metadata",
         help="osparc config file or folder",
@@ -115,21 +134,16 @@ def main(
 ):
     """create docker image/runtime compose-specs from an osparc config"""
 
-    basedir = Path(".osparc")
-    meta_filename = "metadata.yml"
-
     # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if not config_path.exists():
         raise typer.BadParameter("Invalid path to metadata file or folder")
 
     if config_path.is_dir():
         basedir = config_path
+        meta_filename = "metadata.yml"
     else:
         basedir = config_path.parent
         meta_filename = config_path.name
-
-    if not basedir.exists():
-        raise typer.BadParameter("Unable to determin configuration folder")
 
     config_filenames: dict[str, list[Path]] = {}
     for meta_cfg in sorted(list(basedir.rglob(meta_filename))):

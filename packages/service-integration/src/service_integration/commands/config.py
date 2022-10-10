@@ -51,7 +51,7 @@ def create_osparc_specs(
                             item.strip().split("=") for item in labels
                         )
                     # TODO: there must be a better way for this ...
-                    assert isinstance(labels.__root__, dict)
+                    assert isinstance(labels.__root__, dict)  # nosec
                     labels = labels.__root__
 
                 meta_cfg = MetaConfig.from_labels_annotations(labels)
