@@ -64,28 +64,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: setup docker buildx
-        if: github.event_name == 'push'
         id: buildx
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
-        if: github.event_name == 'push'
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system environs
-        if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
-        if: github.event_name == 'push'
-        run: ./ci/build/test-images.bash build_images
-      - name: set owner variable
-        if: github.event_name == 'push'
-        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - name: push images
-        # only pushes have access to the docker credentials
-        if: github.event_name == 'push'
-        run: ./ci/deploy/dockerhub-test-images.bash
+        run: |
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          mkdir --parents /${{ runner. temp }}/build
+          make build local-dest=/${{ runner. temp }}/build
+      - name: upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
 
   unit-test-webserver-01:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
@@ -108,7 +107,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -160,7 +159,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -210,7 +209,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -260,7 +259,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -310,7 +309,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -347,7 +346,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -384,7 +383,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -397,7 +396,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -447,7 +446,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -503,7 +502,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -560,7 +559,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -610,7 +609,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -666,7 +665,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -718,7 +717,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -768,7 +767,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -820,7 +819,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - uses: actions/setup-node@v3.5.0
@@ -859,7 +858,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -896,7 +895,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -947,7 +946,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -997,7 +996,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1047,7 +1046,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1097,7 +1096,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1147,7 +1146,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: install rclone in CI
@@ -1206,7 +1205,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1215,6 +1214,13 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1272,7 +1278,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1281,6 +1287,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1338,7 +1353,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1347,6 +1362,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1404,7 +1428,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
 
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
@@ -1416,6 +1440,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1473,7 +1506,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: install rclone in CI
@@ -1484,6 +1517,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1541,7 +1583,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1550,6 +1592,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/public-api/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1594,7 +1645,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1603,6 +1654,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1648,7 +1708,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1662,6 +1722,15 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner. temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -1721,7 +1790,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1850,7 +1919,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: set owner variable

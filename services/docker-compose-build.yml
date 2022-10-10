@@ -97,7 +97,8 @@ services:
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
 
-  dask-scheduler: *build-dask-sidecar
+  # dask-scheduler: *build-dask-sidecar
+  # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 
   director-v2:
     image: local/director-v2:${BUILD_TARGET:?build_target_required}

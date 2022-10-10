@@ -18,7 +18,7 @@ install() {
   popd
   .venv/bin/pip list --verbose
   # pull the test images if registry is set up, else build the images
-  (make pull-version tag-local) || (make build tag-version)
+  make tag-version
   make info-images
 }
 

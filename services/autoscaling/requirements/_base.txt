@@ -8,30 +8,53 @@ aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.21.0
+    # via -r requirements/_base.in
 aiofiles==22.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiohttp==3.8.3
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiodocker
+aiosignal==1.2.0
+    # via aiohttp
 anyio==3.6.1
     # via
     #   httpcore
     #   starlette
+async-timeout==4.0.2
+    # via aiohttp
 attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   aiohttp
     #   jsonschema
-certifi==2022.6.15.1
+boto3==1.24.80
+    # via -r requirements/_base.in
+botocore==1.27.80
+    # via
+    #   boto3
+    #   s3transfer
+certifi==2022.9.14
     # via
     #   httpcore
     #   httpx
+charset-normalizer==2.1.1
+    # via aiohttp
 click==8.1.3
     # via
     #   typer
     #   uvicorn
 dnspython==2.2.1
     # via email-validator
-email-validator==1.2.1
+email-validator==1.3.0
     # via pydantic
 fastapi==0.85.0
     # via
@@ -40,6 +63,10 @@ fastapi==0.85.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+frozenlist==1.3.1
+    # via
+    #   aiohttp
+    #   aiosignal
 h11==0.12.0
     # via
     #   httpcore
@@ -54,18 +81,27 @@ httpx==0.23.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-idna==3.3
+idna==3.4
     # via
     #   anyio
     #   email-validator
     #   rfc3986
+    #   yarl
 jaeger-client==4.8.0
     # via fastapi-contrib
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 jsonschema==3.2.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+multidict==6.0.2
+    # via
+    #   aiohttp
+    #   yarl
 opentracing==2.4.0
     # via
     #   fastapi-contrib
@@ -92,6 +128,8 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
+python-dateutil==2.8.2
+    # via botocore
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -105,9 +143,12 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 rfc3986==1.5.0
     # via httpx
+s3transfer==0.6.0
+    # via boto3
 six==1.16.0
     # via
     #   jsonschema
+    #   python-dateutil
     #   thrift
 sniffio==1.3.0
     # via
@@ -116,7 +157,7 @@ sniffio==1.3.0
     #   httpx
 starlette==0.20.4
     # via fastapi
-tenacity==8.0.1
+tenacity==8.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -137,10 +178,21 @@ typer==0.6.1
 typing-extensions==4.3.0
     # via
     #   aiodebug
+    #   aiodocker
     #   pydantic
     #   starlette
+urllib3==1.26.12
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   botocore
 uvicorn==0.18.3
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+yarl==1.8.1
+    # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

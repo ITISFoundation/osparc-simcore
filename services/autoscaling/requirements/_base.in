@@ -13,5 +13,7 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+aiodocker
+boto3 # note that aioboto/core does not support yet ec2!
 fastapi
 packaging

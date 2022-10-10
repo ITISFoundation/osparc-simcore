@@ -51,7 +51,7 @@ RUN node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' &&
 
 FROM joseluisq/static-web-server:1.16.0-alpine as server-base
 
-LABEL maintainer=neagu@itis.swiss
+LABEL org.opencontainers.image.authors="GitHK, odeimaiz"
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
