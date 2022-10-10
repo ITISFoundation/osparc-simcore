@@ -37,18 +37,21 @@ async function runTutorial() {
     // wait for the three services
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
+    const esId = workbenchData["nodeIds"][0];
+    const tiId = workbenchData["nodeIds"][2];
+    const ppId = workbenchData["nodeIds"][3];
 
     // wait for the three services, except the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [workbenchData["nodeIds"][0], workbenchData["nodeIds"][2], workbenchData["nodeIds"][3]],
+      [esId, tiId, ppId],
       startTimeout,
       false
     );
 
     // Make Electrode Selector selection
     await tutorial.takeScreenshot("electrodeSelector_before");
-    const electrodeSelectorIframe = await tutorial.getIframe(workbenchData["nodeIds"][0]);
+    const electrodeSelectorIframe = await tutorial.getIframe(esId);
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Selector"]');
     await utils.waitAndClick(electrodeSelectorIframe, '[osparc-test-id="TargetStructure_Target_Hypothalamus"]');
     const selection = [
@@ -78,7 +81,7 @@ async function runTutorial() {
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
-    const postProIframe = await tutorial.getIframe(workbenchData["nodeIds"][2]);
+    const postProIframe = await tutorial.getIframe(tiId);
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();
@@ -111,13 +114,13 @@ async function runTutorial() {
       "TIP_report.pdf",
       "results.csv"
     ];
-    await tutorial.checkNodeOutputsAppMode(workbenchData["nodeIds"][2], outFiles, true, false);
+    await tutorial.checkNodeOutputsAppMode(tiId, outFiles, true, false);
 
     // Check s4l
     await tutorial.waitAndClick("AppMode_NextBtn");
     await tutorial.waitFor(5000, "Starting s4l");
     await tutorial.takeScreenshot("s4l");
-    const s4lIframe = await tutorial.getIframe(workbenchData["nodeIds"][3]);
+    const s4lIframe = await tutorial.getIframe(ppId);
     const postProTree = await s4lIframe.$('.algorithm-tree');
     const postProItems = await postProTree.$$('.MuiTreeItem-label');
     const nLabels = postProItems.length;
