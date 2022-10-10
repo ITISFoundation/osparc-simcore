@@ -26,6 +26,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.getChildControl("instructions");
+
     this.__tree = this.getChildControl("tree");
 
     const disable = this.getChildControl("disable");
@@ -52,6 +54,21 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "instructions": {
+          let msg = this.tr("Use the eye icons to display/hide nodes in the App Mode.");
+          msg += "<br>";
+          msg += this.tr("Use the up and down arrows to sort them.");
+          msg += "<br>";
+          msg += this.tr("You can also display nodes by clicking on them on the Workbench or Nodes list.");
+          control = new qx.ui.basic.Label(msg).set({
+            rich: true,
+            wrap: true,
+            paddingLeft: 5,
+            paddingRight: 5
+          });
+          this._add(control);
+          break;
+        }
         case "tree":
           control = this.__buildTree();
           this._add(control, {
