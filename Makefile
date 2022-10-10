@@ -95,7 +95,7 @@ guard-%:
 	fi
 
 # Check that given variables are set and all have non-empty values,
-# die with an error otherwise.
+# exit with an error otherwise.
 #
 # Params:
 #   1. Variable name(s) to test.
