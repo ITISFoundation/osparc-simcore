@@ -119,32 +119,34 @@ def main(
     meta_filename = "metadata.yml"
 
     # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
-    if config_path.exists():
-        if config_path.is_dir():
-            basedir = config_path
-        else:
-            basedir = config_path.parent
-            meta_filename = config_path.name
+    if not config_path.exists():
+        raise typer.BadParameter("Invalid path to metadata file or folder")
+
+    if config_path.is_dir():
+        basedir = config_path
+    else:
+        basedir = config_path.parent
+        meta_filename = config_path.name
+
+    if not basedir.exists():
+        raise typer.BadParameter("Unable to determin configuration folder")
 
     config_filenames: dict[str, list[Path]] = {}
-    if basedir.exists():
-        for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
-            config_name = meta_cfg.parent.name
-            config_filenames[config_name] = []
-            # load meta
-            config_filenames[config_name].append(meta_cfg)
+    for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
+        config_name = meta_cfg.parent.name
+        config_filenames[config_name] = []
+        # load meta
+        config_filenames[config_name].append(meta_cfg)
 
-            # loads overwrites
-            docker_compose_overwrite_path = (
-                meta_cfg.parent / "docker-compose.overwrite.yml"
-            )
-            if docker_compose_overwrite_path.exists():
-                config_filenames[config_name].append(docker_compose_overwrite_path)
+        # loads overwrites
+        docker_compose_overwrite_path = meta_cfg.parent / "docker-compose.overwrite.yml"
+        if docker_compose_overwrite_path.exists():
+            config_filenames[config_name].append(docker_compose_overwrite_path)
 
-            # find pair (not required)
-            runtime_cfg = meta_cfg.parent / "runtime.yml"
-            if runtime_cfg.exists():
-                config_filenames[config_name].append(runtime_cfg)
+        # find pair (not required)
+        runtime_cfg = meta_cfg.parent / "runtime.yml"
+        if runtime_cfg.exists():
+            config_filenames[config_name].append(runtime_cfg)
 
     # output
     compose_spec_dict = {}
