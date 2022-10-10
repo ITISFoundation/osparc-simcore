@@ -24,9 +24,6 @@ async function runTutorial() {
     await utils.sleep(2000, "Wait for Quick Start dialog");
     await tutorial.closeQuickStart();
 
-    // check that the "New Study" is "New Plan"
-    await tutorial.checkFirstStudyId("newPlanButton");
-
     // create New Plan
     const studyData = await tutorial.startNewPlan();
     studyId = studyData["data"]["uuid"];
