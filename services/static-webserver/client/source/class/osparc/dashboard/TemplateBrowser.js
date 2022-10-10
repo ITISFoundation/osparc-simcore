@@ -274,7 +274,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       };
 
       task.addListener("taskAborted", () => {
-        const msg = this.tr("Study to Template aborted");
+        const msg = this.tr("Study to Template cancelled");
         finished(msg, "INFO");
       });
       task.addListener("updateReceived", e => {
