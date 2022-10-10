@@ -1,4 +1,6 @@
+from datetime import datetime
 from pathlib import Path
+from subprocess import CalledProcessError, check_output
 from typing import Optional
 
 import rich
@@ -6,22 +8,41 @@ import typer
 import yaml
 
 from ..compose_spec_model import ComposeSpecification
+from ..context import IntegrationContext
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
 
+def _utc_timestamp() -> str:
+    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _command_output(command: str, *, default: Optional[str] = None) -> Optional[str]:
+    try:
+        return check_output(command, shell=True).decode().strip()
+    except CalledProcessError:
+        return default
+
+
 def create_docker_compose_image_spec(
-    io_config_path: Path,
-    service_config_path: Optional[Path] = None,
+    integration_context: IntegrationContext,
+    meta_config_path: Path,
+    docker_compose_overwrite_path: Path,
+    service_config_path: Path = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
-    config_basedir = io_config_path.parent
+    config_basedir = meta_config_path.parent
 
     # required
-    meta_cfg = MetaConfig.from_yaml(io_config_path)
+    meta_cfg = MetaConfig.from_yaml(meta_config_path)
+
+    # required
+    docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+        docker_compose_overwrite_path, service_name=meta_cfg.service_name()
+    )
 
     # optional
     runtime_cfg = None
@@ -52,18 +73,33 @@ def create_docker_compose_image_spec(
             )
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
-
         except FileNotFoundError:
             rich.print(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
+    # add required labels
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = _utc_timestamp()
+    extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _command_output(
+        "git describe --always", default=""
+    )
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _command_output(
+        "git config --get remote.origin.url", default=""
+    )
 
-    compose_spec = create_image_spec(meta_cfg, runtime_cfg, extra_labels=extra_labels)
+    compose_spec = create_image_spec(
+        integration_context,
+        meta_cfg,
+        docker_compose_overwrite_cfg,
+        runtime_cfg,
+        extra_labels=extra_labels,
+    )
 
     return compose_spec
 
 
 def main(
+    ctx: typer.Context,
     config_path: Path = typer.Option(
         "metadata.yml",
         "-m",
@@ -92,11 +128,18 @@ def main(
 
     config_filenames: dict[str, list[Path]] = {}
     if basedir.exists():
-        for meta_cfg in basedir.rglob(meta_filename):
+        for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
             config_name = meta_cfg.parent.name
-            config_filenames[config_name] = [
-                meta_cfg,
-            ]
+            config_filenames[config_name] = []
+            # load meta
+            config_filenames[config_name].append(meta_cfg)
+
+            # loads overwrites
+            docker_compose_overwrite_path = (
+                meta_cfg.parent / "docker-compose.overwrite.yml"
+            )
+            if docker_compose_overwrite_path.exists():
+                config_filenames[config_name].append(docker_compose_overwrite_path)
 
             # find pair (not required)
             runtime_cfg = meta_cfg.parent / "runtime.yml"
@@ -107,7 +150,7 @@ def main(
     compose_spec_dict = {}
     for n, config_name in enumerate(config_filenames):
         nth_compose_spec = create_docker_compose_image_spec(
-            *config_filenames[config_name]
+            ctx.parent.integration_context, *config_filenames[config_name]
         ).dict(exclude_unset=True)
 
         # FIXME: shaky! why first decides ??
