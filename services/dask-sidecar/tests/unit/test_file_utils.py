@@ -123,6 +123,7 @@ def fake_api_server(
     def _api_server_upload_cb(url: URL, **kwargs) -> CallbackResult:
         assert url.user, f"missing user name in {url=}"
         assert url.password, f"missing passowrd in {url=}"
+
         return CallbackResult(
             status=web.HTTPOk.status_code,
             payload=jsonable_encoder(
@@ -227,7 +228,6 @@ async def test_push_file_to_osparc_api(
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
-
     assert osparc_api_settings
 
     dst_url = (
@@ -244,6 +244,7 @@ async def test_push_file_to_osparc_api(
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
     )
+    assert fake_api_server.requests
 
 
 async def test_push_file_to_remote_compresses_if_zip_destination(
