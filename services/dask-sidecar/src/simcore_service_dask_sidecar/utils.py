@@ -43,7 +43,7 @@ def num_available_gpus() -> int:
 
                 container_data = await container.wait(timeout=10)
                 container_logs = await cast(
-                    Coroutine,
+                    Coroutine[Any, Any, list[str]],
                     container.log(stdout=True, stderr=True, follow=False),
                 )
                 num_gpus = (

@@ -243,7 +243,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             container_id=container.id,
                             exit_code=container_data["State"]["ExitCode"],
                             service_logs=await cast(
-                                Coroutine,
+                                Coroutine[Any, Any, list[str]],
                                 container.log(
                                     stdout=True, stderr=True, tail=20, follow=False
                                 ),

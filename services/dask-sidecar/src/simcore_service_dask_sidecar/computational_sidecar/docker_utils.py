@@ -304,7 +304,7 @@ async def _parse_container_docker_logs(
             # NOTE: The log stream may be interrupted before all the logs are gathered!
             # therefore it is needed to get the remaining logs
             missing_logs = await cast(
-                Coroutine,
+                Coroutine[Any, Any, list[str]],
                 container.log(
                     stdout=True,
                     stderr=True,
