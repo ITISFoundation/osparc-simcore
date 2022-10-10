@@ -15,10 +15,12 @@ import fsspec
 import pytest
 from _pytest.fixtures import FixtureRequest
 from aiohttp import web
+from aioresponses import CallbackResult
 from aioresponses import aioresponses as AioResponsesMock
 from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from faker import Faker
 from minio import Minio
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from osparc.models.file import File
 from pydantic import AnyUrl, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
@@ -29,6 +31,7 @@ from simcore_service_dask_sidecar.file_utils import (
     pull_file_from_remote,
     push_file_to_remote,
 )
+from yarl import URL
 
 
 @pytest.fixture()
@@ -112,17 +115,30 @@ def fake_api_server(
     s3_presigned_link_remote_file_url: AnyUrl,
     faker: Faker,
 ) -> AioResponsesMock:
-    upload_file_pattern = re.compile(rf"^{osparc_api_endpoint}/v0\/files\/content")
+    endpoint = URL(osparc_api_endpoint)
+    upload_file_pattern = re.compile(
+        rf"^{endpoint.scheme}:\/\/((.*):(.*)@)?{endpoint.host}\/v0\/files\/content"
+    )
+
+    def _api_server_upload_cb(url: URL, **kwargs) -> CallbackResult:
+        assert url.user, f"missing user name in {url=}"
+        assert url.password, f"missing passowrd in {url=}"
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload=jsonable_encoder(
+                File(
+                    id=faker.uuid4(),
+                    filename=faker.file_name(),
+                    content_type="application/octet-stream",
+                    checksum=faker.uuid4(),
+                ).to_dict()
+            ),
+        )
+
     aioresponses_mocker.put(
         upload_file_pattern,
-        status=web.HTTPOk.status_code,
         repeat=True,
-        payload=File(
-            id=faker.uuid4(),
-            filename=faker.file_name(),
-            content_type="application:*/*",
-            checksum=faker.uuid4(),
-        ).to_dict(),
+        callback=_api_server_upload_cb,
     )
     return aioresponses_mocker
 
@@ -214,9 +230,12 @@ async def test_push_file_to_osparc_api(
 
     assert osparc_api_settings
 
-    dst_url = parse_obj_as(
-        AnyUrl, f"{osparc_api_settings.osparc_api_endpoint}/v0/files/content"
+    dst_url = (
+        URL(f"{osparc_api_settings.osparc_api_endpoint}v0/files/content")
+        .with_user(osparc_api_settings.api_key)
+        .with_password(osparc_api_settings.api_secret)
     )
+    dst_url = parse_obj_as(AnyUrl, f"{dst_url}")
 
     # push it to the remote
     await push_file_to_remote(
