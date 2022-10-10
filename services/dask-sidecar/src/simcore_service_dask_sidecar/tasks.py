@@ -13,6 +13,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from distributed.worker import Worker, logger
+from models_library.services import ServiceKeyVersion
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 
@@ -109,8 +110,9 @@ async def _run_computational_sidecar_async(
         sidecar_bootmode = get_current_task_boot_mode()
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
-            service_key=service_key,
-            service_version=service_version,
+            service_key_version=ServiceKeyVersion(
+                key=service_key, version=service_version
+            ),
             input_data=input_data,
             output_data_keys=output_data_keys,
             log_file_url=log_file_url,

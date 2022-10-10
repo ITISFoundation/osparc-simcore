@@ -113,10 +113,11 @@ async def test_push_file_to_remote(
     assert src_path.exists()
     # push it to the remote
     await push_file_to_remote(
-        src_path,
-        remote_parameters.remote_file_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        src_path=src_path,
+        dst_url=remote_parameters.remote_file_url,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        osparc_api_settings=None,
     )
 
     # check the remote is actually having the file in
@@ -151,10 +152,11 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     assert src_path.exists()
     # push it to the remote
     await push_file_to_remote(
-        src_path,
-        s3_presigned_link_remote_file_url,
-        mocked_log_publishing_cb,
+        src_path=src_path,
+        dst_url=s3_presigned_link_remote_file_url,
+        log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
+        osparc_api_settings=None,
     )
 
     # check the remote is actually having the file in, but we need s3 access now
@@ -185,10 +187,11 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
     assert src_path.exists()
 
     await push_file_to_remote(
-        src_path,
-        destination_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        src_path=src_path,
+        dst_url=destination_url,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        osparc_api_settings=None,
     )
 
     storage_kwargs = {}

@@ -4,7 +4,7 @@
 
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional
+from typing import Any, Callable, Iterable, Iterator, Optional
 
 import dask
 import distributed
@@ -13,6 +13,7 @@ import pytest
 import simcore_service_dask_sidecar
 from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
+from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from faker import Faker
 from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
@@ -53,7 +54,7 @@ def installed_package_dir() -> Path:
 
 @pytest.fixture()
 def mock_service_envs(
-    mock_env_devel_environment: Dict[str, Optional[str]],
+    mock_env_devel_environment: dict[str, Optional[str]],
     monkeypatch: MonkeyPatch,
     mocker: MockerFixture,
     tmp_path_factory: TempPathFactory,
@@ -91,7 +92,7 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
 
 
 @pytest.fixture(scope="module")
-def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
+def ftp_server(ftpserver: ProcessFTPServer) -> list[URL]:
     faker = Faker()
 
     files = ["file_1", "file_2", "file_3"]
@@ -117,6 +118,11 @@ def s3_endpoint_url(minio_config: dict[str, Any]) -> AnyUrl:
 @pytest.fixture
 def s3_settings(minio_config: dict[str, Any], minio_service: Minio) -> S3Settings:
     return S3Settings.create_from_envs()
+
+
+@pytest.fixture
+def osparc_api_settings() -> Optional[TaskOsparcAPISettings]:
+    return None
 
 
 @pytest.fixture

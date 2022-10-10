@@ -4,11 +4,12 @@
 # pylint: disable=no-member
 
 import asyncio
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest.mock import call
 
 import aiodocker
 import pytest
+from models_library.services import ServiceKeyVersion
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -36,7 +37,7 @@ def service_version() -> str:
 
 
 @pytest.fixture()
-def command() -> List[str]:
+def command() -> list[str]:
     return ["sh", "-c", "some_app"]
 
 
@@ -53,20 +54,19 @@ async def test_create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
-    task_max_resources: Dict[str, Any],
+    task_max_resources: dict[str, Any],
 ):
 
     container_config = await create_container_config(
         docker_registry,
-        service_key,
-        service_version,
-        command,
-        comp_volume_mount_point,
-        boot_mode,
-        task_max_resources,
+        service_key_version=ServiceKeyVersion(key=service_key, version=service_version),
+        command=command,
+        comp_volume_mount_point=comp_volume_mount_point,
+        boot_mode=boot_mode,
+        task_max_resources=task_max_resources,
     )
     assert container_config.dict(by_alias=True) == (
         {
@@ -188,7 +188,7 @@ async def test_create_container_config(
         ),
     ],
 )
-async def test_parse_line(log_line: str, expected_parsing: Tuple[LogType, str, str]):
+async def test_parse_line(log_line: str, expected_parsing: tuple[LogType, str, str]):
     assert await parse_line(log_line) == expected_parsing
 
 
@@ -204,17 +204,16 @@ async def test_managed_container_always_removes_container(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     mocker: MockerFixture,
     exception_type: Exception,
 ):
     container_config = await create_container_config(
         docker_registry,
-        service_key,
-        service_version,
-        command,
-        comp_volume_mount_point,
+        service_key_version=ServiceKeyVersion(key=service_key, version=service_version),
+        command=command,
+        comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=BootMode.CPU,
         task_max_resources={},
     )

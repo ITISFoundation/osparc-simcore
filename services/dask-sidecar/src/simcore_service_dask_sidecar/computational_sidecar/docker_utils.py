@@ -23,7 +23,9 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from distributed.pubsub import Pub
+from models_library.services import ServiceKeyVersion
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
@@ -47,8 +49,7 @@ LogPublishingCB = Callable[[str], Awaitable[None]]
 
 async def create_container_config(
     docker_registry: str,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
@@ -72,7 +73,7 @@ async def create_container_config(
             f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
         ],
         Cmd=command,
-        Image=f"{docker_registry}/{service_key}:{service_version}",
+        Image=f"{docker_registry}/{service_key_version.as_image_tag()}",
         Labels={},
         HostConfig=ContainerHostConfig(
             Init=True,
@@ -164,8 +165,7 @@ async def parse_line(line: str) -> tuple[LogType, str, str]:
 
 
 async def publish_container_logs(
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     container: DockerContainer,
     container_name: str,
     progress_pub: Pub,
@@ -177,7 +177,7 @@ async def publish_container_logs(
         progress_pub,
         logs_pub,
         log_type,
-        message_prefix=f"{service_key}:{service_version} - {container.id}{container_name}",
+        message_prefix=f"{service_key_version.as_image_tag()} - {container.id}{container_name}",
         message=message,
     )
 
@@ -188,8 +188,7 @@ PARSE_LOG_INTERVAL_S: Final[float] = 0.5
 
 async def _parse_container_log_file(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     container_name: str,
     progress_pub: Pub,
     logs_pub: Pub,
@@ -197,6 +196,7 @@ async def _parse_container_log_file(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -207,8 +207,7 @@ async def _parse_container_log_file(
             if line := await file_pointer.readline():
                 log_type, _, message = await parse_line(line)
                 await publish_container_logs(
-                    service_key=service_key,
-                    service_version=service_version,
+                    service_key_version,
                     container=container,
                     container_name=container_name,
                     progress_pub=progress_pub,
@@ -222,8 +221,7 @@ async def _parse_container_log_file(
         async for line in file_pointer:
             log_type, _, message = await parse_line(line)
             await publish_container_logs(
-                service_key=service_key,
-                service_version=service_version,
+                service_key_version,
                 container=container,
                 container_name=container_name,
                 progress_pub=progress_pub,
@@ -243,7 +241,11 @@ async def _parse_container_log_file(
         # copy the log file to the log_file_url
         file_to_upload = log_file
         await push_file_to_remote(
-            file_to_upload, log_file_url, log_publishing_cb, s3_settings
+            file_to_upload,
+            log_file_url,
+            log_publishing_cb=log_publishing_cb,
+            s3_settings=s3_settings,
+            osparc_api_settings=osparc_api_settings,
         )
 
         logger.debug(
@@ -255,14 +257,14 @@ async def _parse_container_log_file(
 
 async def _parse_container_docker_logs(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     container_name: str,
     progress_pub: Pub,
     logs_pub: Pub,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -273,7 +275,8 @@ async def _parse_container_docker_logs(
     # TODO: move that file somewhere else
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         log_file_path = (
-            Path(tmp_dir) / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+            Path(tmp_dir)
+            / f"{service_key_version.key.split(sep='/')[-1]}_{service_key_version.version}.logs"
         )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
@@ -284,8 +287,7 @@ async def _parse_container_docker_logs(
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
                 await publish_container_logs(
-                    service_key=service_key,
-                    service_version=service_version,
+                    service_key_version,
                     container=container,
                     container_name=container_name,
                     progress_pub=progress_pub,
@@ -315,8 +317,7 @@ async def _parse_container_docker_logs(
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
                 await publish_container_logs(
-                    service_key=service_key,
-                    service_version=service_version,
+                    service_key_version,
                     container=container,
                     container_name=container_name,
                     progress_pub=progress_pub,
@@ -341,7 +342,11 @@ async def _parse_container_docker_logs(
 
         # copy the log file to the log_file_url
         await push_file_to_remote(
-            log_file_path, log_file_url, log_publishing_cb, s3_settings
+            log_file_path,
+            log_file_url,
+            log_publishing_cb,
+            s3_settings=s3_settings,
+            osparc_api_settings=osparc_api_settings,
         )
 
     logger.debug(
@@ -354,8 +359,7 @@ async def _parse_container_docker_logs(
 
 async def monitor_container_logs(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     progress_pub: Pub,
     logs_pub: Pub,
     integration_version: version.Version,
@@ -363,6 +367,7 @@ async def monitor_container_logs(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -373,9 +378,8 @@ async def monitor_container_logs(
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
         logger.info(
-            "Starting to parse information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
+            "Starting to parse information of task [%s - %s%s]",
+            service_key_version.as_image_tag(),
             container.id,
             container_name,
         )
@@ -383,20 +387,19 @@ async def monitor_container_logs(
         if integration_version > LEGACY_INTEGRATION_VERSION:
             await _parse_container_docker_logs(
                 container,
-                service_key,
-                service_version,
+                service_key_version,
                 container_name,
                 progress_pub,
                 logs_pub,
                 log_file_url,
                 log_publishing_cb,
                 s3_settings,
+                osparc_api_settings,
             )
         else:
             await _parse_container_log_file(
                 container,
-                service_key,
-                service_version,
+                service_key_version,
                 container_name,
                 progress_pub,
                 logs_pub,
@@ -404,20 +407,19 @@ async def monitor_container_logs(
                 log_file_url,
                 log_publishing_cb,
                 s3_settings,
+                osparc_api_settings,
             )
 
         logger.info(
-            "Finished parsing information of task [%s:%s - %s%s]",
-            service_key,
-            service_version,
+            "Finished parsing information of task [%s - %s%s]",
+            service_key_version.as_image_tag(),
             container.id,
             container_name,
         )
     except DockerError as exc:
         logger.exception(
-            "log monitoring of [%s:%s - %s] stopped with unexpected error:\n%s",
-            service_key,
-            service_version,
+            "log monitoring of [%s - %s] stopped with unexpected error:\n%s",
+            service_key_version.as_image_tag(),
             container.id,
             exc,
         )
@@ -426,8 +428,7 @@ async def monitor_container_logs(
 @contextlib.asynccontextmanager
 async def managed_monitor_container_log_task(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     progress_pub: Pub,
     logs_pub: Pub,
     integration_version: version.Version,
@@ -435,6 +436,7 @@ async def managed_monitor_container_log_task(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -445,8 +447,7 @@ async def managed_monitor_container_log_task(
         monitoring_task = asyncio.create_task(
             monitor_container_logs(
                 container,
-                service_key,
-                service_version,
+                service_key_version,
                 progress_pub,
                 logs_pub,
                 integration_version,
@@ -454,8 +455,9 @@ async def managed_monitor_container_log_task(
                 log_file_url,
                 log_publishing_cb,
                 s3_settings,
+                osparc_api_settings,
             ),
-            name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
+            name=f"{service_key_version.as_image_tag()}_{container.id}_monitoring_task",
         )
         yield monitoring_task
         # wait for task to complete, so we get the complete log
@@ -470,13 +472,12 @@ async def managed_monitor_container_log_task(
 async def pull_image(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
     log_publishing_cb: LogPublishingCB,
 ) -> None:
 
     async for pull_progress in docker_client.images.pull(
-        f"{docker_auth.server_address}/{service_key}:{service_version}",
+        f"{docker_auth.server_address}/{service_key_version.as_image_tag()}",
         stream=True,
         auth={
             "username": docker_auth.username,
@@ -484,21 +485,20 @@ async def pull_image(
         },
     ):
         await log_publishing_cb(
-            f"Pulling {service_key}:{service_version}: {pull_progress}..."
+            f"Pulling {service_key_version.as_image_tag()}: {pull_progress}..."
         )
     await log_publishing_cb(
-        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}."
+        f"Docker image for {service_key_version.as_image_tag()} ready  on {socket.gethostname()}."
     )
 
 
 async def get_integration_version(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key_version: ServiceKeyVersion,
 ) -> version.Version:
     image_cfg = await docker_client.images.inspect(
-        f"{docker_auth.server_address}/{service_key}:{service_version}"
+        f"{docker_auth.server_address}/{service_key_version.as_image_tag()}"
     )
     # NOTE: old services did not have the integration-version label
     integration_version = LEGACY_INTEGRATION_VERSION
@@ -519,9 +519,8 @@ async def get_integration_version(
         integration_version = version.Version(service_integration_label)
 
     logger.info(
-        "%s:%s has integration version %s",
-        service_key,
-        service_version,
+        "%s has integration version %s",
+        service_key_version.as_image_tag(),
         integration_version,
     )
     return integration_version

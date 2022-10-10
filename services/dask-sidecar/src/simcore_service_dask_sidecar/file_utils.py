@@ -165,7 +165,7 @@ async def pull_file_from_remote(
 
 
 async def _push_file_to_osparc_api(
-    file_to_upload, osparc_api_settings, log_publishing_cb
+    _file_to_upload, _osparc_api_settings, _log_publishing_cb
 ) -> str:
     ...
 

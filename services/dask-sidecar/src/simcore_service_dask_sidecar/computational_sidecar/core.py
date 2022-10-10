@@ -20,6 +20,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from models_library.projects_state import RunningState
+from models_library.services import ServiceKeyVersion
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
@@ -49,8 +50,7 @@ CONTAINER_WAIT_TIME_SECS = 2
 @dataclass
 class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     docker_auth: DockerBasicAuth
-    service_key: str
-    service_version: str
+    service_key_version: ServiceKeyVersion
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
@@ -153,8 +153,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
         except (ValueError, ValidationError) as exc:
             raise ServiceBadFormattedOutputError(
-                service_key=self.service_key,
-                service_version=self.service_version,
+                service_key=self.service_key_version.key,
+                service_version=self.service_key_version.version,
                 exc=exc,
             ) from exc
 
@@ -176,7 +176,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     async def run(self, command: list[str]) -> TaskOutputData:
         await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
-            f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
+            f"Starting task for {self.service_key_version.as_image_tag()} on {socket.gethostname()}..."
         )
 
         settings = Settings.create_from_envs()
@@ -188,21 +188,19 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await pull_image(
                 docker_client,
                 self.docker_auth,
-                self.service_key,
-                self.service_version,
+                self.service_key_version,
                 self._publish_sidecar_log,
             )
 
             integration_version = await get_integration_version(
-                docker_client, self.docker_auth, self.service_key, self.service_version
+                docker_client, self.docker_auth, self.service_key_version
             )
             computational_shared_data_mount_point = (
                 await get_computational_shared_data_mount_point(docker_client)
             )
             config = await create_container_config(
                 docker_registry=self.docker_auth.server_address,
-                service_key=self.service_key,
-                service_version=self.service_version,
+                service_key_version=self.service_key_version,
                 command=command,
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
                 boot_mode=self.boot_mode,
@@ -214,8 +212,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             async with managed_container(docker_client, config) as container:
                 async with managed_monitor_container_log_task(
                     container=container,
-                    service_key=self.service_key,
-                    service_version=self.service_version,
+                    service_key_version=self.service_key_version,
                     progress_pub=self.task_publishers.progress,
                     logs_pub=self.task_publishers.logs,
                     integration_version=integration_version,
@@ -223,6 +220,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     log_file_url=self.log_file_url,
                     log_publishing_cb=self._publish_sidecar_log,
                     s3_settings=self.s3_settings,
+                    osparc_api_settings=self.osparc_api_settings,
                 ):
                     await container.start()
                     await self._publish_sidecar_log(
@@ -236,12 +234,12 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     if container_data["State"]["ExitCode"] > os.EX_OK:
                         await self._publish_sidecar_state(
                             RunningState.FAILED,
-                            msg=f"error while running container '{container.id}' for '{self.service_key}:{self.service_version}'",
+                            msg=f"error while running container '{container.id}' for '{self.service_key_version.as_image_tag()}'",
                         )
 
                         raise ServiceRunError(
-                            service_key=self.service_key,
-                            service_version=self.service_version,
+                            service_key=self.service_key_version.key,
+                            service_version=self.service_key_version.version,
                             container_id=container.id,
                             exit_code=container_data["State"]["ExitCode"],
                             service_logs=await cast(

@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Callable, Coroutine, Dict, Iterable, List
+from typing import Callable, Coroutine, Iterable, Optional
 from unittest import mock
 from uuid import uuid4
 
@@ -30,6 +30,7 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
+    TaskOsparcAPISettings,
     TaskOutputData,
     TaskOutputDataSchema,
 )
@@ -78,7 +79,7 @@ def node_id() -> NodeID:
 
 
 @pytest.fixture()
-def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
+def dask_subsystem_mock(mocker: MockerFixture) -> dict[str, MockerFixture]:
     # mock dask client
     dask_client_mock = mocker.patch("distributed.Client", autospec=True)
 
@@ -129,12 +130,12 @@ class ServiceExampleParam:
     docker_basic_auth: DockerBasicAuth
     service_key: str
     service_version: str
-    command: List[str]
+    command: list[str]
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
     expected_output_data: TaskOutputData
-    expected_logs: List[str]
+    expected_logs: list[str]
     integration_version: version.Version
 
 
@@ -328,10 +329,11 @@ def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: Dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, MockerFixture],
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
 
     mocked_get_integration_version = mocker.patch(
@@ -348,6 +350,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.log_file_url,
         ubuntu_task.command,
         s3_settings,
+        osparc_api_settings,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -406,6 +409,7 @@ def test_run_multiple_computational_sidecar_dask(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     NUMBER_OF_TASKS = 50
 
@@ -425,6 +429,7 @@ def test_run_multiple_computational_sidecar_dask(
             ubuntu_task.log_file_url,
             ubuntu_task.command,
             s3_settings,
+            osparc_api_settings,
             resources={},
         )
         for _ in range(NUMBER_OF_TASKS)
@@ -446,6 +451,7 @@ def test_run_computational_sidecar_dask(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -462,6 +468,7 @@ def test_run_computational_sidecar_dask(
         ubuntu_task.log_file_url,
         ubuntu_task.command,
         s3_settings,
+        osparc_api_settings,
         resources={},
     )
 
@@ -500,9 +507,10 @@ def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: Dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, MockerFixture],
     ubuntu_task_fail: ServiceExampleParam,
     s3_settings: S3Settings,
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
@@ -514,6 +522,7 @@ def test_failing_service_raises_exception(
             ubuntu_task_fail.log_file_url,
             ubuntu_task_fail.command,
             s3_settings,
+            osparc_api_settings,
         )
 
 
@@ -521,9 +530,10 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
-    dask_subsystem_mock: Dict[str, MockerFixture],
+    dask_subsystem_mock: dict[str, MockerFixture],
     ubuntu_task_unexpected_output: ServiceExampleParam,
     s3_settings: S3Settings,
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
@@ -535,4 +545,5 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
             ubuntu_task_unexpected_output.log_file_url,
             ubuntu_task_unexpected_output.command,
             s3_settings,
+            osparc_api_settings,
         )
