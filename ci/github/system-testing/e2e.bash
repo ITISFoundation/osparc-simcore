@@ -12,7 +12,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   pushd tests/e2e
-  make install-ci
+  make install-ci-no-build
   popd
 }
 
@@ -20,13 +20,6 @@ test() {
   pushd tests/e2e
   make test
   popd
-}
-
-setup_images() {
-  echo "--------------- preparing docker images..."
-  make pull-version || (make build tag-version)
-  make info-images
-
 }
 
 clean_up() {

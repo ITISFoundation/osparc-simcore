@@ -21,8 +21,10 @@ from aiohttp import (
     ClientResponse,
     ClientResponseError,
     ClientSession,
+    RequestInfo,
     web,
 )
+from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from pydantic import AnyUrl
 from servicelib.utils import logged_gather
@@ -45,6 +47,55 @@ class UploadableFileObject:
     file_object: IO
     file_name: str
     file_size: int
+
+
+class ExtendedClientResponseError(ClientResponseError):
+    def __init__(
+        self,
+        request_info: RequestInfo,
+        history: tuple[ClientResponse, ...],
+        body: str,
+        *,
+        code: Optional[int] = None,
+        status: Optional[int] = None,
+        message: str = "",
+        headers: Optional[LooseHeaders] = None,
+    ):
+        super().__init__(
+            request_info,
+            history,
+            code=code,
+            status=status,
+            message=message,
+            headers=headers,
+        )
+        self.body = body
+
+    def __str__(self) -> str:
+        # When dealing with errors coming from S3 it is hard to conclude
+        # what is wrong from a generic `400 Bad Request` extending
+        # stacktrace with body. SEE links below for details:
+        # - https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+        # - https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingRESTError.html
+        return (
+            f"status={self.status}, "
+            f"message={self.message}, "
+            f"url={self.request_info.real_url}, "
+            f"body={self.body}"
+        )
+
+
+async def _raise_for_status(response: ClientResponse) -> None:
+    if response.status >= 400:
+        body = await response.text()
+        raise ExtendedClientResponseError(
+            response.request_info,
+            response.history,
+            body,
+            status=response.status,
+            message=response.reason,
+            headers=response.headers,
+        )
 
 
 def _compute_tqdm_miniters(byte_size: int) -> float:
@@ -214,7 +265,7 @@ async def _upload_file_part(
                     "Content-Length": f"{file_part_size}",
                 },
             ) as response:
-                response.raise_for_status()
+                await _raise_for_status(response)
                 if pbar.update(file_part_size) and io_log_redirect_cb:
                     await io_log_redirect_cb(f"{pbar}")
                 # NOTE: the response from minio does not contain a json body

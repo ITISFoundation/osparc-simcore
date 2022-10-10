@@ -10,7 +10,7 @@ image_name="$(basename "$0"):latest"
 # NOTE: latest pydantic version (1.10.0) creates a invalid issue in mypy.
 # using mypy 0.971 (compiled: yes)
 # simcore_service_dynamic_sidecar/models/shared_store.py:12:47: error: Incompatible types in assignment (expression has type "List[_T]", variable has type "List[str]")
-docker buildx build --tag "$image_name" - &>/dev/null <<EOF
+docker buildx build --tag "$image_name" --load - &>/dev/null <<EOF
 FROM python:3.9.12-slim-buster
 RUN pip install --upgrade pip \
     && pip install mypy==0.971 \
