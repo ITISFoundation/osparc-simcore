@@ -45,22 +45,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     "finished": "qx.event.type.Event"
   },
 
-  statics: {
-    getItemsInTree: function(itemMdl, children = []) {
-      children.push(itemMdl);
-      for (let i=0; itemMdl.getChildren && i<itemMdl.getChildren().length; i++) {
-        this.self().getItemsInTree(itemMdl.getChildren().toArray()[i], children);
-      }
-    },
-
-    moveElement: function(input, from, to) {
-      let numberOfDeletedElm = 1;
-      const elm = input.splice(from, numberOfDeletedElm)[0];
-      numberOfDeletedElm = 0;
-      input.splice(to, numberOfDeletedElm, elm);
-    }
-  },
-
   members: {
     __study: null,
     __tree: null,
@@ -191,7 +175,13 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       const children = this.__tree.getModel().getChildren().toArray();
       const idx = children.findIndex(elem => elem.getNodeId() === nodeId);
       if (idx > -1) {
-        this.__tree.setSelection(new qx.data.Array([children[idx]]));
+        const item = children[idx];
+        this.__tree.setSelection(new qx.data.Array([item]));
+        // show by default
+        if (item.getPosition() === -1) {
+          this.__show(item);
+          this.__tree.refresh();
+        }
       }
     },
 
