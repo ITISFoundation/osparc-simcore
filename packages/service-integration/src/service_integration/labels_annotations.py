@@ -5,7 +5,7 @@ This module defines how config is serialized/deserialized to/from docker labels
 
 import json
 from json.decoder import JSONDecodeError
-from typing import Any, Dict
+from typing import Any
 
 from pydantic.json import pydantic_encoder
 
@@ -15,8 +15,8 @@ def _json_dumps(obj: Any, **kwargs):
 
 
 def to_labels(
-    config: Dict[str, Any], *, prefix_key: str, trim_key_head: bool = True
-) -> Dict[str, str]:
+    config: dict[str, Any], *, prefix_key: str, trim_key_head: bool = True
+) -> dict[str, str]:
     # FIXME: null is loaded as 'null' string value? is that correct? json -> None upon deserialization?
     labels = {}
     for key, value in config.items():
@@ -40,9 +40,9 @@ def to_labels(
 
 
 def from_labels(
-    labels: Dict[str, str], *, prefix_key: str, trim_key_head: bool = True
-) -> Dict[str, Any]:
-    data: Dict[str, Any] = {}
+    labels: dict[str, str], *, prefix_key: str, trim_key_head: bool = True
+) -> dict[str, Any]:
+    data: dict[str, Any] = {}
     for key, label in labels.items():
         if key.startswith(f"{prefix_key}."):
             try:

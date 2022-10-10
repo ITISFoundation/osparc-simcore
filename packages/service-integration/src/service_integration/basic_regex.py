@@ -11,9 +11,6 @@ import re
 
 from models_library.basic_regex import VERSION_RE
 
-## VERSIONS --------------------------------------------------------------------------------------------------
-
-
 version_regex = re.compile(VERSION_RE)
 
 # Semantic version regex (https://semver.org/)

@@ -9,8 +9,8 @@ from typing import Callable
 
 import pytest
 import service_integration
-from click.testing import CliRunner
-from service_integration.cli import main
+from service_integration import cli
+from typer.testing import CliRunner
 
 pytest_plugins = [
     "pytest_simcore.pydantic_models",
@@ -52,6 +52,6 @@ def run_program_with_args() -> Callable:
     def _invoke(*cmd):
         print("RUNNING", "osparc-service-integrator", cmd)
         print(runner.make_env())
-        return runner.invoke(main, list(cmd))
+        return runner.invoke(cli.app, list(cmd))
 
     return _invoke

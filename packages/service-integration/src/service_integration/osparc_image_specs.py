@@ -3,7 +3,7 @@
 """
 
 
-from typing import Dict, Optional
+from typing import Optional
 
 from service_integration.compose_spec_model import (
     BuildItem,
@@ -18,7 +18,7 @@ def create_image_spec(
     meta_cfg: MetaConfig,
     runtime_cfg: Optional[RuntimeConfig] = None,
     *,
-    extra_labels: Dict[str, str] = {},
+    extra_labels: dict[str, str] = {},
     **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
