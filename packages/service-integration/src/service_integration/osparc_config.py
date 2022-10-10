@@ -14,7 +14,7 @@ integrates with osparc.
 
 import io
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, NamedTuple, Optional
 
 from models_library.service_settings_labels import (
     ContainerSpec,
@@ -216,6 +216,13 @@ class RuntimeConfig(BaseModel):
 
 
 ## FILES -----------------------------------------------------------
+
+
+class ConfigFileDescriptor(NamedTuple):
+    glob_pattern: str
+    required: bool = True
+
+
 class ConfigFilesStructure:
     """
     Defines config file structure and how they
@@ -223,10 +230,11 @@ class ConfigFilesStructure:
     """
 
     FILES_GLOBS = {
-        # TODO: below DockerComposeOverwrite might not be required, maybe remove?
-        DockerComposeOverwriteCfg.__name__: "docker-compose.overwrite.y*ml",
-        MetaConfig.__name__: "metadata.y*ml",
-        RuntimeConfig.__name__: "runtime.y*ml",
+        DockerComposeOverwriteCfg.__name__: ConfigFileDescriptor(
+            glob_pattern="docker-compose.overwrite.y*ml", required=False
+        ),
+        MetaConfig.__name__: ConfigFileDescriptor(glob_pattern="metadata.y*ml"),
+        RuntimeConfig.__name__: ConfigFileDescriptor(glob_pattern="runtime.y*ml"),
     }
 
     @staticmethod
@@ -242,7 +250,8 @@ class ConfigFilesStructure:
         """
         found = {
             configtype: list(start_dir.rglob(pattern))
-            for configtype, pattern in self.FILES_GLOBS.items()
+            for configtype, (pattern, required) in self.FILES_GLOBS.items()
+            if required
         }
 
         if not found:
