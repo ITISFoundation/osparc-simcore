@@ -8,7 +8,6 @@ def test_cli_help(run_program_with_args: Callable):
         "--help",
     )
     assert result.exit_code == 0
-    assert "bump-version " in result.output
 
 
 def test_cli_version(run_program_with_args: Callable):

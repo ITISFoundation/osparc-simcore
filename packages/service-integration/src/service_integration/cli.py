@@ -13,6 +13,8 @@ DEFAULTS = IntegrationContext()
 
 app = typer.Typer()
 
+app = typer.Typer()
+
 
 def version_callback(value: bool):
     if value:
