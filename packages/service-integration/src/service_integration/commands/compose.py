@@ -70,7 +70,7 @@ def main(
         "--metadata",
         help="osparc config file or folder",
     ),
-    compose_spec_path: Path = typer.Option(
+    to_spec_file: Path = typer.Option(
         Path("docker-compose.yml"),
         "-f",
         "--to-spec-file",
@@ -117,8 +117,8 @@ def main(
             # appends only services section!
             compose_spec_dict["services"].update(nth_compose_spec["services"])
 
-    compose_spec_path.parent.mkdir(parents=True, exist_ok=True)
-    with compose_spec_path.open("wt") as fh:
+    to_spec_file.parent.mkdir(parents=True, exist_ok=True)
+    with to_spec_file.open("wt") as fh:
         yaml.safe_dump(
             compose_spec_dict,
             fh,

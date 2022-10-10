@@ -78,21 +78,21 @@ def create_osparc_specs(
 
 
 def main(
-    compose_spec_path: Path = typer.Option(
+    from_spec_file: Path = typer.Option(
         Path("docker-compose.yml"),
         "-f",
-        "--to-spec-file",
-        help="Output docker-compose image spec",
+        "--from-spec-file",
+        help="docker-compose used to deduce osparc config",
     ),
 ):
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
-    config_dir = compose_spec_path.parent / ".osparc"
+    config_dir = from_spec_file.parent / ".osparc"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"
 
     meta_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
-    rich.print(f"Creating {config_dir} from {compose_spec_path} ...")
+    rich.print(f"Creating {config_dir} from {from_spec_file} ...")
 
-    create_osparc_specs(compose_spec_path, meta_cfg_path, runtime_cfg_path)
+    create_osparc_specs(from_spec_file, meta_cfg_path, runtime_cfg_path)

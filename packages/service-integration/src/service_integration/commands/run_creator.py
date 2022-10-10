@@ -15,10 +15,9 @@ def get_input_config(metadata_file: Path) -> dict:
 
 
 def main(
-    metadata_file_path: Path = typer.Option(
+    metadata_file: Path = typer.Option(
         ".osparc/metadata.yml",
         "--metadata",
-        "--metadata-file",
         help="The metadata yaml of the node",
     ),
     run_script_file_path: Path = typer.Option(
@@ -49,7 +48,7 @@ cd "$(dirname "$0")"
 json_input=$INPUT_FOLDER/inputs.json
     """
     ]
-    input_config = get_input_config(metadata_file_path)
+    input_config = get_input_config(metadata_file)
     for input_key, input_value in input_config.items():
         if "data:" in input_value["type"]:
             filename = input_key

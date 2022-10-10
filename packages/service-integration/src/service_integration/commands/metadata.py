@@ -23,17 +23,18 @@ class UpgradeTags(str, Enum):
 
 
 def bump_version(
-    target_version: TargetVersionChoices = TargetVersionChoices.SEMANTIC_VERSION,
+    target_version: TargetVersionChoices = typer.Argument(
+        TargetVersionChoices.SEMANTIC_VERSION
+    ),
     upgrade: UpgradeTags = typer.Option(..., case_sensitive=False),
-    metadata_file_path: Path = typer.Option(
+    metadata_file: Path = typer.Option(
         "metadata/metadata.yml",
-        "--metadata-file",
         help="The metadata yaml file",
     ),
 ):
     """Bumps target version in metadata  (legacy)"""
     # load
-    raw_data: OrderedDict = ordered_safe_load(metadata_file_path.read_text())
+    raw_data: OrderedDict = ordered_safe_load(metadata_file.read_text())
 
     # parse and validate
     metadata = ServiceDockerData(**raw_data)
@@ -47,15 +48,16 @@ def bump_version(
 
     # dump to file (preserving order!)
     text = ordered_safe_dump(raw_data)
-    metadata_file_path.write_text(text)
+    metadata_file.write_text(text)
     rich.print(f"{target_version.title()} bumped: {current_version} → {new_version}")
 
 
 def get_version(
-    target_version: TargetVersionChoices = TargetVersionChoices.SEMANTIC_VERSION,
+    target_version: TargetVersionChoices = typer.Argument(
+        TargetVersionChoices.SEMANTIC_VERSION
+    ),
     metadata_file: Path = typer.Option(
         ".osparc/metadata.yml",
-        "--metadata-file",
         help="The metadata yaml file",
     ),
 ):
