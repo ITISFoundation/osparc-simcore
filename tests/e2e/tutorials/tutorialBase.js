@@ -415,8 +415,7 @@ class TutorialBase {
     return nodeIframe;
   }
 
-  async openNodeFiles(nodePosInTree = 0) {
-    const nodeId = await auto.openNode(this.__page, nodePosInTree);
+  async openNodeFiles(nodeId) {
     this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     await auto.openNodeFiles(this.__page);
     try {
@@ -448,45 +447,39 @@ class TutorialBase {
     await this.waitAndClick("nodeDataManagerCloseBtn");
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true) {
-    try {
-      await this.openNodeFiles(nodePos);
-      await this.takeScreenshot("checkNodeOutputs_before");
-      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.map(el => el.textContent.trim()));
-      if (checkNFiles) {
-        assert(files.length === fileNames.length, 'Number of files is incorrect')
-        console.log('Number of files is correct')
-      }
-    }
-    catch (err) {
-      console.error("Results don't match", err);
-      throw (err)
-    }
-    finally {
+  async __checkNItemsInFolder(fileNames) {
+    await this.takeScreenshot("checkNodeOutputs_before");
+    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]');
+    if (files.length === fileNames.length) {
+      console.log("Number of files is correct")
       await this.takeScreenshot("checkNodeOutputs_after");
-      await this.closeNodeFiles();
+    }
+    else {
+      await this.takeScreenshot("checkNodeOutputs_after");
+      throw("Number of files is incorrect")
     }
   }
 
-  async checkNodeOutputsAppMode(nodeId, fileNames, checkNFiles = true) {
+  async checkNodeOutputs(nodePos, fileNames) {
     try {
-      await this.openNodeFilesAppMode(nodeId);
-      await this.takeScreenshot("checkNodeOutputs_before");
-      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.map(el => el.textContent.trim()));
-      if (checkNFiles) {
-        assert(files.length === fileNames.length, 'Number of files is incorrect')
-        console.log('Number of files is correct')
-      }
+      const nodeId = await auto.openNode(this.__page, nodePos);
+      await this.openNodeFiles(nodeId);
+      await this.__checkNItemsInFolder(fileNames);
     }
     catch (err) {
       console.error("Results don't match", err);
       throw (err)
     }
-    finally {
-      await this.takeScreenshot("checkNodeOutputs_after");
-      await this.closeNodeFiles();
+  }
+
+  async checkNodeOutputsAppMode(nodeId, fileNames) {
+    try {
+      await this.openNodeFilesAppMode(nodeId);
+      await this.__checkNItemsInFolder(fileNames);
+    }
+    catch (err) {
+      console.error("Results don't match", err);
+      throw (err)
     }
   }
 

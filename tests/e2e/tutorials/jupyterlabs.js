@@ -73,7 +73,7 @@ async function runTutorial() {
         "TheNumber.txt",
         "workspace.zip"
       ];
-      await tutorial.checkNodeOutputs(j, outFiles, true);
+      await tutorial.checkNodeOutputs(j, outFiles);
     }
   }
   catch (err) {
