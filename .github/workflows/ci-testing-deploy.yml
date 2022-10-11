@@ -45,6 +45,10 @@ env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test-images:
     # this step comes first, so that it is executed as first job in push calls
