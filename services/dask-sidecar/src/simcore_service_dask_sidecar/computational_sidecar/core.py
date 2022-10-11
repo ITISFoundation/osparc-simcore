@@ -153,7 +153,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         except (ValueError, ValidationError) as exc:
             raise ServiceBadFormattedOutputError(
                 service_key=self.service_key,
-                service_version=self.service_key,
+                service_version=self.service_version,
                 exc=exc,
             ) from exc
 
