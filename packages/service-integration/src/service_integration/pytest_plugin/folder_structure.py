@@ -68,18 +68,18 @@ def get_expected_files(docker_name: str) -> tuple[str, ...]:
         ".cookiecutterrc",
         ".dockerignore",
         ".gitignore",
-        ".pylintrc",
+        # ".pylintrc",
         "metadata:metadata.yml",
         f"docker/{docker_name}:entrypoint.sh",
         f"docker/{docker_name}:Dockerfile",
         "service.cli:execute.sh",
-        "versioning:integration.cfg",
-        "versioning:service.cfg",
-        "requirements.in",
+        # "versioning:integration.cfg",
+        # "versioning:service.cfg",
+        # "requirements.in",
         "requirements.txt",
-        "Makefile",
+        # "Makefile",
         "VERSION",
-        "VERSION_INTEGRATION",
+        # "VERSION_INTEGRATION",
         "README.md",
         "docker-compose-build.yml",
         "docker-compose-meta.yml",
@@ -91,11 +91,13 @@ def get_expected_files(docker_name: str) -> tuple[str, ...]:
 def assert_path_in_repo(expected_path: str, project_slug_dir: Path):
 
     if ":" in expected_path:
-        folder, glob = expected_path.split(":")
+        folder, glob_pattern = expected_path.split(":")
         folder_path = project_slug_dir / folder
-        assert folder_path.exists(), f"folder {folder_path} is missing!"
-        assert any(folder_path.glob(glob)), f"no {glob} in {folder_path}"
+        assert folder_path.exists(), f"folder '{folder_path}' is missing!"
+        assert any(
+            folder_path.glob(glob_pattern)
+        ), f"no {glob_pattern=} in '{folder_path}'"
     else:
         assert (
             project_slug_dir / expected_path
-        ).exists(), f"{expected_path} is missing from {project_slug_dir}"
+        ).exists(), f"'{expected_path}' is missing from '{project_slug_dir}'"
