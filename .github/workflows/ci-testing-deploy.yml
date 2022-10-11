@@ -176,7 +176,7 @@ jobs:
               - 'services/web/**'
 
   unit-test-webserver-01:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
@@ -230,7 +230,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
@@ -282,7 +282,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
@@ -334,7 +334,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.storage == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
@@ -386,7 +386,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-api:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.api == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api"
@@ -425,7 +425,7 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.api-server == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
@@ -477,7 +477,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-autoscaling:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] autoscaling"
@@ -529,7 +529,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.catalog == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
@@ -587,7 +587,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-datcore-adapter:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.datcore-adapter == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] datcore-adapter"
@@ -645,7 +645,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.director == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director"
@@ -698,7 +698,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.director-v2 == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
@@ -756,7 +756,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-task-models-library:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.dask-task-models-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
@@ -810,7 +810,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-sidecar:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.dask-sidecar == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-sidecar"
@@ -862,7 +862,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dynamic-sidecar:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
@@ -916,7 +916,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.static-webserver == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
@@ -994,7 +994,7 @@ jobs:
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-postgres-database:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.postgres-database == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
@@ -1047,7 +1047,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.service-integration == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
@@ -1099,7 +1099,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.service-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
@@ -1151,7 +1151,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-settings-library:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.settings-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
@@ -1203,7 +1203,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.models-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
@@ -1255,7 +1255,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
-    needs: change
+    needs: changes
     if: ${{ needs.changes.outputs.simcore-sdk == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
