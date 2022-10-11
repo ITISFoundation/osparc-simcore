@@ -46,46 +46,6 @@ env:
   DEFAULT_MAX_MEMORY: 268435456
 
 jobs:
-  build-test-images:
-    # this step comes first, so that it is executed as first job in push calls
-    # in PR calls this step is anyway skipped
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    name: "[build] docker images"
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: show system environs
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner. temp }}/build
-          make build local-dest=/${{ runner. temp }}/build
-      - name: upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
-
   changes:
     name: detect file changes since last push
     runs-on: ubuntu-latest
@@ -111,6 +71,7 @@ jobs:
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
       webserver: ${{ steps.filter.outputs.webserver }}
+      anything: ${{ steps.filter.outputs.anything }}
     steps:
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
@@ -174,6 +135,50 @@ jobs:
             webserver:
               - 'packages/**'
               - 'services/web/**'
+            anything:
+              - 'packages/**'
+              - 'services/**'
+  build-test-images:
+    # this step comes first, so that it is executed as first job in push calls
+    # in PR calls this step is anyway skipped
+    needs: changes
+    if: ${{ needs.changes.outputs.anything == 'true' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    name: "[build] docker images"
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: show system environs
+        run: ./ci/helpers/show_system_versions.bash
+      - name: build images
+        run: |
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          mkdir --parents /${{ runner. temp }}/build
+          make build local-dest=/${{ runner. temp }}/build
+      - name: upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner. temp }}/build
 
   unit-test-webserver-01:
     needs: changes
@@ -1309,9 +1314,10 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-01:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1382,9 +1388,10 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-02:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1457,9 +1464,10 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-01:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1532,9 +1540,10 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-02:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1610,9 +1619,10 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1687,9 +1697,10 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1749,9 +1760,10 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1811,9 +1823,10 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
