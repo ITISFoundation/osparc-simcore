@@ -448,7 +448,7 @@ class TutorialBase {
     await this.waitAndClick("nodeDataManagerCloseBtn");
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
+  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true) {
     try {
       await this.openNodeFiles(nodePos);
       await this.takeScreenshot("checkNodeOutputs_before");
@@ -457,13 +457,6 @@ class TutorialBase {
       if (checkNFiles) {
         assert(files.length === fileNames.length, 'Number of files is incorrect')
         console.log('Number of files is correct')
-      }
-      if (checkFileNames) {
-        assert(
-          fileNames.every(fileName => files.some(file => file.includes(fileName))),
-          'File names are incorrect'
-        )
-        console.log('File names are correct')
       }
     }
     catch (err) {
@@ -476,7 +469,7 @@ class TutorialBase {
     }
   }
 
-  async checkNodeOutputsAppMode(nodeId, fileNames, checkNFiles = true, checkFileNames = true) {
+  async checkNodeOutputsAppMode(nodeId, fileNames, checkNFiles = true) {
     try {
       await this.openNodeFilesAppMode(nodeId);
       await this.takeScreenshot("checkNodeOutputs_before");
@@ -485,13 +478,6 @@ class TutorialBase {
       if (checkNFiles) {
         assert(files.length === fileNames.length, 'Number of files is incorrect')
         console.log('Number of files is correct')
-      }
-      if (checkFileNames) {
-        assert(
-          fileNames.every(fileName => files.some(file => file.includes(fileName))),
-          'File names are incorrect'
-        )
-        console.log('File names are correct')
       }
     }
     catch (err) {
