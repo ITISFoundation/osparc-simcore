@@ -9,8 +9,8 @@ from settings_library.utils_cli import create_settings_command
 
 from ..core.settings import AppSettings
 from ..meta import PROJECT_NAME
-from ._core import async_node_save_state, async_project_save_state, async_project_state
 from ._close_and_save_service import async_close_and_save_service
+from ._core import async_node_save_state, async_project_save_state, async_project_state
 
 DEFAULT_NODE_SAVE_RETRY_TIMES: Final[int] = 3
 DEFAULT_STATE_UPDATE_INTERVAL_S: Final[int] = 5
@@ -64,11 +64,11 @@ def close_and_save_service(
     skip_state_saving: bool = False,
     skip_outputs_pushing: bool = False,
     skip_docker_resources_removal: bool = False,
-    state_retry: int = typer.Option(
+    state_save_retry_attempts: int = typer.Option(
         DEFAULT_SAVE_STATE_RETRY_TIMES,
         help="times the state saving will be retried if failed",
     ),
-    outputs_retry: int = typer.Option(
+    outputs_push_retry_attempts: int = typer.Option(
         DEFAULT_OUTPUTS_PUSH_RETRY_TIMES,
         help="times the outputs pushing will be retried if failed",
     ),
@@ -95,8 +95,8 @@ def close_and_save_service(
             skip_state_saving,
             skip_outputs_pushing,
             skip_docker_resources_removal,
-            state_retry,
-            outputs_retry,
+            state_save_retry_attempts,
+            outputs_push_retry_attempts,
             update_interval,
         )
     )

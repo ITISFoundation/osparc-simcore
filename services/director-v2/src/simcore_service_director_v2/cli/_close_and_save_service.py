@@ -1,17 +1,18 @@
+import logging
 from contextlib import asynccontextmanager
+from typing import AsyncIterator, Final
 
-from typing import AsyncIterator
-from typing import Final
-
+import rich
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-
 from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
-import rich
-
-from ._client import ThinDv2LocalhostClient
-
-
+from rich.progress import (
+    BarColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     ProgressMessage,
@@ -20,16 +21,11 @@ from servicelib.fastapi.long_running_tasks.client import (
     periodic_task_result,
     setup,
 )
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
-from rich.progress import (
-    Progress,
-    TextColumn,
-    BarColumn,
-    TaskProgressColumn,
-    TimeElapsedColumn,
-)
-import logging
-
+from ._client import ThinDV2LocalhostClient
 
 _MIN: Final[PositiveFloat] = 60
 
@@ -85,12 +81,12 @@ async def async_close_and_save_service(
     skip_state_saving: bool,
     skip_outputs_pushing: bool,
     skip_docker_resources_removal: bool,
-    state_retry: int,
-    outputs_retry: int,
+    state_save_retry_attempts: int,
+    outputs_push_retry_attempts: int,
     update_interval: int,
 ) -> None:
     async with _minimal_app() as app:
-        thin_dv2_localhost_client = ThinDv2LocalhostClient()
+        thin_dv2_localhost_client = ThinDV2LocalhostClient()
 
         client = Client(
             app=app,
@@ -98,8 +94,9 @@ async def async_close_and_save_service(
             base_url=parse_obj_as(AnyHttpUrl, thin_dv2_localhost_client.base_address),
         )
 
+        rich.print(f"[red]Cleaning up {node_id}[/red]")
         if not skip_container_removal:
-            rich.print("deleting service containers")
+            rich.print("[red][Step][/red] deleting service containers")
             response = await thin_dv2_localhost_client.delete_service_containers(
                 f"{node_id}"
             )
@@ -109,27 +106,39 @@ async def async_close_and_save_service(
             )
 
         if not skip_state_saving:
-            # TODO add retry here
-            rich.print("saving service state")
-            response = await thin_dv2_localhost_client.save_service_state(f"{node_id}")
-            task_id: TaskId = response.json()
-            await _track_and_display(
-                client, task_id, update_interval, task_timeout=60 * _MIN
-            )
+            rich.print("[red][Step][/red] saving service state")
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(1),
+                stop=stop_after_attempt(state_save_retry_attempts),
+                reraise=True,
+            ):
+                with attempt:
+                    response = await thin_dv2_localhost_client.save_service_state(
+                        f"{node_id}"
+                    )
+                    task_id: TaskId = response.json()
+                    await _track_and_display(
+                        client, task_id, update_interval, task_timeout=60 * _MIN
+                    )
 
         if not skip_outputs_pushing:
-            # TODO add retry here
-            rich.print("pushing service outputs")
-            response = await thin_dv2_localhost_client.push_service_outputs(
-                f"{node_id}"
-            )
-            task_id: TaskId = response.json()
-            await _track_and_display(
-                client, task_id, update_interval, task_timeout=60 * _MIN
-            )
+            rich.print("[red][Step][/red] pushing service outputs")
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(1),
+                stop=stop_after_attempt(outputs_push_retry_attempts),
+                reraise=True,
+            ):
+                with attempt:
+                    response = await thin_dv2_localhost_client.push_service_outputs(
+                        f"{node_id}"
+                    )
+                    task_id: TaskId = response.json()
+                    await _track_and_display(
+                        client, task_id, update_interval, task_timeout=60 * _MIN
+                    )
 
         if not skip_docker_resources_removal:
-            rich.print("deleting service docker resources")
+            rich.print("[red][Step][/red] deleting service docker resources")
             response = await thin_dv2_localhost_client.delete_service_docker_resources(
                 f"{node_id}"
             )

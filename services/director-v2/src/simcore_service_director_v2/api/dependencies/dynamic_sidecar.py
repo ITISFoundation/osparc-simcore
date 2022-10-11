@@ -1,8 +1,8 @@
 from fastapi import Request
 
+from ...core.settings import DynamicSidecarSettings
 from ...modules.dynamic_sidecar.api_client import DynamicSidecarClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
-from ...core.settings import DynamicSidecarSettings
 
 
 def get_dynamic_sidecar_client(request: Request) -> DynamicSidecarClient:

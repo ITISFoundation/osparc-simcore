@@ -12,22 +12,10 @@ from ..modules.dynamic_sidecar.api_client._base import (
 logger = logging.getLogger(__name__)
 
 
-class ThinDv2LocalhostClient(BaseThinClient):
-    """
-    NOTE: all calls can raise the following errors.
-    - `UnexpectedStatusError`
-    - `ClientHttpError` wraps httpx.HttpError errors
-    """
-
-    API_VERSION = "v1"
-
+class ThinDV2LocalhostClient(BaseThinClient):
     def __init__(self):
         self.client = AsyncClient(timeout=Timeout(5))
         self._request_max_retries: int = 3
-
-        # timeouts
-        self._health_request_timeout = Timeout(1.0, connect=1.0)
-        self._long_running_timeout = Timeout(3600, connect=5)
 
         self.base_address: str = "http://localhost:8000"
 
