@@ -23,6 +23,7 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
     TaskInputData,
+    TaskOsparcAPISettings,
     TaskOutputData,
     TaskOutputDataSchema,
 )
@@ -209,6 +210,7 @@ class DaskClient:
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
+            from pydantic import HttpUrl
             from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
             return run_computational_sidecar(
@@ -220,6 +222,11 @@ class DaskClient:
                 log_file_url,
                 command,
                 s3_settings,
+                TaskOsparcAPISettings(
+                    api_key="THEKEY",
+                    api_secret="THESECRET",
+                    osparc_api_endpoint=parse_obj_as(HttpUrl, "http://THEENDPOINT"),
+                ),
             )
 
         if remote_fct is None:

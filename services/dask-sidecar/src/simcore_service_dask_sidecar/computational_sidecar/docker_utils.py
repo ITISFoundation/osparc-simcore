@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import logging
 import re
 import socket
 from pathlib import Path
@@ -29,6 +30,7 @@ from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.docker_utils import to_datetime
+from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 
 from ..boot_mode import BootMode
@@ -198,7 +200,7 @@ async def _parse_container_log_file(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
-    _osparc_api_settings: Optional[TaskOsparcAPISettings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -249,6 +251,7 @@ async def _parse_container_log_file(
             log_file_url,
             log_publishing_cb=log_publishing_cb,
             s3_settings=s3_settings,
+            osparc_api_settings=osparc_api_settings,
         )
 
         logger.debug(
@@ -268,7 +271,7 @@ async def _parse_container_docker_logs(
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
-    _osparc_api_settings: Optional[TaskOsparcAPISettings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -351,6 +354,7 @@ async def _parse_container_docker_logs(
             log_file_url,
             log_publishing_cb,
             s3_settings=s3_settings,
+            osparc_api_settings=osparc_api_settings,
         )
 
     logger.debug(
@@ -382,47 +386,38 @@ async def monitor_container_logs(  # pylint: disable=too-many-arguments
     try:
         container_info = await container.show()
         container_name = container_info.get("Name", "undefined")
-        logger.info(
-            "Starting to parse information of task [%s - %s%s]",
-            f"{service_key}:{service_version}",
-            container.id,
-            container_name,
-        )
-
-        if integration_version > LEGACY_INTEGRATION_VERSION:
-            await _parse_container_docker_logs(
-                container,
-                service_key,
-                service_version,
-                container_name,
-                progress_pub,
-                logs_pub,
-                log_file_url,
-                log_publishing_cb,
-                s3_settings,
-                osparc_api_settings,
-            )
-        else:
-            await _parse_container_log_file(
-                container,
-                service_key,
-                service_version,
-                container_name,
-                progress_pub,
-                logs_pub,
-                task_volumes,
-                log_file_url,
-                log_publishing_cb,
-                s3_settings,
-                osparc_api_settings,
-            )
-
-        logger.info(
-            "Finished parsing information of task [%s - %s%s]",
-            f"{service_key}:{service_version}",
-            container.id,
-            container_name,
-        )
+        with log_context(
+            logger,
+            logging.INFO,
+            msg=f"parsing information of task [{service_key}:{service_version} - {container.id}:{container_name}]",
+        ):
+            if integration_version > LEGACY_INTEGRATION_VERSION:
+                await _parse_container_docker_logs(
+                    container,
+                    service_key,
+                    service_version,
+                    container_name,
+                    progress_pub,
+                    logs_pub,
+                    log_file_url,
+                    log_publishing_cb,
+                    s3_settings,
+                    osparc_api_settings,
+                )
+            else:
+                await _parse_container_log_file(
+                    container,
+                    service_key,
+                    service_version,
+                    container_name,
+                    progress_pub,
+                    logs_pub,
+                    task_volumes,
+                    log_file_url,
+                    log_publishing_cb,
+                    s3_settings,
+                    osparc_api_settings,
+                )
     except DockerError as exc:
         logger.exception(
             "log monitoring of [%s - %s] stopped with unexpected error:\n%s",

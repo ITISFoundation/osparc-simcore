@@ -142,6 +142,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             output_params.url,
                             self._publish_sidecar_log,
                             self.s3_settings,
+                            self.osparc_api_settings,
                         )
                     )
             await asyncio.gather(*upload_tasks)

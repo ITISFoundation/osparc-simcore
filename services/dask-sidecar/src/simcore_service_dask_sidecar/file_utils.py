@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import logging
 import mimetypes
 import time
 import zipfile
@@ -9,9 +10,13 @@ from typing import Any, Awaitable, Callable, Final, Mapping, Optional, TypedDict
 
 import aiofiles
 import aiofiles.tempfile
+import aiohttp
 import fsspec
+from aiohttp import ClientSession
+from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from pydantic import ByteSize, FileUrl, parse_obj_as
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.s3 import S3Settings
 from yarl import URL
 
@@ -163,8 +168,76 @@ async def pull_file_from_remote(
         dst_path.unlink()
 
 
+async def file_sender(file_name: Path):
+    async with aiofiles.open(file_name, "rb") as f:
+        chunk = await f.read(64 * 1024)
+        while chunk:
+            yield chunk
+            chunk = await f.read(64 * 1024)
+
+
+async def _push_file_to_osparc_api(
+    file_to_upload: Path,
+    log_publishing_cb: LogPublishingCB,
+    osparc_api_settings: TaskOsparcAPISettings,
+) -> None:
+    # class ProgressFileReader(BufferedReader):
+    #     def __init__(self, filename, read_callback=None):
+    #         f = open(filename, "rb")
+    #         self.__read_callback = read_callback
+    #         super().__init__(raw=f)
+    #         self.length = Path(filename).stat().st_size
+
+    #     def read(self, size=None):
+    #         calc_sz = size
+    #         if not calc_sz:
+    #             calc_sz = self.length - self.tell()
+    #         if self.__read_callback:
+    #             self.__read_callback(self.length, self.tell())
+    #         return super(ProgressFileReader, self).read(size)
+
+    osparc_files_api_url = URL(f"{osparc_api_settings.osparc_api_endpoint}").with_path(
+        "/v0/files/content"
+    )
+    with log_context(logger, logging.DEBUG, msg="uploading to osparc API"), log_catch(
+        logger
+    ):
+        session = ClientSession()
+        async with aiofiles.open(file_to_upload, "rb") as file:
+            upload_payload = {"file": file}
+            async with session.put(
+                osparc_files_api_url,
+                data=upload_payload,
+                auth=aiohttp.BasicAuth(
+                    osparc_api_settings.api_key, osparc_api_settings.api_secret
+                ),
+            ) as response:
+                response.raise_for_status()
+        # with ProgressFileReader(
+        #     filename=file_to_upload,
+        #     read_callback=functools.partial(
+        #         _file_progress_cb,
+        #         log_publishing_cb=log_publishing_cb,
+        #         text_prefix=f"Uploading '{file_to_upload}':",
+        #         main_loop=asyncio.get_event_loop(),
+        #     ),
+        # ) as file:
+        #     file_to_upload.ope
+        #     upload_payload = {"file": file}
+        #     async with session.put(
+        #         osparc_files_api_url,
+        #         data=upload_payload,
+        #         auth=aiohttp.BasicAuth(
+        #             osparc_api_settings.api_key, osparc_api_settings.api_secret
+        #         ),
+        #     ) as response:
+        #         response.raise_for_status()
+
+
 async def _push_file_to_http_link(
-    file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
+    file_to_upload: Path,
+    dst_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
 ):
     # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
     # Therefore, we need to use the http filesystem directly in order to call the put_file function.
@@ -224,6 +297,7 @@ async def push_file_to_remote(
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
+    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ) -> None:
     if not src_path.exists():
         raise ValueError(f"{src_path=} does not exist")
@@ -254,7 +328,11 @@ async def push_file_to_remote(
 
         await log_publishing_cb(f"Uploading '{file_to_upload.name}' to '{dst_url}'...")
 
-        if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
+        if osparc_api_settings:
+            await _push_file_to_osparc_api(
+                file_to_upload, log_publishing_cb, osparc_api_settings
+            )
+        elif dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
             await _push_file_to_remote(
