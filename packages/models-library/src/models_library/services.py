@@ -382,9 +382,6 @@ class ServiceKeyVersion(BaseModel):
         examples=["1.0.0", "0.0.1"],
     )
 
-    def as_image_tag(self) -> str:
-        return f"{self.key}:{self.version}"
-
 
 class _BaseServiceCommonDataModel(BaseModel):
     name: str = Field(
