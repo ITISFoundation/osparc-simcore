@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 
@@ -14,8 +14,6 @@ from service_integration.versioning import (
 
 
 def test_pep404_compare_versions():
-    # TODO: replace pkg_resources with https://importlib-metadata.readthedocs.io/en/latest/index.html so it is standard in 3.8
-
     # A reminder from https://setuptools.readthedocs.io/en/latest/userguide/distribution.html#specifying-your-project-s-version
     assert Version("1.9.a.dev") == Version("1.9a0dev")
     assert Version("2.1-rc2") < Version("2.1")
