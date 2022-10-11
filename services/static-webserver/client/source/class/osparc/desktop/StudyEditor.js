@@ -37,6 +37,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     workbenchView.addListener("createIterations", () => this.__createIterations(), this);
     workbenchView.addListener("showIterations", () => this.__showIterations(), this);
+    workbenchView.addListener("changeSelectedNode", e => {
+      if (this.__nodesSlidesTree) {
+        const nodeId = e.getData();
+        this.__nodesSlidesTree.changeSelectedNode(nodeId);
+      }
+    });
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
@@ -119,6 +125,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __lastSavedStudy: null,
     __updatingStudy: null,
     __updateThrottled: null,
+    __nodesSlidesTree: null,
 
     setStudyData: function(studyData) {
       return new Promise((resolve, reject) => {
@@ -286,15 +293,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const study = this.getStudy();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
-      const title = this.tr("Edit Slideshow");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 600).set({
+      const nodesSlidesTree = this.__nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const title = this.tr("Edit App Mode");
+      const nNodes = Object.keys(study.getWorkbench().getNodes()).length;
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 370, Math.min(350, 200+(30*nNodes))).set({
         modal: false,
         clickAwayClose: false
+      });
+      nodesSlidesTree.addListener("changeSelectedNode", e => {
+        const nodeId = e.getData();
+        this.__workbenchView.getNodesTree().nodeSelected(nodeId);
+        this.__workbenchView.getWorkbenchUI().nodeSelected(nodeId);
       });
       nodesSlidesTree.addListener("finished", () => {
         const slideshow = study.getUi().getSlideshow();
         slideshow.fireEvent("changeSlideshow");
+        this.__nodesSlidesTree = null;
         win.close();
       });
     },

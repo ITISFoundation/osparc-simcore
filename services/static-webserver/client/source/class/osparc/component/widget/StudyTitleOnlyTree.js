@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
 
     selectStudyItem: function() {
       this.setSelection(new qx.data.Array([this.getModel()]));
-      this.fireDataEvent("nodeSelected", this.getModel().getId());
+      this.fireDataEvent("changeSelectedNode", this.getModel().getId());
     }
   }
 });
