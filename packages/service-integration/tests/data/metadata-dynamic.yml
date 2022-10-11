@@ -1,5 +1,5 @@
 name: my-service
-key: simcore/services/dynamic/myservice-web
+key: simcore/services/dynamic/osparc-python-runner
 type: dynamic
 integration-version: 1.0.0
 version: 2.0.2
