@@ -1,26 +1,64 @@
+import subprocess
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 
-import click
+import rich
+import typer
 import yaml
+from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
+from ..context import IntegrationContext
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
+
+error_console = Console(stderr=True)
+
+
+def _run_git(*args) -> str:
+    """:raises CalledProcessError"""
+    return subprocess.run(
+        [
+            "git",
+        ]
+        + list(args),
+        capture_output=True,
+        encoding="utf8",
+        check=True,
+    ).stdout.strip()
+
+
+def _run_git_or_empty_string(*args) -> str:
+    try:
+        return _run_git(*args)
+    except subprocess.CalledProcessError as err:
+        error_console.print(
+            "WARNING: Defaulting label to emtpy string",
+            "due to:",
+            err.stderr,
+        )
+        return ""
 
 
 def create_docker_compose_image_spec(
-    io_config_path: Path,
+    integration_context: IntegrationContext,
+    meta_config_path: Path,
+    docker_compose_overwrite_path: Path,
     service_config_path: Path = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
-    config_basedir = io_config_path.parent
+    config_basedir = meta_config_path.parent
 
     # required
-    meta_cfg = MetaConfig.from_yaml(io_config_path)
+    meta_cfg = MetaConfig.from_yaml(meta_config_path)
+
+    # required
+    docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+        docker_compose_overwrite_path, service_name=meta_cfg.service_name()
+    )
 
     # optional
     runtime_cfg = None
@@ -29,7 +67,7 @@ def create_docker_compose_image_spec(
             # TODO: should include default?
             runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
         except FileNotFoundError:
-            click.echo("No runtime config found (optional), using default.")
+            rich.print("No runtime config found (optional), using default.")
 
     # OCI annotations (optional)
     extra_labels = {}
@@ -51,71 +89,84 @@ def create_docker_compose_image_spec(
             )
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
-
         except FileNotFoundError:
-            click.echo(
+            rich.print(
                 "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
             )
+    # add required labels
+    extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = datetime.utcnow().strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
 
-    compose_spec = create_image_spec(meta_cfg, runtime_cfg, extra_labels=extra_labels)
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
+        "rev-parse", "HEAD"
+    )
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _run_git_or_empty_string(
+        "config", "--get", "remote.origin.url"
+    )
+
+    compose_spec = create_image_spec(
+        integration_context,
+        meta_cfg,
+        docker_compose_overwrite_cfg,
+        runtime_cfg,
+        extra_labels=extra_labels,
+    )
 
     return compose_spec
 
 
-@click.command()
-@click.option(
-    "-m",
-    "--metadata",
-    "config_path",
-    help="osparc config file or folder",
-    type=Path,
-    required=False,
-    default="metadata.yml",
-)
-@click.option(
-    "-f",
-    "--to-spec-file",
-    "compose_spec_path",
-    help="Output docker-compose image spec",
-    type=Path,
-    required=False,
-    default=Path("docker-compose.yml"),
-)
 def main(
-    config_path: Path,
-    compose_spec_path: Path,
+    ctx: typer.Context,
+    config_path: Path = typer.Option(
+        ".osparc/metadata.yml",
+        "-m",
+        "--metadata",
+        help="osparc config file or folder",
+    ),
+    to_spec_file: Path = typer.Option(
+        Path("docker-compose.yml"),
+        "-f",
+        "--to-spec-file",
+        help="Output docker-compose image spec",
+    ),
 ):
     """create docker image/runtime compose-specs from an osparc config"""
 
-    basedir = Path(".osparc")
-    meta_filename = "metadata.yml"
-
     # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
-    if config_path.exists():
-        if config_path.is_dir():
-            basedir = config_path
-        else:
-            basedir = config_path.parent
-            meta_filename = config_path.name
+    if not config_path.exists():
+        raise typer.BadParameter("Invalid path to metadata file or folder")
 
-    config_filenames: Dict[str, List[Path]] = {}
-    if basedir.exists():
-        for meta_cfg in basedir.rglob(meta_filename):
-            config_name = meta_cfg.parent.name
-            config_filenames[config_name] = [
-                meta_cfg,
-            ]
+    if config_path.is_dir():
+        basedir = config_path
+        meta_filename = "metadata.yml"
+    else:
+        basedir = config_path.parent
+        meta_filename = config_path.name
 
-            # find pair (not required)
-            runtime_cfg = meta_cfg.parent / "runtime.yml"
-            if runtime_cfg.exists():
-                config_filenames[config_name].append(runtime_cfg)
+    config_filenames: dict[str, list[Path]] = {}
+    for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
+        config_name = meta_cfg.parent.name
+        config_filenames[config_name] = []
+        # load meta
+        config_filenames[config_name].append(meta_cfg)
+
+        # loads overwrites
+        docker_compose_overwrite_path = meta_cfg.parent / "docker-compose.overwrite.yml"
+        if docker_compose_overwrite_path.exists():
+            config_filenames[config_name].append(docker_compose_overwrite_path)
+
+        # find pair (not required)
+        runtime_cfg = meta_cfg.parent / "runtime.yml"
+        if runtime_cfg.exists():
+            config_filenames[config_name].append(runtime_cfg)
 
     # output
     compose_spec_dict = {}
     for n, config_name in enumerate(config_filenames):
         nth_compose_spec = create_docker_compose_image_spec(
-            *config_filenames[config_name]
+            ctx.parent.integration_context, *config_filenames[config_name]
         ).dict(exclude_unset=True)
 
         # FIXME: shaky! why first decides ??
@@ -125,16 +176,11 @@ def main(
             # appends only services section!
             compose_spec_dict["services"].update(nth_compose_spec["services"])
 
-    compose_spec_path.parent.mkdir(parents=True, exist_ok=True)
-    with compose_spec_path.open("wt") as fh:
+    to_spec_file.parent.mkdir(parents=True, exist_ok=True)
+    with to_spec_file.open("wt") as fh:
         yaml.safe_dump(
             compose_spec_dict,
             fh,
             default_flow_style=False,
             sort_keys=False,
         )
-
-
-if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
-    main()

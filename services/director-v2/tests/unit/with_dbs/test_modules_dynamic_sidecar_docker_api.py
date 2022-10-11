@@ -776,6 +776,7 @@ async def test_update_scheduler_data_label_skip_if_service_is_missing(
     await docker_api.update_scheduler_data_label(mock_scheduler_data)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_regression_update_service_update_out_of_sequence(
     docker: aiodocker.Docker, mock_service: str, docker_swarm: None
 ):

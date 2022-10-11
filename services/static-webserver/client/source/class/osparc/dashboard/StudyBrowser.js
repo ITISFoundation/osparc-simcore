@@ -726,7 +726,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
 
       task.addListener("taskAborted", () => {
-        const msg = this.tr("Duplication aborted");
+        const msg = this.tr("Duplication cancelled");
         finished(msg, "INFO");
       });
       task.addListener("resultReceived", e => {

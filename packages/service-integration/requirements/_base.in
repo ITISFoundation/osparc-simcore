@@ -5,11 +5,9 @@
 
 --requirement ../../../packages/models-library/requirements/_base.in
 
-# tools
-pyyaml
 click
-
-# pytest-plugin
-pytest
-docker
-jsonschema
+docker # pytest-plugin
+jsonschema # pytest-plugin
+pytest # pytest-plugin
+pyyaml
+typer[all]

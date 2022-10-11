@@ -9,8 +9,8 @@ from typing import Callable
 
 import pytest
 import service_integration
-from click.testing import CliRunner
-from service_integration.cli import main
+from service_integration import cli
+from typer.testing import CliRunner
 
 pytest_plugins = [
     "pytest_simcore.pydantic_models",
@@ -37,6 +37,15 @@ def tests_data_dir() -> Path:
 
 
 @pytest.fixture
+def project_file_path(tests_data_dir, tmp_path) -> Path:
+    dst = shutil.copy(
+        src=tests_data_dir / "docker-compose.overwrite.yml",
+        dst=tmp_path / "docker-compose.overwrite.yml",
+    )
+    return Path(dst)
+
+
+@pytest.fixture
 def metadata_file_path(tests_data_dir, tmp_path) -> Path:
     dst = shutil.copy(
         src=tests_data_dir / "metadata.yml", dst=tmp_path / "metadata.yml"
@@ -52,6 +61,6 @@ def run_program_with_args() -> Callable:
     def _invoke(*cmd):
         print("RUNNING", "osparc-service-integrator", cmd)
         print(runner.make_env())
-        return runner.invoke(main, list(cmd))
+        return runner.invoke(cli.app, list(cmd))
 
     return _invoke
