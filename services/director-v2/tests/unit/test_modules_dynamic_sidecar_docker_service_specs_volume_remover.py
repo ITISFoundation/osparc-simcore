@@ -180,6 +180,7 @@ async def test_sh_script_error_if_volume_is_used(
     used_volume_name: str, docker_version: DockerVersion
 ):
     result = await run_command(docker_version, volume_names=[used_volume_name])
+    print(result)
     assert "ERROR: Please check above logs, there was/were 1 error/s." in result
 
 
@@ -187,6 +188,7 @@ async def test_sh_script_removes_unused_volume(
     unused_volume_name: str, docker_version: DockerVersion
 ):
     result = await run_command(docker_version, volume_names=[unused_volume_name])
+    print(result)
     assert "ERROR: Please check above logs, there was/were" not in result
     assert result == f"{unused_volume_name}\n"
 
@@ -195,6 +197,7 @@ async def test_sh_script_no_error_if_volume_does_not_exist(
     missing_volume_name: str, docker_version: DockerVersion
 ):
     result = await run_command(docker_version, volume_names=[missing_volume_name])
+    print(result)
     assert "ERROR: Please check above logs, there was/were" not in result
 
 

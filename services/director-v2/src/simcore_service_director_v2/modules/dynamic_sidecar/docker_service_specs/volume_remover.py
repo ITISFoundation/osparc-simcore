@@ -51,15 +51,35 @@ function retry {{
   shift
 
   local count=0
-  until "$@"; do
-    exit=$?
+  while true;
+  do
+
+    local command_result
+    set +e
+    $($@ > /tmp/command_result 2>&1)
+    exit_code=$?
+    set -e
+
+    command_result=$(cat /tmp/command_result)
+    echo "$command_result"
+    volume_name=$4
+
+    case "$command_result" in
+      *"Error: No such volume: $volume_name"*)
+        return 0
+        ;;
+    esac
+
+    if [ $exit_code -eq 0 ]; then
+        return 0
+    fi
 
     count=$(($count + 1))
     if [ $count -lt $retries ]; then
-      echo "Retry $count/$retries exited $exit, retrying in {sleep} seconds..."
+      echo "Retry $count/$retries exited $exit_code, retrying in {sleep} seconds..."
       sleep {sleep}
     else
-      echo "Retry $count/$retries exited $exit, no more retries left."
+      echo "Retry $count/$retries exited $exit_code, no more retries left."
       let error_counter=error_counter+1
       return 0
     fi
