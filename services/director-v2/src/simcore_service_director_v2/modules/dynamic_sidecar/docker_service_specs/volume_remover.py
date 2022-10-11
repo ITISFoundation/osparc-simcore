@@ -47,7 +47,7 @@ set -e;
 error_counter=0
 
 function retry {{
-  local retries={retries}
+  local retries=$1
   shift
 
   local count=0
@@ -69,7 +69,7 @@ function retry {{
 
 for volume_name in {volume_names_seq}
 do
-    retry 3 docker volume rm "$volume_name"
+    retry {retries} docker volume rm "$volume_name"
 done
 
 if [ "$error_counter" -ne "0" ]; then
