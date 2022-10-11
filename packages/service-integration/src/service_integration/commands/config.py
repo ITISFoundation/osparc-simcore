@@ -9,12 +9,13 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
 
 
 def create_osparc_specs(
     compose_spec_path: Path,
-    io_specs_path: Path = Path("metadata.yml"),
+    docker_compose_overwrite_path: Path = Path("docker-compose.overwrite.yml"),
+    metadata_path: Path = Path("metadata.yml"),
     service_specs_path: Path = Path("runtime-spec.yml"),
 ):
     rich.print(f"Creating osparc config files from {compose_spec_path}")
@@ -36,9 +37,7 @@ def create_osparc_specs(
             rich.print(f"Creating {output_path} ...", end="")
 
             with output_path.open("wt") as fh:
-                data = json.loads(
-                    model.json(exclude_unset=True, by_alias=True, exclude_none=True)
-                )
+                data = json.loads(model.json(by_alias=True, exclude_none=True))
                 yaml.safe_dump(data, fh, sort_keys=False)
 
             rich.print("DONE")
@@ -56,18 +55,19 @@ def create_osparc_specs(
                     labels = labels.__root__
 
                 meta_cfg = MetaConfig.from_labels_annotations(labels)
+                _save(service_name, metadata_path, meta_cfg)
+
+                docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+                    path=None, service_name=meta_cfg.service_name()
+                )
                 _save(
                     service_name,
-                    io_specs_path,
-                    meta_cfg,
+                    docker_compose_overwrite_path,
+                    docker_compose_overwrite_cfg,
                 )
 
                 runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
-                _save(
-                    service_name,
-                    service_specs_path,
-                    runtime_cfg,
-                )
+                _save(service_name, service_specs_path, runtime_cfg)
 
             except (AttributeError, ValidationError, TypeError) as err:
                 rich.print(
@@ -88,6 +88,7 @@ def main(
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
     config_dir = from_spec_file.parent / ".osparc"
+    project_cfg_path = config_dir / "docker-compose.overwrite.yml"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"
 
@@ -95,4 +96,11 @@ def main(
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     rich.print(f"Creating {config_dir} from {from_spec_file} ...")
 
-    create_osparc_specs(from_spec_file, meta_cfg_path, runtime_cfg_path)
+    create_osparc_specs(
+        from_spec_file, project_cfg_path, meta_cfg_path, runtime_cfg_path
+    )
+
+
+if __name__ == "__main__":
+    # pylint: disable=no-value-for-parameter
+    main()

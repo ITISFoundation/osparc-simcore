@@ -69,7 +69,6 @@ class OciImageSpecAnnotations(BaseModel):
         "The version MAY match a label or tag in the source code repository"
         "version MAY be Semantic versioning-compatible",
     )
-
     revision: str = Field(
         None,
         description="Source control revision identifier for the packaged software.",
@@ -84,19 +83,16 @@ class OciImageSpecAnnotations(BaseModel):
         "MIT",
         description="License(s) under which contained software is distributed as an SPDX License Expression.",
     )
-
     ref_name: str = Field(
         None,
         description="Name of the reference for a target (string).",
     )
 
     title: str = Field(None, description="Human-readable title of the image (string)")
-
     description: str = Field(
         None,
         description="Human-readable description of the software packaged in the image (string)",
     )
-
     base_digest: SHA1Str = Field(
         None,
         description="Digest of the image this image is based on (string)",
