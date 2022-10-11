@@ -28,7 +28,7 @@ def docker_registry() -> str:
 
 @pytest.fixture()
 def service_key() -> str:
-    return "myfake/service_key"
+    return "simcore/services/comp/service_key"
 
 
 @pytest.fixture()
@@ -47,7 +47,9 @@ def comp_volume_mount_point() -> str:
 
 
 @pytest.mark.parametrize(
-    "task_max_resources", [{}, {"CPU": 12, "RAM": 2**9}, {"GPU": 4, "RAM": 1**6}]
+    "task_max_resources",
+    [{}, {"CPU": 12, "RAM": 2**9}, {"GPU": 4, "RAM": 1**6}],
+    ids=str,
 )
 @pytest.mark.parametrize("boot_mode", list(BootMode))
 async def test_create_container_config(
