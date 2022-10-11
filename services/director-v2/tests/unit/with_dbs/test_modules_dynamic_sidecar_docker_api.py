@@ -19,7 +19,6 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from pytest import FixtureRequest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
@@ -369,12 +368,6 @@ def mock_scheduler_data(
     ]
     scheduler_data.service_name = service_name
     return scheduler_data
-
-
-@pytest.fixture
-async def docker() -> AsyncIterable[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
 
 
 @pytest.fixture
@@ -919,14 +912,6 @@ async def test_remove_volume_from_node_no_volume_found(
 @pytest.fixture
 def volume_removal_services_names(faker: Faker) -> set[str]:
     return {f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{faker.uuid4()}" for _ in range(10)}
-
-
-@pytest.fixture
-async def docker_version(docker: aiodocker.Docker) -> DockerVersion:
-    version_request = await docker._query_json(  # pylint: disable=protected-access
-        "version", versioned_api=False
-    )
-    return parse_obj_as(DockerVersion, version_request["Version"])
 
 
 @pytest.fixture(params=[0, 2])
