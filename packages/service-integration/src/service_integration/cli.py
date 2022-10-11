@@ -27,16 +27,15 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
-    # TODO: this is an URL!
     registry_name: Optional[str] = typer.Option(
         None,
         "--REGISTRY_NAME",
-        help="sets docker registry",
+        help="image registry name. Full url or prefix used as prefix in an image name",
     ),
     compose_version: Optional[str] = typer.Option(
         None,
         "--COMPOSE_VERSION",
-        help="sets docker-compose spec version",
+        help="version used for docker compose specification",
     ),
 ):
     """o2s2parc service integration library"""

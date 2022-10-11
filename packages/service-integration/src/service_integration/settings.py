@@ -17,7 +17,8 @@ class AppSettings(BaseSettings):
     DEFAULT_REGISTRY: str = "local"
 
     REGISTRY_NAME: str = Field(
-        "", description="name of the registry to use for images, default is Docker Hub"
+        default="itisfoundation",
+        description="name of the registry used as prefix in images",
     )
 
     COMPOSE_VERSION: str = Field(
