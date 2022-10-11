@@ -86,6 +86,54 @@ jobs:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner. temp }}/build
 
+  file-changes:
+    runs-on: ubuntu-latest
+    # Set job outputs to values from filter step
+    outputs:
+      packages: ${{ steps.filter.outputs.packages }}
+      api-server: ${{ steps.filter.outputs.api-server }}
+      autoscaling: ${{ steps.filter.outputs.autoscaling }}
+      catalog: ${{ steps.filter.outputs.catalog }}
+      dask-sidecar: ${{ steps.filter.outputs.dask-sidecar }}
+      datcore-adapter: ${{ steps.filter.outputs.datcore-adapter }}
+      director: ${{ steps.filter.outputs.director }}
+      director-v2: ${{ steps.filter.outputs.director-v2 }}
+      dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
+      migration: ${{ steps.filter.outputs.migration }}
+      static-webserver: ${{ steps.filter.outputs.static-webserver }}
+      storage: ${{ steps.filter.outputs.storage }}
+      webserver: ${{ steps.filter.outputs.webserver }}
+    steps:
+      # For pull requests it's not necessary to checkout the code
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            packages:
+              - 'packages/**'
+            autoscaling:
+              - 'services/autoscaling/**'
+            catalog:
+              - 'services/catalog/**'
+            dask-sidecar:
+              - 'services/dask-sidecar/**'
+            datcore-adapter:
+              - 'services/datcore-adapter/**'
+            director:
+              - 'services/director/**'
+            director-v2:
+              - 'services/director-v2/**'
+            dynamic-sidecar:
+              - 'services/dynamic-sidecar/**'
+            migration:
+              - 'services/migration/**'
+            static-webserver:
+              - 'services/static-webserver/**'
+            storage:
+              - 'services/storage/**'
+            webserver:
+              - 'services/web/**'
+
   unit-test-webserver-01:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
