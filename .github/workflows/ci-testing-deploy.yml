@@ -757,7 +757,7 @@ jobs:
 
   unit-test-dask-task-models-library:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.dask-task-models-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
     runs-on: ${{ matrix.os }}
@@ -995,7 +995,7 @@ jobs:
 
   unit-test-postgres-database:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.postgres-database == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
@@ -1048,7 +1048,7 @@ jobs:
 
   unit-test-service-integration:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.service-integration == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
@@ -1100,7 +1100,7 @@ jobs:
 
   unit-test-service-library:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.service-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
@@ -1152,7 +1152,7 @@ jobs:
 
   unit-test-settings-library:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.settings-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
     runs-on: ${{ matrix.os }}
@@ -1204,7 +1204,7 @@ jobs:
 
   unit-test-models-library:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.models-library == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
@@ -1256,7 +1256,7 @@ jobs:
 
   unit-test-simcore-sdk:
     needs: change
-    if: ${{ needs.changes.outputs.packages == 'true' }}
+    if: ${{ needs.changes.outputs.simcore-sdk == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
