@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 import sys
 from pathlib import Path
 
@@ -67,20 +66,10 @@ def get_expected_files(docker_name: str) -> tuple[str, ...]:
     return (
         ".cookiecutterrc",
         ".dockerignore",
-        ".gitignore",
-        # ".pylintrc",
         "metadata:metadata.yml",
         f"docker/{docker_name}:entrypoint.sh",
         f"docker/{docker_name}:Dockerfile",
         "service.cli:execute.sh",
-        # "versioning:integration.cfg",
-        # "versioning:service.cfg",
-        # "requirements.in",
-        "requirements.txt",
-        # "Makefile",
-        "VERSION",
-        # "VERSION_INTEGRATION",
-        "README.md",
         "docker-compose-build.yml",
         "docker-compose-meta.yml",
         "docker-compose.devel.yml",
