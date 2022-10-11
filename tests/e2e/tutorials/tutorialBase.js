@@ -457,7 +457,8 @@ class TutorialBase {
     }
     else {
       await this.takeScreenshot("checkNodeOutputs_after");
-      throw("Number of files is incorrect")
+      await this.closeNodeFiles();
+      throw("Number of files is incorrect. Items in folder" + files);
     }
   }
 
