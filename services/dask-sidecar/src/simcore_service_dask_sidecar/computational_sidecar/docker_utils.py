@@ -25,7 +25,6 @@ from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import TaskOsparcAPISettings
 from distributed.pubsub import Pub
-from models_library.services import ServiceKeyVersion
 from packaging import version
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
@@ -49,7 +48,8 @@ LogPublishingCB = Callable[[str], Awaitable[None]]
 
 async def create_container_config(
     docker_registry: str,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
@@ -73,7 +73,7 @@ async def create_container_config(
             f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
         ],
         Cmd=command,
-        Image=f"{docker_registry}/{service_key_version.as_image_tag()}",
+        Image=f"{docker_registry}/{service_key}:{service_version}",
         Labels={},
         HostConfig=ContainerHostConfig(
             Init=True,
@@ -165,7 +165,8 @@ async def parse_line(line: str) -> tuple[LogType, str, str]:
 
 
 async def publish_container_logs(
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     container: DockerContainer,
     container_name: str,
     progress_pub: Pub,
@@ -177,7 +178,7 @@ async def publish_container_logs(
         progress_pub,
         logs_pub,
         log_type,
-        message_prefix=f"{service_key_version.as_image_tag()} - {container.id}{container_name}",
+        message_prefix=f"{service_key}:{service_version} - {container.id}{container_name}",
         message=message,
     )
 
@@ -188,7 +189,8 @@ PARSE_LOG_INTERVAL_S: Final[float] = 0.5
 
 async def _parse_container_log_file(
     container: DockerContainer,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     container_name: str,
     progress_pub: Pub,
     logs_pub: Pub,
@@ -207,7 +209,8 @@ async def _parse_container_log_file(
             if line := await file_pointer.readline():
                 log_type, _, message = await parse_line(line)
                 await publish_container_logs(
-                    service_key_version,
+                    service_key=service_key,
+                    service_version=service_version,
                     container=container,
                     container_name=container_name,
                     progress_pub=progress_pub,
@@ -221,7 +224,8 @@ async def _parse_container_log_file(
         async for line in file_pointer:
             log_type, _, message = await parse_line(line)
             await publish_container_logs(
-                service_key_version,
+                service_key=service_key,
+                service_version=service_version,
                 container=container,
                 container_name=container_name,
                 progress_pub=progress_pub,
@@ -256,7 +260,8 @@ async def _parse_container_log_file(
 
 async def _parse_container_docker_logs(
     container: DockerContainer,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     container_name: str,
     progress_pub: Pub,
     logs_pub: Pub,
@@ -274,8 +279,7 @@ async def _parse_container_docker_logs(
     # TODO: move that file somewhere else
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         log_file_path = (
-            Path(tmp_dir)
-            / f"{service_key_version.key.split(sep='/')[-1]}_{service_key_version.version}.logs"
+            Path(tmp_dir) / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
         )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
@@ -286,7 +290,8 @@ async def _parse_container_docker_logs(
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
                 await publish_container_logs(
-                    service_key_version,
+                    service_key=service_key,
+                    service_version=service_version,
                     container=container,
                     container_name=container_name,
                     progress_pub=progress_pub,
@@ -316,7 +321,8 @@ async def _parse_container_docker_logs(
                 await log_fp.write(log_line.encode("utf-8"))
                 log_type, latest_log_timestamp, message = await parse_line(log_line)
                 await publish_container_logs(
-                    service_key_version,
+                    service_key=service_key,
+                    service_version=service_version,
                     container=container,
                     container_name=container_name,
                     progress_pub=progress_pub,
@@ -355,9 +361,10 @@ async def _parse_container_docker_logs(
     )
 
 
-async def monitor_container_logs(
+async def monitor_container_logs(  # pylint: disable=too-many-arguments
     container: DockerContainer,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     progress_pub: Pub,
     logs_pub: Pub,
     integration_version: version.Version,
@@ -377,7 +384,7 @@ async def monitor_container_logs(
         container_name = container_info.get("Name", "undefined")
         logger.info(
             "Starting to parse information of task [%s - %s%s]",
-            service_key_version.as_image_tag(),
+            f"{service_key}:{service_version}",
             container.id,
             container_name,
         )
@@ -385,7 +392,8 @@ async def monitor_container_logs(
         if integration_version > LEGACY_INTEGRATION_VERSION:
             await _parse_container_docker_logs(
                 container,
-                service_key_version,
+                service_key,
+                service_version,
                 container_name,
                 progress_pub,
                 logs_pub,
@@ -397,7 +405,8 @@ async def monitor_container_logs(
         else:
             await _parse_container_log_file(
                 container,
-                service_key_version,
+                service_key,
+                service_version,
                 container_name,
                 progress_pub,
                 logs_pub,
@@ -410,23 +419,24 @@ async def monitor_container_logs(
 
         logger.info(
             "Finished parsing information of task [%s - %s%s]",
-            service_key_version.as_image_tag(),
+            f"{service_key}:{service_version}",
             container.id,
             container_name,
         )
     except DockerError as exc:
         logger.exception(
             "log monitoring of [%s - %s] stopped with unexpected error:\n%s",
-            service_key_version.as_image_tag(),
+            f"{service_key}:{service_version}",
             container.id,
             exc,
         )
 
 
 @contextlib.asynccontextmanager
-async def managed_monitor_container_log_task(
+async def managed_monitor_container_log_task(  # pylint: disable=too-many-arguments
     container: DockerContainer,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     progress_pub: Pub,
     logs_pub: Pub,
     integration_version: version.Version,
@@ -445,7 +455,8 @@ async def managed_monitor_container_log_task(
         monitoring_task = asyncio.create_task(
             monitor_container_logs(
                 container,
-                service_key_version,
+                service_key,
+                service_version,
                 progress_pub,
                 logs_pub,
                 integration_version,
@@ -455,7 +466,7 @@ async def managed_monitor_container_log_task(
                 s3_settings,
                 osparc_api_settings,
             ),
-            name=f"{service_key_version.as_image_tag()}_{container.id}_monitoring_task",
+            name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
         yield monitoring_task
         # wait for task to complete, so we get the complete log
@@ -470,12 +481,13 @@ async def managed_monitor_container_log_task(
 async def pull_image(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
     log_publishing_cb: LogPublishingCB,
 ) -> None:
 
     async for pull_progress in docker_client.images.pull(
-        f"{docker_auth.server_address}/{service_key_version.as_image_tag()}",
+        f"{docker_auth.server_address}/{service_key}:{service_version}",
         stream=True,
         auth={
             "username": docker_auth.username,
@@ -483,20 +495,21 @@ async def pull_image(
         },
     ):
         await log_publishing_cb(
-            f"Pulling {service_key_version.as_image_tag()}: {pull_progress}..."
+            f"Pulling {service_key}:{service_version}: {pull_progress}..."
         )
     await log_publishing_cb(
-        f"Docker image for {service_key_version.as_image_tag()} ready  on {socket.gethostname()}."
+        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}."
     )
 
 
 async def get_integration_version(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key_version: ServiceKeyVersion,
+    service_key: str,
+    service_version: str,
 ) -> version.Version:
     image_cfg = await docker_client.images.inspect(
-        f"{docker_auth.server_address}/{service_key_version.as_image_tag()}"
+        f"{docker_auth.server_address}/{service_key}:{service_version}"
     )
     # NOTE: old services did not have the integration-version label
     integration_version = LEGACY_INTEGRATION_VERSION
@@ -518,7 +531,7 @@ async def get_integration_version(
 
     logger.info(
         "%s has integration version %s",
-        service_key_version.as_image_tag(),
+        f"{service_key}:{service_version}",
         integration_version,
     )
     return integration_version

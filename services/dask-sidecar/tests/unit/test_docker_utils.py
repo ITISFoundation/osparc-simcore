@@ -9,7 +9,6 @@ from unittest.mock import call
 
 import aiodocker
 import pytest
-from models_library.services import ServiceKeyVersion
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -64,7 +63,8 @@ async def test_create_container_config(
 
     container_config = await create_container_config(
         docker_registry,
-        service_key_version=ServiceKeyVersion(key=service_key, version=service_version),
+        service_key=service_key,
+        service_version=service_version,
         command=command,
         comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=boot_mode,
@@ -213,7 +213,8 @@ async def test_managed_container_always_removes_container(
 ):
     container_config = await create_container_config(
         docker_registry,
-        service_key_version=ServiceKeyVersion(key=service_key, version=service_version),
+        service_key=service_key,
+        service_version=service_version,
         command=command,
         comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=BootMode.CPU,
