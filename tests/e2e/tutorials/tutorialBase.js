@@ -453,6 +453,7 @@ class TutorialBase {
     if (files.length === fileNames.length) {
       console.log("Number of files is correct")
       await this.takeScreenshot("checkNodeOutputs_after");
+      await this.closeNodeFiles();
     }
     else {
       await this.takeScreenshot("checkNodeOutputs_after");
