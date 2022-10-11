@@ -962,6 +962,8 @@ jobs:
     #     flags: unittests #optional
 
   unit-test-python-linting:
+    needs: changes
+    if: ${{ needs.changes.outputs.anything == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
