@@ -42,14 +42,14 @@ def main(
     """o2s2parc service integration library"""
     assert version or not version  # nosec
 
-    data = {}
+    overrides = {}
     if registry_name:
-        data["REGISTRY_NAME"] = registry_name
+        overrides["REGISTRY_NAME"] = registry_name
 
     if compose_version:
-        data["COMPOSE_VERSION"]
+        overrides["COMPOSE_VERSION"] = compose_version
 
-    ctx.settings = AppSettings(**data)
+    ctx.settings = AppSettings(**overrides)
 
 
 # new
