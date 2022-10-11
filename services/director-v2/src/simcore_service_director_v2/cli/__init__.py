@@ -10,7 +10,7 @@ from settings_library.utils_cli import create_settings_command
 from ..core.settings import AppSettings
 from ..meta import PROJECT_NAME
 from ._close_and_save_service import async_close_and_save_service
-from ._core import async_node_save_state, async_project_save_state, async_project_state
+from ._core import async_project_save_state, async_project_state
 
 DEFAULT_NODE_SAVE_RETRY_TIMES: Final[int] = 3
 DEFAULT_STATE_UPDATE_INTERVAL_S: Final[int] = 5
@@ -35,14 +35,6 @@ def project_save_state(
     If errors persist it will produce a list of nodes which failed to save.
     """
     asyncio.run(async_project_save_state(project_id, save_retry_times))
-
-
-@main.command()
-def node_save_state(node_id: NodeID, retry_save: int = DEFAULT_NODE_SAVE_RETRY_TIMES):
-    """
-    Saves the state of an individual node in the project.
-    """
-    asyncio.run(async_node_save_state(node_id, retry_save))
 
 
 @main.command()

@@ -128,19 +128,6 @@ async def async_project_save_state(
     typer.echo(f"Save complete for project {project_id}")
 
 
-### NODE SAVE STATE
-
-
-async def async_node_save_state(node_id: NodeID, retry_save: int) -> None:
-    async with _initialized_app() as app:
-        dynamic_sidecar_client = api_client.get_dynamic_sidecar_client(app)
-        await _save_node_state(
-            app, dynamic_sidecar_client, retry_save, NodeIDStr(f"{node_id}"), ""
-        )
-
-    typer.echo(f"Node {node_id} save completed")
-
-
 ### PROJECT STATE
 
 
