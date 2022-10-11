@@ -1,6 +1,7 @@
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import rich
 import typer
@@ -8,11 +9,11 @@ import yaml
 from rich.console import Console
 
 from ..compose_spec_model import ComposeSpecification
-from ..context import IntegrationContext
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
+from ..settings import AppSettings
 
 error_console = Console(stderr=True)
 
@@ -43,10 +44,11 @@ def _run_git_or_empty_string(*args) -> str:
 
 
 def create_docker_compose_image_spec(
-    integration_context: IntegrationContext,
+    settings: AppSettings,
+    *,
     meta_config_path: Path,
-    docker_compose_overwrite_path: Path,
-    service_config_path: Path = None,
+    docker_compose_overwrite_path: Optional[Path] = None,
+    service_config_path: Optional[Path] = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
@@ -56,9 +58,14 @@ def create_docker_compose_image_spec(
     meta_cfg = MetaConfig.from_yaml(meta_config_path)
 
     # required
-    docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
-        docker_compose_overwrite_path, service_name=meta_cfg.service_name()
-    )
+    if docker_compose_overwrite_path:
+        docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+            docker_compose_overwrite_path
+        )
+    else:
+        docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.create_default(
+            service_name=meta_cfg.service_name()
+        )
 
     # optional
     runtime_cfg = None
@@ -107,7 +114,7 @@ def create_docker_compose_image_spec(
     )
 
     compose_spec = create_image_spec(
-        integration_context,
+        settings,
         meta_cfg,
         docker_compose_overwrite_cfg,
         runtime_cfg,
@@ -145,28 +152,29 @@ def main(
         basedir = config_path.parent
         meta_filename = config_path.name
 
-    config_filenames: dict[str, list[Path]] = {}
+    configs_kwargs_map: dict[str, dict[str, Path]] = {}
+
     for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
         config_name = meta_cfg.parent.name
-        config_filenames[config_name] = []
-        # load meta
-        config_filenames[config_name].append(meta_cfg)
+        configs_kwargs_map[config_name] = {}
 
-        # loads overwrites
-        docker_compose_overwrite_path = meta_cfg.parent / "docker-compose.overwrite.yml"
-        if docker_compose_overwrite_path.exists():
-            config_filenames[config_name].append(docker_compose_overwrite_path)
+        # load meta [required]
+        configs_kwargs_map[config_name]["meta_config_path"] = meta_cfg
 
-        # find pair (not required)
-        runtime_cfg = meta_cfg.parent / "runtime.yml"
-        if runtime_cfg.exists():
-            config_filenames[config_name].append(runtime_cfg)
+        # others [optional]
+        for file_name, arg_name in (
+            ("docker-compose.overwrite.yml", "docker_compose_overwrite_path"),
+            ("runtime.yml", "service_config_path"),
+        ):
+            file_path = meta_cfg.parent / file_name
+            if file_path.exists():
+                configs_kwargs_map[config_name][arg_name] = file_path
 
     # output
     compose_spec_dict = {}
-    for n, config_name in enumerate(config_filenames):
+    for n, config_name in enumerate(configs_kwargs_map):
         nth_compose_spec = create_docker_compose_image_spec(
-            ctx.parent.integration_context, *config_filenames[config_name]
+            ctx.parent.settings, **configs_kwargs_map[config_name]
         ).dict(exclude_unset=True)
 
         # FIXME: shaky! why first decides ??

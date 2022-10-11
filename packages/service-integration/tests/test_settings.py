@@ -4,10 +4,10 @@ from typing import Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from service_integration.context import IntegrationContext
+from service_integration.settings import AppSettings
 
 CONTEXT_DEFAULTS: dict[str, Any] = {
-    k: x.default for k, x in IntegrationContext.__fields__.items()
+    k: x.default for k, x in AppSettings.__fields__.items()
 }
 CONTEXT_ARGS: list[dict[str, Any]] = [
     CONTEXT_DEFAULTS,
@@ -23,10 +23,10 @@ def env(request, monkeypatch: MonkeyPatch) -> None:
 
 @pytest.mark.parametrize("context_kwargs", CONTEXT_ARGS)
 def test_context_from_args(context_kwargs: dict[str, Any]) -> None:
-    context = IntegrationContext(**context_kwargs)
+    context = AppSettings(**context_kwargs)
     assert context
 
 
 def test_context_from_env(env: None):
-    context = IntegrationContext()
+    context = AppSettings()
     assert context
