@@ -91,7 +91,14 @@ jobs:
     runs-on: ubuntu-latest
     # Set job outputs to values from filter step
     outputs:
-      packages: ${{ steps.filter.outputs.packages }}
+      dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
+      models-library: ${{ steps.filter.outputs.models-library }}
+      postgres-database: ${{ steps.filter.outputs.postgres-database }}
+      service-integration: ${{ steps.filter.outputs.service-integration }}
+      service-library: ${{ steps.filter.outputs.service-library }}
+      settings-library: ${{ steps.filter.outputs.settings-library }}
+      simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
+      api: ${{ steps.filter.outputs.api }}
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
       catalog: ${{ steps.filter.outputs.catalog }}
@@ -110,29 +117,62 @@ jobs:
         id: filter
         with:
           filters: |
-            packages:
+            dask-task-models-library:
+              - 'packages/dask-task-models-library/**'
+              - 'packages/pytest-simcore/**'
+            models-library:
+              - 'packages/models-library/**'
+              - 'packages/postgres-database/**'
+              - 'packages/pytest-simcore/**'
+            postgres-database:
+              - 'packages/postgres-database/**'
+              - 'packages/pytest-simcore/**'
+            service-integration:
+              - 'packages/models-library/**'
+              - 'packages/pytest-simcore/**'
+              - 'packages/service-integration/**'
+            service-library:
+              - 'packages/pytest-simcore/**'
+              - 'packages/service-library/**'
+            settings-library:
+              - 'packages/pytest-simcore/**'
+              - 'packages/settings-library/**'
+            simcore-sdk:
               - 'packages/**'
+            api:
+              - 'api/**'
             autoscaling:
+              - 'packages/**'
               - 'services/autoscaling/**'
             catalog:
+              - 'packages/**'
               - 'services/catalog/**'
             dask-sidecar:
+              - 'packages/**'
               - 'services/dask-sidecar/**'
             datcore-adapter:
+              - 'packages/**'
               - 'services/datcore-adapter/**'
             director:
+              - 'packages/**'
               - 'services/director/**'
             director-v2:
+              - 'packages/**'
               - 'services/director-v2/**'
             dynamic-sidecar:
+              - 'packages/**'
               - 'services/dynamic-sidecar/**'
             migration:
+              - 'packages/**'
               - 'services/migration/**'
             static-webserver:
+              - 'packages/**'
               - 'services/static-webserver/**'
             storage:
+              - 'packages/**'
               - 'services/storage/**'
             webserver:
+              - 'packages/**'
               - 'services/web/**'
 
   unit-test-webserver-01:
