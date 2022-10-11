@@ -26,6 +26,7 @@ def test_to_and_from_labels(metadata_config: dict[str, Any], trim_key_head: bool
     metadata_labels = to_labels(
         metadata_config, prefix_key="swiss.itisfoundation", trim_key_head=trim_key_head
     )
+    print(f"\n{trim_key_head=:*^100}")
     pprint(metadata_labels)
 
     assert all(key.startswith("swiss.itisfoundation.") for key in metadata_labels)
