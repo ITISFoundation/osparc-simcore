@@ -79,7 +79,13 @@ def run_program_in_repo(tmp_path: Path, jupytermath_repo: Path) -> Iterable[Call
 def test_ooil_compose_wo_arguments(
     run_program_in_repo: Callable[..., tuple[Path, Result]],
 ):
-    # make compose-spec. SEE https://github.com/ITISFoundation/jupyter-math/blob/main/Makefile#L25
+    # After https://github.com/ITISFoundation/osparc-simcore/pull/3433#pullrequestreview-1138481844
+    #
+    # this test reproduces the calls with ooil in jupyter-math repo:
+    #
+    # SEE https://github.com/ITISFoundation/jupyter-math/blob/ad51f531548e88afa3ffe3b702a89d159ad8be7f/Makefile#L29
+    # SEE https://github.com/ITISFoundation/jupyter-math/blob/ad51f531548e88afa3ffe3b702a89d159ad8be7f/.github/workflows/check-image.yml#L18
+    #
 
     # NOTE: defaults searches for configs in .osparc/**/metadata.yml
     workdir, result = run_program_in_repo(
