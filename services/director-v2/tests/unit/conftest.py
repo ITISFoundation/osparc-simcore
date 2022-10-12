@@ -428,14 +428,16 @@ def mock_docker_api(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def docker() -> AsyncIterable[aiodocker.Docker]:
+async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
 
 
 @pytest.fixture
-async def docker_version(docker: aiodocker.Docker) -> DockerVersion:
-    version_request = await docker._query_json(  # pylint: disable=protected-access
-        "version", versioned_api=False
+async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
+    version_request = (
+        await async_docker_client._query_json(  # pylint: disable=protected-access
+            "version", versioned_api=False
+        )
     )
     return parse_obj_as(DockerVersion, version_request["Version"])

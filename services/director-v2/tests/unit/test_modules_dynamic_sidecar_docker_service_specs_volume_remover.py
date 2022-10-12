@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import AsyncIterator
 
-import aiodocker
 import pytest
+from aiodocker import Docker, DockerError
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from pydantic import parse_obj_as
@@ -22,31 +22,31 @@ def _get_source(run_id: str, node_uuid: str, volume_path: Path) -> str:
 
 
 async def run_command(
-    docker_version: DockerVersion, volume_names: list[str]
-) -> list[str]:
-    async with aiodocker.Docker() as docker_client:
-        volume_names_seq = " ".join(volume_names)
-        formatted_command = SH_SCRIPT_REMOVE_VOLUMES.format(
-            volume_names_seq=volume_names_seq, retries=5, sleep=1
-        )
-        print("Container will run:\n%s", formatted_command)
-        command = ["sh", "-c", formatted_command]
+    async_docker_client: Docker, docker_version: DockerVersion, volume_names: list[str]
+) -> str:
 
-        container = await docker_client.containers.run(
-            config={
-                "Cmd": command,
-                "Image": f"docker:{docker_version}-dind",
-                "HostConfig": {"Binds": ["/var/run/docker.sock:/var/run/docker.sock"]},
-            },
-        )
-        await container.start()
-        await container.wait()
+    volume_names_seq = " ".join(volume_names)
+    formatted_command = SH_SCRIPT_REMOVE_VOLUMES.format(
+        volume_names_seq=volume_names_seq, retries=3, sleep=0.1
+    )
+    print("Container will run:\n%s", formatted_command)
+    command = ["sh", "-c", formatted_command]
 
-        logs = await container.log(stderr=True, stdout=True)
+    container = await async_docker_client.containers.run(
+        config={
+            "Cmd": command,
+            "Image": f"docker:{docker_version}-dind",
+            "HostConfig": {"Binds": ["/var/run/docker.sock:/var/run/docker.sock"]},
+        },
+    )
+    await container.start()
+    await container.wait()
 
-        await container.delete(force=True)
+    logs = await container.log(stderr=True, stdout=True)
 
-        return "".join(logs)
+    await container.delete(force=True)
+
+    return "".join(logs)
 
 
 # FIXTURES
@@ -84,76 +84,77 @@ def unused_volume_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 async def unused_volume(
+    async_docker_client: Docker,
     swarm_stack_name: str,
     study_id: str,
     node_uuid: str,
     run_id: str,
     unused_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
-    async with aiodocker.Docker() as docker_client:
-        source = _get_source(run_id, node_uuid, unused_volume_path)
-        volume = await docker_client.volumes.create(
-            {
-                "Name": source,
-                "Labels": {
-                    "node_uuid": node_uuid,
-                    "run_id": run_id,
-                    "source": source,
-                    "study_id": study_id,
-                    "swarm_stack_name": swarm_stack_name,
-                    "user_id": "1",
-                },
-            }
-        )
+    source = _get_source(run_id, node_uuid, unused_volume_path)
+    volume = await async_docker_client.volumes.create(
+        {
+            "Name": source,
+            "Labels": {
+                "node_uuid": node_uuid,
+                "run_id": run_id,
+                "source": source,
+                "study_id": study_id,
+                "swarm_stack_name": swarm_stack_name,
+                "user_id": "1",
+            },
+        }
+    )
 
-        # attach to volume and create some files!!!
+    # attach to volume and create some files!!!
 
-        yield volume
+    yield volume
 
-        try:
-            await volume.delete()
-        except aiodocker.DockerError:
-            pass
+    try:
+        await volume.delete()
+    except DockerError:
+        pass
 
 
 @pytest.fixture
 async def used_volume(
+    async_docker_client: Docker,
     swarm_stack_name: str,
     study_id: str,
     node_uuid: str,
     run_id: str,
     used_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
-    async with aiodocker.Docker() as docker_client:
-        source = _get_source(run_id, node_uuid, used_volume_path)
-        volume = await docker_client.volumes.create(
-            {
-                "Name": source,
-                "Labels": {
-                    "node_uuid": node_uuid,
-                    "run_id": run_id,
-                    "source": source,
-                    "study_id": study_id,
-                    "swarm_stack_name": swarm_stack_name,
-                    "user_id": "1",
-                },
-            }
-        )
 
-        container = await docker_client.containers.run(
-            config={
-                "Cmd": ["/bin/ash", "-c", "sleep 10000"],
-                "Image": "alpine:latest",
-                "HostConfig": {"Binds": [f"{volume.name}:{used_volume_path}"]},
+    source = _get_source(run_id, node_uuid, used_volume_path)
+    volume = await async_docker_client.volumes.create(
+        {
+            "Name": source,
+            "Labels": {
+                "node_uuid": node_uuid,
+                "run_id": run_id,
+                "source": source,
+                "study_id": study_id,
+                "swarm_stack_name": swarm_stack_name,
+                "user_id": "1",
             },
-            name=f"using_volume_{volume.name}",
-        )
-        await container.start()
+        }
+    )
 
-        yield volume
+    container = await async_docker_client.containers.run(
+        config={
+            "Cmd": ["/bin/ash", "-c", "sleep 10000"],
+            "Image": "alpine:latest",
+            "HostConfig": {"Binds": [f"{volume.name}:{used_volume_path}"]},
+        },
+        name=f"using_volume_{volume.name}",
+    )
+    await container.start()
 
-        await container.delete(force=True)
-        await volume.delete()
+    yield volume
+
+    await container.delete(force=True)
+    await volume.delete()
 
 
 @pytest.fixture
@@ -177,28 +178,34 @@ def missing_volume_name(run_id: str, node_uuid: str) -> str:
 
 
 async def test_sh_script_error_if_volume_is_used(
-    used_volume_name: str, docker_version: DockerVersion
+    async_docker_client: Docker, used_volume_name: str, docker_version: DockerVersion
 ):
-    result = await run_command(docker_version, volume_names=[used_volume_name])
-    print(result)
-    assert "ERROR: Please check above logs, there was/were 1 error/s." in result
+    command_stdout = await run_command(
+        async_docker_client, docker_version, volume_names=[used_volume_name]
+    )
+    print(command_stdout)
+    assert "ERROR: Please check above logs, there was/were 1 error/s." in command_stdout
 
 
 async def test_sh_script_removes_unused_volume(
-    unused_volume_name: str, docker_version: DockerVersion
+    async_docker_client: Docker, unused_volume_name: str, docker_version: DockerVersion
 ):
-    result = await run_command(docker_version, volume_names=[unused_volume_name])
-    print(result)
-    assert "ERROR: Please check above logs, there was/were" not in result
-    assert result == f"{unused_volume_name}\n"
+    command_stdout = await run_command(
+        async_docker_client, docker_version, volume_names=[unused_volume_name]
+    )
+    print(command_stdout)
+    assert "ERROR: Please check above logs, there was/were" not in command_stdout
+    assert command_stdout == f"{unused_volume_name}\n"
 
 
 async def test_sh_script_no_error_if_volume_does_not_exist(
-    missing_volume_name: str, docker_version: DockerVersion
+    async_docker_client: Docker, missing_volume_name: str, docker_version: DockerVersion
 ):
-    result = await run_command(docker_version, volume_names=[missing_volume_name])
-    print(result)
-    assert "ERROR: Please check above logs, there was/were" not in result
+    command_stdout = await run_command(
+        async_docker_client, docker_version, volume_names=[missing_volume_name]
+    )
+    print(command_stdout)
+    assert "ERROR: Please check above logs, there was/were" not in command_stdout
 
 
 @pytest.mark.parametrize(
