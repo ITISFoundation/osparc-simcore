@@ -449,8 +449,10 @@ class TutorialBase {
 
   async __checkNItemsInFolder(fileNames) {
     await this.takeScreenshot("checkNodeOutputs_before");
+    console.log("N items in folder. Expected:", fileNames);
     const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
         elements => elements.map(el => el.textContent));
+    console.log("N items in folder. Received:", files);
     if (files.length === fileNames.length) {
       console.log("Number of files is correct")
       await this.takeScreenshot("checkNodeOutputs_after");
@@ -459,7 +461,7 @@ class TutorialBase {
     else {
       await this.takeScreenshot("checkNodeOutputs_after");
       await this.closeNodeFiles();
-      throw("Number of files is incorrect. Items in folder" + files);
+      throw("Number of files is incorrect");
     }
   }
 
