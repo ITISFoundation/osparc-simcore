@@ -155,7 +155,9 @@ async def async_close_and_save_service(
                     )
 
         if not skip_docker_resources_removal:
-            rich.print(f"{HEADING} deleting service docker resources")
+            rich.print(
+                f"{HEADING} deleting service docker resources and removing service"
+            )
             response = await thin_dv2_localhost_client.delete_service_docker_resources(
                 f"{node_id}"
             )
