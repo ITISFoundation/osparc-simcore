@@ -66,7 +66,7 @@ async function runTutorial () {
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.checkNodeOutputs(1, outFiles2, false);
+    await tutorial.checkNodeOutputs(1, outFiles2);
   }
   catch(err) {
     await tutorial.setTutorialFailed(true);

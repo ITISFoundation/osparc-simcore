@@ -114,7 +114,7 @@ async function runTutorial() {
       "TIP_report.pdf",
       "results.csv"
     ];
-    await tutorial.checkNodeOutputsAppMode(tiId, outFiles, true, false);
+    await tutorial.checkNodeOutputsAppMode(tiId, outFiles);
 
     // Check s4l
     await tutorial.waitAndClick("AppMode_NextBtn");
