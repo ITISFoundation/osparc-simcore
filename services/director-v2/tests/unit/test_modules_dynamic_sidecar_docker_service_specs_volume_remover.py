@@ -106,8 +106,6 @@ async def unused_volume(
         }
     )
 
-    # attach to volume and create some files!!!
-
     yield volume
 
     try:
@@ -125,7 +123,6 @@ async def used_volume(
     run_id: str,
     used_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
-
     source = _get_source(run_id, node_uuid, used_volume_path)
     volume = await async_docker_client.volumes.create(
         {
