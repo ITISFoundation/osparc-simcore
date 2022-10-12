@@ -6,8 +6,6 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.types import constr
 
-from ._meta import INTEGRATION_API_VERSION
-
 SemanticVersionStr = constr(regex=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 
 
@@ -66,7 +64,7 @@ class ExecutableVersionInfo(BaseModel):
 class ServiceVersionInfo(BaseModel):
     version: SemanticVersionStr
     integration_version: SemanticVersionStr = Field(
-        INTEGRATION_API_VERSION, description="osparc internal integration version"
+        ..., description="osparc internal integration version"
     )
     released: datetime = Field(..., description="Publication/release date")
 
