@@ -1872,39 +1872,38 @@ jobs:
 
   deploy:
     name: deploy to dockerhub
-    # if: github.event_name == 'push'
+    if: github.event_name == 'push'
     needs:
       [
-        build-test-images,
-        # unit-test-api-server,
-        # unit-test-autoscaling,
-        # unit-test-api,
-        # unit-test-catalog,
-        # unit-test-dask-sidecar,
-        # unit-test-dask-task-models-library,
-        # unit-test-datcore-adapter,
-        # unit-test-director-v2,
-        # unit-test-director,
-        # unit-test-dynamic-sidecar,
-        # unit-test-frontend,
-        # unit-test-models-library,
-        # unit-test-postgres-database,
-        # unit-test-python-linting,
-        # unit-test-service-integration,
-        # unit-test-service-library,
-        # unit-test-settings-library,
-        # unit-test-simcore-sdk,
-        # unit-test-storage,
-        # unit-test-webserver-01,
-        # unit-test-webserver-02,
-        # unit-test-webserver-03,
-        # integration-test-director-v2-01,
-        # integration-test-director-v2-02,
-        # integration-test-simcore-sdk,
-        # integration-test-webserver-01,
-        # integration-test-webserver-02,
-        # system-test-public-api,
-        # system-test-swarm-deploy,
+        unit-test-api-server,
+        unit-test-autoscaling,
+        unit-test-api,
+        unit-test-catalog,
+        unit-test-dask-sidecar,
+        unit-test-dask-task-models-library,
+        unit-test-datcore-adapter,
+        unit-test-director-v2,
+        unit-test-director,
+        unit-test-dynamic-sidecar,
+        unit-test-frontend,
+        unit-test-models-library,
+        unit-test-postgres-database,
+        unit-test-python-linting,
+        unit-test-service-integration,
+        unit-test-service-library,
+        unit-test-settings-library,
+        unit-test-simcore-sdk,
+        unit-test-storage,
+        unit-test-webserver-01,
+        unit-test-webserver-02,
+        unit-test-webserver-03,
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
+        integration-test-simcore-sdk,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
+        system-test-public-api,
+        system-test-swarm-deploy,
       ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1933,14 +1932,9 @@ jobs:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
       - name: load docker images
-        run: |
-          make load-images local-src=/${{ runner.temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - name: temporary test to fake deployment
-        env:
-          TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: github.ref == 'refs/heads/master'
         name: deploy master image
         env:
