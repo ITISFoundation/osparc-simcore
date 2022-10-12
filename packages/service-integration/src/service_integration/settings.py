@@ -9,6 +9,10 @@ class Registry(BaseModel):
     password: Optional[SecretStr] = None
 
 
+# NOTE: image names w/o a prefix default in dockerhub registry
+DOCKERHUB_REGISTRY_NAME = ""
+
+
 class AppSettings(BaseSettings):
 
     DOCKER_REGISTRIES: dict[str, Registry] = {
@@ -17,7 +21,7 @@ class AppSettings(BaseSettings):
     DEFAULT_REGISTRY: str = "local"
 
     REGISTRY_NAME: str = Field(
-        default="itisfoundation",
+        DOCKERHUB_REGISTRY_NAME,
         description="name of the registry used as prefix in images",
     )
 
