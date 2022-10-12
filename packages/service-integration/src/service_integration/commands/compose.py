@@ -127,10 +127,11 @@ def create_docker_compose_image_spec(
 def main(
     ctx: typer.Context,
     config_path: Path = typer.Option(
-        ".osparc/metadata.yml",
+        ".osparc",
         "-m",
         "--metadata",
-        help="osparc config file or folder",
+        help="osparc config file or folder. "
+        "If the latter, it will scan for configs using the glob pattern 'config_path/**/metadata.yml' ",
     ),
     to_spec_file: Path = typer.Option(
         Path("docker-compose.yml"),
@@ -146,29 +147,34 @@ def main(
         raise typer.BadParameter("Invalid path to metadata file or folder")
 
     if config_path.is_dir():
+        # equivalent to 'basedir/**/metadata.yml'
         basedir = config_path
-        meta_filename = "metadata.yml"
+        config_pattern = "metadata.yml"
     else:
+        # equivalent to 'config_path'
         basedir = config_path.parent
-        meta_filename = config_path.name
+        config_pattern = config_path.name
 
     configs_kwargs_map: dict[str, dict[str, Path]] = {}
 
-    for meta_cfg in sorted(list(basedir.rglob(meta_filename))):
-        config_name = meta_cfg.parent.name
+    for meta_config in sorted(list(basedir.rglob(config_pattern))):
+        config_name = meta_config.parent.name
         configs_kwargs_map[config_name] = {}
 
         # load meta [required]
-        configs_kwargs_map[config_name]["meta_config_path"] = meta_cfg
+        configs_kwargs_map[config_name]["meta_config_path"] = meta_config
 
         # others [optional]
         for file_name, arg_name in (
             ("docker-compose.overwrite.yml", "docker_compose_overwrite_path"),
             ("runtime.yml", "service_config_path"),
         ):
-            file_path = meta_cfg.parent / file_name
+            file_path = meta_config.parent / file_name
             if file_path.exists():
                 configs_kwargs_map[config_name][arg_name] = file_path
+
+    if not configs_kwargs_map:
+        rich.print(f"[warning] No config files were found in '{config_path}'")
 
     # output
     compose_spec_dict = {}
@@ -192,3 +198,4 @@ def main(
             default_flow_style=False,
             sort_keys=False,
         )
+    rich.print(f"Created compose specs at '{to_spec_file.resolve()}'")
