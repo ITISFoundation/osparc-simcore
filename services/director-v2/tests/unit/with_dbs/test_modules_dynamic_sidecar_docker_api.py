@@ -903,7 +903,7 @@ async def test_remove_volume_from_node_no_volume_found(
         volume_removal_attempts=2,
         sleep_between_attempts_s=1,
     )
-    assert volume_removal_result is False
+    assert volume_removal_result is True
     assert await is_volume_present(docker, missing_volume_name) is False
     for named_volume in named_volumes:
         assert await is_volume_present(docker, named_volume) is False
