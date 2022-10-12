@@ -1935,21 +1935,24 @@ jobs:
       - name: load docker images
         run: |
           make load-images local-src=/${{ runner.temp }}/build
-          make info-images
-      # - name: set owner variable
-      #   run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      # - if: github.ref == 'refs/heads/master'
-      #   name: deploy master image
-      #   env:
-      #     TAG_PREFIX: master-github
-      #   run: ./ci/deploy/dockerhub-deploy.bash
-      # - if: contains(github.ref, 'refs/heads/hotfix_v')
-      #   name: deploy release hotfix image
-      #   env:
-      #     TAG_PREFIX: hotfix-github
-      #   run: ./ci/deploy/dockerhub-deploy.bash
-      # - if: contains(github.ref, 'refs/heads/hotfix_staging_')
-      #   name: deploy staging hotfix image
-      #   env:
-      #     TAG_PREFIX: hotfix-staging-github
-      #   run: ./ci/deploy/dockerhub-deploy.bash
+      - name: set owner variable
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
+      - name: temporary test to fake deployment
+        env:
+          TAG_PREFIX: master-github
+        run: ./ci/deploy/dockerhub-deploy.bash -n
+      - if: github.ref == 'refs/heads/master'
+        name: deploy master image
+        env:
+          TAG_PREFIX: master-github
+        run: ./ci/deploy/dockerhub-deploy.bash -n
+      - if: contains(github.ref, 'refs/heads/hotfix_v')
+        name: deploy release hotfix image
+        env:
+          TAG_PREFIX: hotfix-github
+        run: ./ci/deploy/dockerhub-deploy.bash -n
+      - if: contains(github.ref, 'refs/heads/hotfix_staging_')
+        name: deploy staging hotfix image
+        env:
+          TAG_PREFIX: hotfix-staging-github
+        run: ./ci/deploy/dockerhub-deploy.bash -n
