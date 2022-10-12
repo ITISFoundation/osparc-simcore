@@ -28,6 +28,7 @@ from tenacity.wait import wait_fixed
 from ._client import ThinDV2LocalhostClient
 
 _MIN: Final[PositiveFloat] = 60
+HEADING: Final[str] = "[green]*[/green]"
 
 logger = logging.getLogger(__name__)
 
@@ -51,19 +52,17 @@ async def _track_and_display(
 ):
     with Progress(
         BarColumn(),
-        TaskProgressColumn(
-            text_format="[progress.percentage]{task.percentage:>3.02f}%"
-        ),
+        TaskProgressColumn(),
         TimeElapsedColumn(),
         TextColumn("[progress.description]{task.description}"),
         refresh_per_second=4,
     ) as progress:
-        task = progress.add_task("", total=1.0)
+        task = progress.add_task("...", total=1.0, visible=True)
 
         async def _debug_progress_callback(
             message: ProgressMessage, percent: ProgressPercent, _: TaskId
         ) -> None:
-            progress.update(task, completed=percent, description=message)
+            progress.update(task, completed=percent, description=message, visible=True)
 
         async with periodic_task_result(
             client,
@@ -94,9 +93,11 @@ async def async_close_and_save_service(
             base_url=parse_obj_as(AnyHttpUrl, thin_dv2_localhost_client.base_address),
         )
 
-        rich.print(f"[red]Cleaning up {node_id}[/red]")
+        rich.print(
+            f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
+        )
         if not skip_container_removal:
-            rich.print("[red][Step][/red] deleting service containers")
+            rich.print(f"{HEADING} deleting service containers")
             response = await thin_dv2_localhost_client.delete_service_containers(
                 f"{node_id}"
             )
@@ -106,7 +107,7 @@ async def async_close_and_save_service(
             )
 
         if not skip_state_saving:
-            rich.print("[red][Step][/red] saving service state")
+            rich.print(f"{HEADING} saving service state")
             async for attempt in AsyncRetrying(
                 wait=wait_fixed(1),
                 stop=stop_after_attempt(state_save_retry_attempts),
@@ -122,7 +123,7 @@ async def async_close_and_save_service(
                     )
 
         if not skip_outputs_pushing:
-            rich.print("[red][Step][/red] pushing service outputs")
+            rich.print(f"{HEADING} pushing service outputs")
             async for attempt in AsyncRetrying(
                 wait=wait_fixed(1),
                 stop=stop_after_attempt(outputs_push_retry_attempts),
@@ -138,7 +139,7 @@ async def async_close_and_save_service(
                     )
 
         if not skip_docker_resources_removal:
-            rich.print("[red][Step][/red] deleting service docker resources")
+            rich.print(f"{HEADING} deleting service docker resources")
             response = await thin_dv2_localhost_client.delete_service_docker_resources(
                 f"{node_id}"
             )
@@ -146,3 +147,6 @@ async def async_close_and_save_service(
             await _track_and_display(
                 client, task_id, update_interval, task_timeout=5 * _MIN
             )
+        rich.print(
+            f"[green]Finished[/green] cleanup for service [green]{node_id}[/green]"
+        )
