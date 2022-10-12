@@ -449,7 +449,8 @@ class TutorialBase {
 
   async __checkNItemsInFolder(fileNames) {
     await this.takeScreenshot("checkNodeOutputs_before");
-    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]');
+    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent));
     if (files.length === fileNames.length) {
       console.log("Number of files is correct")
       await this.takeScreenshot("checkNodeOutputs_after");
