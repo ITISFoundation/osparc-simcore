@@ -21,7 +21,7 @@ from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
 from math import floor
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -64,6 +64,8 @@ logger = logging.getLogger(__name__)
 
 ServiceName = str
 
+_DISABLED_MARK = object()
+
 
 def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
     # divisor to figure out if 30 seconds have passed based on the cycle count
@@ -77,7 +79,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
     _lock: Lock = field(default_factory=Lock)
     _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
-    _service_observation_task: dict[ServiceName, asyncio.Task] = field(
+    _service_observation_task: dict[ServiceName, Union[asyncio.Task, object]] = field(
         default_factory=dict
     )
     _keep_running: bool = False
@@ -87,6 +89,28 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
+
+    def toggle_observation_cycle(self, node_uuid: NodeID, disable: bool) -> bool:
+        """
+        returns True if it manged to toggle the current state
+
+        raises DynamicSidecarNotFoundError
+        """
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
+
+        service_task = self._service_observation_task.get(service_name)
+
+        if isinstance(service_task, asyncio.Task):
+            return False
+
+        if disable:
+            self._service_observation_task[service_name] = _DISABLED_MARK
+        else:
+            self._service_observation_task.pop(service_name, None)
+
+        return True
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started

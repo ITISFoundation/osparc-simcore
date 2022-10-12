@@ -12,10 +12,11 @@ from ..meta import PROJECT_NAME
 from ._close_and_save_service import async_close_and_save_service
 from ._core import async_project_save_state, async_project_state
 
-DEFAULT_NODE_SAVE_RETRY_TIMES: Final[int] = 3
+DEFAULT_NODE_SAVE_ATTEMPTS: Final[int] = 3
 DEFAULT_STATE_UPDATE_INTERVAL_S: Final[int] = 5
-DEFAULT_SAVE_STATE_RETRY_TIMES: Final[int] = 3
-DEFAULT_OUTPUTS_PUSH_RETRY_TIMES: Final[int] = 3
+DEFAULT_DISABLE_OBSERVATION_ATTEMPTS: Final[int] = 10
+DEFAULT_SAVE_STATE_ATTEMPTS: Final[int] = 3
+DEFAULT_OUTPUTS_PUSH_ATTEMPTS: Final[int] = 3
 DEFAULT_TASK_UPDATE_INTERVAL_S: Final[int] = 1
 
 main = typer.Typer(name=PROJECT_NAME)
@@ -26,7 +27,7 @@ main.command()(create_settings_command(settings_cls=AppSettings, logger=log))
 
 @main.command()
 def project_save_state(
-    project_id: ProjectID, save_retry_times: int = DEFAULT_NODE_SAVE_RETRY_TIMES
+    project_id: ProjectID, save_attempts: int = DEFAULT_NODE_SAVE_ATTEMPTS
 ):
     """
     Saves the state of all dy-sidecars in a project.
@@ -34,7 +35,7 @@ def project_save_state(
     it will retry to save.
     If errors persist it will produce a list of nodes which failed to save.
     """
-    asyncio.run(async_project_save_state(project_id, save_retry_times))
+    asyncio.run(async_project_save_state(project_id, save_attempts))
 
 
 @main.command()
@@ -56,13 +57,17 @@ def close_and_save_service(
     skip_state_saving: bool = False,
     skip_outputs_pushing: bool = False,
     skip_docker_resources_removal: bool = False,
+    disable_observation_attempts: int = typer.Option(
+        DEFAULT_DISABLE_OBSERVATION_ATTEMPTS,
+        help="disable observation retry max attempts",
+    ),
     state_save_retry_attempts: int = typer.Option(
-        DEFAULT_SAVE_STATE_RETRY_TIMES,
-        help="times the state saving will be retried if failed",
+        DEFAULT_SAVE_STATE_ATTEMPTS,
+        help="state saving retry max attempts",
     ),
     outputs_push_retry_attempts: int = typer.Option(
-        DEFAULT_OUTPUTS_PUSH_RETRY_TIMES,
-        help="times the outputs pushing will be retried if failed",
+        DEFAULT_OUTPUTS_PUSH_ATTEMPTS,
+        help="outputs pushing retry max attempts",
     ),
     update_interval: int = typer.Option(
         DEFAULT_TASK_UPDATE_INTERVAL_S,
@@ -87,6 +92,7 @@ def close_and_save_service(
             skip_state_saving,
             skip_outputs_pushing,
             skip_docker_resources_removal,
+            disable_observation_attempts,
             state_save_retry_attempts,
             outputs_push_retry_attempts,
             update_interval,

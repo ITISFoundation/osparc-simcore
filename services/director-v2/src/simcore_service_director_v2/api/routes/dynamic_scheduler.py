@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from models_library.projects_nodes import NodeID
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, BaseModel
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressMessage,
     ProgressPercent,
@@ -24,6 +24,7 @@ from ...modules.dynamic_sidecar.scheduler._utils import (
     service_remove_docker_resources,
     service_save_state,
 )
+from ...utils.routes import NoContentResponse
 from ..dependencies import get_app
 from ..dependencies.dynamic_sidecar import (
     get_dynamic_sidecar_client,
@@ -31,7 +32,35 @@ from ..dependencies.dynamic_sidecar import (
     get_dynamic_sidecar_settings,
 )
 
+
+class ObservationItem(BaseModel):
+    is_disabled: bool
+
+
 router = APIRouter()
+
+
+@router.patch(
+    "/{node_uuid}/observation",
+    summary="Enable/disable observation of service.",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def toggle_service_observation(
+    node_uuid: NodeID,
+    observation_item: ObservationItem,
+    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
+        get_dynamic_sidecar_scheduler
+    ),
+) -> NoContentResponse:
+    if dynamic_sidecars_scheduler.toggle_observation_cycle(
+        node_uuid, observation_item.is_disabled
+    ):
+        return NoContentResponse()
+
+    raise HTTPException(
+        status.HTTP_423_LOCKED,
+        detail=f"Could not toggle service {node_uuid} observation to disabled={observation_item.is_disabled}",
+    )
 
 
 @router.delete(

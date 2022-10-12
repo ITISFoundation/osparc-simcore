@@ -25,6 +25,16 @@ class ThinDV2LocalhostClient(BaseThinClient):
         return f"{self.base_address}/v2/dynamic_scheduler{postfix}"
 
     @retry_on_errors
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def toggle_service_observation(
+        self, node_uuid: str, *, is_disabled: bool
+    ) -> Response:
+        return await self.client.patch(
+            self._get_url(f"/{node_uuid}/observation"),
+            json=dict(is_disabled=is_disabled),
+        )
+
+    @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def delete_service_containers(self, node_uuid: str) -> Response:
         return await self.client.delete(self._get_url(f"/{node_uuid}/containers"))

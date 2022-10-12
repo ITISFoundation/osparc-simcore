@@ -22,9 +22,11 @@ from servicelib.fastapi.long_running_tasks.client import (
     setup,
 )
 from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+from ..modules.dynamic_sidecar.api_client._errors import UnexpectedStatusError
 from ._client import ThinDV2LocalhostClient
 
 _MIN: Final[PositiveFloat] = 60
@@ -80,12 +82,29 @@ async def async_close_and_save_service(
     skip_state_saving: bool,
     skip_outputs_pushing: bool,
     skip_docker_resources_removal: bool,
+    disable_observation_attempts: int,
     state_save_retry_attempts: int,
     outputs_push_retry_attempts: int,
     update_interval: int,
 ) -> None:
     async with _minimal_app() as app:
+        rich.print(
+            f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
+        )
+
         thin_dv2_localhost_client = ThinDV2LocalhostClient()
+
+        rich.print(f"{HEADING} disabling service observation")
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(1),
+            stop=stop_after_attempt(disable_observation_attempts),
+            retry=retry_if_exception_type(UnexpectedStatusError),
+            reraise=True,
+        ):
+            with attempt:
+                await thin_dv2_localhost_client.toggle_service_observation(
+                    f"{node_id}", is_disabled=True
+                )
 
         client = Client(
             app=app,
@@ -93,9 +112,6 @@ async def async_close_and_save_service(
             base_url=parse_obj_as(AnyHttpUrl, thin_dv2_localhost_client.base_address),
         )
 
-        rich.print(
-            f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
-        )
         if not skip_container_removal:
             rich.print(f"{HEADING} deleting service containers")
             response = await thin_dv2_localhost_client.delete_service_containers(
