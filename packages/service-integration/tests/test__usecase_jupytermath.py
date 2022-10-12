@@ -158,4 +158,25 @@ def test_ooil_compose_wo_arguments(
         == "https://github.com/ITISFoundation/jupyter-math"
     )
 
+    # Comparison compose-specs
+    #  following up with https://github.com/ITISFoundation/osparc-simcore/pull/3433#issuecomment-1275728062
+    #
+    # PR 2657 does not seem to correspond to the version in the image 'itisfoundation/ci-service-integration-library:v1.0.1-dev-25'!
+    # https://github.com/ITISFoundation/osparc-simcore/pull/2657/files#diff-908bfee2900285b2cfe9ec71fae205aa0527c840a293f5b3497e1a9157c65c65L39
+    #
+    assert compose_spec_reference["services"]["jupyter-math"]["build"].pop("args") == {
+        "VERSION": "2.0.8"
+    }
+
+    # new ooil has complete SHA
+    compose_spec_reference["services"]["jupyter-math"]["build"]["labels"][
+        "org.label-schema.vcs-ref"
+    ] = "ad51f531548e88afa3ffe3b702a89d159ad8be7f"
+
+    # different dates
+    compose_spec["services"]["jupyter-math"]["build"]["labels"][
+        "org.label-schema.build-date"
+    ] = compose_spec_reference["services"]["jupyter-math"]["build"]["labels"][
+        "org.label-schema.build-date"
+    ]
     assert compose_spec == compose_spec_reference
