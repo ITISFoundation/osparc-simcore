@@ -144,6 +144,7 @@ def mock_close_service_routes(mocker: MockerFixture, task_id: str) -> None:
         progress_callback: Optional[ProgressCallback] = None,
         status_poll_interval: Any = 5,
     ) -> AsyncIterator[None]:
+        assert progress_callback
         await progress_callback("test", 1.0, task_id)
         yield
 
