@@ -79,7 +79,8 @@ def close_and_save_service(
     docker created resources for a service.
 
     Order of actions taken: container removal -> state
-    saving -> outputs pushing -> docker resources removal.
+    saving -> outputs pushing -> docker resources removal
+    and removing service from observation.
 
     Should work out of the box with current defaults. Below
     options can be used to skip one of these steps and are
