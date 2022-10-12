@@ -53,11 +53,11 @@ while getopts ":nh:" option; do
    esac
 done
 
-# log_info "logging in dockerhub..."
-# bash ci/helpers/dockerhub_login.bash
-echo $skip_pulling
+log_info "logging in dockerhub..."
+bash ci/helpers/dockerhub_login.bash
+
 if [ $skip_pulling -eq 1 ]; then
-  log_info "skipping image pulling"
+  log_info "skipping image pulling (assuming the images are already available)"
 else
   # pull the current tested build
   DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
@@ -67,18 +67,17 @@ else
 fi
 
 # show current images on system
-log_info "Before push"
+log_info "Locally available images before push:"
 make info-images
 
 # re-tag build
 DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
 export DOCKER_IMAGE_TAG
-log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
-make tag-version
+log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}..."
+make push-version
 
 # re-tag build to master-github-DATE.GIT_SHA
 DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HEAD)
 export DOCKER_IMAGE_TAG
-log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
-make tag-version
-make info-images
+log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}..."
+make push-version
