@@ -217,11 +217,6 @@ class DynamicSidecar(BaseModel):
         description="set True if the dy-sidecar saves the state and uploads the outputs",
     )
 
-    were_service_containers_detected_before: bool = Field(
-        False,
-        description="set True when containers for the service were detected",
-    )
-
     # below had already been validated and
     # used only to start the proxy
     dynamic_sidecar_id: Optional[ServiceId] = Field(

@@ -244,7 +244,10 @@ class GetStatus(DynamicSchedulerEvent):
                 dynamic_sidecar_endpoint
             )
         except BaseClientHTTPError as e:
-            if scheduler_data.dynamic_sidecar.were_service_containers_detected_before:
+            were_service_containers_previously_present = (
+                len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
+            )
+            if were_service_containers_previously_present:
                 # Containers disappeared after they were started.
                 # for now just mark as error and remove the sidecar
 
@@ -269,11 +272,6 @@ class GetStatus(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
             containers_inspect
         )
-
-        if not scheduler_data.dynamic_sidecar.were_service_containers_detected_before:
-            scheduler_data.dynamic_sidecar.were_service_containers_detected_before = (
-                len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
-            )
 
         # TODO: ANE using `were_service_containers_detected_before` together with
         # how many containers to expect, it can be detected if containers
