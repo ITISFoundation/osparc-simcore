@@ -560,7 +560,7 @@ async def test_is_dynamic_sidecar_stack_missing(
     assert services_are_missing is False
 
 
-async def test_are_all_services_present(
+async def test_all_dynamic_sidecar_stack_services_present(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
