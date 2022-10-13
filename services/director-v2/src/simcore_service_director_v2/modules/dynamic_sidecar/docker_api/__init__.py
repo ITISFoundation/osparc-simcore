@@ -1,5 +1,5 @@
 from ._core import (
-    are_all_services_present,
+    all_dynamic_sidecar_stack_services_present,
     constrain_service_to_node,
     create_network,
     create_service_and_get_id,
@@ -21,7 +21,7 @@ from ._core import (
 from ._volume import remove_pending_volume_removal_services, remove_volumes_from_node
 
 __all__: tuple[str, ...] = (
-    "are_all_services_present",
+    "all_dynamic_sidecar_stack_services_present",
     "constrain_service_to_node",
     "create_network",
     "create_service_and_get_id",

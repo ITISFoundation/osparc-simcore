@@ -89,7 +89,9 @@ def parse_containers_inspect(
     return list(results)
 
 
-def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+def are_all_service_containers_running(
+    containers_inspect: List[DockerContainerInspect],
+) -> bool:
     return len(containers_inspect) > 0 and all(
         (x.status == DockerStatus.RUNNING for x in containers_inspect)
     )
