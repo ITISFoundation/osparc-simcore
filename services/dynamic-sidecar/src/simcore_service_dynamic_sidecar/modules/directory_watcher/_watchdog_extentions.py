@@ -33,6 +33,7 @@ class _ExtendedInotifyBuffer(InotifyBuffer):
 class _ExtendedInotifyEmitter(InotifyEmitter):
     def on_thread_start(self):
         path = os.fsencode(self.watch.path)
+        # pylint:disable=attribute-defined-outside-init
         self._inotify = _ExtendedInotifyBuffer(path, self.watch.is_recursive)
 
 
