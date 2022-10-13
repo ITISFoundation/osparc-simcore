@@ -44,12 +44,12 @@ jobs:
         run: |
           ./ci/helpers/ensure_python_pip.bash
           make devenv
-          source .venv/bin/pip
+          source .venv/bin/activate
           make --directory=${{ inputs.package_path }} install-ci
           pip list --verbose
       - name: tests
         run: |
-          source .venv/bin/pip
+          source .venv/bin/activate
           make --directory=${{ inputs.package_path }} test-ci-unit ${{ inputs.test_parameters }}
       # - name: test
       #   run: ./ci/github/unit-testing/webserver.bash test_with_db 01
