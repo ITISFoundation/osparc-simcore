@@ -90,7 +90,7 @@ jobs:
   #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
   #         path: /${{ runner.temp }}/build
 
-  unit-tests:
+  unit-test:
     strategy:
       fail-fast: false
       matrix:
@@ -98,21 +98,31 @@ jobs:
           - package-path: services/web/server
             test-parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
           - package-path: services/web/server
-            test-parameters: test-subfolder=01
+            test-parameters: test-subfolder=with_dbs/01
           - package-path: services/web/server
-            test-parameters: test-subfolder=02
+            test-parameters: test-subfolder=with_dbs/02
           - package-path: services/web/server
-            test-parameters: test-subfolder=03
+            test-parameters: test-subfolder=with_dbs/03
           - package-path: services/storage
             test-parameters: ""
           - package-path: services/api-server
             test-parameters: ""
+          - package-path: services/catalog
+            test-parameters: ""
+          - package-path: services/datcore-adapter
+            test-parameters: pytest-parameters="--numprocesses=auto"
+          - package-path: services/director-v2
+            test-parameters: ""
+          - package-path: services/dynamic-sidecar
+            test-parameters: ""
           - package-path: services/autoscaling
+            test-parameters: ""
+          - package-path: services/dask-sidecar
             test-parameters: ""
     uses: ./.github/workflows/ci-unit-test.yml
     with:
-      package_path: ${{ matrix.package-path }}
-      test_parameters: ${{ matrix.test-parameters }}
+      package-path: ${{ matrix.package-path }}
+      test-parameters: ${{ matrix.test-parameters }}
 
 
   # unit-test-api:
@@ -152,167 +162,6 @@ jobs:
   #     - name: test
   #       run: ./ci/github/unit-testing/api.bash test
 
-  # unit-test-autoscaling:
-  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
-  #   name: "[unit] autoscaling"
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/autoscaling/requirements/ci.txt"
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/unit-testing/autoscaling.bash install
-  #     - name: test
-  #       run: ./ci/github/unit-testing/autoscaling.bash test
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: unittests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/autoscaling/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
-
-  # unit-test-catalog:
-  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
-  #   name: "[unit] catalog"
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/catalog/requirements/ci.txt"
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/unit-testing/catalog.bash install
-  #     - name: test
-  #       run: ./ci/github/unit-testing/catalog.bash test
-  #     - name: upload failed tests logs
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ github.job }}_docker_logs
-  #         path: ./services/catalog/test_failures
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: unittests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/catalog/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
-
-  # unit-test-datcore-adapter:
-  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
-  #   name: "[unit] datcore-adapter"
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/datcore-adapter/requirements/ci.txt"
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/unit-testing/datcore-adapter.bash install
-  #     - name: test
-  #       run: ./ci/github/unit-testing/datcore-adapter.bash test
-  #     - name: upload failed tests logs
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ github.job }}_docker_logs
-  #         path: ./services/datcore-adapter/test_failures
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: unittests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/datcore-adapter/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
 
   # unit-test-director:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
