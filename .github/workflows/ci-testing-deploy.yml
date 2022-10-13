@@ -119,6 +119,8 @@ jobs:
             test-parameters: ""
           - package-path: services/dask-sidecar
             test-parameters: ""
+          - package-path: packages/simcore-sdk
+            test-parameters: ""
     uses: ./.github/workflows/reusables/service-unit-test.yml
     with:
       package-path: ${{ matrix.package-path }}
@@ -138,6 +140,8 @@ jobs:
             test-parameters: test-subfolder=01
           - package-path: services/director-v2
             test-parameters: test-subfolder=02
+          - package-path: packages/simcore-sdk
+            test-parameters: ""
 
     uses: ./.github/workflows/reusables/service-integration-test.yml
     with:

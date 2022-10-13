@@ -16,8 +16,8 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
-.PHONY: tests-unit tests-unit-ci tests-integration tests-integration-ci tests
-tests-unit: ## runs unit tests
+.PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration tests
+test-dev-unit: ## runs unit tests
 	# running unit tests
 	@pytest \
 		--asyncio-mode=auto \
@@ -33,7 +33,7 @@ tests-unit: ## runs unit tests
 		-vv \
 		$(CURDIR)/tests/unit
 
-tests-unit-ci: ## runs unit tests with ci parameters
+test-ci-unit: ## runs unit tests with ci parameters
 	# running unit tests
 	@pytest \
 		--asyncio-mode=auto \
@@ -51,7 +51,7 @@ tests-unit-ci: ## runs unit tests with ci parameters
 		-m "not heavy_load" \
 		$(CURDIR)/tests/unit
 
-tests-integration: ## runs integration tests against local+production images
+test-dev-integration: ## runs integration tests against local+production images
 	# running integration tests local/(service):production images ...
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
@@ -70,7 +70,7 @@ tests-integration: ## runs integration tests against local+production images
 		--verbose \
 		$(CURDIR)/tests/integration
 
-tests-integration-ci: ## runs integration tests against local+production images with CI parameters
+test-ci-integration: ## runs integration tests against local+production images with CI parameters
 	pytest \
 		--asyncio-mode=auto \
 		--color=yes \
@@ -87,5 +87,5 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		$(CURDIR)/tests/integration
 
-tests: tests-unit tests-integration ## runs all tests
+tests: test-dev-unit test-dev-integration ## runs all tests
 	# running tests
