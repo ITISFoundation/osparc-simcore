@@ -755,28 +755,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           }, this);
 
           const topOffset = 20;
-          svgEl.addEventListener("mouseover", e => {
-            const leftOffset = -(hint.getText().length*3);
-            const properties = {
-              top: e.clientY + topOffset,
-              left: e.clientX + leftOffset
-            };
-            hint.setLayoutProperties(properties);
-            if (hint.getText().length !== 0) {
-              hint.show();
-            }
-          }, this);
-          svgEl.addEventListener("mousemove", e => {
-            const leftOffset = -(hint.getText().length*3);
-            const properties = {
-              top: e.clientY + topOffset,
-              left: e.clientX + leftOffset
-            };
-            hint.setLayoutProperties(properties);
-            if (hint.getText().length !== 0) {
-              hint.show();
-            }
-          }, this);
+          [
+            "mouseover",
+            "mousemove"
+          ].forEach(ev => {
+            svgEl.addEventListener(ev, e => {
+              const leftOffset = -(hint.getText().length*3);
+              const properties = {
+                top: e.clientY + topOffset,
+                left: e.clientX + leftOffset
+              };
+              hint.setLayoutProperties(properties);
+              if (hint.getText().length !== 0) {
+                hint.show();
+              }
+            }, this);
+          });
         });
         edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", e => {
           hint.exclude();
