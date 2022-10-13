@@ -53,7 +53,7 @@ from ..errors import EntrypointContainerNotFoundError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     all_containers_running,
-    attempt_user_create_services_removal_and_data_saving,
+    attempt_user_created_services_removal_and_data_saving,
     disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
@@ -244,10 +244,7 @@ class GetStatus(DynamicSchedulerEvent):
                 dynamic_sidecar_endpoint
             )
         except BaseClientHTTPError as e:
-            were_service_containers_detected_before = (
-                len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
-            )
-            if were_service_containers_detected_before:
+            if scheduler_data.dynamic_sidecar.were_service_containers_detected_before:
                 # Containers disappeared after they were started.
                 # for now just mark as error and remove the sidecar
 
@@ -272,6 +269,11 @@ class GetStatus(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.containers_inspect = parse_containers_inspect(
             containers_inspect
         )
+
+        if not scheduler_data.dynamic_sidecar.were_service_containers_detected_before:
+            scheduler_data.dynamic_sidecar.were_service_containers_detected_before = (
+                len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
+            )
 
         # TODO: ANE using `were_service_containers_detected_before` together with
         # how many containers to expect, it can be detected if containers
@@ -564,7 +566,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        await attempt_user_create_services_removal_and_data_saving(app, scheduler_data)
+        await attempt_user_created_services_removal_and_data_saving(app, scheduler_data)
 
 
 # register all handlers defined in this module here
