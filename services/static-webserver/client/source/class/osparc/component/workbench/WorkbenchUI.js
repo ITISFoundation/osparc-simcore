@@ -732,6 +732,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         const hint = new osparc.ui.hint.Hint(null, "");
         edgeRepresentation.hint = hint;
+        edgeRepresentation.hint.setText(edge.isPortConnected() ? "" : "No ports Connected");
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
@@ -739,9 +740,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         edge.addListener("changePortConnected", e => {
           const portConnected = e.getData();
           osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
-          if ("hint" in edgeRepresentation) {
-            edgeRepresentation.hint.setText(portConnected ? "" : "No ports Connected");
-          }
+          edgeRepresentation.hint.setText(portConnected ? "" : "No ports Connected");
         }, this);
 
         const that = this;
@@ -757,7 +756,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
           const topOffset = 20;
           svgEl.addEventListener("mouseover", e => {
-            const leftOffset = -(hint.getText().length*4);
+            const leftOffset = -(hint.getText().length*3);
             const properties = {
               top: e.clientY + topOffset,
               left: e.clientX + leftOffset
@@ -768,7 +767,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             }
           }, this);
           svgEl.addEventListener("mousemove", e => {
-            const leftOffset = -(hint.getText().length*4);
+            const leftOffset = -(hint.getText().length*3);
             const properties = {
               top: e.clientY + topOffset,
               left: e.clientX + leftOffset
