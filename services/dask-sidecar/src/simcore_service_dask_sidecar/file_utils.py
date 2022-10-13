@@ -4,7 +4,7 @@ import logging
 import mimetypes
 import time
 import zipfile
-from io import BytesIO
+from io import BufferedReader, BytesIO
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Final, Mapping, Optional, TypedDict, cast
 
@@ -176,35 +176,55 @@ async def file_sender(file_name: Path):
             chunk = await f.read(64 * 1024)
 
 
+def file_sende_sync(file_name: Path):
+    with file_name.open("rb") as f:
+        chunk = f.read(64 * 1024)
+        while chunk:
+            yield chunk
+            chunk = f.read(64 * 1024)
+
+
 async def _push_file_to_osparc_api(
     file_to_upload: Path,
     log_publishing_cb: LogPublishingCB,
     osparc_api_settings: TaskOsparcAPISettings,
 ) -> None:
-    # class ProgressFileReader(BufferedReader):
-    #     def __init__(self, filename, read_callback=None):
-    #         f = open(filename, "rb")
-    #         self.__read_callback = read_callback
-    #         super().__init__(raw=f)
-    #         self.length = Path(filename).stat().st_size
+    class ProgressFileReader(BufferedReader):
+        """This is a trick to be able to update the reading file progress since it is not possible to use any kind of generator
+        or at least I did not find how
+        """
 
-    #     def read(self, size=None):
-    #         calc_sz = size
-    #         if not calc_sz:
-    #             calc_sz = self.length - self.tell()
-    #         if self.__read_callback:
-    #             self.__read_callback(self.length, self.tell())
-    #         return super(ProgressFileReader, self).read(size)
+        def __init__(self, filename, read_callback, file_pointer):
+            self.__read_callback = read_callback
+            super().__init__(raw=file_pointer)
+            self.length = Path(filename).stat().st_size
+
+        def read(self, size=None):
+            calc_sz = size
+            if not calc_sz:
+                calc_sz = self.length - self.tell()
+            if self.__read_callback:
+                self.__read_callback(self.length, self.tell())
+            return super().read(size)
 
     osparc_files_api_url = URL(f"{osparc_api_settings.osparc_api_endpoint}").with_path(
         "/v0/files/content"
     )
     with log_context(logger, logging.DEBUG, msg="uploading to osparc API"), log_catch(
         logger
-    ):
+    ), file_to_upload.open("rb") as file:
         session = ClientSession()
-        async with aiofiles.open(file_to_upload, "rb") as file:
-            upload_payload = {"file": file}
+        with ProgressFileReader(
+            file_to_upload,
+            functools.partial(
+                _file_progress_cb,
+                log_publishing_cb=log_publishing_cb,
+                text_prefix=f"Uploading '{file_to_upload}':",
+                main_loop=asyncio.get_event_loop(),
+            ),
+            file,
+        ) as progress_file_reader:
+            upload_payload = {"file": progress_file_reader}
             async with session.put(
                 osparc_files_api_url,
                 data=upload_payload,
@@ -212,26 +232,8 @@ async def _push_file_to_osparc_api(
                     osparc_api_settings.api_key, osparc_api_settings.api_secret
                 ),
             ) as response:
+                logger.debug("upload returned response: %s", await response.text())
                 response.raise_for_status()
-        # with ProgressFileReader(
-        #     filename=file_to_upload,
-        #     read_callback=functools.partial(
-        #         _file_progress_cb,
-        #         log_publishing_cb=log_publishing_cb,
-        #         text_prefix=f"Uploading '{file_to_upload}':",
-        #         main_loop=asyncio.get_event_loop(),
-        #     ),
-        # ) as file:
-        #     file_to_upload.ope
-        #     upload_payload = {"file": file}
-        #     async with session.put(
-        #         osparc_files_api_url,
-        #         data=upload_payload,
-        #         auth=aiohttp.BasicAuth(
-        #             osparc_api_settings.api_key, osparc_api_settings.api_secret
-        #         ),
-        #     ) as response:
-        #         response.raise_for_status()
 
 
 async def _push_file_to_http_link(
