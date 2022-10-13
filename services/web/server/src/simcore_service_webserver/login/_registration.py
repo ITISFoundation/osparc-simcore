@@ -80,7 +80,7 @@ async def check_registration(
     confirm: Optional[str],
     db: AsyncpgStorage,
     cfg: LoginOptions,
-):
+) -> None:
     # email : required & formats
     # password: required & secure[min length, ...]
 
@@ -115,6 +115,12 @@ async def check_registration(
             if is_confirmation_expired(cfg, _confirmation):
                 await db.delete_confirmation(_confirmation)
                 await db.delete_user(user)
+                log.warning(
+                    "Time to confirm a registration is overdue. Used expired token [%s]."
+                    "Deleted token from confirmations table and %s from users table.",
+                    _confirmation,
+                    f"{user=}",
+                )
                 return
 
         # If the email is already taken, return a 409 - HTTPConflict
