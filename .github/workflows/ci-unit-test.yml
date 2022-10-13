@@ -4,11 +4,13 @@ on:
       package_path:
         required: true
         type: string
+      test_parameters:
+        required: false
+        type: string
 
 jobs:
   unit-test:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -38,12 +40,19 @@ jobs:
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test isolated
-        run: ./ci/github/unit-testing/webserver.bash test_isolated
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
+      - name: install package
+        run: |
+          ./ci/helpers/ensure_python_pip.bash
+          make devenv
+          source .venv/bin/pip
+          make --directory=${{ inputs.package_path }} install-ci
+          pip list --verbose
+      - name: tests
+        run: |
+          source .venv/bin/pip
+          make --directory=${{ inputs.package_path }} test-ci-unit ${{ inputs.test_parameters }}
+      # - name: test
+      #   run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional

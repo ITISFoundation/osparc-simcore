@@ -95,6 +95,7 @@ jobs:
     uses: ./.github/workflows/ci-unit-test.yml
     with:
       package_path: services/web/server
+      test_parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
 
   # unit-test-webserver-02:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
