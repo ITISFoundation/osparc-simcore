@@ -55,8 +55,8 @@ jobs:
           source .venv/bin/activate
           make --directory=${{ inputs.package-path }} install-ci
           pip list --verbose
-          make --directory=${{ inputs.package-path }} tag-version
-          make --directory=${{ inputs.package-path }} info-images
+          make tag-version
+          make info-images
       - name: test
         run: |
           source .venv/bin/activate
