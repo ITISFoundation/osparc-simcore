@@ -55,14 +55,4 @@ jobs:
       #   run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v3.1.1
         with:
-          flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json ${{ inputs.package_path }}/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
+          flags: unittests
