@@ -7,16 +7,16 @@ IFS=$'\n\t'
 
 install() {
     npm install
-    make -C services/web/client clean
+    make -C services/static-webserver/client clean
     npx eslint --version
-    make -C services/web/client info
+    make -C services/static-webserver/client info
 }
 
 test() {
     echo "# Running Linter"
     npm run linter
 
-    pushd services/web/client
+    pushd services/static-webserver/client
 
     echo "# Building build version"
     make compile
@@ -56,9 +56,9 @@ test() {
     # cp -rp docs/webdocroot/* itisfoundation.github.io
 
     # # add our build
-    # if [ -d services/web/client/build-output ]; then
+    # if [ -d services/static-webserver/client/build-output ]; then
     #   rm -rf itisfoundation.github.io/frontend
-    #   cp -rp services/web/client/build-output itisfoundation.github.io/frontend
+    #   cp -rp services/static-webserver/client/build-output itisfoundation.github.io/frontend
     # fi
 }
 

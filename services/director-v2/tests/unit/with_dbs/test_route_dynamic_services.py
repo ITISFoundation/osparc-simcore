@@ -157,7 +157,7 @@ async def mock_retrieve_features(
             ] = scheduler_data_from_http_request
 
             respx_mock.post(
-                f"{scheduler_data_from_http_request.dynamic_sidecar.endpoint}/v1/containers/ports/inputs:pull",
+                f"{scheduler_data_from_http_request.endpoint}/v1/containers/ports/inputs:pull",
                 name="service_pull_input_ports",
             ).respond(json="mocked_task_id", status_code=status.HTTP_202_ACCEPTED)
 

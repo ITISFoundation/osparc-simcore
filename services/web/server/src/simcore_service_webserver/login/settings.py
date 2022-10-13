@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Literal, Optional
+from typing import Final, Literal, Optional
 
 from aiohttp import web
 from pydantic import BaseModel, validator
@@ -11,9 +11,10 @@ from settings_library.twilio import TwilioSettings
 
 from .._constants import APP_SETTINGS_KEY
 
-_DAYS = 1.0
-_MINUTES = 1.0 / 24.0 / 60.0
-
+_DAYS: Final[float] = 1.0  # in days
+_MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
+_YEARS: Final[float] = 365 * _DAYS
+_UNLIMITED: Final[float] = 99 * _YEARS
 
 APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
@@ -66,8 +67,6 @@ class LoginSettings(BaseCustomSettings):
 class LoginOptions(BaseModel):
     """These options are NOT directly exposed to the env vars due to security reasons."""
 
-    THEME: str = "templates/osparc.io"
-    COMMON_THEME: str = "templates/common"
     PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
@@ -79,9 +78,9 @@ class LoginOptions(BaseModel):
     SMTP_USERNAME: Optional[str] = Field(...)
     SMTP_PASSWORD: Optional[SecretStr] = Field(...)
 
-    # lifetime limits are in days
+    # NOTE: lifetime limits are expressed in days (use constants above)
     REGISTRATION_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS
-    INVITATION_CONFIRMATION_LIFETIME: PositiveFloat = 15 * _DAYS
+    INVITATION_CONFIRMATION_LIFETIME: PositiveFloat = _UNLIMITED
     RESET_PASSWORD_CONFIRMATION_LIFETIME: PositiveFloat = 20 * _MINUTES
     CHANGE_EMAIL_CONFIRMATION_LIFETIME: PositiveFloat = 5 * _DAYS
 
@@ -92,7 +91,6 @@ class LoginOptions(BaseModel):
         value = getattr(self, f"{action.upper()}_CONFIRMATION_LIFETIME")
         return timedelta(days=value)
 
-    # TODO: translation?
     MSG_LOGGED_IN: str = "You are logged in"
     MSG_LOGGED_OUT: str = "You are logged out"
     MSG_2FA_CODE_SENT: str = "Code sent by SMS to {phone_number}"
@@ -100,7 +98,8 @@ class LoginOptions(BaseModel):
     MSG_UNKNOWN_EMAIL: str = "This email is not registered"
     MSG_WRONG_PASSWORD: str = "Wrong password"
     MSG_PASSWORD_MISMATCH: str = "Password and confirmation do not match"
-    MSG_USER_BANNED: str = "This user is banned"
+    MSG_USER_BANNED: str = "This user does not have anymore access. Please contact support for further details: {support_email}"
+    MSG_USER_EXPIRED: str = "This account has expired and does not have anymore access. Please contact support for further details: {support_email}"
     MSG_ACTIVATION_REQUIRED: str = (
         "You have to activate your account via email, before you can login"
     )

@@ -6,6 +6,7 @@
 import re
 from collections import UserDict
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any
 from unittest import mock
 from uuid import UUID, uuid4
@@ -69,6 +70,9 @@ async def test_get_node_resources(
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
     mock_catalog_service_api_responses: None,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_orphaned_services,
+    mock_catalog_api: dict[str, mock.Mock],
     expected: type[web.HTTPException],
 ):
     assert client.app
@@ -157,6 +161,7 @@ async def test_create_node_properly_upgrade_database(
     expected: ExpectedResponse,
     faker: Faker,
     mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
     catalog_subsystem_mock,
     mocker: MockerFixture,
 ):
@@ -227,6 +232,86 @@ async def test_create_node_returns_422_if_body_is_missing(
         },
     ]:
         response = await client.post(url.path, json=partial_body)
-        await assert_status(response, expected.unprocessable)
+        assert response.status == expected.unprocessable.status_code
     # this does not start anything in the backend
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "node_class, expect_run_service_call",
+    [("dynamic", True), ("comp", False), ("frontend", False)],
+)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_create_node(
+    node_class: str,
+    expect_run_service_call: bool,
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    faker: Faker,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    mocker: MockerFixture,
+):
+    create_or_update_mock = mocker.patch(
+        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        autospec=True,
+        return_value=None,
+    )
+
+    assert client.app
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+
+    # Use-case 1.: not passing a service UUID will generate a new one on the fly
+    body = {
+        "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
+        "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
+    }
+    response = await client.post(url.path, json=body)
+    data, error = await assert_status(response, expected.created)
+    if data:
+        assert not error
+        create_or_update_mock.assert_called_once()
+        if expect_run_service_call:
+            mocked_director_v2_api[
+                "director_v2_api.run_dynamic_service"
+            ].assert_called_once()
+        else:
+            mocked_director_v2_api[
+                "director_v2_api.run_dynamic_service"
+            ].assert_not_called()
+    else:
+        assert error
+
+
+@pytest.mark.parametrize(
+    "node_class",
+    [("dynamic"), ("comp"), ("frontend")],
+)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_creating_deprecated_node_returns_406_not_acceptable(
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    faker: Faker,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    node_class: str,
+):
+    mock_catalog_api["get_service"].return_value["deprecated"] = (
+        datetime.utcnow() - timedelta(days=1)
+    ).isoformat()
+    assert client.app
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+
+    # Use-case 1.: not passing a service UUID will generate a new one on the fly
+    body = {
+        "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
+        "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
+    }
+    response = await client.post(url.path, json=body)
+    data, error = await assert_status(response, expected.not_acceptable)
+    assert error
+    assert not data
+    # this does not start anything in the backend since this node is deprecated
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()

@@ -39,7 +39,7 @@ from simcore_sdk.node_ports_common.storage_client import (
 
 from ...director_v2_api import create_or_update_pipeline
 from ...projects.projects_api import get_project_for_user, submit_delete_project_task
-from ...projects.projects_db import APP_PROJECT_DBAPI
+from ...projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from ...projects.projects_exceptions import ProjectsException
 from ...users_api import get_user
 from ...utils import now_str
@@ -193,6 +193,7 @@ async def upload_file_to_storage(
             s3_object=link_and_path.relative_path_to_file,
             file_to_upload=link_and_path.storage_path_to_file,
             client_session=session,
+            io_log_redirect_cb=None,
         )
         return (link_and_path, e_tag)
     except (
@@ -205,11 +206,13 @@ async def upload_file_to_storage(
         ) from err
 
 
-async def add_new_project(app: web.Application, project: Project, user_id: int):
+async def add_new_project(
+    app: web.Application, project: Project, user_id: int, product_name: str
+):
     # TODO: move this to projects_api
     # TODO: this piece was taking fromt the end of projects.projects_handlers.create_projects
 
-    db = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
     project_in: dict = json.loads(
@@ -218,7 +221,7 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: dict = await db.add_project(
-        project_in, user_id, force_as_template=False
+        project_in, user_id, force_as_template=False, product_name=product_name
     )
     if _project_db["uuid"] != str(project.uuid):
         raise ExporterException("Project uuid dose nto match after validation")
@@ -345,6 +348,7 @@ async def _upload_files_to_storage(
 async def import_files_and_validate_project(
     app: web.Application,
     user_id: int,
+    product_name: str,
     root_folder: Path,
     manifest_root_folder: Optional[Path],
 ) -> str:
@@ -394,7 +398,7 @@ async def import_files_and_validate_project(
 
     try:
         await _remove_runtime_states(project)
-        await add_new_project(app, project, user_id)
+        await add_new_project(app, project, user_id, product_name)
 
         # upload files to storage
         links_to_new_e_tags = await _upload_files_to_storage(
@@ -452,12 +456,14 @@ class FormatterV1(BaseFormatter):
     async def validate_and_import_directory(self, **kwargs) -> str:
         app: web.Application = kwargs["app"]
         user_id: int = kwargs["user_id"]
+        product_name: str = kwargs["product_name"]
         # injected by Formatter_V2
         manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
 
         return await import_files_and_validate_project(
             app=app,
             user_id=user_id,
+            product_name=product_name,
             root_folder=self.root_folder,
             manifest_root_folder=manifest_root_folder,
         )

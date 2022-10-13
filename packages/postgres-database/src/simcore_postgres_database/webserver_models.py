@@ -17,7 +17,7 @@ from .models.tags import study_tags, tags
 from .models.tokens import tokens
 from .models.users import UserRole, UserStatus, users
 
-__all__ = [
+__all__ = (
     "api_keys",
     "comp_pipeline",
     "comp_tasks",
@@ -40,4 +40,5 @@ __all__ = [
     "UserRole",
     "users",
     "UserStatus",
-]
+)
+# nopycln: file

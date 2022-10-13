@@ -1,18 +1,21 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Callable, Dict, List, Type
-from unittest.mock import MagicMock
+from typing import Any, Callable
+from unittest.mock import MagicMock, Mock
 
 import faker
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
+from faker import Faker
+from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_tokens import (
@@ -26,10 +29,12 @@ from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.users_models import ProfileGet
 
 API_VERSION = "v0"
 
@@ -37,11 +42,11 @@ API_VERSION = "v0"
 @pytest.fixture
 def client(
     event_loop,
-    aiohttp_client,
+    aiohttp_client: Callable,
     app_cfg,
     postgres_db,
     monkeypatch_setenv_from_app_config: Callable,
-):
+) -> TestClient:
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
@@ -68,29 +73,16 @@ def client(
     return client
 
 
-# WARNING: pytest-asyncio and pytest-aiohttp are not compatible
-#
-# https://github.com/aio-libs/pytest-aiohttp/issues/8#issuecomment-405602020
-# https://github.com/pytest-dev/pytest-asyncio/issues/76
-#
-
-
 @pytest.fixture
-async def tokens_db(logged_user, client):
+async def tokens_db(logged_user, client: TestClient):
+    assert client.app
     engine = client.app[APP_DB_ENGINE_KEY]
     yield engine
     await delete_all_tokens_from_db(engine)
 
 
 @pytest.fixture
-async def fake_tokens(logged_user, tokens_db):
-    # pylint: disable=E1101
-    from faker.providers import lorem
-
-    fake = faker.Factory.create()
-    fake.seed(4567)  # Always the same fakes
-    fake.add_provider(lorem)
-
+async def fake_tokens(logged_user, tokens_db, faker: Faker):
     all_tokens = []
 
     # TODO: automatically create data from oas!
@@ -98,9 +90,9 @@ async def fake_tokens(logged_user, tokens_db):
     for _ in repeat(None, 5):
         # TODO: add tokens from other users
         data = {
-            "service": fake.word(ext_word_list=None),
-            "token_key": fake.md5(raw_output=False),
-            "token_secret": fake.md5(raw_output=False),
+            "service": faker.word(ext_word_list=None),
+            "token_key": faker.md5(raw_output=False),
+            "token_secret": faker.md5(raw_output=False),
         }
         row = await create_token_in_db(
             tokens_db,
@@ -112,8 +104,7 @@ async def fake_tokens(logged_user, tokens_db):
     return all_tokens
 
 
-# --------------------------------------------------------------------------
-PREFIX = "/" + API_VERSION + "/me"
+PREFIX = f"/{API_VERSION}/me"
 
 
 @pytest.mark.parametrize(
@@ -126,27 +117,37 @@ PREFIX = "/" + API_VERSION + "/me"
     ],
 )
 async def test_get_profile(
-    logged_user: Dict,
-    client,
+    logged_user: dict,
+    client: TestClient,
     user_role: UserRole,
-    expected: Type[web.HTTPException],
-    primary_group: Dict[str, str],
-    standard_groups: List[Dict[str, str]],
-    all_group: Dict[str, str],
+    expected: type[web.HTTPException],
+    primary_group: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
+    all_group: dict[str, str],
 ):
-    url = client.app.router["get_my_profile"].url_for()
-    assert str(url) == "/v0/me"
+    assert client.app
 
-    resp = await client.get(url)
+    url = client.app.router["get_my_profile"].url_for()
+    assert f"{url}" == "/v0/me"
+
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
+    # check enveloped
+    e = Envelope[ProfileGet].parse_obj(await resp.json())
+    assert e.error == error
+    assert e.data.dict(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
+
     if not error:
-        assert data["login"] == logged_user["email"]
-        assert data["gravatar_id"]
-        assert data["first_name"] == logged_user["name"]
-        assert data["last_name"] == ""
-        assert data["role"] == user_role.name.capitalize()
-        assert data["groups"] == {
+        profile = ProfileGet.parse_obj(data)
+
+        assert profile.login == logged_user["email"]
+        assert profile.gravatar_id
+        assert profile.first_name == logged_user["name"]
+        assert profile.last_name == ""
+        assert profile.role == user_role.name.capitalize()
+        assert profile.groups
+        assert profile.groups.dict(**RESPONSE_MODEL_POLICY) == {
             "me": primary_group,
             "organizations": standard_groups,
             "all": all_group,
@@ -162,8 +163,15 @@ async def test_get_profile(
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_update_profile(logged_user, client, user_role, expected):
-    url = client.app.router["update_my_profile"].url_for()
+async def test_update_profile(
+    logged_user,
+    client: TestClient,
+    user_role,
+    expected: type[web.HTTPException],
+):
+    assert client.app
+
+    url = f"{client.app.router['update_my_profile'].url_for()}"
     assert str(url) == "/v0/me"
 
     resp = await client.put(url, json={"last_name": "Foo"})
@@ -183,7 +191,7 @@ async def test_update_profile(logged_user, client, user_role, expected):
 # TODO: create parametrize fixture with resource_name
 
 RESOURCE_NAME = "tokens"
-PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
+PREFIX = f"/{API_VERSION}/me/{RESOURCE_NAME}"
 
 
 @pytest.mark.parametrize(
@@ -195,7 +203,14 @@ PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
         (UserRole.TESTER, web.HTTPCreated),
     ],
 )
-async def test_create_token(client, logged_user, tokens_db, expected):
+async def test_create_token(
+    client: TestClient,
+    logged_user,
+    tokens_db,
+    expected: type[web.HTTPException],
+):
+    assert client.app
+
     url = client.app.router["create_tokens"].url_for()
     assert "/v0/me/tokens" == str(url)
 
@@ -222,9 +237,16 @@ async def test_create_token(client, logged_user, tokens_db, expected):
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_read_token(client, logged_user, tokens_db, fake_tokens, expected):
+async def test_read_token(
+    client: TestClient,
+    logged_user,
+    tokens_db,
+    fake_tokens,
+    expected: type[web.HTTPException],
+):
+    assert client.app
     # list all
-    url = client.app.router["list_tokens"].url_for()
+    url = f"{client.app.router['list_tokens'].url_for()}"
     assert "/v0/me/tokens" == str(url)
 
     resp = await client.get(url)
@@ -237,7 +259,7 @@ async def test_read_token(client, logged_user, tokens_db, fake_tokens, expected)
         # get one
         url = client.app.router["get_token"].url_for(service=sid)
         assert "/v0/me/tokens/%s" % sid == str(url)
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
 
         data, error = await assert_status(resp, expected)
 
@@ -253,15 +275,24 @@ async def test_read_token(client, logged_user, tokens_db, fake_tokens, expected)
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_update_token(client, logged_user, tokens_db, fake_tokens, expected):
+async def test_update_token(
+    client: TestClient,
+    logged_user,
+    tokens_db,
+    fake_tokens,
+    expected: type[web.HTTPException],
+):
+    assert client.app
 
     selected = random.choice(fake_tokens)
     sid = selected["service"]
 
     url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == str(url)
+    assert "/v0/me/tokens/%s" % sid == f"{url}"
 
-    resp = await client.put(url, json={"token_secret": "some completely new secret"})
+    resp = await client.put(
+        f"{url}", json={"token_secret": "some completely new secret"}
+    )
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -284,13 +315,17 @@ async def test_update_token(client, logged_user, tokens_db, fake_tokens, expecte
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_delete_token(client, logged_user, tokens_db, fake_tokens, expected):
+async def test_delete_token(
+    client: TestClient, logged_user, tokens_db, fake_tokens, expected
+):
+    assert client.app
+
     sid = fake_tokens[0]["service"]
 
     url = client.app.router["delete_token"].url_for(service=sid)
     assert "/v0/me/tokens/%s" % sid == str(url)
 
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
 
     data, error = await assert_status(resp, expected)
 
@@ -299,7 +334,7 @@ async def test_delete_token(client, logged_user, tokens_db, fake_tokens, expecte
 
 
 @pytest.fixture
-def mock_failing_connection(mocker) -> MagicMock:
+def mock_failing_connection(mocker: Mock) -> MagicMock:
     """
     async with engine.acquire() as conn:
         await conn.execute(query)  --> will raise OperationalError
@@ -320,9 +355,9 @@ def mock_failing_connection(mocker) -> MagicMock:
 )
 async def test_get_profile_with_failing_db_connection(
     logged_user,
-    client,
+    client: TestClient,
     mock_failing_connection: MagicMock,
-    expected: Type[web.HTTPException],
+    expected: type[web.HTTPException],
 ):
     """
     Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160

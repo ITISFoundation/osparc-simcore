@@ -16,13 +16,13 @@
     "project_id": "c440556a-b4d9-11ec-9a17-02420a000016",
     "node_uuid": "3e68d1f6-be3e-414e-a468-4a2bf415f756",
     "service_name": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+    "hostname": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
+    "port": 8000,
     "dynamic_sidecar": {
         "status": {
             "current": "ok",
             "info": ""
         },
-        "hostname": "dy-sidecar_3e68d1f6-be3e-414e-a468-4a2bf415f756",
-        "port": 8000,
         "is_available": true,
         "was_compose_spec_submitted": true,
         "containers_inspect": [

@@ -15,10 +15,10 @@ from typing import Optional
 from aiohttp import web
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
+from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
-from .settings import TwilioSettings
 
 log = logging.getLogger(__name__)
 
@@ -79,29 +79,35 @@ async def send_sms_code(
     code: str,
     twilo_auth: TwilioSettings,
     twilio_messaging_sid: str,
-    product_display_name: str,
+    twilio_alpha_numeric_sender: str,
+    user_name: str = "user",
 ):
-    def sender():
+    create_kwargs = {
+        "messaging_service_sid": twilio_messaging_sid,
+        "to": phone_number,
+        "body": f"Dear {user_name[:20].capitalize().strip()}, your verification code is {code}",
+    }
+    if twilo_auth.is_alphanumeric_supported(phone_number):
+        create_kwargs["from_"] = twilio_alpha_numeric_sender
+
+    def _sender():
         log.info(
             "Sending sms code to %s from product %s",
             f"{phone_number=}",
-            product_display_name,
+            twilio_alpha_numeric_sender,
         )
+        #
         # SEE https://www.twilio.com/docs/sms/quickstart/python
         #
         client = Client(twilo_auth.TWILIO_ACCOUNT_SID, twilo_auth.TWILIO_AUTH_TOKEN)
-        message = client.messages.create(
-            messaging_service_sid=twilio_messaging_sid,
-            to=phone_number,
-            body=f"Dear {product_display_name} user, your verification code is {code}",
-        )
+        message = client.messages.create(**create_kwargs)
 
         log.debug(
             "Got twilio client %s",
             f"{message=}",
         )
 
-    await asyncio.get_event_loop().run_in_executor(None, sender)
+    await asyncio.get_event_loop().run_in_executor(None, _sender)
 
 
 #

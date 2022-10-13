@@ -13,12 +13,17 @@ import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from pytest import FixtureRequest
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx.router import MockRouter
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
+    DynamicSidecarClient,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils, task
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
@@ -28,8 +33,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
 )
 
 SCHEDULER_INTERVAL_SECONDS: Final[float] = 0.1
-
-# FIXTURES
 
 
 @pytest.fixture
@@ -61,6 +64,7 @@ def mock_env(
 
 @pytest.fixture
 def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> SchedulerData:
+    scheduler_data_from_http_request.docker_node_id = "test_docker_node_id"
     return scheduler_data_from_http_request
 
 
@@ -68,11 +72,11 @@ def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> Scheduler
 def mock_containers_docker_status(
     scheduler_data: SchedulerData,
 ) -> Iterator[MockRouter]:
-    service_endpoint = scheduler_data.dynamic_sidecar.endpoint
+    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(
             re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.dynamic_sidecar.port}/v1/containers\?only_status=true"
+                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"
             ),
             name="containers_docker_status",
         ).mock(httpx.Response(200, json={}))
@@ -84,8 +88,28 @@ def mock_containers_docker_status(
 
 
 @pytest.fixture
+def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
+    mocker.patch.object(DynamicSidecarClient, "push_service_output_ports")
+    mocker.patch.object(DynamicSidecarClient, "save_service_state")
+    mocker.patch.object(DynamicSidecarClient, "stop_service")
+
+
+@pytest.fixture
+def mock_is_dynamic_sidecar_stack_missing(mocker: MockerFixture) -> None:
+    async def _return_false(*args, **kwargs) -> bool:
+        return False
+
+    mocker.patch.object(
+        task, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
+    )
+
+
+@pytest.fixture
 def scheduler(
-    mock_containers_docker_status: MockRouter, minimal_app: FastAPI
+    mock_containers_docker_status: MockRouter,
+    mock_dynamic_sidecar_client: None,
+    mock_is_dynamic_sidecar_stack_missing: None,
+    minimal_app: FastAPI,
 ) -> DynamicSidecarsScheduler:
     return minimal_app.state.dynamic_sidecar_scheduler
 
@@ -107,23 +131,31 @@ def error_raised_by_saving_state(request: FixtureRequest) -> bool:
 @dataclass
 class UseCase:
     can_save: bool
-    were_containers_created: bool
+    wait_for_manual_intervention_after_error: bool
     outcome_service_removed: bool
 
 
 @pytest.fixture(
     params=[
         UseCase(
-            can_save=False, were_containers_created=False, outcome_service_removed=True
+            can_save=False,
+            wait_for_manual_intervention_after_error=False,
+            outcome_service_removed=True,
         ),
         UseCase(
-            can_save=False, were_containers_created=True, outcome_service_removed=True
+            can_save=False,
+            wait_for_manual_intervention_after_error=True,
+            outcome_service_removed=False,
         ),
         UseCase(
-            can_save=True, were_containers_created=False, outcome_service_removed=True
+            can_save=True,
+            wait_for_manual_intervention_after_error=False,
+            outcome_service_removed=True,
         ),
         UseCase(
-            can_save=True, were_containers_created=True, outcome_service_removed=False
+            can_save=True,
+            wait_for_manual_intervention_after_error=True,
+            outcome_service_removed=False,
         ),
     ]
 )
@@ -152,8 +184,8 @@ def mocked_dynamic_scheduler_events(
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                     use_case.can_save
                 )
-                scheduler_data.dynamic_sidecar.were_containers_created = (
-                    use_case.were_containers_created
+                scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
+                    use_case.wait_for_manual_intervention_after_error
                 )
             raise RuntimeError("Failed as planned")
 
@@ -169,16 +201,20 @@ def mocked_dynamic_scheduler_events(
     return counter
 
 
-# TESTS
+@pytest.fixture
+def mock_remove_calls(mocker: MockerFixture) -> None:
+    mocker.patch.object(_utils, "remove_volumes_from_node")
 
 
 async def test_skip_observation_cycle_after_error(
+    docker_swarm: None,
     minimal_app: FastAPI,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: ACounter,
     error_raised_by_saving_state: bool,
     use_case: UseCase,
+    mock_remove_calls: None,
 ):
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again

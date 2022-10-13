@@ -32,7 +32,7 @@ function parseCommandLineArguments(args) {
 }
 
 function parseCommandLineArgumentsTemplate(args) {
-  // node $template.js [url] [template_uuid] [--demo]
+  // node $template.js [url] [template_uuid] [start_timeout] [--demo]
 
   if (args.length < 3) {
     console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [start_timeout] [--demo]');
@@ -273,8 +273,7 @@ async function isServiceReady(page, studyId, nodeId) {
   console.log("Status:", nodeId, status);
   const stopListening = [
     "running",
-    "complete",
-    "failed"
+    "complete"
   ];
   return stopListening.includes(status);
 }
@@ -518,6 +517,11 @@ async function clickLoggerTitle(page) {
   await this.waitAndClick(page, '[osparc-test-id="loggerTabButton"]')
 }
 
+async function getButtonsWithText(page, text) {
+  const buttons = await page.$x(`//button[contains(text(), '${text}')]`);
+  return buttons;
+}
+
 
 module.exports = {
   makeRequest,
@@ -552,4 +556,5 @@ module.exports = {
   waitUntilVisible,
   isElementVisible,
   clickLoggerTitle,
+  getButtonsWithText,
 }

@@ -95,6 +95,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
         auto_default_from_env=True
     )
+    API_SERVER_DEFAULT_PRODUCT_NAME: str = Field(
+        default="osparc", description="The API-server default product name"
+    )
 
     # DIAGNOSTICS
     API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)

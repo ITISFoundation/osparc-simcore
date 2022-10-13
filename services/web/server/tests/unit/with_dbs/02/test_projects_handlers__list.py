@@ -22,9 +22,6 @@ from yarl import URL
 API_PREFIX = "/" + api_version_prefix
 
 
-# HELPERS -----------------------------------------------------------------------------------------
-
-
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
@@ -118,9 +115,6 @@ def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
     return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
 
 
-# TESTS ----------------------------------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize(
     "limit, offset, expected_error_msg",
     [
@@ -145,7 +139,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 ):
     await _list_projects(
         client,
-        web.HTTPBadRequest,
+        web.HTTPUnprocessableEntity,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
         expected_error_code="value_error.number.not_ge",

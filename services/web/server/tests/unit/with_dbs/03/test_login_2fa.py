@@ -10,6 +10,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest import MonkeyPatch
+from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -93,9 +94,6 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
             "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
         )
     }
-
-
-# TESTS ---------------------------------------------------------------------------
 
 
 async def test_2fa_code_operations(
@@ -238,3 +236,28 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["email"] == EMAIL
     assert user["phone"] == PHONE
     assert user["status"] == UserStatus.ACTIVE.value
+
+
+async def test_register_phone_fails_with_used_number(
+    client: TestClient,
+    db: AsyncpgStorage,
+):
+    """
+    Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
+    """
+
+    # some user ALREADY registered with the same phone
+    await utils_login.create_fake_user(db, data={"phone": PHONE})
+
+    # new registration with same phone
+    # 1. submit
+    url = client.app.router["auth_verify_2fa_phone"].url_for()
+    rsp = await client.post(
+        url,
+        json={
+            "email": EMAIL,
+            "phone": PHONE,
+        },
+    )
+    _, error = await assert_status(rsp, web.HTTPUnauthorized)
+    assert "phone" in error["message"]

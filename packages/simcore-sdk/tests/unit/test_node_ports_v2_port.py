@@ -21,6 +21,7 @@ from attr import dataclass
 from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
@@ -33,8 +34,6 @@ from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
-
-# HELPERS --------------------------------------------------------------------------------------
 
 
 def camel_to_snake(name):
@@ -76,9 +75,6 @@ def datcore_store_id() -> LocationID:
 
 def e_tag() -> str:
     return "1212132546546321-1"
-
-
-# FIXTURES --------------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -178,6 +174,7 @@ async def mock_download_file(
     async def mock_download_file_from_link(
         download_link: URL,
         local_folder: Path,
+        io_log_redirect_cb: Optional[LogRedirectCB],
         file_name: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
     ) -> Path:
@@ -195,6 +192,7 @@ async def mock_download_file(
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.download_file_from_link",
         side_effect=mock_download_file_from_link,
+        autospec=True,
     )
 
 
@@ -233,9 +231,6 @@ class PortParams(NamedTuple):
     new_value: Union[int, float, bool, str, Path, None]
     exp_new_value: Union[int, float, bool, str, Path, FileLink, None]
     exp_new_get_value: Union[int, float, bool, str, Path, None]
-
-
-# TESTS --------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -597,6 +592,7 @@ async def test_valid_port(
         project_id: str
         node_uuid: str
         r_clone_settings: Optional[Any] = None
+        io_log_redirect_cb: Optional[LogRedirectCB] = None
 
         @staticmethod
         async def get(key):

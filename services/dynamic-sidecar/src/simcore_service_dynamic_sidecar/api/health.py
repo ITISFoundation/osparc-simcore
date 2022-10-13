@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from ..models.schemas.application_health import ApplicationHealth
 from ._dependencies import get_application_health
 
-health_router = APIRouter()
+router = APIRouter()
 
 
-@health_router.get(
+@router.get(
     "/health",
     response_model=ApplicationHealth,
     responses={
@@ -22,6 +22,3 @@ async def health_endpoint(
         )
 
     return application_health
-
-
-__all__: tuple[str, ...] = ("health_router",)

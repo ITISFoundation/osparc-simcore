@@ -5,9 +5,8 @@ Revises: 72f8be1c4838
 Create Date: 2020-06-05 14:18:55.443267+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "694f201e484a"
@@ -47,14 +46,14 @@ def upgrade():
     # NOTE: this does not need to be reversed as it was not used before
     op.execute(
         sa.DDL(
-            "UPDATE projects SET access_rights = (regexp_replace(access_rights::text, '\"rwx\"', '{\"read\":true, \"write\":false, \"delete\":false}')::jsonb) WHERE access_rights != '{}'"
+            'UPDATE projects SET access_rights = (regexp_replace(access_rights::text, \'"rwx"\', \'{"read":true, "write":false, "delete":false}\')::jsonb) WHERE access_rights != \'{}\''
         )
     )
     # add prj_owner into access rights column
     # NOTE: this dows not need to be reversed
     op.execute(
         sa.DDL(
-    """
+            """
 WITH user_project as (
  SELECT projects.id AS pid, projects.access_rights AS current_rights, '{"' || users.primary_gid || '"}' AS json_key
   FROM projects

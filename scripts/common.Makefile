@@ -38,6 +38,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 # relevant repo folders
 SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
 PACKAGES_DIR := $(abspath $(REPO_BASE_DIR)/packages)
+SERVICES_DIR := $(abspath $(REPO_BASE_DIR)/services)
 
 # virtual env
 EXPECTED_PYTHON_VERSION := $(shell cat $(REPO_BASE_DIR)/requirements/PYTHON_VERSION)
@@ -66,7 +67,7 @@ hel%:
 
 
 .PHONY: devenv
-devenv: ## build development environment (using main services/docker-compose-build.yml)
+devenv: ## build development environment
 	@$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
@@ -103,33 +104,33 @@ inf%: ## displays basic info
 	-@echo ' description  : ' "$(shell python ${CURDIR}/setup.py --description)"
 
 
-.PHONY: autoformat
-autoformat: ## runs black python formatter on this service's code. Use AFTER make install-*
-	# sort imports
-	@python3 -m isort --verbose \
-		--atomic \
-		--recursive \
-		--skip-glob */client-sdk/* \
-		--skip-glob */migration/* \
-		$(CURDIR)
-	# auto formatting with black
-	@python3 -m black --verbose \
-		--exclude "/(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|\.svn|_build|buck-out|build|dist|migration|client-sdk|generated_code)/" \
-		$(CURDIR)
+
+.PHONY: codeformat
+codeformat: ## runs all code formatters. Use AFTER make install-*
+	@$(eval PYFILES=$(shell find $(CURDIR) -type f -name '*.py'))
+	@pre-commit run pyupgrade --files $(PYFILES)
+	@pre-commit run pycln --files $(PYFILES)
+	@pre-commit run isort --files $(PYFILES)
+	@pre-commit run black --files $(PYFILES)
 
 
 .PHONY: pyupgrade
-pyupgrade: ## Upgrade python syntax for newer versions of the language (SEE https://github.com/asottile/pyupgrade)
-	@$(REPO_BASE_DIR)/scripts/pyupgrade.bash $(shell find . -type f -name '*.py')
+pyupgrade: ## upgrades python syntax for newer versions of the language (SEE https://github.com/asottile/pyupgrade)
+	@pre-commit run pyupgrade --files $(shell find $(CURDIR) -type f -name '*.py')
+
+
+.PHONY: pylint
+pylint: $(REPO_BASE_DIR)/.pylintrc ## runs pylint (python linter) on src and tests folders
+	@pylint --rcfile="$(REPO_BASE_DIR)/.pylintrc" -v $(CURDIR)/src $(CURDIR)/tests
 
 
 .PHONY: mypy
-mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type checker on this services's code. Use AFTER make install-*
+mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src
 
 
-.PHONY: code-analysis
-code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
+.PHONY: codeclimate
+codeclimate: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
 	# Copying config
 	cp $(REPO_BASE_DIR)/.codeclimate.yml $(CURDIR)/.codeclimate.yml
 	# Validates $< at ${PWD}

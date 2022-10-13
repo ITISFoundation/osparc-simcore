@@ -15,6 +15,7 @@ from typing import (
     Mapping,
 )
 
+import aiodocker
 import pytest
 import respx
 import traitlets.config
@@ -29,7 +30,8 @@ from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceKeyVersion
+from models_library.services import RunID, ServiceKeyVersion
+from pydantic import parse_obj_as
 from pydantic.types import NonNegativeInt
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
@@ -47,6 +49,9 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
     ServiceState,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
+    DockerVersion,
 )
 from yarl import URL
 
@@ -76,15 +81,36 @@ def dynamic_sidecar_port() -> int:
 
 
 @pytest.fixture
+def run_id(faker: Faker) -> RunID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def request_dns() -> str:
+    return "test-endpoint"
+
+
+@pytest.fixture
+def request_scheme() -> str:
+    return "http"
+
+
+@pytest.fixture
 def scheduler_data_from_http_request(
+    run_id: RunID,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
+    request_dns: str,
+    request_scheme: str,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
         service=dynamic_service_create,
         simcore_service_labels=simcore_service_labels,
         port=dynamic_sidecar_port,
+        request_dns=request_dns,
+        request_scheme=request_scheme,
+        run_id=run_id,
     )
 
 
@@ -391,7 +417,7 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         return_value=[],
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.are_all_services_present",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils.are_all_services_present",
         autospec=True,
         return_value=True,
     )
@@ -399,3 +425,19 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
+
+
+@pytest.fixture
+async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
+    version_request = (
+        await async_docker_client._query_json(  # pylint: disable=protected-access
+            "version", versioned_api=False
+        )
+    )
+    return parse_obj_as(DockerVersion, version_request["Version"])

@@ -5,10 +5,7 @@
 import datetime
 
 import pytest
-from aiohttp import web
-from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.projects.projects_db import (
-    ProjectDBAPI,
     _convert_to_db_names,
     _convert_to_schema_names,
 )
@@ -54,30 +51,3 @@ def test_convert_to_schema_names(fake_db_dict):
     db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
     assert "prjOwner" in db_entries
     assert db_entries["prjOwner"] == fake_email
-
-
-@pytest.fixture
-def mock_pg_engine(mocker):
-    connection = mocker.AsyncMock(name="Connection")
-
-    mc = mocker.Mock(name="ManagedConnection")
-    mc.__aenter__ = mocker.AsyncMock(name="Enter", return_value=connection)
-    mc.__aexit__ = mocker.AsyncMock(name="Exit", return_value=False)
-
-    engine = mocker.Mock(name="Engine")
-    engine.acquire.return_value = mc
-    return engine, connection
-
-
-async def test_add_projects(fake_project, mock_pg_engine):
-    engine, connection = mock_pg_engine
-
-    app = web.Application()
-    app[APP_DB_ENGINE_KEY] = engine
-
-    db = ProjectDBAPI(app)
-    assert await db.add_projects([fake_project], user_id=-1)
-
-    engine.acquire.assert_called()
-    connection.scalar.assert_called()
-    connection.execute.assert_called_once()

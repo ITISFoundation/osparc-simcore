@@ -5,7 +5,6 @@
 import json
 import os
 import re
-from typing import Dict
 
 import pytest
 from aiohttp import web
@@ -17,13 +16,11 @@ from simcore_service_webserver.application_settings import (
 )
 from simcore_service_webserver.application_settings_utils import convert_to_app_config
 
-# FIXTURES -----------------------------
-
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: Dict[str, str], monkeypatch
-) -> Dict[str, str]:
+    mock_env_devel_environment: dict[str, str], monkeypatch
+) -> dict[str, str]:
     # Overrides to ensure dev-features are enabled testings
     # TODO: move this to the base conftest!
     monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
@@ -41,7 +38,7 @@ def mock_env_makefile(monkeypatch):
     monkeypatch.setenv("CATALOG_API_VERSION", "0.3.2")
     monkeypatch.setenv(
         "CLIENT_WEB_OUTPUT",
-        "/home/crespo/devp/osparc-simcore/services/web/client/source-output",
+        "/home/crespo/devp/osparc-simcore/services/static-webserver/client/source-output",
     )
     monkeypatch.setenv("DATCORE_ADAPTER_API_VERSION", "0.1.0-alpha")
     monkeypatch.setenv("DIRECTOR_API_VERSION", "0.1.0")
@@ -160,9 +157,6 @@ def app_settings(mock_webserver_service_environment) -> ApplicationSettings:
     assert APP_SETTINGS_KEY in app
     assert app[APP_SETTINGS_KEY] == settings
     return settings
-
-
-# TESTS -----------------------------
 
 
 @pytest.mark.skip(reason="DEPRECATED")

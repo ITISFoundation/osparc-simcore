@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.sql import func
 
 from .base import metadata
+from .jinja2_templates import jinja2_templates
 
 products = sa.Table(
     "products",
@@ -25,6 +26,15 @@ products = sa.Table(
         nullable=False,
         server_default="o²S²PARC",
         doc="Human readable name of the product or display name",
+    ),
+    sa.Column(
+        "short_name",
+        sa.String,
+        nullable=False,
+        server_default="osparc",
+        doc="Alphanumeric name up to 11 characters long with characters "
+        "include both upper- and lower-case Ascii letters, the digits 0 through 9, "
+        "and the space character. They may not be only numerals.",
     ),
     sa.Column(
         "host_regex",
@@ -65,22 +75,36 @@ products = sa.Table(
     sa.Column(
         "issues_login_url",
         sa.String,
-        nullable=False,
+        nullable=True,
         server_default="https://github.com/ITISFoundation/osparc-simcore/issues",
-        doc="URL to login in the issue tracker site",
+        doc="URL to login in the issue tracker site"
+        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
     ),
     sa.Column(
         "issues_new_url",
         sa.String,
-        nullable=False,
+        nullable=True,
         server_default="https://github.com/ITISFoundation/osparc-simcore/issues/new",
-        doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)",
+        doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)"
+        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
     ),
     sa.Column(
         "feedback_form_url",
         sa.String,
         nullable=True,
         doc="URL to a feedback form (e.g. google forms etc)",
+    ),
+    sa.Column(
+        "registration_email_template",
+        sa.String,
+        sa.ForeignKey(
+            jinja2_templates.c.name,
+            name="fk_jinja2_templates_name",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+        ),
+        nullable=True,
+        doc="Custom jinja2 template for registration email",
     ),
     sa.Column(
         "created",

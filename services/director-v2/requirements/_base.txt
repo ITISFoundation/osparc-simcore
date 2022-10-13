@@ -51,7 +51,7 @@ aiormq==3.3.1
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.8.0
+alembic==1.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
@@ -68,7 +68,7 @@ async-timeout==4.0.2
     #   aiopg
     #   aioredis
     #   redis
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -98,6 +98,8 @@ cloudpickle==2.0.0
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
+commonmark==0.9.1
+    # via rich
 dask==2022.6.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
@@ -121,7 +123,7 @@ email-validator==1.2.1
     # via
     #   fastapi
     #   pydantic
-fastapi==0.71.0
+fastapi==0.85.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -211,8 +213,22 @@ locket==1.0.0
     #   partd
 lz4==4.0.0
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-mako==1.1.5
-    # via alembic
+mako==1.2.2
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 markupsafe==2.1.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -287,6 +303,8 @@ pydantic==1.9.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
+pygments==2.13.0
+    # via rich
 pyinstrument==4.1.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -337,6 +355,8 @@ requests==2.27.1
     # via fastapi
 rfc3986==1.4.0
     # via httpx
+rich==12.5.1
+    # via -r requirements/_base.in
 six==1.15.0
     # via
     #   jsonschema
@@ -370,7 +390,7 @@ sqlalchemy==1.4.37
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.17.1
+starlette==0.20.4
     # via fastapi
 tblib==1.7.0
     # via
@@ -416,8 +436,23 @@ typing-extensions==4.3.0
     #   aiodocker
     #   aioredis
     #   pydantic
-ujson==4.3.0
-    # via fastapi
+    #   starlette
+ujson==5.5.0
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

@@ -15,7 +15,7 @@
 # Nonetheless, notice that minio is a service used from simcore stack. Therefore, disabling ops stack
 # is meaningful ONLY when simcore stack is intended to run with the the actual stacks from osparc-ops
 #
-#  NOTE: this stack cannot be called tools because it collides with default network created in services/web/client/tools/docker-compose.yml
+#  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
 version: "3.8"
 

@@ -1,20 +1,20 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import os
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable
 
 import pytest
 import yaml
-from service_integration.commands.metadata import TARGET_VERSION_CHOICES
+from service_integration.commands.metadata import TargetVersionChoices
 
 
 @pytest.fixture
 def current_metadata(
     metadata_file_path: Path, target_version: str, current_version: str
-) -> Dict:
+) -> dict:
 
     metadata = yaml.safe_load(metadata_file_path.read_text())
     metadata[target_version] = current_version
@@ -31,7 +31,9 @@ BUMP_PARAMS = [
 ]
 
 
-CMD_PARAMS = [(t, b, c, n) for t in TARGET_VERSION_CHOICES for b, c, n in BUMP_PARAMS]
+CMD_PARAMS = [
+    (t.value, b, c, n) for t in TargetVersionChoices for b, c, n in BUMP_PARAMS
+]
 
 
 @pytest.mark.parametrize("target_version,bump,current_version,new_version", CMD_PARAMS)
@@ -40,7 +42,7 @@ def test_make_version(
     bump: str,
     current_version: str,
     new_version: str,
-    current_metadata: Dict,
+    current_metadata: dict,
     metadata_file_path: Path,
     run_program_with_args: Callable,
 ):
@@ -61,7 +63,7 @@ def test_make_version(
         bump,
         target_version,
     )
-    assert result.exit_code == os.EX_OK, (result.output, result.exception)
+    assert result.exit_code == os.EX_OK, result.output
 
     # version was updated in metadata file
     new_metadata = yaml.safe_load(metadata_file_path.read_text())
@@ -100,13 +102,13 @@ def test_get_version_from_metadata(
 ):
     cmd = cmd.replace("tests/data/metadata.yml", str(metadata_file_path))
     result = run_program_with_args(*cmd.split()[1:])
-    assert result.exit_code == os.EX_OK, (result.output, result.exception)
+    assert result.exit_code == os.EX_OK, result.output
 
     assert result.output == expected_output
 
 
 def test_changes_in_metadata_keeps_keys_order(
-    metadata_file_path: Path, run_program_with_args: Callable
+    metadata_file_path, run_program_with_args
 ):
 
     before = yaml.safe_load(metadata_file_path.read_text())
@@ -121,7 +123,7 @@ def test_changes_in_metadata_keeps_keys_order(
         "--upgrade",
         "major",
     )
-    assert result.exit_code == os.EX_OK, (result.output, result.exception)
+    assert result.exit_code == os.EX_OK, result.output
 
     after = yaml.safe_load(metadata_file_path.read_text())
     print(after)

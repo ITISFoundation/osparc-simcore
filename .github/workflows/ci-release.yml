@@ -11,6 +11,10 @@ env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: deploy release
@@ -19,7 +23,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           # ensure the docker_compose_sha corresponds to the the version!!
@@ -51,13 +55,10 @@ jobs:
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
-      - if: contains(env.BRANCH_NAME, 'remotes/origin/master')
-        env:
-          FROM_TAG_PREFIX: staging-github
-        name: deploy
-        run: ./ci/deploy/dockerhub-tag-version.bash
+      - name: source image is staging
+        run: echo "FROM_TAG_PREFIX=staging-github" >> $GITHUB_ENV
       - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_v')
-        env:
-          FROM_TAG_PREFIX: hotfix-github
-        name: deploy from hotfix image
+        name: source image is hotfix (instead of staging)
+        run: echo "FROM_TAG_PREFIX=hotfix-github" >> $GITHUB_ENV
+      - name: deploy
         run: ./ci/deploy/dockerhub-tag-version.bash

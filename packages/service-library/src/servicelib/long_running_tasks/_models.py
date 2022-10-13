@@ -1,9 +1,17 @@
 import logging
+import urllib.parse
 from asyncio import Task
 from datetime import datetime
 from typing import Any, Awaitable, Callable, Coroutine, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, confloat
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveFloat,
+    confloat,
+    validate_arguments,
+    validator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +37,8 @@ class TaskProgress(BaseModel):
     message: ProgressMessage = Field(default="")
     percent: ProgressPercent = Field(default=0.0)
 
-    def publish(
+    @validate_arguments
+    def update(
         self,
         *,
         message: Optional[ProgressMessage] = None,
@@ -49,12 +58,23 @@ class TaskProgress(BaseModel):
     def create(cls) -> "TaskProgress":
         return cls.parse_obj(dict(message="", percent=0.0))
 
+    @validator("percent")
+    @classmethod
+    def round_value_to_3_digit(cls, v):
+        return round(v, 3)
+
 
 class TrackedTask(BaseModel):
     task_id: str
     task: Task
     task_name: TaskName
     task_progress: TaskProgress
+    # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
+    task_context: dict[str, Any]
+    fire_and_forget: bool = Field(
+        ...,
+        description="if True then the task will not be auto-cancelled if no one enquires of its status",
+    )
 
     started: datetime = Field(default_factory=datetime.utcnow)
     last_status_check: Optional[datetime] = Field(
@@ -83,3 +103,16 @@ class TaskResult(BaseModel):
 class ClientConfiguration(BaseModel):
     router_prefix: str
     default_timeout: PositiveFloat
+
+
+class TaskGet(BaseModel):
+    task_id: TaskId
+    task_name: str
+    status_href: str
+    result_href: str
+    abort_href: str
+
+    @validator("task_name")
+    @classmethod
+    def unquote_str(cls, v) -> str:
+        return urllib.parse.unquote(v)

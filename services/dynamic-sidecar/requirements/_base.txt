@@ -43,7 +43,7 @@ aiormq==3.3.1
     # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
-alembic==1.8.0
+alembic==1.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
@@ -57,7 +57,7 @@ async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -124,7 +124,7 @@ docopt==0.6.2
     # via docker-compose
 email-validator==1.2.1
     # via pydantic
-fastapi==0.71.0
+fastapi==0.85.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -175,8 +175,20 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   docker-compose
-mako==1.1.5
-    # via alembic
+mako==1.2.2
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 markupsafe==2.1.1
     # via mako
 multidict==6.0.2
@@ -311,7 +323,7 @@ sqlalchemy==1.4.37
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.17.1
+starlette==0.20.4
     # via fastapi
 tenacity==8.0.1
     # via
@@ -344,6 +356,7 @@ typing-extensions==4.3.0
     #   aiodebug
     #   aiodocker
     #   pydantic
+    #   starlette
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

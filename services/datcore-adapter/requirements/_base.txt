@@ -20,7 +20,7 @@ anyio==3.5.0
     #   watchgod
 asgiref==3.5.0
     # via uvicorn
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -54,7 +54,7 @@ ecdsa==0.14.1
     # via python-jose
 email-validator==1.2.1
     # via pydantic
-fastapi==0.75.1
+fastapi==0.85.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -196,7 +196,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-starlette==0.17.1
+starlette==0.20.4
     # via fastapi
 tenacity==8.0.1
     # via
@@ -220,6 +220,7 @@ typing-extensions==4.3.0
     # via
     #   aiodebug
     #   pydantic
+    #   starlette
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

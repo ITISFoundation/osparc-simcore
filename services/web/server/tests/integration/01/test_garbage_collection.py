@@ -7,7 +7,7 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable, Dict, List, Optional
+from typing import Any, AsyncIterable, Callable, Optional
 from uuid import UUID, uuid4
 
 import aiopg
@@ -79,6 +79,11 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
     await client.close(close_connection_pool=True)
     yield
     # do nothing on teadown
+
+
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
 
 
 @pytest.fixture
@@ -176,9 +181,6 @@ def disable_garbage_collector_task(mocker):
     )
 
 
-# UTILS --------------
-
-
 async def login_user(client: TestClient):
     """returns a logged in regular user"""
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
@@ -192,8 +194,9 @@ async def login_guest_user(client: TestClient):
 async def new_project(
     client: TestClient,
     user: UserInfoDict,
+    product_name: str,
     tests_data_dir: Path,
-    access_rights: Optional[Dict[str, Any]] = None,
+    access_rights: Optional[dict[str, Any]] = None,
 ):
     """returns a project for the given user"""
     project_data = empty_project_data()
@@ -205,6 +208,7 @@ async def new_project(
         client.app,
         project_data,
         user["id"],
+        product_name=product_name,
         default_project_json=tests_data_dir / "fake-template-projects.isan.2dplot.json",
     )
 
@@ -212,6 +216,7 @@ async def new_project(
 async def get_template_project(
     client: TestClient,
     user: UserInfoDict,
+    product_name: str,
     project_data: ProjectDict,
     access_rights=None,
 ):
@@ -232,6 +237,7 @@ async def get_template_project(
         client.app,
         project_data,
         user["id"],
+        product_name=product_name,
         default_project_json=None,
     )
 
@@ -256,7 +262,7 @@ async def invite_user_to_group(client, owner, invitee, group):
 
 
 async def change_user_role(
-    aiopg_engine: aiopg.sa.Engine, user: Dict, role: UserRole
+    aiopg_engine: aiopg.sa.Engine, user: dict, role: UserRole
 ) -> None:
     async with aiopg_engine.acquire() as conn:
         await conn.execute(
@@ -319,7 +325,7 @@ async def fetch_user_from_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict):
         return await user_result.first()
 
 
-async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: Dict):
+async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: dict):
     async with aiopg_engine.acquire() as conn:
         project_result = await conn.execute(
             projects.select().where(projects.c.uuid == user_project["uuid"])
@@ -344,7 +350,7 @@ async def assert_user_not_in_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDic
     assert user_db is None
 
 
-async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: Dict):
+async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict):
     project = await fetch_project_from_db(aiopg_engine, user_project)
     assert project
     project_as_dict = dict(project)
@@ -353,7 +359,7 @@ async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: Dict
 
 
 async def assert_user_is_owner_of_project(
-    aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: Dict
+    aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: dict
 ):
     user = await fetch_user_from_db(aiopg_engine, owner_user)
     assert user
@@ -365,7 +371,7 @@ async def assert_user_is_owner_of_project(
 
 
 async def assert_one_owner_for_project(
-    aiopg_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[UserInfoDict]
+    aiopg_engine: aiopg.sa.Engine, project: dict, possible_owners: list[UserInfoDict]
 ):
     q_owners = [
         await fetch_user_from_db(aiopg_engine, owner) for owner in possible_owners
@@ -375,10 +381,7 @@ async def assert_one_owner_for_project(
     q_project = await fetch_project_from_db(aiopg_engine, project)
     assert q_project
 
-    assert q_project.prj_owner in set(user.id for user in q_owners if user)
-
-
-# TESTS ---------------
+    assert q_project.prj_owner in {user.id for user in q_owners if user}
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
@@ -388,11 +391,12 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     aiopg_engine,
     redis_client,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(
-        client, logged_guest_user, tests_data_dir
+        client, logged_guest_user, osparc_product_name, tests_data_dir
     )
     await assert_users_count(aiopg_engine, 1)
     await assert_projects_count(aiopg_engine, 1)
@@ -413,11 +417,12 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     aiopg_engine,
     redis_client,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(
-        client, logged_guest_user, tests_data_dir
+        client, logged_guest_user, osparc_product_name, tests_data_dir
     )
     await assert_users_count(aiopg_engine, 1)
     await assert_projects_count(aiopg_engine, 1)
@@ -459,19 +464,22 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     client,
     socketio_client_factory: Callable,
     aiopg_engine,
-    fake_project: Dict,
+    fake_project: dict,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
     number_of_templates = 5
     logged_user = await login_user(client)
     user_projects = [
-        await new_project(client, logged_user, tests_data_dir)
+        await new_project(client, logged_user, osparc_product_name, tests_data_dir)
         for _ in range(number_of_projects)
     ]
     user_template_projects = [
-        await get_template_project(client, logged_user, fake_project)
+        await get_template_project(
+            client, logged_user, osparc_product_name, fake_project
+        )
         for _ in range(number_of_templates)
     ]
 
@@ -506,6 +514,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     client,
     aiopg_engine,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -526,6 +535,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
@@ -545,7 +555,11 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -563,6 +577,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
@@ -585,7 +600,11 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -608,6 +627,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
@@ -655,6 +675,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     client,
     aiopg_engine,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -679,6 +700,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
@@ -737,7 +759,11 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -757,6 +783,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
@@ -804,7 +831,11 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -826,6 +857,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
@@ -884,7 +916,11 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
 
 async def test_t10_owner_and_all_shared_users_marked_as_guests(
-    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -904,6 +940,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
@@ -927,7 +964,11 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
 
 
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
-    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";
@@ -948,6 +989,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     project = await new_project(
         client,
         u1,
+        osparc_product_name,
         tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )

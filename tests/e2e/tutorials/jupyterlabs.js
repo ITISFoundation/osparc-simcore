@@ -36,17 +36,10 @@ async function runTutorial() {
     for (let j = 1; j < 3; j++) {
       // open JLab
       await tutorial.openNode(j);
-      await tutorial.waitFor(35000);
-
+      await tutorial.waitFor(10000);
 
       // Run the jlab nbook
-      const iframeHandles = await tutorial.getIframe();
-      let iframes2 = [];
-      for (let i = 0; i < iframeHandles.length; i++) {
-        const frame = await iframeHandles[i].contentFrame();
-        iframes2.push(frame);
-      }
-      const jLabIframe = iframes2.find(iframe => iframe._url.includes(workbenchData["nodeIds"][j]));
+      const jLabIframe = await tutorial.getIframe(workbenchData["nodeIds"][j]);
 
       await tutorial.takeScreenshot("before_nb_selection");
       const input2outputFileSelector = '[title~="jl_notebook.ipynb"]';
@@ -70,16 +63,17 @@ async function runTutorial() {
       await tutorial.takeScreenshot("after_run_all_menu");
 
       if (j === 2) {
-        await tutorial.waitFor(40000); // we are solving an em problem
-      } else {
-        await tutorial.waitFor(5000); // we are not solving an em problem
+        await tutorial.waitFor(30000); // we are solving an em problem
+      }
+      else {
+        await tutorial.waitFor(5000); // we are NOT solving an em problem
       }
 
       const outFiles = [
         "TheNumber.txt",
         "workspace.zip"
       ];
-      await tutorial.checkNodeOutputs(j, outFiles, true, false);
+      await tutorial.checkNodeOutputs(j, outFiles);
     }
   }
   catch (err) {

@@ -31,7 +31,7 @@ pytest_simcore_ops_services_selection = [
 
 
 #
-# FIXTURES: produces values to be used as arguments in the simcore_service_storage_sdk API
+
 #
 
 

@@ -132,7 +132,6 @@ def node_id(fake_workbench_adjacency: dict[str, Any]) -> NodeID:
     return NodeID(next(nid for nid in fake_workbench_adjacency.keys()))
 
 
-# TESTS -------------------------------------
 # - tests api routes
 #   - real postgres db with rows inserted in users, projects, comp_tasks and comp_pipelines
 #   - mocks responses from storage API patching nodeports

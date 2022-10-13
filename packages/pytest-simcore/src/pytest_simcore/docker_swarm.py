@@ -15,10 +15,11 @@ import docker
 import pytest
 import yaml
 from docker.errors import APIError
-from tenacity import Retrying
+from tenacity import Retrying, TryAgain, retry
 from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_fixed, wait_random_exponential
 
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.typing_env import EnvVarsDict
@@ -26,9 +27,6 @@ from .helpers.utils_dict import copy_from_dict
 from .helpers.utils_docker import get_localhost_ip
 
 log = logging.getLogger(__name__)
-
-
-# HELPERS --------------------------------------------------------------------------------
 
 
 class _ResourceStillNotRemoved(Exception):
@@ -45,6 +43,12 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
     return True
 
 
+@retry(
+    wait=wait_fixed(5),
+    stop=stop_after_delay(8 * MINUTE),
+    before_sleep=before_sleep_log(log, logging.WARNING),
+    reraise=True,
+)
 def assert_service_is_running(service):
     """Checks that a number of tasks of this service are in running state"""
 
@@ -88,6 +92,8 @@ def assert_service_is_running(service):
         f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
     )
 
+    print(f"--> {service_name} is up and running!!")
+
 
 def _fetch_and_print_services(
     docker_client: docker.client.DockerClient, extra_title: str
@@ -100,6 +106,7 @@ def _fetch_and_print_services(
         service = {}
         with suppress(Exception):
             # trims dicts (more info in dumps)
+            assert service_obj.attrs
             service = copy_from_dict(
                 service_obj.attrs,
                 include={
@@ -130,9 +137,6 @@ def _fetch_and_print_services(
 
         print(HEADER_STR.format(service_obj.name))  # type: ignore
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
-
-
-# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
@@ -205,33 +209,59 @@ def docker_stack(
         ),
     ]
 
+    # NOTE: if the migration service was already running prior to this call it must
+    # be force updated so that it does its job. else it remains and tests will fail
+    migration_service_was_running_before = any(
+        filter(
+            lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+        )
+    )
+    for migration_service in filter(
+        lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+    ):
+        print(
+            "WARNING: migration service detected before updating stack, it will be force-updated"
+        )
+        migration_service.force_update()  # type: ignore
+        print(f"forced updated {migration_service.name}.")  # type: ignore
+
     # make up-version
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
-        try:
-            subprocess.run(
-                [
-                    "docker",
-                    "stack",
-                    "deploy",
-                    "--with-registry-auth",
-                    "--compose-file",
-                    f"{compose_file.name}",
-                    f"{stack_name}",
-                ],
-                check=True,
-                cwd=compose_file.parent,
-            )
-        except subprocess.CalledProcessError as err:
-            print(
-                "docker_stack failed",
-                f"{' '.join(err.cmd)}",
-                f"returncode={err.returncode}",
-                f"stdout={err.stdout}",
-                f"stderr={err.stderr}",
-                "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
-            )
-            raise
+        for attempt in Retrying(
+            stop=stop_after_delay(60),
+            wait=wait_random_exponential(max=5),
+            retry=retry_if_exception_type(TryAgain),
+            reraise=True,
+        ):
+            with attempt:
+                try:
+                    subprocess.run(
+                        [
+                            "docker",
+                            "stack",
+                            "deploy",
+                            "--with-registry-auth",
+                            "--compose-file",
+                            f"{compose_file.name}",
+                            f"{stack_name}",
+                        ],
+                        check=True,
+                        cwd=compose_file.parent,
+                        capture_output=True,
+                    )
+                except subprocess.CalledProcessError as err:
+                    if b"update out of sequence" in err.stderr:
+                        raise TryAgain from err
+                    print(
+                        "docker_stack failed",
+                        f"{' '.join(err.cmd)}",
+                        f"returncode={err.returncode}",
+                        f"stdout={err.stdout}",
+                        f"stderr={err.stderr}",
+                        "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
+                    )
+                    raise
 
         stacks_deployed[key] = {
             "name": stack_name,
@@ -242,24 +272,19 @@ def docker_stack(
     # - notice that the timeout is set for all services in both stacks
     # - TODO: the time to deploy will depend on the number of services selected
     try:
-        from tenacity._asyncio import AsyncRetrying
 
         async def _check_all_services_are_running():
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(5),
-                stop=stop_after_delay(8 * MINUTE),
-                before_sleep=before_sleep_log(log, logging.INFO),
-                reraise=True,
-            ):
-                with attempt:
-                    await asyncio.gather(
-                        *[
-                            asyncio.get_event_loop().run_in_executor(
-                                None, assert_service_is_running, service
-                            )
-                            for service in docker_client.services.list()
-                        ]
+            done, pending = await asyncio.wait(
+                [
+                    asyncio.get_event_loop().run_in_executor(
+                        None, assert_service_is_running, service
                     )
+                    for service in docker_client.services.list()
+                ],
+                return_when=asyncio.FIRST_EXCEPTION,
+            )
+            assert done, f"no services ready, they all failed! [{pending}]"
+            assert not pending, f"some service did not start correctly [{pending}]"
 
         asyncio.run(_check_all_services_are_running())
 

@@ -66,6 +66,13 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
         "SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_")
     )
 
+    env_devel[
+        "AIOCACHE_DISABLE"
+    ] = "1"  # ensure that aio-caches are disabled for testing [https://aiocache.readthedocs.io/en/latest/testing.html]
+    env_devel[
+        "CATALOG_BACKGROUND_TASK_REST_TIME"
+    ] = "1"  # ensure catalog refreshes services access rights fast
+
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
     env_devel.setdefault("DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", "")
     env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_SECRET_ID", "")
@@ -281,7 +288,7 @@ def ops_docker_compose_file(
     ops_view_only_services = ["adminer", "redis-commander", "portainer", "filestash"]
     if "CI" in os.environ:
         print(
-            f"Warning: Services such as {ops_view_only_services!r} are removed from the stack when running in the CI"
+            f"WARNING: Services such as {ops_view_only_services!r} are removed from the stack when running in the CI"
         )
         ops_services_selection = list(
             filter(
@@ -323,9 +330,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name
         _save_docker_logs_to_folder(failed_test_directory)
-
-
-# HELPERS ---------------------------------------------
 
 
 def _minio_fix(service_environs: dict) -> dict:

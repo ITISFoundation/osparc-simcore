@@ -14,32 +14,38 @@ install() {
   python -m ensurepip
 
   echo "INFO:" "$(pip --version)" "@" "$(command -v pip)"
-
   # NOTE: pip<22.0 for python 3.6
   pip3 install --upgrade \
     pip~=21.0 \
     wheel \
     setuptools
+  python3 -m venv .venv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/director
   pip3 install -r requirements/ci.txt
   popd
-  pip list -v
+  .venv/bin/pip list --verbose
 }
 
 test() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/director
   pytest \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_director \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
+		--color=yes \
+		--cov-append \
+		--cov-config=.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov=simcore_service_director \
+		--durations=10 \
+		--keep-docker-up \
+		--log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    services/director/tests
+		--verbose \
+    tests/
+  popd
 }
 
 # Check if the function exists (bash specific)

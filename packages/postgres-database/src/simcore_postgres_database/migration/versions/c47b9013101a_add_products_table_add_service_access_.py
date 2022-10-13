@@ -5,8 +5,8 @@ Revises: 43766dcf0fc2
 Create Date: 2020-09-11 13:50:55.000337+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -40,7 +40,8 @@ def upgrade():
         "INSERT INTO products (name, urls, frontend) VALUES ('osparc', '{\"osparc.io\"}', 'osparc')"
     )
     op.add_column(
-        "services_access_rights", sa.Column("product_name", sa.String(), nullable=False, server_default="osparc")
+        "services_access_rights",
+        sa.Column("product_name", sa.String(), nullable=False, server_default="osparc"),
     )
     op.create_foreign_key(
         "fk_services_name_products",

@@ -214,12 +214,13 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
-        60.0,
+        60 * MINS,
         description=(
-            "When starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
-            "is required. If something goes wrong timeout and do not wait forever in a loop. "
-            "This is used to scheduler the status of the service via aiodocker and not http requests "
-            "twards the dynamic-sidecar, as is the case with the above timeout field."
+            "After starting the dynamic-sidecar its docker_node_id is required. "
+            "This operation can be slow based on system load, sometimes docker "
+            "swarm takes more than seconds to assign the node."
+            "Autoscaling of nodes takes time, it is required to wait longer"
+            "for nodes to be assigned."
         ),
     )
     DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
@@ -274,6 +275,16 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S: PositiveFloat = Field(
+        1 * MINS,
+        description=(
+            "Connectivity between director-v2 and a dy-sidecar can be "
+            "temporarily disrupted if network between swarm nodes has "
+            "issues. To avoid the sidecar being marked as failed, "
+            "allow for some time to pass before declaring it failed."
+        ),
+    )
+
     #
     # DEVELOPMENT ONLY config
     #
@@ -305,7 +316,12 @@ class DynamicSidecarSettings(BaseCustomSettings):
         False,
         description=(
             "Limits concurrent service saves for a docker node. Guarantees "
-            "that no more than X services use a resource together."
+            "that no more than X services use a resource together. "
+            "NOTE: A node can end up with all the services from a single study. "
+            "When the study is closed/opened all the services will try to "
+            "upload/download their data. This causes a lot of disk "
+            "and network stress (especially for low power nodes like in AWS). "
+            "Some nodes collapse under load or behave unexpectedly."
         ),
     )
     DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
@@ -359,6 +375,14 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: PositiveFloat = Field(
         5.0, description="interval at which the scheduler cycle is repeated"
+    )
+
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = (
+        Field(
+            30 * MINS,
+            description="interval at which cleaning of unused dy-sidecar "
+            "docker volume removal services is executed",
+        )
     )
 
 
@@ -440,6 +464,14 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
+
+    DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: bool = Field(
+        False,
+        description=(
+            "Under development feature. If enabled state "
+            "is saved using rclone docker volumes."
+        ),
+    )
 
     # for passing self-signed certificate to spawned services
     # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services

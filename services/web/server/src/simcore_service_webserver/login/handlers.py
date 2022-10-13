@@ -1,12 +1,13 @@
 import logging
+from datetime import datetime, timedelta
 
 from aiohttp import web
-from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.users import UserRole
 
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
@@ -21,32 +22,64 @@ from ._2fa import (
     set_2fa_code,
 )
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._registration import check_and_consume_invitation, check_registration
 from .decorators import RQT_USERID_KEY, login_required
-from .registration import check_invitation, check_registration
 from .settings import (
     LoginOptions,
     LoginSettings,
     get_plugin_options,
     get_plugin_settings,
 )
-from .storage import AsyncpgStorage, ConfirmationDict, get_plugin_storage
+from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
     ACTIVE,
     ANONYMOUS,
     BANNED,
     CHANGE_EMAIL,
     CONFIRMATION_PENDING,
+    EXPIRED,
     REGISTRATION,
     RESET_PASSWORD,
     USER,
     envelope_response,
     flash_response,
     get_client_ip,
+    get_template_path,
+    notify_user_logout,
     render_and_send_mail,
-    themed,
 )
 
 log = logging.getLogger(__name__)
+
+
+def _get_user_name(email: str) -> str:
+    username = email.split("@")[0]
+    # TODO: this has to be unique and add this in user registration!
+    return username
+
+
+def _validate_user_status(user: dict, cfg, support_email: str):
+    user_status: str = user["status"]
+
+    if user_status == BANNED or user["role"] == ANONYMOUS:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_USER_BANNED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON
+        )  # 401
+
+    if user_status == EXPIRED:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_USER_EXPIRED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON
+        )  # 401
+
+    if user_status == CONFIRMATION_PENDING:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_ACTIVATION_REQUIRED,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )  # 401
+
+    assert user_status == ACTIVE  # nosec
 
 
 async def register(request: web.Request):
@@ -61,17 +94,26 @@ async def register(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
-    username = email.split("@")[
-        0
-    ]  # FIXME: this has to be unique and add this in user registration!
+    username = _get_user_name(email)
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
+    expires_at = None
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
-        invitation = body.invitation if hasattr(body, "invitation") else None
-        await check_invitation(invitation, db, cfg)
+        try:
+            invitation_code = body.invitation
+        except AttributeError as e:
+            raise web.HTTPBadRequest(
+                reason="invitation field is required",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from e
+
+        invitation = await check_and_consume_invitation(invitation_code, db=db, cfg=cfg)
+        if invitation.trial_account_days:
+            expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
     await check_registration(email, password, confirm, db, cfg)
 
@@ -86,6 +128,7 @@ async def register(request: web.Request):
                 else ACTIVE
             ),
             "role": USER,
+            "expires_at": expires_at,
             "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
         }
     )
@@ -101,17 +144,20 @@ async def register(request: web.Request):
         await remember(request, response, identity)
         return response
 
-    confirmation_: ConfirmationDict = await db.create_confirmation(user, REGISTRATION)
+    confirmation_: ConfirmationTokenDict = await db.create_confirmation(
+        user["id"], REGISTRATION
+    )
     link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
             request,
-            email,
-            themed(cfg.THEME, "registration_email.html"),
+            to=email,
+            template=await get_template_path(request, "registration_email.jinja2"),
             context={
                 "host": request.host,
                 "link": link,
-                "name": email.split("@")[0],
+                "name": username,
+                "support_email": product.support_email,
             },
         )
     except Exception as err:  # pylint: disable=broad-except
@@ -161,7 +207,7 @@ async def register_phone(request: web.Request):
 
         if await db.get_user({"phone": phone}):
             raise web.HTTPUnauthorized(
-                reason="Invalid phone number: one phone number per account allowed",
+                reason="Cannot register this phone number because it is already assigned to an active user",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
@@ -172,7 +218,8 @@ async def register_phone(request: web.Request):
             code=code,
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
-            product_display_name=product.display_name,
+            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+            user_name=_get_user_name(email),
         )
 
         response = flash_response(
@@ -181,15 +228,19 @@ async def register_phone(request: web.Request):
         )
         return response
 
-    except Exception as e:
+    except web.HTTPException:
+        raise
+
+    except Exception as e:  # Unexpected errors -> 503
         error_code = create_error_code(e)
         log.exception(
             "Phone registration unexpectedly failed [%s]",
             f"{error_code}",
             extra={"error_code": error_code},
         )
+
         raise web.HTTPServiceUnavailable(
-            reason=f"Currently cannot register phone, please try again later ({error_code})",
+            reason=f"Currently our system cannot register phones ({error_code})",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from e
 
@@ -251,37 +302,29 @@ async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
     password = body.password
 
     user = await db.get_user({"email": email})
+
     if not user:
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    if user["status"] == BANNED or user["role"] == ANONYMOUS:
-        raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
-        )
+    _validate_user_status(user, cfg, product.support_email)
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    if user["status"] == CONFIRMATION_PENDING:
-        raise web.HTTPUnauthorized(
-            reason=cfg.MSG_ACTIVATION_REQUIRED, content_type=MIMETYPE_APPLICATION_JSON
-        )
-
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    if settings.LOGIN_2FA_REQUIRED:
-        product: Product = get_current_product(request)
-
+    if settings.LOGIN_2FA_REQUIRED and UserRole(user["role"]) <= UserRole.USER:
         if not user["phone"]:
             rsp = envelope_response(
                 {
@@ -303,7 +346,8 @@ async def login(request: web.Request):
                 code=code,
                 twilo_auth=settings.LOGIN_TWILIO,
                 twilio_messaging_sid=product.twilio_messaging_sid,
-                product_display_name=product.display_name,
+                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+                user_name=user["name"],
             )
 
             rsp = envelope_response(
@@ -390,15 +434,13 @@ async def logout(request: web.Request) -> web.Response:
     with log_context(
         log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
     ):
-        await observer.emit(
-            "SIGNAL_USER_LOGOUT", user_id, client_session_id, request.app
-        )
+        await notify_user_logout(request.app, user_id, client_session_id)
         await forget(request, response)
 
     return response
 
 
-@global_rate_limit_route(number_of_requests=5, interval_seconds=HOUR)
+@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -416,6 +458,7 @@ async def reset_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
 
@@ -426,16 +469,7 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        if user["status"] == BANNED:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_USER_BANNED, content_type=MIMETYPE_APPLICATION_JSON
-            )  # 401
-
-        if user["status"] == CONFIRMATION_PENDING:
-            raise web.HTTPUnauthorized(
-                reason=cfg.MSG_ACTIVATION_REQUIRED,
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )  # 401
+        _validate_user_status(user, cfg, product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == email  # nosec
@@ -445,13 +479,16 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_OFTEN_RESET_PASSWORD,
                 content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
+
     except web.HTTPError as err:
         # Email wiht be an explanation and suggest alternative approaches or ways to contact support for help
         try:
             await render_and_send_mail(
                 request,
-                email,
-                themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
+                to=email,
+                template=await get_template_path(
+                    request, "reset_password_email_failed.jinja2"
+                ),
                 context={
                     "host": request.host,
                     "reason": err.reason,
@@ -461,14 +498,16 @@ async def reset_password(request: web.Request):
             log.exception("Cannot send email")
             raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err2
     else:
-        confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
+        confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
             await render_and_send_mail(
                 request,
-                email,
-                themed(cfg.COMMON_THEME, "reset_password_email.html"),
+                to=email,
+                template=await get_template_path(
+                    request, "reset_password_email.jinja2"
+                ),
                 context={
                     "host": request.host,
                     "link": link,
@@ -508,13 +547,13 @@ async def change_email(request: web.Request):
         await db.delete_confirmation(confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
+    confirmation = await db.create_confirmation(user["id"], CHANGE_EMAIL, email)
     link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(
             request,
-            email,
-            themed(cfg.COMMON_THEME, "change_email_email.html"),
+            to=email,
+            template=await get_template_path(request, "change_email_email.jinja2"),
             context={
                 "host": request.host,
                 "link": link,

@@ -1,4 +1,5 @@
-pydantic
-typer
-sqlalchemy
 psycopg2
+pydantic
+sqlalchemy
+tenacity
+typer

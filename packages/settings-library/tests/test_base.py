@@ -11,7 +11,6 @@ from pydantic import ValidationError
 from pydantic.fields import Field
 from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 
-# HELPERS --------------------------------------------------------------------
 S2 = json.dumps({"S_VALUE": 2})
 S3 = json.dumps({"S_VALUE": 3})
 
@@ -84,9 +83,6 @@ def model_class_factory():
         return _classes.get(class_name) or list(_classes.values())
 
     return _create_model
-
-
-# TEST ---------------------------------------------------------------
 
 
 def test_without_envs(model_class_factory):

@@ -22,7 +22,16 @@ UUID_RE = rf"^{UUID_RE_BASE}$"
 DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z"
 
 
+# python-like version
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+
+# Semantic version
+# SEE https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+#
+# with capture groups: cg1 = major, cg2 = minor, cg3 = patch, cg4 = prerelease and cg5 = buildmetadata
+SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+# with named groups: major, minor, patch, prerelease and buildmetadata
+SEMANTIC_VERSION_RE_W_NAMED_GROUPS = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
 
 
 # Regex to detect whether a string can be used as a variable identifier (see tests)
@@ -43,3 +52,11 @@ S3_BUCKET_NAME_RE = r"(?!(^xn--|-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
 # Datcore file ID
 DATCORE_FILE_ID_RE = rf"^N:package:{UUID_RE_BASE}$"
 DATCORE_DATASET_NAME_RE = rf"^N:dataset:{UUID_RE_BASE}$"
+
+
+TWILIO_ALPHANUMERIC_SENDER_ID_RE = r"(?!^\d+$)^[a-zA-Z0-9\s]{2,11}$"
+#   Alphanumeric Sender IDs may be up to 11 characters long.
+#   Accepted characters include both upper- and lower-case Ascii letters,
+#   the digits 0 through 9, and the space character.
+#   They may not be only numerals.
+# SEE # https://www.twilio.com/docs/glossary/what-alphanumeric-sender-id

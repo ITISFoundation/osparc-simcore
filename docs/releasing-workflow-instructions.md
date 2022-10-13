@@ -170,12 +170,12 @@ See ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
     cd osparc-simcore
     # let's checkout the release with the issue, typically a staging tag such as staging_Meerkat1
     git checkout VERSION_TAG_FOR_HOTFIXING
-    # create the hotfix branch, the name must follow the hotfix__stagingX convention, X is just a number
-    git checkout -b hotfix_stagingX
+    # create the hotfix branch, the name must follow the hotfix_staging_X convention, X is just a number
+    git checkout -b hotfix_staging_X
     # develop the fix here, git commit, git push, have someone review your code
 
     git commit -m "this is my awsome fix for this problematic issue"
-    git push --set-upstream origin/hotfix_stagingX
+    git push --set-upstream origin/hotfix_staging_X
 
     # - NO NEED to pull request
     # - WAIT until the CI completed the its run (going through ALL the tests and generating the docker images)

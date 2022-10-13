@@ -1,7 +1,9 @@
-import json
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -10,11 +12,10 @@ import pytest
 import simcore_sdk
 from pytest_simcore.postgres_service import PostgresTestConfig
 
-## HELPERS
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / "helpers"))
 
-# FIXTURES
+
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",

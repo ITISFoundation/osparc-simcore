@@ -16,7 +16,7 @@ aiofiles==0.8.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aioredis==2.0.1
     # via aiocache
-alembic==1.8.0
+alembic==1.8.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==3.6.1
     # via
@@ -29,7 +29,7 @@ async-timeout==4.0.2
     # via aioredis
 asyncpg==0.25.0
     # via -r requirements/_base.in
-attrs==20.3.0
+attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -51,7 +51,7 @@ email-validator==1.2.1
     # via
     #   fastapi
     #   pydantic
-fastapi==0.71.0
+fastapi==0.85.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -103,8 +103,15 @@ jsonschema==3.2.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-mako==1.1.5
-    # via alembic
+mako==1.2.2
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 markupsafe==2.1.1
     # via
     #   jinja2
@@ -191,7 +198,7 @@ sqlalchemy==1.4.37
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/_base.in
     #   alembic
-starlette==0.17.1
+starlette==0.20.4
     # via fastapi
 tenacity==8.0.1
     # via
@@ -217,8 +224,16 @@ typing-extensions==4.3.0
     #   aiodebug
     #   aioredis
     #   pydantic
-ujson==4.3.0
-    # via fastapi
+    #   starlette
+ujson==5.5.0
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

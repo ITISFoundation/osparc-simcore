@@ -1,0 +1,20 @@
+# This file exists so you can easily regenerate your project.
+#
+#  cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc /home/crespo/devp/cookiecutter-simcore-py-fastapi
+#
+
+default_context:
+
+    _extensions:               ['jinja2_time.TimeExtension']
+    _output_dir:               '/home/crespo/devp/cookiecutter-simcore-py-fastapi/.output/osparc-simcore/services'
+    _template:                 '/home/crespo/devp/cookiecutter-simcore-py-fastapi'
+    detailed_doc:              'n'
+    distribution_name:         'simcore-service-autoscaling'
+    full_name:                 'Pedro Crespo-Valero'
+    github_username:           'pcrespov'
+    package_name:              'simcore_service_autoscaling'
+    project_name:              'Auto scaling service'
+    project_short_description: 'Service to auto-scale swarm'
+    project_slug:              'autoscaling'
+    version:                   '0.1.0-alpha'
+    year:                      '2022'

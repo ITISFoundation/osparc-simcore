@@ -2,7 +2,7 @@
 # pylint: disable=protected-access
 
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import yaml
@@ -12,9 +12,8 @@ from models_library.services_resources import (
     ServiceResourcesDict,
 )
 from pydantic import parse_obj_as
+from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
-
-# TESTS
 
 
 def test_parse_and_export_of_compose_environment_section():
@@ -98,7 +97,7 @@ environment:
     ],
 )
 async def test_inject_resource_limits_and_reservations(
-    service_spec: Dict[str, Any],
+    service_spec: dict[str, Any],
     service_resources: ServiceResourcesDict,
 ) -> None:
     docker_compose_specs._update_resource_limits_and_reservations(
@@ -122,9 +121,21 @@ async def test_inject_resource_limits_and_reservations(
             )
             assert spec["deploy"]["resources"]["limits"]["cpus"] == cpu.limit
             assert spec["deploy"]["resources"]["limits"]["memory"] == f"{memory.limit}"
+
+            assert (
+                f"{CPU_RESOURCE_LIMIT_KEY}={int(cpu.limit*10**9)}"
+                in spec["environment"]
+            )
+            assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
     else:
         for spec in service_spec["services"].values():
             assert spec["mem_limit"] == f"{memory.limit}"
             assert spec["mem_reservation"] == f"{memory.reservation}"
             assert int(spec["mem_reservation"]) <= int(spec["mem_limit"])
             assert spec["cpus"] == max(cpu.limit, cpu.reservation)
+
+            assert (
+                f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation)*10**9)}"
+                in spec["environment"]
+            )
+            assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]

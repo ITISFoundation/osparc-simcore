@@ -7,6 +7,7 @@ NOTE: to dump json-schema from CLI use
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional, Union
+from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -59,6 +60,8 @@ FileName = constr(regex=FILENAME_RE)
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
+
+RunID = UUID
 
 
 class ServiceType(str, Enum):
@@ -563,7 +566,10 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
-    deprecated: Optional[datetime]
+    deprecated: Optional[datetime] = Field(
+        default=None,
+        description="If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
+    )
 
     # user-defined metatada
     classifiers: Optional[list[str]]

@@ -37,8 +37,6 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 
-# FIXTURES ----------------------------------------------------------------------------------
-
 pytest_simcore_core_services_selection = [
     "catalog",
     "director",
@@ -166,7 +164,7 @@ async def director_v2_client(
     monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
     monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
     monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
-    monkeypatch.setenv("S3_SECURE", minio_config["client"]["secure"])
+    monkeypatch.setenv("S3_SECURE", f"{minio_config['client']['secure']}")
 
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
@@ -237,9 +235,6 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.periodic_task_result",
         side_effect=_mocked_context_manger,
     )
-
-
-# TESTS ----------------------------------------------------------------------------------------
 
 
 async def test_legacy_and_dynamic_sidecar_run(

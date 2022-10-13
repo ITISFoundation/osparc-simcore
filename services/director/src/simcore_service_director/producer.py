@@ -212,10 +212,13 @@ async def _create_docker_service_params(
                 "MaxAttempts": config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS,
             },
             "Resources": {
-                "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
+                "Limits": {
+                    "NanoCPUs": config.DEFAULT_MAX_NANO_CPUS,
+                    "MemoryBytes": config.DEFAULT_MAX_MEMORY,
+                },
                 "Reservations": {
-                    "NanoCPUs": 1 * pow(10, 8),
-                    "MemoryBytes": 500 * pow(1024, 2),
+                    "NanoCPUs": config.DEFAULT_MAX_NANO_CPUS,
+                    "MemoryBytes": config.DEFAULT_MAX_MEMORY,
                 },
             },
         },
@@ -236,7 +239,6 @@ async def _create_docker_service_params(
         },
         "networks": [internal_network_id] if internal_network_id else [],
     }
-
     if config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
         log.debug(
             "adding custom constraints %s ", config.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
@@ -287,6 +289,17 @@ async def _create_docker_service_params(
             # REST-API compatible
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
+
+            # ensure strictness of reservations/limits (e.g. reservations = limits)
+            for resource_key in ["NanoCPUs", "MemoryBytes"]:
+                resources = docker_params["task_template"]["Resources"]
+                max_value = max(
+                    resources["Reservations"][resource_key],
+                    resources["Limits"][resource_key],
+                )
+                resources["Reservations"][resource_key] = resources["Limits"][
+                    resource_key
+                ] = max_value
 
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int":  # backward comp

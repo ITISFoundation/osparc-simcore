@@ -7,22 +7,20 @@ import asyncio
 import json
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Awaitable, Optional
-from uuid import UUID
+from typing import Any, Coroutine, Optional
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
-from models_library.basic_types import UUIDStr
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
-    get_tasks_manager,
-    start_task,
+    start_long_running_task,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -36,19 +34,25 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from .. import catalog, director_v2_api
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
-from ..storage_api import copy_data_folders_from_project
+from ..storage_api import copy_data_folders_from_project, get_project_total_size
 from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_exceptions import (
+    ProjectDeleteError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .projects_nodes_utils import update_frontend_outputs
 from .projects_utils import (
+    NodesMap,
     any_node_inputs_changed,
     clone_project_document,
     default_copy_project_name,
@@ -96,7 +100,7 @@ class ProjectPathParams(BaseModel):
 
 
 class _ProjectCreateParams(BaseModel):
-    from_study: Optional[UUIDStr] = Field(
+    from_study: Optional[ProjectID] = Field(
         None,
         description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
@@ -129,92 +133,80 @@ async def create_projects(request: web.Request):
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
-    task_manager = get_tasks_manager(request.app)
-    task_id = None
-    try:
-        task_id = start_task(
-            task_manager,
-            _create_projects,
-            app=request.app,
-            query_params=query_params,
-            user_id=req_ctx.user_id,
-            predefined_project=predefined_project,
-        )
-        status_url = request.app.router["get_task_status"].url_for(task_id=task_id)
-        result_url = request.app.router["get_task_result"].url_for(task_id=task_id)
-        abort_url = request.app.router["cancel_and_delete_task"].url_for(
-            task_id=task_id
-        )
-        return web.json_response(
-            data={
-                "data": {
-                    "task_id": task_id,
-                    "status_href": f"{status_url}",
-                    "result_href": f"{result_url}",
-                    "abort_href": f"{abort_url}",
-                }
-            },
-            status=web.HTTPAccepted.status_code,
-            dumps=json_dumps,
-        )
-    except asyncio.CancelledError:
-        # cancel the task, the client has disconnected
-        if task_id:
-            await task_manager.cancel_task(task_id)
-        raise
+    return await start_long_running_task(
+        request,
+        _create_projects,
+        task_context=jsonable_encoder(req_ctx),
+        app=request.app,
+        request_context=req_ctx,
+        query_params=query_params,
+        predefined_project=predefined_project,
+        fire_and_forget=True,
+    )
 
 
-async def _init_project_from_request(
-    app: web.Application, query_params: _ProjectCreateParams, user_id: UserID
-) -> tuple[ProjectDict, Optional[Awaitable[None]]]:
-    if not query_params.from_study:
-        return {}, None
+async def _prepare_project_copy(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    src_project_uuid: ProjectID,
+    as_template: bool,
+    deep_copy: bool,
+    task_progress: TaskProgress,
+) -> tuple[ProjectDict, Optional[Coroutine[Any, Any, None]]]:
     source_project = await projects_api.get_project_for_user(
         app,
-        project_uuid=query_params.from_study,
+        project_uuid=f"{src_project_uuid}",
         user_id=user_id,
         include_templates=True,
     )
+    settings = get_settings(app).WEBSERVER_PROJECTS
+    assert settings  # nosec
+    if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
+        # get project total data size
+        project_data_size = await get_project_total_size(app, user_id, src_project_uuid)
+        if project_data_size >= max_bytes:
+            raise web.HTTPUnprocessableEntity(
+                reason=f"Source project data size is {project_data_size.human_readable()}."
+                f"This is larger than the maximum {max_bytes.human_readable()} allowed for copying."
+                "TIP: Please reduce the study size or contact application support."
+            )
 
     # clone template as user project
     new_project, nodes_map = clone_project_document(
         source_project,
         forced_copy_project_id=None,
-        clean_output_data=(query_params.copy_data == False),
+        clean_output_data=(deep_copy is False),
     )
     # remove template/study access rights
     new_project["accessRights"] = {}
-    if not query_params.as_template:
+    if not as_template:
         new_project["name"] = default_copy_project_name(source_project["name"])
-    # the project is to be hidden until the data is copied
-    query_params.hidden = query_params.copy_data
-    # TODO: this should be made long running as well
-    clone_data_task = (
-        copy_data_folders_from_project(
-            app, source_project, new_project, nodes_map, user_id
+
+    copy_file_coro = None
+    if deep_copy and len(nodes_map) > 0:
+        copy_file_coro = _copy_files_from_source_project(
+            app,
+            source_project,
+            new_project,
+            nodes_map,
+            user_id,
+            task_progress,
         )
-        if query_params.copy_data
-        else None
-    )
-    return new_project, clone_data_task
+    return new_project, copy_file_coro
 
 
 async def _copy_files_from_source_project(
     app: web.Application,
-    db: ProjectDBAPI,
-    query_params: _ProjectCreateParams,
+    source_project: ProjectDict,
     new_project: ProjectDict,
+    nodes_map: NodesMap,
     user_id: UserID,
-    clone_data_task: Optional[Awaitable[None]],
-    new_project_was_hidden_before_data_was_copied: bool,
+    task_progress: TaskProgress,
 ):
-    if not all([clone_data_task, query_params.from_study, query_params.copy_data]):
-        return
-    assert clone_data_task  # nosec
-    assert query_params.from_study  # nosec
-
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     needs_lock_source_project: bool = (
-        await db.get_project_type(parse_obj_as(ProjectID, query_params.from_study))
+        await db.get_project_type(parse_obj_as(ProjectID, source_project["uuid"]))
         != ProjectTypeDB.TEMPLATE
     )
 
@@ -223,26 +215,32 @@ async def _copy_files_from_source_project(
             await stack.enter_async_context(
                 projects_api.lock_with_notification(
                     app,
-                    query_params.from_study,
+                    source_project["uuid"],
                     ProjectStatus.CLONING,
                     user_id,
                     await get_user_name(app, user_id),
                 )
             )
-        await clone_data_task
-
-    # unhide the project if needed since it is now complete
-    if not new_project_was_hidden_before_data_was_copied:
-        await db.update_project_without_checking_permissions(
-            new_project, new_project["uuid"], hidden=False
-        )
+        starting_value = task_progress.percent
+        async for long_running_task in copy_data_folders_from_project(
+            app, source_project, new_project, nodes_map, user_id
+        ):
+            task_progress.update(
+                message=long_running_task.progress.message,
+                percent=(
+                    starting_value
+                    + long_running_task.progress.percent * (1.0 - starting_value)
+                ),
+            )
+            if long_running_task.done():
+                await long_running_task.result()
 
 
 async def _create_projects(
     task_progress: TaskProgress,
     app: web.Application,
     query_params: _ProjectCreateParams,
-    user_id: UserID,
+    request_context: RequestContext,
     predefined_project: Optional[ProjectDict],
 ):
     """
@@ -255,72 +253,70 @@ async def _create_projects(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     new_project = {}
+    copy_file_coro = None
     try:
-        task_progress.publish(message="cloning project scaffold", percent=0)
+        task_progress.update(message="creating new study...")
         new_project_was_hidden_before_data_was_copied = query_params.hidden
+        if query_params.from_study:
+            # 1. prepare copy
+            new_project, copy_file_coro = await _prepare_project_copy(
+                app,
+                user_id=request_context.user_id,
+                src_project_uuid=query_params.from_study,
+                as_template=query_params.as_template,
+                deep_copy=query_params.copy_data,
+                task_progress=task_progress,
+            )
 
-        new_project, clone_data_task = await _init_project_from_request(
-            app, query_params, user_id
-        )
-
-        # overrides with body
         if predefined_project:
+            # 2. overrides with optional body and re-validate
             if new_project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
-                    non_null_value = predefined_project.get(key)
-                    if non_null_value:
+                    if non_null_value := predefined_project.get(key):
                         new_project[key] = non_null_value
             else:
                 # TODO: take skeleton and fill instead
                 new_project = predefined_project
-
-            # re-validate data
-            task_progress.publish(message="validating project scaffold", percent=0.1)
             await projects_api.validate_project(app, new_project)
 
-        # update metadata (uuid, timestamps, ownership) and save
-        task_progress.publish(message="storing project scaffold", percent=0.15)
+        # 3. save new project in DB
         new_project = await db.add_project(
             new_project,
-            user_id,
+            request_context.user_id,
+            product_name=request_context.product_name,
             force_as_template=query_params.as_template,
-            hidden=query_params.hidden,
+            hidden=query_params.copy_data,
         )
 
-        # copies the project's DATA IF cloned
-        task_progress.publish(message="copying project data", percent=0.2)
-        await _copy_files_from_source_project(
-            app,
-            db,
-            query_params,
-            new_project,
-            user_id,
-            clone_data_task,
-            new_project_was_hidden_before_data_was_copied,
-        )
+        # 4. deep copy source project's files
+        if copy_file_coro:
+            # NOTE: storage needs to have access to the new project prior to copying files
+            await copy_file_coro
+
+        # 5. unhide the project if needed since it is now complete
+        if not new_project_was_hidden_before_data_was_copied:
+            await db.update_project_without_checking_permissions(
+                new_project, new_project["uuid"], hidden=False
+            )
 
         # update the network information in director-v2
-        task_progress.publish(message="updating project network", percent=0.8)
         await director_v2_api.update_dynamic_service_networks_in_project(
-            app, UUID(new_project["uuid"])
+            app, ProjectID(new_project["uuid"])
         )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        task_progress.publish(message="updating project pipeline", percent=0.9)
         await director_v2_api.create_or_update_pipeline(
-            app, user_id, new_project["uuid"]
+            app, request_context.user_id, new_project["uuid"]
         )
 
         # Appends state
-        task_progress.publish(message="retrieving project status", percent=0.95)
         new_project = await projects_api.add_project_states_for_user(
-            user_id=user_id,
+            user_id=request_context.user_id,
             project=new_project,
             is_template=query_params.as_template,
             app=app,
         )
 
-        log.debug("project created successfuly")
         raise web.HTTPCreated(
             text=json_dumps({"data": new_project}),
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -334,11 +330,14 @@ async def _create_projects(
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
         log.warning(
-            "cancelled creation of project for user '%s', cleaning up",
-            f"{user_id=}",
+            "cancelled creation of project for '%s', cleaning up",
+            f"{request_context.user_id=}",
         )
         # FIXME: If cancelled during shutdown, cancellation of all_tasks will produce "new tasks"!
-        await projects_api.submit_delete_project_task(app, new_project["uuid"], user_id)
+        if prj_uuid := new_project.get("uuid"):
+            await projects_api.submit_delete_project_task(
+                app, prj_uuid, request_context.user_id
+            )
         raise
 
 
@@ -404,6 +403,7 @@ async def list_projects(request: web.Request):
 
     projects, project_types, total_number_projects = await db.load_projects(
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
             query_params.project_type
         ),
@@ -618,7 +618,8 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project,
             req_ctx.user_id,
-            f"{path_params.project_id}",
+            project_uuid=f"{path_params.project_id}",
+            product_name=req_ctx.product_name,
             include_templates=True,
         )
 
@@ -719,5 +720,7 @@ async def delete_project(request: web.Request):
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
         ) from err
+    except ProjectDeleteError as err:
+        raise web.HTTPConflict(reason=f"{err}") from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

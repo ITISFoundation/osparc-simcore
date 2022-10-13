@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Optional, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -29,13 +29,13 @@ from ..dependencies.director import DirectorApi, get_director_api
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-ServicesSelection = Set[Tuple[str, str]]
+ServicesSelection = set[tuple[str, str]]
 
 
 def _prepare_service_details(
-    service_in_registry: Dict[str, Any],
+    service_in_registry: dict[str, Any],
     service_in_db: ServiceMetaDataAtDB,
-    service_access_rights_in_db: List[ServiceAccessRightsAtDB],
+    service_access_rights_in_db: list[ServiceAccessRightsAtDB],
     service_owner: Optional[str],
 ) -> Optional[ServiceGet]:
     # compose service from registry and DB
@@ -67,7 +67,7 @@ def _build_cache_key(fct, *_, **kwargs):
 # NOTE: this call is pretty expensive and can be called several times
 # (when e2e runs or by the webserver when listing projects) therefore
 # a cache is setup here
-@router.get("", response_model=List[ServiceGet], **RESPONSE_MODEL_POLICY)
+@router.get("", response_model=list[ServiceGet], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 @cached(
     ttl=LIST_SERVICES_CACHING_TTL,
@@ -119,6 +119,7 @@ async def list_services(
                 contact="nodetails@nodetails.com",
                 inputs={},
                 outputs={},
+                deprecated=services_in_db[(key, version)].deprecated,
             )
             for key, version in services_in_db
         ]
@@ -187,7 +188,7 @@ async def get_service(
 ):
     # check the service exists (raise HTTP_404_NOT_FOUND)
     if is_function_service(service_key):
-        frontend_service: Dict[str, Any] = get_function_service(
+        frontend_service: dict[str, Any] = get_function_service(
             key=service_key, version=service_version
         )
         _service_data = frontend_service
@@ -220,7 +221,7 @@ async def get_service(
     )
     if service_in_db:
         # we have full access, let's add the access to the output
-        service_access_rights: List[
+        service_access_rights: list[
             ServiceAccessRightsAtDB
         ] = await services_repo.get_service_access_rights(
             service.key, service.version, product_name=x_simcore_products_name

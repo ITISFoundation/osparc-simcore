@@ -1,11 +1,16 @@
 import logging
 import re
-from typing import List, Set
+from datetime import datetime
+from typing import Any
 
 from models_library.projects_state import RunningState
-from models_library.services import SERVICE_KEY_RE
+from models_library.services import SERVICE_KEY_RE, ServiceKeyVersion
+from models_library.users import UserID
+from pydantic import parse_obj_as
+from servicelib.utils import logged_gather
 
 from ..models.domains.comp_tasks import CompTaskAtDB
+from ..modules.catalog import CatalogClient
 from ..modules.db.tables import NodeClass
 
 log = logging.getLogger(__name__)
@@ -51,13 +56,13 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
 }
 
 
-def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningState:
+def get_pipeline_state_from_task_states(tasks: list[CompTaskAtDB]) -> RunningState:
 
     # compute pipeline state from task states
     if not tasks:
         return RunningState.UNKNOWN
     # put in a set of unique values
-    set_states: Set[RunningState] = {task.state for task in tasks}
+    set_states: set[RunningState] = {task.state for task in tasks}
     if len(set_states) == 1:
         # there is only one state, so it's the one
         the_state = next(iter(set_states))
@@ -93,3 +98,38 @@ def is_pipeline_running(pipeline_state: RunningState) -> bool:
 
 def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
     return not pipeline_state.is_running()
+
+
+async def find_deprecated_tasks(
+    user_id: UserID,
+    product_name: str,
+    task_key_versions: list[ServiceKeyVersion],
+    catalog_client: CatalogClient,
+) -> list[ServiceKeyVersion]:
+
+    task_services = await logged_gather(
+        *(
+            catalog_client.get_service(
+                user_id=user_id,
+                service_key=key_version.key,
+                service_version=key_version.version,
+                product_name=product_name,
+            )
+            for key_version in task_key_versions
+        )
+    )
+    today = datetime.utcnow()
+
+    def _is_service_deprecated(service: dict[str, Any]) -> bool:
+        if deprecation_date := service.get("deprecated"):
+            deprecation_date = parse_obj_as(datetime, deprecation_date)
+            return today > deprecation_date
+        return False
+
+    deprecated_tasks = [
+        task
+        for task, service in zip(task_key_versions, task_services)
+        if _is_service_deprecated(service)
+    ]
+
+    return deprecated_tasks

@@ -47,7 +47,11 @@ class TutorialBase {
   async beforeScript() {
     this.__browser = await startPuppe.getBrowser(this.__demo);
     this.__page = await startPuppe.getPage(this.__browser);
+    this.__page.setExtraHTTPHeaders({
+      "X-Simcore-User-Agent": "puppeteer"
+    });
     this.__responsesQueue = new responses.ResponsesQueue(this.__page);
+
     return this.__page;
   }
 
@@ -117,6 +121,12 @@ class TutorialBase {
     }
   }
 
+  async closeQuickStart() {
+    await this.takeScreenshot("preCloseQuickStart");
+    await auto.closeQuickStart(this.__page);
+    await this.takeScreenshot("postCloseQuickStart");
+  }
+
   async registerIfNeeded() {
     if (this.__newUser) {
       await auto.register(this.__page, this.__user, this.__pass);
@@ -174,7 +184,7 @@ class TutorialBase {
 
   async checkFirstStudyId(studyId) {
     await this.__page.waitForSelector('[osparc-test-id="studiesList"]');
-    await this.waitFor(1000);
+    await this.waitFor(5000, "Wait for studies to be loaded");
     const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
     console.log("checkFirstStudyId", studyId);
     console.log(studies);
@@ -184,10 +194,10 @@ class TutorialBase {
   }
 
   async waitForOpen() {
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
@@ -198,13 +208,13 @@ class TutorialBase {
   async startNewPlan() {
     await this.takeScreenshot("startNewPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
       await auto.dashboardNewPlan(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
@@ -218,12 +228,12 @@ class TutorialBase {
   }
 
   async openStudyLink(openStudyTimeout = 20000) {
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
 
     let resp = null;
     try {
       await this.__goTo();
-      resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+      resp = await this.__responsesQueue.waitUntilResponse(":open", openStudyTimeout);
       await this.__printMe();
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
@@ -238,13 +248,13 @@ class TutorialBase {
   async openTemplate(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenFirstTemplate_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
@@ -259,12 +269,12 @@ class TutorialBase {
 
   async openService(waitFor = 1000) {
     await this.takeScreenshot("dashboardOpenService_before");
-    this.__responsesQueue.addResponseListener("open");
+    this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
-      resp = await this.__responsesQueue.waitUntilResponse("open");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
@@ -283,7 +293,8 @@ class TutorialBase {
     if (appModeButtonsAllIds.length < 1) {
       throw ("appModeButtons not found");
     }
-    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("appModeButton_"));
+    console.log("appModeButtonsAllIds", appModeButtonsAllIds);
+    const appModeButtonIds = appModeButtonsAllIds.filter(btn => btn && btn.includes("AppMode_StepBtn"));
     if (appModeButtonIds.length < 1) {
       throw ("appModeButtons filtered not found");
     }
@@ -291,6 +302,7 @@ class TutorialBase {
   }
 
   async waitForServices(studyId, nodeIds, timeout = 40000, waitForConnected = true) {
+    console.log("waitForServices timeout:", timeout);
     if (nodeIds.length < 1) {
       return;
     }
@@ -383,12 +395,27 @@ class TutorialBase {
     await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 
-  async getIframe() {
+  async __getIframeHandles() {
     return await this.__page.$$("iframe");
   }
 
-  async openNodeFiles(nodePosInTree = 0) {
-    const nodeId = await auto.openNode(this.__page, nodePosInTree);
+  async __getIframes() {
+    const iframeHandles = await this.__getIframeHandles();
+    const iframes = [];
+    for (let i = 0; i < iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      iframes.push(frame);
+    }
+    return iframes;
+  }
+
+  async getIframe(nodeId) {
+    const iframes = await this.__getIframes();
+    const nodeIframe = iframes.find(iframe => iframe._url.includes(nodeId));
+    return nodeIframe;
+  }
+
+  async openNodeFiles(nodeId) {
     this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     await auto.openNodeFiles(this.__page);
     try {
@@ -400,35 +427,64 @@ class TutorialBase {
     }
   }
 
-  async closeNodeFiles() {
-    await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
+  async openNodeFilesAppMode(nodeId) {
+    this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+    await auto.openNodeFilesAppMode(this.__page);
+    try {
+      await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
+    }
+    catch (err) {
+      console.error(err);
+      throw (err);
+    }
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
+  async waitAndClick(osparcTestId) {
+    await utils.waitAndClick(this.__page, `[osparc-test-id=${osparcTestId}]`);
+  }
+
+  async closeNodeFiles() {
+    await this.waitAndClick("nodeDataManagerCloseBtn");
+  }
+
+  async __checkNItemsInFolder(fileNames) {
+    await this.takeScreenshot("checkNodeOutputs_before");
+    console.log("N items in folder. Expected:", fileNames);
+    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent));
+    console.log("N items in folder. Received:", files);
+    if (files.length === fileNames.length) {
+      console.log("Number of files is correct")
+      await this.takeScreenshot("checkNodeOutputs_after");
+      await this.closeNodeFiles();
+    }
+    else {
+      await this.takeScreenshot("checkNodeOutputs_after");
+      await this.closeNodeFiles();
+      throw("Number of files is incorrect");
+    }
+  }
+
+  async checkNodeOutputs(nodePos, fileNames) {
     try {
-      await this.openNodeFiles(nodePos);
-      await this.takeScreenshot("checkNodeOutputs_before");
-      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.map(el => el.textContent.trim()));
-      if (checkNFiles) {
-        assert(files.length === fileNames.length, 'Number of files is incorrect')
-        console.log('Number of files is correct')
-      }
-      if (checkFileNames) {
-        assert(
-          fileNames.every(fileName => files.some(file => file.includes(fileName))),
-          'File names are incorrect'
-        )
-        console.log('File names are correct')
-      }
+      const nodeId = await auto.openNode(this.__page, nodePos);
+      await this.openNodeFiles(nodeId);
+      await this.__checkNItemsInFolder(fileNames);
     }
     catch (err) {
       console.error("Results don't match", err);
       throw (err)
     }
-    finally {
-      await this.takeScreenshot("checkNodeOutputs_after");
-      await this.closeNodeFiles();
+  }
+
+  async checkNodeOutputsAppMode(nodeId, fileNames) {
+    try {
+      await this.openNodeFilesAppMode(nodeId);
+      await this.__checkNItemsInFolder(fileNames);
+    }
+    catch (err) {
+      console.error("Results don't match", err);
+      throw (err)
     }
   }
 

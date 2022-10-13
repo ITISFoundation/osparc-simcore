@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import conint, constr
+from pydantic import HttpUrl, PositiveInt, conint, constr
 
 from .basic_regex import UUID_RE, VERSION_RE
 
@@ -22,6 +22,13 @@ EnvVarKey = constr(regex=r"[a-zA-Z][a-azA-Z0-9_]*")
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
 UUIDStr = constr(regex=UUID_RE)
+
+# auto-incremented primary-key IDs
+IdInt = PrimaryKeyInt = PositiveInt
+
+# https e.g. https://techterms.com/definition/https
+class HttpSecureUrl(HttpUrl):
+    allowed_schemes = {"https"}
 
 
 class LogLevel(str, Enum):

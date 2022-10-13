@@ -10,8 +10,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SchedulerData,
 )
 
-# FIXTURES
-
 
 @pytest.fixture(
     scope="session",
@@ -43,9 +41,6 @@ def assert_copy_has_changes(original: SchedulerData) -> Iterator[SchedulerData]:
     assert original != to_change
 
 
-# TESTS
-
-
 async def test_parse_saved_fake_scheduler_data(fake_scheduler_data: str) -> None:
     assert SchedulerData.parse_raw(fake_scheduler_data)
 
@@ -60,7 +55,7 @@ def test_nested_compare(fake_scheduler_data: str) -> None:
         to_change.version = "2.0.5"
 
     with assert_copy_has_changes(scheduler_data) as to_change:
-        to_change.dynamic_sidecar.port = 333333
+        to_change.port = 333333
 
     with assert_copy_has_changes(scheduler_data) as to_change:
         to_change.dynamic_sidecar.status.info = "some info"

@@ -16,7 +16,9 @@ on:
       - "**.js"
       - "**/requirements/*.txt"
       - "**.json"
+      - "**.Makefile"
       - ".github/workflows/ci-testing-deploy.yml"
+      - "ci/**"
   pull_request:
     branches:
       - "*"
@@ -31,16 +33,21 @@ on:
       - "**.js"
       - "**/requirements/*.txt"
       - "**.json"
+      - "**.Makefile"
       - ".github/workflows/ci-testing-deploy.yml"
-
+      - "ci/**"
 env:
   # secrets can be set in settings/secrets on github
   DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   CC_TEST_REPORTER_ID: 21a72eb30476c870140b1576258873a41be6692f71bd9aebe812174b7d8f4b4e
-  DEFAULT_MAX_NANO_CPUS: 1000000000
+  DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test-images:
@@ -51,7 +58,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -61,28 +68,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: setup docker buildx
-        if: github.event_name == 'push'
         id: buildx
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
-        if: github.event_name == 'push'
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
       - name: show system environs
-        if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: build images
-        if: github.event_name == 'push'
-        run: ./ci/build/test-images.bash build_images
-      - name: set owner variable
-        if: github.event_name == 'push'
-        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - name: push images
-        # only pushes have access to the docker credentials
-        if: github.event_name == 'push'
-        run: ./ci/deploy/dockerhub-test-images.bash
+        run: |
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          mkdir --parents /${{ runner.temp }}/build
+          make build local-dest=/${{ runner.temp }}/build
+      - name: upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
 
   unit-test-webserver-01:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
@@ -92,7 +98,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -105,7 +111,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -122,15 +128,15 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -144,7 +150,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -157,7 +163,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -172,15 +178,15 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -194,7 +200,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -207,7 +213,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -222,15 +228,65 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
+      - name: store codeclimate coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-storage:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] storage"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/storage/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/storage.bash install
+      - name: test
+        run: ./ci/github/unit-testing/storage.bash test
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/storage/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -244,7 +300,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -257,7 +313,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -281,7 +337,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -294,7 +350,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -309,15 +365,65 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash install
       - name: test
         run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/api-server/coverage.xml
+      - name: store codeclimate coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-autoscaling:
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] autoscaling"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/autoscaling/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/autoscaling.bash install
+      - name: test
+        run: ./ci/github/unit-testing/autoscaling.bash test
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/autoscaling/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -331,7 +437,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -344,7 +450,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -365,15 +471,15 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/catalog/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -387,7 +493,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -400,7 +506,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -421,15 +527,15 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/datcore-adapter/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -444,7 +550,7 @@ jobs:
         # KEEP 3.6 Development of this service is frozen
         python: [3.6]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -457,7 +563,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -472,15 +578,15 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --output codeclimate.${{ github.job }}_coverage.json services/director/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -494,7 +600,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -507,7 +613,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -528,15 +634,15 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -550,7 +656,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -563,7 +669,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -580,15 +686,15 @@ jobs:
         run: ./ci/github/unit-testing/dask-task-models-library.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/dask-task-models-library/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -602,7 +708,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -615,7 +721,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -630,15 +736,15 @@ jobs:
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/dask-sidecar/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -652,7 +758,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -665,7 +771,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -682,15 +788,15 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/dynamic-sidecar/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -704,7 +810,7 @@ jobs:
       matrix:
         node: [14]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -717,10 +823,10 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - uses: actions/setup-node@v3.4.1
+      - uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -731,7 +837,7 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/frontend.bash test
     # no coverage here??
-    # - uses: codecov/codecov-action@v3.1.0
+    # - uses: codecov/codecov-action@v3.1.1
     #   with:
     #     flags: unittests #optional
 
@@ -743,7 +849,7 @@ jobs:
       matrix:
         python: ["3.9", "3.10"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -756,7 +862,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -780,7 +886,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -793,7 +899,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -808,16 +914,16 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: test
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
           ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/postgres-database/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -831,7 +937,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -844,7 +950,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -859,15 +965,15 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/service-integration/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -881,7 +987,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -894,7 +1000,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -909,15 +1015,15 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/service-library/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -931,7 +1037,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -944,7 +1050,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -959,15 +1065,15 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/settings-library/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -981,7 +1087,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -994,7 +1100,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1009,15 +1115,15 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash install
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/models-library/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1031,7 +1137,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1044,7 +1150,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: install rclone in CI
@@ -1061,65 +1167,15 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
-
-  unit-test-storage:
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] storage"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/storage/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/storage.bash install
-      - name: test
-        run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v3.1.0
-        with:
-          flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/simcore-sdk/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1134,7 +1190,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1153,7 +1209,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1162,6 +1218,13 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1177,15 +1240,15 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1200,7 +1263,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1219,7 +1282,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1228,6 +1291,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/web/server/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1243,15 +1315,15 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1266,7 +1338,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1285,7 +1357,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1294,6 +1366,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1309,15 +1390,15 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1332,7 +1413,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1351,7 +1432,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
 
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
@@ -1363,6 +1444,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1378,15 +1468,15 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1401,7 +1491,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1420,7 +1510,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: install rclone in CI
@@ -1431,6 +1521,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1446,15 +1545,15 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v3.1.0
+      - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
-      - name: upload codeclimate coverage
+          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/simcore-sdk/coverage.xml
+      - name: store codeclimate coverage
         uses: actions/upload-artifact@v3
         with:
           name: codeclimate-${{ github.job }}-coverage
@@ -1469,7 +1568,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1488,7 +1587,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1497,6 +1596,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/public-api/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1522,7 +1630,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1541,7 +1649,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1550,6 +1658,15 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1576,7 +1693,7 @@ jobs:
         python: ["3.9"]
         node: [14]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1595,7 +1712,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1604,11 +1721,20 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v3.4.1
+      - uses: actions/setup-node@v3.5.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -1649,7 +1775,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1668,7 +1794,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
@@ -1690,6 +1816,8 @@ jobs:
   coverage:
     needs:
       [
+        unit-test-api-server,
+        unit-test-autoscaling,
         unit-test-catalog,
         unit-test-datcore-adapter,
         unit-test-director,
@@ -1727,12 +1855,20 @@ jobs:
           ls --all -l all_coverages/*.json
       - name: install codeclimate test reporter
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines)
+      - name: notify of pending code climate coverage
+        run: |
+          ./cc-test-reporter before-build
+      - name: sum all coverage
+        run: |
+          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines) --debug --output summed_codeclimate.json
+      - name: show coverage
+        run: |
+          ./cc-test-reporter show-coverage summed_codeclimate.json
       - name: upload coverages
         run: |
-          ./cc-test-reporter upload-coverage
+          ./cc-test-reporter upload-coverage --input summed_codeclimate.json
 
   deploy:
     name: deploy to dockerhub
@@ -1740,6 +1876,7 @@ jobs:
     needs:
       [
         unit-test-api-server,
+        unit-test-autoscaling,
         unit-test-api,
         unit-test-catalog,
         unit-test-dask-sidecar,
@@ -1773,7 +1910,7 @@ jobs:
       matrix:
         python: ["3.9"]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.7.1]
+        docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1786,23 +1923,30 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
+          driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'
         name: deploy master image
         env:
           TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: contains(github.ref, 'refs/heads/hotfix_v')
         name: deploy release hotfix image
         env:
           TAG_PREFIX: hotfix-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: contains(github.ref, 'refs/heads/hotfix_staging_')
         name: deploy staging hotfix image
         env:
           TAG_PREFIX: hotfix-staging-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n

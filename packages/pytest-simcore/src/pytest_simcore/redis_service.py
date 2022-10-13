@@ -81,9 +81,6 @@ async def redis_locks_client(
     await client.close(close_connection_pool=True)
 
 
-# HELPERS --
-
-
 @tenacity.retry(
     wait=wait_fixed(5),
     stop=stop_after_delay(60),

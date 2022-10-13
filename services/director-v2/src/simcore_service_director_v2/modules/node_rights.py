@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from asyncio import Task
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from typing import AsyncIterator, Optional
@@ -53,7 +52,7 @@ class ExtendLock:
         self.timeout_s: PositiveFloat = timeout_s
         self.extend_interval_s: PositiveFloat = extend_interval_s
         self._redis_lock: Lock = lock
-        self.task: Optional[Task] = asyncio.create_task(
+        self.task: Optional[asyncio.Task] = asyncio.create_task(
             self._extend_task(), name=f"{self.__class__.__name__}"
         )
 
@@ -151,7 +150,7 @@ class NodeRightsManager:
             extend_lock.task.cancel()
             with suppress(asyncio.CancelledError):
 
-                async def _await_task(task: Task) -> None:
+                async def _await_task(task: asyncio.Task) -> None:
                     await task
 
                 # NOTE: When the extension task is awaited it sometimes blocks

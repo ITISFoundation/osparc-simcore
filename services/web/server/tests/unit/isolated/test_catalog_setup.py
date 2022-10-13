@@ -37,9 +37,6 @@ def mock_api_calls_to_catalog(client, mocker):
     raise NotImplementedError("TODO: Use aioresponse to emulate catalog responses")
 
 
-# TESTS -------------------------------------------------------------------
-
-
 def test_url_translation():
     front_url = URL(
         f"https://osparc.io/{api_version_prefix}/catalog/dags/123?page_size=6"

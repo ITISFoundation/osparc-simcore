@@ -1,12 +1,19 @@
 import json
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
+from math import ceil
+from typing import NamedTuple
 
-import attr
 from aiohttp.web_exceptions import HTTPTooManyRequests
 
 
-def global_rate_limit_route(number_of_requests: int, interval_seconds: int):
+class RateLimitSetup(NamedTuple):
+    number_of_requests: int
+    interval_seconds: float
+
+
+def global_rate_limit_route(number_of_requests: int, interval_seconds: float):
     """
     Limits the requests per given interval to this endpoint
     from all incoming sources.
@@ -19,14 +26,14 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: int):
     """
 
     # compute the amount of requests per
-    def decorating_function(decorated_function):
-        @attr.s(auto_attribs=True)
-        class Context:
+    def decorator(decorated_function):
+        @dataclass
+        class _Context:
             max_allowed: int  # maximum allowed requests per interval
             remaining: int  # remaining requests
-            rate_limit_reset: int  # utc timestamp
+            rate_limit_reset: float  # utc timestamp
 
-        context = Context(
+        context = _Context(
             max_allowed=number_of_requests,
             remaining=number_of_requests,
             rate_limit_reset=0,
@@ -35,24 +42,24 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: int):
         @wraps(decorated_function)
         async def wrapper(*args, **kwargs):
             utc_now = datetime.utcnow()
-            current_utc_timestamp = datetime.timestamp(utc_now)
+            utc_now_timestamp = datetime.timestamp(utc_now)
 
             # reset counter & first time initialization
-            if current_utc_timestamp >= context.rate_limit_reset:
+            if utc_now_timestamp >= context.rate_limit_reset:
                 context.rate_limit_reset = datetime.timestamp(
                     utc_now + timedelta(seconds=interval_seconds)
                 )
                 context.remaining = context.max_allowed
 
-            if (
-                current_utc_timestamp <= context.rate_limit_reset
-                and context.remaining <= 0
-            ):
-                # show error and return from here
+            if utc_now_timestamp <= context.rate_limit_reset and context.remaining <= 0:
+                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+                retry_after_sec = int(
+                    ceil(context.rate_limit_reset - utc_now_timestamp)
+                )
                 raise HTTPTooManyRequests(
                     headers={
                         "Content-Type": "application/json",
-                        "Retry-After": str(int(context.rate_limit_reset)),
+                        "Retry-After": f"{retry_after_sec}",
                     },
                     text=json.dumps(
                         {
@@ -68,7 +75,7 @@ def global_rate_limit_route(number_of_requests: int, interval_seconds: int):
             context.remaining -= 1
             return await decorated_function(*args, **kwargs)
 
-        wrapper.rate_limit_setup = (number_of_requests, interval_seconds)
+        wrapper.rate_limit_setup = RateLimitSetup(number_of_requests, interval_seconds)
         return wrapper
 
-    return decorating_function
+    return decorator

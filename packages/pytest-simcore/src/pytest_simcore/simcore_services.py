@@ -23,8 +23,6 @@ from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
-# HELPERS --------------------------------------------------------------------------------
-
 
 SERVICES_TO_SKIP = [
     "dask-sidecar",
@@ -38,10 +36,12 @@ SERVICES_TO_SKIP = [
 ]
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
 SERVICE_PUBLISHED_PORT = {}
-SERVICE_HEALTHCHECK_ENTRYPOINT = {
-    "director-v2": "/",
+DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT = "/v0/"
+MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
+    "autoscaling": "/",
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
+    "director-v2": "/",
 }
 AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000
@@ -93,13 +93,10 @@ class ServiceHealthcheckEndpoint:
         obj = cls(
             name=service_name,
             url=URL(
-                f"{baseurl}{SERVICE_HEALTHCHECK_ENTRYPOINT.get(service_name, '/v0/')}"
+                f"{baseurl}{MAP_SERVICE_HEALTHCHECK_ENTRYPOINT.get(service_name, DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT)}"
             ),
         )
         return obj
-
-
-# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")

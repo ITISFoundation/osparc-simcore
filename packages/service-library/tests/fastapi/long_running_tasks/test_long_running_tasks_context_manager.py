@@ -42,9 +42,6 @@ async def _assert_task_removed(
     assert result.status_code == status.HTTP_404_NOT_FOUND
 
 
-# FIXTURES
-
-
 async def a_test_task(task_progress: TaskProgress) -> int:
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     return 42
@@ -63,14 +60,14 @@ def user_routes() -> APIRouter:
     async def create_task_user_defined_route(
         tasks_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(tasks_manager, handler=a_test_task)
+        task_id = start_task(tasks_manager, task=a_test_task)
         return task_id
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
         task_manager: TasksManager = Depends(get_tasks_manager),
     ) -> TaskId:
-        task_id = start_task(task_manager, handler=a_failing_test_task)
+        task_id = start_task(task_manager, task=a_failing_test_task)
         return task_id
 
     return router
@@ -94,9 +91,6 @@ async def bg_task_app(
 @pytest.fixture
 def mock_task_id() -> TaskId:
     return parse_obj_as(TaskId, "fake_task_id")
-
-
-# TESTS
 
 
 async def test_task_result(

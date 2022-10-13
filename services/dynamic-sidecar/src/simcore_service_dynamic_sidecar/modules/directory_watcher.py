@@ -1,20 +1,22 @@
 import asyncio
+import functools
 import logging
 import time
 from asyncio import AbstractEventLoop
 from collections import deque
 from contextlib import contextmanager
-from functools import wraps
 from os import name
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Deque, Generator, Optional
 
 from fastapi import FastAPI
 from servicelib.utils import logged_gather
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.modules import nodeports
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from ..core.rabbitmq import send_message
 from .mounted_fs import MountedVolumes
 
 DETECTION_INTERVAL: float = 1.0
@@ -54,7 +56,7 @@ def async_run_once_after_event_chain(
     def internal(decorated_function: Callable[..., Awaitable[Any]]):
         last = AsyncLockedFloat(initial_value=None)
 
-        @wraps(decorated_function)
+        @functools.wraps(decorated_function)
         async def wrapper(*args: Any, **kwargs: Any):
             # skipping  the first time the event chain starts
             if await last.get_value() is None:
@@ -76,22 +78,29 @@ def async_run_once_after_event_chain(
     return internal
 
 
-async def _push_directory(directory_path: Path) -> None:
-    await nodeports.dispatch_update_for_directory(directory_path)
+async def _push_directory(
+    directory_path: Path, io_log_redirect_cb: Optional[LogRedirectCB]
+) -> None:
+    await nodeports.dispatch_update_for_directory(
+        directory_path, io_log_redirect_cb=io_log_redirect_cb
+    )
 
 
 @async_run_once_after_event_chain(detection_interval=DETECTION_INTERVAL)
-async def _push_directory_after_event_chain(directory_path: Path) -> None:
-    await _push_directory(directory_path)
+async def _push_directory_after_event_chain(
+    directory_path: Path, io_log_redirect_cb: Optional[LogRedirectCB]
+) -> None:
+    await _push_directory(directory_path, io_log_redirect_cb=io_log_redirect_cb)
 
 
 def async_push_directory(
     event_loop: AbstractEventLoop,
     directory_path: Path,
     tasks_collection: set[asyncio.Task[Any]],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> None:
     task = event_loop.create_task(
-        _push_directory_after_event_chain(directory_path),
+        _push_directory_after_event_chain(directory_path, io_log_redirect_cb),
         name=TASK_NAME_FOR_CLEANUP,
     )
     tasks_collection.add(task)
@@ -99,13 +108,19 @@ def async_push_directory(
 
 
 class UnifyingEventHandler(FileSystemEventHandler):
-    def __init__(self, loop: AbstractEventLoop, directory_path: Path):
+    def __init__(
+        self,
+        loop: AbstractEventLoop,
+        directory_path: Path,
+        io_log_redirect_cb: Optional[LogRedirectCB],
+    ):
         super().__init__()
 
         self.loop: AbstractEventLoop = loop
         self.directory_path: Path = directory_path
         self._is_enabled: bool = True
         self._background_tasks: set[asyncio.Task[Any]] = set()
+        self.io_log_redirect_cb: Optional[LogRedirectCB] = io_log_redirect_cb
 
     def set_enabled(self, is_enabled: bool) -> None:
         self._is_enabled = is_enabled
@@ -113,7 +128,12 @@ class UnifyingEventHandler(FileSystemEventHandler):
     def _invoke_push_directory(self) -> None:
         # wrapping the function call in the object
         # helps with testing, it is simplet to mock
-        async_push_directory(self.loop, self.directory_path, self._background_tasks)
+        async_push_directory(
+            self.loop,
+            self.directory_path,
+            self._background_tasks,
+            self.io_log_redirect_cb,
+        )
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
@@ -124,19 +144,21 @@ class UnifyingEventHandler(FileSystemEventHandler):
 class DirectoryWatcherObservers:
     """Used to keep tack of observer threads"""
 
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self, *, io_log_redirect_cb: Optional[LogRedirectCB]) -> None:
         self._observers: Deque[Observer] = deque()
 
         self._keep_running: bool = True
         self._blocking_task: Optional[Awaitable[Any]] = None
         self.outputs_event_handle: Optional[UnifyingEventHandler] = None
+        self.io_log_redirect_cb: Optional[LogRedirectCB] = io_log_redirect_cb
 
     def observe_directory(self, directory_path: Path, recursive: bool = True) -> None:
+        logger.debug("observing %s, %s", f"{directory_path=}", f"{recursive=}")
         path = directory_path.absolute()
         self.outputs_event_handle = UnifyingEventHandler(
-            loop=asyncio.get_event_loop(), directory_path=path
+            loop=asyncio.get_event_loop(),
+            directory_path=path,
+            io_log_redirect_cb=self.io_log_redirect_cb,
         )
         observer = Observer()
         observer.schedule(self.outputs_event_handle, str(path), recursive=recursive)
@@ -201,8 +223,16 @@ def setup_directory_watcher(app: FastAPI) -> None:
     async def on_startup() -> None:
         mounted_volumes: MountedVolumes
         mounted_volumes = app.state.mounted_volumes  # nosec
-
-        app.state.dir_watcher = DirectoryWatcherObservers()
+        io_log_redirect_cb = None
+        if app.state.settings.RABBIT_SETTINGS:
+            io_log_redirect_cb = functools.partial(send_message, app.state.rabbitmq)
+        logger.debug(
+            "setting up directory watcher %s",
+            "with redirection of logs..." if io_log_redirect_cb else "...",
+        )
+        app.state.dir_watcher = DirectoryWatcherObservers(
+            io_log_redirect_cb=io_log_redirect_cb
+        )
         app.state.dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
         app.state.dir_watcher.disable_event_propagation()
         app.state.dir_watcher.start()

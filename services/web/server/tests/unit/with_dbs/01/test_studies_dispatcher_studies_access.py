@@ -12,21 +12,24 @@ import re
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import AsyncIterator, Callable, Dict
+from typing import AsyncIterator, Callable
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from servicelib.aiohttp.long_running_tasks.client import LRTask
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from settings_library.redis import RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users_api import delete_user, get_user_role
 
@@ -91,8 +94,11 @@ def app_cfg(
 
 @pytest.fixture
 async def published_project(
-    client, fake_project, tests_data_dir: Path
-) -> AsyncIterator[Dict]:
+    client: TestClient,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+) -> AsyncIterator[dict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = SHARED_STUDY_UUID
@@ -102,6 +108,7 @@ async def published_project(
         project_data,
         client.app,
         user_id=None,
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
     ) as template_project:
@@ -109,7 +116,12 @@ async def published_project(
 
 
 @pytest.fixture
-async def unpublished_project(client, fake_project, tests_data_dir: Path):
+async def unpublished_project(
+    client: TestClient,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Template Unpublished project"
     project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
@@ -119,8 +131,10 @@ async def unpublished_project(client, fake_project, tests_data_dir: Path):
         project_data,
         client.app,
         user_id=None,
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
+        as_template=True,
     ) as template_project:
         yield template_project
 
@@ -143,20 +157,18 @@ async def _get_user_projects(client):
     return projects
 
 
-def _assert_same_projects(got: Dict, expected: Dict):
+def _assert_same_projects(got: dict, expected: dict):
     # TODO: validate using api/specs/webserver/v0/components/schemas/project-v0.0.1.json
     # TODO: validate workbench!
-    exclude = set(
-        [
-            "creationDate",
-            "lastChangeDate",
-            "prjOwner",
-            "uuid",
-            "workbench",
-            "accessRights",
-            "ui",
-        ]
-    )
+    exclude = {
+        "creationDate",
+        "lastChangeDate",
+        "prjOwner",
+        "uuid",
+        "workbench",
+        "accessRights",
+        "ui",
+    }
     for key in expected.keys():
         if key not in exclude:
             assert got[key] == expected[key], "Failed in %s" % key
@@ -195,21 +207,6 @@ async def assert_redirected_to_study(
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, published_project):
-    services_in_project = [
-        {"key": s["key"], "version": s["version"]}
-        for _, s in published_project["workbench"].items()
-    ]
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-
-@pytest.fixture
 def mocks_on_projects_api(mocker) -> None:
     """
     All projects in this module are UNLOCKED
@@ -221,7 +218,7 @@ def mocks_on_projects_api(mocker) -> None:
 
 
 @pytest.fixture
-async def storage_subsystem_mock(storage_subsystem_mock, mocker):
+async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
     """
     Mocks functions that require storage client
     """
@@ -230,7 +227,8 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker):
 
     # Mocks copy_data_folders_from_project BUT under studies_access
     mock = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._studies_access.copy_data_folders_from_project"
+        "simcore_service_webserver.studies_dispatcher._studies_access.copy_data_folders_from_project",
+        autospec=True,
     )
 
     async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
@@ -238,12 +236,18 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker):
             f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
-        return dst_prj
+
+        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+
+        async def _mock_result():
+            return None
+
+        yield LRTask(
+            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            _result=_mock_result(),
+        )
 
     mock.side_effect = _mock_copy_data_from_project
-
-
-# TESTS ----------------------------------------------------------------------------------------------
 
 
 async def test_access_to_invalid_study(client, published_project):
@@ -276,6 +280,7 @@ async def test_access_study_anonymously(
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     assert not is_user_authenticated(client.session), "Is anonymous"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -322,6 +327,7 @@ async def test_access_study_by_logged_user(
     auto_delete_projects,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     assert is_user_authenticated(client.session), "Is already logged-in"
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -349,6 +355,7 @@ async def test_access_cookie_of_expired_user(
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     # emulates issue #1570
     app: web.Application = client.app
 
@@ -415,6 +422,7 @@ async def test_guest_user_is_not_garbage_collected(
     mocks_on_projects_api,
     redis_locks_client,  # needed to cleanup the locks between parametrizations
 ):
+    catalog_subsystem_mock([published_project])
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
 
     async def _test_guest_user_workflow(request_index):

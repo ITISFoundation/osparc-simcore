@@ -14,7 +14,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable, Iterator
+from typing import Any, AsyncIterator, Callable, Iterator, Optional, Union
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -29,11 +29,16 @@ from _helpers import MockedStorageSubsystem
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from pydantic import ByteSize, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.long_running_tasks.client import LRTask
+from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings
+from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.groups_api import (
@@ -86,7 +91,6 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
     NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
-
     # fills ports on the fly
     cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["storage"]["port"] = unused_tcp_port_factory()
@@ -96,31 +100,45 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 
 
 @pytest.fixture
+def app_environment(
+    app_cfg: ConfigDict,
+    monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
+) -> dict[str, str]:
+    """overridable fixture that defines the ENV for the webserver application
+    based on legacy application config files.
+
+    override like so:
+    @pytest.fixture
+    def app_environment(app_environment: dict[str, str], monkeypatch: MonkeyPatch) -> dict[str, str]:
+        monkeypatch.setenv("MODIFIED_ENV", "VALUE")
+        return app_environment | {"MODIFIED_ENV":"VALUE"}
+    """
+    print("+ web_server:")
+    cfg = deepcopy(app_cfg)
+    return monkeypatch_setenv_from_app_config(cfg)
+
+
+@pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
+    app_environment,
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
     monkeypatch: MonkeyPatch,
-    monkeypatch_setenv_from_app_config: Callable,
     disable_static_webserver: Callable,
 ) -> TestServer:
-
-    print("+ web_server:")
-    cfg = deepcopy(app_cfg)
-    monkeypatch_setenv_from_app_config(cfg)
-
     # original APP
     app = create_application()
 
     # with patched email
-    _path_mail(monkeypatch)
+    _patch_compose_mail(monkeypatch)
 
     disable_static_webserver(app)
 
     server = event_loop.run_until_complete(
-        aiohttp_server(app, port=cfg["main"]["port"])
+        aiohttp_server(app, port=app_cfg["main"]["port"])
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
@@ -143,10 +161,40 @@ def client(
     return cli
 
 
+@pytest.fixture(scope="session")
+def osparc_product_name() -> str:
+    return "osparc"
+
+
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
 #
 # Mocks entirely or part of the calls to the web-server subsystems
 #
+
+
+@pytest.fixture
+async def catalog_subsystem_mock(
+    monkeypatch,
+) -> Callable[[Optional[Union[list[dict], dict]]], None]:
+    services_in_project = []
+
+    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
+        for proj in projects or []:
+            services_in_project.extend(
+                [
+                    {"key": s["key"], "version": s["version"]}
+                    for _, s in proj["workbench"].items()
+                ]
+            )
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+    return creator
 
 
 @pytest.fixture
@@ -191,8 +239,21 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     Patched functions are exposed within projects but call storage subsystem
     """
 
-    async def _mock_copy_data_from_project(*args):
-        return args[2]
+    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+        print(
+            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"with {len(nodes_map)} s3 objects by user={user_id}"
+        )
+
+        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+
+        async def _mock_result():
+            return None
+
+        yield LRTask(
+            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            _result=_mock_result(),
+        )
 
     mock = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
@@ -205,7 +266,14 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
         side_effect=async_mock,
     )
-    return MockedStorageSubsystem(mock, mock1)
+
+    mock3 = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size",
+        autospec=True,
+        return_value=parse_obj_as(ByteSize, "1Gib"),
+    )
+
+    return MockedStorageSubsystem(mock, mock1, mock3)
 
 
 @pytest.fixture
@@ -218,7 +286,7 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(mocker) -> dict[str, MagicMock]:
+async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     mock = {}
 
     #
@@ -394,7 +462,7 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user) -> dict[str, str]:
+async def primary_group(client, logged_user) -> dict[str, Any]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
@@ -402,7 +470,7 @@ async def primary_group(client, logged_user) -> dict[str, str]:
 @pytest.fixture
 async def standard_groups(
     client, logged_user: dict
-) -> AsyncIterator[list[dict[str, str]]]:
+) -> AsyncIterator[list[dict[str, Any]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced
@@ -459,13 +527,13 @@ async def all_group(client, logged_user) -> dict[str, str]:
 # GENERIC HELPER FUNCTIONS ----------------------------------------------------
 
 
-def _path_mail(monkeypatch):
-    async def send_mail(*args):
+def _patch_compose_mail(monkeypatch):
+    async def print_mail_to_stdout(*args):
         _app, recipient, subject, body = args
         print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
 
     monkeypatch.setattr(
-        simcore_service_webserver.login.utils, "compose_mail", send_mail
+        simcore_service_webserver.login.utils, "compose_mail", print_mail_to_stdout
     )
 
 

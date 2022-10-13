@@ -1,4 +1,4 @@
-// node kember.js [url_prefix] [template_uuid] [--demo]
+// node kember.js [url_prefix] [template_uuid] [start_timeout] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');
@@ -43,15 +43,7 @@ async function runTutorial () {
     await tutorial.openNode(1);
 
     await tutorial.waitFor(2000);
-    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
-    const iframeHandles = await page.$$("iframe");
-    const iframes = [];
-    for (let i=0; i<iframeHandles.length; i++) {
-      const frame = await iframeHandles[i].contentFrame();
-      iframes.push(frame);
-    }
-    // url/x/nodeIdViewer
-    const frame = iframes.find(iframe => iframe._url.includes(nodeIdViewer));
+    const frame = await tutorial.getIframe(nodeIdViewer);
 
     // restart kernel: click restart and accept
     const restartSelector = "#run_int > button:nth-child(3)";
@@ -74,7 +66,7 @@ async function runTutorial () {
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.checkNodeOutputs(1, outFiles2, false);
+    await tutorial.checkNodeOutputs(1, outFiles2);
   }
   catch(err) {
     await tutorial.setTutorialFailed(true);

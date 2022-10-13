@@ -16,7 +16,6 @@ Why does this file exist, and why not put this in __main__?
 
 import logging
 import os
-from typing import Dict, Tuple
 
 import typer
 from aiohttp import web
@@ -26,6 +25,7 @@ from .application import create_application, run_service
 from .application_settings import ApplicationSettings
 from .application_settings_utils import convert_to_app_config
 from .log import setup_logging
+from .login import cli as login_cli
 
 # ptsvd cause issues with ProcessPoolExecutor
 # SEE: https://github.com/microsoft/ptvsd/issues/1443
@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 
 def _setup_app_from_settings(
     settings: ApplicationSettings,
-) -> Tuple[web.Application, Dict]:
+) -> tuple[web.Application, dict]:
 
     # NOTE: keeping an equivalent config allows us
     # to keep some of the code from the previous
@@ -76,9 +76,12 @@ main = typer.Typer(name="simcore-service-webserver")
 
 main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
 
+main.command()(login_cli.invitations)
+
 
 @main.command()
 def run():
+    """Runs web server"""
     app_settings = ApplicationSettings()
     app, cfg = _setup_app_from_settings(app_settings)
     run_service(app, cfg)

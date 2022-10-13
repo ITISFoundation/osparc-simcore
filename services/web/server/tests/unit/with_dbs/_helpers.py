@@ -37,6 +37,12 @@ class ExpectedResponse(NamedTuple):
         type[web.HTTPForbidden],
         type[web.HTTPUnprocessableEntity],
     ]
+    not_acceptable: Union[
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPNotAcceptable]
+    ]
+    conflict: Union[
+        type[web.HTTPUnauthorized], type[web.HTTPForbidden], type[web.HTTPConflict]
+    ]
 
     def __str__(self) -> str:
         items = ",".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
@@ -58,6 +64,8 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     locked=web.HTTPUnauthorized,
                     accepted=web.HTTPUnauthorized,
                     unprocessable=web.HTTPUnauthorized,
+                    not_acceptable=web.HTTPUnauthorized,
+                    conflict=web.HTTPUnauthorized,
                 ),
             ),
             (
@@ -71,6 +79,8 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     locked=web.HTTPForbidden,
                     accepted=web.HTTPForbidden,
                     unprocessable=web.HTTPForbidden,
+                    not_acceptable=web.HTTPForbidden,
+                    conflict=web.HTTPForbidden,
                 ),
             ),
             (
@@ -84,6 +94,8 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     locked=HTTPLocked,
                     accepted=web.HTTPAccepted,
                     unprocessable=web.HTTPUnprocessableEntity,
+                    not_acceptable=web.HTTPNotAcceptable,
+                    conflict=web.HTTPConflict,
                 ),
             ),
             (
@@ -97,6 +109,8 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     locked=HTTPLocked,
                     accepted=web.HTTPAccepted,
                     unprocessable=web.HTTPUnprocessableEntity,
+                    not_acceptable=web.HTTPNotAcceptable,
+                    conflict=web.HTTPConflict,
                 ),
             ),
         ],
@@ -106,3 +120,4 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
 class MockedStorageSubsystem(NamedTuple):
     copy_data_folders_from_project: mock.MagicMock
     delete_project: mock.MagicMock
+    get_project_total_size: mock.MagicMock

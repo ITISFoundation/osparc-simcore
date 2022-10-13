@@ -25,6 +25,24 @@ services:
         org.label-schema.vcs-ref: "${VCS_REF}"
         io.osparc.api-version: "${API_SERVER_API_VERSION}"
 
+  autoscaling:
+    image: local/autoscaling:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/autoscaling/Dockerfile
+      cache_from:
+        - local/autoscaling:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "${VCS_URL}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+        io.osparc.api-version: "${AUTOSCALING_API_VERSION}"
+
   catalog:
     image: local/catalog:${BUILD_TARGET:?build_target_required}
     build:
@@ -61,7 +79,8 @@ services:
         org.label-schema.vcs-ref: "${VCS_REF}"
         io.osparc.api-version: "${DIRECTOR_API_VERSION}"
 
-  dask-sidecar: &build-dask-sidecar
+  dask-sidecar:
+    &build-dask-sidecar
     image: local/dask-sidecar:${BUILD_TARGET:?build_target_required}
     build:
       context: ../
@@ -78,7 +97,8 @@ services:
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
 
-  dask-scheduler: *build-dask-sidecar
+  # dask-scheduler: *build-dask-sidecar
+  # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 
   director-v2:
     image: local/director-v2:${BUILD_TARGET:?build_target_required}
@@ -118,8 +138,14 @@ services:
   static-webserver:
     image: local/static-webserver:${BUILD_TARGET:?build_target_required}
     build:
-      context: ../
-      dockerfile: services/static-webserver/Dockerfile
+      context: ./static-webserver/client
+      dockerfile: tools/qooxdoo-kit/builder/Dockerfile
+      args:
+        - tag=latest
+        - VCS_REF=${VCS_REF}
+        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
+        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
+        - VCS_URL=${VCS_URL}
       cache_from:
         - local/static-webserver:${BUILD_TARGET:?build_target_required}
         - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:master-github-latest

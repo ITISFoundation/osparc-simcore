@@ -5,8 +5,9 @@
 
 import itertools
 import random
+from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Callable, Iterable, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, Optional
 
 import pytest
 import respx
@@ -24,6 +25,7 @@ from simcore_service_catalog.db.tables import (
     services_access_rights,
     services_meta_data,
 )
+from sqlalchemy import tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
@@ -178,7 +180,7 @@ async def user_groups_ids(
 @pytest.fixture()
 async def services_db_tables_injector(
     sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable]:
+) -> AsyncIterator[Callable[[list[tuple]], Awaitable[None]]]:
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
@@ -205,6 +207,7 @@ async def services_db_tables_injector(
         )
     """
     # pylint: disable=no-value-for-parameter
+    inserted_services: set[tuple[str, str]] = set()
 
     async def inject_in_db(fake_catalog: list[tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
@@ -221,6 +224,7 @@ async def services_db_tables_injector(
                     set_=service,
                 )
                 await conn.execute(upsert_meta)
+                inserted_services.add((service["key"], service["version"]))
 
             for access_rights in itertools.chain(items[1:] for items in fake_catalog):
                 stmt_access = services_access_rights.insert().values(access_rights)
@@ -229,8 +233,13 @@ async def services_db_tables_injector(
     yield inject_in_db
 
     async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(services_access_rights.delete())
-        await conn.execute(services_meta_data.delete())
+        await conn.execute(
+            services_meta_data.delete().where(
+                tuple_(services_meta_data.c.key, services_meta_data.c.version).in_(
+                    inserted_services
+                )
+            )
+        )
 
 
 @pytest.fixture()
@@ -285,10 +294,15 @@ async def service_catalog_faker(
         return data
 
     def _fake_factory(
-        key, version, team_access=None, everyone_access=None, product=products_names[0]
+        key,
+        version,
+        team_access=None,
+        everyone_access=None,
+        product=products_names[0],
+        deprecated: Optional[datetime] = None,
     ) -> tuple[dict[str, Any], ...]:
 
-        service = _random_service(key=key, version=version)
+        service = _random_service(key=key, version=version, deprecated=deprecated)
 
         # owner always has full-access
         owner_access = _random_access(

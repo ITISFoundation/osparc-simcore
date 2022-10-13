@@ -93,9 +93,6 @@ async def fake_catalog_with_jupyterlab(
     return info
 
 
-# TESTS ----------------
-
-
 async def test_create_services(
     services_repo: ServicesRepository, service_catalog_faker: Callable
 ):

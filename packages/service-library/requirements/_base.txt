@@ -6,13 +6,13 @@
 #
 aiodebug==2.3.0
     # via -r requirements/_base.in
-aiofiles==0.8.0
+aiofiles==22.1.0
     # via -r requirements/_base.in
-pydantic==1.9.2
+pydantic==1.10.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pyinstrument==4.2.0
+pyinstrument==4.3.0
     # via -r requirements/_base.in
 pyyaml==5.4.1
     # via
@@ -21,7 +21,7 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
 tenacity==8.0.1
     # via -r requirements/_base.in
-tqdm==4.64.0
+tqdm==4.64.1
     # via -r requirements/_base.in
 typing-extensions==4.3.0
     # via

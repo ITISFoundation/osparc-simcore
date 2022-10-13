@@ -77,9 +77,6 @@ def _make_dir_with_files(temp_dir: Path, file_count: int) -> Path:
     return content_dir_path
 
 
-# FIXTURES
-
-
 @pytest.fixture
 def node_uuid() -> str:
     return f"{uuid4()}"
@@ -141,6 +138,7 @@ async def test_valid_upload_download(
         project_id=project_id,
         node_uuid=node_uuid,
         file_or_folder=content_path,
+        io_log_redirect_cb=None,
     )
 
     uploaded_hashes = _get_file_hashes_in_path(content_path)
@@ -152,6 +150,7 @@ async def test_valid_upload_download(
         project_id=project_id,
         node_uuid=node_uuid,
         file_or_folder=content_path,
+        io_log_redirect_cb=None,
     )
 
     downloaded_hashes = _get_file_hashes_in_path(content_path)
@@ -181,6 +180,7 @@ async def test_valid_upload_download_saved_to(
         project_id=project_id,
         node_uuid=node_uuid,
         file_or_folder=content_path,
+        io_log_redirect_cb=None,
     )
 
     uploaded_hashes = _get_file_hashes_in_path(content_path)
@@ -195,6 +195,7 @@ async def test_valid_upload_download_saved_to(
         node_uuid=node_uuid,
         file_or_folder=content_path,
         save_to=new_destination,
+        io_log_redirect_cb=None,
     )
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)

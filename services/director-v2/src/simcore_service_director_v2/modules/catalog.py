@@ -14,8 +14,6 @@ from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
-_MINUTE = 60
-
 
 def setup(app: FastAPI, settings: CatalogSettings) -> None:
     if not settings:
@@ -60,6 +58,26 @@ class CatalogClient:
     @handle_retry(logger)
     async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)
+
+    @log_decorator(logger=logger)
+    async def get_service(
+        self,
+        user_id: UserID,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+        product_name: str,
+    ) -> dict[str, Any]:
+
+        resp = await self.request(
+            "GET",
+            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}",
+            params={"user_id": user_id},
+            headers={"X-Simcore-Products-Name": product_name},
+        )
+        resp.raise_for_status()
+        if resp.status_code == status.HTTP_200_OK:
+            return resp.json()
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
     async def get_service_specifications(

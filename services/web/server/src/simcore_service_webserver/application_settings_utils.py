@@ -23,7 +23,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "main": {
             "host": app_settings.WEBSERVER_SERVER_HOST,
             "port": app_settings.WEBSERVER_PORT,
-            "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
+            "log_level": f"{app_settings.WEBSERVER_LOGLEVEL}",
             "testing": False,  # TODO: deprecate!
             "studies_access_enabled": int(
                 app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
@@ -199,7 +199,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if main := cfg.get("main"):
         envs["WEBSERVER_PORT"] = main.get("port")
-        envs["WEBSERVER_LOG_LEVEL"] = main.get("log_level")
+        envs["WEBSERVER_LOGLEVEL"] = main.get("log_level")
         envs["WEBSERVER_STUDIES_ACCESS_ENABLED"] = main.get("studies_access_enabled")
 
     if section := cfg.get("tracing"):

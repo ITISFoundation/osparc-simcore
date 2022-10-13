@@ -1,12 +1,10 @@
-import enum
 from datetime import datetime
 from logging import getLogger
-from typing import TypedDict
+from typing import Literal, Optional, TypedDict
 
 import asyncpg
 from aiohttp import web
 
-from ..db_models import ConfirmationAction, UserRole, UserStatus
 from . import _sql
 from .utils import get_random_string
 
@@ -15,16 +13,24 @@ log = getLogger(__name__)
 APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 
 
-# SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
-class _ConfirmationDictRequired(TypedDict):
+## MODELS
+
+ActionLiteralStr = Literal[
+    "REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"
+]
+
+
+class ConfirmationTokenDict(TypedDict):
+    # SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
     code: str
     user_id: int
-    action: str
-
-
-class ConfirmationDict(_ConfirmationDictRequired, total=False):
-    data: dict
+    action: ActionLiteralStr
     created_at: datetime
+    # SEE handlers_confirmation.py::email_confirmation to determine what type is associated to each action
+    data: Optional[str]
+
+
+## REPOSITORY
 
 
 class AsyncpgStorage:
@@ -57,30 +63,37 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
-    async def create_confirmation(self, user, action, data=None) -> ConfirmationDict:
+    async def create_confirmation(
+        self, user_id, action: ActionLiteralStr, data=None
+    ) -> ConfirmationTokenDict:
         async with self.pool.acquire() as conn:
             while True:
                 code = get_random_string(30)
                 if not await _sql.find_one(conn, self.confirm_tbl, {"code": code}):
                     break
-            confirmation: ConfirmationDict = {
+            confirmation: ConfirmationTokenDict = {
                 "code": code,
-                "user_id": user["id"],
+                "user_id": user_id,
                 "action": action,
                 "data": data,
                 "created_at": datetime.utcnow(),
             }
-            await _sql.insert(conn, self.confirm_tbl, confirmation, None)
+            c = await _sql.insert(
+                conn, self.confirm_tbl, confirmation, returning="code"
+            )
+            assert code == c  # nosec
             return confirmation
 
-    async def get_confirmation(self, filter_dict) -> asyncpg.Record:
+    async def get_confirmation(self, filter_dict) -> Optional[ConfirmationTokenDict]:
         if "user" in filter_dict:
             filter_dict["user_id"] = filter_dict.pop("user")["id"]
         async with self.pool.acquire() as conn:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
-            return confirmation
+            return (
+                ConfirmationTokenDict(**confirmation) if confirmation else confirmation
+            )
 
-    async def delete_confirmation(self, confirmation: ConfirmationDict):
+    async def delete_confirmation(self, confirmation: ConfirmationTokenDict):
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
 
@@ -89,29 +102,3 @@ def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
     storage = app.get(APP_LOGIN_STORAGE_KEY)
     assert storage, "login plugin was not initialized"  # nosec
     return storage
-
-
-# helpers ----------------------------
-def _to_enum(data):
-    # FIXME: cannot modify asyncpg.Record:
-
-    # TODO: ensure columns names and types! User tables for that
-    # See https://docs.sqlalchemy.org/en/latest/core/metadata.html
-    if data:
-        for key, enumtype in (
-            ("status", UserStatus),
-            ("role", UserRole),
-            ("action", ConfirmationAction),
-        ):
-            if key in data:
-                data[key] = getattr(enumtype, data[key])
-    return data
-
-
-def _to_name(data):
-    if data:
-        for key in ("status", "role", "action"):
-            if key in data:
-                if isinstance(data[key], enum.Enum):
-                    data[key] = data[key].name
-    return data

@@ -2,7 +2,7 @@ import asyncio
 import functools
 import logging
 import warnings
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Final, Optional
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
@@ -21,6 +21,8 @@ from ...long_running_tasks._models import (
     TaskStatus,
 )
 
+DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +36,7 @@ def _before_sleep_log(
     """Before call strategy that logs to some logger the attempt."""
 
     def log_it(retry_state: "RetryCallState") -> None:
+        assert retry_state.outcome  # nosec
         if retry_state.outcome.failed:
             ex = retry_state.outcome.exception()
             verb, value = "raised", f"{ex.__class__.__name__}: {ex}"
@@ -46,6 +49,7 @@ def _before_sleep_log(
             verb, value = "returned", retry_state.outcome.result()
             local_exc_info = False  # exc_info does not apply when no exception
 
+        assert retry_state.next_action  # nosec
         logger.warning(
             "Retrying '%s %s %s' in %s seconds as it %s %s. %s",
             request_function.__name__,
@@ -210,7 +214,7 @@ def setup(
     app: FastAPI,
     *,
     router_prefix: str = "",
-    http_requests_timeout: PositiveFloat = 15,
+    http_requests_timeout: PositiveFloat = DEFAULT_HTTP_REQUESTS_TIMEOUT,
 ):
     """
     - `router_prefix` by default it is assumed the server mounts the APIs on

@@ -11,29 +11,23 @@ export DOCKER_IMAGE_TAG
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/web/server
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  pip list -v
-  make pull-version || (make build tag-version)
+  .venv/bin/pip list --verbose
+  make tag-version
   make info-images
 }
 
 test() {
-  pytest \
-    --asyncio-mode=auto \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_webserver \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    "services/web/server/tests/integration/$1"
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/web/server
+  make test-ci-integration test-subfolder="$1"
+  popd
 }
 
 clean_up() {

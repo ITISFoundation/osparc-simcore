@@ -3,15 +3,18 @@ import logging
 import os
 import shutil
 import sys
-import tempfile
 import time
 from collections import deque
+from contextlib import AsyncExitStack
 from enum import Enum
 from pathlib import Path
 from typing import Any, Coroutine, Optional, cast
 
 import magic
+from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
+from models_library.projects import ProjectIDStr
 from models_library.projects_nodes import OutputsDict
+from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
@@ -19,6 +22,7 @@ from servicelib.file_utils import remove_directory
 from servicelib.pools import async_on_threadpool
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import Nodeports, Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_service_dynamic_sidecar.core.settings import (
@@ -54,8 +58,17 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
     return sys.getsizeof(value)
 
 
+_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
+    "TEST: test_nodeports_integration DO NOT REMOVE"
+)
+
+
 @run_sequentially_in_context()
-async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
+async def upload_outputs(
+    outputs_path: Path,
+    port_keys: list[str],
+    io_log_redirect_cb: Optional[LogRedirectCB],
+) -> None:
     """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
     logger.debug("uploading data to simcore...")
@@ -64,69 +77,70 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
     settings: ApplicationSettings = get_settings()
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.rclone_settings_for_nodeports,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
 
     # let's gather the tasks
-    temp_paths: deque[Path] = deque()
-    ports_values: dict[str, ItemConcreteValue] = {}
+    ports_values: dict[str, Optional[ItemConcreteValue]] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
 
-    for port in (await PORTS.outputs).values():
-        logger.debug("Checking port %s", port.key)
-        if port_keys and port.key not in port_keys:
-            continue
-        logger.debug(
-            "uploading data to port '%s' with value '%s'...", port.key, port.value
-        )
-        if _FILE_TYPE_PREFIX in port.property_type:
-            src_folder = outputs_path / port.key
-            files_and_folders_list = list(src_folder.rglob("*"))
-            logger.debug("Discovered files to upload %s", files_and_folders_list)
-
-            if not files_and_folders_list:
-                ports_values[port.key] = None
+    async with AsyncExitStack() as stack:
+        for port in (await PORTS.outputs).values():
+            logger.debug("Checking port %s", port.key)
+            if port_keys and port.key not in port_keys:
                 continue
-
-            if len(files_and_folders_list) == 1 and (
-                files_and_folders_list[0].is_file()
-                or files_and_folders_list[0].is_symlink()
-            ):
-                # special case, direct upload
-                ports_values[port.key] = files_and_folders_list[0]
-                continue
-
-            # generic case let's create an archive
-            # only the filtered out files will be zipped
-            tmp_folder = Path(tempfile.mkdtemp())
-            tmp_file = tmp_folder / f"{src_folder.stem}.zip"
-            temp_paths.append(tmp_folder)
-
-            # when having multiple directories it is important to
-            # run the compression in parallel to guarantee better performance
-            archiving_tasks.append(
-                archive_dir(
-                    dir_to_compress=src_folder,
-                    destination=tmp_file,
-                    compress=False,
-                    store_relative_path=True,
-                )
+            logger.debug(
+                "uploading data to port '%s' with value '%s'...", port.key, port.value
             )
-            ports_values[port.key] = tmp_file
-        else:
-            data_file = outputs_path / _KEY_VALUE_FILE_NAME
-            if data_file.exists():
-                data = json.loads(data_file.read_text())
-                if port.key in data and data[port.key] is not None:
-                    ports_values[port.key] = data[port.key]
-                else:
-                    logger.debug("Port %s not found in %s", port.key, data)
-            else:
-                logger.debug("No file %s to fetch port values from", data_file)
+            if _FILE_TYPE_PREFIX in port.property_type:
+                src_folder = outputs_path / port.key
+                files_and_folders_list = list(src_folder.rglob("*"))
+                logger.debug("Discovered files to upload %s", files_and_folders_list)
 
-    try:
+                if not files_and_folders_list:
+                    ports_values[port.key] = None
+                    continue
+
+                if len(files_and_folders_list) == 1 and (
+                    files_and_folders_list[0].is_file()
+                    or files_and_folders_list[0].is_symlink()
+                ):
+                    # special case, direct upload
+                    ports_values[port.key] = files_and_folders_list[0]
+                    continue
+
+                # generic case let's create an archive
+                # only the filtered out files will be zipped
+                tmp_folder = Path(
+                    await stack.enter_async_context(AioTemporaryDirectory())
+                )
+                tmp_file = tmp_folder / f"{src_folder.stem}.zip"
+
+                # when having multiple directories it is important to
+                # run the compression in parallel to guarantee better performance
+                archiving_tasks.append(
+                    archive_dir(
+                        dir_to_compress=src_folder,
+                        destination=tmp_file,
+                        compress=False,
+                        store_relative_path=True,
+                    )
+                )
+                ports_values[port.key] = tmp_file
+            else:
+                data_file = outputs_path / _KEY_VALUE_FILE_NAME
+                if data_file.exists():
+                    data = json.loads(data_file.read_text())
+                    if port.key in data and data[port.key] is not None:
+                        ports_values[port.key] = data[port.key]
+                    else:
+                        logger.debug("Port %s not found in %s", port.key, data)
+                else:
+                    logger.debug("No file %s to fetch port values from", data_file)
+
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
         await PORTS.set_multiple(ports_values)
@@ -134,19 +148,15 @@ async def upload_outputs(outputs_path: Path, port_keys: list[str]) -> None:
         elapsed_time = time.perf_counter() - start_time
         total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
         logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
-    finally:
-        # clean up possible compressed files
-        for file_path in temp_paths:
-            await async_on_threadpool(
-                # pylint: disable=cell-var-from-loop
-                lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
-            )
+        logger.debug(_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE)
 
 
-async def dispatch_update_for_directory(directory_path: Path) -> None:
+async def dispatch_update_for_directory(
+    directory_path: Path, io_log_redirect_cb: Optional[LogRedirectCB]
+) -> None:
     logger.debug("Uploading data for directory %s", directory_path)
     # TODO: how to figure out from directory_path which is the correct target to upload
-    await upload_outputs(directory_path, [])
+    await upload_outputs(directory_path, [], io_log_redirect_cb=io_log_redirect_cb)
 
 
 # INPUTS section
@@ -249,7 +259,10 @@ async def _download_files(
 
 @run_sequentially_in_context()
 async def download_target_ports(
-    port_type_name: PortTypeName, target_path: Path, port_keys: list[str]
+    port_type_name: PortTypeName,
+    target_path: Path,
+    port_keys: list[str],
+    io_log_redirect_cb: LogRedirectCB,
 ) -> ByteSize:
     logger.debug("retrieving data from simcore...")
     start_time = time.perf_counter()
@@ -257,9 +270,10 @@ async def download_target_ports(
     settings: ApplicationSettings = get_settings()
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=settings.rclone_settings_for_nodeports,
+        io_log_redirect_cb=io_log_redirect_cb,
     )
 
     # let's gather all the data
@@ -291,9 +305,3 @@ async def download_target_ports(
         elapsed_time,
     )
     return transferred_bytes
-
-
-__all__: tuple[str, ...] = (
-    "dispatch_update_for_directory",
-    "download_target_ports",
-)

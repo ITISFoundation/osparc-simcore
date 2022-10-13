@@ -18,7 +18,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 
-# HELPERS -----------------------------------------------------------
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
 
@@ -77,9 +76,6 @@ class MyBody(BaseModel):
     @classmethod
     def create_fake(cls, faker: Faker):
         return cls(x=faker.pyint(), y=faker.pybool(), z=Sub.create_fake(faker))
-
-
-# FIXTURES ----------------------------------
 
 
 @pytest.fixture
@@ -160,9 +156,6 @@ def body(faker: Faker) -> MyBody:
     return MyBody.create_fake(faker)
 
 
-# TESTS ------------------------------------------------------
-
-
 async def test_parse_request_as(
     client: TestClient,
     path_params: MyRequestPathParams,
@@ -199,7 +192,7 @@ async def test_parse_request_with_invalid_path_params(
         params=query_params.as_params(),
         json=body.dict(),
     )
-    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
     errors = await r.json()
     assert errors["error"].pop("resource")
@@ -228,7 +221,7 @@ async def test_parse_request_with_invalid_query_params(
         params={},
         json=body.dict(),
     )
-    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
     errors = await r.json()
     assert errors["error"].pop("resource")
@@ -257,7 +250,7 @@ async def test_parse_request_with_invalid_body(
         params=query_params.as_params(),
         json={"invalid": "body"},
     )
-    assert r.status == web.HTTPBadRequest.status_code, f"{await r.text()}"
+    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
     errors = await r.json()
 

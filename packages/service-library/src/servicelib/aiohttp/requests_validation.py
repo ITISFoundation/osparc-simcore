@@ -4,7 +4,7 @@ These functions are analogous to `pydantic.tools.parse_obj_as(model_class, obj)`
 """
 
 from contextlib import contextmanager
-from typing import Iterator, Type, TypeVar
+from typing import Iterator, TypeVar
 
 from aiohttp import web
 from pydantic import BaseModel, ValidationError
@@ -52,7 +52,12 @@ def handle_validation_as_http_error(
                 for e in details
             ]
             error_str = json_dumps(
-                {"error": {"status": web.HTTPBadRequest.status_code, "errors": errors}}
+                {
+                    "error": {
+                        "status": web.HTTPUnprocessableEntity.status_code,
+                        "errors": errors,
+                    }
+                }
             )
         else:
             # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
@@ -66,7 +71,7 @@ def handle_validation_as_http_error(
                 }
             )
 
-        raise web.HTTPBadRequest(
+        raise web.HTTPUnprocessableEntity(
             reason=reason_msg,
             text=error_str,
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -82,7 +87,7 @@ def handle_validation_as_http_error(
 
 
 def parse_request_path_parameters_as(
-    parameters_schema: Type[ModelType],
+    parameters_schema: type[ModelType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
@@ -101,7 +106,7 @@ def parse_request_path_parameters_as(
 
 
 def parse_request_query_parameters_as(
-    parameters_schema: Type[ModelType],
+    parameters_schema: type[ModelType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
@@ -121,7 +126,7 @@ def parse_request_query_parameters_as(
 
 
 async def parse_request_body_as(
-    model_schema: Type[ModelType],
+    model_schema: type[ModelType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,

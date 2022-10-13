@@ -1,7 +1,8 @@
 from pathlib import Path
 from subprocess import CompletedProcess, run
-
-from typing import Optional
+from tenacity import retry
+from tenacity.stop import stop_after_attempt
+from settings_library.r_clone import S3Provider
 
 DESTINATION = "dst"
 SOURCE = "src"
@@ -9,45 +10,44 @@ SOURCE = "src"
 CONFIG = """
 [{destination}]
 type = s3
-provider = AWS
-access_key_id = {aws_access_key}
-secret_access_key = {aws_secret_key}
+provider = {destination_provider}
+access_key_id = {destination_access_key}
+secret_access_key = {destination_secret_key}
+endpoint = {destination_endpoint}
 region = us-east-1
 acl = private
 
 [{source}]
 type = s3
-provider = Minio
-access_key_id = {minio_access_key}
-secret_access_key = {minio_secret_key}
-endpoint = {minio_endpoint}
+provider = {source_provider}
+access_key_id = {source_access_key}
+secret_access_key = {source_secret_key}
+endpoint = {source_endpoint}
 region = us-east-1
 acl = private
 """
 
 
 def assemble_config_file(
-    aws_access_key: str,
-    aws_secret_key: str,
-    minio_access_key: str,
-    minio_secret_key: str,
-    minio_endpoint: Optional[str],
+    source_access_key: str,
+    source_secret_key: str,
+    source_endpoint: str,
+    source_provider: S3Provider,
+    destination_access_key: str,
+    destination_secret_key: str,
+    destination_endpoint: str = "https://s3.amazonaws.com",
+    destination_provider: S3Provider = S3Provider.AWS,
 ) -> Path:
-    # NOTE: Since rclone requires slightly different configuration based on the
-    # S3 provider, below assumptions are made:
-    # - source: MINIO
-    # - destination: AWS S3
-    # The above CONFIG will require changing if this changes
-
-    # minio endpoint must be provided
-    assert minio_endpoint is not None  # nosec
 
     config_content = CONFIG.format(
-        aws_access_key=aws_access_key,
-        aws_secret_key=aws_secret_key,
-        minio_access_key=minio_access_key,
-        minio_secret_key=minio_secret_key,
-        minio_endpoint=minio_endpoint,
+        source_access_key=source_access_key,
+        source_secret_key=source_secret_key,
+        source_endpoint=source_endpoint,
+        source_provider=source_provider,
+        destination_access_key=destination_access_key,
+        destination_secret_key=destination_secret_key,
+        destination_endpoint=destination_endpoint,
+        destination_provider=destination_provider,
         destination=DESTINATION,
         source=SOURCE,
     )
@@ -57,6 +57,7 @@ def assemble_config_file(
     return conf_path
 
 
+@retry(stop=stop_after_attempt(3))
 def sync_file(
     config_path: Path, s3_object: str, source_bucket: str, destination_bucket: str
 ) -> None:
@@ -75,6 +76,12 @@ def sync_file(
         "rclone",
         "--config",
         config_path,
+        "--low-level-retries",
+        "3",
+        "--retries",
+        "3",
+        "--transfers",
+        "1",
         "sync",
         f"{SOURCE}:{source_path.parent}",
         f"{DESTINATION}:{destination_path.parent}",

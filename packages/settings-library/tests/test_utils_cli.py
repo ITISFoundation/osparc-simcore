@@ -21,8 +21,6 @@ from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
 
-# HELPERS  --------------------------------------------------------------------------------
-
 
 def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
     kwargs = {}
@@ -33,9 +31,6 @@ def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
             except json.JSONDecodeError:
                 kwargs[k] = v
     return kwargs
-
-
-# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -84,9 +79,6 @@ def export_as_dict() -> Callable:
         )
 
     return _export
-
-
-# TESTS -----------------------------------------------------------------------------------
 
 
 def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):

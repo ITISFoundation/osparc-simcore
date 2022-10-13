@@ -22,7 +22,6 @@ from simcore_sdk.node_ports_v2.port_validation import (
 )
 
 
-# HELPERS ---------
 def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
     #
     # Taken and adapted from https://github.com/samuelcolvin/pydantic/issues/889#issuecomment-850312496
@@ -55,9 +54,6 @@ def _resolve_refs(schema: dict[str, Any]) -> dict[str, Any]:
         # In the meantime we can live with this
         return _replace_value_in_dict(deepcopy(schema), deepcopy(schema.copy()))
     return schema
-
-
-# TESTS --------------
 
 
 def test_validate_port_content():

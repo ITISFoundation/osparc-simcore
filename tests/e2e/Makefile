@@ -75,7 +75,16 @@ endef
 
 # SETUP ##################
 
-.PHONY: install-ci install-prod clean-up
+.PHONY: install-ci-no-build install-ci install-prod clean-up
+
+install-ci-no-build:
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_up_simcore)
+	@$(_setup_test_environment)
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(_transfer-images-to-registry)
+	@$(_inject-templates-in-db)
+
 install-ci install-prod: ## install e2e testing framework and start simcore/registry
 	@$(_build_simcore_images)
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
@@ -95,7 +104,7 @@ clean-up: ## remove everything
 
 
 
-# TEST ###############
+
 .PHONY: test
 test: ## test the platform
 	# tests

@@ -16,7 +16,6 @@ _REQUIRED_FIELDS = [
 CONVERTED_SUFFIX = "-converted.yaml"
 
 
-# TESTS ----------------------------------------------------------
 # NOTE: parametrizing tests per file makes more visible which file failed
 # NOTE: to debug use the wildcard and select problematic file, e.g. list_files_in_api_specs("*log_message.y*ml"))
 

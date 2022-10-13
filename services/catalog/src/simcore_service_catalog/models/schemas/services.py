@@ -85,12 +85,12 @@ class ServiceGet(
                 "badges": None,
                 "authors": [
                     {
-                        "name": "Odei Maiz",
-                        "email": "maiz@itis.swiss",
+                        "name": "Red Pandas",
+                        "email": "redpandas@wonderland.com",
                         "affiliation": None,
                     }
                 ],
-                "contact": "maiz@itis.swiss",
+                "contact": "redpandas@wonderland.com",
                 "inputs": {},
                 "outputs": {
                     "outFile": {
@@ -102,7 +102,7 @@ class ServiceGet(
                         "widget": None,
                     }
                 },
-                "owner": "maiz@itis.swiss",
+                "owner": "redpandas@wonderland.com",
             }
         }
 

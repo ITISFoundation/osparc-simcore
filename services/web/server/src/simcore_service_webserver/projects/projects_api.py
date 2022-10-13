@@ -13,6 +13,8 @@ import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
+from dataclasses import dataclass
+from datetime import datetime
 from pprint import pformat
 from typing import Any, Optional
 from uuid import UUID, uuid4
@@ -21,7 +23,7 @@ from aiohttp import web
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -33,13 +35,14 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic.types import PositiveInt
+from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
 )
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog_client, director_v2_api, storage_api
@@ -58,7 +61,12 @@ from ..socketio.events import (
 from ..users_api import UserRole, get_user_name, get_user_role
 from ..users_exceptions import UserNotFoundError
 from . import _delete
-from .project_lock import UserNameDict, get_project_locked_state, lock_project
+from .project_lock import (
+    UserNameDict,
+    get_project_locked_state,
+    is_project_locked,
+    lock_project,
+)
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import NodeNotFoundError, ProjectLockError
 from .projects_utils import extract_dns_without_default_port
@@ -170,7 +178,8 @@ def get_delete_project_task(
 async def add_project_node(
     request: web.Request,
     project: dict[str, Any],
-    user_id: int,
+    user_id: UserID,
+    product_name: str,
     service_key: str,
     service_version: str,
     service_id: Optional[str],
@@ -202,6 +211,7 @@ async def add_project_node(
     await db.replace_user_project(
         new_project_data=project,
         user_id=user_id,
+        product_name=product_name,
         project_uuid=project["uuid"],
     )
     # also ensure the project is updated by director-v2 since services
@@ -210,27 +220,30 @@ async def add_project_node(
         request.app, user_id, project["uuid"]
     )
 
-    if _is_node_dynamic(service_key):
-        service_resources: ServiceResourcesDict = await get_project_node_resources(
-            request.app,
-            project={
-                "workbench": {
-                    f"{node_uuid}": {"key": service_key, "version": service_version}
-                }
-            },
-            node_id=NodeID(node_uuid),
-        )
-        await director_v2_api.run_dynamic_service(
-            request.app,
-            project_id=project["uuid"],
-            user_id=user_id,
-            service_key=service_key,
-            service_version=service_version,
-            service_uuid=node_uuid,
-            request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-            service_resources=service_resources,
-        )
+    if not _is_node_dynamic(service_key):
+        return node_uuid
+
+    # this is a dynamic node, let's gather its resources and start it
+    service_resources: ServiceResourcesDict = await get_project_node_resources(
+        request.app,
+        project={
+            "workbench": {
+                f"{node_uuid}": {"key": service_key, "version": service_version}
+            }
+        },
+        node_id=NodeID(node_uuid),
+    )
+    await director_v2_api.run_dynamic_service(
+        request.app,
+        project_id=project["uuid"],
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        service_uuid=node_uuid,
+        request_dns=extract_dns_without_default_port(request.url),
+        request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+        service_resources=service_resources,
+    )
     return node_uuid
 
 
@@ -263,6 +276,14 @@ async def delete_project_node(
     await storage_api.delete_data_folders_of_project_node(
         request.app, project_uuid, node_uuid, user_id
     )
+
+
+async def update_project_linked_product(
+    app: web.Application, project_id: ProjectID, product_name: str
+) -> None:
+    with log_context(log, level=logging.DEBUG, msg="updating project linked product"):
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        await db.upsert_project_linked_product(project_id, product_name)
 
 
 async def update_project_node_state(
@@ -387,11 +408,23 @@ async def is_node_id_present_in_any_project_workbench(
     return await db.node_id_exists(node_id)
 
 
-async def trigger_connected_service_retrieve(
+async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
+    project_id = project["uuid"]
+    if await is_project_locked(app, project_id):
+        # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
+        log.warning(
+            "Skipping service retrieval because project with %s is currently locked."
+            "Operation triggered by %s",
+            f"{project_id=}",
+            f"{changed_keys=}",
+        )
+        return
+
     workbench = project["workbench"]
     nodes_keys_to_update: dict[str, list[str]] = defaultdict(list)
+
     # find the nodes that need to retrieve data
     for node_uuid, node in workbench.items():
         # check this node is dynamic
@@ -425,7 +458,7 @@ async def post_trigger_connected_service_retrieve(
     app: web.Application, **kwargs
 ) -> None:
     await fire_and_forget_task(
-        trigger_connected_service_retrieve(app, **kwargs),
+        _trigger_connected_service_retrieve(app, **kwargs),
         task_suffix_name="trigger_connected_service_retrieve",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
@@ -466,7 +499,7 @@ async def _clean_user_disconnected_clients(
 
 
 async def try_open_project_for_user(
-    user_id: int, project_uuid: str, client_session_id: str, app: web.Application
+    user_id: UserID, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
         async with lock_with_notification(
@@ -705,6 +738,39 @@ async def add_project_states_for_user(
 
 
 #
+# SERVICE DEPRECATION ----------------------------
+#
+async def is_service_deprecated(
+    app: web.Application,
+    user_id: UserID,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+) -> bool:
+    service = await catalog_client.get_service(
+        app, user_id, service_key, service_version, product_name
+    )
+    if deprecation_date := service.get("deprecated"):
+        deprecation_date = parse_obj_as(datetime, deprecation_date)
+        return datetime.utcnow() > deprecation_date
+    return False
+
+
+async def is_project_node_deprecated(
+    app: web.Application,
+    user_id: UserID,
+    project: dict[str, Any],
+    node_id: NodeID,
+    product_name: str,
+) -> bool:
+    if project_node := project.get("workbench", {}).get(f"{node_id}"):
+        return await is_service_deprecated(
+            app, user_id, project_node["key"], project_node["version"], product_name
+        )
+    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+
+
+#
 # SERVICE RESOURCES -----------------------------------
 #
 
@@ -731,7 +797,7 @@ async def set_project_node_resources(
 
 
 async def run_project_dynamic_services(
-    request: web.Request, project: dict, user_id: PositiveInt
+    request: web.Request, project: dict, user_id: UserID, product_name: str
 ) -> None:
     # first get the services if they already exist
     log.debug(
@@ -750,7 +816,7 @@ async def run_project_dynamic_services(
 
     running_service_uuids = [d["service_uuid"] for d in running_services]
     # now start them if needed
-    project_needed_services = {
+    project_needed_services: dict[NodeIDStr, dict[str, Any]] = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"])
@@ -758,17 +824,44 @@ async def run_project_dynamic_services(
     }
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
+    @dataclass
+    class _ServiceParams:
+        node_id: NodeIDStr
+        resources: ServiceResourcesDict
+        deprecated: bool
+
     unique_project_needed_services = set(project_needed_services.keys())
+    deprecated_services: list[bool] = await logged_gather(
+        *(
+            is_service_deprecated(
+                request.app,
+                user_id,
+                project_needed_services[service_uuid]["key"],
+                project_needed_services[service_uuid]["version"],
+                product_name,
+            )
+            for service_uuid in unique_project_needed_services
+        ),
+        reraise=True,
+    )
     service_resources_result: list[ServiceResourcesDict] = await logged_gather(
         *[
-            get_project_node_resources(request.app, project=project, node_id=node_uuid)
+            get_project_node_resources(
+                request.app, project=project, node_id=NodeID(node_uuid)
+            )
             for node_uuid in unique_project_needed_services
         ],
         reraise=True,
     )
-    service_resources_search: dict[str, ServiceResourcesDict] = dict(
-        zip(unique_project_needed_services, service_resources_result)
-    )
+
+    service_resources_search = {
+        n: _ServiceParams(n, r, d)
+        for n, r, d in zip(
+            unique_project_needed_services,
+            service_resources_result,
+            deprecated_services,
+        )
+    }
 
     start_service_tasks = [
         director_v2_api.run_dynamic_service(
@@ -780,9 +873,10 @@ async def run_project_dynamic_services(
             service_uuid=service_uuid,
             request_dns=extract_dns_without_default_port(request.url),
             request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-            service_resources=service_resources_search[service_uuid],
+            service_resources=service_resources_search[service_uuid].resources,
         )
         for service_uuid, service in project_needed_services.items()
+        if service_resources_search[service_uuid].deprecated is False
     ]
     results = await logged_gather(*start_service_tasks, reraise=True)
     log.debug("Services start result %s", results)

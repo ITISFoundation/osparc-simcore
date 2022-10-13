@@ -5,129 +5,21 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, Union
+from typing import Any, AsyncIterable, AsyncIterator, Callable
+from unittest import mock
 
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses
-from models_library.projects_access import Owner
-from models_library.projects_state import (
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    ProjectStatus,
-    RunningState,
-)
+from models_library.projects_state import ProjectState
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.long_running_tasks.server import (
-    setup as setup_long_running_tasks,
-)
-from simcore_service_webserver import catalog
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.plugin import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.tags import setup_tags
-
-DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
-DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
-
-
-@pytest.fixture
-def client(
-    event_loop,
-    aiohttp_client,
-    app_cfg,
-    postgres_db,
-    mocked_director_v2_api,
-    mock_orphaned_services,
-    mock_catalog_api: None,
-    redis_client,
-    monkeypatch_setenv_from_app_config: Callable,
-):
-
-    # config app
-    cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
-    cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
-
-    monkeypatch_setenv_from_app_config(cfg)
-    app = create_safe_application(cfg)
-
-    # setup app
-
-    assert setup_settings(app)
-    setup_long_running_tasks(app, router_prefix="/tasks")
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)  # needed for login_utils fixtures
-    setup_resource_manager(app)
-    setup_garbage_collector(app)
-    setup_socketio(app)
-    setup_director(app)
-    setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
-    setup_products(app)
-
-    # server and client
-    yield event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
-    )
-
-    # teardown here ...
-
-
-@pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> None:
-    """
-    All projects in this module are UNLOCKED
-
-    Emulates that it found logged_user as the SOLE user of this project
-    and returns the  ProjectState indicating his as owner
-    """
-    nameparts = logged_user["name"].split(".") + [""]
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False,
-            owner=Owner(
-                user_id=logged_user["id"],
-                first_name=nameparts[0],
-                last_name=nameparts[1],
-            ),
-            status=ProjectStatus.CLOSED,
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=state,
-    )
 
 
 @pytest.fixture
@@ -139,24 +31,74 @@ def mock_service_resources() -> ServiceResourcesDict:
 
 
 @pytest.fixture
-def mock_catalog_api(mocker, mock_service_resources: ServiceResourcesDict) -> None:
-    mocker.patch(
-        "simcore_service_webserver.catalog_client.get_service_resources",
-        return_value=mock_service_resources,
-    )
+def mock_service() -> dict[str, Any]:
+    return {
+        "name": "File Picker",
+        "thumbnail": None,
+        "description": "File Picker",
+        "classifiers": [],
+        "quality": {},
+        "access_rights": {
+            "1": {"execute_access": True, "write_access": False},
+            "4": {"execute_access": True, "write_access": True},
+        },
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "integration-version": None,
+        "type": "dynamic",
+        "badges": None,
+        "authors": [
+            {
+                "name": "Red Pandas",
+                "email": "redpandas@wonderland.com",
+                "affiliation": None,
+            }
+        ],
+        "contact": "redpandas@wonderland.com",
+        "inputs": {},
+        "outputs": {
+            "outFile": {
+                "displayOrder": 0,
+                "label": "File",
+                "description": "Chosen File",
+                "type": "data:*/*",
+                "fileToKeyMap": None,
+                "widget": None,
+            }
+        },
+        "owner": "redpandas@wonderland.com",
+    }
+
+
+@pytest.fixture
+def mock_catalog_api(
+    mocker: MockerFixture,
+    mock_service_resources: ServiceResourcesDict,
+    mock_service: dict[str, Any],
+) -> dict[str, mock.Mock]:
+    return {
+        "get_service_resources": mocker.patch(
+            "simcore_service_webserver.projects.projects_api.catalog_client.get_service_resources",
+            return_value=mock_service_resources,
+            autospec=True,
+        ),
+        "get_service": mocker.patch(
+            "simcore_service_webserver.projects.projects_api.catalog_client.get_service",
+            return_value=mock_service,
+            autospec=True,
+        ),
+    }
 
 
 @pytest.fixture
 async def user_project(
-    client,
-    fake_project,
-    logged_user,
-    tests_data_dir: Path,
+    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
 ):
     async with NewProject(
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
@@ -171,6 +113,7 @@ async def shared_project(
     logged_user,
     all_group,
     tests_data_dir: Path,
+    osparc_product_name: str,
 ):
     fake_project.update(
         {
@@ -183,6 +126,7 @@ async def shared_project(
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
@@ -197,6 +141,7 @@ async def template_project(
     logged_user,
     all_group: dict[str, str],
     tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterable[dict[str, Any]]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -209,8 +154,10 @@ async def template_project(
         project_data,
         client.app,
         user_id=None,
+        product_name=osparc_product_name,
         clear_all=True,
         tests_data_dir=tests_data_dir,
+        as_template=True,
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project
@@ -230,31 +177,6 @@ def fake_services():
 async def project_db_cleaner(client):
     yield
     await delete_all_projects(client.app)
-
-
-@pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch,
-) -> Callable[[Optional[Union[list[dict], dict]]], None]:
-    services_in_project = []
-
-    def creator(projects: Optional[Union[list[dict], dict]] = None) -> None:
-        for proj in projects or []:
-            services_in_project.extend(
-                [
-                    {"key": s["key"], "version": s["version"]}
-                    for _, s in proj["workbench"].items()
-                ]
-            )
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-    return creator
 
 
 @pytest.fixture(autouse=True)

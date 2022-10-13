@@ -47,8 +47,6 @@ async def storage_service(
     return storage_endpoint
 
 
-# HELPERS --
-
 # TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
 async def wait_till_storage_responsive(storage_endpoint: URL):

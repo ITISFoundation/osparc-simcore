@@ -7,9 +7,10 @@ from httpx import HTTPStatusError
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 
+from ...core.settings import ApplicationSettings
 from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
-from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.application import get_reverse_url_mapper, get_settings
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 
@@ -33,9 +34,12 @@ async def list_solvers(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
+    app_settings: ApplicationSettings = Depends(get_settings),
 ):
     """Lists all available solvers (latest version)"""
-    solvers: list[Solver] = await catalog_client.list_latest_releases(user_id)
+    solvers: list[Solver] = await catalog_client.list_latest_releases(
+        user_id, product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
+    )
 
     for solver in solvers:
         solver.url = url_for(
@@ -50,11 +54,14 @@ async def list_solvers_releases(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
+    app_settings: ApplicationSettings = Depends(get_settings),
 ):
     """Lists all released solvers (all released versions)"""
     assert await catalog_client.is_responsive()  # nosec
 
-    solvers: list[Solver] = await catalog_client.list_solvers(user_id)
+    solvers: list[Solver] = await catalog_client.list_solvers(
+        user_id, product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
+    )
 
     for solver in solvers:
         solver.url = url_for(
@@ -74,13 +81,18 @@ async def get_solver(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
+    app_settings: ApplicationSettings = Depends(get_settings),
 ) -> Solver:
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
 
-        solver = await catalog_client.get_latest_release(user_id, solver_key)
+        solver = await catalog_client.get_latest_release(
+            user_id,
+            solver_key,
+            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+        )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
@@ -101,10 +113,11 @@ async def list_solver_releases(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
+    app_settings: ApplicationSettings = Depends(get_settings),
 ):
     """Lists all releases of a given solver"""
     releases: list[Solver] = await catalog_client.list_solver_releases(
-        user_id, solver_key
+        user_id, solver_key, product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
     )
 
     for solver in releases:
@@ -122,10 +135,16 @@ async def get_solver_release(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
+    app_settings: ApplicationSettings = Depends(get_settings),
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver = await catalog_client.get_solver(user_id, solver_key, version)
+        solver = await catalog_client.get_solver(
+            user_id,
+            solver_key,
+            version,
+            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+        )
 
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version

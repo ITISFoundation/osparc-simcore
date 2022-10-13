@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.7.0
+  version: 0.9.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -326,8 +326,8 @@ paths:
     $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_details"
 
   # TASKS --------------------------------------------------------------------------
-  # /tasks:
-  #   $ref: "./openapi-tasks.yaml#/paths/~1tasks"
+  /tasks:
+    $ref: "./openapi-tasks.yaml#/paths/~1tasks"
 
   /tasks/{task_id}:
     $ref: "./openapi-tasks.yaml#/paths/~1tasks~1{task_id}"

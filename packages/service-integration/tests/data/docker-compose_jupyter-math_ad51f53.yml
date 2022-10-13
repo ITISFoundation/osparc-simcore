@@ -1,0 +1,64 @@
+version: '3.7'
+services:
+  jupyter-math:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        VERSION: 2.0.8
+      labels:
+        org.label-schema.build-date: '2022-10-12T16:26:11Z'
+        org.label-schema.schema-version: '1.0'
+        org.label-schema.vcs-ref: ad51f53
+        org.label-schema.vcs-url: https://github.com/ITISFoundation/jupyter-math
+        io.simcore.name: '{"name": "JupyterLab Math (Python+Octave)"}'
+        io.simcore.thumbnail: '{"thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/1024px-Jupyter_logo.svg.png"}'
+        io.simcore.description: '{"description": "[JupyterLab](https://jupyter.org/)
+          with **math** kernels in [octave](https://www.gnu.org/software/octave/index)
+          (largely compatible with Matlab code) and python. Python kernel includes
+          popular math packages like [numpy](https://numpy.org/), [pandas](https://pandas.pydata.org/),
+          [matplotlib](https://matplotlib.org/), [plotly](https://plotly.com/python/)
+          and [scipy](https://www.scipy.org/) packages (see requirements.txt list)\n"}'
+        io.simcore.key: '{"key": "simcore/services/dynamic/jupyter-math"}'
+        io.simcore.version: '{"version": "2.0.8"}'
+        io.simcore.integration-version: '{"integration-version": "2.0.0"}'
+        io.simcore.type: '{"type": "dynamic"}'
+        io.simcore.authors: '{"authors": [{"name": "Pedro Crespo-Valero", "email":
+          "crespo@itis.swiss", "affiliation": "IT''IS Foundation"}, {"name": "Sylvain
+          Andereregg", "email": "anderegg@itis.swiss", "affiliation": "IT''IS Foundation"},
+          {"name": "Sylvain Reboux", "email": "reboux@zmt.swiss", "affiliation": "Zurich
+          MedTech"}]}'
+        io.simcore.contact: '{"contact": "crespo@itis.swiss"}'
+        io.simcore.inputs: '{"inputs": {"input_1": {"displayOrder": 1.0, "label":
+          "input_files_1", "description": "Any input files. One or several files compressed
+          in a zip will be downloaded in an inputs folder.", "type": "data:*/*"},
+          "input_2": {"displayOrder": 2.0, "label": "input_files_2", "description":
+          "Any input files. One or several files compressed in a zip will be downloaded
+          in an inputs folder.", "type": "data:*/*"}, "input_3": {"displayOrder":
+          3.0, "label": "input_files_3", "description": "Any input files. One or several
+          files compressed in a zip will be downloaded in an inputs folder.", "type":
+          "data:*/*"}, "input_4": {"displayOrder": 4.0, "label": "input_files_4",
+          "description": "Any input files. One or several files compressed in a zip
+          will be downloaded in an inputs folder.", "type": "data:*/*"}}}'
+        io.simcore.outputs: '{"outputs": {"output_1": {"displayOrder": 1.0, "label":
+          "Output files 1", "description": "Output files uploaded from the outputs
+          folder", "type": "data:*/*"}, "output_2": {"displayOrder": 2.0, "label":
+          "Output files 2", "description": "Output files uploaded from the outputs
+          folder", "type": "data:*/*"}, "output_3": {"displayOrder": 3.0, "label":
+          "Output files 3", "description": "Output files uploaded from the outputs
+          folder", "type": "data:*/*"}, "output_4": {"displayOrder": 4.0, "label":
+          "Output files 4", "description": "Output files uploaded from the outputs
+          folder", "type": "data:*/*"}}}'
+        io.simcore.boot-options: '{"boot-options": {"boot_mode": {"label": "Boot mode",
+          "description": "Select boot type for the service", "default": "0", "items":
+          {"0": {"label": "JupyterLab", "description": "Display the JupyterLab interface
+          the default boot mode"}, "1": {"label": "Voila", "description": "To start
+          as Voila save a notebook as \"voila.ipynb\" in the root folder"}}}}}'
+        simcore.service.restart-policy: no-restart
+        simcore.service.paths-mapping: '{"inputs_path": "/home/jovyan/work/inputs",
+          "outputs_path": "/home/jovyan/work/outputs", "state_paths": ["/home/jovyan/work/workspace"]}'
+        simcore.service.settings: '[{"name": "ports", "type": "int", "value": 8888},
+          {"name": "constraints", "type": "string", "value": ["node.platform.os ==
+          linux"]}, {"name": "Resources", "type": "Resources", "value": {"Limits":
+          {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184}}}]'
+    image: simcore/services/dynamic/jupyter-math:2.0.8
