@@ -50,45 +50,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # build-test-images:
-  #   # this step comes first, so that it is executed as first job in push calls
-  #   # in PR calls this step is anyway skipped
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   name: "[build] docker images"
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: expose github runtime for buildx
-  #       uses: crazy-max/ghaction-github-runtime@v2
-  #     - name: show system environs
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: build images
-  #       run: |
-  #         export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-  #         mkdir --parents /${{ runner.temp }}/build
-  #         make build local-dest=/${{ runner.temp }}/build
-  #     - name: upload build artifacts
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-  #         path: /${{ runner.temp }}/build
+  build:
+    # this step comes first, so that it is executed as first job in push calls
+    # in PR calls this step is anyway skipped
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    name: "[build] docker images"
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: show system environs
+        run: ./ci/helpers/show_system_versions.bash
+      - name: build images
+        run: |
+          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          mkdir --parents /${{ runner.temp }}/build
+          make build local-dest=/${{ runner.temp }}/build
+      - name: upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
 
   unit-test:
     strategy:
@@ -124,6 +124,24 @@ jobs:
       package-path: ${{ matrix.package-path }}
       test-parameters: ${{ matrix.test-parameters }}
 
+  integration-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package-path: services/web/server
+            test-parameters: test-subfolder=01
+          - package-path: services/web/server
+            test-parameters: test-subfolder=02
+          - package-path: services/director-v2
+            test-parameters: test-subfolder=01
+          - package-path: services/director-v2
+            test-parameters: test-subfolder=02
+
+    uses: ./.github/workflows/ci-unit-test.yml
+    with:
+      package-path: ${{ matrix.package-path }}
+      test-parameters: ${{ matrix.test-parameters }}
 
   # unit-test-api:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
@@ -803,306 +821,6 @@ jobs:
   #         name: codeclimate-${{ github.job }}-coverage
   #         path: codeclimate.${{ github.job }}_coverage.json
 
-  # integration-test-webserver-01:
-  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
-  #   name: "[int] webserver 01"
-  #   needs: [build-test-images]
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - name: set PR default variables
-  #       # only pushes have access to the docker credentials, use a default
-  #       if: github.event_name == 'pull_request'
-  #       run: |
-  #         export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-  #         echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/web/server/requirements/ci.txt"
-  #     - name: download docker images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-  #         path: /${{ runner.temp }}/build
-  #     - name: load docker images
-  #       run: make load-images local-src=/${{ runner.temp }}/build
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/integration-testing/webserver.bash install
-  #     - name: test
-  #       run: ./ci/github/integration-testing/webserver.bash test 01
-  #     - name: upload failed tests logs
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ github.job }}_docker_logs
-  #         path: ./services/web/server/test_failures
-  #     - name: cleanup
-  #       if: always()
-  #       run: ./ci/github/integration-testing/webserver.bash clean_up
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: integrationtests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
-
-  # integration-test-webserver-02:
-  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
-  #   name: "[int] webserver 02"
-  #   needs: [build-test-images]
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - name: set PR default variables
-  #       # only pushes have access to the docker credentials, use a default
-  #       if: github.event_name == 'pull_request'
-  #       run: |
-  #         export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-  #         echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/web/server/requirements/ci.txt"
-  #     - name: expose github runtime for buildx
-  #       uses: crazy-max/ghaction-github-runtime@v2
-  #     - name: download docker images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-  #         path: /${{ runner.temp }}/build
-  #     - name: load docker images
-  #       run: make load-images local-src=/${{ runner.temp }}/build
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/integration-testing/webserver.bash install
-  #     - name: test
-  #       run: ./ci/github/integration-testing/webserver.bash test 02
-  #     - name: upload failed tests logs
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ github.job }}_docker_logs
-  #         path: ./services/web/server/test_failures
-  #     - name: cleanup
-  #       if: always()
-  #       run: ./ci/github/integration-testing/webserver.bash clean_up
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: integrationtests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
-
-  # integration-test-director-v2-01:
-  #   timeout-minutes: 35 # FIXME: temporary up (PC). if this timeout gets too small, then split the tests
-  #   name: "[int] director-v2 01"
-  #   needs: [build-test-images]
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - name: set PR default variables
-  #       # only pushes have access to the docker credentials, use a default
-  #       if: github.event_name == 'pull_request'
-  #       run: |
-  #         export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-  #         echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/director-v2/requirements/ci.txt"
-  #     - name: expose github runtime for buildx
-  #       uses: crazy-max/ghaction-github-runtime@v2
-  #     - name: download docker images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-  #         path: /${{ runner.temp }}/build
-  #     - name: load docker images
-  #       run: make load-images local-src=/${{ runner.temp }}/build
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/integration-testing/director-v2.bash install
-  #     - name: test
-  #       run: ./ci/github/integration-testing/director-v2.bash test 01
-  #     - name: upload failed tests logs
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ github.job }}_docker_logs
-  #         path: ./services/director-v2/test_failures
-  #     - name: cleanup
-  #       if: always()
-  #       run: ./ci/github/integration-testing/director-v2.bash clean_up
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: integrationtests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
-
-  # integration-test-director-v2-02:
-  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
-  #   name: "[int] director-v2 02"
-  #   needs: [build-test-images]
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - name: set PR default variables
-  #       # only pushes have access to the docker credentials, use a default
-  #       if: github.event_name == 'pull_request'
-  #       run: |
-  #         export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-  #         echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup rclone docker volume plugin
-  #       run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "services/director-v2/requirements/ci.txt"
-  #     - name: expose github runtime for buildx
-  #       uses: crazy-max/ghaction-github-runtime@v2
-  #     - name: download docker images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-  #         path: /${{ runner.temp }}/build
-  #     - name: load docker images
-  #       run: make load-images local-src=/${{ runner.temp }}/build
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/integration-testing/director-v2.bash install
-  #     - name: test
-  #       run: ./ci/github/integration-testing/director-v2.bash test 02
-  #     - name: upload failed tests logs
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ github.job }}_docker_logs
-  #         path: ./services/director-v2/test_failures
-  #     - name: cleanup
-  #       if: always()
-  #       run: ./ci/github/integration-testing/director-v2.bash clean_up
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: integrationtests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
 
   # integration-test-simcore-sdk:
   #   timeout-minutes: 30 # if this timeout gets too small, then split the tests

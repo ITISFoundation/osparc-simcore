@@ -9,9 +9,10 @@ on:
         type: string
 
 jobs:
-  unit-test:
+  integration-test:
     name: ${{ inputs.package-path }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -39,6 +40,13 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "${{ inputs.package-path }}/requirements/ci.txt"
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install package
@@ -48,10 +56,18 @@ jobs:
           source .venv/bin/activate
           make --directory=${{ inputs.package-path }} install-ci
           pip list --verbose
-      - name: tests
+          make --directory=${{ inputs.package-path }} tag-version
+          make --directory=${{ inputs.package-path }} info-images
+      - name: test
         run: |
           source .venv/bin/activate
-          make --directory=${{ inputs.package-path }} test-ci-unit ${{ inputs.test-parameters }}
+          make --directory=${{ inputs.package-path }} test-ci-integration ${{ inputs.test-parameters }}
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/web/server/test_failures
       - uses: codecov/codecov-action@v3.1.1
         with:
-          flags: unittests
+          flags: integrationtests #optional
