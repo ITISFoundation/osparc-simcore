@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import os
 from pathlib import Path
@@ -43,7 +42,7 @@ def test_make_docker_compose_meta(
         "--to-spec-file",
         compose_file_path,
     )
-    assert result.exit_code == os.EX_OK, result
+    assert result.exit_code == os.EX_OK, result.output
 
     assert compose_file_path.exists()
 

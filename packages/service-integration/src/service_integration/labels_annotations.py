@@ -1,6 +1,7 @@
-""" configuration is attached to user's docker image as label annotations
+""" Image labels annotations
 
-This module defines how config is serialized/deserialized to/from docker labels
+osparc expects the service configuration (in short: config) attached to the service's image as label annotations.
+This module defines how this config is serialized/deserialized to/from docker labels annotations
 """
 
 import json
@@ -9,14 +10,18 @@ from typing import Any
 
 from pydantic.json import pydantic_encoder
 
+LabelsAnnotationsDict = dict[str, str]
 
-def _json_dumps(obj: Any, **kwargs):
+
+def _json_dumps(obj: Any, **kwargs) -> str:
     return json.dumps(obj, default=pydantic_encoder, **kwargs)
 
 
 def to_labels(
     config: dict[str, Any], *, prefix_key: str, trim_key_head: bool = True
-) -> dict[str, str]:
+) -> LabelsAnnotationsDict:
+    """converts config into labels annotations"""
+
     # FIXME: null is loaded as 'null' string value? is that correct? json -> None upon deserialization?
     labels = {}
     for key, value in config.items():
@@ -40,9 +45,10 @@ def to_labels(
 
 
 def from_labels(
-    labels: dict[str, str], *, prefix_key: str, trim_key_head: bool = True
+    labels: LabelsAnnotationsDict, *, prefix_key: str, trim_key_head: bool = True
 ) -> dict[str, Any]:
-    data: dict[str, Any] = {}
+    """convert labels annotations into config"""
+    config: dict[str, Any] = {}
     for key, label in labels.items():
         if key.startswith(f"{prefix_key}."):
             try:
@@ -52,8 +58,8 @@ def from_labels(
 
             if not trim_key_head:
                 if isinstance(value, dict):
-                    data.update(value)
+                    config.update(value)
             else:
-                data[key.replace(f"{prefix_key}.", "")] = value
+                config[key.replace(f"{prefix_key}.", "")] = value
 
-    return data
+    return config

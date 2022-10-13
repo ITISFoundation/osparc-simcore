@@ -12,7 +12,6 @@ integrates with osparc.
     -
 """
 
-import io
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, Optional
 
@@ -33,9 +32,9 @@ from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 
 from .compose_spec_model import ComposeSpecification
-from .context import IntegrationContext
 from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
+from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
 CONFIG_FOLDER_NAME = ".osparc"
@@ -61,30 +60,26 @@ OSPARC_LABEL_PREFIXES = (
 # Project config -> stored in repo's basedir/.osparc
 #
 
-COMPOSE_OVERWRITE_DEFAULTS = """
-services:
-  {service_name}:
-    build:
-      dockerfile: Dockerfile
-"""
-
 
 class DockerComposeOverwriteCfg(ComposeSpecification):
     """picks up configurations used to overwrite the docker-compuse output"""
 
     @classmethod
-    def from_yaml(
-        cls, path: Optional[Path], service_name: Optional[str] = None
-    ) -> "DockerComposeOverwriteCfg":
-        """Loads from the file or creates the content of the file if missing"""
-        if path is None:
-            if service_name is None:
-                raise ValueError("Must provide a 'service_name' when path is missing")
+    def create_default(cls, service_name: str = None) -> "DockerComposeOverwriteCfg":
+        return cls.parse_obj(
+            {
+                "services": {
+                    service_name: {
+                        "build": {
+                            "dockerfile": "Dockerfile",
+                        }
+                    }
+                }
+            }
+        )
 
-            string_io = io.StringIO(
-                COMPOSE_OVERWRITE_DEFAULTS.format(service_name=service_name)
-            )
-            return cls.parse_obj(yaml_safe_load(string_io))
+    @classmethod
+    def from_yaml(cls, path: Path) -> "DockerComposeOverwriteCfg":
         with path.open() as fh:
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
@@ -130,14 +125,8 @@ class MetaConfig(ServiceDockerData):
         """name used as key in the compose-spec services map"""
         return self.key.split("/")[-1].replace(" ", "")
 
-    def image_name(
-        self, integration_context: IntegrationContext, registry="local"
-    ) -> str:
-        registry_prefix = (
-            f"{integration_context.REGISTRY_NAME}/"
-            if integration_context.REGISTRY_NAME
-            else ""
-        )
+    def image_name(self, settings: AppSettings, registry="local") -> str:
+        registry_prefix = f"{settings.REGISTRY_NAME}/" if settings.REGISTRY_NAME else ""
         service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
