@@ -125,6 +125,7 @@ jobs:
       test-parameters: ${{ matrix.test-parameters }}
 
   integration-test:
+    needs: build
     strategy:
       fail-fast: false
       matrix:

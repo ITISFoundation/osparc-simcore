@@ -12,7 +12,6 @@ jobs:
   integration-test:
     name: ${{ inputs.package-path }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
