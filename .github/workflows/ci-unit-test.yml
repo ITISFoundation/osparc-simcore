@@ -1,21 +1,6 @@
 on:
   workflow_call:
     inputs:
-      os:
-        required: true
-        type: string
-      python:
-        required: true
-        type: string
-      docker_buildx:
-        required: true
-        type: string
-      docker_compose:
-        required: true
-        type: string
-      docker_compose_sha:
-        required: true
-        type: string
       package_path:
         required: true
         type: string
