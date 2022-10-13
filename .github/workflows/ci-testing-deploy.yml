@@ -90,29 +90,24 @@ jobs:
   #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
   #         path: /${{ runner.temp }}/build
 
-  unit-test-webserver-isolated:
+  unit-test-webserver:
+    strategy:
+      fail-fast: false
+      matrix:
+        package-path: [service/web/server]
+        include:
+          - package-path: service/web/server
+            test-parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
+          - package-path: service/web/server
+            test-parameters: test-subfolder=01
+          - package-path: service/web/server
+            test-parameters: test-subfolder=02
+          - package-path: service/web/server
+            test-parameters: test-subfolder=03
     uses: ./.github/workflows/ci-unit-test.yml
     with:
-      package_path: services/web/server
-      test_parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
-
-  unit-test-webserver-01:
-    uses: ./.github/workflows/ci-unit-test.yml
-    with:
-      package_path: services/web/server
-      test_parameters: test-subfolder=with_dbs/01
-
-  unit-test-webserver-02:
-    uses: ./.github/workflows/ci-unit-test.yml
-    with:
-      package_path: services/web/server
-      test_parameters: test-subfolder=with_dbs/02
-
-  unit-test-webserver-03:
-    uses: ./.github/workflows/ci-unit-test.yml
-    with:
-      package_path: services/web/server
-      test_parameters: test-subfolder=with_dbs/03
+      package_path: ${{ matrix.package-path }}
+      test_parameters: ${{ matrix.test-parameters }}
 
   # unit-test-storage:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
