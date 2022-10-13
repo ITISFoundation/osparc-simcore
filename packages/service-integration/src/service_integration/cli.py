@@ -7,9 +7,7 @@ import typer
 
 from . import __version__
 from .commands import compose, config, metadata, run_creator
-from .context import IntegrationContext
-
-DEFAULTS = IntegrationContext()
+from .settings import AppSettings
 
 app = typer.Typer()
 
@@ -29,23 +27,28 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
-    registry_name: str = typer.Option(
-        DEFAULTS.REGISTRY_NAME,
+    registry_name: Optional[str] = typer.Option(
+        None,
         "--REGISTRY_NAME",
-        help="sets docker registry",
+        help="image registry name. Full url or prefix used as prefix in an image name",
     ),
-    compose_version: str = typer.Option(
-        DEFAULTS.COMPOSE_VERSION,
+    compose_version: Optional[str] = typer.Option(
+        None,
         "--COMPOSE_VERSION",
-        help="sets docker-compose spec version",
+        help="version used for docker compose specification",
     ),
 ):
     """o2s2parc service integration library"""
     assert version or not version  # nosec
-    ctx.integration_context = IntegrationContext(
-        REGISTRY_NAME=registry_name,
-        COMPOSE_VERSION=compose_version,
-    )
+
+    overrides = {}
+    if registry_name:
+        overrides["REGISTRY_NAME"] = registry_name
+
+    if compose_version:
+        overrides["COMPOSE_VERSION"] = compose_version
+
+    ctx.settings = AppSettings(**overrides)
 
 
 # new

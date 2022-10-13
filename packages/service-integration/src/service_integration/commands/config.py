@@ -57,8 +57,8 @@ def create_osparc_specs(
                 meta_cfg = MetaConfig.from_labels_annotations(labels)
                 _save(service_name, metadata_path, meta_cfg)
 
-                docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
-                    path=None, service_name=meta_cfg.service_name()
+                docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.create_default(
+                    service_name=meta_cfg.service_name()
                 )
                 _save(
                     service_name,
