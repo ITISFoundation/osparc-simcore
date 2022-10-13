@@ -94,15 +94,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package-path: [service/web/server]
+        package-path: [services/web/server]
         include:
-          - package-path: service/web/server
+          - package-path: services/web/server
             test-parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
-          - package-path: service/web/server
+          - package-path: services/web/server
             test-parameters: test-subfolder=01
-          - package-path: service/web/server
+          - package-path: services/web/server
             test-parameters: test-subfolder=02
-          - package-path: service/web/server
+          - package-path: services/web/server
             test-parameters: test-subfolder=03
     uses: ./.github/workflows/ci-unit-test.yml
     with:
