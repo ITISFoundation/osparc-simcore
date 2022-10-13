@@ -127,6 +127,13 @@ qx.Class.define("osparc.ui.hint.Hint", {
       }
     },
 
+    getText: function() {
+      if (this.__label) {
+        return this.__label.getValue();
+      }
+      return null;
+    },
+
     setText: function(text) {
       if (this.__label) {
         this.__label.setValue(text);

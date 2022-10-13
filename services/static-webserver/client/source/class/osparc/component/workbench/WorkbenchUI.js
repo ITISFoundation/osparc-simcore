@@ -730,19 +730,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y2 = pointList[1] ? pointList[1][1] : 0;
         const edgeRepresentation = this.__svgLayer.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
 
-        edge.addListener("changePortConnected", e => {
-          const portConnected = e.getData();
-          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
-        }, this);
+        const hint = new osparc.ui.hint.Hint(null, "");
+        edgeRepresentation.hint = hint;
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
-        const hint = new osparc.ui.hint.Hint(null, "Link status");
+        edge.addListener("changePortConnected", e => {
+          const portConnected = e.getData();
+          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
+          if ("hint" in edgeRepresentation) {
+            edgeRepresentation.hint.setText(portConnected ? "" : "No ports Connected");
+          }
+        }, this);
+
         const that = this;
         [
-          edgeUI.getRepresentation().widerCurve.node,
-          edgeUI.getRepresentation().node
+          edgeRepresentation.widerCurve.node,
+          edgeRepresentation.node
         ].forEach(svgEl => {
           svgEl.addEventListener("click", e => {
             // this is needed to get out of the context of svg
@@ -751,28 +756,30 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           }, this);
 
           const topOffset = 20;
-          const leftOffset = -40;
           svgEl.addEventListener("mouseover", e => {
-            console.log("mouseover", e);
+            const leftOffset = -(hint.getText().length*4);
             const properties = {
               top: e.clientY + topOffset,
-              left: e.clientX - leftOffset
+              left: e.clientX + leftOffset
             };
             hint.setLayoutProperties(properties);
-            hint.show();
+            if (hint.getText().length !== 0) {
+              hint.show();
+            }
           }, this);
           svgEl.addEventListener("mousemove", e => {
-            console.log("mousemove", e);
+            const leftOffset = -(hint.getText().length*4);
             const properties = {
               top: e.clientY + topOffset,
-              left: e.clientX - leftOffset
+              left: e.clientX + leftOffset
             };
             hint.setLayoutProperties(properties);
-            hint.show();
+            if (hint.getText().length !== 0) {
+              hint.show();
+            }
           }, this);
         });
         edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", e => {
-          console.log("mouseout", e);
           hint.exclude();
         }, this);
       }
