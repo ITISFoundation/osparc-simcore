@@ -121,7 +121,7 @@ jobs:
             test-parameters: ""
           - package-path: packages/simcore-sdk
             test-parameters: ""
-    uses: ./.github/workflows/reusables/service-unit-test.yml
+    uses: ./.github/workflows/reusable-unit-test.yml
     with:
       package-path: ${{ matrix.package-path }}
       test-parameters: ${{ matrix.test-parameters }}
@@ -143,7 +143,7 @@ jobs:
           - package-path: packages/simcore-sdk
             test-parameters: ""
 
-    uses: ./.github/workflows/reusables/service-integration-test.yml
+    uses: ./.github/workflows/reusable-integration-test.yml
     with:
       package-path: ${{ matrix.package-path }}
       test-parameters: ${{ matrix.test-parameters }}
