@@ -152,7 +152,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
           width,
           height
         } = qx.bom.element.Dimension.getSize(element);
-        const selfBounds = this.getBounds() || this.getSizeHint();
+        const selfBounds = this.getHintBounds();
         let properties = {};
         switch (this.getOrientation()) {
           case this.self().orientation.TOP:
@@ -174,6 +174,10 @@ qx.Class.define("osparc.ui.hint.Hint", {
         }
         this.setLayoutProperties(properties);
       }
+    },
+
+    getHintBounds: function() {
+      return this.getBounds() || this.getSizeHint();
     },
 
     _applyOrientation: function() {
