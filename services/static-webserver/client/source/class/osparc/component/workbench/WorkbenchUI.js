@@ -738,16 +738,42 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
+        const hint = new osparc.ui.hint.Hint(null, "Link status");
         const that = this;
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("click", e => {
-          // this is needed to get out of the context of svg
-          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-          e.stopPropagation();
-        }, this);
-        edgeUI.getRepresentation().node.addEventListener("click", e => {
-          // this is needed to get out of the context of svg
-          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-          e.stopPropagation();
+        [
+          edgeUI.getRepresentation().widerCurve.node,
+          edgeUI.getRepresentation().node
+        ].forEach(svgEl => {
+          svgEl.addEventListener("click", e => {
+            // this is needed to get out of the context of svg
+            that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+            e.stopPropagation();
+          }, this);
+
+          const topOffset = 20;
+          const leftOffset = -40;
+          svgEl.addEventListener("mouseover", e => {
+            console.log("mouseover", e);
+            const properties = {
+              top: e.clientY + topOffset,
+              left: e.clientX - leftOffset
+            };
+            hint.setLayoutProperties(properties);
+            hint.show();
+          }, this);
+          svgEl.addEventListener("mousemove", e => {
+            console.log("mousemove", e);
+            const properties = {
+              top: e.clientY + topOffset,
+              left: e.clientX - leftOffset
+            };
+            hint.setLayoutProperties(properties);
+            hint.show();
+          }, this);
+        });
+        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", e => {
+          console.log("mouseout", e);
+          hint.exclude();
         }, this);
       }
     },
