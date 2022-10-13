@@ -39,7 +39,7 @@ async def apply_observation_cycle(
         )
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
-            can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
+            can_save=scheduler_data.dynamic_sidecar.were_containers_created,
         )
 
     # TODO: ANE this can be moved to a handler in the future scheduled
