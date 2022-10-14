@@ -15,7 +15,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests tests-ci
+.PHONY: tests test-ci-unit
 tests: ## runs unit tests
 	# running unit tests
 	@pytest \
@@ -31,7 +31,7 @@ tests: ## runs unit tests
 		-vv \
 		$(CURDIR)/tests
 
-tests-ci: ## runs unit tests
+test-ci-unit: ## runs unit tests
 	# running unit tests
 	@pytest \
 		--asyncio-mode=auto \

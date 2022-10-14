@@ -20,7 +20,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/postgres-database
-  make tests-ci
+  make test-ci-unit
   popd
 }
 
