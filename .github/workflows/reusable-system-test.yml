@@ -1,0 +1,57 @@
+on:
+  workflow_call:
+    inputs:
+      test-name:
+        required: true
+        type: string
+
+jobs:
+  integration-test:
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    name: ${{ inputs.test-name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "./tests/${{ inputs.test-name }}/requirements/ci.txt"
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/system-testing/${{ inputs.test-name }}.bash install
+      - name: test
+        run: ./ci/github/system-testing/${{ inputs.test-name }}.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./test_failures
