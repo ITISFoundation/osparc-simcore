@@ -274,7 +274,7 @@ async def start_project_node(
     workbench = project.get("workbench", {})
     if not workbench.get(f"{node_id}"):
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
-    node_details = Node.construct(workbench[f"{node_id}"])
+    node_details = Node.construct(**workbench[f"{node_id}"])
 
     await _start_dynamic_service(
         request,
