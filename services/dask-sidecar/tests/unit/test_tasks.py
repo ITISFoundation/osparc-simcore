@@ -333,7 +333,7 @@ def test_run_computational_sidecar_real_fct(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
+    osparc_api_settings: TaskOsparcAPISettings,
 ):
 
     mocked_get_integration_version = mocker.patch(
@@ -350,7 +350,7 @@ def test_run_computational_sidecar_real_fct(
         ubuntu_task.log_file_url,
         ubuntu_task.command,
         s3_settings,
-        osparc_api_settings,
+        None,
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -429,7 +429,7 @@ def test_run_multiple_computational_sidecar_dask(
             ubuntu_task.log_file_url,
             ubuntu_task.command,
             s3_settings,
-            osparc_api_settings,
+            None,
             resources={},
         )
         for _ in range(NUMBER_OF_TASKS)
@@ -468,7 +468,7 @@ def test_run_computational_sidecar_dask(
         ubuntu_task.log_file_url,
         ubuntu_task.command,
         s3_settings,
-        osparc_api_settings,
+        None,
         resources={},
     )
 
@@ -522,7 +522,7 @@ def test_failing_service_raises_exception(
             ubuntu_task_fail.log_file_url,
             ubuntu_task_fail.command,
             s3_settings,
-            osparc_api_settings,
+            None,
         )
 
 
@@ -545,5 +545,5 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
             ubuntu_task_unexpected_output.log_file_url,
             ubuntu_task_unexpected_output.command,
             s3_settings,
-            osparc_api_settings,
+            None,
         )
