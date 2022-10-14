@@ -74,7 +74,6 @@ async def toggle_service_observation(
     },
 )
 async def remove_service_containers(
-    request: Request,
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
@@ -82,8 +81,6 @@ async def remove_service_containers(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    assert request  # nosec
-
     scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
 
     async def _task_remove_service_containers(
@@ -124,7 +121,6 @@ async def remove_service_containers(
     },
 )
 async def save_service_state(
-    request: Request,
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
@@ -132,8 +128,6 @@ async def save_service_state(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    assert request  # nosec
-
     scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
 
     async def _task_save_service_state(
@@ -174,7 +168,6 @@ async def save_service_state(
     },
 )
 async def push_service_outputs(
-    request: Request,
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
@@ -182,8 +175,6 @@ async def push_service_outputs(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    assert request  # nosec
-
     scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
 
     async def _task_push_service_outputs(
@@ -224,7 +215,6 @@ async def push_service_outputs(
     },
 )
 async def cleanup_service_docker_resources(
-    request: Request,
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     app: FastAPI = Depends(get_app),
@@ -235,8 +225,6 @@ async def cleanup_service_docker_resources(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    assert request  # nosec
-
     scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
 
     async def _task_cleanup_service_docker_resources(
