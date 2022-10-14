@@ -80,7 +80,7 @@ dask==2022.9.2
     #   -r requirements/_base.in
     #   dask-gateway
     #   distributed
-dask-gateway==2022.6.1
+dask-gateway==2022.10.0
     # via -r requirements/_base.in
 defusedxml==0.7.1
     # via nbconvert
