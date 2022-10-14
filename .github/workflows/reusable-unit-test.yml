@@ -4,9 +4,22 @@ on:
       package-path:
         required: true
         type: string
+      package-install-cmd:
+        required: false
+        type: string
+        default: test-ci-unit
+      test-cmd:
+        required: false
+        type: string
+        default: test-ci-unit
       test-parameters:
         required: false
         type: string
+        default: ""
+      run-codestyle:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   unit-test:
@@ -46,12 +59,17 @@ jobs:
           ./ci/helpers/ensure_python_pip.bash
           make devenv
           source .venv/bin/activate
-          make --directory=${{ inputs.package-path }} install-ci
+          make --directory=${{ inputs.package-path }} ${{ inputs.package-install-cmd }}
           pip list --verbose
+      - name: codestyle
+        if: ${{ inputs.run-codestyle }}
+        run: |
+          source .venv/bin/activate
+          make --directory=${{ inputs.package-path }} codestyle-ci
       - name: tests
         run: |
           source .venv/bin/activate
-          make --directory=${{ inputs.package-path }} test-ci-unit ${{ inputs.test-parameters }}
+          make --directory=${{ inputs.package-path }} ${{ inputs.test-cmd }} ${{ inputs.test-parameters }}
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests
