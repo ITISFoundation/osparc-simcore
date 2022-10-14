@@ -26,7 +26,8 @@ logger = create_dask_worker_logger(__name__)
 
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
-
+CHUNK_SIZE = 4 * 1024 * 1024
+MIMETYPE_APPLICATION_ZIP: Final[str] = "application/zip"
 
 LogPublishingCB = Callable[[str], Awaitable[None]]
 
@@ -47,9 +48,6 @@ def _file_progress_cb(
         ),
         main_loop,
     )
-
-
-CHUNK_SIZE = 4 * 1024 * 1024
 
 
 class ClientKWArgsDict(TypedDict):
@@ -78,10 +76,6 @@ def _file_chunk_streamer(src: BytesIO, dst: BytesIO):
     data = src.read(CHUNK_SIZE)
     segment_len = dst.write(data)
     return (data, segment_len)
-
-
-# TODO: use filecaching to leverage fsspec local cache of files for future improvements
-# TODO: use unzip from fsspec to simplify code
 
 
 async def _copy_file(
@@ -116,9 +110,6 @@ async def _copy_file(
                     f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
                     f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]"
                 )
-
-
-_ZIP_MIME_TYPE: Final[str] = "application/zip"
 
 
 async def pull_file_from_remote(
@@ -156,7 +147,10 @@ async def pull_file_from_remote(
         f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete."
     )
 
-    if src_mime_type == _ZIP_MIME_TYPE and target_mime_type != _ZIP_MIME_TYPE:
+    if (
+        src_mime_type == MIMETYPE_APPLICATION_ZIP
+        and target_mime_type != MIMETYPE_APPLICATION_ZIP
+    ):
         await log_publishing_cb(f"Uncompressing '{dst_path.name}'...")
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
         with zipfile.ZipFile(dst_path, "r") as zip_obj:
@@ -166,22 +160,6 @@ async def pull_file_from_remote(
         # finally remove the zip archive
         await log_publishing_cb(f"Uncompressing '{dst_path.name}' complete.")
         dst_path.unlink()
-
-
-async def file_sender(file_name: Path):
-    async with aiofiles.open(file_name, "rb") as f:
-        chunk = await f.read(64 * 1024)
-        while chunk:
-            yield chunk
-            chunk = await f.read(64 * 1024)
-
-
-def file_sende_sync(file_name: Path):
-    with file_name.open("rb") as f:
-        chunk = f.read(64 * 1024)
-        while chunk:
-            yield chunk
-            chunk = f.read(64 * 1024)
 
 
 async def _push_file_to_osparc_api(
@@ -291,9 +269,6 @@ async def _push_file_to_remote(
     )
 
 
-MIMETYPE_APPLICATION_ZIP = "application/zip"
-
-
 async def push_file_to_remote(
     src_path: Path,
     dst_url: AnyUrl,
@@ -310,7 +285,10 @@ async def push_file_to_remote(
         dst_mime_type, _ = mimetypes.guess_type(f"{dst_url.path}")
         src_mime_type, _ = mimetypes.guess_type(src_path)
 
-        if dst_mime_type == _ZIP_MIME_TYPE and src_mime_type != _ZIP_MIME_TYPE:
+        if (
+            dst_mime_type == MIMETYPE_APPLICATION_ZIP
+            and src_mime_type != MIMETYPE_APPLICATION_ZIP
+        ):
             archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
             await log_publishing_cb(
                 f"Compressing '{src_path.name}' to '{archive_file_path.name}'..."
