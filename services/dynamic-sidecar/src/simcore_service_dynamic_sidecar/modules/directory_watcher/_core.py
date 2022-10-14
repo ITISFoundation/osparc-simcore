@@ -129,8 +129,7 @@ class UnifyingEventHandler(FileSystemEventHandler):
     def _invoke_push_directory(self) -> None:
         if not self._is_enabled:
             return
-        # wrapping the function call in the object
-        # helps with testing, it is simpler to mock
+
         async_push_directory(
             self.loop,
             self.directory_path,
