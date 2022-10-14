@@ -46,17 +46,11 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
 
     const hint = new osparc.ui.hint.Hint(null, "");
     representation.hint = hint;
-    representation.hint.setText(edge.isPortConnected() ? null : this.self().noPortsConnectedText(edge));
 
     if (edge.getInputNode()) {
       edge.getInputNode().getStatus().addListener("changeModified", () => this.__updateEdgeState());
     }
-
-    edge.addListener("changePortConnected", e => {
-      const portConnected = e.getData();
-      osparc.wrapper.Svg.updateCurveDashes(representation, !portConnected);
-      representation.hint.setText(portConnected ? null : this.self().noPortsConnectedText(edge));
-    }, this);
+    edge.addListener("changePortConnected", () => this.__updateEdgeState());
 
     this.__updateEdgeState();
 
@@ -94,13 +88,25 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
   members: {
     __updateEdgeState: function() {
       const inputNode = this.getEdge().getInputNode();
+      const portConnected = this.getEdge().isPortConnected();
       const modified = inputNode ? inputNode.getStatus().getModified() : false;
+
+      // color
       const colorHex = this.self().getEdgeColor(modified);
       osparc.wrapper.Svg.updateCurveColor(this.getRepresentation(), colorHex);
-      if (modified && this.getRepresentation().hint.getText() === null) {
-        this.getRepresentation().hint.setText("Out-of-date");
+
+      // shape
+      osparc.wrapper.Svg.updateCurveDashes(this.getRepresentation(), !portConnected);
+
+      // tooltip
+      const hint = this.getHint();
+      if (this.getEdge().isPortConnected() === false) {
+        hint.setText(this.self().noPortsConnectedText(this.getEdge()));
+      } else if (modified) {
+        hint.setText("Out-of-date");
+      } else {
+        hint.setText(null);
       }
-      this.getHint().setText(this.getEdge().isPortConnected() ? null : this.self().noPortsConnectedText(this.getEdge()));
     },
 
     getHint: function() {
