@@ -23,8 +23,27 @@ install: _check_venv_active requirements.txt ## installs dependencies
 .PHONY: test-dev
 test-dev: _check_venv_active ## runs all tests [DEV]
 	# running unit tests
-	pytest -vv --exitfirst --failed-first  --durations=10 --pdb $(CURDIR)
+	pytest \
+		-vv \
+		--exitfirst \
+		--failed-first  \
+		--durations=10 \
+		--pdb \
+		$(CURDIR)
 
+.PHONY: test-ci
+test-ci: _check_venv_active ## runs all tests [CI]
+	# running unit tests
+	pytest \
+		--color=yes \
+		--durations=10 \
+		--exitfirst \
+		--failed-first  \
+		--log-date-format="%Y-%m-%d %H:%M:%S" \
+		--verbose \
+		-m "not heavy_load" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		$(CURDIR)
 
 
 .PHONY: help

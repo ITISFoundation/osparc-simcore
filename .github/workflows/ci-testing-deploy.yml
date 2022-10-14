@@ -92,6 +92,9 @@ jobs:
           - package-path: packages/settings-library
             package-install-cmd: install-ci[all]
             test-cmd: test-ci[all]
+          - package-path: api/tests
+            package-install-cmd: install
+            test-cmd: test-ci
     uses: ./.github/workflows/reusable-unit-test.yml
     with:
       package-path: ${{ matrix.package-path }}
