@@ -58,7 +58,7 @@ from ..errors import (
     GenericDockerError,
 )
 from ._task_utils import apply_observation_cycle
-from ._utils import attempt_user_create_services_removal_and_data_saving
+from ._utils import attempt_pod_removal_and_data_saving
 
 logger = logging.getLogger(__name__)
 
@@ -395,7 +395,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                         scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                             False
                         )
-                        await attempt_user_create_services_removal_and_data_saving(
+                        await attempt_pod_removal_and_data_saving(
                             self.app, scheduler_data
                         )
 
@@ -403,9 +403,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
                 # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
-                await attempt_user_create_services_removal_and_data_saving(
-                    self.app, scheduler_data
-                )
+                await attempt_pod_removal_and_data_saving(self.app, scheduler_data)
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

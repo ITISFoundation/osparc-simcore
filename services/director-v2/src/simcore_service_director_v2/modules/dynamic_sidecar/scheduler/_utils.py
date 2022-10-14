@@ -93,7 +93,9 @@ def parse_containers_inspect(
     return list(results)
 
 
-def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+def are_all_user_services_containers_running(
+    containers_inspect: List[DockerContainerInspect],
+) -> bool:
     return len(containers_inspect) > 0 and all(
         (x.status == DockerStatus.RUNNING for x in containers_inspect)
     )
@@ -211,7 +213,7 @@ async def service_remove_docker_resources(
     task_progress.update(message="finished removing resources", percent=1)
 
 
-async def attempt_user_create_services_removal_and_data_saving(
+async def attempt_pod_removal_and_data_saving(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     # invoke container cleanup at this point
