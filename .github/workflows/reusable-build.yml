@@ -1,12 +1,5 @@
 on:
   workflow_call:
-    inputs:
-      package-path:
-        required: true
-        type: string
-      test-parameters:
-        required: false
-        type: string
 
 jobs:
   build:
