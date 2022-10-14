@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Callable, Coroutine, Iterable, Optional
+from typing import Callable, Coroutine, Iterable
 from unittest import mock
 from uuid import uuid4
 
@@ -30,7 +30,6 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
-    TaskOsparcAPISettings,
     TaskOutputData,
     TaskOutputDataSchema,
 )
@@ -333,7 +332,6 @@ def test_run_computational_sidecar_real_fct(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
-    osparc_api_settings: TaskOsparcAPISettings,
 ):
 
     mocked_get_integration_version = mocker.patch(
@@ -409,7 +407,6 @@ def test_run_multiple_computational_sidecar_dask(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     NUMBER_OF_TASKS = 50
 
@@ -451,7 +448,6 @@ def test_run_computational_sidecar_dask(
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
     s3_settings: S3Settings,
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
@@ -510,7 +506,6 @@ def test_failing_service_raises_exception(
     dask_subsystem_mock: dict[str, MockerFixture],
     ubuntu_task_fail: ServiceExampleParam,
     s3_settings: S3Settings,
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
@@ -533,7 +528,6 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     dask_subsystem_mock: dict[str, MockerFixture],
     ubuntu_task_unexpected_output: ServiceExampleParam,
     s3_settings: S3Settings,
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
 ):
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
