@@ -369,9 +369,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
                 # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
-                await attempt_pod_removal_and_data_saving(
-                    self.app, scheduler_data
-                )
+                await attempt_pod_removal_and_data_saving(self.app, scheduler_data)
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
