@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-aiohttp==3.8.1
+aiohttp==3.8.3
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
@@ -21,7 +21,7 @@ attrs==22.1.0
     #   pytest
 charset-normalizer==2.1.1
     # via aiohttp
-coverage[toml]==6.4.4
+coverage[toml]==6.5.0
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -31,13 +31,13 @@ frozenlist==1.3.1
     # via
     #   aiohttp
     #   aiosignal
-idna==3.3
+idna==3.4
     # via yarl
 iniconfig==1.1.1
     # via pytest
 isodate==0.6.1
     # via openapi-core
-jsonschema==4.15.0
+jsonschema==4.16.0
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
@@ -85,7 +85,7 @@ pytest-aiohttp==1.0.4
     # via -r requirements.in
 pytest-asyncio==0.19.0
     # via pytest-aiohttp
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via -r requirements.in
 pytest-instafail==0.4.2
     # via -r requirements.in
@@ -99,7 +99,7 @@ six==1.16.0
     # via
     #   isodate
     #   openapi-core
-termcolor==1.1.0
+termcolor==2.0.1
     # via pytest-sugar
 tomli==2.0.1
     # via

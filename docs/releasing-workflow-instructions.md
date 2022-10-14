@@ -25,7 +25,7 @@ The ``webserver`` service in *master* branch with commit ``752ef...`` will be bu
 - ``itisfoundation/webserver:master-github-v2.0.1-2020-08-31--12-36.752ef50f3babb6537580c0e03b85b9a8209bbf10``
 - ``itisfoundation/webserver:master-github-latest``
 
-## Staging process
+## Staging pre-release: master -> staging
 
 A staging version of simcore is a *pre-released* version that is marked as such on the *master* branch by leveraging *Github*  pre-release tagging mechanism. The CI is triggered and will pull the marked docker images (by using the given git SHA or latest *master* build), and tag them as staging images.
 Therefore, each docker image are renamed as:
@@ -53,7 +53,7 @@ then after the review we do a couple of additions and re-release staging ``DAJIA
 - ``itisfoundation/webserver:staging-github-stage_DAJIA2-2020-09-01--20-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
 - ``itisfoundation/webserver:staging-github-latest``
 
-### Instructions to generate a staging release
+### Instructions to generate a staging pre-release
 
 0. THIS IS VERY IMPORTANT:
 - *Make sure the github-actions CI has successfully run on the latest commit on the master-branch! This is mandatory!*
@@ -69,9 +69,9 @@ then after the review we do a couple of additions and re-release staging ``DAJIA
 
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button
-4. The CI will be automatically triggered and will deploy the staging release
+4. The CI will be automatically triggered and will deploy the staging pre-release
 
-## Release process
+## Release : staging -> production
 
 A released version of simcore, that is marked as such on the *master* branch by leveraging *Github*  release tagging mechanism. The CI is triggered and will pull the marked staging docker images (by using the given git SHA or the latest staging images), and tag them as release images.
 **NOTE:** A release version is ALWAYS preceded by a staging version. The CI will fail if it does not find the corresponding staging version.
@@ -107,11 +107,11 @@ The team decides to release to production the lastest staging version of ``DAJIA
 
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button
-4. The CI will be automatically triggered and will deploy the staging release
+4. The CI will be automatically triggered and will deploy the staging pre-release
 
 See ![img/git-release-workflow.svg](img/git-release-workflow.svg)
 
-## Hotfix process
+## Hotfix release: hotfix branch -> production
 
 A hotfix is **ALWAYS made from an already released version**. A branch, named after *hotfix_v.\**, is created from the tagged release version having an issue. The bugfix is implemented in that branch following usual best practices. On each commit pushed to github the CI is triggered (as in master for usual development) and will generate the following images in Dockerhub:
 
@@ -155,12 +155,16 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
 
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button
-4. The CI will be automatically triggered and will deploy the staging release
-5. **Once the deploy was successfully done: create a PR from that branch to the master branch if it applies
+4. The CI will be automatically triggered and will deploy the release
+5. Once the deploy was successfully done: **create a PR from that branch to the master branch** if it applies
 6. The branch can be safely deleted afterwards
 
 See ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
 
+
+## Hotfix pre-release: hotfix branch -> staging
+
+A hotfix can also be pre-release to staging
 ### Instructions to generate a hotfix for staging
 
 1. Generate *Github*  release tag
@@ -168,13 +172,13 @@ See ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
     ```bash
     git clone https://github.com/ITISFoundation/osparc-simcore.git
     cd osparc-simcore
-    # let's checkout the release with the issue, typically a staging tag such as staging_Meerkat1
+    # let's checkout the release with the issue, typically a staging tag such as 'staging_Meerkat1'
     git checkout VERSION_TAG_FOR_HOTFIXING
-    # create the hotfix branch, the name must follow the hotfix_staging_X convention, X is just a number
+    # create the hotfix branch, the name must follow this glob 'hotfix_staging_*'. E.g. 'hotfix_staging_1' or 'hotfix_staging_mysprint2' or just 'hotfix_staging_X`
     git checkout -b hotfix_staging_X
     # develop the fix here, git commit, git push, have someone review your code
 
-    git commit -m "this is my awsome fix for this problematic issue"
+    git commit -m "this is my hotfix for this problematic issue"
     git push --set-upstream origin/hotfix_staging_X
 
     # - NO NEED to pull request
@@ -185,6 +189,6 @@ See ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
 
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button
-4. The CI will be automatically triggered and will deploy the staging release
-5. **Once the deploy was successfully done: create a PR from that branch to the master branch if it applies
+4. The CI will be automatically triggered and will deploy the staging pre-release
+5. Once the deploy was successfully done: **create a PR from that branch to the master branch** if it applies
 6. The branch can be safely deleted afterwards
