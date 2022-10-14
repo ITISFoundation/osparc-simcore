@@ -48,7 +48,7 @@ class CommitsOrm(BaseOrm[int]):
             connection,
             readonly={"id", "created", "modified"},
             # pylint: disable=no-member
-            writeonce={c for c in projects_vc_commits.columns.keys()},
+            writeonce=set(projects_vc_commits.columns.keys()),
         )
 
 
