@@ -69,9 +69,9 @@ async def open_project(request: web.Request) -> web.Response:
         )
 
         # user id opened project uuid
-        await projects_api.run_project_dynamic_services(
-            request, project, req_ctx.user_id, req_ctx.product_name
-        )
+        # await projects_api.run_project_dynamic_services(
+        #     request, project, req_ctx.user_id, req_ctx.product_name
+        # )
 
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(
