@@ -8,6 +8,10 @@ on:
         required: false
         type: string
         default: install-ci
+      package-install-cache-path:
+        required: false
+        type: string
+        default: ${{ inputs.package-path }}/requirements/ci.txt
       test-cmd:
         required: false
         type: string
