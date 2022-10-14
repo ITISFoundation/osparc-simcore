@@ -267,6 +267,25 @@ async def add_project_node(
     return node_uuid
 
 
+async def start_project_node(
+    request: web.Request, user_id: UserID, project_id: ProjectID, node_id: NodeID
+):
+    project = await get_project_for_user(request.app, f"{project_id}", user_id)
+    workbench = project.get("workbench", {})
+    if not workbench.get(f"{node_id}"):
+        raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
+    node_details = Node.construct(workbench[f"{node_id}"])
+
+    await _start_dynamic_service(
+        request,
+        node_details.key,
+        node_details.version,
+        user_id,
+        project_id,
+        node_id,
+    )
+
+
 async def delete_project_node(
     request: web.Request, project_uuid: str, user_id: int, node_uuid: str
 ) -> None:

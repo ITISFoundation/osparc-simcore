@@ -191,6 +191,33 @@ async def retrieve_node(request: web.Request) -> web.Response:
     )
 
 
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start")
+@login_required
+@permission_required("project.update")
+async def start_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    await projects_api.start_project_node(
+        request, req_ctx.user_id, path_params.project_id, path_params.node_id
+    )
+
+    return web.HTTPNoContent()
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
+@login_required
+@permission_required("project.update")
+async def stop_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    await director_v2_api.stop_dynamic_service(request.app, f"{path_params.node_id}")
+
+    return web.HTTPNoContent()
+
+
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
 @login_required
 @permission_required("project.node.read")
