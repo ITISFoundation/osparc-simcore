@@ -8,7 +8,6 @@
 
 # installs base requirements
 --requirement _base.txt
---requirement _packages.txt
 
 # installs this repo's packages
 ../../packages/dask-task-models-library/
