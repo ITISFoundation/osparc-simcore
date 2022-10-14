@@ -259,7 +259,7 @@ async def is_dynamic_sidecar_stack_missing(
     return len(stack_services) == 0
 
 
-async def all_dynamic_sidecar_stack_services_present(
+async def are_sidecar_and_proxy_services_present(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """

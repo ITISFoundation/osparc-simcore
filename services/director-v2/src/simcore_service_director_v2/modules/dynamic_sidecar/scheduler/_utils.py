@@ -89,7 +89,7 @@ def parse_containers_inspect(
     return list(results)
 
 
-def are_all_service_containers_running(
+def are_all_user_services_containers_running(
     containers_inspect: List[DockerContainerInspect],
 ) -> bool:
     return len(containers_inspect) > 0 and all(
@@ -97,7 +97,7 @@ def are_all_service_containers_running(
     )
 
 
-async def attempt_user_created_services_removal_and_data_saving(
+async def attempt_pod_removal_and_data_saving(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     # invoke container cleanup at this point

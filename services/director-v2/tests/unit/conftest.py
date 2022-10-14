@@ -417,7 +417,7 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         return_value=[],
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils.all_dynamic_sidecar_stack_services_present",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils.are_sidecar_and_proxy_services_present",
         autospec=True,
         return_value=True,
     )

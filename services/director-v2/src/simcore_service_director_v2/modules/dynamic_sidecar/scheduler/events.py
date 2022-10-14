@@ -52,8 +52,8 @@ from ..docker_service_specs import (
 from ..errors import EntrypointContainerNotFoundError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
-    are_all_service_containers_running,
-    attempt_user_created_services_removal_and_data_saving,
+    are_all_user_services_containers_running,
+    attempt_pod_removal_and_data_saving,
     disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
@@ -506,7 +506,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
         return (
             scheduler_data.dynamic_sidecar.were_containers_created
             and scheduler_data.dynamic_sidecar.is_project_network_attached == False
-            and are_all_service_containers_running(
+            and are_all_user_services_containers_running(
                 scheduler_data.dynamic_sidecar.containers_inspect
             )
         )
@@ -564,7 +564,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        await attempt_user_created_services_removal_and_data_saving(app, scheduler_data)
+        await attempt_pod_removal_and_data_saving(app, scheduler_data)
 
 
 # register all handlers defined in this module here
