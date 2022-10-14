@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import socket
+from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from typing import (
@@ -166,19 +167,24 @@ async def parse_line(line: str) -> tuple[LogType, str, str]:
     return (log_type, timestamp, log)
 
 
+@dataclass(frozen=True)
+class DaskPublishers:
+    logs: Pub
+    progress: Pub
+
+
 async def publish_container_logs(
     service_key: str,
     service_version: str,
     container: DockerContainer,
     container_name: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    dask_pubs: DaskPublishers,
     log_type: LogType,
     message: str,
 ) -> None:
     return publish_task_logs(
-        progress_pub,
-        logs_pub,
+        dask_pubs.progress,
+        dask_pubs.logs,
         log_type,
         message_prefix=f"{service_key}:{service_version} - {container.id}{container_name}",
         message=message,
@@ -194,8 +200,7 @@ async def _parse_container_log_file(
     service_key: str,
     service_version: str,
     container_name: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    dask_pubs: DaskPublishers,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
@@ -215,8 +220,7 @@ async def _parse_container_log_file(
                     service_version=service_version,
                     container=container,
                     container_name=container_name,
-                    progress_pub=progress_pub,
-                    logs_pub=logs_pub,
+                    dask_pubs=dask_pubs,
                     log_type=log_type,
                     message=message,
                 )
@@ -230,8 +234,7 @@ async def _parse_container_log_file(
                 service_version=service_version,
                 container=container,
                 container_name=container_name,
-                progress_pub=progress_pub,
-                logs_pub=logs_pub,
+                dask_pubs=dask_pubs,
                 log_type=log_type,
                 message=message,
             )
@@ -266,8 +269,7 @@ async def _parse_container_docker_logs(
     service_key: str,
     service_version: str,
     container_name: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    dask_pubs: DaskPublishers,
     log_file_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: Optional[S3Settings],
@@ -297,8 +299,7 @@ async def _parse_container_docker_logs(
                     service_version=service_version,
                     container=container,
                     container_name=container_name,
-                    progress_pub=progress_pub,
-                    logs_pub=logs_pub,
+                    dask_pubs=dask_pubs,
                     log_type=log_type,
                     message=message,
                 )
@@ -328,8 +329,7 @@ async def _parse_container_docker_logs(
                     service_version=service_version,
                     container=container,
                     container_name=container_name,
-                    progress_pub=progress_pub,
-                    logs_pub=logs_pub,
+                    dask_pubs=dask_pubs,
                     log_type=log_type,
                     message=message,
                 )
@@ -365,12 +365,11 @@ async def _parse_container_docker_logs(
     )
 
 
-async def monitor_container_logs(  # pylint: disable=too-many-arguments
+async def monitor_container_logs(
     container: DockerContainer,
     service_key: str,
     service_version: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    dask_pubs: DaskPublishers,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
@@ -397,8 +396,7 @@ async def monitor_container_logs(  # pylint: disable=too-many-arguments
                     service_key,
                     service_version,
                     container_name,
-                    progress_pub,
-                    logs_pub,
+                    dask_pubs,
                     log_file_url,
                     log_publishing_cb,
                     s3_settings,
@@ -410,8 +408,7 @@ async def monitor_container_logs(  # pylint: disable=too-many-arguments
                     service_key,
                     service_version,
                     container_name,
-                    progress_pub,
-                    logs_pub,
+                    dask_pubs,
                     task_volumes,
                     log_file_url,
                     log_publishing_cb,
@@ -428,12 +425,11 @@ async def monitor_container_logs(  # pylint: disable=too-many-arguments
 
 
 @contextlib.asynccontextmanager
-async def managed_monitor_container_log_task(  # pylint: disable=too-many-arguments
+async def managed_monitor_container_log_task(
     container: DockerContainer,
     service_key: str,
     service_version: str,
-    progress_pub: Pub,
-    logs_pub: Pub,
+    dask_pubs: DaskPublishers,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
@@ -452,8 +448,7 @@ async def managed_monitor_container_log_task(  # pylint: disable=too-many-argume
                 container,
                 service_key,
                 service_version,
-                progress_pub,
-                logs_pub,
+                dask_pubs,
                 integration_version,
                 task_volumes,
                 log_file_url,

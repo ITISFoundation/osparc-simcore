@@ -31,6 +31,7 @@ from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
+    DaskPublishers,
     create_container_config,
     get_computational_shared_data_mount_point,
     get_integration_version,
@@ -216,8 +217,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     container=container,
                     service_key=self.service_key,
                     service_version=self.service_version,
-                    progress_pub=self.task_publishers.progress,
-                    logs_pub=self.task_publishers.logs,
+                    dask_pubs=DaskPublishers(
+                        progress=self.task_publishers.progress,
+                        logs=self.task_publishers.logs,
+                    ),
                     integration_version=integration_version,
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
