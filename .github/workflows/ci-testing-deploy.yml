@@ -95,6 +95,7 @@ jobs:
             test-cmd: test-ci[all]
           - package-path: api/tests
             package-install-cmd: install
+            package-install-cache-path: api/tests/requirements.txt
             test-cmd: test-ci
     uses: ./.github/workflows/reusable-unit-test.yml
     with:
@@ -137,42 +138,6 @@ jobs:
     uses: ./.github/workflows/reusable-system-test.yml
     with:
       test-name: ${{ matrix.test-name }}
-  # unit-test-api:
-  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
-  #   name: "[unit] api"
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "api/tests/requirements.txt"
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install api
-  #       run: ./ci/github/unit-testing/api.bash install
-  #     - name: test
-  #       run: ./ci/github/unit-testing/api.bash test
 
   # unit-test-director:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
@@ -300,56 +265,6 @@ jobs:
   #       run: ./ci/github/unit-testing/python-linting.bash install
   #     - name: test
   #       run: ./ci/github/unit-testing/python-linting.bash test
-
-  # unit-test-service-library:
-  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
-  #   name: "[unit] service-library"
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "packages/service-library/requirements/ci.txt"
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/unit-testing/service-library.bash install_all
-  #     - name: test
-  #       run: ./ci/github/unit-testing/service-library.bash test_all
-  #     - uses: codecov/codecov-action@v3.1.1
-  #       with:
-  #         flags: unittests #optional
-  #     - name: prepare codeclimate coverage file
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #         ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/service-library/coverage.xml
-  #     - name: store codeclimate coverage
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: codeclimate-${{ github.job }}-coverage
-  #         path: codeclimate.${{ github.job }}_coverage.json
 
   # system-test-public-api:
   #   timeout-minutes: 25 # if this timeout gets too small, then split the tests

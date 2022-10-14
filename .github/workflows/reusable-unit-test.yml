@@ -56,7 +56,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: |
-            ${{ inputs.package-path }}/requirements/ci.txt
+            ${{ inputs.package-install-cache-path }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install package
