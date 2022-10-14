@@ -143,8 +143,7 @@ jobs:
           - test-name: e2e
     uses: ./.github/workflows/reusable-system-test.yml
     with:
-      package-path: ${{ matrix.package-path }}
-      test-parameters: ${{ matrix.test-parameters }}
+      test-name: ${{ matrix.test-name }}
   # unit-test-api:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
   #   name: "[unit] api"
