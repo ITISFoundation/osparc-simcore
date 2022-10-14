@@ -730,20 +730,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y2 = pointList[1] ? pointList[1][1] : 0;
         const edgeRepresentation = this.__svgLayer.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
 
-        const hint = new osparc.ui.hint.Hint(null, "");
-        edgeRepresentation.hint = hint;
-        const noPortsConnectedText = `Connection candidate.<br>Check the ${nodeUI2.getNode().getLabel()} inputs`;
-        edgeRepresentation.hint.setText(edge.isPortConnected() ? null : noPortsConnectedText);
-
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
-        edge.addListener("changePortConnected", e => {
-          const portConnected = e.getData();
-          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
-          edgeRepresentation.hint.setText(portConnected ? null : noPortsConnectedText);
-        }, this);
-
+        const hint = edgeUI.getHint();
         const that = this;
         [
           edgeRepresentation.widerCurve.node,

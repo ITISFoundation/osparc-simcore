@@ -44,9 +44,20 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
     this.setEdge(edge);
     this.setRepresentation(representation);
 
+    const hint = new osparc.ui.hint.Hint(null, "");
+    representation.hint = hint;
+    representation.hint.setText(edge.isPortConnected() ? null : this.self().noPortsConnectedText(edge));
+
     if (edge.getInputNode()) {
       edge.getInputNode().getStatus().addListener("changeModified", () => this.__updateEdgeState());
     }
+
+    edge.addListener("changePortConnected", e => {
+      const portConnected = e.getData();
+      osparc.wrapper.Svg.updateCurveDashes(representation, !portConnected);
+      representation.hint.setText(portConnected ? null : this.self().noPortsConnectedText(edge));
+    }, this);
+
     this.__updateEdgeState();
 
     this.subscribeToFilterGroup("workbench");
@@ -64,7 +75,7 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
   },
 
   statics: {
-    getEdgeColor(modified) {
+    getEdgeColor: function(modified) {
       let newColor = null;
       if (modified === null) {
         newColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-comp-active");
@@ -73,6 +84,10 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
       }
       const colorHex = qx.theme.manager.Color.getInstance().resolve(newColor);
       return colorHex;
+    },
+
+    noPortsConnectedText: function(edge) {
+      return `Connection candidate.<br>Check the ${edge.getOutputNode().getLabel()} inputs`;
     }
   },
 
@@ -85,6 +100,11 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
       if (modified && this.getRepresentation().hint.getText() === null) {
         this.getRepresentation().hint.setText("Out-of-date");
       }
+      this.getHint().setText(this.getEdge().isPortConnected() ? null : this.self().noPortsConnectedText(this.getEdge()));
+    },
+
+    getHint: function() {
+      return this.getRepresentation().hint;
     },
 
     setSelected: function(selected) {
