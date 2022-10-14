@@ -8,7 +8,7 @@ anyio==3.6.1
     # via
     #   httpcore
     #   starlette
-certifi==2022.6.15
+certifi==2022.9.24
     # via
     #   httpcore
     #   httpx
@@ -30,7 +30,7 @@ httpx==0.23.0
     # via
     #   -c requirements/./../../../requirements/constraints.txt
     #   -r requirements/_fastapi.in
-idna==3.3
+idna==3.4
     # via
     #   anyio
     #   rfc3986
@@ -64,7 +64,7 @@ tornado==6.2
     # via
     #   jaeger-client
     #   threadloop
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via
     #   pydantic
     #   starlette

@@ -45,12 +45,18 @@ authors:
     affiliation: "IT'IS Foundation"
   - given-names: Dustin
     family-names: Kaiser
+    affiliation: "IT'IS Foundation"
     orcid: "https://orcid.org/0000-0003-2251-1509"
   - given-names: Alexandre
     family-names: Allexandre
     affiliation: "IT'IS Foundation"
   - given-names: Colin
     family-names: Rawlings
+    affiliation: "ZMT"
+  - given-names: Elisabetta
+    family-names: Iavarone
+    affiliation: "IT'IS Foundation"
+    orcid: "https://orcid.org/0000-0001-5157-247X"
   - given-names: Tobias
     family-names: Oetiker
     affiliation: "OETIKER+PARTNER AG"
