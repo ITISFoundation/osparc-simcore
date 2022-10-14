@@ -8,9 +8,9 @@ aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aioboto3==10.0.0
+aioboto3==10.1.0
     # via -r requirements/_test.in
-aiobotocore==2.3.4
+aiobotocore==2.4.0
     # via aioboto3
 aiohttp==3.8.1
     # via
@@ -19,7 +19,7 @@ aiohttp==3.8.1
     #   aiobotocore
     #   dask-gateway-server
     #   pytest-aiohttp
-aioitertools==0.10.0
+aioitertools==0.11.0
     # via aiobotocore
 aiormq==3.3.1
     # via
@@ -39,7 +39,7 @@ anyio==3.6.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.12.9
+astroid==2.12.11
     # via pylint
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
@@ -55,9 +55,9 @@ attrs==21.4.0
     #   pytest-docker
 bokeh==2.4.3
     # via -r requirements/_test.in
-boto3==1.21.21
+boto3==1.24.59
     # via aiobotocore
-botocore==1.24.21
+botocore==1.27.59
     # via
     #   aiobotocore
     #   boto3
@@ -80,14 +80,14 @@ codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.7.0
     # via dask-gateway-server
-coverage==6.4.4
+coverage==6.5.0
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==38.0.0
+cryptography==38.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
@@ -101,7 +101,7 @@ docopt==0.6.2
     # via coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==14.2.0
+faker==15.1.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -173,7 +173,7 @@ multidict==6.0.2
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-numpy==1.23.2
+numpy==1.23.4
     # via bokeh
 packaging==21.3
     # via
@@ -203,7 +203,7 @@ py==1.11.0
     #   pytest-forked
 pycparser==2.21
     # via cffi
-pylint==2.15.0
+pylint==2.15.4
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
@@ -224,15 +224,15 @@ pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.19.0
     # via pytest-aiohttp
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via -r requirements/_test.in
-pytest-docker==1.0.0
+pytest-docker==1.0.1
     # via -r requirements/_test.in
 pytest-forked==1.4.0
     # via pytest-xdist
 pytest-icdiff==0.6
     # via -r requirements/_test.in
-pytest-mock==3.8.2
+pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -254,13 +254,13 @@ requests==2.27.1
     #   codecov
     #   coveralls
     #   docker
-respx==0.19.2
+respx==0.20.0
     # via -r requirements/_test.in
 rfc3986==1.4.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-s3transfer==0.5.2
+s3transfer==0.6.0
     # via boto3
 six==1.15.0
     # via
@@ -284,13 +284,13 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-tomlkit==0.11.4
+tomlkit==0.11.5
     # via pylint
 tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   bokeh
-traitlets==5.3.0
+traitlets==5.4.0
     # via dask-gateway-server
 typing-extensions==4.3.0
     # via
