@@ -33,7 +33,7 @@ test() {
 }
 
 typecheck() {
-  pushd services/dask-task-models-library
+  pushd packages/dask-task-models-library
   make mypy
   popd
 }

@@ -25,7 +25,7 @@ test() {
 }
 
 typecheck() {
-  pushd services/service-integration
+  pushd packages/service-integration
   make mypy
   popd
 }

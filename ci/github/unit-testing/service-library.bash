@@ -27,7 +27,7 @@ test_all() {
 }
 
 typecheck() {
-  pushd services/service-library
+  pushd packages/service-library
   make mypy
   popd
 }

@@ -28,7 +28,7 @@ test() {
 }
 
 typecheck() {
-  pushd services/simcore-sdk
+  pushd packages/simcore-sdk
   make mypy
   popd
 }
