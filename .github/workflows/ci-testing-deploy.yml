@@ -915,6 +915,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
