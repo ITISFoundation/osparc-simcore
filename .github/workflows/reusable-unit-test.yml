@@ -7,7 +7,7 @@ on:
       package-install-cmd:
         required: false
         type: string
-        default: test-ci-unit
+        default: install-ci
       test-cmd:
         required: false
         type: string
