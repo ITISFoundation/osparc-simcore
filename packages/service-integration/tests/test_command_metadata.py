@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import os
 from pathlib import Path
@@ -63,7 +63,7 @@ def test_make_version(
         bump,
         target_version,
     )
-    assert result.exit_code == os.EX_OK, result
+    assert result.exit_code == os.EX_OK, result.output
 
     # version was updated in metadata file
     new_metadata = yaml.safe_load(metadata_file_path.read_text())
@@ -102,7 +102,7 @@ def test_get_version_from_metadata(
 ):
     cmd = cmd.replace("tests/data/metadata.yml", str(metadata_file_path))
     result = run_program_with_args(*cmd.split()[1:])
-    assert result.exit_code == os.EX_OK, result
+    assert result.exit_code == os.EX_OK, result.output
 
     assert result.output == expected_output
 
@@ -123,7 +123,7 @@ def test_changes_in_metadata_keeps_keys_order(
         "--upgrade",
         "major",
     )
-    assert result.exit_code == os.EX_OK, result
+    assert result.exit_code == os.EX_OK, result.output
 
     after = yaml.safe_load(metadata_file_path.read_text())
     print(after)

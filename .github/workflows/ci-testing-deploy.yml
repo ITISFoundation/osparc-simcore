@@ -45,6 +45,10 @@ env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test-images:
     # this step comes first, so that it is executed as first job in push calls
@@ -78,13 +82,13 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner. temp }}/build
-          make build local-dest=/${{ runner. temp }}/build
+          mkdir --parents /${{ runner.temp }}/build
+          make build local-dest=/${{ runner.temp }}/build
       - name: upload build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
 
   unit-test-webserver-01:
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
@@ -1218,9 +1222,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1293,9 +1297,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1368,9 +1372,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1446,9 +1450,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1523,9 +1527,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1598,9 +1602,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1660,9 +1664,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1728,9 +1732,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -1922,20 +1926,27 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'
         name: deploy master image
         env:
           TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: contains(github.ref, 'refs/heads/hotfix_v')
         name: deploy release hotfix image
         env:
           TAG_PREFIX: hotfix-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: contains(github.ref, 'refs/heads/hotfix_staging_')
         name: deploy staging hotfix image
         env:
           TAG_PREFIX: hotfix-staging-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
