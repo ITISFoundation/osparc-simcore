@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Callable, Final, Optional
 
 import click
-import docker
+import docker.client
 from alembic.config import Config as AlembicConfig
 
 from .utils import build_url
@@ -52,7 +52,7 @@ def _safe(if_fails_return=False):
 
 @_safe(if_fails_return=None)
 def get_service_published_port(service_name: str) -> int:
-    client = docker.from_env()
+    client = docker.client.from_env()
     services = [
         s for s in client.services.list() if service_name in getattr(s, "name", "")
     ]
@@ -81,7 +81,7 @@ def load_cache(*, raise_if_error=False) -> dict:
         if raise_if_error:
             raise
         return {}
-    return cfg
+    return dict(cfg)
 
 
 def reset_cache():
