@@ -4,11 +4,10 @@ import logging
 import os
 from copy import deepcopy
 from functools import wraps
-from typing import Callable, Dict, Final, Optional
+from typing import Callable, Final, Optional
 
 import click
 import docker
-from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 
 from .utils import build_url
@@ -74,7 +73,7 @@ def get_service_published_port(service_name: str) -> int:
     return int(published_port)
 
 
-def load_cache(*, raise_if_error=False) -> Dict:
+def load_cache(*, raise_if_error=False) -> dict:
     try:
         with open(DISCOVERED_CACHE) as fh:
             cfg = json.load(fh)
@@ -92,7 +91,7 @@ def reset_cache():
 
 
 def get_alembic_config_from_cache(
-    force_cfg: Optional[Dict] = None,
+    force_cfg: Optional[dict] = None,
 ) -> Optional[AlembicConfig]:
     """
     Creates alembic config from cfg or cache
