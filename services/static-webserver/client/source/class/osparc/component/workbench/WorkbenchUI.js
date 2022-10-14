@@ -773,9 +773,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             }, this);
           });
         });
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", e => {
-          hint.exclude();
-        }, this);
+        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
+        this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
       }
     },
 

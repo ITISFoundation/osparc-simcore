@@ -82,7 +82,7 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
       const modified = inputNode ? inputNode.getStatus().getModified() : false;
       const colorHex = this.self().getEdgeColor(modified);
       osparc.wrapper.Svg.updateCurveColor(this.getRepresentation(), colorHex);
-      if (modified && this.getRepresentation().hint.getText() === "") {
+      if (modified && this.getRepresentation().hint.getText() === null) {
         this.getRepresentation().hint.setText("Out-of-date");
       }
     },
