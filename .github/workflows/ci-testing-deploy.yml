@@ -520,63 +520,6 @@ jobs:
   #       if: always()
   #       run: ./ci/github/system-testing/environment-setup.bash clean_up
 
-  # coverage:
-  #   needs:
-  #     [
-  #       unit-test-api-server,
-  #       unit-test-autoscaling,
-  #       unit-test-catalog,
-  #       unit-test-datcore-adapter,
-  #       unit-test-director,
-  #       unit-test-director-v2,
-  #       unit-test-dynamic-sidecar,
-  #       unit-test-dask-task-models-library,
-  #       unit-test-dask-sidecar,
-  #       unit-test-service-integration,
-  #       unit-test-service-library,
-  #       unit-test-settings-library,
-  #       unit-test-models-library,
-  #       unit-test-simcore-sdk,
-  #       unit-test-storage,
-  #       unit-test-webserver-01,
-  #       unit-test-webserver-02,
-  #       unit-test-webserver-03,
-  #       integration-test-webserver-01,
-  #       integration-test-webserver-02,
-  #       integration-test-director-v2-01,
-  #       integration-test-director-v2-02,
-  #       integration-test-simcore-sdk,
-  #     ]
-  #   name: coverage
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/download-artifact@v3
-  #       name: download all artifacts
-  #       with:
-  #         path: artifacts
-  #     - name: put all artefacts together
-  #       run: |
-  #         mkdir --parents all_coverages
-  #         cp artifacts/codeclimate*/*.json all_coverages
-  #         ls --all -l all_coverages/*.json
-  #     - name: install codeclimate test reporter
-  #       run: |
-  #         curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-  #         chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-  #     - name: notify of pending code climate coverage
-  #       run: |
-  #         ./cc-test-reporter before-build
-  #     - name: sum all coverage
-  #       run: |
-  #         ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines) --debug --output summed_codeclimate.json
-  #     - name: show coverage
-  #       run: |
-  #         ./cc-test-reporter show-coverage summed_codeclimate.json
-  #     - name: upload coverages
-  #       run: |
-  #         ./cc-test-reporter upload-coverage --input summed_codeclimate.json
-
   # deploy:
   #   name: deploy to dockerhub
   #   if: github.event_name == 'push'
