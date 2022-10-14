@@ -9,7 +9,5 @@
 
 # SEE https://github.com/dask/dask/blob/main/setup.py#L12 for extra reqs
 dask[distributed]
-
-# compression
-blosc
-lz4
+blosc # compression
+lz4 # compression
