@@ -129,7 +129,7 @@ def osparc_api_endpoint(faker: Faker) -> str:
 @pytest.fixture
 def osparc_api_settings(
     osparc_api_endpoint: str, faker: Faker
-) -> Optional[TaskOsparcAPISettings]:
+) -> TaskOsparcAPISettings:
     return TaskOsparcAPISettings.parse_obj(
         dict(
             api_key=faker.uuid4(),

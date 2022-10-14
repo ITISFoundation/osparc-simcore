@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, AsyncIterable, Optional, cast
 from unittest import mock
 
+import aiohttp
 import fsspec
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -81,7 +82,7 @@ def s3_presigned_link_remote_file_url(
 @pytest.fixture
 def s3_remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
     return parse_obj_as(
-        AnyUrl, f"s3://{minio_config['bucket_name']}{faker.file_path()}"
+        AnyUrl, f"s3://{minio_config['bucket_name']}/{faker.file_name()}"
     )
 
 
@@ -89,19 +90,33 @@ def s3_remote_file_url(minio_config: dict[str, Any], faker: Faker) -> AnyUrl:
 class StorageParameters:
     s3_settings: Optional[S3Settings]
     remote_file_url: AnyUrl
+    osparc_api_settings: Optional[TaskOsparcAPISettings]
 
 
-@pytest.fixture(params=["ftp", "s3"])
+@pytest.fixture(params=["ftp", "s3", "osparcapi"])
 def remote_parameters(
     request: FixtureRequest,
     ftp_remote_file_url: AnyUrl,
     s3_remote_file_url: AnyUrl,
     s3_settings: S3Settings,
+    osparc_api_settings: TaskOsparcAPISettings,
+    fake_api_server: AioResponsesMock,
 ) -> StorageParameters:
     return {
-        "ftp": StorageParameters(s3_settings=None, remote_file_url=ftp_remote_file_url),
+        "ftp": StorageParameters(
+            s3_settings=None,
+            remote_file_url=ftp_remote_file_url,
+            osparc_api_settings=None,
+        ),
         "s3": StorageParameters(
-            s3_settings=s3_settings, remote_file_url=s3_remote_file_url
+            s3_settings=s3_settings,
+            remote_file_url=s3_remote_file_url,
+            osparc_api_settings=None,
+        ),
+        "osparcapi": StorageParameters(
+            s3_settings=s3_settings,
+            remote_file_url=s3_remote_file_url,
+            osparc_api_settings=osparc_api_settings,
         ),
     }[
         request.param  # type: ignore
@@ -110,19 +125,39 @@ def remote_parameters(
 
 @pytest.fixture
 def fake_api_server(
-    osparc_api_endpoint: str,
+    osparc_api_settings: TaskOsparcAPISettings,
     aioresponses_mocker: AioResponsesMock,
-    s3_presigned_link_remote_file_url: AnyUrl,
+    s3_settings: S3Settings,
+    s3_remote_file_url: AnyUrl,
     faker: Faker,
 ) -> AioResponsesMock:
-    endpoint = URL(osparc_api_endpoint)
+    endpoint = URL(osparc_api_settings.osparc_api_endpoint)
     upload_file_pattern = re.compile(
         rf"^{endpoint.scheme}:\/\/((.*):(.*)@)?{endpoint.host}\/v0\/files\/content"
     )
 
     def _api_server_upload_cb(url: URL, **kwargs) -> CallbackResult:
-        assert url.user, f"missing user name in {url=}"
-        assert url.password, f"missing passowrd in {url=}"
+        """this simulates the api-server upload endpoint by uploading further to S3"""
+        assert "auth" in kwargs
+        assert kwargs["auth"] == aiohttp.BasicAuth(
+            osparc_api_settings.api_key, osparc_api_settings.api_secret
+        )
+        assert "data" in kwargs
+        assert "file" in kwargs["data"]
+        assert kwargs["data"]["file"]
+        file_name = Path(kwargs["data"]["file"].name).name
+
+        # now we should upload further
+        storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+        with cast(
+            fsspec.core.OpenFile,
+            fsspec.open(
+                f"s3://{s3_settings.S3_BUCKET_NAME}/{file_name}",
+                mode="wb",
+                **storage_kwargs,
+            ),
+        ) as fp:
+            fp.write(kwargs["data"]["file"].read())
 
         return CallbackResult(
             status=web.HTTPOk.status_code,
@@ -161,6 +196,7 @@ async def test_push_file_to_remote(
         dst_url=remote_parameters.remote_file_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        osparc_api_settings=remote_parameters.osparc_api_settings,
     )
 
     # check the remote is actually having the file in
@@ -199,6 +235,7 @@ async def test_push_file_to_remote_s3_http_presigned_link(
         dst_url=s3_presigned_link_remote_file_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
+        osparc_api_settings=None,
     )
 
     # check the remote is actually having the file in, but we need s3 access now
@@ -214,37 +251,6 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     ) as fp:
         assert fp.read() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
-
-
-async def test_push_file_to_osparc_api(
-    osparc_api_settings: Optional[TaskOsparcAPISettings],
-    fake_api_server: AioResponsesMock,
-    tmp_path: Path,
-    faker: Faker,
-    mocked_log_publishing_cb: mock.AsyncMock,
-):
-    # let's create some file with text inside
-    src_path = tmp_path / faker.file_name()
-    TEXT_IN_FILE = faker.text()
-    src_path.write_text(TEXT_IN_FILE)
-    assert src_path.exists()
-    assert osparc_api_settings
-
-    dst_url = (
-        URL(f"{osparc_api_settings.osparc_api_endpoint}v0/files/content")
-        .with_user(osparc_api_settings.api_key)
-        .with_password(osparc_api_settings.api_secret)
-    )
-    dst_url = parse_obj_as(AnyUrl, f"{dst_url}")
-
-    # push it to the remote
-    await push_file_to_remote(
-        src_path=src_path,
-        dst_url=dst_url,
-        log_publishing_cb=mocked_log_publishing_cb,
-        s3_settings=None,
-    )
-    assert fake_api_server.requests
 
 
 async def test_push_file_to_remote_compresses_if_zip_destination(
@@ -264,6 +270,7 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
         dst_url=destination_url,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        osparc_api_settings=remote_parameters.osparc_api_settings,
     )
 
     storage_kwargs = {}
