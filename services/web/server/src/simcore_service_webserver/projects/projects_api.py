@@ -175,6 +175,40 @@ def get_delete_project_task(
 #
 
 
+async def _start_dynamic_service(
+    request: web.Request,
+    service_key: str,
+    service_version: str,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_uuid: NodeID,
+):
+    if not _is_node_dynamic(service_key):
+        return
+
+    # this is a dynamic node, let's gather its resources and start it
+    service_resources: ServiceResourcesDict = await get_project_node_resources(
+        request.app,
+        project={
+            "workbench": {
+                f"{node_uuid}": {"key": service_key, "version": service_version}
+            }
+        },
+        node_id=node_uuid,
+    )
+    await director_v2_api.run_dynamic_service(
+        request.app,
+        project_id=f"{project_uuid}",
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        service_uuid=f"{node_uuid}",
+        request_dns=extract_dns_without_default_port(request.url),
+        request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
+        service_resources=service_resources,
+    )
+
+
 async def add_project_node(
     request: web.Request,
     project: dict[str, Any],
@@ -220,30 +254,16 @@ async def add_project_node(
         request.app, user_id, project["uuid"]
     )
 
-    if not _is_node_dynamic(service_key):
-        return node_uuid
+    if _is_node_dynamic(service_key):
+        await _start_dynamic_service(
+            request,
+            service_key,
+            service_version,
+            user_id,
+            ProjectID(project["uuid"]),
+            NodeID(node_uuid),
+        )
 
-    # this is a dynamic node, let's gather its resources and start it
-    service_resources: ServiceResourcesDict = await get_project_node_resources(
-        request.app,
-        project={
-            "workbench": {
-                f"{node_uuid}": {"key": service_key, "version": service_version}
-            }
-        },
-        node_id=NodeID(node_uuid),
-    )
-    await director_v2_api.run_dynamic_service(
-        request.app,
-        project_id=project["uuid"],
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=node_uuid,
-        request_dns=extract_dns_without_default_port(request.url),
-        request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-        service_resources=service_resources,
-    )
     return node_uuid
 
 
