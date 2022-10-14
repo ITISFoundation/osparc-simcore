@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from ....core.settings import DynamicServicesSettings
 from ....models.schemas.dynamic_services import SchedulerData
 from ..api_client import get_dynamic_sidecar_service_health
-from ..docker_api import are_all_services_present
+from ..docker_api import are_sidecar_and_proxy_services_present
 from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ async def apply_observation_cycle(
 
     if (  # do not refactor, second part of "and condition" is skipped most times
         scheduler_data.dynamic_sidecar.were_containers_created
-        and not await are_all_services_present(
+        and not await are_sidecar_and_proxy_services_present(
             node_uuid=scheduler_data.node_uuid,
             dynamic_sidecar_settings=dynamic_services_settings.DYNAMIC_SIDECAR,
         )
@@ -39,7 +39,7 @@ async def apply_observation_cycle(
         )
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
-            can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
+            can_save=scheduler_data.dynamic_sidecar.were_containers_created,
         )
 
     # TODO: ANE this can be moved to a handler in the future scheduled
