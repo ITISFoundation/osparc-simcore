@@ -67,6 +67,12 @@ jobs:
         test-cmd: [test-ci-unit]
         test-parameters: [""]
         run-codestyle: [false]
+        include:
+          - package-path: api/tests
+            package-install-cmd: install
+            package-install-cache-path: api/tests/requirements.txt
+            test-cmd: test-ci
+
         # include:
         #   - package-path:
         #     package-install-cmd: install
