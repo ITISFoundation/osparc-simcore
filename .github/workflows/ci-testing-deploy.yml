@@ -61,6 +61,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - package-path: api/tests
+            package-install-cmd: install
+            package-install-cache-path: api/tests/requirements.txt
+            test-cmd: test-ci
+          - package-path: packages/dask-task-models-library
+            run-codestyle: true
+          - package-path: packages/models-library
+          - package-path: packages/postgres-database
+          - package-path: packages/simcore-sdk
+          - package-path: packages/service-integration
+          - package-path: packages/service-library
+            package-install-cmd: install-ci[all]
+            test-cmd: test-ci[all]
+          - package-path: packages/settings-library
+          - package-path: services/api-server
+          - package-path: services/autoscaling
+          - package-path: services/catalog
+          - package-path: services/dask-sidecar
+          - package-path: services/datcore-adapter
+            test-parameters: pytest-parameters="--numprocesses=auto"
+          - package-path: services/director
+          - package-path: services/director-v2
+            test-parameters: pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
+          - package-path: services/director-v2
+            test-parameters: test-subfolder=with_dbs
+          - package-path: services/dynamic-sidecar
+            run-codestyle: true
+          - package-path: services/storage
           - package-path: services/web/server
             test-parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
           - package-path: services/web/server
@@ -69,34 +97,6 @@ jobs:
             test-parameters: test-subfolder=with_dbs/02
           - package-path: services/web/server
             test-parameters: test-subfolder=with_dbs/03
-          - package-path: services/storage
-          - package-path: services/api-server
-          - package-path: services/catalog
-          - package-path: services/datcore-adapter
-            test-parameters: pytest-parameters="--numprocesses=auto"
-          - package-path: services/director-v2
-            test-parameters: pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
-          - package-path: services/director-v2
-            test-parameters: test-subfolder=with_dbs
-          - package-path: services/dynamic-sidecar
-            run-codestyle: true
-            test-parameters: ""
-          - package-path: services/autoscaling
-          - package-path: services/dask-sidecar
-          - package-path: packages/simcore-sdk
-          - package-path: packages/dask-task-models-library
-            run-codestyle: true
-          - package-path: packages/models-library
-          - package-path: packages/postgres-database
-          - package-path: packages/service-integration
-          - package-path: packages/settings-library
-          - package-path: packages/settings-library
-            package-install-cmd: install-ci[all]
-            test-cmd: test-ci[all]
-          - package-path: api/tests
-            package-install-cmd: install
-            package-install-cache-path: api/tests/requirements.txt
-            test-cmd: test-ci
     uses: ./.github/workflows/reusable-unit-test.yml
     with:
       package-path: ${{ matrix.package-path }}
