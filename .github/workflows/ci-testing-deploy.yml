@@ -62,6 +62,11 @@ jobs:
       matrix:
         python: ["3.9"]
         package-path: [api/tests, packages/dask-task-models-library, packages/models-library]
+        package-install-cmd: [install-ci]
+        package-install-cache-path: ["**/requirements/ci.txt"]
+        test-cmd: [test-ci-unit]
+        test-parameters: [""]
+        run-codestyle: [false]
         # include:
         #   - package-path:
         #     package-install-cmd: install
