@@ -61,45 +61,46 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.9"]
-        include:
-          - package-path: api/tests
-            package-install-cmd: install
-            package-install-cache-path: api/tests/requirements.txt
-            test-cmd: test-ci
-          - package-path: packages/dask-task-models-library
-            run-codestyle: true
-          - package-path: packages/models-library
-          - package-path: packages/postgres-database
-          - package-path: packages/simcore-sdk
-          - package-path: packages/service-integration
-          - package-path: packages/service-library
-            package-install-cmd: install-ci[all]
-            test-cmd: test-ci[all]
-          - package-path: packages/settings-library
-          - package-path: services/api-server
-          - package-path: services/autoscaling
-          - package-path: services/catalog
-          - package-path: services/dask-sidecar
-          - package-path: services/datcore-adapter
-            test-parameters: pytest-parameters="--numprocesses=auto"
-          - package-path: services/director
-            test-cmd: test-ci
-            python: "3.6"
-          - package-path: services/director-v2
-            test-parameters: pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
-          - package-path: services/director-v2
-            test-parameters: test-subfolder=with_dbs
-          - package-path: services/dynamic-sidecar
-            run-codestyle: true
-          - package-path: services/storage
-          - package-path: services/web/server
-            test-parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
-          - package-path: services/web/server
-            test-parameters: test-subfolder=with_dbs/01
-          - package-path: services/web/server
-            test-parameters: test-subfolder=with_dbs/02
-          - package-path: services/web/server
-            test-parameters: test-subfolder=with_dbs/03
+        package-path: [api/tests, packages/dask-task-models-library, packages/models-library]
+        # include:
+        #   - package-path:
+        #     package-install-cmd: install
+        #     package-install-cache-path: api/tests/requirements.txt
+        #     test-cmd: test-ci
+        #   - package-path: packages/dask-task-models-library
+        #     run-codestyle: true
+        #   - package-path: packages/models-library
+        #   - package-path: packages/postgres-database
+        #   - package-path: packages/simcore-sdk
+        #   - package-path: packages/service-integration
+        #   - package-path: packages/service-library
+        #     package-install-cmd: install-ci[all]
+        #     test-cmd: test-ci[all]
+        #   - package-path: packages/settings-library
+        #   - package-path: services/api-server
+        #   - package-path: services/autoscaling
+        #   - package-path: services/catalog
+        #   - package-path: services/dask-sidecar
+        #   - package-path: services/datcore-adapter
+        #     test-parameters: pytest-parameters="--numprocesses=auto"
+        #   - package-path: services/director
+        #     test-cmd: test-ci
+        #     python: "3.6"
+        #   - package-path: services/director-v2
+        #     test-parameters: pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
+        #   - package-path: services/director-v2
+        #     test-parameters: test-subfolder=with_dbs
+        #   - package-path: services/dynamic-sidecar
+        #     run-codestyle: true
+        #   - package-path: services/storage
+        #   - package-path: services/web/server
+        #     test-parameters: test-subfolder=isolated pytest-parameters="--numprocesses=auto"
+        #   - package-path: services/web/server
+        #     test-parameters: test-subfolder=with_dbs/01
+        #   - package-path: services/web/server
+        #     test-parameters: test-subfolder=with_dbs/02
+        #   - package-path: services/web/server
+        #     test-parameters: test-subfolder=with_dbs/03
     uses: ./.github/workflows/reusable-unit-test.yml
     with:
       python: ${{ matrix.python }}
@@ -110,42 +111,42 @@ jobs:
       test-parameters: ${{ matrix.test-parameters }}
       run-codestyle: ${{ matrix.run-codestyle }}
 
-  integration-test:
-    name: "[int]"
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package-path: services/web/server
-            test-parameters: test-subfolder=01
-          - package-path: services/web/server
-            test-parameters: test-subfolder=02
-          - package-path: services/director-v2
-            test-parameters: test-subfolder=01
-          - package-path: services/director-v2
-            test-parameters: test-subfolder=02
-          - package-path: packages/simcore-sdk
-            test-parameters: ""
+  # integration-test:
+  #   name: "[int]"
+  #   needs: build
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - package-path: services/web/server
+  #           test-parameters: test-subfolder=01
+  #         - package-path: services/web/server
+  #           test-parameters: test-subfolder=02
+  #         - package-path: services/director-v2
+  #           test-parameters: test-subfolder=01
+  #         - package-path: services/director-v2
+  #           test-parameters: test-subfolder=02
+  #         - package-path: packages/simcore-sdk
+  #           test-parameters: ""
 
-    uses: ./.github/workflows/reusable-integration-test.yml
-    with:
-      package-path: ${{ matrix.package-path }}
-      test-parameters: ${{ matrix.test-parameters }}
+  #   uses: ./.github/workflows/reusable-integration-test.yml
+  #   with:
+  #     package-path: ${{ matrix.package-path }}
+  #     test-parameters: ${{ matrix.test-parameters }}
 
-  system-test:
-    name: "[sys]"
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - test-name: public-api
-          - test-name: swarm-deploy
-          - test-name: e2e
-    uses: ./.github/workflows/reusable-system-test.yml
-    with:
-      test-name: ${{ matrix.test-name }}
+  # system-test:
+  #   name: "[sys]"
+  #   needs: build
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - test-name: public-api
+  #         - test-name: swarm-deploy
+  #         - test-name: e2e
+  #   uses: ./.github/workflows/reusable-system-test.yml
+  #   with:
+  #     test-name: ${{ matrix.test-name }}
 
   # unit-test-director:
   #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
