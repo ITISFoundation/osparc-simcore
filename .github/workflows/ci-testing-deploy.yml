@@ -62,8 +62,8 @@ jobs:
       matrix:
         include:
           - package-path: api/tests
-            package-install-cmd: install
-            package-install-cache-path: api/tests/requirements.txt
+            install-cmd: install
+            install-cache: api/tests/requirements.txt
             test-cmd: test-ci
           - package-path: packages/dask-task-models-library
             run-codestyle: true
@@ -82,6 +82,7 @@ jobs:
           - package-path: services/datcore-adapter
             test-parameters: pytest-parameters="--numprocesses=auto"
           - package-path: services/director
+            test-cmd: test-ci
           - package-path: services/director-v2
             test-parameters: pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
           - package-path: services/director-v2

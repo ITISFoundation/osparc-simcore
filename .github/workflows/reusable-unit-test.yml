@@ -4,11 +4,11 @@ on:
       package-path:
         required: true
         type: string
-      package-install-cmd:
+      install-cmd:
         required: false
         type: string
         default: install-ci
-      package-install-cache-path:
+      install-cache:
         required: false
         type: string
         default: "**/requirements/ci.txt"
@@ -56,7 +56,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: |
-            ${{ inputs.package-install-cache-path }}
+            ${{ inputs.install-cache }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install package
@@ -64,7 +64,7 @@ jobs:
           ./ci/helpers/ensure_python_pip.bash
           make devenv
           source .venv/bin/activate
-          make --directory=${{ inputs.package-path }} ${{ inputs.package-install-cmd }}
+          make --directory=${{ inputs.package-path }} ${{ inputs.install-cmd }}
           pip list --verbose
       - name: codestyle
         if: ${{ inputs.run-codestyle }}
