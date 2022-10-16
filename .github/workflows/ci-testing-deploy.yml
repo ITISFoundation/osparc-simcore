@@ -60,10 +60,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        python: ["3.9"]
         include:
           - package-path: api/tests
-            install-cmd: install
-            install-cache: api/tests/requirements.txt
+            package-install-cmd: install
+            package-install-cache-path: api/tests/requirements.txt
             test-cmd: test-ci
           - package-path: packages/dask-task-models-library
             run-codestyle: true
@@ -83,6 +84,7 @@ jobs:
             test-parameters: pytest-parameters="--numprocesses=auto"
           - package-path: services/director
             test-cmd: test-ci
+            python: "3.6"
           - package-path: services/director-v2
             test-parameters: pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
           - package-path: services/director-v2
@@ -100,8 +102,13 @@ jobs:
             test-parameters: test-subfolder=with_dbs/03
     uses: ./.github/workflows/reusable-unit-test.yml
     with:
+      python: ${{ matrix.python }}
       package-path: ${{ matrix.package-path }}
+      package-install-cmd: ${{ matrix.package-install-cmd }}
+      package-install-cache-path: ${{ matrix.package-install-cache-path }}
+      test-cmd: ${{ matrix.test-cmd }}
       test-parameters: ${{ matrix.test-parameters }}
+      run-codestyle: ${{ matrix.run-codestyle }}
 
   integration-test:
     name: "[int]"

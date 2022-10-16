@@ -4,11 +4,11 @@ on:
       package-path:
         required: true
         type: string
-      install-cmd:
+      package-install-cmd:
         required: false
         type: string
         default: install-ci
-      install-cache:
+      package-install-cache-path:
         required: false
         type: string
         default: "**/requirements/ci.txt"
@@ -24,6 +24,9 @@ on:
         required: false
         type: boolean
         default: false
+      python:
+        required: true
+        type: string
 
 jobs:
   unit-test:
@@ -32,7 +35,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9"]
         os: [ubuntu-20.04]
         docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
@@ -53,10 +55,10 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ inputs.python }}
           cache: "pip"
           cache-dependency-path: |
-            ${{ inputs.install-cache }}
+            ${{ inputs.package-install-cache-path }}
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install package
@@ -64,7 +66,7 @@ jobs:
           ./ci/helpers/ensure_python_pip.bash
           make devenv
           source .venv/bin/activate
-          make --directory=${{ inputs.package-path }} ${{ inputs.install-cmd }}
+          make --directory=${{ inputs.package-path }} ${{ inputs.package-install-cmd }}
           pip list --verbose
       - name: codestyle
         if: ${{ inputs.run-codestyle }}
