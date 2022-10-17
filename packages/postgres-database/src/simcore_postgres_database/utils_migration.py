@@ -38,7 +38,6 @@ def get_current_head() -> RevisionID:
     if not head:
         raise RuntimeError(f"Cannot find head revision in {script}")
 
-    assert head  # nosec
     return head
 
 
