@@ -13,7 +13,7 @@ WORKDIR="$(pwd)"
 DEFAULT_MYPY_CONFIG="$(git rev-parse --show-toplevel)/mypy.ini"
 MYPY_CONFIG=$(realpath "${2:-${DEFAULT_MYPY_CONFIG}}")
 
-Build() {
+build() {
   echo Building image "$IMAGE_NAME"
   #
   docker build \
@@ -22,7 +22,7 @@ Build() {
     "$SCRIPT_DIR/mypy"
 }
 
-Run() {
+run() {
   echo Using "$(docker run --rm "$IMAGE_NAME" --version)"
   echo Mypy config "${MYPY_CONFIG}"
   echo Mypying "$(realpath "$@")":
@@ -44,7 +44,7 @@ Run() {
 #
 # USAGE
 #    ./scripts/mypy.bash --help
-Build
-Run "$@"
+build
+run "$@"
 echo "DONE"
 # ----------------------------------------------------------------------
