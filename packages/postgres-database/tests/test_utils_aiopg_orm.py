@@ -5,7 +5,7 @@
 
 
 from datetime import datetime
-from typing import Iterator, List
+from typing import Iterator
 
 import pytest
 from aiopg.sa.connection import SAConnection
@@ -16,7 +16,7 @@ from simcore_postgres_database.utils_aiopg_orm import ALL_COLUMNS, BaseOrm
 
 
 @pytest.fixture
-async def fake_scicrunch_ids(pg_engine: Engine) -> List[str]:
+async def fake_scicrunch_ids(pg_engine: Engine) -> list[str]:
     row1 = dict(rrid="RRID:foo", name="foo", description="fooing")
     row2 = dict(rrid="RRID:bar", name="bar", description="barring")
 
@@ -51,7 +51,7 @@ async def scicrunch_orm(pg_engine: Engine) -> Iterator[BaseOrm[str]]:
         yield orm_obj
 
 
-async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]):
+async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
 
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
@@ -96,7 +96,7 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[s
 
 
 async def test_orm_fetch_defaults(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]
+    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
 
     # insert 1 and 2
@@ -131,7 +131,7 @@ async def test_orm_fetch_defaults(
 
 
 async def test_orm_fetchall_page(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]
+    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
 
     # insert 1 and 2
@@ -211,7 +211,7 @@ async def test_orm_insert_with_different_returns(scicrunch_orm: BaseOrm[str]):
     assert scicrunch2.rrid == "RRID:bar"
 
 
-async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]):
+async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
 
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
 
@@ -232,7 +232,7 @@ async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[
 
 
 async def test_orm_update_with_different_returns(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]
+    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
 
     scicrunch_id1, _ = fake_scicrunch_ids
@@ -260,7 +260,7 @@ async def test_orm_update_with_different_returns(
 
 
 async def test_orm_fail_to_update(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]
+    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
 
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
@@ -275,7 +275,7 @@ async def test_orm_fail_to_update(
 
 
 @pytest.mark.skip(reason="DEV")
-async def test_rowproxy(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[str]):
+async def test_rowproxy(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -284,7 +284,7 @@ async def test_rowproxy(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: List[st
     assert scicrunch_id2 == "RRID:bar"
 
     # fetch
-    rows: List[RowProxy] = await scicrunch_orm.fetch_all()
+    rows: list[RowProxy] = await scicrunch_orm.fetch_all()
     assert len(rows) == 2
 
     # Exercise conversions ----
