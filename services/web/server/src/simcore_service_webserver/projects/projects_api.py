@@ -13,7 +13,6 @@ import json
 import logging
 from collections import defaultdict
 from contextlib import suppress
-from dataclasses import dataclass
 from datetime import datetime
 from pprint import pformat
 from typing import Any, Optional
@@ -857,108 +856,70 @@ async def run_project_dynamic_services(
     request: web.Request, project: dict, user_id: UserID, product_name: str
 ) -> None:
     # first get the services if they already exist
-    log.debug(
-        "getting running interactive services of project %s for user %s",
-        f"{project['uuid']=}",
-        f"{user_id=}",
-    )
-    running_services = await director_v2_api.get_dynamic_services(
-        request.app, user_id, project["uuid"]
-    )
-    log.debug(
-        "Currently running services %s for user %s",
-        f"{running_services=}",
-        f"{user_id=}",
-    )
+    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
+    assert project_settings  # nosec
+    running_service_uuids: list[NodeIDStr] = [
+        d["service_uuid"]
+        for d in await director_v2_api.get_dynamic_services(
+            request.app, user_id, project["uuid"]
+        )
+    ]
+    if (
+        len(running_service_uuids)
+        >= project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+    ):
+        # we are done here, there are already enough services running
+        raise ProjectStartsTooManyDynamicNodes(
+            user_id=user_id, project_uuid=ProjectID(project["uuid"])
+        )
 
-    running_service_uuids = [d["service_uuid"] for d in running_services]
-    # now start them if needed
-    project_needed_services: dict[NodeIDStr, dict[str, Any]] = {
+    # find what needs to be started
+    project_missing_services: dict[NodeIDStr, dict[str, Any]] = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
-    log.debug("Starting services: %s", f"{project_needed_services=}")
+    if (
+        len(project_missing_services)
+        > project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+    ):
+        # we cannot start so many services so we are done
+        raise ProjectStartsTooManyDynamicNodes(
+            user_id=user_id, project_uuid=ProjectID(project["uuid"])
+        )
 
-    @dataclass
-    class _ServiceParams:
-        node_id: NodeIDStr
-        resources: ServiceResourcesDict
-        deprecated: bool
-
-    unique_project_needed_services = set(project_needed_services.keys())
     deprecated_services: list[bool] = await logged_gather(
         *(
             is_service_deprecated(
                 request.app,
                 user_id,
-                project_needed_services[service_uuid]["key"],
-                project_needed_services[service_uuid]["version"],
+                project_missing_services[service_uuid]["key"],
+                project_missing_services[service_uuid]["version"],
                 product_name,
             )
-            for service_uuid in unique_project_needed_services
+            for service_uuid in project_missing_services
         ),
         reraise=True,
     )
-    service_resources_result: list[ServiceResourcesDict] = await logged_gather(
-        *[
-            get_project_node_resources(
-                request.app, project=project, node_id=NodeID(node_uuid)
+
+    await logged_gather(
+        *(
+            _start_dynamic_service(
+                request,
+                project_missing_services[service_uuid]["key"],
+                project_missing_services[service_uuid]["version"],
+                user_id,
+                project["uuid"],
+                NodeID(service_uuid),
             )
-            for node_uuid in unique_project_needed_services
-        ],
+            for service_uuid, is_deprecated in zip(
+                project_missing_services, deprecated_services
+            )
+            if not is_deprecated
+        ),
         reraise=True,
     )
-
-    service_resources_search = {
-        n: _ServiceParams(n, r, d)
-        for n, r, d in zip(
-            unique_project_needed_services,
-            service_resources_result,
-            deprecated_services,
-        )
-    }
-
-    non_deprecated_project_needed_services = {
-        service_uuid: service
-        for service_uuid, service in project_needed_services.items()
-        if service_resources_search[service_uuid].deprecated is False
-    }
-
-    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
-    assert project_settings  # nosec
-    if (
-        len(non_deprecated_project_needed_services)
-        > project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
-    ):
-        raise ProjectStartsTooManyDynamicNodes(
-            user_id=user_id, project_uuid=ProjectID(project["uuid"])
-        )
-
-    start_service_tasks = [
-        director_v2_api.run_dynamic_service(
-            request.app,
-            user_id=user_id,
-            project_id=project["uuid"],
-            service_key=service["key"],
-            service_version=service["version"],
-            service_uuid=service_uuid,
-            request_dns=extract_dns_without_default_port(request.url),
-            request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
-            service_resources=service_resources_search[service_uuid].resources,
-        )
-        for service_uuid, service in non_deprecated_project_needed_services.items()
-    ]
-    results = await logged_gather(*start_service_tasks, reraise=True)
-    log.debug("Services start result %s", results)
-    for entry in results:
-        if entry:
-            # if the status is present in the results for the start_service
-            # it means that the API call failed
-            # also it is enforced that the status is different from 200 OK
-            if entry.get("status", 200) != 200:
-                log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
 async def remove_project_dynamic_services(
