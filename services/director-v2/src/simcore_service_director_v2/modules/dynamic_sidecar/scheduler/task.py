@@ -79,9 +79,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
     _lock: Lock = field(default_factory=Lock)
     _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
-    _service_observation_task: dict[ServiceName, Union[asyncio.Task, object]] = field(
-        default_factory=dict
-    )
+    _service_observation_task: dict[
+        ServiceName, Optional[Union[asyncio.Task, object]]
+    ] = field(default_factory=dict)
     _keep_running: bool = False
     _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
