@@ -9,7 +9,7 @@ import json.decoder
 import logging
 import os
 from logging.config import fileConfig
-from typing import Dict, Optional
+from typing import Optional
 
 import alembic.command
 import click
