@@ -44,9 +44,9 @@ from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
-from simcore_service_webserver.application_settings import get_settings
 
 from .. import catalog_client, director_v2_api, storage_api
+from ..application_settings import get_settings
 from ..resource_manager.websocket_manager import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -190,6 +190,19 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
+
+    project_running_nodes = await director_v2_api.get_dynamic_services(
+        request.app, user_id, f"{project_uuid}"
+    )
+    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
+    assert project_settings  # nosec
+    if (
+        len(project_running_nodes)
+        == project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+    ):
+        raise ProjectStartsTooManyDynamicNodes(
+            user_id=user_id, project_uuid=project_uuid
+        )
 
     # this is a dynamic node, let's gather its resources and start it
     service_resources: ServiceResourcesDict = await get_project_node_resources(
