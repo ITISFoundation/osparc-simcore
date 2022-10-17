@@ -204,16 +204,33 @@ async def download_link_to_file(
                     raise exceptions.TransferError(url) from exc
 
 
-def _check_for_aws_500_issue(exc: BaseException) -> bool:
-    """Sometimes AWS responds with a 500 or 503 which shall be retried
-    see [AWS notes on that](https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/) about 500 and 503 in AWS
-    """
-    if isinstance(exc, ClientResponseError):
-        client_error = cast(ClientResponseError, exc)
-        return client_error.status in (
-            web.HTTPInternalServerError.status_code,
-            web.HTTPServiceUnavailable.status_code,
-        )
+def _check_for_aws_http_errors(exc: BaseException) -> bool:
+    """returns: True if it should retry when http exception is detected"""
+
+    if not isinstance(exc, ExtendedClientResponseError):
+        return False
+
+    client_error = cast(ExtendedClientResponseError, exc)
+
+    # Sometimes AWS responds with a 500 or 503 which shall be retried,
+    # form more information see:
+    # https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/
+    if client_error.status in (
+        web.HTTPInternalServerError.status_code,
+        web.HTTPServiceUnavailable.status_code,
+    ):
+        return True
+
+    # Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
+    # reason in the body will be received. This also needs retrying,
+    # for more information see:
+    # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+    if (
+        client_error.status == web.HTTPBadRequest.status_code
+        and "RequestTimeout" in client_error.body
+    ):
+        return True
+
     return False
 
 
@@ -253,7 +270,7 @@ async def _upload_file_part(
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError)
-        | retry_if_exception(_check_for_aws_500_issue),
+        | retry_if_exception(_check_for_aws_http_errors),
         before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
         after=after_log(log, log_level=logging.ERROR),
     ):
