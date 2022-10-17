@@ -14,10 +14,11 @@ from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.modules import nodeports
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
-from watchdog.observers import Observer
+from watchdog.observers.api import BaseObserver
 
-from ..core.rabbitmq import send_message
-from .mounted_fs import MountedVolumes
+from ...core.rabbitmq import send_message
+from ..mounted_fs import MountedVolumes
+from ._watchdog_extentions import ExtendedInotifyObserver
 
 DETECTION_INTERVAL: float = 1.0
 TASK_NAME_FOR_CLEANUP = f"{name}.InvokeTask"
@@ -126,8 +127,9 @@ class UnifyingEventHandler(FileSystemEventHandler):
         self._is_enabled = is_enabled
 
     def _invoke_push_directory(self) -> None:
-        # wrapping the function call in the object
-        # helps with testing, it is simplet to mock
+        if not self._is_enabled:
+            return
+
         async_push_directory(
             self.loop,
             self.directory_path,
@@ -137,15 +139,14 @@ class UnifyingEventHandler(FileSystemEventHandler):
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
-        if self._is_enabled:
-            self._invoke_push_directory()
+        self._invoke_push_directory()
 
 
 class DirectoryWatcherObservers:
     """Used to keep tack of observer threads"""
 
     def __init__(self, *, io_log_redirect_cb: Optional[LogRedirectCB]) -> None:
-        self._observers: Deque[Observer] = deque()
+        self._observers: Deque[BaseObserver] = deque()
 
         self._keep_running: bool = True
         self._blocking_task: Optional[Awaitable[Any]] = None
@@ -160,7 +161,7 @@ class DirectoryWatcherObservers:
             directory_path=path,
             io_log_redirect_cb=self.io_log_redirect_cb,
         )
-        observer = Observer()
+        observer = ExtendedInotifyObserver()
         observer.schedule(self.outputs_event_handle, str(path), recursive=recursive)
         self._observers.append(observer)
 
@@ -262,11 +263,3 @@ def directory_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
         yield None
     finally:
         enable_directory_watcher(app)
-
-
-__all__: tuple[str, ...] = (
-    "directory_watcher_disabled",
-    "disable_directory_watcher",
-    "enable_directory_watcher",
-    "setup_directory_watcher",
-)
