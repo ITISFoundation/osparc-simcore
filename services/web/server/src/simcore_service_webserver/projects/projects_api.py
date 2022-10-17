@@ -44,6 +44,7 @@ from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_service_webserver.application_settings import get_settings
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..resource_manager.websocket_manager import (
@@ -68,7 +69,11 @@ from .project_lock import (
     lock_project,
 )
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import NodeNotFoundError, ProjectLockError
+from .projects_exceptions import (
+    NodeNotFoundError,
+    ProjectLockError,
+    ProjectStartsTooManyDynamicNodes,
+)
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -902,6 +907,22 @@ async def run_project_dynamic_services(
         )
     }
 
+    non_deprecated_project_needed_services = {
+        service_uuid: service
+        for service_uuid, service in project_needed_services.items()
+        if service_resources_search[service_uuid].deprecated is False
+    }
+
+    project_settings = get_settings(request.app).WEBSERVER_PROJECTS
+    assert project_settings  # nosec
+    if (
+        len(non_deprecated_project_needed_services)
+        > project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+    ):
+        raise ProjectStartsTooManyDynamicNodes(
+            user_id=user_id, project_uuid=ProjectID(project["uuid"])
+        )
+
     start_service_tasks = [
         director_v2_api.run_dynamic_service(
             request.app,
@@ -914,8 +935,7 @@ async def run_project_dynamic_services(
             request_scheme=request.headers.get("X-Forwarded-Proto", request.url.scheme),
             service_resources=service_resources_search[service_uuid].resources,
         )
-        for service_uuid, service in project_needed_services.items()
-        if service_resources_search[service_uuid].deprecated is False
+        for service_uuid, service in non_deprecated_project_needed_services.items()
     ]
     results = await logged_gather(*start_service_tasks, reraise=True)
     log.debug("Services start result %s", results)

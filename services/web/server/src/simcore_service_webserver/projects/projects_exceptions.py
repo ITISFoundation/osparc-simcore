@@ -1,5 +1,7 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
 import redis.exceptions
+from models_library.projects import ProjectID
+from models_library.users import UserID
 
 
 class ProjectsException(Exception):
@@ -52,3 +54,14 @@ class NodeNotFoundError(ProjectsException):
 
 
 ProjectLockError = redis.exceptions.LockError
+
+
+class ProjectStartsTooManyDynamicNodes(ProjectsException):
+    """user tried to start too many nodes concurrently"""
+
+    def __init__(self, user_id: UserID, project_uuid: ProjectID):
+        super().__init__(
+            "User cannot start so many nodes, please manually select nodes to run"
+        )
+        self.user_id = user_id
+        self.project_uuid = project_uuid
