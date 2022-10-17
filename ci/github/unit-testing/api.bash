@@ -1,14 +1,14 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-    bash ci/helpers/ensure_python_pip.bash
-    pip3 install --requirement api/tests/requirements.txt
-    pip list --verbose
+  bash ci/helpers/ensure_python_pip.bash
+  pip3 install --requirement api/tests/requirements.txt
+  pip list --verbose
 }
 
 test() {
@@ -23,8 +23,7 @@ test() {
 }
 
 # Check if the function exists (bash specific)
-if declare -f "$1" > /dev/null
-then
+if declare -f "$1" >/dev/null; then
   # call arguments verbatim
   "$@"
 else

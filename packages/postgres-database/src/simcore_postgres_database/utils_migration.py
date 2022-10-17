@@ -3,11 +3,11 @@
 """
 import sys
 from pathlib import Path
-from typing import Final
+from typing import Final, Optional
 
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
-from alembic.script import ScriptDirectory
+from alembic.script.base import ScriptDirectory
 
 _CURRENT_DIR = Path(
     sys.argv[0] if __name__ == "__main__" else __file__
@@ -32,8 +32,13 @@ def get_current_head() -> RevisionID:
     due to branching, an error is raised;
     """
     config = create_basic_config()
-    script = ScriptDirectory.from_config(config)
+    script: ScriptDirectory = ScriptDirectory.from_config(config)
 
-    head = script.get_current_head()
-    assert head  # nosec
+    head: Optional[str] = script.get_current_head()
+    if not head:
+        raise RuntimeError(f"Cannot find head revision in {script}")
+
     return head
+
+
+# nopycln: file
