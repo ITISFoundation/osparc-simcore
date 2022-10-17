@@ -124,8 +124,7 @@ pylint: $(REPO_BASE_DIR)/.pylintrc ## runs pylint (python linter) on src and tes
 	@pylint --rcfile="$(REPO_BASE_DIR)/.pylintrc" -v $(CURDIR)/src $(CURDIR)/tests
 
 
-.PHONY: mypy typecheck
-typecheck: mypy
+.PHONY: mypy
 mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*
 	@$(REPO_BASE_DIR)/scripts/mypy.bash src
 
