@@ -9,7 +9,7 @@ import json.decoder
 import logging
 import os
 from logging.config import fileConfig
-from typing import Dict, Optional
+from typing import Optional
 
 import alembic.command
 import click
@@ -57,7 +57,7 @@ def main():
 @click.option("--host")
 @click.option("--port", type=int)
 @click.option("--database", "-d")
-def discover(**cli_inputs) -> Optional[Dict]:
+def discover(**cli_inputs) -> Optional[dict]:
     """Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
@@ -67,13 +67,13 @@ def discover(**cli_inputs) -> Optional[Dict]:
 
     # tests different urls
 
-    def _test_cached() -> Dict:
+    def _test_cached() -> dict:
         """Tests cached configuration"""
         cfg = load_cache(raise_if_error=True)
         cfg.update(cli_cfg)  # overrides
         return cfg
 
-    def _test_env() -> Dict:
+    def _test_env() -> dict:
         """Tests environ variables"""
         cfg = {
             "user": os.getenv("POSTGRES_USER"),
@@ -85,7 +85,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
         cfg.update(cli_cfg)
         return cfg
 
-    def _test_swarm() -> Dict:
+    def _test_swarm() -> dict:
         """Tests published port in swarm from host"""
         cfg = _test_env()
         cfg["host"] = "127.0.0.1"
@@ -97,7 +97,7 @@ def discover(**cli_inputs) -> Optional[Dict]:
         try:
             click.echo("-> {0.__name__}: {0.__doc__}".format(test))
 
-            cfg: Dict = test()
+            cfg: dict = test()
             cfg.update(cli_cfg)  # CLI always overrides
             url = build_url(**cfg)
 
