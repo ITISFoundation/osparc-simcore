@@ -908,6 +908,32 @@ qx.Class.define("osparc.data.model.Node", {
     },
     // !---- Output Nodes -----
 
+    startNode: function() {
+      const params = {
+        url: {
+          studyId: this.getStudy().getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "startNode", params)
+        .then(data => this.startDynamicService())
+        .catch(err => {});
+      return true;
+    },
+
+    stopNode: function() {
+      const params = {
+        url: {
+          studyId: this.getStudy().getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      osparc.data.Resources.fetch("studies", "stopNode", params)
+        .then(data => this.__onNodeState(data))
+        .catch(err => {});
+      return true;
+    },
+
     renameNode: function(newLabel) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
         return false;

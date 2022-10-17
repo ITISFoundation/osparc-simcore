@@ -113,6 +113,8 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
   events: {
     "renameNode": "qx.event.type.Data",
+    "startNode": "qx.event.type.Data",
+    "stopNode": "qx.event.type.Data",
     "infoNode": "qx.event.type.Data",
     "markerClicked": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
@@ -135,6 +137,20 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       const optionsMenu = this._optionsMenu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
+
+      const startBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Start"),
+        icon: "@FontAwesome5Solid/play/10"
+      });
+      startBtn.addListener("execute", () => this.fireDataEvent("startNode", this.getNodeId()));
+      optionsMenu.add(startBtn);
+
+      const stopBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Stop"),
+        icon: "@FontAwesome5Solid/stop/10"
+      });
+      stopBtn.addListener("execute", () => this.fireDataEvent("stopNode", this.getNodeId()));
+      optionsMenu.add(stopBtn);
 
       const renameBtn = new qx.ui.menu.Button().set({
         label: this.tr("Rename"),
