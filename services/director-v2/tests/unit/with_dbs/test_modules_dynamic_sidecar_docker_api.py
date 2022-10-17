@@ -560,14 +560,14 @@ async def test_is_dynamic_sidecar_stack_missing(
     assert services_are_missing is False
 
 
-async def test_are_all_services_present(
+async def test_are_sidecar_and_proxy_services_present(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
-    services_are_missing = await docker_api.are_all_services_present(
+    services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing is False
@@ -577,7 +577,7 @@ async def test_are_all_services_present(
         service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
         assert service_id
 
-    services_are_missing = await docker_api.are_all_services_present(
+    services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing is True
