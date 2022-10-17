@@ -9,19 +9,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest import MonkeyPatch
-from simcore_service_dynamic_sidecar.modules import directory_watcher
 from simcore_service_dynamic_sidecar.modules.directory_watcher import (
+    _core as directory_watcher_core,
+)
+from simcore_service_dynamic_sidecar.modules.directory_watcher._core import (
     DirectoryWatcherObservers,
 )
-
-# TODO:
-# - setup and look at a directory
-# - do something on that dir when file changes
-# - use a mock to check that it calls the function a certain amount of times
-# - good way to check the code works properly
-# - todo make it run on a separate thread, already there
-# - todo use absolute patterns for monitoring
-
 
 TICK_INTERVAL = 0.001
 
@@ -30,8 +23,8 @@ TICK_INTERVAL = 0.001
 def patch_directory_watcher(monkeypatch: MonkeyPatch) -> Iterator[AsyncMock]:
     mocked_upload_data = AsyncMock(return_value=None)
 
-    monkeypatch.setattr(directory_watcher, "DETECTION_INTERVAL", TICK_INTERVAL)
-    monkeypatch.setattr(directory_watcher, "_push_directory", mocked_upload_data)
+    monkeypatch.setattr(directory_watcher_core, "DETECTION_INTERVAL", TICK_INTERVAL)
+    monkeypatch.setattr(directory_watcher_core, "_push_directory", mocked_upload_data)
 
     yield mocked_upload_data
 
@@ -56,6 +49,10 @@ async def _generate_event_burst(tmp_path: Path, subfolder: str = None) -> None:
     await asyncio.sleep(TICK_INTERVAL)
 
 
+async def _wait_for_events_to_trigger() -> None:
+    await asyncio.sleep(3)
+
+
 async def test_run_observer(
     patch_directory_watcher: AsyncMock,
     tmp_path: Path,
@@ -72,7 +69,7 @@ async def test_run_observer(
     # generates the first event chain
     await _generate_event_burst(tmp_path)
 
-    await asyncio.sleep(2)
+    await _wait_for_events_to_trigger()
 
     # generates the second event chain
     await _generate_event_burst(tmp_path, "ciao")
@@ -85,3 +82,29 @@ async def test_run_observer(
     assert directory_watcher_observers._blocking_task is None
 
     assert patch_directory_watcher.call_count == 2
+
+
+async def test_does_not_trigger_on_attribute_change(
+    patch_directory_watcher: AsyncMock, tmp_path: Path
+):
+    directory_watcher_observers = DirectoryWatcherObservers(io_log_redirect_cb=None)
+    directory_watcher_observers.observe_directory(tmp_path)
+
+    directory_watcher_observers.start()
+
+    await asyncio.sleep(TICK_INTERVAL)
+
+    # crate a file in the directory
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    file_path_1 = tmp_path / "file1.txt"
+    file_path_1.touch()
+
+    await _wait_for_events_to_trigger()
+    assert patch_directory_watcher.call_count == 1
+
+    # apply an attribute change
+    file_path_1.chmod(0o744)
+
+    await _wait_for_events_to_trigger()
+    # same call count as before, event was ignored
+    assert patch_directory_watcher.call_count == 1
