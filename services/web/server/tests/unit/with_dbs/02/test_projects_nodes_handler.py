@@ -7,6 +7,7 @@ import re
 from collections import UserDict
 from copy import deepcopy
 from datetime import datetime, timedelta
+from random import choice
 from typing import Any, Awaitable, Callable
 from unittest import mock
 from uuid import UUID, uuid4
@@ -350,4 +351,119 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert error
     assert not data
     # this does not start anything in the backend since this node is deprecated
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_start_node(
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+    max_amount_of_auto_started_dyn_services: int,
+):
+    assert client.app
+    assert (
+        max_amount_of_auto_started_dyn_services > 0
+    ), "this test does not make sense if the value is 0. TIP: remove the test then"
+    project = await user_project_with_num_dynamic_services(
+        max_amount_of_auto_started_dyn_services
+    )
+    all_service_uuids = list(project["workbench"])
+    # start the node, shall work as expected
+    url = client.app.router["start_node"].url_for(
+        project_id=project["uuid"], node_id=choice(all_service_uuids)
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(
+        response,
+        web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content,
+    )
+    if error is None:
+        mocked_director_v2_api[
+            "director_v2_api.run_dynamic_service"
+        ].assert_called_once()
+    else:
+        mocked_director_v2_api[
+            "director_v2_api.run_dynamic_service"
+        ].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_start_node_raises_if_dynamic_services_limit_attained(
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+    max_amount_of_auto_started_dyn_services: int,
+):
+    assert client.app
+    project = await user_project_with_num_dynamic_services(
+        max_amount_of_auto_started_dyn_services
+    )
+    all_service_uuids = list(project["workbench"])
+    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+    ]
+    # start the node, shall work as expected
+    url = client.app.router["start_node"].url_for(
+        project_id=project["uuid"], node_id=choice(all_service_uuids)
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(
+        response,
+        expected.conflict,
+    )
+    assert not data
+    assert error
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_start_node_raises_if_called_with_wrong_data(
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+    max_amount_of_auto_started_dyn_services: int,
+):
+    assert client.app
+    project = await user_project_with_num_dynamic_services(
+        max_amount_of_auto_started_dyn_services
+    )
+    all_service_uuids = list(project["workbench"])
+
+    # start the node, with wrong project
+    url = client.app.router["start_node"].url_for(
+        project_id=faker.uuid4(), node_id=choice(all_service_uuids)
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(
+        response,
+        expected.not_found,
+    )
+    assert not data
+    assert error
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+    # start the node, with wrong node
+    url = client.app.router["start_node"].url_for(
+        project_id=project["uuid"], node_id=faker.uuid4()
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(
+        response,
+        expected.not_found,
+    )
+    assert not data
+    assert error
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()

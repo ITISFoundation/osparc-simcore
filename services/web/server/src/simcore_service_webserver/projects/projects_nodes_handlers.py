@@ -26,7 +26,11 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from .projects_exceptions import (
+    NodeNotFoundError,
+    ProjectNotFoundError,
+    ProjectStartsTooManyDynamicNodes,
+)
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
@@ -198,12 +202,23 @@ async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    try:
 
-    await projects_api.start_project_node(
-        request, req_ctx.user_id, path_params.project_id, path_params.node_id
-    )
+        await projects_api.start_project_node(
+            request, req_ctx.user_id, path_params.project_id, path_params.node_id
+        )
 
-    return web.HTTPNoContent()
+        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    except ProjectStartsTooManyDynamicNodes as exc:
+        raise web.HTTPConflict(reason=f"{exc}") from exc
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Node {path_params.node_id} not found in project"
+        ) from exc
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
@@ -215,7 +230,7 @@ async def stop_node(request: web.Request) -> web.Response:
 
     await director_v2_api.stop_dynamic_service(request.app, f"{path_params.node_id}")
 
-    return web.HTTPNoContent()
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
