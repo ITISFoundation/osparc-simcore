@@ -21,7 +21,7 @@ from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...modules.dynamic_sidecar.scheduler._utils import (
     service_push_outputs,
     service_remove_containers,
-    service_remove_docker_resources,
+    service_remove_sidecar_proxy_docker_networks_and_volumes,
     service_save_state,
 )
 from ...utils.routes import NoContentResponse
@@ -41,11 +41,11 @@ router = APIRouter()
 
 
 @router.patch(
-    "/{node_uuid}/observation",
-    summary="Enable/disable observation of service.",
+    "/services/{node_uuid}/observation",
+    summary="Enable/disable observation of the service",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def toggle_service_observation(
+async def update_service_observation(
     node_uuid: NodeID,
     observation_item: ObservationItem,
     dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
@@ -64,7 +64,8 @@ async def toggle_service_observation(
 
 
 @router.delete(
-    "/{node_uuid}/containers",
+    "/services/{node_uuid}/containers",
+    summary="Removes the service's user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
     responses={
@@ -73,7 +74,7 @@ async def toggle_service_observation(
         }
     },
 )
-async def remove_service_containers(
+async def delete_service_containers(
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
@@ -111,7 +112,8 @@ async def remove_service_containers(
 
 
 @router.post(
-    "/{node_uuid}/state:save",
+    "/services/{node_uuid}/state:save",
+    summary="Starts the saving of the state for the service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
     responses={
@@ -158,7 +160,8 @@ async def save_service_state(
 
 
 @router.post(
-    "/{node_uuid}/outputs:push",
+    "/services/{node_uuid}/outputs:push",
+    summary="Starts the pushing of the outputs for the service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
     responses={
@@ -205,7 +208,8 @@ async def push_service_outputs(
 
 
 @router.delete(
-    "/{node_uuid}/docker-resources",
+    "/services/{node_uuid}/docker-resources",
+    summary="Removes the service's sidecar, proxy and docker networks & volumes",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
     responses={
@@ -214,7 +218,7 @@ async def push_service_outputs(
         }
     },
 )
-async def cleanup_service_docker_resources(
+async def delete_service_docker_resources(
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     app: FastAPI = Depends(get_app),
@@ -234,7 +238,7 @@ async def cleanup_service_docker_resources(
         dynamic_sidecar_settings: DynamicSidecarSettings,
     ) -> None:
         scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
-        await service_remove_docker_resources(
+        await service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress, app, scheduler_data, dynamic_sidecar_settings
         )
 

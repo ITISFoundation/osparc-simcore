@@ -30,26 +30,34 @@ class ThinDV2LocalhostClient(BaseThinClient):
         self, node_uuid: str, *, is_disabled: bool
     ) -> Response:
         return await self.client.patch(
-            self._get_url(f"/{node_uuid}/observation"),
+            self._get_url(f"/services/{node_uuid}/observation"),
             json=dict(is_disabled=is_disabled),
         )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def delete_service_containers(self, node_uuid: str) -> Response:
-        return await self.client.delete(self._get_url(f"/{node_uuid}/containers"))
+        return await self.client.delete(
+            self._get_url(f"/services/{node_uuid}/containers")
+        )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def save_service_state(self, node_uuid: str) -> Response:
-        return await self.client.post(self._get_url(f"/{node_uuid}/state:save"))
+        return await self.client.post(
+            self._get_url(f"/services/{node_uuid}/state:save")
+        )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def push_service_outputs(self, node_uuid: str) -> Response:
-        return await self.client.post(self._get_url(f"/{node_uuid}/outputs:push"))
+        return await self.client.post(
+            self._get_url(f"/services/{node_uuid}/outputs:push")
+        )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def delete_service_docker_resources(self, node_uuid: str) -> Response:
-        return await self.client.delete(self._get_url(f"/{node_uuid}/docker-resources"))
+        return await self.client.delete(
+            self._get_url(f"/services/{node_uuid}/docker-resources")
+        )
