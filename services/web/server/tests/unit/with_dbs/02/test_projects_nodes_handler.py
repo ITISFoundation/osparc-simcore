@@ -467,3 +467,41 @@ async def test_start_node_raises_if_called_with_wrong_data(
     assert not data
     assert error
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_stop_node(
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+    max_amount_of_auto_started_dyn_services: int,
+):
+    assert client.app
+    assert (
+        max_amount_of_auto_started_dyn_services > 0
+    ), "this test does not make sense if the value is 0. TIP: remove the test then"
+    project = await user_project_with_num_dynamic_services(
+        max_amount_of_auto_started_dyn_services
+    )
+    all_service_uuids = list(project["workbench"])
+    # start the node, shall work as expected
+    url = client.app.router["stop_node"].url_for(
+        project_id=project["uuid"], node_id=choice(all_service_uuids)
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(
+        response,
+        web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content,
+    )
+    if error is None:
+        mocked_director_v2_api[
+            "director_v2_api.stop_dynamic_service"
+        ].assert_called_once()
+    else:
+        mocked_director_v2_api[
+            "director_v2_api.stop_dynamic_service"
+        ].assert_not_called()

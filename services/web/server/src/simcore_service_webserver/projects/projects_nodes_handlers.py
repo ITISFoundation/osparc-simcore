@@ -228,9 +228,20 @@ async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
-    await director_v2_api.stop_dynamic_service(request.app, f"{path_params.node_id}")
+    try:
+        await director_v2_api.stop_dynamic_service(
+            request.app, f"{path_params.node_id}"
+        )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Node {path_params.node_id} not found in project"
+        ) from exc
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
