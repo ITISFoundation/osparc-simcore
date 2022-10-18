@@ -92,7 +92,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
     def toggle_observation_cycle(self, node_uuid: NodeID, disable: bool) -> bool:
         """
-        returns True if it manged to toggle the current state
+        returns True if it managed to toggle the current state
 
         raises DynamicSidecarNotFoundError
         """

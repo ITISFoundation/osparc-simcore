@@ -141,7 +141,7 @@ async def service_push_outputs(
     )
 
 
-async def service_remove_docker_resources(
+async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     task_progress: TaskProgress,
     app: FastAPI,
     scheduler_data: SchedulerData,
@@ -296,6 +296,6 @@ async def attempt_pod_removal_and_data_saving(
     else:
         await _remove_containers_save_state_and_outputs()
 
-    await service_remove_docker_resources(
+    await service_remove_sidecar_proxy_docker_networks_and_volumes(
         TaskProgress.create(), app, scheduler_data, dynamic_sidecar_settings
     )
