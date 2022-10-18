@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.12.10
+astroid==2.12.11
     # via pylint
 attrs==22.1.0
     # via
@@ -58,7 +58,7 @@ py==1.11.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pylint==2.15.3
+pylint==2.15.4
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via

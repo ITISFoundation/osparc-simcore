@@ -11,12 +11,12 @@ from service_integration.compose_spec_model import (
     Service,
 )
 
-from .context import IntegrationContext
 from .osparc_config import DockerComposeOverwriteCfg, MetaConfig, RuntimeConfig
+from .settings import AppSettings
 
 
 def create_image_spec(
-    integration_context: IntegrationContext,
+    settings: AppSettings,
     meta_cfg: MetaConfig,
     docker_compose_overwrite_cfg: DockerComposeOverwriteCfg,
     runtime_cfg: Optional[RuntimeConfig] = None,
@@ -47,11 +47,9 @@ def create_image_spec(
     build_spec = BuildItem(**overwrite_options)
 
     compose_spec = ComposeSpecification(
-        version=integration_context.COMPOSE_VERSION,
+        version=settings.COMPOSE_VERSION,
         services={
-            service_name: Service(
-                image=meta_cfg.image_name(integration_context), build=build_spec
-            )
+            service_name: Service(image=meta_cfg.image_name(settings), build=build_spec)
         },
     )
     return compose_spec

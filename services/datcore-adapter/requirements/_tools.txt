@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-black==22.8.0
+black==22.10.0
     # via -r requirements/../../../requirements/devenv.txt
 build==0.8.0
     # via pip-tools
@@ -21,7 +21,7 @@ distlib==0.3.6
     # via virtualenv
 filelock==3.8.0
     # via virtualenv
-identify==2.5.5
+identify==2.5.6
     # via pre-commit
 isort==5.10.1
     # via
@@ -39,7 +39,7 @@ pathspec==0.10.1
     # via black
 pep517==0.13.0
     # via build
-pip-tools==6.8.0
+pip-tools==6.9.0
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==2.5.2
     # via
@@ -71,7 +71,7 @@ typing-extensions==4.3.0
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.16.4
+virtualenv==20.16.5
     # via pre-commit
 watchdog==2.1.9
     # via -r requirements/_tools.in

@@ -19,7 +19,6 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from pytest import FixtureRequest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
@@ -72,12 +71,6 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-async def async_docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
-    async with aiodocker.Docker() as client:
-        yield client
-
-
-@pytest.fixture
 def dynamic_sidecar_settings(
     monkeypatch: MonkeyPatch, mock_env: EnvVarsDict
 ) -> DynamicSidecarSettings:
@@ -107,7 +100,7 @@ def network_config(simcore_services_network_name: str, faker: Faker) -> dict[str
 @pytest.fixture
 async def ensure_swarm_network(
     network_config: dict[str, Any],
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[None]:
     network_id = await docker_api.create_network(network_config)
     yield
@@ -128,7 +121,7 @@ async def ensure_swarm_network(
 @pytest.fixture
 async def cleanup_swarm_network(
     simcore_services_network_name: str,
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[None]:
     yield
     # docker containers must be gone before network removal is functional
@@ -164,7 +157,7 @@ def service_spec(test_service_name: str) -> dict[str, Any]:
 @pytest.fixture
 async def cleanup_test_service_name(
     test_service_name: str,
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
     docker_swarm: None,
 ) -> AsyncIterator[None]:
     yield
@@ -207,7 +200,7 @@ def dynamic_sidecar_service_spec(
 @pytest.fixture
 async def cleanup_test_dynamic_sidecar_service(
     dynamic_sidecar_service_name: str,
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[None]:
     yield
     assert (
@@ -270,7 +263,7 @@ def dynamic_sidecar_stack_specs(
 @pytest.fixture
 async def cleanup_dynamic_sidecar_stack(
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[None]:
     yield
     for dynamic_sidecar_spec in dynamic_sidecar_stack_specs:
@@ -282,7 +275,7 @@ async def cleanup_dynamic_sidecar_stack(
 
 @pytest.fixture
 async def project_id_labeled_network(
-    async_docker_client: aiodocker.docker.Docker, project_id: ProjectID
+    async_docker_client: aiodocker.Docker, project_id: ProjectID
 ) -> AsyncIterable[str]:
     network_config = {
         "Name": "test_network_by_project_id",
@@ -299,7 +292,7 @@ async def project_id_labeled_network(
 
 @pytest.fixture
 async def test_networks(
-    async_docker_client: aiodocker.docker.Docker, docker_swarm: None
+    async_docker_client: aiodocker.Docker, docker_swarm: None
 ) -> AsyncIterator[list[str]]:
     network_names = [f"test_network_name__{k}" for k in range(5)]
 
@@ -312,7 +305,7 @@ async def test_networks(
 
 @pytest.fixture
 async def existing_network(
-    async_docker_client: aiodocker.docker.Docker, project_id: ProjectID
+    async_docker_client: aiodocker.Docker, project_id: ProjectID
 ) -> AsyncIterable[str]:
     name = "test_with_existing_network_by_project_id"
     network_config = {
@@ -372,23 +365,17 @@ def mock_scheduler_data(
 
 
 @pytest.fixture
-async def docker() -> AsyncIterable[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
-
-
-@pytest.fixture
 async def mock_service(
-    docker: aiodocker.Docker, service_name: str
+    async_docker_client: aiodocker.Docker, service_name: str
 ) -> AsyncIterable[str]:
-    service_data = await docker.services.create(
+    service_data = await async_docker_client.services.create(
         {"ContainerSpec": {"Image": "joseluisq/static-web-server:1.16.0-alpine"}},
         name=service_name,
     )
 
     yield service_name
 
-    await docker.services.delete(service_data["ID"])
+    await async_docker_client.services.delete(service_data["ID"])
 
 
 @pytest.mark.parametrize(
@@ -573,14 +560,14 @@ async def test_is_dynamic_sidecar_stack_missing(
     assert services_are_missing is False
 
 
-async def test_are_all_services_present(
+async def test_are_sidecar_and_proxy_services_present(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     cleanup_dynamic_sidecar_stack: None,
     docker_swarm: None,
 ):
-    services_are_missing = await docker_api.are_all_services_present(
+    services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing is False
@@ -590,7 +577,7 @@ async def test_are_all_services_present(
         service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
         assert service_id
 
-    services_are_missing = await docker_api.are_all_services_present(
+    services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing is True
@@ -601,12 +588,12 @@ async def test_remove_dynamic_sidecar_stack(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
     docker_swarm: None,
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
 ):
     async def _count_services_in_stack(
         node_uuid: UUID,
         dynamic_sidecar_settings: DynamicSidecarSettings,
-        async_docker_client: aiodocker.docker.Docker,
+        async_docker_client: aiodocker.Docker,
     ) -> int:
         services = await async_docker_client.services.list(
             filters={
@@ -715,7 +702,7 @@ async def test_is_dynamic_service_running(
 
 
 async def test_get_projects_networks_containers(
-    async_docker_client: aiodocker.docker.Docker,
+    async_docker_client: aiodocker.Docker,
     project_id_labeled_network: str,
     project_id: ProjectID,
     docker_swarm: None,
@@ -751,7 +738,7 @@ async def test_get_or_create_networks_ids(
 
 
 async def test_update_scheduler_data_label(
-    docker: aiodocker.Docker,
+    async_docker_client: aiodocker.Docker,
     mock_service: str,
     mock_scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -759,7 +746,7 @@ async def test_update_scheduler_data_label(
     await docker_api.update_scheduler_data_label(mock_scheduler_data)
 
     # fetch stored data in labels
-    service_inspect = await docker.services.inspect(mock_service)
+    service_inspect = await async_docker_client.services.inspect(mock_service)
     labels = service_inspect["Spec"]["Labels"]
     scheduler_data = SchedulerData.parse_raw(
         labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]
@@ -768,7 +755,7 @@ async def test_update_scheduler_data_label(
 
 
 async def test_update_scheduler_data_label_skip_if_service_is_missing(
-    docker: aiodocker.Docker, mock_scheduler_data: SchedulerData
+    async_docker_client: aiodocker.Docker, mock_scheduler_data: SchedulerData
 ):
     # NOTE: checks that docker engine replies with
     # `service mock-service-name not found`
@@ -778,7 +765,7 @@ async def test_update_scheduler_data_label_skip_if_service_is_missing(
 
 @pytest.mark.flaky(max_runs=3)
 async def test_regression_update_service_update_out_of_sequence(
-    docker: aiodocker.Docker, mock_service: str, docker_swarm: None
+    async_docker_client: aiodocker.Docker, mock_service: str, docker_swarm: None
 ):
     # NOTE: checks that the docker engine replies with
     # `rpc error: code = Unknown desc = update out of sequence`
@@ -798,22 +785,25 @@ async def test_regression_update_service_update_out_of_sequence(
 
 
 @pytest.fixture
-async def target_node_id(docker: aiodocker.Docker) -> str:
+async def target_node_id(async_docker_client: aiodocker.Docker) -> str:
     # get a node's ID
-    docker_nodes = await docker.nodes.list()
+    docker_nodes = await async_docker_client.nodes.list()
     target_node_id = docker_nodes[0]["ID"]
     return target_node_id
 
 
 async def test_constrain_service_to_node(
-    docker: aiodocker.Docker, mock_service: str, target_node_id: str, docker_swarm: None
+    async_docker_client: aiodocker.Docker,
+    mock_service: str,
+    target_node_id: str,
+    docker_swarm: None,
 ):
     await docker_api.constrain_service_to_node(
         mock_service, docker_node_id=target_node_id
     )
 
     # check constraint was added
-    service_inspect = await docker.services.inspect(mock_service)
+    service_inspect = await async_docker_client.services.inspect(mock_service)
     constraints: list[str] = service_inspect["Spec"]["TaskTemplate"]["Placement"][
         "Constraints"
     ]
@@ -826,12 +816,12 @@ async def test_constrain_service_to_node(
 
 @pytest.fixture
 async def named_volumes(
-    docker: aiodocker.Docker, faker: Faker
+    async_docker_client: aiodocker.Docker, faker: Faker
 ) -> AsyncIterator[list[str]]:
     named_volumes: list[DockerVolume] = []
     volume_names: list[str] = []
     for _ in range(10):
-        named_volume: DockerVolume = await docker.volumes.create(
+        named_volume: DockerVolume = await async_docker_client.volumes.create(
             {"Name": f"named-volume-{faker.uuid4()}"}
         )
         volume_names.append(named_volume.name)
@@ -847,8 +837,10 @@ async def named_volumes(
             pass
 
 
-async def is_volume_present(docker: aiodocker.Docker, volume_name: str) -> bool:
-    docker_volume = DockerVolume(docker, volume_name)
+async def is_volume_present(
+    async_docker_client: aiodocker.Docker, volume_name: str
+) -> bool:
+    docker_volume = DockerVolume(async_docker_client, volume_name)
     try:
         await docker_volume.show()
         return True
@@ -859,7 +851,7 @@ async def is_volume_present(docker: aiodocker.Docker, volume_name: str) -> bool:
 
 async def test_remove_volume_from_node_ok(
     docker_swarm: None,
-    docker: aiodocker.Docker,
+    async_docker_client: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
     user_id: UserID,
@@ -868,7 +860,7 @@ async def test_remove_volume_from_node_ok(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ):
     for named_volume in named_volumes:
-        assert await is_volume_present(docker, named_volume) is True
+        assert await is_volume_present(async_docker_client, named_volume) is True
 
     volume_removal_result = await docker_api.remove_volumes_from_node(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
@@ -881,12 +873,12 @@ async def test_remove_volume_from_node_ok(
     assert volume_removal_result is True
 
     for named_volume in named_volumes:
-        assert await is_volume_present(docker, named_volume) is False
+        assert await is_volume_present(async_docker_client, named_volume) is False
 
 
 async def test_remove_volume_from_node_no_volume_found(
     docker_swarm: None,
-    docker: aiodocker.Docker,
+    async_docker_client: aiodocker.Docker,
     named_volumes: list[str],
     target_node_id: str,
     user_id: UserID,
@@ -895,7 +887,7 @@ async def test_remove_volume_from_node_no_volume_found(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ):
     missing_volume_name = "nope-i-am-fake-and-do-not-exist"
-    assert await is_volume_present(docker, missing_volume_name) is False
+    assert await is_volume_present(async_docker_client, missing_volume_name) is False
 
     # put the missing one in the middle of the sequence
     volumes_to_remove = named_volumes[:1] + [missing_volume_name] + named_volumes[1:]
@@ -910,23 +902,15 @@ async def test_remove_volume_from_node_no_volume_found(
         volume_removal_attempts=2,
         sleep_between_attempts_s=1,
     )
-    assert volume_removal_result is False
-    assert await is_volume_present(docker, missing_volume_name) is False
+    assert volume_removal_result is True
+    assert await is_volume_present(async_docker_client, missing_volume_name) is False
     for named_volume in named_volumes:
-        assert await is_volume_present(docker, named_volume) is False
+        assert await is_volume_present(async_docker_client, named_volume) is False
 
 
 @pytest.fixture
 def volume_removal_services_names(faker: Faker) -> set[str]:
     return {f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{faker.uuid4()}" for _ in range(10)}
-
-
-@pytest.fixture
-async def docker_version(docker: aiodocker.Docker) -> DockerVersion:
-    version_request = await docker._query_json(  # pylint: disable=protected-access
-        "version", versioned_api=False
-    )
-    return parse_obj_as(DockerVersion, version_request["Version"])
 
 
 @pytest.fixture(params=[0, 2])
@@ -936,7 +920,7 @@ def service_timeout_s(request: FixtureRequest) -> int:
 
 @pytest.fixture
 async def ensure_fake_volume_removal_services(
-    docker: aiodocker.Docker,
+    async_docker_client: aiodocker.Docker,
     docker_version: DockerVersion,
     target_node_id: str,
     user_id: UserID,
@@ -968,7 +952,7 @@ async def ensure_fake_volume_removal_services(
         # use very long sleep command
         service_spec.TaskTemplate.ContainerSpec.Command = ["sh", "-c", "sleep 3600"]
 
-        started_service = await docker.services.create(
+        started_service = await async_docker_client.services.create(
             **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
         )
         started_services_ids.append(started_service["ID"])
@@ -977,21 +961,22 @@ async def ensure_fake_volume_removal_services(
 
     for service_id in started_services_ids:
         try:
-            await docker.services.delete(service_id)
+            await async_docker_client.services.delete(service_id)
         except aiodocker.exceptions.DockerError as e:
             assert e.message == f"service {service_id} not found"
 
 
-async def _get_pending_services(docker: aiodocker.Docker) -> list[str]:
+async def _get_pending_services(async_docker_client: aiodocker.Docker) -> list[str]:
     service_filters = {"name": [f"{DYNAMIC_VOLUME_REMOVER_PREFIX}"]}
     return [
-        x["Spec"]["Name"] for x in await docker.services.list(filters=service_filters)
+        x["Spec"]["Name"]
+        for x in await async_docker_client.services.list(filters=service_filters)
     ]
 
 
 async def test_get_volume_removal_services(
     ensure_fake_volume_removal_services: None,
-    docker: aiodocker.Docker,
+    async_docker_client: aiodocker.Docker,
     volume_removal_services_names: set[str],
     dynamic_sidecar_settings: DynamicSidecarSettings,
     service_timeout_s: int,
@@ -1000,7 +985,7 @@ async def test_get_volume_removal_services(
     sleep_for = 1.01
     await asyncio.sleep(sleep_for)
 
-    pending_service_names = await _get_pending_services(docker)
+    pending_service_names = await _get_pending_services(async_docker_client)
     assert len(pending_service_names) == len(volume_removal_services_names)
 
     # check services are present before removing timed out services
@@ -1010,7 +995,7 @@ async def test_get_volume_removal_services(
     await docker_api.remove_pending_volume_removal_services(dynamic_sidecar_settings)
 
     # check that timed out services have been removed
-    pending_service_names = await _get_pending_services(docker)
+    pending_service_names = await _get_pending_services(async_docker_client)
     services_have_timed_out = sleep_for > service_timeout_s
     if services_have_timed_out:
         assert len(pending_service_names) == 0
