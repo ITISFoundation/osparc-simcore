@@ -2,21 +2,25 @@
 # pylint: disable=unused-argument
 
 import os
+import re
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Callable, Optional
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional
 
 import pytest
+import respx
 from click.testing import Result
 from faker import Faker
 from fastapi import status
-from httpx import Response
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.long_running_tasks._models import ProgressCallback
 from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
+from simcore_service_director_v2.cli._close_and_save_service import (
+    ThinDV2LocalhostClient,
+)
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceOut,
 )
@@ -112,46 +116,51 @@ def task_id(faker: Faker) -> str:
 
 
 @pytest.fixture
-def mock_close_service_routes(mocker: MockerFixture, task_id: str) -> None:
-    class_path = (
-        "simcore_service_director_v2.cli._close_and_save_service.ThinDV2LocalhostClient"
-    )
-    for function_name, return_value in [
-        ("toggle_service_observation", Response(status.HTTP_204_NO_CONTENT)),
-        (
-            "delete_service_containers",
-            Response(status.HTTP_202_ACCEPTED, json=task_id),
-        ),
-        ("save_service_state", Response(status.HTTP_202_ACCEPTED, json=task_id)),
-        ("push_service_outputs", Response(status.HTTP_202_ACCEPTED, json=task_id)),
-        (
-            "delete_service_docker_resources",
-            Response(status.HTTP_202_ACCEPTED, json=task_id),
-        ),
-    ]:
+async def mock_close_service_routes(
+    mocker: MockerFixture, task_id: str
+) -> AsyncIterable[None]:
+    regex_base = r"/v2/dynamic_scheduler/services/([\w-]+)"
+    with respx.mock(
+        base_url=ThinDV2LocalhostClient.BASE_ADDRESS,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.patch(
+            re.compile(f"{regex_base}/observation"), name="toggle_service_observation"
+        ).respond(status_code=status.HTTP_204_NO_CONTENT)
+        respx_mock.delete(
+            re.compile(f"{regex_base}/containers"), name="delete_service_containers"
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.post(
+            re.compile(f"{regex_base}/state:save"), name="save_service_state"
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.post(
+            re.compile(f"{regex_base}/outputs:push"), name="push_service_outputs"
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.delete(
+            re.compile(f"{regex_base}/docker-resources"),
+            name="delete_service_docker_resources",
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+
+        @asynccontextmanager
+        async def _mocked_context_manger(
+            client: Any,
+            task_id: Any,
+            *,
+            task_timeout: Any,
+            progress_callback: Optional[ProgressCallback] = None,
+            status_poll_interval: Any = 5,
+        ) -> AsyncIterator[None]:
+            assert progress_callback
+            await progress_callback("test", 1.0, task_id)
+            yield
+
         mocker.patch(
-            f"{class_path}.{function_name}",
-            # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            "simcore_service_director_v2.cli._close_and_save_service.periodic_task_result",
+            side_effect=_mocked_context_manger,
         )
 
-    @asynccontextmanager
-    async def _mocked_context_manger(
-        client: Any,
-        task_id: Any,
-        *,
-        task_timeout: Any,
-        progress_callback: Optional[ProgressCallback] = None,
-        status_poll_interval: Any = 5,
-    ) -> AsyncIterator[None]:
-        assert progress_callback
-        await progress_callback("test", 1.0, task_id)
         yield
-
-    mocker.patch(
-        "simcore_service_director_v2.cli._close_and_save_service.periodic_task_result",
-        side_effect=_mocked_context_manger,
-    )
 
 
 def _format_cli_error(result: Result) -> str:

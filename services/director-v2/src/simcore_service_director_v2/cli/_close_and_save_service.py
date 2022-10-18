@@ -109,7 +109,7 @@ async def async_close_and_save_service(
         client = Client(
             app=app,
             async_client=thin_dv2_localhost_client.client,
-            base_url=parse_obj_as(AnyHttpUrl, thin_dv2_localhost_client.base_address),
+            base_url=parse_obj_as(AnyHttpUrl, thin_dv2_localhost_client.BASE_ADDRESS),
         )
 
         if not skip_container_removal:

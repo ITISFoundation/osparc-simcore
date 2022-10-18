@@ -13,16 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 class ThinDV2LocalhostClient(BaseThinClient):
+    BASE_ADDRESS: str = "http://localhost:8000"
+
     def __init__(self):
         self.client = AsyncClient(timeout=Timeout(5))
         self._request_max_retries: int = 3
 
-        self.base_address: str = "http://localhost:8000"
-
         super().__init__(request_max_retries=self._request_max_retries)
 
     def _get_url(self, postfix: str) -> str:
-        return f"{self.base_address}/v2/dynamic_scheduler{postfix}"
+        return f"{self.BASE_ADDRESS}/v2/dynamic_scheduler{postfix}"
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
