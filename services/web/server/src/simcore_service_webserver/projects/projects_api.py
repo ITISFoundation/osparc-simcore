@@ -864,15 +864,6 @@ async def run_project_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]
-    if (
-        len(running_service_uuids)
-        >= project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
-    ):
-        # we are done here, there are already enough services running
-        raise ProjectStartsTooManyDynamicNodes(
-            user_id=user_id, project_uuid=ProjectID(project["uuid"])
-        )
-
     # find what needs to be started
     project_missing_services: dict[NodeIDStr, dict[str, Any]] = {
         service_uuid: service
@@ -881,9 +872,8 @@ async def run_project_dynamic_services(
         and service_uuid not in running_service_uuids
     }
     if (
-        len(project_missing_services)
-        > project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
-    ):
+        len(project_missing_services) + len(running_service_uuids)
+    ) > project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT:
         # we cannot start so many services so we are done
         raise ProjectStartsTooManyDynamicNodes(
             user_id=user_id, project_uuid=ProjectID(project["uuid"])
