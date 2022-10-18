@@ -36,11 +36,12 @@ log = logging.getLogger(__name__)
 def _setup_app_from_settings(
     settings: ApplicationSettings,
 ) -> tuple[web.Application, dict]:
+    # NOTE: keeping imports here to reduce CLI load time
     from .application import create_application
     from .application_settings_utils import convert_to_app_config
     from .log import setup_logging
 
-    # NOTE: keeping an equivalent config allows us
+    # NOTE: By having an equivalent config allows us
     # to keep some of the code from the previous
     # design whose starting point was a validated
     # config. E.g. many test fixtures were based on
@@ -81,6 +82,7 @@ main.command()(login_cli.invitations)
 @main.command()
 def run():
     """Runs web server"""
+    # NOTE: keeping imports here to reduce CLI load time
     from .application import run_service
 
     app_settings = ApplicationSettings.create_from_envs()
