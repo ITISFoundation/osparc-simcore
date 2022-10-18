@@ -7,11 +7,9 @@
 import asyncio
 import json
 import time
-from contextlib import AsyncExitStack
 from copy import deepcopy
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, Optional, Union
+from typing import Any, Awaitable, Callable, Iterator, Optional, Union
 from unittest import mock
 from unittest.mock import call
 
@@ -36,9 +34,8 @@ from models_library.services_resources import (
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
-from pytest_simcore.helpers.utils_projects import NewProject, assert_get_same_project
+from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
-from simcore_service_webserver.application_settings import get_settings
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
@@ -345,61 +342,6 @@ async def test_open_project(
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
             calls
         )
-
-
-@pytest.fixture
-def max_amount_of_auto_started_dyn_services(client: TestClient) -> int:
-    assert client.app
-    projects_settings = get_settings(client.app).WEBSERVER_PROJECTS
-    assert projects_settings
-    return projects_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
-
-
-@pytest.fixture
-async def user_project_with_num_dynamic_services(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-    faker: Faker,
-) -> AsyncIterator[Callable[[int], Awaitable[ProjectDict]]]:
-
-    async with AsyncExitStack() as stack:
-
-        async def _creator(num_dyn_services: int) -> ProjectDict:
-            project_data = {
-                "workbench": {
-                    faker.uuid4(): {
-                        "key": f"simcore/services/dynamic/{faker.pystr()}",
-                        "version": faker.numerify("#.#.#"),
-                        "label": faker.name(),
-                    }
-                    for _ in range(num_dyn_services)
-                }
-            }
-            project = await stack.enter_async_context(
-                NewProject(
-                    project_data,
-                    client.app,
-                    user_id=logged_user["id"],
-                    product_name=osparc_product_name,
-                    tests_data_dir=tests_data_dir,
-                )
-            )
-            print("-----> added project", project["name"])
-            assert "workbench" in project
-            dynamic_services = list(
-                filter(
-                    lambda service: "/dynamic/" in service["key"],
-                    project["workbench"].values(),
-                )
-            )
-            assert len(dynamic_services) == num_dyn_services
-            assert project["workbench"]
-            return project
-
-        yield _creator
-    print("<----- cleaned up projects")
 
 
 @pytest.mark.parametrize(

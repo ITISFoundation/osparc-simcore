@@ -197,7 +197,7 @@ async def _start_dynamic_service(
     assert project_settings  # nosec
     if (
         len(project_running_nodes)
-        == project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+        >= project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
     ):
         raise ProjectStartsTooManyDynamicNodes(
             user_id=user_id, project_uuid=project_uuid
@@ -272,14 +272,16 @@ async def add_project_node(
     )
 
     if _is_node_dynamic(service_key):
-        await _start_dynamic_service(
-            request,
-            service_key,
-            service_version,
-            user_id,
-            ProjectID(project["uuid"]),
-            NodeID(node_uuid),
-        )
+        with suppress(ProjectStartsTooManyDynamicNodes):
+            # NOTE: we do not start the start if there are already too many
+            await _start_dynamic_service(
+                request,
+                service_key,
+                service_version,
+                user_id,
+                ProjectID(project["uuid"]),
+                NodeID(node_uuid),
+            )
 
     return node_uuid
 

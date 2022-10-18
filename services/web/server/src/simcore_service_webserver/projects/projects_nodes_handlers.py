@@ -26,11 +26,7 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import (
-    NodeNotFoundError,
-    ProjectNotFoundError,
-    ProjectStartsTooManyDynamicNodes,
-)
+from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
@@ -89,8 +85,6 @@ async def create_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
         ) from exc
-    except ProjectStartsTooManyDynamicNodes as exc:
-        raise web.HTTPConflict(reason=f"{exc}") from exc
 
 
 class _NodePathParams(ProjectPathParams):

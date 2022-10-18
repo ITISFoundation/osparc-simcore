@@ -7,7 +7,7 @@ import re
 from collections import UserDict
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Awaitable, Callable
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -293,14 +293,22 @@ def standard_user_role() -> tuple[str, tuple]:
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_many_running(
     client: TestClient,
-    user_project: ProjectDict,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
+    max_amount_of_auto_started_dyn_services: int,
 ):
     assert client.app
-    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    project = await user_project_with_num_dynamic_services(
+        max_amount_of_auto_started_dyn_services
+    )
+    all_service_uuids = list(project["workbench"])
+    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+    ]
+    url = client.app.router["create_node"].url_for(project_id=project["uuid"])
 
     # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
@@ -308,7 +316,8 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
         "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(f"{ url}", json=body)
-    data, error = await assert_status(response, expected.created)
+    await assert_status(response, expected.created)
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(
