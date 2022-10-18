@@ -284,6 +284,33 @@ async def test_create_node(
         assert error
 
 
+def standard_user_role() -> tuple[str, tuple]:
+    all_roles = standard_role_response()
+
+    return (all_roles[0], (pytest.param(*all_roles[1][2], id="standard user role"),))
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_many_running(
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+):
+    assert client.app
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+
+    # Use-case 1.: not passing a service UUID will generate a new one on the fly
+    body = {
+        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_version": faker.numerify("%.#.#"),
+    }
+    response = await client.post(f"{ url}", json=body)
+    data, error = await assert_status(response, expected.created)
+
+
 @pytest.mark.parametrize(
     "node_class",
     [("dynamic"), ("comp"), ("frontend")],
