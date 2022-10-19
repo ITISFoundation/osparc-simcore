@@ -25,7 +25,9 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, monkeypatch: MonkeyPatch) -> None:
+def mock_env(
+    mock_env: EnvVarsDict, monkeypatch: MonkeyPatch, docker_swarm: None
+) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "default")
     monkeypatch.setenv("DIRECTOR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
