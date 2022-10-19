@@ -215,11 +215,14 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
             # if the service is not present, return pending
             return _make_pending()
 
+        # TODO: ANE this is not necessarily the last task here. ordering is not given. possible issue?
         last_task = running_services[0]
 
     # GenericDockerError
     except GenericDockerError as e:
         if e.original_exception.status == 404:
+            # TODO: ANE not sure this is always the case. won't you get a 404 also in errors?
+
             # because the service is not there yet return a pending state
             # it is looking for a service or something with no error message
             return _make_pending()

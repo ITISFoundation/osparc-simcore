@@ -233,6 +233,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
         except ClientHttpError:
             # error fetching docker_statues, probably someone should check
+            # TODO: ANE this needs review I believe... nobody is checking this...
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
@@ -241,6 +242,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
 
         # wait for containers to start
+        # TODO: ANE what if it is stopping???
         if len(user_services_docker_statuses) == 0:
             # marks status as waiting for containers
             return RunningDynamicServiceDetails.from_scheduler_data(
