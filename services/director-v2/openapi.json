@@ -7,8 +7,12 @@
   },
   "servers": [
     {
+      "url": "/",
+      "description": "Default server: requests directed to serving url"
+    },
+    {
       "url": "http://{host}:{port}",
-      "description": "Development server",
+      "description": "Development server: can configure any base url",
       "variables": {
         "host": {
           "default": "127.0.0.1"
@@ -1541,6 +1545,194 @@
           }
         }
       }
+    },
+    "/v2/dynamic_scheduler/{node_uuid}/containers": {
+      "delete": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Remove Service Containers",
+        "operationId": "remove_service_containers_v2_dynamic_scheduler__node_uuid__containers_delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Remove Service Containers V2 Dynamic Scheduler  Node Uuid  Containers Delete",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/dynamic_scheduler/{node_uuid}/state:save": {
+      "post": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Save Service State",
+        "operationId": "save_service_state_v2_dynamic_scheduler__node_uuid__state_save_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Save Service State V2 Dynamic Scheduler  Node Uuid  State Save Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/dynamic_scheduler/{node_uuid}/outputs:push": {
+      "post": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Push Service Outputs",
+        "operationId": "push_service_outputs_v2_dynamic_scheduler__node_uuid__outputs_push_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Push Service Outputs V2 Dynamic Scheduler  Node Uuid  Outputs Push Post",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/dynamic_scheduler/{node_uuid}/docker-resources": {
+      "delete": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Cleanup Service Docker Resources",
+        "operationId": "cleanup_service_docker_resources_v2_dynamic_scheduler__node_uuid__docker_resources_delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cleanup Service Docker Resources V2 Dynamic Scheduler  Node Uuid  Docker Resources Delete",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1981,6 +2173,11 @@
             "type": "boolean",
             "description": "if True the computation pipeline will start right away",
             "default": false
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string",
+            "description": "required if computation is started"
           },
           "subgraph": {
             "title": "Subgraph",
@@ -3267,7 +3464,14 @@
             "title": "Location",
             "type": "array",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
             }
           },
           "msg": {

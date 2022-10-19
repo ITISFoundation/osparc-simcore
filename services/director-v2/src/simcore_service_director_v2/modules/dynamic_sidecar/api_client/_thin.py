@@ -19,7 +19,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
     - `ClientHttpError` wraps httpx.HttpError errors
     """
 
-    SKIP_METHODS: set[str] = BaseThinClient.SKIP_METHODS | {"get_async_client"}
     API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):
@@ -58,6 +57,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         postfix: str,
+        *,
         no_api_version: bool = False,
     ) -> str:
         """formats and returns an url for the request"""
