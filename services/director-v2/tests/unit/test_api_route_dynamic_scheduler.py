@@ -26,9 +26,9 @@ from starlette.testclient import TestClient
 @pytest.fixture
 def mock_env(mock_env: EnvVarsDict, monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "default")
-    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
