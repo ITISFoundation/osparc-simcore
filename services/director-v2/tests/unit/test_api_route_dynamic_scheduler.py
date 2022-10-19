@@ -6,6 +6,7 @@ import asyncio
 from typing import AsyncIterator
 
 import pytest
+from requests import Response
 import respx
 from fastapi import status
 from pytest import MonkeyPatch
@@ -98,23 +99,27 @@ async def test_update_service_observation_node_not_found(
 async def test_update_service_observation(
     mock_sidecar_api: None, client: TestClient, observed_service: SchedulerData
 ):
+    def _toggle(*, is_disabled: bool) -> Response:
+        return client.patch(
+            f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/observation",
+            json=dict(is_disabled=is_disabled),
+        )
 
+    # trying to lock the service
     was_423_detected = False
     was_204_detected = False
     while not was_423_detected and not was_204_detected:
-        response = client.patch(
-            f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/observation",
-            json=dict(is_disabled=False),
-        )
+        response = _toggle(is_disabled=True)
 
         # the service is being observed at regular intervals
-        # there is no guarantee that the service is not observed
-        # if this is the case a 423 status code will be returned
+        # while the service is being observed an
+        # HTTP_423_LOCKED will be returned
+        # retrying until the service can be locked
 
         if response.status_code == status.HTTP_423_LOCKED:
             assert (
                 response.json()["errors"][0]
-                == f"Could not toggle service {observed_service.node_uuid} observation to disabled=False"
+                == f"Could not toggle service {observed_service.node_uuid} observation to disabled=True"
             )
             was_423_detected = True
 
@@ -123,6 +128,16 @@ async def test_update_service_observation(
             was_204_detected = True
 
         await asyncio.sleep(0.1)
+
+    # while disabled can always mark it as disabled
+    response = _toggle(is_disabled=True)
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert response.text == ""
+
+    # at this point it is always possible to remove the lock
+    response = _toggle(is_disabled=False)
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert response.text == ""
 
 
 @pytest.mark.parametrize(
