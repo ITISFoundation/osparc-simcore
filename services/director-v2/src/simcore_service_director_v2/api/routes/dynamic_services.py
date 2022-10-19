@@ -25,7 +25,7 @@ from ...api.dependencies.rabbitmq import get_rabbitmq_client
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
-    DynamicServiceOut,
+    DynamicServiceGet,
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
-    response_model=list[DynamicServiceOut],
+    response_model=list[DynamicServiceGet],
     response_model_exclude_unset=True,
     summary=(
         "returns a list of running interactive services filtered by user_id and/or project_id"
@@ -76,9 +76,9 @@ async def list_running_dynamic_services(
         get_dynamic_services_settings
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> list[DynamicServiceOut]:
-    legacy_running_services: list[DynamicServiceOut] = cast(
-        list[DynamicServiceOut],
+) -> list[DynamicServiceGet]:
+    legacy_running_services: list[DynamicServiceGet] = cast(
+        list[DynamicServiceGet],
         await director_v0_client.get_running_services(user_id, project_id),
     )
 
@@ -90,8 +90,8 @@ async def list_running_dynamic_services(
     ]
 
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
-    dynamic_sidecar_running_services: list[DynamicServiceOut] = cast(
-        list[DynamicServiceOut], await asyncio.gather(*get_stack_statuse_tasks)
+    dynamic_sidecar_running_services: list[DynamicServiceGet] = cast(
+        list[DynamicServiceGet], await asyncio.gather(*get_stack_statuse_tasks)
     )
 
     return legacy_running_services + dynamic_sidecar_running_services
@@ -101,7 +101,7 @@ async def list_running_dynamic_services(
     "",
     summary="creates & starts the dynamic service",
     status_code=status.HTTP_201_CREATED,
-    response_model=DynamicServiceOut,
+    response_model=DynamicServiceGet,
 )
 @log_decorator(logger=logger)
 async def create_dynamic_service(
@@ -113,7 +113,7 @@ async def create_dynamic_service(
         get_dynamic_services_settings
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[DynamicServiceOut, RedirectResponse]:
+) -> Union[DynamicServiceGet, RedirectResponse]:
 
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
@@ -151,22 +151,22 @@ async def create_dynamic_service(
         )
         await scheduler.add_service(scheduler_data)
 
-    return cast(DynamicServiceOut, await scheduler.get_stack_status(service.node_uuid))
+    return cast(DynamicServiceGet, await scheduler.get_stack_status(service.node_uuid))
 
 
 @router.get(
     "/{node_uuid}",
     summary="assembles the status for the dynamic-sidecar",
-    response_model=DynamicServiceOut,
+    response_model=DynamicServiceGet,
 )
 async def get_dynamic_sidecar_status(
     node_uuid: NodeID,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> Union[DynamicServiceOut, RedirectResponse]:
+) -> Union[DynamicServiceGet, RedirectResponse]:
 
     try:
-        return cast(DynamicServiceOut, await scheduler.get_stack_status(node_uuid))
+        return cast(DynamicServiceGet, await scheduler.get_stack_status(node_uuid))
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

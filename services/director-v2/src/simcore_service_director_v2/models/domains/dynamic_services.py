@@ -1,5 +1,3 @@
-from typing import List
-
 from models_library.services import PropertyName
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -11,7 +9,7 @@ from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDeta
 
 
 class RetrieveDataIn(BaseModel):
-    port_keys: List[PropertyName] = Field(
+    port_keys: list[PropertyName] = Field(
         ..., description="The port keys to retrieve data from"
     )
 
@@ -54,4 +52,4 @@ class DynamicServiceCreate(ServiceDetails):
         }
 
 
-DynamicServiceOut = RunningDynamicServiceDetails
+DynamicServiceGet = RunningDynamicServiceDetails
