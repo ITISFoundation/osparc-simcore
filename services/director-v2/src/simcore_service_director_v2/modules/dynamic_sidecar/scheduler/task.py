@@ -206,19 +206,19 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
-        service_state, service_message = await get_dynamic_sidecar_state(
+        sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
             # the service_name is unique and will not collide with other names
             # it can be used in place of the service_id here, as the docker API accepts both
             service_id=scheduler_data.service_name
         )
 
         # while the dynamic-sidecar state is not RUNNING report it's state
-        if service_state != ServiceState.RUNNING:
+        if sidecar_state != ServiceState.RUNNING:
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
-                service_state=service_state,
-                service_message=service_message,
+                service_state=sidecar_state,
+                service_message=sidecar_message,
             )
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
@@ -226,7 +226,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         )
 
         try:
-            docker_statuses: Optional[
+            user_services_docker_statuses: Optional[
                 dict[str, dict[str, str]]
             ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.endpoint
@@ -241,7 +241,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
 
         # wait for containers to start
-        if len(docker_statuses) == 0:
+        if len(user_services_docker_statuses) == 0:
             # marks status as waiting for containers
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
@@ -252,7 +252,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
         # compute composed containers states
         container_state, container_message = extract_containers_minimim_statuses(
-            docker_statuses
+            user_services_docker_statuses
         )
         return RunningDynamicServiceDetails.from_scheduler_data(
             node_uuid=node_uuid,
