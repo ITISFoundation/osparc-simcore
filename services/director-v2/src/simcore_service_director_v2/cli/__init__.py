@@ -85,6 +85,8 @@ def close_and_save_service(
     Should work out of the box with current defaults. Below
     options can be used to skip one of these steps and are
     generally intended for edge cases.
+
+    For more: https://github.com/ITISFoundation/osparc-simcore/pull/3430
     """
     asyncio.run(
         async_close_and_save_service(
