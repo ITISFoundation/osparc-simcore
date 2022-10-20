@@ -23,6 +23,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
+from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from . import projects_api
@@ -124,22 +125,35 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_state: Union[dict, list] = await director_v2_api.get_dynamic_service(
+        service_data: Union[dict, list] = await director_v2_api.get_dynamic_service(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
-        if "data" not in service_state:
+        if "data" not in service_data:
             # dynamic-service NODE STATE
-            return web.json_response({"data": service_state}, dumps=json_dumps)
+            return web.json_response({"data": service_data}, dumps=json_dumps)
 
         # LEGACY-service NODE STATE
-        return web.json_response({"data": service_state["data"]}, dumps=json_dumps)
+        return web.json_response({"data": service_data["data"]}, dumps=json_dumps)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
         ) from exc
     except NodeNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Node {path_params.node_id} not found") from exc
+    except DirectorServiceError as exc:
+        if exc.status == web.HTTPNotFound.status_code:
+            # the service was not started, so it's state is not started or idle
+            return web.json_response(
+                {
+                    "data": {
+                        "service_state": "idle",
+                        "service_uuid": f"{path_params.node_id}",
+                    }
+                },
+                dumps=json_dumps,
+            )
+        raise
 
 
 @login_required
