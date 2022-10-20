@@ -93,7 +93,7 @@ async def _raise_for_status(response: ClientResponse) -> None:
             response.history,
             body,
             status=response.status,
-            message=response.reason,
+            message=response.reason or "",
             headers=response.headers,
         )
 
