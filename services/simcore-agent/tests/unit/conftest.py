@@ -6,11 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
-
 import simcore_service_simcore_agent
-
-
-pytest_plugins = ["pytest_simcore.repository_paths"]
 
 
 @pytest.fixture(scope="session")

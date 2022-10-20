@@ -19,4 +19,3 @@ pytest-asyncio
 pytest-cov
 pytest-mock
 pytest-runner
-respx

@@ -4,4 +4,7 @@
 
 --requirement ../../../requirements/devenv.txt
 
+black
+isort
+pylint
 watchdog[watchmedo]

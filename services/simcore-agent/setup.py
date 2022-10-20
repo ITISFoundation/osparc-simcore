@@ -32,7 +32,6 @@ PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
         "simcore-models-library",
-        "simcore-service-library[fastapi]",
         "simcore-settings-library",
     }
 )

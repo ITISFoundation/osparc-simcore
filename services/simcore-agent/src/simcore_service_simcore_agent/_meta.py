@@ -7,9 +7,7 @@ from typing import Final
 import pkg_resources
 from packaging.version import Version
 
-_current_distribution = pkg_resources.get_distribution(
-    "simcore-service-simcore-agent"
-)
+_current_distribution = pkg_resources.get_distribution("simcore-service-simcore-agent")
 __version__: str = _current_distribution.version
 
 
