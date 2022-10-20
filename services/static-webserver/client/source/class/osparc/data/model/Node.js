@@ -1164,6 +1164,7 @@ qx.Class.define("osparc.data.model.Node", {
           qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
           break;
         }
+        case "stopping":
         case "starting":
         case "pulling": {
           status.setInteractive(serviceState);
