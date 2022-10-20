@@ -104,14 +104,6 @@ async def upload_outputs(
                     ports_values[port.key] = None
                     continue
 
-                if len(files_and_folders_list) == 1 and (
-                    files_and_folders_list[0].is_file()
-                    or files_and_folders_list[0].is_symlink()
-                ):
-                    # special case, direct upload
-                    ports_values[port.key] = files_and_folders_list[0]
-                    continue
-
                 # generic case let's create an archive
                 # only the filtered out files will be zipped
                 tmp_folder = Path(
