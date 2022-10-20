@@ -22,12 +22,13 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from math import floor
 from typing import Optional, Union
-from uuid import UUID
 
 from fastapi import FastAPI
+from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from models_library.users import UserID
 from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
@@ -83,7 +84,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         ServiceName, Optional[Union[asyncio.Task, object]]
     ] = field(default_factory=dict)
     _keep_running: bool = False
-    _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
+    _inverse_search_mapping: dict[NodeID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
     _cleanup_volume_removal_services_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
@@ -138,6 +139,34 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             self._to_observe[scheduler_data.service_name] = scheduler_data
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
+
+    def list_services(
+        self,
+        *,
+        user_id: Optional[UserID] = None,
+        project_id: Optional[ProjectID] = None,
+    ) -> list[NodeID]:
+        """Returns the list of tracked service UUIDs"""
+        all_tracked_service_uuids = list(self._inverse_search_mapping)
+        if user_id == project_id == None:
+            return all_tracked_service_uuids
+        # let's filter
+        def _filter_scheduler_data(node_id: NodeID) -> bool:
+            try:
+                scheduler_data = self.get_scheduler_data(node_id)
+                if user_id and scheduler_data.user_id != user_id:
+                    return False
+                if project_id and scheduler_data.project_id != project_id:
+                    return False
+                return True
+            except DynamicSidecarNotFoundError:
+                return False
+
+        filtered_tracked_service_uuids = filter(
+            _filter_scheduler_data,
+            (n for n in all_tracked_service_uuids),
+        )
+        return list(filtered_tracked_service_uuids)
 
     async def mark_service_for_removal(
         self, node_uuid: NodeID, can_save: Optional[bool]

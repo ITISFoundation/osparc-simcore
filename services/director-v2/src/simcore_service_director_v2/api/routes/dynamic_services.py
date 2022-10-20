@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from typing import Coroutine, Optional, Union, cast
-from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, Header
@@ -33,10 +32,7 @@ from ...models.schemas.dynamic_services import SchedulerData
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
-from ...modules.dynamic_sidecar.docker_api import (
-    is_dynamic_service_running,
-    list_dynamic_sidecar_services,
-)
+from ...modules.dynamic_sidecar.docker_api import is_dynamic_service_running
 from ...modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
     LegacyServiceIsNotSupportedError,
@@ -68,13 +64,10 @@ logger = logging.getLogger(__name__)
         "both legacy (director-v0) and modern (director-v2)"
     ),
 )
-async def list_running_dynamic_services(
+async def list_tracked_dynamic_services(
     user_id: Optional[UserID] = None,
     project_id: Optional[ProjectID] = None,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-    dynamic_services_settings: DynamicServicesSettings = Depends(
-        get_dynamic_services_settings
-    ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> list[DynamicServiceGet]:
     legacy_running_services: list[DynamicServiceGet] = cast(
@@ -83,9 +76,9 @@ async def list_running_dynamic_services(
     )
 
     get_stack_statuse_tasks: list[Coroutine] = [
-        scheduler.get_stack_status(UUID(service["Spec"]["Labels"]["uuid"]))
-        for service in await list_dynamic_sidecar_services(
-            dynamic_services_settings.DYNAMIC_SIDECAR, user_id, project_id
+        scheduler.get_stack_status(service_uuid)
+        for service_uuid in scheduler.list_services(
+            user_id=user_id, project_id=project_id
         )
     ]
 
