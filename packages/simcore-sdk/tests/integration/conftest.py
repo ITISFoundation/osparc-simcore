@@ -89,7 +89,10 @@ def create_valid_file_uuid(
     project_id: str, node_uuid: str
 ) -> Callable[[Path], SimcoreS3FileID]:
     def _create(file_path: Path) -> SimcoreS3FileID:
-        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_uuid}/{file_path}")
+        return parse_obj_as(
+            SimcoreS3FileID,
+            f"{project_id}/{node_uuid}/sub_folder_1/sub_folder_2/sub_folder_3/{file_path.name}",
+        )
 
     return _create
 
