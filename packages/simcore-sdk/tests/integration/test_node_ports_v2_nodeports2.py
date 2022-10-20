@@ -17,7 +17,7 @@ from uuid import uuid4
 import np_helpers
 import pytest
 import sqlalchemy as sa
-from models_library.projects_nodes_io import LocationID, NodeIDStr
+from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
@@ -589,6 +589,7 @@ async def test_file_mapping(
     item_alias: str,
     item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
+    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
 ):
     config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],
@@ -637,7 +638,7 @@ async def test_file_mapping(
         await PORTS.set_file_by_keymap(invalid_alias)
     assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)
-    file_id = np_helpers.file_uuid(file_path, project_id, node_uuid)
+    file_id = create_valid_file_uuid(file_path)
     received_file_link = (await PORTS.outputs)["out_1"].value.dict(
         by_alias=True, exclude_unset=True
     )

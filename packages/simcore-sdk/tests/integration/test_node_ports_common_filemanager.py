@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
 
-import np_helpers
 import pytest
 from aiohttp import ClientError
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
@@ -350,9 +349,7 @@ async def test_errors_upon_invalid_file_identifiers(
             user_id=user_id,
             store_id=store,
             store_name=None,
-            s3_object=np_helpers.file_uuid(
-                Path("invisible.txt"), project_id, f"{uuid4()}"
-            ),
+            s3_object=SimcoreS3FileID(f"{project_id}/{uuid4()}/invisible.txt"),
             local_folder=download_folder,
             io_log_redirect_cb=None,
         )
