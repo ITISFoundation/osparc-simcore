@@ -9,11 +9,16 @@ from typing import Optional, Union
 from aiohttp import web
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
 #
 # projects/*/nodes COLLECTION -------------------------
 #
 from pydantic import BaseModel
+from servicelib.aiohttp.long_running_tasks.server import (
+    TaskProgress,
+    start_long_running_task,
+)
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -233,18 +238,11 @@ async def start_node(request: web.Request) -> web.Response:
         ) from exc
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
-@login_required
-@permission_required("project.update")
-async def stop_node(request: web.Request) -> web.Response:
-    """Has only effect on nodes associated to dynamic services"""
-    path_params = parse_request_path_parameters_as(_NodePathParams, request)
-
+async def _stop_dynamic_service_with_progress(
+    _task_progress: TaskProgress, path_params: _NodePathParams, *args, **kwargs
+):
     try:
-        await director_v2_api.stop_dynamic_service(
-            request.app, f"{path_params.node_id}"
-        )
-
+        await director_v2_api.stop_dynamic_service(*args, **kwargs)
         return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
@@ -254,6 +252,30 @@ async def stop_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(
             reason=f"Node {path_params.node_id} not found in project"
         ) from exc
+    except DirectorServiceError as exc:
+        if exc.status == web.HTTPNotFound.status_code:
+            # already stopped, it's all right
+            return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        raise
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
+@login_required
+@permission_required("project.update")
+async def stop_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    return await start_long_running_task(
+        request,
+        _stop_dynamic_service_with_progress,
+        task_context=jsonable_encoder(req_ctx),
+        path_params=path_params,
+        app=request.app,
+        service_uuid=f"{path_params.node_id}",
+        fire_and_forget=True,
+    )
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
