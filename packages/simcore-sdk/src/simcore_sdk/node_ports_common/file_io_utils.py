@@ -100,7 +100,7 @@ async def _raise_for_status(response: ClientResponse) -> None:
 
 def _compute_tqdm_miniters(byte_size: int) -> float:
     """ensures tqdm minimal iteration is 1 %"""
-    return min(byte_size / 100, 1.0)
+    return min(byte_size / 100.0, 1.0)
 
 
 async def _file_object_chunk_reader(
