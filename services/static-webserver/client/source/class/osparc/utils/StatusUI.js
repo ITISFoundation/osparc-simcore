@@ -65,6 +65,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "ready":
           return "@FontAwesome5Solid/check/"+size;
         case "starting":
+        case "stopping":
         case "pending":
         case "pulling":
         case "connecting":
@@ -157,6 +158,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "ready":
           return "ready-green";
         case "starting":
+        case "stopping":
         case "pulling":
         case "pending":
         case "connecting":

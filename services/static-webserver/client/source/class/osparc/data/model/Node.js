@@ -929,7 +929,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       };
       osparc.data.Resources.fetch("studies", "stopNode", params)
-        .then(data => this.__onNodeState(data))
+        .then(data => this.__onNodeState(data, false))
         .catch(err => {});
       return true;
     },
@@ -1116,7 +1116,25 @@ qx.Class.define("osparc.data.model.Node", {
         this.__nodeState();
       }
     },
-    __onNodeState: function(data) {
+    stopDynamicService: function() {
+      if (this.isDynamic()) {
+        const metaData = this.getMetaData();
+
+        const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
+        const msgData = {
+          nodeId: this.getNodeId(),
+          msg: msg
+        };
+        this.fireDataEvent("showInLogger", msgData);
+
+        const status = this.getStatus();
+        status.setInteractive("stopping");
+
+        this.__unresponsiveRetries = 5;
+        this.__nodeState(false);
+      }
+    },
+    __onNodeState: function(data, starting=true) {
       const serviceState = data["service_state"];
       const nodeId = data["service_uuid"];
       const status = this.getStatus();
@@ -1124,7 +1142,7 @@ qx.Class.define("osparc.data.model.Node", {
         case "idle": {
           status.setInteractive("idle");
           const interval = 2000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
           break;
         }
         case "pending": {
@@ -1143,19 +1161,25 @@ qx.Class.define("osparc.data.model.Node", {
           }
           status.setInteractive("pending");
           const interval = 10000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
           break;
         }
         case "starting":
         case "pulling": {
           status.setInteractive(serviceState);
           const interval = 5000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
           break;
         }
         case "running": {
           if (nodeId !== this.getNodeId()) {
             return;
+          }
+          if (!starting) {
+            status.setInteractive("stopping");
+            const interval = 5000;
+            qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
+            break;
           }
           const {
             srvUrl,
@@ -1186,7 +1210,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __nodeState: function() {
+    __nodeState: function(starting=true) {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
         return;
@@ -1203,7 +1227,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
-        .then(data => this.__onNodeState(data))
+        .then(data => this.__onNodeState(data, starting))
         .catch(err => {
           let errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
           if ("status" in err && err.status === 406) {
