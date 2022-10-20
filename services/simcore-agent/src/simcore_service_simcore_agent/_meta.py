@@ -12,9 +12,7 @@ __version__: str = _current_distribution.version
 
 
 APP_NAME: Final[str] = _current_distribution.project_name
-API_VERSION: str = __version__
-VERSION: Final[str] = Version(__version__)
-API_VTAG: str = f"v{VERSION.major}"
+VERSION: Final[Version] = Version(__version__)
 
 
 def get_summary() -> str:
@@ -31,12 +29,14 @@ def get_summary() -> str:
 SUMMARY: Final[str] = get_summary()
 
 
-APP_STARTED_BANNER_MSG = """ SEE
-
-    https://patorjk.com/software/taag/#p=testall&f=Avatar&t=MyServiceName
-
-    {0}
-    """.format(
+APP_STARTED_BANNER_MSG = """
+     _                                                           _
+ ___(_)_ __ ___   ___ ___  _ __ ___        __ _  __ _  ___ _ __ | |_
+/ __| | '_ ` _ \ / __/ _ \| '__/ _ \_____ / _` |/ _` |/ _ \ '_ \| __|
+\__ \ | | | | | | (_| (_) | | |  __/_____| (_| | (_| |  __/ | | | |_
+|___/_|_| |_| |_|\___\___/|_|  \___|      \__,_|\__, |\___|_| |_|\__|
+                                                |___/
+    {0}""".format(
     f"v{__version__}"
 )
 
