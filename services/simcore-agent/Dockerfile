@@ -80,8 +80,8 @@ WORKDIR /build
 COPY  --chown=scu:scu services/simcore-agent/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
-# install rclone
-COPY  --chown=scu:scu ci/github/helpers/install_rclone.bash .
+# rclone installation
+COPY  --chown=scu:scu scripts/install_rclone.bash .
 RUN ./install_rclone.bash
 
 

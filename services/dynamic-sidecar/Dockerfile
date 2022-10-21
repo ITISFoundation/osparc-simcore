@@ -49,11 +49,8 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
 # rclone installation
-ARG R_CLONE_VERSION="1.58.0"
-RUN curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
-  dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
-  rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb" && \
-  rclone --version
+COPY  --chown=scu:scu scripts/install_rclone.bash .
+RUN ./install_rclone.bash
 
 # create direcotry to persist SharedStore data accessiable
 # between dynamic-sidecar reboots
