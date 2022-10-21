@@ -1,4 +1,3 @@
-import contextlib
 import tempfile
 import threading
 from pathlib import Path
@@ -16,8 +15,7 @@ def create_simcore_file_id(
 ) -> SimcoreS3FileID:
     s3_file_name = file_path.name
     if file_base_path:
-        with contextlib.suppress(ValueError):
-            s3_file_name = file_path.relative_to(file_base_path)
+        s3_file_name = f"{file_base_path / file_path.name}"
 
     return SimcoreS3FileID(f"{project_id}/{node_id}/{s3_file_name}")
 
