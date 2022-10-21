@@ -35,7 +35,7 @@ def test_process_handles_signals(
     env: None,
     cli_runner: CliRunner,
     signal: signal.Signals,
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_debug: LogCaptureFixture,
 ):
 
     # Running out app in SubProcess and after a while using signal sending
@@ -46,8 +46,8 @@ def test_process_handles_signals(
         print(result.output)
 
         assert result.exit_code == 0, _format_cli_error(result)
-        assert APP_FINISHED_BANNER_MSG in caplog_info_level.messages
-        assert APP_STARTED_BANNER_MSG in caplog_info_level.messages
+        assert APP_FINISHED_BANNER_MSG in caplog_info_debug.messages
+        assert APP_STARTED_BANNER_MSG in caplog_info_debug.messages
 
     process = Process(target=background)
     process.start()

@@ -5,13 +5,13 @@
 from pathlib import Path
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
 from simcore_service_simcore_agent.settings import ApplicationSettings
 from simcore_service_simcore_agent.volumes_cleanup import backup_and_remove_volumes
-from _pytest.logging import LogCaptureFixture
 
 
 @pytest.fixture
@@ -68,13 +68,13 @@ def env(monkeypatch: MonkeyPatch, minio: dict, bucket: str) -> None:
 
 async def test_workflow(
     mock_volumes_folders: None,
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_debug: LogCaptureFixture,
     settings: ApplicationSettings,
     used_volume_name: str,
     unused_volume_name: str,
 ):
     await backup_and_remove_volumes(settings)
 
-    log_messages = caplog_info_level.messages
+    log_messages = caplog_info_debug.messages
     assert f"Removed docker volume: '{unused_volume_name}'" in log_messages
     assert f"Skipped in use docker volume: '{used_volume_name}'" in log_messages
