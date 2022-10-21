@@ -329,13 +329,13 @@ class Port(BaseServiceIOModel):
         self.value_concrete = None
         self._used_default_value = False
 
-    async def set(self, new_value: ItemConcreteValue) -> None:
+    async def set(self, new_value: ItemConcreteValue, **set_kwargs) -> None:
         """sets a value to the port, by default it is also stored in the database
 
         :raises InvalidItemTypeError
         :raises ValidationError
         """
-        await self._set(new_concrete_value=new_value)
+        await self._set(new_concrete_value=new_value, **set_kwargs)
         await self._node_ports.save_to_db_cb(self._node_ports)
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
