@@ -4,15 +4,43 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aioboto3==10.1.0
+    # via -r requirements/_test.in
+aiobotocore==2.4.0
+    # via aioboto3
+aiohttp==3.8.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   aiobotocore
+aioitertools==0.11.0
+    # via aiobotocore
+aiosignal==1.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+async-timeout==4.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   pytest
+boto3==1.24.59
+    # via aiobotocore
+botocore==1.27.59
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
 certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
@@ -28,12 +56,27 @@ docopt==0.6.2
     # via coveralls
 faker==15.1.1
     # via -r requirements/_test.in
+frozenlist==1.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   aiosignal
 idna==3.4
     # via
     #   -c requirements/_base.txt
     #   requests
+    #   yarl
 iniconfig==1.1.1
     # via pytest
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
+multidict==6.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   yarl
 packaging==21.3
     # via pytest
 pluggy==1.0.0
@@ -57,11 +100,15 @@ pytest-mock==3.10.0
 pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   botocore
+    #   faker
 requests==2.28.1
     # via
     #   codecov
     #   coveralls
+s3transfer==0.6.0
+    # via boto3
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -70,7 +117,18 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
+typing-extensions==4.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   aioitertools
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   botocore
     #   requests
+wrapt==1.14.1
+    # via aiobotocore
+yarl==1.8.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp

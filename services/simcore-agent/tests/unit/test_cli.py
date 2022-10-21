@@ -1,11 +1,14 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import signal
-from multiprocessing import Process, Queue
+import traceback
+from multiprocessing import Process
 from os import getpid, kill
 from threading import Timer
 
 import pytest
+from click.testing import Result
 from simcore_service_simcore_agent._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_STARTED_BANNER_MSG,
@@ -20,25 +23,29 @@ def cli_runner() -> CliRunner:
     return CliRunner()
 
 
+def _format_cli_error(result: Result) -> str:
+    assert result.exception
+    tb_message = "\n".join(traceback.format_tb(result.exception.__traceback__))
+    return f"Below exception was raised by the cli:\n{tb_message}"
+
+
 @pytest.mark.parametrize("signal", Application.HANDLED_EXIT_SIGNALS)
-def test_process_handles_signals(cli_runner: CliRunner, signal: signal.Signals):
-    queue = Queue()
+def test_process_handles_signals(
+    env: None, cli_runner: CliRunner, signal: signal.Signals
+):
 
     # Running out app in SubProcess and after a while using signal sending
     # SIGINT, results passed back via channel/queue
     def background():
         Timer(0.2, lambda: kill(getpid(), signal)).start()
         result = cli_runner.invoke(main, ["run"])
-        queue.put(result.exit_code)
-        queue.put(result.output)
+
+        assert result.exit_code == 0, _format_cli_error(result)
+        assert APP_STARTED_BANNER_MSG in result.output
+        assert APP_FINISHED_BANNER_MSG in result.output
 
     process = Process(target=background)
     process.start()
     process.join()
 
-    exit_code = queue.get()
-    output = queue.get()
-
-    assert exit_code == 0
-    assert APP_STARTED_BANNER_MSG in output
-    assert APP_FINISHED_BANNER_MSG in output
+    assert process.exitcode == 0, "Please check logs above for error"

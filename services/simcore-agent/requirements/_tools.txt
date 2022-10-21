@@ -85,6 +85,7 @@ tomlkit==0.11.5
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   astroid
     #   black
     #   pylint
@@ -95,7 +96,9 @@ watchdog==2.1.9
 wheel==0.37.1
     # via pip-tools
 wrapt==1.14.1
-    # via astroid
+    # via
+    #   -c requirements/_test.txt
+    #   astroid
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

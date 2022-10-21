@@ -28,7 +28,7 @@ def get_summary() -> str:
 
 SUMMARY: Final[str] = get_summary()
 
-
+# pylint: disable=anomalous-backslash-in-string
 APP_STARTED_BANNER_MSG = """
      _                                                           _
  ___(_)_ __ ___   ___ ___  _ __ ___        __ _  __ _  ___ _ __ | |_

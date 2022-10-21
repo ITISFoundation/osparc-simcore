@@ -52,12 +52,6 @@ def create_application() -> Application:
 
     settings = ApplicationSettings.create_from_envs()
 
-    async def a_task():
-        while True:
-            print("OK")
-            await asyncio.sleep(1)
-
-    # app.add_as_task(backup_and_remove_volumes(settings))
-    app.add_coroutine(a_task())
+    app.add_coroutine(backup_and_remove_volumes(settings))
 
     return app
