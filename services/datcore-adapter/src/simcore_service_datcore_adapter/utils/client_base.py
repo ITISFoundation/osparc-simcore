@@ -27,7 +27,6 @@ class BaseServiceClientApi(AppDataMixin):
 
     async def is_responsive(self) -> bool:
         try:
-            log.debug("checking responsivitiy of pennsieve client")
             resp = await self.client.get(
                 self.health_check_path, timeout=self.health_check_timeout
             )
