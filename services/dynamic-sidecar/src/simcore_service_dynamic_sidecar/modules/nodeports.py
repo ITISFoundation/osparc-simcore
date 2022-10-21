@@ -117,7 +117,9 @@ async def upload_outputs(
                     ports_values[port.key] = (
                         files_and_folders_list[0],
                         SetKWargs(
-                            file_base_path=(src_folder.relative_to(outputs_path.parent))
+                            file_base_path=(
+                                src_folder.parent.relative_to(outputs_path.parent)
+                            )
                         ),
                     )
                     continue
@@ -142,7 +144,9 @@ async def upload_outputs(
                 ports_values[port.key] = (
                     tmp_file,
                     SetKWargs(
-                        file_base_path=(src_folder.relative_to(outputs_path.parent))
+                        file_base_path=(
+                            src_folder.parent.relative_to(outputs_path.parent)
+                        )
                     ),
                 )
             else:

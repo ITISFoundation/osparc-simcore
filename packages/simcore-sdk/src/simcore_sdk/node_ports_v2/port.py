@@ -320,6 +320,11 @@ class Port(BaseServiceIOModel):
 
                 _check_if_symlink_is_valid(converted_value)
 
+                # NOTE: the file will be saved in S3 as PROJECT_ID/NODE_ID/(set_kwargs.file_base_path)/PORT_KEY/file.ext
+                base_path = Path(self.key)
+                if set_kwargs and set_kwargs.file_base_path:
+                    base_path = set_kwargs.file_base_path / self.key
+
                 new_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,
@@ -327,7 +332,7 @@ class Port(BaseServiceIOModel):
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
-                    file_base_path=set_kwargs.file_base_path if set_kwargs else None,
+                    file_base_path=base_path,
                 )
             else:
                 new_value = converted_value
