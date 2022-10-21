@@ -25,6 +25,7 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import Nodeports, Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
+from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_service_dynamic_sidecar.core.settings import (
     ApplicationSettings,
     get_settings,
@@ -86,7 +87,9 @@ async def upload_outputs(
     )
 
     # let's gather the tasks
-    ports_values: dict[str, Optional[ItemConcreteValue]] = {}
+    ports_values: dict[
+        str, tuple[Optional[ItemConcreteValue], Optional[SetKWargs]]
+    ] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
 
     async with AsyncExitStack() as stack:
@@ -103,7 +106,7 @@ async def upload_outputs(
                 logger.debug("Discovered files to upload %s", files_and_folders_list)
 
                 if not files_and_folders_list:
-                    ports_values[port.key] = None
+                    ports_values[port.key] = (None, None)
                     continue
 
                 if len(files_and_folders_list) == 1 and (
@@ -111,7 +114,12 @@ async def upload_outputs(
                     or files_and_folders_list[0].is_symlink()
                 ):
                     # special case, direct upload
-                    ports_values[port.key] = files_and_folders_list[0]
+                    ports_values[port.key] = (
+                        files_and_folders_list[0],
+                        SetKWargs(
+                            file_base_path=(src_folder.relative_to(outputs_path.parent))
+                        ),
+                    )
                     continue
 
                 # generic case let's create an archive
@@ -131,7 +139,12 @@ async def upload_outputs(
                         store_relative_path=True,
                     )
                 )
-                ports_values[port.key] = tmp_file
+                ports_values[port.key] = (
+                    tmp_file,
+                    SetKWargs(
+                        file_base_path=(src_folder.relative_to(outputs_path.parent))
+                    ),
+                )
             else:
                 data_file = outputs_path / _KEY_VALUE_FILE_NAME
                 if data_file.exists():
@@ -145,7 +158,7 @@ async def upload_outputs(
 
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
-        await PORTS.set_multiple(ports_values, file_base_path=outputs_path)
+        await PORTS.set_multiple(ports_values)
 
         elapsed_time = time.perf_counter() - start_time
         total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
