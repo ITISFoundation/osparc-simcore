@@ -16,8 +16,8 @@ def create_simcore_file_id(
     s3_file_name = file_path.name
     if file_base_path:
         s3_file_name = f"{file_base_path / file_path.name}"
-
-    return SimcoreS3FileID(f"{project_id}/{node_id}/{s3_file_name}")
+    clean_path = Path(f"{project_id}/{node_id}/{s3_file_name}")
+    return SimcoreS3FileID(f"{clean_path}")
 
 
 _INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")

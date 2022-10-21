@@ -37,7 +37,7 @@ class _SimcoreFileIDParam:
             node_id="cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e",
             file_base_path=Path("/another/path"),
             expected_simcore_file_id=SimcoreS3FileID(
-                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/path.ext"
+                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/another/path/path.ext"
             ),
         ),
         _SimcoreFileIDParam(
@@ -46,7 +46,7 @@ class _SimcoreFileIDParam:
             node_id="cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e",
             file_base_path=Path("/some/random"),
             expected_simcore_file_id=SimcoreS3FileID(
-                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/file/path.ext"
+                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/some/random/path.ext"
             ),
         ),
         _SimcoreFileIDParam(
@@ -55,7 +55,7 @@ class _SimcoreFileIDParam:
             node_id="cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e",
             file_base_path=Path("/some/random/"),
             expected_simcore_file_id=SimcoreS3FileID(
-                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/file/path.ext"
+                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/some/random/path.ext"
             ),
         ),
         _SimcoreFileIDParam(
@@ -64,7 +64,7 @@ class _SimcoreFileIDParam:
             node_id="cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e",
             file_base_path=Path("/some"),
             expected_simcore_file_id=SimcoreS3FileID(
-                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/random/file/path.ext"
+                "2c471fb7-af17-408b-bcf4-91d419d0d20e/cd38bee6-9d4d-48e5-a8d5-98d7e049aa5e/some/path.ext"
             ),
         ),
     ],
