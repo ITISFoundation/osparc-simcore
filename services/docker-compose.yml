@@ -272,6 +272,22 @@ services:
       - default
       - interactive_services_subnet
 
+  simcore-agent:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-agent:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
+    deploy:
+      mode: global
+      endpoint_mode: dnsrr
+      resources:
+        reservations:
+          cpus: "0.10"
+          memory: "100M"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      LOGLEVEL: ${LOG_LEVEL:-INFO}
+
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
