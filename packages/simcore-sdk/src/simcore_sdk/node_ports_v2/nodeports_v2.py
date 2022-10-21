@@ -131,7 +131,9 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self
 
-    async def set_multiple(self, port_values: dict[str, ItemConcreteValue]) -> None:
+    async def set_multiple(
+        self, port_values: dict[str, Optional[ItemConcreteValue]]
+    ) -> None:
         """
         Sets the provided values to the respective input or output ports
         Only supports port_key by name, not able to distinguish between inputs

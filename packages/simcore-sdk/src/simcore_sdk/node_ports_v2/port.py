@@ -284,7 +284,7 @@ class Port(BaseServiceIOModel):
             self.value_concrete = v
         return v
 
-    async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
+    async def _set(self, new_concrete_value: Optional[ItemConcreteValue]) -> None:
         """
         :raises InvalidItemTypeError
         :raises ValidationError

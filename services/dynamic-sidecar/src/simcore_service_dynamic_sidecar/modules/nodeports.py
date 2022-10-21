@@ -44,7 +44,9 @@ logger = logging.getLogger(__name__)
 # OUTPUTS section
 
 
-def _get_size_of_value(value: ItemConcreteValue) -> int:
+def _get_size_of_value(value: Optional[ItemConcreteValue]) -> int:
+    if value is None:
+        return 0
     if isinstance(value, Path):
         # if symlink we need to fetch the pointer to the file
         # relative symlink need to know which their parent is
