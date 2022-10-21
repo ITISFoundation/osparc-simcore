@@ -32,7 +32,7 @@ def get_config_file_path(
         destination_endpoint=s3_endpoint,
         destination_region=s3_region,
     )
-    conf_path = Path("/tmp/rclone_config.ini")  # nosec
+    conf_path = Path("/tmp/rclone_config.ini")  # NOSONAR
     conf_path.write_text(config_content)  # pylint:disable=unspecified-encoding
     return conf_path
 
