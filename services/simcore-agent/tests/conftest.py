@@ -3,17 +3,18 @@
 
 import logging
 from pathlib import Path
-from typing import AsyncIterator, Iterable
+from typing import AsyncIterator, Iterable, Iterator
 from uuid import uuid4
 
-import aioboto3
 import aiodocker
 import pytest
 import simcore_service_simcore_agent
-import tenacity
 from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
+from moto.server import ThreadedMotoServer
+from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.r_clone import S3Provider
 from simcore_service_simcore_agent.settings import ApplicationSettings
 
@@ -156,84 +157,6 @@ async def used_volume(
 
 
 @pytest.fixture
-def minio_port() -> int:
-    return 19000
-
-
-@tenacity.retry(
-    stop=tenacity.stop.stop_after_attempt(5), wait=tenacity.wait.wait_fixed(1)
-)
-async def _is_minio_responsive(endpoint: str, access_key: str, secret_key: str) -> None:
-    session = aioboto3.Session(
-        aws_access_key_id=access_key, aws_secret_access_key=secret_key
-    )
-    async with session.resource("s3", endpoint_url=endpoint, use_ssl=False) as s_3:
-        bucket = await s_3.create_bucket(Bucket=f"test-bucket{uuid4()}")
-        await bucket.delete()
-
-
-@pytest.fixture
-def minio_container_name() -> str:
-    return "test_container_minio"
-
-
-@pytest.fixture
-async def remove_container(minio_container_name: str) -> AsyncIterator[None]:
-    yield
-
-    async with aiodocker.Docker() as docker_client:
-        try:
-            container = await docker_client.containers.get(minio_container_name)
-            await container.stop()
-            await container.delete(force=True)
-        except aiodocker.DockerError:
-            pass
-
-
-@pytest.fixture
-async def minio(
-    remove_container: None, minio_port: int, minio_container_name: str
-) -> AsyncIterator[dict]:
-    access_key = f"{uuid4()}"
-    secret_key = f"{uuid4()}"
-    async with aiodocker.Docker() as docker_client:
-        container = await docker_client.containers.run(
-            config={
-                "Cmd": ["server", "/data"],
-                "Env": [
-                    f"MINIO_ACCESS_KEY={access_key}",
-                    f"MINIO_SECRET_KEY={secret_key}",
-                ],
-                "Image": "minio/minio:RELEASE.2020-05-16T01-33-21Z",
-                "HostConfig": {
-                    "PortBindings": {
-                        "9000/tcp": [{"HostPort": f"{minio_port}", "HostIp": "0.0.0.0"}]
-                    },
-                },
-            },
-            name=minio_container_name,
-        )
-        await container.start()
-
-        s3_access = {
-            "endpoint": f"http://127.0.0.1:{minio_port}",
-            "access_key": access_key,
-            "secret_key": secret_key,
-        }
-
-        await _is_minio_responsive(
-            endpoint=s3_access["endpoint"],
-            access_key=s3_access["access_key"],
-            secret_key=s3_access["secret_key"],
-        )
-
-        yield s3_access
-
-        await container.stop()
-        await container.delete(force=True)
-
-
-@pytest.fixture
 def env(monkeypatch: MonkeyPatch) -> None:
     mock_dict = {
         "SIMCORE_AGENT_S3_ENDPOINT": "endpoint",
@@ -255,3 +178,24 @@ def settings(env: None) -> ApplicationSettings:
 def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
+
+
+@pytest.fixture
+def mocked_s3_server_url() -> Iterator[HttpUrl]:
+    """
+    For download links, the in-memory moto.mock_s3() does not suffice since
+    we need an http entrypoint
+    """
+    # http://docs.getmoto.org/en/latest/docs/server_mode.html#start-within-python
+    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=9000)
+
+    # pylint: disable=protected-access
+    endpoint_url = parse_obj_as(HttpUrl, f"http://{server._ip_address}:{server._port}")
+
+    print(f"--> started mock S3 server on {endpoint_url}")
+    server.start()
+
+    yield endpoint_url
+
+    server.stop()
+    print(f"<-- stopped mock S3 server on {endpoint_url}")

@@ -9,6 +9,7 @@ from typing import Optional
 import aioboto3
 import pytest
 from aiodocker.volumes import DockerVolume
+from pydantic import HttpUrl
 from simcore_service_simcore_agent.settings import ApplicationSettings
 from simcore_service_simcore_agent.volumes_cleanup._s3 import (
     S3Provider,
@@ -119,7 +120,7 @@ async def test_get_s3_path(
 
 async def test_store_to_s3(
     unused_volume: DockerVolume,
-    minio: dict,
+    mocked_s3_server_url: HttpUrl,
     unused_volume_path: Path,
     save_to: Path,
     study_id: str,
@@ -137,10 +138,10 @@ async def test_store_to_s3(
 
     await store_to_s3(
         dyv_volume=dyv_volume,
-        s3_access_key=minio["access_key"],
-        s3_secret_key=minio["secret_key"],
+        s3_access_key="xxx",
+        s3_secret_key="xxx",
         s3_bucket=bucket,
-        s3_endpoint=minio["endpoint"],
+        s3_endpoint=mocked_s3_server_url,
         s3_region="us-east-1",
         s3_provider=S3Provider.MINIO,
         s3_parallelism=3,
@@ -149,9 +150,9 @@ async def test_store_to_s3(
     )
 
     await _download_files_from_bucket(
-        endpoint=minio["endpoint"],
-        access_key=minio["access_key"],
-        secret_key=minio["secret_key"],
+        endpoint=mocked_s3_server_url,
+        access_key="xxx",
+        secret_key="xxx",
         bucket_name=bucket,
         save_to=save_to,
         swarm_stack_name=dyv_volume["Labels"]["swarm_stack_name"],

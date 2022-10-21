@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
+from pydantic import HttpUrl
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
@@ -54,11 +55,11 @@ async def unused_volume_name(unused_volume: DockerVolume) -> str:
 
 
 @pytest.fixture
-def env(monkeypatch: MonkeyPatch, minio: dict, bucket: str) -> None:
+def env(monkeypatch: MonkeyPatch, mocked_s3_server_url: HttpUrl, bucket: str) -> None:
     mock_dict = {
-        "SIMCORE_AGENT_S3_ENDPOINT": minio["endpoint"],
-        "SIMCORE_AGENT_S3_ACCESS_KEY": minio["access_key"],
-        "SIMCORE_AGENT_S3_SECRET_KEY": minio["secret_key"],
+        "SIMCORE_AGENT_S3_ENDPOINT": mocked_s3_server_url,
+        "SIMCORE_AGENT_S3_ACCESS_KEY": "xxx",
+        "SIMCORE_AGENT_S3_SECRET_KEY": "xxx",
         "SIMCORE_AGENT_S3_BUCKET": bucket,
         "SIMCORE_AGENT_S3_PROVIDER": S3Provider.MINIO,
     }
