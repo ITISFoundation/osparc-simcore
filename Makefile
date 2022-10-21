@@ -37,6 +37,7 @@ SERVICES_LIST := \
 	director-v2 \
 	dynamic-sidecar \
 	migration \
+	simcore-agent \
 	static-webserver \
 	storage \
 	webserver
