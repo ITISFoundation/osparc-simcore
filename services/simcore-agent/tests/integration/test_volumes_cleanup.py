@@ -6,12 +6,11 @@ from pathlib import Path
 
 import pytest
 from aiodocker.volumes import DockerVolume
-from settings_library.r_clone import S3Provider
-from pytest import MonkeyPatch
+from pytest import CaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
-from simcore_service_simcore_agent.volumes_cleanup import backup_and_remove_volumes
+from settings_library.r_clone import S3Provider
 from simcore_service_simcore_agent.settings import ApplicationSettings
-from pytest import CaptureFixture
+from simcore_service_simcore_agent.volumes_cleanup import backup_and_remove_volumes
 
 
 @pytest.fixture
