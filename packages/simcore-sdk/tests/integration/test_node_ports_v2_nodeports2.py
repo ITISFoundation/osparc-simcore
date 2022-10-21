@@ -740,11 +740,11 @@ async def test_batch_update_inputs_outputs(
     await check_config_valid(PORTS, config_dict)
 
     await PORTS.set_multiple(
-        {port.key: k for k, port in enumerate((await PORTS.outputs).values())}
+        {port.key: (k, None) for k, port in enumerate((await PORTS.outputs).values())}
     )
     await PORTS.set_multiple(
         {
-            port.key: k
+            port.key: (k, None)
             for k, port in enumerate((await PORTS.inputs).values(), start=1000)
         }
     )
