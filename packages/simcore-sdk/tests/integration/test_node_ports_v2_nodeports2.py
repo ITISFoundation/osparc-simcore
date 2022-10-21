@@ -60,15 +60,15 @@ async def _check_port_valid(
     if "defaultValue" in port_schema:
         assert port.default_value == port_schema["defaultValue"]
     else:
-        assert port.default_value == None
+        assert port.default_value is None
     if "fileToKeyMap" in port_schema:
         assert port.file_to_key_map == port_schema["fileToKeyMap"]
     else:
-        assert port.file_to_key_map == None
+        assert port.file_to_key_map is None
     if "widget" in port_schema:
         assert port.widget == port_schema["widget"]
     else:
-        assert port.widget == None
+        assert port.widget is None
 
     # check payload values
     port_values = config_dict[port_type]
@@ -83,7 +83,7 @@ async def _check_port_valid(
     elif "defaultValue" in port_schema:
         assert port.value == port_schema["defaultValue"]
     else:
-        assert port.value == None
+        assert port.value is None
 
 
 async def _check_ports_valid(ports: Nodeports, config_dict: dict, port_type: str):
