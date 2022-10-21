@@ -50,6 +50,11 @@ def _get_s3_path(s3_bucket: str, labels: dict[str, str]) -> Path:
     return Path(f"/{joint_key}")
 
 
+async def _read_stream(stream):
+    while line := await stream.readline():
+        logger.info(line.decode().strip("\n"))
+
+
 async def store_to_s3(  # pylint:disable=too-many-locals
     dyv_volume: dict,
     s3_endpoint: str,
@@ -83,12 +88,16 @@ async def store_to_s3(  # pylint:disable=too-many-locals
         f"{s3_retries}",
         "--transfers",
         f"{s3_parallelism}",
+        "--stats",
+        "5s",
+        "--stats-one-line",
         "sync",
         f"{source_dir}",
         f"dst:{s3_path}",
         "-P",
     ]
-    # ignore files
+
+    # add files to be ignored
     for to_exclude in exclude_files:
         r_clone_command.append("--exclude")
         r_clone_command.append(to_exclude)
@@ -98,14 +107,15 @@ async def store_to_s3(  # pylint:disable=too-many-locals
 
     process = await asyncio.create_subprocess_shell(
         str_r_clone_command,
-        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-    stdout, _ = await process.communicate()
+
+    await _read_stream(process.stdout)
+    await process.wait()
 
     if process.returncode != 0:
         raise RuntimeError(
             f"Shell subprocesses yielded nonzero error code {process.returncode} "
-            f" for command {str_r_clone_command}\n{stdout.decode()}"
+            f"for command {str_r_clone_command}"
         )
