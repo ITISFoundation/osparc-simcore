@@ -8,6 +8,7 @@ from os import getpid, kill
 from threading import Timer
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 from click.testing import Result
 from simcore_service_simcore_agent._meta import (
     APP_FINISHED_BANNER_MSG,
@@ -31,7 +32,10 @@ def _format_cli_error(result: Result) -> str:
 
 @pytest.mark.parametrize("signal", Application.HANDLED_EXIT_SIGNALS)
 def test_process_handles_signals(
-    env: None, cli_runner: CliRunner, signal: signal.Signals
+    env: None,
+    cli_runner: CliRunner,
+    signal: signal.Signals,
+    caplog_info_level: LogCaptureFixture,
 ):
 
     # Running out app in SubProcess and after a while using signal sending
@@ -39,10 +43,11 @@ def test_process_handles_signals(
     def background():
         Timer(0.2, lambda: kill(getpid(), signal)).start()
         result = cli_runner.invoke(main, ["run"])
+        print(result.output)
 
         assert result.exit_code == 0, _format_cli_error(result)
-        assert APP_STARTED_BANNER_MSG in result.output
-        assert APP_FINISHED_BANNER_MSG in result.output
+        assert APP_FINISHED_BANNER_MSG in caplog_info_level.messages
+        assert APP_STARTED_BANNER_MSG in caplog_info_level.messages
 
     process = Process(target=background)
     process.start()

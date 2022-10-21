@@ -2,7 +2,6 @@ import asyncio
 import logging
 from pathlib import Path
 
-import typer
 from settings_library.r_clone import S3Provider
 
 logger = logging.getLogger(__name__)
@@ -95,7 +94,7 @@ async def store_to_s3(  # pylint:disable=too-many-locals
         r_clone_command.append(to_exclude)
 
     str_r_clone_command = " ".join(r_clone_command)
-    typer.echo(r_clone_command)
+    logger.info(r_clone_command)
 
     process = await asyncio.create_subprocess_shell(
         str_r_clone_command,

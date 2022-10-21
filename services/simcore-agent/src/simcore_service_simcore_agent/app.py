@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import signal
 from contextlib import suppress
 from typing import Coroutine
@@ -6,6 +7,9 @@ from typing import Coroutine
 from ._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from .settings import ApplicationSettings
 from .volumes_cleanup import backup_and_remove_volumes
+from servicelib.logging_utils import config_all_loggers
+
+logger = logging.getLogger(__name__)
 
 
 class Application:
@@ -30,14 +34,14 @@ class Application:
             with suppress(asyncio.CancelledError):
                 await task
 
-        print(APP_FINISHED_BANNER_MSG)
+        logger.info(APP_FINISHED_BANNER_MSG)
         loop.stop()
 
     def add_coroutine(self, coroutine: Coroutine) -> None:
         self._coroutines.add(coroutine)
 
     def run(self) -> None:
-        print(APP_STARTED_BANNER_MSG)
+        logger.info(APP_STARTED_BANNER_MSG)
 
         async def _get_tasks_from_coroutines() -> None:
             for coroutine in self._coroutines:
@@ -47,10 +51,18 @@ class Application:
         self._loop.run_forever()
 
 
+def setup_logger(settings: ApplicationSettings):
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
+    logging.basicConfig(level=settings.LOGLEVEL.value)
+    logging.root.setLevel(settings.LOGLEVEL.value)
+    config_all_loggers()
+
+
 def create_application() -> Application:
     app = Application()
 
     settings = ApplicationSettings.create_from_envs()
+    setup_logger(settings)
 
     app.add_coroutine(backup_and_remove_volumes(settings))
 

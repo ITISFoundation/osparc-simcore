@@ -1,13 +1,11 @@
 import logging
 
-import typer
 
 from ..settings import ApplicationSettings
 from ._docker import delete_volume, docker_client, get_dyv_volumes, is_volume_used
 from ._s3 import store_to_s3
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
@@ -18,39 +16,45 @@ async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
             return
 
         cleaned_up_volumes_count = 0
-        typer.echo("Beginning cleanup.")
+        logger.info("Beginning cleanup.")
         for dyv_volume in dyv_volumes:
             volume_name = dyv_volume["Name"]
 
             if await is_volume_used(client, volume_name):
-                typer.echo(f"Skipped in use docker volume: '{volume_name}'")
+                logger.info("Skipped in use docker volume: '%s'", volume_name)
                 continue
 
             await store_to_s3(
                 dyv_volume=dyv_volume,
-                s3_endpoint=settings.S3_ENDPOINT,
-                s3_access_key=settings.S3_ACCESS_KEY,
-                s3_secret_key=settings.S3_SECRET_KEY,
-                s3_bucket=settings.S3_BUCKET,
-                s3_region=settings.S3_REGION,
-                s3_provider=settings.S3_PROVIDER,
-                s3_retries=settings.S3_RETRIES,
-                s3_parallelism=settings.S3_PARALLELISM,
-                exclude_files=settings.EXCLUDE_FILES,
+                s3_endpoint=settings.SIMCORE_AGENT_S3_ENDPOINT,
+                s3_access_key=settings.SIMCORE_AGENT_S3_ACCESS_KEY,
+                s3_secret_key=settings.SIMCORE_AGENT_S3_SECRET_KEY,
+                s3_bucket=settings.SIMCORE_AGENT_S3_BUCKET,
+                s3_region=settings.SIMCORE_AGENT_S3_REGION,
+                s3_provider=settings.SIMCORE_AGENT_S3_PROVIDER,
+                s3_retries=settings.SIMCORE_AGENT_S3_RETRIES,
+                s3_parallelism=settings.SIMCORE_AGENT_S3_PARALLELISM,
+                exclude_files=settings.SIMCORE_AGENT_EXCLUDE_FILES,
             )
-            typer.echo(
-                "Succesfully pushed data to S3 for zombie dynamic sidecar "
-                f"docker volume: '{volume_name}'"
+            logger.info(
+                (
+                    "Succesfully pushed data to S3 for zombie dynamic sidecar "
+                    "docker volume: '%s'"
+                ),
+                volume_name,
             )
 
             await delete_volume(client, volume_name)
-            typer.echo(f"Removed docker volume: '{volume_name}'")
+            logger.info("Removed docker volume: '%s'", volume_name)
             cleaned_up_volumes_count += 1
 
         if cleaned_up_volumes_count > 0:
-            typer.echo(
-                f"The dy-sidecar volume cleanup detected {cleaned_up_volumes_count} "
-                "zombie volumes on the current machine."
+            logger.info(
+                (
+                    "The dy-sidecar volume cleanup detected %s "
+                    "zombie volumes on the current machine."
+                ),
+                cleaned_up_volumes_count,
             )
         else:
-            typer.echo("Found no zombie dy-sidecar volumes to cleanup.")
+            logger.info("Found no zombie dy-sidecar volumes to cleanup.")

@@ -1,8 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import logging
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncIterator, Iterable
 from uuid import uuid4
 
 import aioboto3
@@ -10,6 +11,7 @@ import aiodocker
 import pytest
 import simcore_service_simcore_agent
 import tenacity
+from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
 from pytest import MonkeyPatch
 from settings_library.r_clone import S3Provider
@@ -234,11 +236,11 @@ async def minio(
 @pytest.fixture
 def env(monkeypatch: MonkeyPatch) -> None:
     mock_dict = {
-        "S3_ENDPOINT": "endpoint",
-        "S3_ACCESS_KEY": "access_key",
-        "S3_SECRET_KEY": "secret_key",
-        "S3_BUCKET": "bucket_name",
-        "S3_PROVIDER": S3Provider.MINIO,
+        "SIMCORE_AGENT_S3_ENDPOINT": "endpoint",
+        "SIMCORE_AGENT_S3_ACCESS_KEY": "access_key",
+        "SIMCORE_AGENT_S3_SECRET_KEY": "secret_key",
+        "SIMCORE_AGENT_S3_BUCKET": "bucket_name",
+        "SIMCORE_AGENT_S3_PROVIDER": S3Provider.MINIO,
     }
     for key, value in mock_dict.items():
         monkeypatch.setenv(key, value)
@@ -247,3 +249,11 @@ def env(monkeypatch: MonkeyPatch) -> None:
 @pytest.fixture
 def settings(env: None) -> ApplicationSettings:
     return ApplicationSettings.create_from_envs()
+
+
+@pytest.fixture()
+def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(
+        logging.INFO,
+    ):
+        yield caplog

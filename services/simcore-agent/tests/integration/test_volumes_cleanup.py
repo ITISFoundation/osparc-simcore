@@ -6,11 +6,12 @@ from pathlib import Path
 
 import pytest
 from aiodocker.volumes import DockerVolume
-from pytest import CaptureFixture, MonkeyPatch
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
 from simcore_service_simcore_agent.settings import ApplicationSettings
 from simcore_service_simcore_agent.volumes_cleanup import backup_and_remove_volumes
+from _pytest.logging import LogCaptureFixture
 
 
 @pytest.fixture
@@ -55,11 +56,11 @@ async def unused_volume_name(unused_volume: DockerVolume) -> str:
 @pytest.fixture
 def env(monkeypatch: MonkeyPatch, minio: dict, bucket: str) -> None:
     mock_dict = {
-        "S3_ENDPOINT": minio["endpoint"],
-        "S3_ACCESS_KEY": minio["access_key"],
-        "S3_SECRET_KEY": minio["secret_key"],
-        "S3_BUCKET": bucket,
-        "S3_PROVIDER": S3Provider.MINIO,
+        "SIMCORE_AGENT_S3_ENDPOINT": minio["endpoint"],
+        "SIMCORE_AGENT_S3_ACCESS_KEY": minio["access_key"],
+        "SIMCORE_AGENT_S3_SECRET_KEY": minio["secret_key"],
+        "SIMCORE_AGENT_S3_BUCKET": bucket,
+        "SIMCORE_AGENT_S3_PROVIDER": S3Provider.MINIO,
     }
     for key, value in mock_dict.items():
         monkeypatch.setenv(key, value)
@@ -67,14 +68,13 @@ def env(monkeypatch: MonkeyPatch, minio: dict, bucket: str) -> None:
 
 async def test_workflow(
     mock_volumes_folders: None,
-    capsys: CaptureFixture,
+    caplog_info_level: LogCaptureFixture,
     settings: ApplicationSettings,
     used_volume_name: str,
     unused_volume_name: str,
 ):
     await backup_and_remove_volumes(settings)
 
-    stdout, stderr = capsys.readouterr()
-    assert f"Removed docker volume: '{unused_volume_name}'" in stdout
-    assert f"Skipped in use docker volume: '{used_volume_name}'" in stdout
-    assert stderr == "", stderr
+    log_messages = caplog_info_level.messages
+    assert f"Removed docker volume: '{unused_volume_name}'" in log_messages
+    assert f"Skipped in use docker volume: '{used_volume_name}'" in log_messages

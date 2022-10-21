@@ -1,5 +1,6 @@
 from typing import Final
 
+from models_library.basic_types import LogLevel
 from pydantic import Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
@@ -8,6 +9,8 @@ _MIN: Final[NonNegativeInt] = 60
 
 
 class ApplicationSettings(BaseCustomSettings):
+    LOGLEVEL: LogLevel = Field(LogLevel.INFO)
+
     SIMCORE_AGENT_S3_SECURE: bool = False
     SIMCORE_AGENT_S3_ENDPOINT: str
     SIMCORE_AGENT_S3_ACCESS_KEY: str
