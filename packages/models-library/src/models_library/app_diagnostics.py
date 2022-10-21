@@ -16,10 +16,10 @@ class AppStatusCheck(BaseModel):
     )
 
     url: Optional[AnyUrl] = Field(
-        None,
+        default=None,
         description="Link to current resource",
     )
     diagnostics_url: Optional[AnyUrl] = Field(
-        None,
+        default=None,
         description="Link to diagnostics report sub-resource. This MIGHT take some time to compute",
     )
