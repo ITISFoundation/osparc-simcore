@@ -74,11 +74,12 @@ def test_app_recovers_from_error(
 
     process = Process(target=_worker, args=(asyncio.get_event_loop(),), daemon=True)
     process.start()
-    sleep(REPEAT_TASK_INTERVAL_S)
+    sleep(REPEAT_TASK_INTERVAL_S * 5)
     process.kill()
 
     log_messages = "\n".join(caplog_info_debug.messages)
     print(log_messages)
+
     assert f"Running '{_error_raising_job.__name__}'" in log_messages
     assert 'RuntimeError("raised expected error")' in log_messages
     assert (
