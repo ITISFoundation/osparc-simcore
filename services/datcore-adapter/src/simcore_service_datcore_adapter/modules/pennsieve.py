@@ -138,7 +138,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         )
 
     async def _get_package_files(
-        self, api_key: str, api_secret: str, package_id: str
+        self, api_key: str, api_secret: str, package_id: str, limit: int, offset: int
     ) -> list[dict[str, Any]]:
         return cast(
             list[dict[str, Any]],
@@ -147,16 +147,18 @@ class PennsieveApiClient(BaseServiceClientApi):
                 api_secret,
                 "GET",
                 f"/packages/{package_id}/files",
+                params={"limit": limit, "offset": offset},
             ),
         )
 
     async def _get_pck_id_files(
         self, api_key: str, api_secret: str, pck_id: str, pck: dict[str, Any]
     ) -> tuple[str, list[dict[str, Any]]]:
+
         return (
             pck_id,
             await self._get_package_files(
-                api_key, api_secret, pck["content"]["nodeId"]
+                api_key, api_secret, pck["content"]["nodeId"], limit=1, offset=0
             ),
         )
 
@@ -313,8 +315,8 @@ class PennsieveApiClient(BaseServiceClientApi):
             for pck_id, pck_data in all_packages.items()
             if pck_data["content"]["packageType"] != "Collection"
         ]
-        package_files = dict(await asyncio.gather(*package_files_tasks))
 
+        package_files = dict(await asyncio.gather(*package_files_tasks))
         for package_id, package in all_packages.items():
             if package["content"]["packageType"] == "Collection":
                 continue
@@ -333,7 +335,9 @@ class PennsieveApiClient(BaseServiceClientApi):
         self, api_key: str, api_secret: str, package_id: str
     ) -> URL:
         """returns the presigned download link of the first file in the package"""
-        files = await self._get_package_files(api_key, api_secret, package_id)
+        files = await self._get_package_files(
+            api_key, api_secret, package_id, limit=0, offset=0
+        )
         # NOTE: this was done like this in the original dsm. we might encounter a problem when there are more than one files
         assert len(files) == 1  # nosec
         file_id = files[0]["content"]["id"]

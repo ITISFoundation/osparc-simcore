@@ -65,7 +65,9 @@ async def _request(
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
 
     except asyncio.TimeoutError as exc:
-        raise DatcoreAdapterClientError("datcore-adapter server timed-out") from exc
+        raise DatcoreAdapterClientError(
+            f"datcore-adapter server timed-out: {exc}"
+        ) from exc
 
     except aiohttp.ClientError as exc:
         raise DatcoreAdapterClientError(f"unexpected client error: {exc}") from exc
