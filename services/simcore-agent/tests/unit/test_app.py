@@ -17,7 +17,7 @@ from pydantic import PositiveFloat
 from pytest import LogCaptureFixture
 from simcore_service_simcore_agent.app import Application
 
-REPEAT_TASK_INTERVAL_S: Final[PositiveFloat] = 0.1
+REPEAT_TASK_INTERVAL_S: Final[PositiveFloat] = 0.05
 SOCKET_ADDRESS: tuple[str, int] = ("127.0.0.1", 2001)
 
 _EXIT_MARK: Final[bytes] = b"exit"
@@ -74,7 +74,7 @@ def test_app_recovers_from_error(
 
     process = Process(target=_worker, args=(asyncio.get_event_loop(),), daemon=True)
     process.start()
-    sleep(REPEAT_TASK_INTERVAL_S * 5)
+    sleep(REPEAT_TASK_INTERVAL_S * 10)
     process.kill()
 
     log_messages = "\n".join(caplog_info_debug.messages)
