@@ -59,6 +59,7 @@ ENV SC_BUILD_TARGET=build
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
+  curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -78,6 +79,10 @@ WORKDIR /build
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY  --chown=scu:scu services/simcore-agent/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
+
+# install rclone
+COPY  --chown=scu:scu ci/github/helpers/install_rclone.bash .
+RUN ./install_rclone.bash
 
 
 # --------------------------Prod-depends-only stage -------------------
