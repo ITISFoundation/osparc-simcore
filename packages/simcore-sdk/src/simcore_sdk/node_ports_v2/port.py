@@ -284,7 +284,9 @@ class Port(BaseServiceIOModel):
             self.value_concrete = v
         return v
 
-    async def _set(self, new_concrete_value: Optional[ItemConcreteValue]) -> None:
+    async def _set(
+        self, new_concrete_value: Optional[ItemConcreteValue], **set_kwargs
+    ) -> None:
         """
         :raises InvalidItemTypeError
         :raises ValidationError
@@ -317,6 +319,7 @@ class Port(BaseServiceIOModel):
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
+                    file_base_path=set_kwargs.get("file_base_path", None),
                 )
             else:
                 new_value = converted_value
