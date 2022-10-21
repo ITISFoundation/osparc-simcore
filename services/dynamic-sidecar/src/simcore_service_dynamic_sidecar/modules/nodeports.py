@@ -145,7 +145,7 @@ async def upload_outputs(
 
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
-        await PORTS.set_multiple(ports_values)
+        await PORTS.set_multiple(ports_values, file_base_path=outputs_path)
 
         elapsed_time = time.perf_counter() - start_time
         total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())

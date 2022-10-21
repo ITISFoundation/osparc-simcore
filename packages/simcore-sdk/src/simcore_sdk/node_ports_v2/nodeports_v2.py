@@ -132,7 +132,7 @@ class Nodeports(BaseModel):
             self.internal_outputs[output_key]._node_ports = self
 
     async def set_multiple(
-        self, port_values: dict[str, Optional[ItemConcreteValue]]
+        self, port_values: dict[str, Optional[ItemConcreteValue]], **set_kwargs
     ) -> None:
         """
         Sets the provided values to the respective input or output ports
@@ -145,11 +145,11 @@ class Nodeports(BaseModel):
         for port_key, value in port_values.items():
             # pylint: disable=protected-access
             try:
-                tasks.append(self.internal_outputs[port_key]._set(value))
+                tasks.append(self.internal_outputs[port_key]._set(value, **set_kwargs))
             except UnboundPortError:
                 # not available try inputs
                 # if this fails it will raise another exception
-                tasks.append(self.internal_inputs[port_key]._set(value))
+                tasks.append(self.internal_inputs[port_key]._set(value, **set_kwargs))
 
         results = await logged_gather(*tasks)
         await self.save_to_db_cb(self)
