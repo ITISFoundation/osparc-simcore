@@ -1,5 +1,6 @@
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Optional
@@ -55,6 +56,11 @@ def can_parse_as(v, *types) -> bool:
         return True
     except ValidationError:
         return False
+
+
+@dataclass(frozen=True)
+class SetKWargs:
+    file_base_path: Optional[Path] = None
 
 
 class Port(BaseServiceIOModel):
@@ -285,7 +291,9 @@ class Port(BaseServiceIOModel):
         return v
 
     async def _set(
-        self, new_concrete_value: Optional[ItemConcreteValue], **set_kwargs
+        self,
+        new_concrete_value: Optional[ItemConcreteValue],
+        set_kwargs: Optional[SetKWargs] = None,
     ) -> None:
         """
         :raises InvalidItemTypeError
@@ -319,7 +327,7 @@ class Port(BaseServiceIOModel):
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
-                    file_base_path=set_kwargs.get("file_base_path", None),
+                    file_base_path=set_kwargs.file_base_path if set_kwargs else None,
                 )
             else:
                 new_value = converted_value

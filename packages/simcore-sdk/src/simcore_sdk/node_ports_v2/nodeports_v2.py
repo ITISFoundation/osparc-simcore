@@ -10,11 +10,12 @@ from pydantic import BaseModel, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
-from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
-from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
+from ..node_ports_common.file_io_utils import LogRedirectCB
+from ..node_ports_common.storage_client import LinkType
+from ..node_ports_v2.port import SetKWargs
 from .links import ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
@@ -132,7 +133,8 @@ class Nodeports(BaseModel):
             self.internal_outputs[output_key]._node_ports = self
 
     async def set_multiple(
-        self, port_values: dict[str, Optional[ItemConcreteValue]], **set_kwargs
+        self,
+        port_values: dict[str, tuple[Optional[ItemConcreteValue], Optional[SetKWargs]]],
     ) -> None:
         """
         Sets the provided values to the respective input or output ports
@@ -142,14 +144,14 @@ class Nodeports(BaseModel):
         raises ValidationError
         """
         tasks = deque()
-        for port_key, value in port_values.items():
+        for port_key, (value, set_kwargs) in port_values.items():
             # pylint: disable=protected-access
             try:
-                tasks.append(self.internal_outputs[port_key]._set(value, **set_kwargs))
+                tasks.append(self.internal_outputs[port_key]._set(value, set_kwargs))
             except UnboundPortError:
                 # not available try inputs
                 # if this fails it will raise another exception
-                tasks.append(self.internal_inputs[port_key]._set(value, **set_kwargs))
+                tasks.append(self.internal_inputs[port_key]._set(value, set_kwargs))
 
         results = await logged_gather(*tasks)
         await self.save_to_db_cb(self)
