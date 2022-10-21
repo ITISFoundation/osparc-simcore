@@ -215,18 +215,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             log.warning("%s still under development and will be disabled.", field.name)
         return None if field.allow_none else False
 
-    class Config(BaseCustomSettings.Config):
-        # NOTE: FutureWarning: aliases are no longer used by BaseSettings to define which environment variables to read.
-        #       Instead use the "env" field setting. See https://pydantic-docs.helpmanual.io/usage/settings/#environment-variable-names
-        # NOTE: These alias are ONLY used in export, not in constructor
-        fields = {
-            "SC_VCS_URL": "vcs_url",
-            "SC_VCS_REF": "vcs_ref",
-            "SC_BUILD_DATE": "build_date",
-            "SWARM_STACK_NAME": "stack_name",
-        }
-        alias_generator = lambda s: s.lower()
-
     @cached_property
     def log_level(self) -> int:
         return getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
@@ -273,6 +261,31 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 plugins_disabled.append(field_name)
         return plugins_disabled
 
+    def _export_by_alias(self, **kwargs) -> dict[str, Any]:
+        #  This is a small helper to assist export functions since aliases are no longer used by
+        #  BaseSettings to define which environment variables to read.
+        #  SEE https://github.com/ITISFoundation/osparc-simcore/issues/3372
+        #
+        # NOTE: This is a copy from pydantic's Config.fields and Config.alias_generator
+        # SEE https://pydantic-docs.helpmanual.io/usage/model_config/#options
+        # SEE https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator
+        #
+        config_fields = {
+            "SC_VCS_URL": "vcs_url",
+            "SC_VCS_REF": "vcs_ref",
+            "SC_BUILD_DATE": "build_date",
+            "SWARM_STACK_NAME": "stack_name",
+        }
+        config_alias_generator = lambda s: s.lower()
+
+        data = self.dict(**kwargs)
+        current_keys = list(data.keys())
+
+        for key in current_keys:
+            if new_key := (config_fields.get(key) or config_alias_generator(key)):
+                data[new_key] = data.pop(key)
+        return data
+
     def public_dict(self) -> dict[str, Any]:
         """Data publicaly available"""
 
@@ -284,7 +297,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             data["login_2fa_required"] = self.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
 
         data.update(
-            self.dict(
+            self._export_by_alias(
                 include={
                     "APP_NAME",
                     "API_VERSION",
@@ -293,13 +306,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                     "SC_BUILD_DATE",
                 },
                 exclude_none=True,
-                by_alias=True,
             )
         )
         return data
 
     def to_client_statics(self) -> dict[str, Any]:
-        data = self.dict(
+        data = self._export_by_alias(
             include={
                 "APP_NAME",
                 "API_VERSION",
@@ -309,7 +321,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SWARM_STACK_NAME",
             },
             exclude_none=True,
-            by_alias=True,
         )
         data["plugins_disabled"] = self._get_disabled_public_plugins()
 
