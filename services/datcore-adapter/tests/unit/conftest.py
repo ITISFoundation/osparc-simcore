@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, AsyncIterator, Callable, Iterator, Optional
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -16,7 +16,10 @@ import simcore_service_datcore_adapter
 from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
-from simcore_service_datcore_adapter.modules.pennsieve import _create_pennsieve_client
+from pytest_mock import MockFixture
+from simcore_service_datcore_adapter.modules.pennsieve import (
+    PennsieveAuthorizationHeaders,
+)
 from starlette import status
 from starlette.testclient import TestClient
 
@@ -79,13 +82,15 @@ def app_envs(monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture()
-async def initialized_app(app_envs: None, minimal_app: FastAPI) -> Iterator[FastAPI]:
+async def initialized_app(
+    app_envs: None, minimal_app: FastAPI
+) -> AsyncIterator[FastAPI]:
     async with LifespanManager(minimal_app):
         yield minimal_app
 
 
 @pytest.fixture(scope="function")
-async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
+async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -220,7 +225,7 @@ def pennsieve_client_mock(
         yield None
     else:
         # NOTE: this function is decorated with lru_cache. so before testing we clear it
-        _create_pennsieve_client.cache_clear()
+        # _create_pennsieve_client.cache_clear()
         # mock the Pennsieve python client
         ps_mock = mocker.patch(
             "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
@@ -248,18 +253,45 @@ def pennsieve_random_fake_datasets(
     return datasets
 
 
+@pytest.fixture
+def get_authorization_headers_mock(
+    use_real_pennsieve_interface: bool, mocker: MockFixture, faker: faker.Faker
+):
+    if use_real_pennsieve_interface:
+        return
+    mocker.patch(
+        "simcore_service_datcore_adapter.modules.pennsieve.PennsieveApiClient._get_authorization_headers",
+        autospec=True,
+        return_value=PennsieveAuthorizationHeaders(
+            Authorization=f"Bearer {faker.uuid4()}"
+        ),
+    )
+
+
 @pytest.fixture()
 async def pennsieve_subsystem_mock(
-    pennsieve_client_mock,
+    get_authorization_headers_mock: None,
+    use_real_pennsieve_interface: bool,
     pennsieve_random_fake_datasets: dict[str, Any],
     pennsieve_mock_dataset_packages: dict[str, Any],
     pennsieve_dataset_id: str,
     pennsieve_collection_id: str,
     pennsieve_file_id: str,
     faker: faker.Faker,
-):
-    if pennsieve_client_mock:
+) -> AsyncIterator[Optional[respx.MockRouter]]:
+    if use_real_pennsieve_interface:
+        yield
+    else:
         async with respx.mock as mock:
+            # get authentication cognito-config
+            mock.get("https://api.pennsieve.io/authentication/cognito-config").respond(
+                status.HTTP_200_OK,
+                json={
+                    "region": "pytest-1",
+                    "tokenPool": {"appClientId": faker.uuid4()},
+                },
+            )
+
             # get user
             mock.get("https://api.pennsieve.io/user/").respond(
                 status.HTTP_200_OK, json={"id": "some_user_id"}
@@ -314,12 +346,15 @@ async def pennsieve_subsystem_mock(
 
             # download file
             mock.get(
-                url__regex=r"https://api.pennsieve.io/packages/.+/files/[\S]+$"
+                url__regex=rf"https://api.pennsieve.io/packages/.+/files/[\S]+$"
             ).respond(
                 status.HTTP_200_OK,
                 json={"url": faker.url()},
             )
 
+            # mock delete object
+            mock.post("https://api.pennsieve.io/data/delete").respond(
+                status.HTTP_200_OK, json={"success": [], "failures": []}
+            )
+
             yield mock
-    else:
-        yield
