@@ -2,9 +2,11 @@
 
     Mostly resolves and redirect to storage API
 """
+import asyncio
 import logging
 from typing import Any, Optional, Union
 
+import aiohttp
 from aiohttp import ClientResponse, web
 from models_library.api_schemas_storage import (
     FileUploadCompleteResponse,
@@ -121,25 +123,41 @@ async def get_storage_locations(request: web.Request) -> web.Response:
     return create_data_response(payload, status=status)
 
 
+_LIST_ALL_DATASETS_TIMEOUT_S = 60
+
+
 @login_required
 @permission_required("storage.files.*")
 async def get_datasets_metadata(request: web.Request) -> web.Response:
-    payload, status = await _request_storage(request, "GET")
+    payload, status = await _request_storage(
+        request,
+        "GET",
+    )
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
 async def get_files_metadata(request: web.Request) -> web.Response:
-    payload, status = await _request_storage(request, "GET")
+    payload, status = await _request_storage(
+        request,
+        "GET",
+    )
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
-    payload, status = await _request_storage(request, "GET")
-    return create_data_response(payload, status=status)
+    try:
+        payload, status = await _request_storage(
+            request,
+            "GET",
+            timeout=aiohttp.ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
+        )
+        return create_data_response(payload, status=status)
+    except asyncio.TimeoutError as err:
+        raise web.HTTPGatewayTimeout(reason=f"{err}") from err
 
 
 @login_required
