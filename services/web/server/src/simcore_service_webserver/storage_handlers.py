@@ -4,10 +4,9 @@
 """
 import asyncio
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Final, Optional, Union
 
-import aiohttp
-from aiohttp import ClientResponse, web
+from aiohttp import ClientResponse, ClientTimeout, web
 from models_library.api_schemas_storage import (
     FileUploadCompleteResponse,
     FileUploadSchema,
@@ -123,37 +122,32 @@ async def get_storage_locations(request: web.Request) -> web.Response:
     return create_data_response(payload, status=status)
 
 
-_LIST_ALL_DATASETS_TIMEOUT_S = 60
-
-
 @login_required
 @permission_required("storage.files.*")
 async def get_datasets_metadata(request: web.Request) -> web.Response:
-    payload, status = await _request_storage(
-        request,
-        "GET",
-    )
+    payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
 
 
 @login_required
 @permission_required("storage.files.*")
 async def get_files_metadata(request: web.Request) -> web.Response:
-    payload, status = await _request_storage(
-        request,
-        "GET",
-    )
+    payload, status = await _request_storage(request, "GET")
     return create_data_response(payload, status=status)
+
+
+_LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 
 
 @login_required
 @permission_required("storage.files.*")
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
+
     try:
         payload, status = await _request_storage(
             request,
             "GET",
-            timeout=aiohttp.ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
+            timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
         )
         return create_data_response(payload, status=status)
     except asyncio.TimeoutError as err:
