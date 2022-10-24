@@ -50,6 +50,8 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
+packaging==21.3
+    # via -r requirements/_base.in
 pydantic==1.10.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -61,6 +63,8 @@ pydantic==1.10.2
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pyinstrument==4.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+pyparsing==3.0.9
+    # via packaging
 pyrsistent==0.18.1
     # via jsonschema
 pyyaml==5.4.1

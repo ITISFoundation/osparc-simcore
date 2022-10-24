@@ -54,7 +54,7 @@ certifi==2022.9.24
     # via requests
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.68.0
+cfn-lint==0.68.1
     # via moto
 charset-normalizer==2.1.1
     # via
@@ -167,6 +167,7 @@ openapi-spec-validator==0.4.0
     #   moto
 packaging==21.3
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   pytest
 pbr==5.11.0
@@ -185,6 +186,7 @@ pycparser==2.21
     # via cffi
 pyparsing==3.0.9
     # via
+    #   -c requirements/_base.txt
     #   moto
     #   packaging
 pyrsistent==0.18.1
@@ -283,7 +285,7 @@ yarl==1.8.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.9.0
+zipp==3.10.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
