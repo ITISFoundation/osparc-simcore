@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
 from contextlib import suppress
