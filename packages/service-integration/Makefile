@@ -47,8 +47,9 @@ tests-ci: ## runs unit tests [ci-mode]
     -m "not heavy_load" \
 		$(CURDIR)/tests
 
-
+#
 # Auto-generation of compose-spec model
+#
 
 compose-spec.json:
 	# Downloading schema from https://github.com/compose-spec/compose-spec

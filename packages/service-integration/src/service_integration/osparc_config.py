@@ -65,7 +65,9 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
     """picks up configurations used to overwrite the docker-compuse output"""
 
     @classmethod
-    def create_default(cls, service_name: str = None) -> "DockerComposeOverwriteCfg":
+    def create_default(
+        cls, service_name: Optional[str] = None
+    ) -> "DockerComposeOverwriteCfg":
         return cls.parse_obj(
             {
                 "services": {

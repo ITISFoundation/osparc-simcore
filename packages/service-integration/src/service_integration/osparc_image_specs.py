@@ -34,17 +34,18 @@ def create_image_spec(
         labels.update(runtime_cfg.to_labels_annotations())
 
     service_name = meta_cfg.service_name()
-    context = docker_compose_overwrite_cfg.services[service_name].build.context
-    docker_compose_overwrite_cfg.services[service_name].build.context = (
-        context if context else "./"
-    )
+
+    # TODO: review this override design with ANE! ----
+    if not docker_compose_overwrite_cfg.services[service_name].build.context:
+        docker_compose_overwrite_cfg.services[service_name].build.context = "./"
+
     docker_compose_overwrite_cfg.services[service_name].build.labels = labels
 
     overwrite_options = docker_compose_overwrite_cfg.services[service_name].build.dict(
         exclude_none=True
     )
-
     build_spec = BuildItem(**overwrite_options)
+    # -----
 
     compose_spec = ComposeSpecification(
         version=settings.COMPOSE_VERSION,
