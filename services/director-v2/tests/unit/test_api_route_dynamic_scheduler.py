@@ -6,12 +6,12 @@ import asyncio
 from typing import AsyncIterator
 
 import pytest
-from requests import Response
 import respx
 from fastapi import status
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from requests import Response
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
