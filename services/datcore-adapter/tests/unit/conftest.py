@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional
+from typing import Any, Callable, Iterator, Optional
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -19,7 +19,6 @@ from fastapi.applications import FastAPI
 from simcore_service_datcore_adapter.modules.pennsieve import _create_pennsieve_client
 from starlette import status
 from starlette.testclient import TestClient
-
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -54,7 +53,7 @@ def mocks_dir(project_slug_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def pennsieve_mock_dataset_packages(mocks_dir: Path) -> Dict[str, Any]:
+def pennsieve_mock_dataset_packages(mocks_dir: Path) -> dict[str, Any]:
     ps_packages_file = mocks_dir / "ps_packages.json"
     assert ps_packages_file.exists()
     return json.loads(ps_packages_file.read_text())
@@ -203,7 +202,7 @@ def use_real_pennsieve_interface(request) -> bool:
 @pytest.fixture(scope="session")
 def pennsieve_api_headers(
     pennsieve_api_key: str, pennsieve_api_secret: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     return {
         "x-datcore-api-key": pennsieve_api_key,
         "x-datcore-api-secret": pennsieve_api_secret,
@@ -216,7 +215,7 @@ def pennsieve_client_mock(
     mocker,
     pennsieve_api_key: str,
     pennsieve_api_secret: str,
-) -> Optional[Any]:
+) -> Iterator[Optional[Any]]:
     if use_real_pennsieve_interface:
         yield None
     else:
@@ -238,7 +237,7 @@ def pennsieve_client_mock(
 @pytest.fixture(scope="module")
 def pennsieve_random_fake_datasets(
     create_pennsieve_fake_dataset_id: Callable,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     datasets = {
         "datasets": [
             {"content": {"id": create_pennsieve_fake_dataset_id(), "name": fake.text()}}
@@ -252,8 +251,8 @@ def pennsieve_random_fake_datasets(
 @pytest.fixture()
 async def pennsieve_subsystem_mock(
     pennsieve_client_mock,
-    pennsieve_random_fake_datasets: Dict[str, Any],
-    pennsieve_mock_dataset_packages: Dict[str, Any],
+    pennsieve_random_fake_datasets: dict[str, Any],
+    pennsieve_mock_dataset_packages: dict[str, Any],
     pennsieve_dataset_id: str,
     pennsieve_collection_id: str,
     pennsieve_file_id: str,
