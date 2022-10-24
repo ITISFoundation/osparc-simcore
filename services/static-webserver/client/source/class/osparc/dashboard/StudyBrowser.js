@@ -644,7 +644,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.dashboard.StudyDataBrowser();
         studyDataManager.initResources();
-        osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["label"], 900, 600).set({
+        osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({
           appearance: "service-window"
         });
       }, this);

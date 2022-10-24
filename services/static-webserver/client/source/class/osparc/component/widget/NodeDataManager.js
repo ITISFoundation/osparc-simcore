@@ -137,9 +137,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       const nodeTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       const nodeReloadBtn = this.getChildControl("reload-button");
-      nodeReloadBtn.addListener("execute", function() {
-        this.__reloadNodeTree();
-      }, this);
+      nodeReloadBtn.addListener("execute", () => this.__reloadNodeTree(), this);
       nodeTreeLayout.add(nodeReloadBtn);
 
       const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("node-files-tree").set({
