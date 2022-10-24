@@ -256,6 +256,7 @@ async def pennsieve_subsystem_mock(
     pennsieve_dataset_id: str,
     pennsieve_collection_id: str,
     pennsieve_file_id: str,
+    faker: faker.Faker,
 ):
     if pennsieve_client_mock:
         async with respx.mock as mock:
@@ -304,9 +305,19 @@ async def pennsieve_subsystem_mock(
                 },
             )
             # get packages files
-            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files$").respond(
+            mock.get(
+                url__regex=r"https://api.pennsieve.io/packages/.+/files\?limit=1&offset=0$"
+            ).respond(
                 status.HTTP_200_OK,
-                json=[{"content": {"size": 12345}}],
+                json=[{"content": {"size": 12345, "id": "fake_file_id"}}],
+            )
+
+            # download file
+            mock.get(
+                url__regex=r"https://api.pennsieve.io/packages/.+/files/[\S]+$"
+            ).respond(
+                status.HTTP_200_OK,
+                json={"url": faker.url()},
             )
 
             yield mock

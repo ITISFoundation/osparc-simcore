@@ -336,7 +336,7 @@ class PennsieveApiClient(BaseServiceClientApi):
     ) -> URL:
         """returns the presigned download link of the first file in the package"""
         files = await self._get_package_files(
-            api_key, api_secret, package_id, limit=0, offset=0
+            api_key, api_secret, package_id, limit=1, offset=0
         )
         # NOTE: this was done like this in the original dsm. we might encounter a problem when there are more than one files
         assert len(files) == 1  # nosec
