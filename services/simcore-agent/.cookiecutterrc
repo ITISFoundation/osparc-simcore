@@ -14,7 +14,7 @@ default_context:
     github_username:           'GitHK'
     package_name:              'simcore_service_simcore_agent'
     project_name:              'simcore-agent'
-    project_short_description: 'Service for runnign commands on docker nodes'
+    project_short_description: 'Service for executing commands on docker nodes'
     project_slug:              'simcore-agent'
     version:                   '0.0.1'
     year:                      '2022'

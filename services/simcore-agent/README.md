@@ -6,7 +6,7 @@
 [![image-version]](https://microbadger.com/images/itisfoundation/simcore-agent "More on simcore-agent image in registry")
 [![image-commit]](https://microbadger.com/images/itisfoundation/simcore-agent "More on simcore-agent image in registry")
 
-Service for runnign commands on docker nodes
+Service for executing commands on docker nodes
 
 <!-- Add badges urls here-->
 [image-size]:https://img.shields.io/microbadger/image-size/itisfoundation/simcore-agent./staging-latest.svg?label=simcore-agent.&style=flat
