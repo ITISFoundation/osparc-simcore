@@ -338,7 +338,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             all_packages.update(
                 {p["content"]["id"]: p for p in resp.get("packages", [])}
             )
-            logger.info(
+            logger.debug(
                 "received dataset packages [%s/%s], cursor: %s",
                 len(all_packages),
                 num_packages,

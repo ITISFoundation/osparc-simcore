@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum, unique
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -31,7 +31,7 @@ class FileMetaData(BaseModel):
 
     @classmethod
     def from_pennsieve_package(
-        cls, package: Dict[str, Any], files: List[Dict[str, Any]], base_path: Path
+        cls, package: dict[str, Any], files: list[dict[str, Any]], base_path: Path
     ):
         """creates a FileMetaData from a pennsieve data structure."""
         pck_name: str = package["content"]["name"]
@@ -42,7 +42,7 @@ class FileMetaData(BaseModel):
         if package["content"]["packageType"] != "Collection" and files:
             file_size = files[0]["content"]["size"]
 
-        return cls(
+        return cls.construct(
             dataset_id=package["content"]["datasetNodeId"],
             package_id=package["content"]["nodeId"],
             id=package["content"]["id"],
