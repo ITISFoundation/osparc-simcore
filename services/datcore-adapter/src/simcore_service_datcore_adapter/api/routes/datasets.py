@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
 
 from ...models.domains.datasets import DatasetsOut, FileMetaDataOut
 from ...modules.pennsieve import PennsieveApiClient
-from ...utils.requests_decorators import cancellable_request
 from ..dependencies.pennsieve import get_pennsieve_api_client
 
 router = APIRouter()
@@ -21,14 +21,15 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
     response_model=Page[DatasetsOut],
 )
-@cancellable_request
+@cancel_on_disconnect
 async def list_datasets(
-    _request: Request,
+    request: Request,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[DatasetsOut]:
+    assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
     datasets, total = await pennsieve_client.list_datasets(
         api_key=x_datcore_api_key,
@@ -45,15 +46,16 @@ async def list_datasets(
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
-@cancellable_request
+@cancel_on_disconnect
 async def list_dataset_top_level_files(
-    _request: Request,
+    request: Request,
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[FileMetaDataOut]:
+    assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
     file_metas, total = await pennsieve_client.list_packages_in_dataset(
@@ -72,9 +74,9 @@ async def list_dataset_top_level_files(
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
-@cancellable_request
+@cancel_on_disconnect
 async def list_dataset_collection_files(
-    _request: Request,
+    request: Request,
     dataset_id: str,
     collection_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -82,6 +84,7 @@ async def list_dataset_collection_files(
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[FileMetaDataOut]:
+    assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
     file_metas, total = await pennsieve_client.list_packages_in_collection(
@@ -101,14 +104,15 @@ async def list_dataset_collection_files(
     status_code=status.HTTP_200_OK,
     response_model=list[FileMetaDataOut],
 )
-@cancellable_request
+@cancel_on_disconnect
 async def list_dataset_files_legacy(
-    _request: Request,
+    request: Request,
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
 ) -> list[FileMetaDataOut]:
+    assert request  # nosec
     file_metas = await pennsieve_client.list_all_dataset_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
