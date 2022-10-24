@@ -12,7 +12,7 @@
 
 
 
-aioboto3
+boto3
 aiofiles
 fastapi
 fastapi-pagination

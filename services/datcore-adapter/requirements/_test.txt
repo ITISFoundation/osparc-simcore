@@ -23,9 +23,7 @@ certifi==2022.9.24
     #   httpx
     #   requests
 charset-normalizer==2.1.1
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 codecov==2.1.12
     # via -r requirements/_test.in
 coverage==6.5.0
@@ -165,6 +163,4 @@ urllib3==1.26.12
     #   -c requirements/_base.txt
     #   requests
 wrapt==1.14.1
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
+    # via astroid
