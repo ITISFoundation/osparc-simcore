@@ -4,8 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Iterator, Optional
-from unittest.mock import MagicMock
+from typing import Any, AsyncIterator, Callable, Optional
 from uuid import uuid4
 
 import faker
@@ -214,31 +213,6 @@ def pennsieve_api_headers(
     }
 
 
-@pytest.fixture()
-def pennsieve_client_mock(
-    use_real_pennsieve_interface: bool,
-    mocker,
-    pennsieve_api_key: str,
-    pennsieve_api_secret: str,
-) -> Iterator[Optional[Any]]:
-    if use_real_pennsieve_interface:
-        yield None
-    else:
-        # NOTE: this function is decorated with lru_cache. so before testing we clear it
-        # _create_pennsieve_client.cache_clear()
-        # mock the Pennsieve python client
-        ps_mock = mocker.patch(
-            "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
-        )
-        ps_mock.return_value._api = MagicMock()  # pylint: disable=protected-access
-        yield ps_mock
-
-        # TODO: with lru cache it does not work anymore
-        ps_mock.assert_any_call(
-            api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
-        )
-
-
 @pytest.fixture(scope="module")
 def pennsieve_random_fake_datasets(
     create_pennsieve_fake_dataset_id: Callable,
@@ -259,7 +233,7 @@ def disable_aiocache(monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture
-def get_authorization_headers_mock(
+def get_bearer_code_mock(
     use_real_pennsieve_interface: bool,
     disable_aiocache: None,
     mocker: MockFixture,
@@ -269,7 +243,7 @@ def get_authorization_headers_mock(
         return
 
     mocker.patch(
-        "simcore_service_datcore_adapter.modules.pennsieve.PennsieveApiClient._get_authorization_headers",
+        "simcore_service_datcore_adapter.modules.pennsieve._get_bearer_code",
         autospec=True,
         return_value=PennsieveAuthorizationHeaders(
             Authorization=f"Bearer {faker.uuid4()}"
@@ -279,7 +253,7 @@ def get_authorization_headers_mock(
 
 @pytest.fixture()
 async def pennsieve_subsystem_mock(
-    get_authorization_headers_mock: None,
+    get_bearer_code_mock: None,
     use_real_pennsieve_interface: bool,
     pennsieve_random_fake_datasets: dict[str, Any],
     pennsieve_mock_dataset_packages: dict[str, Any],
