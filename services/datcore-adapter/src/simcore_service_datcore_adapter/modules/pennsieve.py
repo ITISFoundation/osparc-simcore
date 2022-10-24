@@ -41,12 +41,14 @@ class PennsieveAuthorizationHeaders(TypedDict):
 
 _TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[
     int
-] = 3530  # pennsieve authorizes 3600 seconds
+] = 3530  # NOTE: observed while developing this code, pennsieve authorizes 3600 seconds, so we cache a bit less
 
 
 def _get_bearer_code(
     cognito_config: dict[str, Any], api_key: str, api_secret: str
 ) -> PennsieveAuthorizationHeaders:
+    """according to https://docs.pennsieve.io/recipes
+    ..."""
     session = boto3.Session()  # NOTE: needed since boto3 client is not thread safe
     cognito_client = session.client(
         "cognito-idp",
@@ -70,6 +72,13 @@ class PennsieveApiClient(BaseServiceClientApi):
     async def _get_authorization_headers(
         self, api_key: str, api_secret: str
     ) -> PennsieveAuthorizationHeaders:
+        """returns the authorization bearer code as described
+        in the pennsieve recipe
+        https://docs.pennsieve.io/recipes
+
+        with fixes coming from the python pennsieve library to
+        correct the issue in the above mentioned recipe
+        """
         # get Pennsieve cognito configuration
         response = await self.client.get("/authentication/cognito-config")
         response.raise_for_status()
