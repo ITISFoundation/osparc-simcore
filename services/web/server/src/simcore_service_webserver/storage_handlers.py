@@ -2,7 +2,6 @@
 
     Mostly resolves and redirect to storage API
 """
-import asyncio
 import logging
 from typing import Any, Final, Optional, Union
 
@@ -142,16 +141,12 @@ _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 @login_required
 @permission_required("storage.files.*")
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
-
-    try:
-        payload, status = await _request_storage(
-            request,
-            "GET",
-            timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
-        )
-        return create_data_response(payload, status=status)
-    except asyncio.TimeoutError as err:
-        raise web.HTTPGatewayTimeout(reason=f"{err}") from err
+    payload, status = await _request_storage(
+        request,
+        "GET",
+        timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
+    )
+    return create_data_response(payload, status=status)
 
 
 @login_required
