@@ -66,14 +66,14 @@ qx.Class.define("osparc.data.Converters", {
             prjId
           );
           parent.children.push(prjItem);
-          parent = prjItem
+          parent = prjItem;
           const nodeItem = this.createDirEntry(
             nodeLabel,
             file["location_id"],
             nodeId
           );
           parent.children.push(nodeItem);
-          parent = nodeItem
+          parent = nodeItem;
 
           for (let j=2; j<splitted.length-1; j++) {
             const newItem = this.createDirEntry(
