@@ -254,11 +254,20 @@ def pennsieve_random_fake_datasets(
 
 
 @pytest.fixture
+def disable_aiocache(monkeypatch: MonkeyPatch):
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
+@pytest.fixture
 def get_authorization_headers_mock(
-    use_real_pennsieve_interface: bool, mocker: MockFixture, faker: faker.Faker
+    use_real_pennsieve_interface: bool,
+    disable_aiocache: None,
+    mocker: MockFixture,
+    faker: faker.Faker,
 ):
     if use_real_pennsieve_interface:
         return
+
     mocker.patch(
         "simcore_service_datcore_adapter.modules.pennsieve.PennsieveApiClient._get_authorization_headers",
         autospec=True,
