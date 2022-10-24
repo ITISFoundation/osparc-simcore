@@ -12,7 +12,7 @@ import yaml
 
 @pytest.fixture(params=["input", "output"])
 def port_type(request: pytest.FixtureRequest) -> str:
-    return request.param
+    return request.param  # type: ignore
 
 
 @pytest.fixture
@@ -22,7 +22,9 @@ def label_cfg(metadata_file: Path, port_type: str) -> dict:
         cfg = yaml.safe_load(fp)
         assert isinstance(cfg, dict)
         assert ports_type in cfg
-        return cfg[ports_type]
+        labels = cfg[ports_type]
+        assert isinstance(labels, dict)
+        return labels
 
 
 @pytest.fixture
@@ -100,7 +102,6 @@ def assert_validation_data_follows_definition(
             if not "data:" in label_cfg[key]["type"]:
                 # check the type is correct
                 expected_type = label2types[label_cfg[key]["type"]]
-                assert issubclass(expected_type, type)
                 assert isinstance(
                     value, expected_type
                 ), f"{value} has not the expected type {label2types[label_cfg[key]['type']]}"
