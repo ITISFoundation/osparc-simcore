@@ -1,5 +1,7 @@
 import logging
+from typing import Final
 
+from aiocache import cached
 from fastapi import APIRouter, Depends, Header, Request
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
@@ -14,6 +16,9 @@ from ..dependencies.pennsieve import get_pennsieve_api_client
 router = APIRouter()
 log = logging.getLogger(__file__)
 
+_MINUTE: Final[int] = 60
+_PENNSIEVE_CACHING_TTL_S: Final[int] = 5 * _MINUTE
+
 
 @router.get(
     "/datasets",
@@ -22,6 +27,10 @@ log = logging.getLogger(__file__)
     response_model=Page[DatasetsOut],
 )
 @cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['params']}",
+)
 async def list_datasets(
     request: Request,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -47,6 +56,10 @@ async def list_datasets(
     response_model=Page[FileMetaDataOut],
 )
 @cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['params']}",
+)
 async def list_dataset_top_level_files(
     request: Request,
     dataset_id: str,
@@ -75,6 +88,10 @@ async def list_dataset_top_level_files(
     response_model=Page[FileMetaDataOut],
 )
 @cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['collection_id']}_{kwargs['params']}",
+)
 async def list_dataset_collection_files(
     request: Request,
     dataset_id: str,
@@ -105,6 +122,10 @@ async def list_dataset_collection_files(
     response_model=list[FileMetaDataOut],
 )
 @cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}",
+)
 async def list_dataset_files_legacy(
     request: Request,
     dataset_id: str,
