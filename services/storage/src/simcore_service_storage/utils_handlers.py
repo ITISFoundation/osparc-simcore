@@ -3,6 +3,9 @@ from aiohttp.typedefs import Handler
 from aiohttp.web_request import Request
 from pydantic import ValidationError
 from servicelib.aiohttp.aiopg_utils import DBAPIError
+from simcore_service_storage.datcore_adapter.datcore_adapter_exceptions import (
+    DatcoreAdapterTimeoutError,
+)
 
 from .db_access_layer import InvalidFileIdentifier
 from .exceptions import (
@@ -42,3 +45,5 @@ async def dsm_exception_handler(
         raise web.HTTPServiceUnavailable(
             reason=f"Unexpected error while accessing S3 backend: {err}"
         ) from err
+    except DatcoreAdapterTimeoutError as err:
+        raise web.HTTPGatewayTimeout(reason=f"{err}") from err
