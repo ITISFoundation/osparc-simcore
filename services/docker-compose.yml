@@ -281,8 +281,8 @@ services:
       endpoint_mode: dnsrr
       resources:
         reservations:
-          cpus: "0.10"
-          memory: "100M"
+          cpus: "0.5"
+          memory: "200M"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
