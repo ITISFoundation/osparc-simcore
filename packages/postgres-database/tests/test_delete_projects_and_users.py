@@ -1,15 +1,14 @@
+# pylint: disable=no-name-in-module
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import List
-
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
+from psycopg2.errors import ForeignKeyViolation
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.webserver_models import projects, users
 from sqlalchemy import func
@@ -112,7 +111,7 @@ async def test_view(engine):
         await conn.execute(users.delete().where(users.c.name == "A"))
 
         res: ResultProxy = None
-        rows: List[RowProxy] = []
+        rows: list[RowProxy] = []
 
         res = await conn.execute(users.select())
         rows = await res.fetchall()

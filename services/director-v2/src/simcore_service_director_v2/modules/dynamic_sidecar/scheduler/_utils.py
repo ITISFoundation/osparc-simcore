@@ -5,7 +5,11 @@ from typing import Any, AsyncIterator, Deque, Dict, Final, List, Optional, Type
 
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
-from servicelib.fastapi.long_running_tasks.client import TaskClientResultError
+from servicelib.fastapi.long_running_tasks.client import (
+    ProgressCallback,
+    TaskClientResultError,
+)
+from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 
 from ....api.dependencies.database import get_base_repository
@@ -89,13 +93,127 @@ def parse_containers_inspect(
     return list(results)
 
 
-def all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+def are_all_user_services_containers_running(
+    containers_inspect: List[DockerContainerInspect],
+) -> bool:
     return len(containers_inspect) > 0 and all(
         (x.status == DockerStatus.RUNNING for x in containers_inspect)
     )
 
 
-async def attempt_user_create_services_removal_and_data_saving(
+async def service_remove_containers(
+    dynamic_sidecar_client: DynamicSidecarClient,
+    scheduler_data: SchedulerData,
+    progress_callback: Optional[ProgressCallback] = None,
+) -> None:
+    try:
+        await dynamic_sidecar_client.stop_service(
+            scheduler_data.endpoint, progress_callback=progress_callback
+        )
+    except (BaseClientHTTPError, TaskClientResultError) as e:
+        logger.warning(
+            (
+                "Could not remove service containers for "
+                "%s\n%s. Will continue to save the data from the service!"
+            ),
+            scheduler_data.service_name,
+            f"{e}",
+        )
+
+
+async def service_save_state(
+    dynamic_sidecar_client: DynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    progress_callback: Optional[ProgressCallback] = None,
+) -> None:
+    await dynamic_sidecar_client.save_service_state(
+        dynamic_sidecar_endpoint, progress_callback=progress_callback
+    )
+
+
+async def service_push_outputs(
+    dynamic_sidecar_client: DynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    progress_callback: Optional[ProgressCallback] = None,
+) -> None:
+    await dynamic_sidecar_client.push_service_output_ports(
+        dynamic_sidecar_endpoint, progress_callback=progress_callback
+    )
+
+
+async def service_remove_sidecar_proxy_docker_networks_and_volumes(
+    task_progress: TaskProgress,
+    app: FastAPI,
+    scheduler_data: SchedulerData,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+) -> None:
+
+    # remove the 2 services
+    task_progress.update(message="removing dynamic sidecar stack", percent=0.1)
+    await remove_dynamic_sidecar_stack(
+        node_uuid=scheduler_data.node_uuid,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
+    )
+    # remove network
+    task_progress.update(message="removing network", percent=0.2)
+    await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
+
+    if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
+        if scheduler_data.dynamic_sidecar.docker_node_id is None:
+            logger.warning(
+                "Skipped volume removal for %s, since a docker_node_id was not found.",
+                scheduler_data.node_uuid,
+            )
+        else:
+            # Remove all dy-sidecar associated volumes from node
+            task_progress.update(message="removing volumes", percent=0.3)
+            unique_volume_names = [
+                DynamicSidecarVolumesPathsResolver.source(
+                    path=volume_path,
+                    node_uuid=scheduler_data.node_uuid,
+                    run_id=scheduler_data.run_id,
+                )
+                for volume_path in [
+                    DY_SIDECAR_SHARED_STORE_PATH,
+                    scheduler_data.paths_mapping.inputs_path,
+                    scheduler_data.paths_mapping.outputs_path,
+                ]
+                + scheduler_data.paths_mapping.state_paths
+            ]
+            await remove_volumes_from_node(
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                volume_names=unique_volume_names,
+                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                user_id=scheduler_data.user_id,
+                project_id=scheduler_data.project_id,
+                node_uuid=scheduler_data.node_uuid,
+            )
+
+    logger.debug(
+        "Removed dynamic-sidecar services and crated container for '%s'",
+        scheduler_data.service_name,
+    )
+
+    task_progress.update(message="removing project networks", percent=0.8)
+    used_projects_networks = await get_projects_networks_containers(
+        project_id=scheduler_data.project_id
+    )
+    await logged_gather(
+        *[
+            try_to_remove_network(network_name)
+            for network_name, container_count in used_projects_networks.items()
+            if container_count == 0
+        ]
+    )
+
+    await app.state.dynamic_sidecar_scheduler.remove_service_from_observation(
+        scheduler_data.node_uuid
+    )
+    scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
+    task_progress.update(message="finished removing resources", percent=1)
+
+
+async def attempt_pod_removal_and_data_saving(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     # invoke container cleanup at this point
@@ -108,17 +226,7 @@ async def attempt_user_create_services_removal_and_data_saving(
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
 
-        try:
-            await dynamic_sidecar_client.stop_service(dynamic_sidecar_endpoint)
-        except (BaseClientHTTPError, TaskClientResultError) as e:
-            logger.warning(
-                (
-                    "Could not remove service containers for "
-                    "%s\n%s. Will continue to save the data from the service!"
-                ),
-                scheduler_data.service_name,
-                f"{e}",
-            )
+        await service_remove_containers(dynamic_sidecar_client, scheduler_data)
 
         # only try to save the status if :
         # - it is requested to save the state
@@ -132,8 +240,8 @@ async def attempt_user_create_services_removal_and_data_saving(
             logger.info("Calling into dynamic-sidecar to save: state and output ports")
             try:
                 tasks = [
-                    dynamic_sidecar_client.push_service_output_ports(
-                        dynamic_sidecar_endpoint
+                    service_push_outputs(
+                        dynamic_sidecar_client, dynamic_sidecar_endpoint
                     )
                 ]
 
@@ -141,8 +249,8 @@ async def attempt_user_create_services_removal_and_data_saving(
                 # It uses rclone mounted volumes for this task.
                 if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
                     tasks.append(
-                        dynamic_sidecar_client.save_service_state(
-                            dynamic_sidecar_endpoint
+                        service_save_state(
+                            dynamic_sidecar_client, dynamic_sidecar_endpoint
                         )
                     )
 
@@ -188,61 +296,6 @@ async def attempt_user_create_services_removal_and_data_saving(
     else:
         await _remove_containers_save_state_and_outputs()
 
-    # remove the 2 services
-    await remove_dynamic_sidecar_stack(
-        node_uuid=scheduler_data.node_uuid,
-        dynamic_sidecar_settings=dynamic_sidecar_settings,
+    await service_remove_sidecar_proxy_docker_networks_and_volumes(
+        TaskProgress.create(), app, scheduler_data, dynamic_sidecar_settings
     )
-    # remove network
-    await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
-
-    if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
-        if scheduler_data.dynamic_sidecar.docker_node_id is None:
-            logger.warning(
-                "Skipped volume removal for %s, since a docker_node_id was not found.",
-                scheduler_data.node_uuid,
-            )
-        else:
-            # Remove all dy-sidecar associated volumes from node
-            unique_volume_names = [
-                DynamicSidecarVolumesPathsResolver.source(
-                    path=volume_path,
-                    node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.run_id,
-                )
-                for volume_path in [
-                    DY_SIDECAR_SHARED_STORE_PATH,
-                    scheduler_data.paths_mapping.inputs_path,
-                    scheduler_data.paths_mapping.outputs_path,
-                ]
-                + scheduler_data.paths_mapping.state_paths
-            ]
-            await remove_volumes_from_node(
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                volume_names=unique_volume_names,
-                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                user_id=scheduler_data.user_id,
-                project_id=scheduler_data.project_id,
-                node_uuid=scheduler_data.node_uuid,
-            )
-
-    logger.debug(
-        "Removed dynamic-sidecar services and crated container for '%s'",
-        scheduler_data.service_name,
-    )
-
-    used_projects_networks = await get_projects_networks_containers(
-        project_id=scheduler_data.project_id
-    )
-    await logged_gather(
-        *[
-            try_to_remove_network(network_name)
-            for network_name, container_count in used_projects_networks.items()
-            if container_count == 0
-        ]
-    )
-
-    await app.state.dynamic_sidecar_scheduler.remove_service_from_observation(
-        scheduler_data.node_uuid
-    )
-    scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()

@@ -66,14 +66,14 @@ def _get_dynamic_sidecar_endpoint(
 async def _save_node_state(
     app,
     dynamic_sidecar_client: api_client.DynamicSidecarClient,
-    save_retry_times: int,
+    save_attempts: int,
     node_uuid: NodeIDStr,
     label: str,
 ) -> None:
     typer.echo(f"Saving state for {node_uuid} {label}")
     async for attempt in AsyncRetrying(
         wait=wait_random_exponential(),
-        stop=stop_after_attempt(save_retry_times),
+        stop=stop_after_attempt(save_attempts),
         reraise=True,
     ):
         with attempt:
@@ -83,9 +83,7 @@ async def _save_node_state(
             )
 
 
-async def async_project_save_state(
-    project_id: ProjectID, save_retry_times: int
-) -> None:
+async def async_project_save_state(project_id: ProjectID, save_attempts: int) -> None:
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(
             app, ProjectsRepository
@@ -109,7 +107,7 @@ async def async_project_save_state(
                 await _save_node_state(
                     app,
                     dynamic_sidecar_client,
-                    save_retry_times,
+                    save_attempts,
                     node_uuid,
                     node_content.label,
                 )
@@ -126,19 +124,6 @@ async def async_project_save_state(
         sys.exit(1)
 
     typer.echo(f"Save complete for project {project_id}")
-
-
-### NODE SAVE STATE
-
-
-async def async_node_save_state(node_id: NodeID, retry_save: int) -> None:
-    async with _initialized_app() as app:
-        dynamic_sidecar_client = api_client.get_dynamic_sidecar_client(app)
-        await _save_node_state(
-            app, dynamic_sidecar_client, retry_save, NodeIDStr(f"{node_id}"), ""
-        )
-
-    typer.echo(f"Node {node_id} save completed")
 
 
 ### PROJECT STATE

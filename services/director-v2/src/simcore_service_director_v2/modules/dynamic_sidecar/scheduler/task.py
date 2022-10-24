@@ -21,7 +21,7 @@ from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
 from math import floor
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -58,11 +58,13 @@ from ..errors import (
     GenericDockerError,
 )
 from ._task_utils import apply_observation_cycle
-from ._utils import attempt_user_create_services_removal_and_data_saving
+from ._utils import attempt_pod_removal_and_data_saving
 
 logger = logging.getLogger(__name__)
 
 ServiceName = str
+
+_DISABLED_MARK = object()
 
 
 def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
@@ -77,9 +79,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
     _lock: Lock = field(default_factory=Lock)
     _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
-    _service_observation_task: dict[ServiceName, asyncio.Task] = field(
-        default_factory=dict
-    )
+    _service_observation_task: dict[
+        ServiceName, Optional[Union[asyncio.Task, object]]
+    ] = field(default_factory=dict)
     _keep_running: bool = False
     _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
@@ -87,6 +89,28 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
+
+    def toggle_observation_cycle(self, node_uuid: NodeID, disable: bool) -> bool:
+        """
+        returns True if it managed to toggle the current state
+
+        raises DynamicSidecarNotFoundError
+        """
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
+
+        service_task = self._service_observation_task.get(service_name)
+
+        if isinstance(service_task, asyncio.Task):
+            return False
+
+        if disable:
+            self._service_observation_task[service_name] = _DISABLED_MARK
+        else:
+            self._service_observation_task.pop(service_name, None)
+
+        return True
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
@@ -150,6 +174,16 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             del self._inverse_search_mapping[node_uuid]
 
         logger.debug("Removed service '%s' from scheduler", service_name)
+
+    def get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
+        """
+
+        raises DynamicSidecarNotFoundError
+        """
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
+        return self._to_observe[service_name]
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         """
@@ -361,7 +395,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                         scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                             False
                         )
-                        await attempt_user_create_services_removal_and_data_saving(
+                        await attempt_pod_removal_and_data_saving(
                             self.app, scheduler_data
                         )
 
@@ -369,9 +403,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
                 # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
-                await attempt_user_create_services_removal_and_data_saving(
-                    self.app, scheduler_data
-                )
+                await attempt_pod_removal_and_data_saving(self.app, scheduler_data)
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
