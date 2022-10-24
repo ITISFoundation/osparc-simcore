@@ -4,6 +4,7 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-package.Makefile
 
+
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
@@ -68,3 +69,25 @@ _compose_spec_model.py: ## auto-generates pydantic model for compose-specificati
 	# formats and moves
 	black $@
 	mv $@ src/service_integration/$@
+
+
+
+#
+# Docker image (executable)
+#
+
+.PHONY: build build-nc
+build build-nc: ## [docker] builds docker image of executable w/ or w/o cache
+	# Building docker image for ${PACKAGE_NAME} ...
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${PACKAGE_NAME}
+	# Test run
+	docker run -it local/${PACKAGE_NAME}:production --version
+
+.PHONY: inspect
+inspect:
+	docker image inspect local/${PACKAGE_NAME}:production | jq '.[0] | .RepoTags, .Config.Labels, .Architecture'
+
+
+.PHONY: shell
+shell:
+	docker run -it --entrypoint bash local/${PACKAGE_NAME}:production

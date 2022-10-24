@@ -7,6 +7,23 @@
 #
 version: "3.8"
 services:
+  service-integration:
+    # NOTE: this is NOT a service but an executable of service-integration library
+    image: local/service-integration:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: packages/service-integration/Dockerfile
+      cache_from:
+        - local/service-integration:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/service-integration:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/service-integration:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/service-integration:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
+
   api-server:
     image: local/api-server:${BUILD_TARGET:?build_target_required}
     build:

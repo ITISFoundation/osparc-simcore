@@ -45,7 +45,7 @@ CLIENT_WEB_OUTPUT       := $(CURDIR)/services/static-webserver/client/source-out
 
 # version control
 export VCS_URL          := $(shell git config --get remote.origin.url)
-export VCS_REF          := $(shell git rev-parse --short HEAD)
+export VCS_REF          := $(shell git rev-parse HEAD)
 export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/static-webserver/client)
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")

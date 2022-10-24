@@ -63,14 +63,17 @@ WORKDIR /build
 COPY --chown=scu:scu packages/models-library packages/models-library
 COPY --chown=scu:scu packages/service-integration packages/service-integration
 
-# create a venv and install there
-RUN make install-prod
+
+# make install-prod
+RUN cd packages/service-integration \
+  && pip install --no-cache-dir -r requirements/_base.txt \
+  && pip install --no-cache-dir ../models-library/ \
+  && pip install --no-cache-dir .
+
 
 # -------------------------- Build stage -------------------
 
 FROM base as production
-# New image, copy venv here and add entrypoint and cmd
-# COPY
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
