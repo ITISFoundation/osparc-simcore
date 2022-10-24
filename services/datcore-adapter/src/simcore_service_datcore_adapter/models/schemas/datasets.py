@@ -42,7 +42,7 @@ class FileMetaData(BaseModel):
         if package["content"]["packageType"] != "Collection" and files:
             file_size = files[0]["content"]["size"]
 
-        return cls.construct(
+        return cls(
             dataset_id=package["content"]["datasetNodeId"],
             package_id=package["content"]["nodeId"],
             id=package["content"]["id"],
