@@ -11,7 +11,7 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-
+aiocache
 boto3
 aiofiles
 fastapi
