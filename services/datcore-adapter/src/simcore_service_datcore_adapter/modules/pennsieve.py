@@ -1,14 +1,13 @@
 import asyncio
+import functools
 import logging
-from functools import lru_cache
 from itertools import islice
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Final, Optional, TypedDict, Union, cast
 
-import pennsieve
+import boto3
+from aiocache import cached
 from fastapi.applications import FastAPI
-from pennsieve import Pennsieve
-from pennsieve.models import BaseCollection
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
@@ -19,24 +18,6 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 logger = logging.getLogger(__name__)
 
 Total = int
-
-# NOTE: each pennsieve client seems to be about 8MB. so let's keep max 32
-@lru_cache(maxsize=32)
-def _create_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
-    return Pennsieve(api_token=api_key, api_secret=api_secret)
-
-
-async def _get_pennsieve_client(api_key: str, api_secret: str) -> Pennsieve:
-    return await asyncio.get_event_loop().run_in_executor(
-        None,
-        lambda: _create_pennsieve_client(api_key=api_key, api_secret=api_secret),
-    )
-
-
-async def _get_authorization_headers(api_key: str, api_secret: str) -> dict[str, str]:
-    ps: Pennsieve = await _get_pennsieve_client(api_key=api_key, api_secret=api_secret)
-    bearer_code = ps._api.token  # pylint: disable=protected-access
-    return {"Authorization": f"Bearer {bearer_code}"}
 
 
 def _compute_file_path(
@@ -52,9 +33,52 @@ def _compute_file_path(
     return Path(file_path)
 
 
+class PennsieveAuthorizationHeaders(TypedDict):
+    Authorization: str
+
+
+_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[
+    int
+] = 3530  # pennsieve authorizes 3600 seconds
+
+
 class PennsieveApiClient(BaseServiceClientApi):
-    """The client uses a combination of the pennsieve official API client to authenticate,
-    then uses the internal httpx-based client to call the REST API asynchronously"""
+    """The client uses the internal httpx-based client to call the REST API asynchronously"""
+
+    @cached(ttl=_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS)
+    async def _get_authorization_headers(
+        self, api_key: str, api_secret: str
+    ) -> PennsieveAuthorizationHeaders:
+        # get Pennsieve cognito configuration
+        response = await self.client.get("/authentication/cognito-config")
+        response.raise_for_status()
+        cognito_config = response.json()
+        # get the bearer code
+        cognito_client = await asyncio.get_event_loop().run_in_executor(
+            None,
+            functools.partial(
+                boto3.client,
+                "cognito-idp",
+                region_name=cognito_config["region"],
+                aws_access_key_id="",
+                aws_secret_access_key="",
+            ),
+        )
+        login_response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            functools.partial(
+                cognito_client.initiate_auth,
+                AuthFlow="USER_PASSWORD_AUTH",
+                AuthParameters={"USERNAME": api_key, "PASSWORD": api_secret},
+                ClientId=cognito_config["tokenPool"]["appClientId"],
+            ),
+        )
+        bearer_code = login_response["AuthenticationResult"]["AccessToken"]
+        pennsieve_header = PennsieveAuthorizationHeaders(
+            Authorization=f"Bearer {bearer_code}"
+        )
+
+        return pennsieve_header
 
     async def _request(
         self,
@@ -68,7 +92,10 @@ class PennsieveApiClient(BaseServiceClientApi):
         response = await self.client.request(
             method,
             path,
-            headers=await _get_authorization_headers(api_key, api_secret),
+            headers=cast(
+                dict[str, str],
+                await self._get_authorization_headers(api_key, api_secret),
+            ),
             params=params,
             json=json,
         )
@@ -353,32 +380,6 @@ class PennsieveApiClient(BaseServiceClientApi):
         """deletes the file in datcore"""
         await self._request(
             api_key, api_secret, "POST", "/data/delete", json={"things": [obj_id]}
-        )
-
-    @staticmethod
-    async def upload_file(
-        api_key: str,
-        api_secret: str,
-        file: Path,
-        dataset_id: str,
-        collection_id: Optional[str] = None,
-    ) -> None:
-        """uploads a file NOTE: uses the pennsieve agent and the pennsieve python client"""
-        ps = await _get_pennsieve_client(api_key, api_secret)
-        collection: Optional[pennsieve.models.BaseCollection] = None
-        if collection_id:
-            collection = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: ps.get(collection_id)
-            )
-        else:
-            collection = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: ps.get_dataset(dataset_id)
-            )
-        if collection is None:
-            raise ValueError("could not retrieve collection where to upload the file")
-
-        await asyncio.get_event_loop().run_in_executor(
-            None, lambda: cast(BaseCollection, collection).upload(file.as_posix())
         )
 
 
