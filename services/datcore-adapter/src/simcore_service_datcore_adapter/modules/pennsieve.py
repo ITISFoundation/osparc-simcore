@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import logging
 from itertools import islice
 from pathlib import Path
@@ -8,6 +7,7 @@ from typing import Any, Final, Optional, TypedDict, Union, cast
 import boto3
 from aiocache import cached
 from fastapi.applications import FastAPI
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from starlette.datastructures import URL
 
@@ -44,6 +44,25 @@ _TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[
 ] = 3530  # pennsieve authorizes 3600 seconds
 
 
+def _get_bearer_code(
+    cognito_config: dict[str, Any], api_key: str, api_secret: str
+) -> PennsieveAuthorizationHeaders:
+    session = boto3.Session()  # NOTE: needed since boto3 client is not thread safe
+    cognito_client = session.client(
+        "cognito-idp",
+        region_name=cognito_config["region"],
+        aws_access_key_id="",
+        aws_secret_access_key="",
+    )
+    login_response = cognito_client.initiate_auth(
+        AuthFlow="USER_PASSWORD_AUTH",
+        AuthParameters={"USERNAME": api_key, "PASSWORD": api_secret},
+        ClientId=cognito_config["tokenPool"]["appClientId"],
+    )
+    bearer_code = login_response["AuthenticationResult"]["AccessToken"]
+    return PennsieveAuthorizationHeaders(Authorization=f"Bearer {bearer_code}")
+
+
 class PennsieveApiClient(BaseServiceClientApi):
     """The client uses the internal httpx-based client to call the REST API asynchronously"""
 
@@ -55,29 +74,8 @@ class PennsieveApiClient(BaseServiceClientApi):
         response = await self.client.get("/authentication/cognito-config")
         response.raise_for_status()
         cognito_config = response.json()
-        # get the bearer code
-        cognito_client = await asyncio.get_event_loop().run_in_executor(
-            None,
-            functools.partial(
-                boto3.client,
-                "cognito-idp",
-                region_name=cognito_config["region"],
-                aws_access_key_id="",
-                aws_secret_access_key="",
-            ),
-        )
-        login_response = await asyncio.get_event_loop().run_in_executor(
-            None,
-            functools.partial(
-                cognito_client.initiate_auth,
-                AuthFlow="USER_PASSWORD_AUTH",
-                AuthParameters={"USERNAME": api_key, "PASSWORD": api_secret},
-                ClientId=cognito_config["tokenPool"]["appClientId"],
-            ),
-        )
-        bearer_code = login_response["AuthenticationResult"]["AccessToken"]
-        pennsieve_header = PennsieveAuthorizationHeaders(
-            Authorization=f"Bearer {bearer_code}"
+        pennsieve_header = await asyncio.get_event_loop().run_in_executor(
+            None, _get_bearer_code, cognito_config, api_key, api_secret
         )
 
         return pennsieve_header
@@ -247,7 +245,9 @@ class PennsieveApiClient(BaseServiceClientApi):
         ]
         package_files = dict(
             await logged_gather(
-                *package_files_tasks, max_concurrency=_GATHER_MAX_CONCURRENCY
+                *package_files_tasks,
+                log=logger,
+                max_concurrency=_GATHER_MAX_CONCURRENCY,
             )
         )
         return (
@@ -293,7 +293,9 @@ class PennsieveApiClient(BaseServiceClientApi):
         ]
         package_files = dict(
             await logged_gather(
-                *package_files_tasks, max_concurrency=_GATHER_MAX_CONCURRENCY
+                *package_files_tasks,
+                log=logger,
+                max_concurrency=_GATHER_MAX_CONCURRENCY,
             )
         )
 
@@ -323,6 +325,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         num_packages, dataset_details = await logged_gather(
             self._get_dataset_packages_count(api_key, api_secret, dataset_id),
             self._get_dataset(api_key, api_secret, dataset_id),
+            log=logger,
         )
         base_path = Path(dataset_details["content"]["name"])
 
@@ -336,7 +339,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                 {p["content"]["id"]: p for p in resp.get("packages", [])}
             )
             logger.info(
-                "received packages [%s/%s], cursor: %s",
+                "received dataset packages [%s/%s], cursor: %s",
                 len(all_packages),
                 num_packages,
                 cursor,
@@ -351,23 +354,34 @@ class PennsieveApiClient(BaseServiceClientApi):
             for pck_id, pck_data in all_packages.items()
             if pck_data["content"]["packageType"] != "Collection"
         ]
-
-        package_files = dict(
-            await logged_gather(
-                *package_files_tasks, max_concurrency=_GATHER_MAX_CONCURRENCY
-            )
-        )
-        for package_id, package in all_packages.items():
-            if package["content"]["packageType"] == "Collection":
-                continue
-
-            file_path = base_path / _compute_file_path(all_packages, package)
-
-            file_meta_data.append(
-                FileMetaData.from_pennsieve_package(
-                    package, package_files[package_id], file_path.parent
+        with log_context(
+            logger=logger,
+            level=logging.DEBUG,
+            msg=f"fetching {len(package_files_tasks)} file information",
+        ):
+            package_files = dict(
+                await logged_gather(
+                    *package_files_tasks,
+                    log=logger,
+                    max_concurrency=_GATHER_MAX_CONCURRENCY,
                 )
             )
+        with log_context(
+            logger=logger,
+            level=logging.DEBUG,
+            msg=f"fetching {len(all_packages) - len(package_files_tasks)} collection information",
+        ):
+            for package_id, package in all_packages.items():
+                if package["content"]["packageType"] == "Collection":
+                    continue
+
+                file_path = base_path / _compute_file_path(all_packages, package)
+
+                file_meta_data.append(
+                    FileMetaData.from_pennsieve_package(
+                        package, package_files[package_id], file_path.parent
+                    )
+                )
 
         return file_meta_data
 
