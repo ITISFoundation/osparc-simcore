@@ -54,3 +54,11 @@ def test_process_handles_signals(
     process.join()
 
     assert process.exitcode == 0, "Please check logs above for error"
+
+
+def test_process_settings(
+    env: None, cli_runner: CliRunner, caplog_info_debug: LogCaptureFixture
+):
+    result = cli_runner.invoke(main, ["settings"])
+    print(result.stdout)
+    assert result.exit_code == 0, _format_cli_error(result)
