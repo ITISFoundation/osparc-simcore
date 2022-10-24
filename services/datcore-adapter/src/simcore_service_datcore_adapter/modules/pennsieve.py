@@ -8,6 +8,7 @@ from typing import Any, Final, Optional, TypedDict, Union, cast
 import boto3
 from aiocache import cached
 from fastapi.applications import FastAPI
+from servicelib.utils import logged_gather
 from starlette.datastructures import URL
 
 from ..core.settings import PennsieveSettings
@@ -18,6 +19,7 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 logger = logging.getLogger(__name__)
 
 Total = int
+_GATHER_MAX_CONCURRENCY = 10
 
 
 def _compute_file_path(
@@ -243,7 +245,11 @@ class PennsieveApiClient(BaseServiceClientApi):
             for pck in islice(dataset_pck["children"], offset, offset + limit)
             if pck["content"]["packageType"] != "Collection"
         ]
-        package_files = dict(await asyncio.gather(*package_files_tasks))
+        package_files = dict(
+            await logged_gather(
+                *package_files_tasks, max_concurrency=_GATHER_MAX_CONCURRENCY
+            )
+        )
         return (
             [
                 FileMetaData.from_pennsieve_package(
@@ -279,14 +285,17 @@ class PennsieveApiClient(BaseServiceClientApi):
             )
             / collection_pck["content"]["name"]
         )
-        # TODO: improve speed using gather!!
         # get the information about the files
         package_files_tasks = [
             self._get_pck_id_files(api_key, api_secret, pck["content"]["id"], pck)
             for pck in islice(collection_pck["children"], offset, offset + limit)
             if pck["content"]["packageType"] != "Collection"
         ]
-        package_files = dict(await asyncio.gather(*package_files_tasks))
+        package_files = dict(
+            await logged_gather(
+                *package_files_tasks, max_concurrency=_GATHER_MAX_CONCURRENCY
+            )
+        )
 
         return (
             [
@@ -311,7 +320,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         cursor = ""
         PAGE_SIZE = 1000
 
-        num_packages, dataset_details = await asyncio.gather(
+        num_packages, dataset_details = await logged_gather(
             self._get_dataset_packages_count(api_key, api_secret, dataset_id),
             self._get_dataset(api_key, api_secret, dataset_id),
         )
@@ -343,7 +352,11 @@ class PennsieveApiClient(BaseServiceClientApi):
             if pck_data["content"]["packageType"] != "Collection"
         ]
 
-        package_files = dict(await asyncio.gather(*package_files_tasks))
+        package_files = dict(
+            await logged_gather(
+                *package_files_tasks, max_concurrency=_GATHER_MAX_CONCURRENCY
+            )
+        )
         for package_id, package in all_packages.items():
             if package["content"]["packageType"] == "Collection":
                 continue
