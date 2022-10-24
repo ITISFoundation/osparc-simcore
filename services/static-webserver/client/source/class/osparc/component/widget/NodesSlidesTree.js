@@ -218,7 +218,6 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           fnct = this.__moveDown;
           break;
       }
-      this.changeSelectedNode(item.getModel().getNodeId());
       if (fnct.call(this, item.getModel())) {
         this.__tree.refresh();
       }
