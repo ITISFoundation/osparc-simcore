@@ -1,9 +1,13 @@
 """
     AppData refers to instances of dataclasses stored in the FastApi application
 """
+from dataclasses import dataclass
+from typing import ClassVar
+
 from fastapi import FastAPI
 
 
+@dataclass
 class AppDataMixin:
     """
     appdata preserves a single instance of the data within an app context
@@ -12,9 +16,11 @@ class AppDataMixin:
     of the derived class
     """
 
+    state_attr_name: ClassVar[str]
+
     @classmethod
     def create_once(cls, app: FastAPI, **data):
-        """ Creates a single instance in app """
+        """Creates a single instance in app"""
 
         obj = cls.get_instance(app)
         if not obj:
@@ -31,7 +37,7 @@ class AppDataMixin:
 
     @classmethod
     def get_instance(cls, app: FastAPI):
-        """ Gets single instance in app if any, otherwise returns None """
+        """Gets single instance in app if any, otherwise returns None"""
         assert issubclass(cls, AppDataMixin), "AppDataMixin must be inherited!"
 
         try:

@@ -519,6 +519,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs

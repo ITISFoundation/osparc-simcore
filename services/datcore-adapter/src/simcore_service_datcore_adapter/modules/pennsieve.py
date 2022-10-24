@@ -2,7 +2,7 @@ import asyncio
 import logging
 from itertools import islice
 from pathlib import Path
-from typing import Any, Final, Optional, TypedDict, Union, cast
+from typing import Any, Final, Optional, TypedDict, cast
 
 import boto3
 from aiocache import cached
@@ -27,7 +27,7 @@ def _compute_file_path(
 ) -> Path:
     file_path = Path(pck["content"]["name"])
     if "extension" in pck:
-        file_path = ".".join((f"{file_path}", pck["extension"]))
+        file_path = Path(".".join((f"{file_path}", pck["extension"])))
     if parent_id := pck["content"].get("parentId"):
         file_path = (
             _compute_file_path(all_packages, all_packages[parent_id]) / file_path
@@ -97,7 +97,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         path: str,
         params: Optional[dict[str, Any]] = None,
         json: Optional[dict[str, Any]] = None,
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    ) -> Any:
         response = await self.client.request(
             method,
             path,

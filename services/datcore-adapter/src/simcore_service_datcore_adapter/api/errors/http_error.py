@@ -25,7 +25,7 @@ def make_http_error_handler_for_exception(
     SEE https://docs.python.org/3/library/exceptions.html#concrete-exceptions
     """
 
-    async def _http_error_handler(_: Request, exc: exception_cls) -> JSONResponse:
+    async def _http_error_handler(_: Request, exc: type[BaseException]) -> JSONResponse:
         assert isinstance(exc, exception_cls)  # nosec
         details = override_detail_message or f"{exc}"
         return JSONResponse(
