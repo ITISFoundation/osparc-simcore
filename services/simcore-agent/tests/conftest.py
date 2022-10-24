@@ -16,7 +16,7 @@ from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.r_clone import S3Provider
-from simcore_service_simcore_agent.settings import ApplicationSettings
+from simcore_service_simcore_agent._settings import ApplicationSettings
 
 pytestmark = pytest.mark.asyncio
 

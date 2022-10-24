@@ -14,7 +14,7 @@ from typing import Final, Iterator, Optional
 import pytest
 from pydantic import PositiveFloat
 from pytest import LogCaptureFixture
-from simcore_service_simcore_agent.app import Application
+from simcore_service_simcore_agent._app import Application
 
 REPEAT_TASK_INTERVAL_S: Final[PositiveFloat] = 0.05
 SOCKET_ADDRESS: tuple[str, int] = ("127.0.0.1", 2001)

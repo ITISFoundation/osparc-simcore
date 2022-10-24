@@ -132,7 +132,7 @@ HEALTHCHECK --interval=30s \
   --timeout=20s \
   --start-period=30s \
   --retries=3 \
-  CMD ["python3", "services/simcore-agent/docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["/bin/sh", "services/simcore-agent/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/simcore-agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/simcore-agent/docker/boot.sh"]

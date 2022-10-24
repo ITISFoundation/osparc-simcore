@@ -6,11 +6,8 @@ from contextlib import suppress
 from typing import Any, Callable, Coroutine, Final, Optional
 
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.logging_utils import config_all_loggers
 
 from ._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from .settings import ApplicationSettings
-from .volumes_cleanup import backup_and_remove_volumes
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +29,7 @@ class Application:
 
         self._tasks: set[asyncio.Task] = set()
         self._coroutines: set[Coroutine] = set()
+        self._registered_coroutines: set[str] = set()
 
     async def _exit_gracefully(self, loop: asyncio.AbstractEventLoop):
         for task in self._tasks:
@@ -41,6 +39,9 @@ class Application:
 
         logger.info(APP_FINISHED_BANNER_MSG)
         loop.stop()
+
+    def list_running(self) -> str:
+        return "\n- ".join(["Running tasks:"] + list(self._registered_coroutines))
 
     def add_job(
         self,
@@ -80,6 +81,7 @@ class Application:
                 )
 
         self._coroutines.add(_task_runner())
+        self._registered_coroutines.add(target.__name__)
 
     def run(self) -> None:
         logger.info(APP_STARTED_BANNER_MSG)
@@ -90,25 +92,3 @@ class Application:
 
         self._loop.run_until_complete(_get_tasks_from_coroutines())
         self._loop.run_forever()
-
-
-def setup_logger(settings: ApplicationSettings):
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
-    logging.basicConfig(level=settings.LOGLEVEL.value)  # NOSONAR
-    logging.root.setLevel(settings.LOGLEVEL.value)
-    config_all_loggers()
-
-
-def create_application() -> Application:
-    app = Application()
-
-    settings = ApplicationSettings.create_from_envs()
-    setup_logger(settings)
-
-    app.add_job(
-        backup_and_remove_volumes,
-        settings,
-        repeat_interval_s=settings.SIMCORE_AGENT_INTERVAL_VOLUMES_CLEANUP_S,
-    )
-
-    return app

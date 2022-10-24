@@ -11,7 +11,7 @@ from pydantic import HttpUrl
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
-from simcore_service_simcore_agent.settings import ApplicationSettings
+from simcore_service_simcore_agent._settings import ApplicationSettings
 from simcore_service_simcore_agent.volumes_cleanup import backup_and_remove_volumes
 
 

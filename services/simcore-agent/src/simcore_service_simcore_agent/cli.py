@@ -3,9 +3,11 @@ import logging
 import typer
 from settings_library.utils_cli import create_settings_command
 
+from ._app import Application
+from ._main import create_application
 from ._meta import APP_NAME
-from .app import Application, create_application
-from .settings import ApplicationSettings
+from ._settings import ApplicationSettings
+from .info import request_info
 
 log = logging.getLogger(__name__)
 
@@ -19,3 +21,9 @@ def run():
     """Runs application"""
     app: Application = create_application()
     app.run()
+
+
+@main.command()
+def info():
+    """Prints information about the status of a local running agent"""
+    typer.echo(request_info())
