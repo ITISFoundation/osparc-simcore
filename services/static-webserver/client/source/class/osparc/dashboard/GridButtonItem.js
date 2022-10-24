@@ -34,7 +34,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   },
 
   statics: {
-    MENU_BTN_WIDTH: 25
+    MENU_BTN_WIDTH: 32
   },
 
   members: {
