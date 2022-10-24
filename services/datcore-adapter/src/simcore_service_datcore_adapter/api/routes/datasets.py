@@ -1,10 +1,6 @@
 import logging
-import tempfile
-from pathlib import Path
-from typing import List
 
-import aiofiles
-from fastapi import APIRouter, Depends, File, Header, Request, UploadFile
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
@@ -70,35 +66,6 @@ async def list_dataset_top_level_files(
     return create_page(items=file_metas, total=total, params=params)
 
 
-@router.post(
-    "/datasets/{dataset_id}/files",
-    summary="uploads a file into a dataset",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@cancellable_request
-async def upload_file(
-    _request: Request,
-    dataset_id: str,
-    file: UploadFile = File(...),
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-):
-    # the file must be locally available to be uploaded via the pennsieve agent
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        received_file = Path(tmp_dir) / file.filename
-        async with aiofiles.open(received_file, "wb") as out_fd:
-            while content := await file.read(16 * 1024):
-                await out_fd.write(content)
-        # now upload to pennsieve
-        await pennsieve_client.upload_file(
-            api_key=x_datcore_api_key,
-            api_secret=x_datcore_api_secret,
-            file=received_file,
-            dataset_id=dataset_id,
-        )
-
-
 @router.get(
     "/datasets/{dataset_id}/files/{collection_id}",
     summary="list top level files/folders in a collection in a dataset",
@@ -128,42 +95,11 @@ async def list_dataset_collection_files(
     return create_page(items=file_metas, total=total, params=params)
 
 
-@router.post(
-    "/datasets/{dataset_id}/files/{collection_id}",
-    summary="uploads a file into a collection",
-    status_code=status.HTTP_202_ACCEPTED,
-)
-@cancellable_request
-async def upload_file_in_collection(
-    _request: Request,
-    dataset_id: str,
-    collection_id: str,
-    file: UploadFile = File(...),
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-):
-    # the file must be locally available to be uploaded via the pennsieve agent
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        received_file = Path(tmp_dir) / file.filename
-        async with aiofiles.open(received_file, "wb") as out_fd:
-            while content := await file.read(16 * 1024):
-                await out_fd.write(content)
-        # now upload to pennsieve
-        await pennsieve_client.upload_file(
-            api_key=x_datcore_api_key,
-            api_secret=x_datcore_api_secret,
-            file=received_file,
-            dataset_id=dataset_id,
-            collection_id=collection_id,
-        )
-
-
 @router.get(
     "/datasets/{dataset_id}/files_legacy",
     summary="list all file meta data in dataset",
     status_code=status.HTTP_200_OK,
-    response_model=List[FileMetaDataOut],
+    response_model=list[FileMetaDataOut],
 )
 @cancellable_request
 async def list_dataset_files_legacy(
@@ -172,7 +108,7 @@ async def list_dataset_files_legacy(
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-) -> List[FileMetaDataOut]:
+) -> list[FileMetaDataOut]:
     file_metas = await pennsieve_client.list_all_dataset_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
