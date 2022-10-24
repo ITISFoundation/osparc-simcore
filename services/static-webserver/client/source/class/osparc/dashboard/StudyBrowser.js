@@ -583,6 +583,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
+      const studyDataButton = this.__getStudyDataMenuButton(studyData);
+      menu.add(studyDataButton);
+
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
@@ -634,6 +637,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
           console.error(err);
         });
+    },
+
+    __getStudyDataMenuButton: function(studyData) {
+      const studyDataButton = new qx.ui.menu.Button(this.tr("Study Data"));
+      studyDataButton.addListener("execute", () => {
+        const studyDataManager = new osparc.dashboard.StudyDataBrowser();
+        studyDataManager.initResources();
+        osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["label"], 900, 600).set({
+          appearance: "service-window"
+        });
+      }, this);
+      return studyDataButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {
