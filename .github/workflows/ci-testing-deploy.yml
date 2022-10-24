@@ -1937,7 +1937,9 @@ jobs:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
+        run: |
+          make load-images local-src=/${{ runner.temp }}/build
+          make info-images
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'
