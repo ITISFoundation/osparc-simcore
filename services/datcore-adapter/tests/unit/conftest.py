@@ -329,7 +329,7 @@ async def pennsieve_subsystem_mock(
 
             # download file
             mock.get(
-                url__regex=rf"https://api.pennsieve.io/packages/.+/files/[\S]+$"
+                url__regex=r"https://api.pennsieve.io/packages/.+/files/[\S]+$"
             ).respond(
                 status.HTTP_200_OK,
                 json={"url": faker.url()},
