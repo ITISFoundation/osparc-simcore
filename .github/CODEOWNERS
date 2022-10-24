@@ -32,6 +32,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/docker-compose*.yml             @sanderegg @Surfict @mrnicegyu11
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
+/services/simcore-agent                   @GitHK
 /services/static-webserver                @GitHK
 /services/static-webserver/client/        @odeimaiz
 /services/storage/                        @sanderegg @pcrespov
