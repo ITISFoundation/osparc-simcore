@@ -17,7 +17,9 @@ router = APIRouter()
 log = logging.getLogger(__file__)
 
 _MINUTE: Final[int] = 60
-_PENNSIEVE_CACHING_TTL_S: Final[int] = 5 * _MINUTE
+_PENNSIEVE_CACHING_TTL_S: Final[int] = (
+    5 * _MINUTE
+)  # NOTE: this caching time is arbitrary
 
 
 @router.get(
