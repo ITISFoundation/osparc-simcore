@@ -64,7 +64,7 @@ COPY --chown=scu:scu packages/models-library packages/models-library
 COPY --chown=scu:scu packages/service-integration packages/service-integration
 
 
-# make install-prod
+# Equivalent to `make install-prod`
 RUN cd packages/service-integration \
   && pip install --no-cache-dir -r requirements/_base.txt \
   && pip install --no-cache-dir ../models-library/ \
