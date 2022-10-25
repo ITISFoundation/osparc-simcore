@@ -1,15 +1,21 @@
 import asyncio
 import logging
+from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
 from typing import Any, Final, Optional, TypedDict, cast
 
 import boto3
-from aiocache import cached
+from aiocache import SimpleMemoryCache
 from fastapi.applications import FastAPI
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
+from starlette import status
 from starlette.datastructures import URL
+from tenacity import TryAgain, retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
 
 from ..core.settings import PennsieveSettings
 from ..models.domains.user import Profile
@@ -43,10 +49,12 @@ _TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[
     int
 ] = 3530  # NOTE: observed while developing this code, pennsieve authorizes 3600 seconds, so we cache a bit less
 
+ExpirationTimeSecs = int
+
 
 def _get_bearer_code(
     cognito_config: dict[str, Any], api_key: str, api_secret: str
-) -> PennsieveAuthorizationHeaders:
+) -> tuple[PennsieveAuthorizationHeaders, ExpirationTimeSecs]:
     """according to https://docs.pennsieve.io/recipes
     ..."""
     session = boto3.Session()  # NOTE: needed since boto3 client is not thread safe
@@ -62,13 +70,19 @@ def _get_bearer_code(
         ClientId=cognito_config["tokenPool"]["appClientId"],
     )
     bearer_code = login_response["AuthenticationResult"]["AccessToken"]
-    return PennsieveAuthorizationHeaders(Authorization=f"Bearer {bearer_code}")
+    expiration_time = login_response["AuthenticationResult"]["ExpiresIn"]
+    return (
+        PennsieveAuthorizationHeaders(Authorization=f"Bearer {bearer_code}"),
+        expiration_time,
+    )
 
 
+@dataclass
 class PennsieveApiClient(BaseServiceClientApi):
     """The client uses the internal httpx-based client to call the REST API asynchronously"""
 
-    @cached(ttl=_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS)
+    _bearer_cache = SimpleMemoryCache()
+
     async def _get_authorization_headers(
         self, api_key: str, api_secret: str
     ) -> PennsieveAuthorizationHeaders:
@@ -80,15 +94,33 @@ class PennsieveApiClient(BaseServiceClientApi):
         correct the issue in the above mentioned recipe
         """
         # get Pennsieve cognito configuration
-        response = await self.client.get("/authentication/cognito-config")
-        response.raise_for_status()
-        cognito_config = response.json()
-        pennsieve_header = await asyncio.get_event_loop().run_in_executor(
-            None, _get_bearer_code, cognito_config, api_key, api_secret
+        if pennsieve_header := await self._bearer_cache.get(f"{api_key}_{api_secret}"):
+            return pennsieve_header
+
+        with log_context(
+            logger, logging.DEBUG, msg="getting new authorization headers"
+        ):
+            response = await self.client.get("/authentication/cognito-config")
+            response.raise_for_status()
+            cognito_config = response.json()
+            (
+                pennsieve_header,
+                expiration_time,
+            ) = await asyncio.get_event_loop().run_in_executor(
+                None, _get_bearer_code, cognito_config, api_key, api_secret
+            )
+
+        await self._bearer_cache.set(
+            f"{api_key}_{api_secret}", pennsieve_header, ttl=expiration_time - 30
         )
 
         return pennsieve_header
 
+    @retry(
+        stop=stop_after_attempt(2),
+        retry=retry_if_exception_type(TryAgain),
+        before_sleep=before_sleep_log(logger=logger, log_level=logging.WARNING),
+    )
     async def _request(
         self,
         api_key: str,
@@ -108,6 +140,10 @@ class PennsieveApiClient(BaseServiceClientApi):
             params=params,
             json=json,
         )
+        if response.status_code == status.HTTP_401_UNAUTHORIZED:
+            # NOTE: the cached bearer code might be expired
+            await self._bearer_cache.delete(f"{api_key}_{api_secret}")
+            raise TryAgain
         response.raise_for_status()
         return response.json()
 
