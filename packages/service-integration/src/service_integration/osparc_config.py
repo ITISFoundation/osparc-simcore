@@ -85,7 +85,7 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
     def from_yaml(cls, path: Path) -> "DockerComposeOverwriteCfg":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-            return cls.parse_obj(data)
+        return cls.parse_obj(data)
 
 
 class MetaConfig(ServiceDockerData):
