@@ -245,8 +245,9 @@ def get_bearer_code_mock(
     mocker.patch(
         "simcore_service_datcore_adapter.modules.pennsieve._get_bearer_code",
         autospec=True,
-        return_value=PennsieveAuthorizationHeaders(
-            Authorization=f"Bearer {faker.uuid4()}"
+        return_value=(
+            PennsieveAuthorizationHeaders(Authorization=f"Bearer {faker.uuid4()}"),
+            500,
         ),
     )
 
