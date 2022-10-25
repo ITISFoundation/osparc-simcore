@@ -3,30 +3,6 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
-RUN set -eux && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-  gosu && \
-  rm -rf /var/lib/apt/lists/* && \
-  # verify that the binary works
-  gosu nobody true
-
-
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
@@ -35,7 +11,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
-
 
 
 # -------------------------- Build stage -------------------
@@ -77,5 +52,5 @@ FROM base as production
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-ENV PYTHONOPTIMIZE=TRUE
+# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE since excutable contains pytest code
 ENTRYPOINT [ "ooil" ]
