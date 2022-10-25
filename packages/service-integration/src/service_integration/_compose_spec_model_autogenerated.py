@@ -5,7 +5,6 @@
 # type: ignore
 # nopycln: file
 
-from __future__ import annotations
 
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
@@ -25,8 +24,6 @@ SCHEMA_VERSION = SCHEMA_URL.split("/")[-2]
 # UserWarning: format of 'subnet_ip_address' not understood for 'string' - using default
 
 PortInt = conint(gt=0, lt=65535)
-# TODO: format "duration" https://schema.org/Duration
-# TODO: format "expose"
 
 # ----------------------------------------------------------------------------------------
 
@@ -77,7 +74,7 @@ class Logging(BaseModel):
         extra = Extra.forbid
 
     driver: Optional[str] = None
-    options: Optional[Dict[constr(regex=r"^.+$"), Optional[Union[str, float]]]] = None
+    options: Optional[dict[constr(regex=r"^.+$"), Optional[Union[str, float]]]] = None
 
 
 class Port(BaseModel):
@@ -161,7 +158,7 @@ class Healthcheck(BaseModel):
     disable: Optional[bool] = None
     interval: Optional[str] = None
     retries: Optional[float] = None
-    test: Optional[Union[str, List[str]]] = None
+    test: Optional[Union[str, list[str]]] = None
     timeout: Optional[str] = None
     start_period: Optional[str] = None
 
@@ -229,8 +226,8 @@ class Placement(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    constraints: Optional[List[str]] = None
-    preferences: Optional[List[Preference]] = None
+    constraints: Optional[list[str]] = None
+    preferences: Optional[list[Preference]] = None
     max_replicas_per_node: Optional[int] = None
 
 
@@ -250,7 +247,7 @@ class GenericResource(BaseModel):
 
 
 class GenericResources(BaseModel):
-    __root__: List[GenericResource]
+    __root__: list[GenericResource]
 
 
 class ConfigItem(BaseModel):
@@ -260,7 +257,7 @@ class ConfigItem(BaseModel):
     subnet: Optional[str] = None
     ip_range: Optional[str] = None
     gateway: Optional[str] = None
-    aux_addresses: Optional[Dict[constr(regex=r"^.+$"), str]] = None
+    aux_addresses: Optional[dict[constr(regex=r"^.+$"), str]] = None
 
 
 class Ipam(BaseModel):
@@ -268,8 +265,8 @@ class Ipam(BaseModel):
         extra = Extra.forbid
 
     driver: Optional[str] = None
-    config: Optional[List[ConfigItem]] = None
-    options: Optional[Dict[constr(regex=r"^.+$"), str]] = None
+    config: Optional[list[ConfigItem]] = None
+    options: Optional[dict[constr(regex=r"^.+$"), str]] = None
 
 
 class External(BaseModel):
@@ -295,12 +292,12 @@ class External3(BaseModel):
 
 
 class ListOfStrings(BaseModel):
-    __root__: List[str]
+    __root__: list[str]
 
 
 class ListOrDict(BaseModel):
     __root__: Union[
-        Dict[constr(regex=r".+"), Optional[Union[str, float, bool]]], List[str]
+        dict[constr(regex=r".+"), Optional[Union[str, float, bool]]], list[str]
     ]
 
 
@@ -332,7 +329,7 @@ class BuildItem(BaseModel):
     dockerfile: Optional[str] = None
     args: Optional[ListOrDict] = None
     labels: Optional[ListOrDict] = None
-    cache_from: Optional[List[str]] = None
+    cache_from: Optional[list[str]] = None
     network: Optional[str] = None
     target: Optional[str] = None
     shm_size: Optional[Union[int, str]] = None
@@ -344,12 +341,12 @@ class BlkioConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    device_read_bps: Optional[List[BlkioLimit]] = None
-    device_read_iops: Optional[List[BlkioLimit]] = None
-    device_write_bps: Optional[List[BlkioLimit]] = None
-    device_write_iops: Optional[List[BlkioLimit]] = None
+    device_read_bps: Optional[list[BlkioLimit]] = None
+    device_read_iops: Optional[list[BlkioLimit]] = None
+    device_write_bps: Optional[list[BlkioLimit]] = None
+    device_write_iops: Optional[list[BlkioLimit]] = None
     weight: Optional[int] = None
-    weight_device: Optional[List[BlkioWeight]] = None
+    weight_device: Optional[list[BlkioWeight]] = None
 
 
 class Network1(BaseModel):
@@ -375,7 +372,7 @@ class Device(BaseModel):
 
 
 class Devices(BaseModel):
-    __root__: List[Device]
+    __root__: list[Device]
 
 
 class Network(BaseModel):
@@ -384,7 +381,7 @@ class Network(BaseModel):
 
     name: Optional[str] = None
     driver: Optional[str] = None
-    driver_opts: Optional[Dict[constr(regex=r"^.+$"), Union[str, float]]] = None
+    driver_opts: Optional[dict[constr(regex=r"^.+$"), Union[str, float]]] = None
     ipam: Optional[Ipam] = None
     external: Optional[External] = None
     internal: Optional[bool] = None
@@ -399,7 +396,7 @@ class Volume(BaseModel):
 
     name: Optional[str] = None
     driver: Optional[str] = None
-    driver_opts: Optional[Dict[constr(regex=r"^.+$"), Union[str, float]]] = None
+    driver_opts: Optional[dict[constr(regex=r"^.+$"), Union[str, float]]] = None
     external: Optional[External1] = None
     labels: Optional[ListOrDict] = None
 
@@ -413,7 +410,7 @@ class Secret(BaseModel):
     external: Optional[External2] = None
     labels: Optional[ListOrDict] = None
     driver: Optional[str] = None
-    driver_opts: Optional[Dict[constr(regex=r"^.+$"), Union[str, float]]] = None
+    driver_opts: Optional[dict[constr(regex=r"^.+$"), Union[str, float]]] = None
     template_driver: Optional[str] = None
 
 
@@ -472,11 +469,11 @@ class Service(BaseModel):
     deploy: Optional[Deployment] = None
     build: Optional[Union[str, BuildItem]] = None
     blkio_config: Optional[BlkioConfig] = None
-    cap_add: Optional[List[str]] = None
-    cap_drop: Optional[List[str]] = None
+    cap_add: Optional[list[str]] = None
+    cap_drop: Optional[list[str]] = None
     cgroup_parent: Optional[str] = None
-    command: Optional[Union[str, List[str]]] = None
-    configs: Optional[List[Union[str, Configuration]]] = None
+    command: Optional[Union[str, list[str]]] = None
+    configs: Optional[list[Union[str, Configuration]]] = None
     container_name: Optional[str] = None
     cpu_count: Optional[conint(ge=0)] = None
     cpu_percent: Optional[conint(ge=0, le=100)] = None
@@ -489,22 +486,22 @@ class Service(BaseModel):
     cpuset: Optional[str] = None
     credential_spec: Optional[CredentialSpec] = None
     depends_on: Optional[
-        Union[ListOfStrings, Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), DependsOn]]
+        Union[ListOfStrings, dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), DependsOn]]
     ] = None
     device_cgroup_rules: Optional[ListOfStrings] = None
-    devices: Optional[List[str]] = None
+    devices: Optional[list[str]] = None
     dns: Optional[StringOrList] = None
-    dns_opt: Optional[List[str]] = None
+    dns_opt: Optional[list[str]] = None
     dns_search: Optional[StringOrList] = None
     domainname: Optional[str] = None
-    entrypoint: Optional[Union[str, List[str]]] = None
+    entrypoint: Optional[Union[str, list[str]]] = None
     env_file: Optional[StringOrList] = None
     environment: Optional[ListOrDict] = None
-    expose: Optional[List[Union[str, float]]] = None
+    expose: Optional[list[Union[str, float]]] = None
     extends: Optional[Union[str, Extend]] = None
-    external_links: Optional[List[str]] = None
+    external_links: Optional[list[str]] = None
     extra_hosts: Optional[ListOrDict] = None
-    group_add: Optional[List[Union[str, float]]] = None
+    group_add: Optional[list[Union[str, float]]] = None
     healthcheck: Optional[Healthcheck] = None
     hostname: Optional[str] = None
     image: Optional[str] = None
@@ -512,7 +509,7 @@ class Service(BaseModel):
     ipc: Optional[str] = None
     isolation: Optional[str] = None
     labels: Optional[ListOrDict] = None
-    links: Optional[List[str]] = None
+    links: Optional[list[str]] = None
     logging: Optional[Logging] = None
     mac_address: Optional[str] = None
     mem_limit: Optional[Union[float, str]] = None
@@ -522,7 +519,7 @@ class Service(BaseModel):
     network_mode: Optional[str] = None
     networks: Optional[
         Union[
-            ListOfStrings, Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Optional[Network1]]
+            ListOfStrings, dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Optional[Network1]]
         ]
     ] = None
     oom_kill_disable: Optional[bool] = None
@@ -530,7 +527,7 @@ class Service(BaseModel):
     pid: Optional[Optional[str]] = None
     pids_limit: Optional[Union[float, str]] = None
     platform: Optional[str] = None
-    ports: Optional[List[Union[PortInt, str, Port]]] = None
+    ports: Optional[list[Union[PortInt, str, Port]]] = None
     privileged: Optional[bool] = None
     profiles: Optional[ListOfStrings] = None
     pull_policy: Optional[PullPolicy] = None
@@ -538,21 +535,21 @@ class Service(BaseModel):
     restart: Optional[str] = None
     runtime: Optional[str] = None
     scale: Optional[int] = None
-    security_opt: Optional[List[str]] = None
+    security_opt: Optional[list[str]] = None
     shm_size: Optional[Union[float, str]] = None
-    secrets: Optional[List[Union[str, Secret1]]] = None
+    secrets: Optional[list[Union[str, Secret1]]] = None
     sysctls: Optional[ListOrDict] = None
     stdin_open: Optional[bool] = None
     stop_grace_period: Optional[str] = None
     stop_signal: Optional[str] = None
-    storage_opt: Optional[Dict[str, Any]] = None
+    storage_opt: Optional[dict[str, Any]] = None
     tmpfs: Optional[StringOrList] = None
     tty: Optional[bool] = None
-    ulimits: Optional[Dict[constr(regex=r"^[a-z]+$"), Union[int, Ulimit]]] = None
+    ulimits: Optional[dict[constr(regex=r"^[a-z]+$"), Union[int, Ulimit]]] = None
     user: Optional[str] = None
     userns_mode: Optional[str] = None
-    volumes: Optional[List[Union[str, Volume1]]] = None
-    volumes_from: Optional[List[str]] = None
+    volumes: Optional[list[Union[str, Volume1]]] = None
+    volumes_from: Optional[list[str]] = None
     working_dir: Optional[str] = None
 
 
@@ -568,8 +565,8 @@ class ComposeSpecification(BaseModel):
         None,
         description="Version of the Compose specification used. Tools not implementing required version MUST reject the configuration file.",
     )
-    services: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Service]] = None
-    networks: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network]] = None
-    volumes: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume]] = None
-    secrets: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret]] = None
-    configs: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Config]] = None
+    services: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Service]] = None
+    networks: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network]] = None
+    volumes: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume]] = None
+    secrets: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret]] = None
+    configs: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Config]] = None
