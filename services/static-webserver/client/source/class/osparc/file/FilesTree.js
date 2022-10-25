@@ -228,8 +228,8 @@ qx.Class.define("osparc.file.FilesTree", {
             this.__resetTree(nodeTreeName);
             const rootNodeModel = this.getModel();
             if (nodeData.children.length) {
-              const filesOnly = nodeData.children;
-              this.__filesToRoot(filesOnly);
+              const nodeItemsOnly = nodeData.children;
+              this.__itemsToNode(nodeItemsOnly);
             }
             this.openNode(rootNodeModel);
 
@@ -402,11 +402,11 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
-    __filesToRoot: function(files) {
+    __itemsToNode: function(files) {
       const currentModel = this.getModel();
       this.self().removeLoadingChild(currentModel);
 
-      files.forEach(file => file["pathLabel"] = currentModel.getPathLabel().concat(file["label"]));
+      files.forEach(file => this.self().attachPathLabel(currentModel.getPathLabel(), file));
       const newModelToAdd = qx.data.marshal.Json.createModel(files, true);
       currentModel.getChildren().append(newModelToAdd);
       this.setModel(currentModel);
