@@ -35,7 +35,8 @@ def create_image_spec(
 
     service_name = meta_cfg.service_name()
 
-    # TODO: review this override design with ANE! ----
+    assert docker_compose_overwrite_cfg.services  # nosec
+
     if not docker_compose_overwrite_cfg.services[service_name].build.context:
         docker_compose_overwrite_cfg.services[service_name].build.context = "./"
 
@@ -45,7 +46,6 @@ def create_image_spec(
         exclude_none=True
     )
     build_spec = BuildItem(**overwrite_options)
-    # -----
 
     compose_spec = ComposeSpecification(
         version=settings.COMPOSE_VERSION,
