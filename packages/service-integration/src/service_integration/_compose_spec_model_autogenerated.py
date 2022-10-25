@@ -413,7 +413,7 @@ class Secret(BaseModel):
     template_driver: Optional[str] = None
 
 
-class ComposeConfig(BaseModel):
+class ComposeSpecConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
@@ -568,4 +568,6 @@ class ComposeSpecification(BaseModel):
     networks: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network]] = None
     volumes: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume]] = None
     secrets: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret]] = None
-    configs: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), ComposeConfig]] = None
+    configs: Optional[
+        dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), ComposeSpecConfig]
+    ] = None
