@@ -1353,6 +1353,7 @@ jobs:
         unit-test-webserver-03,
       ]
     if: success()
+    runs-on: ubuntu-latest
     outputs:
       success: ${{ steps.setoutput.outputs.success }}
     steps:
