@@ -87,12 +87,10 @@ def s3_simcore_location() -> LocationID:
 @pytest.fixture
 def create_valid_file_uuid(
     project_id: str, node_uuid: str
-) -> Callable[[Path], SimcoreS3FileID]:
-    def _create(file_path: Path) -> SimcoreS3FileID:
-        return parse_obj_as(
-            SimcoreS3FileID,
-            f"{project_id}/{node_uuid}/{file_path.name}",
-        )
+) -> Callable[[str, Path], SimcoreS3FileID]:
+    def _create(key: str, file_path: Path) -> SimcoreS3FileID:
+        clean_path = Path(f"{project_id}/{node_uuid}/{key}/{file_path.name}")
+        return parse_obj_as(SimcoreS3FileID, f"{clean_path}")
 
     return _create
 
@@ -125,7 +123,7 @@ def create_node_link() -> Callable[[str], dict[str, str]]:
 
 @pytest.fixture()
 def create_store_link(
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     user_id: int,
     project_id: str,
@@ -136,7 +134,7 @@ def create_store_link(
         file_path = Path(file_path)
         assert file_path.exists()
 
-        file_id = create_valid_file_uuid(file_path)
+        file_id = create_valid_file_uuid("", file_path)
         url = URL(
             f"{storage_service}/v0/locations/{s3_simcore_location}/files/{urllib.parse.quote(file_id, safe='')}"
         ).with_query(user_id=user_id, file_size=0)
