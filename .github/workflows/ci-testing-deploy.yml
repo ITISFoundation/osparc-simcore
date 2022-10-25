@@ -131,7 +131,6 @@ jobs:
               - 'packages/**'
               - 'services/migration/**'
             static-webserver:
-              - 'packages/**'
               - 'services/static-webserver/**'
             storage:
               - 'packages/**'
