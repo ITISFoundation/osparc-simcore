@@ -3,9 +3,9 @@
     Mostly resolves and redirect to storage API
 """
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Final, Optional, Union
 
-from aiohttp import ClientResponse, web
+from aiohttp import ClientResponse, ClientTimeout, web
 from models_library.api_schemas_storage import (
     FileUploadCompleteResponse,
     FileUploadSchema,
@@ -135,10 +135,17 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     return create_data_response(payload, status=status)
 
 
+_LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
+
+
 @login_required
 @permission_required("storage.files.*")
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
-    payload, status = await _request_storage(request, "GET")
+    payload, status = await _request_storage(
+        request,
+        "GET",
+        timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
+    )
     return create_data_response(payload, status=status)
 
 

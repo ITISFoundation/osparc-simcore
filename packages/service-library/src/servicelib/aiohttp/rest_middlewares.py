@@ -2,6 +2,7 @@
 
     SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
+import asyncio
 import json
 import logging
 from typing import Awaitable, Callable, Union
@@ -118,6 +119,15 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
                 err,
                 str(err),
                 web.HTTPNotImplemented,
+                skip_internal_error_details=_is_prod,
+            )
+            raise error_response from err
+
+        except asyncio.TimeoutError as err:
+            error_response = create_error_response(
+                err,
+                f"{err}",
+                web.HTTPGatewayTimeout,
                 skip_internal_error_details=_is_prod,
             )
             raise error_response from err
