@@ -82,7 +82,7 @@ build build-nc: ## [docker] builds docker image of executable w/ or w/o cache
 	# Building docker image for ${PACKAGE_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${PACKAGE_NAME}
 	# Test run
-	docker run -it local/${PACKAGE_NAME}:production --version
+	docker run local/${PACKAGE_NAME}:production --version
 
 .PHONY: inspect
 inspect:
