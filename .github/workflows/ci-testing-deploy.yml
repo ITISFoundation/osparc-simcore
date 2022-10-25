@@ -1352,7 +1352,6 @@ jobs:
         unit-test-webserver-02,
         unit-test-webserver-03,
       ]
-    if: success()
     runs-on: ubuntu-latest
     outputs:
       success: ${{ steps.setoutput.outputs.success }}
@@ -1806,6 +1805,22 @@ jobs:
         if: always()
         run: ./ci/github/system-testing/public-api.bash clean_up
 
+  integration-tests:
+    needs:
+      [
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
+        integration-test-simcore-sdk,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
+      ]
+    runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.setoutput.outputs.success }}
+    steps:
+      - id: setoutput
+        run: echo "::set-output name=success::true"
+
   system-test-swarm-deploy:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything == 'true' }}
@@ -1999,6 +2014,21 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/environment-setup.bash clean_up
+
+  system-tests:
+    needs:
+      [
+        system-test-e2e,
+        system-test-environment-setup,
+        system-test-public-api,
+        system-test-swarm-deploy,
+      ]
+    runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.setoutput.outputs.success }}
+    steps:
+      - id: setoutput
+        run: echo "::set-output name=success::true"
 
   coverage:
     needs:
