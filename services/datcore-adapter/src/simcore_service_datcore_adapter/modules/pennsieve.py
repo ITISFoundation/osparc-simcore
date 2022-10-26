@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import typing
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
@@ -95,7 +96,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         """
         # get Pennsieve cognito configuration
         if pennsieve_header := await self._bearer_cache.get(f"{api_key}_{api_secret}"):
-            return pennsieve_header
+            return typing.cast(PennsieveAuthorizationHeaders, pennsieve_header)
 
         with log_context(
             logger, logging.DEBUG, msg="getting new authorization headers"
@@ -114,7 +115,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             f"{api_key}_{api_secret}", pennsieve_header, ttl=expiration_time - 30
         )
 
-        return pennsieve_header
+        return typing.cast(PennsieveAuthorizationHeaders, pennsieve_header)
 
     @retry(
         stop=stop_after_attempt(2),
