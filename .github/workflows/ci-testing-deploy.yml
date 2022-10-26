@@ -522,6 +522,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: failure()
