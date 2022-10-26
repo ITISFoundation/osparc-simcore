@@ -76,7 +76,8 @@ jobs:
       storage: ${{ steps.filter.outputs.storage }}
       webserver: ${{ steps.filter.outputs.webserver }}
       anything: ${{ steps.filter.outputs.anything }}
-      python-linter: ${{ steps.filter.outputs.python-linter }}
+      anything-py: ${{ steps.filter.outputs.anything-py }}
+      anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
@@ -142,8 +143,10 @@ jobs:
             anything:
               - 'packages/**'
               - 'services/**'
-            python-linter:
+            anything-py:
               - '**/*.py'
+            anything-js:
+              - '**/*.js'
   build-test-images:
     # this step comes first, so that it is executed as first job in push calls
     # in PR calls this step is anyway skipped
@@ -974,7 +977,7 @@ jobs:
 
   unit-test-python-linting:
     needs: changes
-    if: ${{ needs.changes.outputs.python-linter == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
@@ -1365,7 +1368,7 @@ jobs:
 
   integration-test-webserver-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     runs-on: ${{ matrix.os }}
@@ -1439,7 +1442,7 @@ jobs:
 
   integration-test-webserver-02:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
     runs-on: ${{ matrix.os }}
@@ -1515,7 +1518,7 @@ jobs:
 
   integration-test-director-v2-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push'}}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push'}}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
     runs-on: ${{ matrix.os }}
@@ -1591,7 +1594,7 @@ jobs:
 
   integration-test-director-v2-02:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
     runs-on: ${{ matrix.os }}
@@ -1670,7 +1673,7 @@ jobs:
 
   integration-test-simcore-sdk:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     runs-on: ${{ matrix.os }}
@@ -1746,6 +1749,24 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
+  integration-tests:
+    # NOTE: this is a github required status check!
+    if: always()
+    needs:
+      [
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
+        integration-test-simcore-sdk,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
+      ]
+    runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.setoutput.outputs.success }}
+    steps:
+      - id: setoutput
+        run: echo "::set-output name=success::true"
+
   system-test-public-api:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
@@ -1808,23 +1829,6 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/public-api.bash clean_up
-
-  integration-tests:
-    if: always()
-    needs:
-      [
-        integration-test-director-v2-01,
-        integration-test-director-v2-02,
-        integration-test-simcore-sdk,
-        integration-test-webserver-01,
-        integration-test-webserver-02,
-      ]
-    runs-on: ubuntu-latest
-    outputs:
-      success: ${{ steps.setoutput.outputs.success }}
-    steps:
-      - id: setoutput
-        run: echo "::set-output name=success::true"
 
   system-test-swarm-deploy:
     needs: [changes, build-test-images]
