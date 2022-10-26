@@ -5,7 +5,7 @@ from typing import Optional
 import rich
 import typer
 
-from . import __version__
+from ._meta import __version__
 from .commands import compose, config, metadata, run_creator
 from .settings import AppSettings
 

@@ -519,7 +519,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: failure()
@@ -682,9 +685,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
-      - name: codestyle
-        run: ./ci/github/unit-testing/dask-task-models-library.bash codestyle
+      - name: typecheck
+        run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
@@ -784,9 +788,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
-      - name: codestyle
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
+      - name: typecheck
+        run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
@@ -1935,7 +1940,8 @@ jobs:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
+        run: |
+          make load-images local-src=/${{ runner.temp }}/build
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'

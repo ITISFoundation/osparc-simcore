@@ -17,6 +17,13 @@ class DatcoreAdapterClientError(DatcoreAdapterException):
         super().__init__(msg=msg)
 
 
+class DatcoreAdapterTimeoutError(DatcoreAdapterException):
+    """client timeout when accessing datcore adapter server"""
+
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg=msg)
+
+
 class DatcoreAdapterServerError(DatcoreAdapterException):
     """server error"""
 
