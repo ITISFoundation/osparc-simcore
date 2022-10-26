@@ -53,10 +53,11 @@ def setup_client_instance(
     assert issubclass(api_cls, BaseServiceClientApi)
 
     def _create_instance() -> None:
+        # NOTE: http2 is explicitely disabled due to the issue https://github.com/encode/httpx/discussions/2112
         api_cls.create_once(
             app,
             client=httpx.AsyncClient(
-                http2=True, base_url=api_baseurl, timeout=api_general_timeout
+                http2=False, base_url=api_baseurl, timeout=api_general_timeout
             ),
             service_name=service_name,
             **extra_fields
