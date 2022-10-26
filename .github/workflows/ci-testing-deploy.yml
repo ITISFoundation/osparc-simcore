@@ -1179,6 +1179,9 @@ jobs:
         unit-test-webserver-03,
       ]
     runs-on: ubuntu-latest
+    steps:
+      - name: all unit tests were run or skipped
+        run: echo "all unit tests were run or skipped"
 
   integration-test-webserver-01:
     needs: [changes, build-test-images]
@@ -1525,6 +1528,9 @@ jobs:
         integration-test-webserver-02,
       ]
     runs-on: ubuntu-latest
+    steps:
+      - name: all unit tests were run or skipped
+        run: echo "all unit tests were run or skipped"
 
   system-test-public-api:
     needs: [changes, build-test-images]
@@ -1794,6 +1800,9 @@ jobs:
         system-test-swarm-deploy,
       ]
     runs-on: ubuntu-latest
+    steps:
+      - name: all unit tests were run or skipped
+        run: echo "all unit tests were run or skipped"
 
   deploy:
     name: deploy to dockerhub
