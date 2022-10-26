@@ -66,7 +66,7 @@ ENV POSTGRES_USER=scu \
   POSTGRES_HOST=postgres \
   POSTGRES_PORT=5432 \
   POSTGRES_DB=simcoredb \
-  SC_DONE_FILE=migration.done
+  SC_DONE_MARK_FILE=migration.done
 
 
 WORKDIR /home/scu
