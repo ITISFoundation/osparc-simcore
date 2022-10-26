@@ -1,22 +1,25 @@
 import logging
-import tempfile
-from pathlib import Path
-from typing import List
+from typing import Final
 
-import aiofiles
-from fastapi import APIRouter, Depends, File, Header, Request, UploadFile
+from aiocache import cached
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi_pagination import Page, Params
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import RawParams
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
 
 from ...models.domains.datasets import DatasetsOut, FileMetaDataOut
 from ...modules.pennsieve import PennsieveApiClient
-from ...utils.requests_decorators import cancellable_request
 from ..dependencies.pennsieve import get_pennsieve_api_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
+
+_MINUTE: Final[int] = 60
+_PENNSIEVE_CACHING_TTL_S: Final[int] = (
+    5 * _MINUTE
+)  # NOTE: this caching time is arbitrary
 
 
 @router.get(
@@ -25,14 +28,19 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
     response_model=Page[DatasetsOut],
 )
-@cancellable_request
+@cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['params']}",
+)
 async def list_datasets(
-    _request: Request,
+    request: Request,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[DatasetsOut]:
+    assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
     datasets, total = await pennsieve_client.list_datasets(
         api_key=x_datcore_api_key,
@@ -49,15 +57,20 @@ async def list_datasets(
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
-@cancellable_request
+@cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['params']}",
+)
 async def list_dataset_top_level_files(
-    _request: Request,
+    request: Request,
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[FileMetaDataOut]:
+    assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
     file_metas, total = await pennsieve_client.list_packages_in_dataset(
@@ -70,44 +83,19 @@ async def list_dataset_top_level_files(
     return create_page(items=file_metas, total=total, params=params)
 
 
-@router.post(
-    "/datasets/{dataset_id}/files",
-    summary="uploads a file into a dataset",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@cancellable_request
-async def upload_file(
-    _request: Request,
-    dataset_id: str,
-    file: UploadFile = File(...),
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-):
-    # the file must be locally available to be uploaded via the pennsieve agent
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        received_file = Path(tmp_dir) / file.filename
-        async with aiofiles.open(received_file, "wb") as out_fd:
-            while content := await file.read(16 * 1024):
-                await out_fd.write(content)
-        # now upload to pennsieve
-        await pennsieve_client.upload_file(
-            api_key=x_datcore_api_key,
-            api_secret=x_datcore_api_secret,
-            file=received_file,
-            dataset_id=dataset_id,
-        )
-
-
 @router.get(
     "/datasets/{dataset_id}/files/{collection_id}",
     summary="list top level files/folders in a collection in a dataset",
     status_code=status.HTTP_200_OK,
     response_model=Page[FileMetaDataOut],
 )
-@cancellable_request
+@cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['collection_id']}_{kwargs['params']}",
+)
 async def list_dataset_collection_files(
-    _request: Request,
+    request: Request,
     dataset_id: str,
     collection_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
@@ -115,6 +103,7 @@ async def list_dataset_collection_files(
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
     params: Params = Depends(),
 ) -> Page[FileMetaDataOut]:
+    assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
 
     file_metas, total = await pennsieve_client.list_packages_in_collection(
@@ -128,51 +117,25 @@ async def list_dataset_collection_files(
     return create_page(items=file_metas, total=total, params=params)
 
 
-@router.post(
-    "/datasets/{dataset_id}/files/{collection_id}",
-    summary="uploads a file into a collection",
-    status_code=status.HTTP_202_ACCEPTED,
-)
-@cancellable_request
-async def upload_file_in_collection(
-    _request: Request,
-    dataset_id: str,
-    collection_id: str,
-    file: UploadFile = File(...),
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-):
-    # the file must be locally available to be uploaded via the pennsieve agent
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        received_file = Path(tmp_dir) / file.filename
-        async with aiofiles.open(received_file, "wb") as out_fd:
-            while content := await file.read(16 * 1024):
-                await out_fd.write(content)
-        # now upload to pennsieve
-        await pennsieve_client.upload_file(
-            api_key=x_datcore_api_key,
-            api_secret=x_datcore_api_secret,
-            file=received_file,
-            dataset_id=dataset_id,
-            collection_id=collection_id,
-        )
-
-
 @router.get(
     "/datasets/{dataset_id}/files_legacy",
     summary="list all file meta data in dataset",
     status_code=status.HTTP_200_OK,
-    response_model=List[FileMetaDataOut],
+    response_model=list[FileMetaDataOut],
 )
-@cancellable_request
+@cancel_on_disconnect
+@cached(
+    ttl=_PENNSIEVE_CACHING_TTL_S,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}",
+)
 async def list_dataset_files_legacy(
-    _request: Request,
+    request: Request,
     dataset_id: str,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-) -> List[FileMetaDataOut]:
+) -> list[FileMetaDataOut]:
+    assert request  # nosec
     file_metas = await pennsieve_client.list_all_dataset_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,

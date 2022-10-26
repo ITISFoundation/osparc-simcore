@@ -157,7 +157,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             get_dynamic_sidecar_spec(
                 scheduler_data=scheduler_data,
                 dynamic_sidecar_settings=dynamic_sidecar_settings,
-                dynamic_sidecar_network_id=dynamic_sidecar_network_id,
                 swarm_network_id=swarm_network_id,
                 settings=settings,
                 app_settings=app.state.settings,

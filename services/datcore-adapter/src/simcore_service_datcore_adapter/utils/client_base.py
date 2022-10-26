@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Optional
 
 import httpx
 from fastapi import FastAPI
@@ -42,7 +42,7 @@ class BaseServiceClientApi(AppDataMixin):
 
 def setup_client_instance(
     app: FastAPI,
-    api_cls: Type[BaseServiceClientApi],
+    api_cls: type[BaseServiceClientApi],
     api_baseurl: str,
     service_name: str,
     api_general_timeout: float = 5.0,
@@ -53,9 +53,12 @@ def setup_client_instance(
     assert issubclass(api_cls, BaseServiceClientApi)
 
     def _create_instance() -> None:
+        # NOTE: http2 is explicitely disabled due to the issue https://github.com/encode/httpx/discussions/2112
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(http2=True, base_url=api_baseurl, timeout=api_general_timeout),
+            client=httpx.AsyncClient(
+                http2=False, base_url=api_baseurl, timeout=api_general_timeout
+            ),
             service_name=service_name,
             **extra_fields
         )
