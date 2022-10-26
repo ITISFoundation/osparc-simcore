@@ -5,10 +5,13 @@
 #
 # NOTE: linter error 'missing image' happens with the file is called 'docker-compose.build.yml'
 #
+# NOTE: service-integration is NOT a stack service but an executable of the service-integration library
+#
+# NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
+#
 version: "3.8"
 services:
   service-integration:
-    # NOTE: this is NOT a service but an executable of service-integration library
     image: local/service-integration:${BUILD_TARGET:?build_target_required}
     build:
       context: ../
@@ -113,9 +116,6 @@ services:
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
-
-  # dask-scheduler: *build-dask-sidecar
-  # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 
   director-v2:
     image: local/director-v2:${BUILD_TARGET:?build_target_required}
