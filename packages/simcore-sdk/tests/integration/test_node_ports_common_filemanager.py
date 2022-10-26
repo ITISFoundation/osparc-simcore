@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
 
-import np_helpers
 import pytest
 from aiohttp import ClientError
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
@@ -55,7 +54,7 @@ async def test_valid_upload_download(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     file_size: ByteSize,
     create_file_of_size: Callable[[ByteSize, str], Path],
@@ -65,7 +64,7 @@ async def test_valid_upload_download(
 ):
     file_path = create_file_of_size(file_size, "test.test")
 
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,
@@ -109,7 +108,7 @@ async def test_valid_upload_download_using_file_object(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     file_size: ByteSize,
     create_file_of_size: Callable[[ByteSize, str], Path],
@@ -117,7 +116,7 @@ async def test_valid_upload_download_using_file_object(
 ):
     file_path = create_file_of_size(file_size, "test.test")
 
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     with file_path.open("rb") as file_object:
         store_id, e_tag = await filemanager.upload_file(
             user_id=user_id,
@@ -176,7 +175,7 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
 async def test_failed_upload_is_properly_removed_from_storage(
     node_ports_config: None,
     create_file_of_size: Callable[[ByteSize], Path],
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     optional_r_clone: Optional[RCloneSettings],
     file_size: ByteSize,
@@ -184,7 +183,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
     mocked_upload_file_raising_exceptions: None,
 ):
     file_path = create_file_of_size(file_size)
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     with pytest.raises(exceptions.S3TransferError):
         await filemanager.upload_file(
             user_id=user_id,
@@ -211,7 +210,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
 async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     node_ports_config: None,
     create_file_of_size: Callable[[ByteSize], Path],
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     optional_r_clone: Optional[RCloneSettings],
     file_size: ByteSize,
@@ -220,7 +219,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
 ):
     # upload a valid file
     file_path = create_file_of_size(file_size)
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,
@@ -271,14 +270,14 @@ async def test_invalid_file_path(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     store = s3_simcore_location
     with pytest.raises(FileNotFoundError):
         await filemanager.upload_file(
@@ -350,9 +349,7 @@ async def test_errors_upon_invalid_file_identifiers(
             user_id=user_id,
             store_id=store,
             store_name=None,
-            s3_object=np_helpers.file_uuid(
-                Path("invisible.txt"), project_id, f"{uuid4()}"
-            ),
+            s3_object=SimcoreS3FileID(f"{project_id}/{uuid4()}/invisible.txt"),
             local_folder=download_folder,
             io_log_redirect_cb=None,
         )
@@ -362,13 +359,13 @@ async def test_invalid_store(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     store = "somefunkystore"
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.upload_file(
@@ -396,12 +393,12 @@ async def test_valid_metadata(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
 ):
     # first we go with a non-existing file
     file_path = Path(tmpdir) / "test.test"
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     assert file_path.exists() is False
 
     is_metadata_present = await filemanager.entry_exists(
@@ -413,7 +410,7 @@ async def test_valid_metadata(
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,
@@ -440,12 +437,12 @@ async def test_invalid_call_raises_exception(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     fct: Callable[[int, str, str, Optional[Any]], Awaitable],
 ):
     file_path = Path(tmpdir) / "test.test"
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     assert file_path.exists() is False
 
     with pytest.raises(exceptions.StorageInvalidCall):
@@ -464,14 +461,14 @@ async def test_delete_File(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = create_valid_file_uuid(file_path)
+    file_id = create_valid_file_uuid("", file_path)
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=s3_simcore_location,

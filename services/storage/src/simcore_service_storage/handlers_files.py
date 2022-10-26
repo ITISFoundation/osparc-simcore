@@ -160,7 +160,6 @@ async def upload_file(request: web.Request):
     """
     query_params = parse_request_query_parameters_as(FileUploadQueryParams, request)
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-
     log.debug(
         "received call to upload_file with %s",
         f"{path_params=}, {query_params=}",
