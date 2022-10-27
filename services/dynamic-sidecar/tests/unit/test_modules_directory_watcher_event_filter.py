@@ -11,12 +11,11 @@ from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.modules.directory_watcher._event_filter import (
     BaseDelayPolicy,
-    EventFilter,
     DefaultDelayPolicy,
+    EventFilter,
 )
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from watchdog.events import FileModifiedEvent, FileSystemEvent
-
 
 # FIXTURES
 
@@ -47,7 +46,8 @@ def port_keys(outputs_path: Path, port_key_1: str) -> list[str]:
 async def outputs_manager(
     outputs_path: Path, port_keys: list[str]
 ) -> AsyncIterator[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=outputs_path, port_keys=port_keys)
+    outputs_manager = OutputsManager(outputs_path=outputs_path)
+    outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()
 

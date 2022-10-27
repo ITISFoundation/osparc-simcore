@@ -64,8 +64,8 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_manager: OutputsManager,
-        delay_policy: BaseDelayPolicy,
         io_log_redirect_cb: Optional[LogRedirectCB],
+        delay_policy: BaseDelayPolicy = DefaultDelayPolicy(),
     ):
         self.outputs_manager = outputs_manager
         self.delay_policy = delay_policy
