@@ -123,6 +123,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return qx.locale.Manager.tr("Deprecated");
         case "starting":
           return qx.locale.Manager.tr("Starting...");
+        case "stopping":
+          return qx.locale.Manager.tr("Stopping...");
         case "pending":
           return qx.locale.Manager.tr("Pending...");
         case "pulling":

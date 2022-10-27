@@ -929,7 +929,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       };
       osparc.data.Resources.fetch("studies", "stopNode", params)
-        .then(data => this.__onNodeState(data, false))
+        .then(data => this.stopDynamicService())
         .catch(err => {});
       return true;
     },
@@ -1141,8 +1141,10 @@ qx.Class.define("osparc.data.model.Node", {
       switch (serviceState) {
         case "idle": {
           status.setInteractive("idle");
-          const interval = 2000;
-          qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
+          if (starting) {
+            const interval = 2000;
+            qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
+          }
           break;
         }
         case "pending": {
