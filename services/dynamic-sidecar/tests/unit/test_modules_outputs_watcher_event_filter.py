@@ -9,12 +9,12 @@ from unittest.mock import AsyncMock
 import pytest
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock.plugin import MockerFixture
-from simcore_service_dynamic_sidecar.modules.directory_watcher._event_filter import (
+from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
+from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
     BaseDelayPolicy,
     DefaultDelayPolicy,
     EventFilter,
 )
-from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from watchdog.events import FileModifiedEvent, FileSystemEvent
 
 # FIXTURES
