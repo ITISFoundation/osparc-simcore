@@ -91,4 +91,13 @@ inspect:
 
 .PHONY: shell
 shell:
-	docker run -it --entrypoint bash local/${PACKAGE_NAME}:production
+	docker run \
+    -it \
+    --rm \
+    --volume="/etc/group:/etc/group:ro" \
+    --volume="/etc/passwd:/etc/passwd:ro" \
+    --user="$(id --user "$(USER)")":"$(id --group "$(USER)")" \
+    --volume "$(PWD)":/src \
+    --workdir=/src \
+		--entrypoint bash \
+		local/${PACKAGE_NAME}:production
