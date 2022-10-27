@@ -60,7 +60,6 @@ concurrency:
 
 jobs:
   changes:
-    if: github.event_name == 'pull_request'
     name: detect file changes since last push
     runs-on: ubuntu-latest
     # Set job outputs to values from filter step
@@ -89,6 +88,8 @@ jobs:
       anything-py: ${{ steps.filter.outputs.anything-py }}
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
+      - uses: actions/checkout@v3
+        if: ${{ github.event_name == 'push' }}
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
         id: filter
