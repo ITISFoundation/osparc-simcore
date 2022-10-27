@@ -219,7 +219,7 @@ qx.Class.define("osparc.file.FilesTree", {
     __populateStudyFiles: function(studyId) {
       const treeName = "Study Files";
       this.__resetTree(treeName);
-      const studyModel = this.getModel();
+      let studyModel = this.getModel();
       this.self().addLoadingChild(studyModel);
 
       const dataStore = osparc.store.Data.getInstance();
@@ -232,6 +232,7 @@ qx.Class.define("osparc.file.FilesTree", {
           if (files.length && "project_name" in files[0]) {
             this.__resetTree(files[0]["project_name"]);
           }
+          studyModel = this.getModel();
           this.__filesToDataset("0", studyId, files, studyModel);
         });
     },
