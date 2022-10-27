@@ -9,6 +9,6 @@ class ProjectsSettings(BaseCustomSettings):
         " when copying a project (disable with 0)",
     )
     PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT: NonNegativeInt = Field(
-        default=3,
+        default=5,
         description="defines the number of dynamic services in a project that can be started concurrently",
     )
