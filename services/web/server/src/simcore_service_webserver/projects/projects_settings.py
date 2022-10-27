@@ -8,7 +8,7 @@ class ProjectsSettings(BaseCustomSettings):
         description="defines the maximum authorized project data size"
         " when copying a project (disable with 0)",
     )
-    PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT: NonNegativeInt = Field(
+    PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES: NonNegativeInt = Field(
         default=5,
-        description="defines the number of dynamic services in a project that can be started concurrently",
+        description="defines the number of dynamic services in a project that can be started concurrently (a value of 0 will disable it)",
     )

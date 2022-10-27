@@ -195,9 +195,9 @@ async def _start_dynamic_service(
     )
     project_settings = get_settings(request.app).WEBSERVER_PROJECTS
     assert project_settings  # nosec
-    if (
+    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
         len(project_running_nodes)
-        >= project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+        >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         raise ProjectStartsTooManyDynamicNodes(
             user_id=user_id, project_uuid=project_uuid
@@ -242,7 +242,7 @@ async def add_project_node(
         project["uuid"],
         user_id,
     )
-    node_uuid = service_id if service_id else str(uuid4())
+    node_uuid = service_id if service_id else f"{uuid4()}"
 
     # ensure the project is up-to-date in the database prior to start any potential service
     project_workbench = project.get("workbench", {})
@@ -873,9 +873,10 @@ async def run_project_dynamic_services(
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
-    if (
-        len(project_missing_services) + len(running_service_uuids)
-    ) > project_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT:
+    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
+        (len(project_missing_services) + len(running_service_uuids))
+        > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+    ):
         # we cannot start so many services so we are done
         raise ProjectStartsTooManyDynamicNodes(
             user_id=user_id, project_uuid=ProjectID(project["uuid"])

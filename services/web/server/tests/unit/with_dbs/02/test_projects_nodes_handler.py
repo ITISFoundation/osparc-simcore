@@ -321,6 +321,34 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
 
 
+@pytest.mark.parametrize(*standard_user_role())
+async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
+    disable_max_number_of_running_dynamic_nodes: dict[str, str],
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+):
+    assert client.app
+    project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
+    all_service_uuids = list(project["workbench"])
+    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+    ]
+    url = client.app.router["create_node"].url_for(project_id=project["uuid"])
+
+    # Use-case 1.: not passing a service UUID will generate a new one on the fly
+    body = {
+        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_version": faker.numerify("%.#.#"),
+    }
+    response = await client.post(f"{ url}", json=body)
+    await assert_status(response, expected.created)
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_called_once()
+
+
 @pytest.mark.parametrize(
     "node_class",
     [("dynamic"), ("comp"), ("frontend")],
@@ -366,11 +394,8 @@ async def test_start_node(
     max_amount_of_auto_started_dyn_services: int,
 ):
     assert client.app
-    assert (
-        max_amount_of_auto_started_dyn_services > 0
-    ), "this test does not make sense if the value is 0. TIP: remove the test then"
     project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services
+        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3)
     )
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
@@ -423,6 +448,37 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     assert not data
     assert error
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_to_0(
+    disable_max_number_of_running_dynamic_nodes: dict[str, str],
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+):
+    assert client.app
+    project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
+    all_service_uuids = list(project["workbench"])
+    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+        {"service_uuid": service_uuid} for service_uuid in all_service_uuids
+    ]
+    # start the node, shall work as expected
+    url = client.app.router["start_node"].url_for(
+        project_id=project["uuid"], node_id=choice(all_service_uuids)
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(
+        response,
+        expected.no_content,
+    )
+    assert not data
+    assert not error
+    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -481,11 +537,8 @@ async def test_stop_node(
     max_amount_of_auto_started_dyn_services: int,
 ):
     assert client.app
-    assert (
-        max_amount_of_auto_started_dyn_services > 0
-    ), "this test does not make sense if the value is 0. TIP: remove the test then"
     project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services
+        max_amount_of_auto_started_dyn_services or faker.pyint(min_value=3)
     )
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
@@ -495,7 +548,7 @@ async def test_stop_node(
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
-        web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content,
+        web.HTTPAccepted if user_role == UserRole.GUEST else expected.accepted,
     )
     if error is None:
         mocked_director_v2_api[

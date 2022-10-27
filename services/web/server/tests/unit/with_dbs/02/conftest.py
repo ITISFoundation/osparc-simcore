@@ -214,11 +214,19 @@ def assert_get_same_project_caller() -> Callable:
 
 
 @pytest.fixture
+def disable_max_number_of_running_dynamic_nodes(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    monkeypatch.setenv("PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES", "0")
+    return app_environment | {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES": "0"}
+
+
+@pytest.fixture
 def max_amount_of_auto_started_dyn_services(client: TestClient) -> int:
     assert client.app
     projects_settings = get_settings(client.app).WEBSERVER_PROJECTS
     assert projects_settings
-    return projects_settings.PROJECTS_MAX_AUTO_STARTED_DYNAMIC_NODES_PRE_PROJECT
+    return projects_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
 
 
 @pytest.fixture

@@ -294,7 +294,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     #  via the director_v2_api or director_v2_core_dynamic_services modules
     #
     for func_name in (
-        "get_dynamic_service_state",
+        "get_dynamic_service",
         "get_dynamic_services",
         "run_dynamic_service",
         "stop_dynamic_service",
