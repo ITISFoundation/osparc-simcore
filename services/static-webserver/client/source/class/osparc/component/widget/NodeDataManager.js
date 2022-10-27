@@ -25,7 +25,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let dataManager = new osparc.component.widget.NodeDataManager(nodeId);
+ *   let dataManager = new osparc.component.widget.NodeDataManager(null, nodeId);
  *   this.getRoot().add(dataManager);
  * </pre>
  */
@@ -34,16 +34,23 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
+    * @param studyId {String} StudyId
     * @param nodeId {String} NodeId
     */
-  construct: function(nodeId) {
+  construct: function(studyId, nodeId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    if (studyId) {
+      this.set({
+        studyId
+      });
+    }
+
     if (nodeId) {
       this.set({
-        nodeId: nodeId
+        nodeId
       });
     }
 
@@ -52,6 +59,12 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
   },
 
   properties: {
+    studyId: {
+      check: "String",
+      init: null,
+      nullable: false
+    },
+
     nodeId: {
       check: "String",
       init: null,
@@ -160,7 +173,12 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
     __reloadTree: function() {
       if (this.__filesTree) {
-        this.__filesTree.populateNodeTree(this.getNodeId());
+        if (this.getStudyId()) {
+          this.__filesTree.populateStudyTree(this.getStudyId());
+        }
+        if (this.getNodeId()) {
+          this.__filesTree.populateNodeTree(this.getNodeId());
+        }
       }
     },
 

@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     openNodeDataManager: function(node) {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(node.getNodeId());
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(null, node.getNodeId());
       const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, node.getLabel(), 900, 600).set({
         appearance: "service-window"
       });

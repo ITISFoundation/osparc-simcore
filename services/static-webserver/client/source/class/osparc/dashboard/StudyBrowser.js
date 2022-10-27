@@ -642,8 +642,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getStudyDataMenuButton: function(studyData) {
       const studyDataButton = new qx.ui.menu.Button(this.tr("Study Data"));
       studyDataButton.addListener("execute", () => {
-        const studyDataManager = new osparc.dashboard.StudyDataBrowser();
-        studyDataManager.initResources();
+        const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
         osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({
           appearance: "service-window"
         });

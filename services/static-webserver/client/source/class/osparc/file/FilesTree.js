@@ -145,6 +145,12 @@ qx.Class.define("osparc.file.FilesTree", {
       dataStore.resetCache();
     },
 
+    populateStudyTree(studyId) {
+      if (studyId) {
+        this.__populateStudyFiles(studyId);
+      }
+    },
+
     populateNodeTree(nodeId) {
       if (nodeId) {
         this.__populateNodeFiles(nodeId);
@@ -208,6 +214,16 @@ qx.Class.define("osparc.file.FilesTree", {
           }
         }
       }
+    },
+
+    __populateStudyFiles: function(studyId) {
+      const treeName = "Study Files";
+      this.__resetTree(treeName);
+      const rootModel = this.getModel();
+      this.self().addLoadingChild(rootModel);
+
+      console.log(studyId);
+      this.requestDatasetFiles("0", studyId);
     },
 
     __populateNodeFiles: function(nodeId) {
