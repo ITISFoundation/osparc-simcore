@@ -54,6 +54,7 @@ from ..docker_api import (
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
 from ..errors import (
+    DockerServiceNotFoundError,
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
     GenericDockerError,
@@ -235,11 +236,28 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
-        sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
-            # the service_name is unique and will not collide with other names
-            # it can be used in place of the service_id here, as the docker API accepts both
-            service_id=scheduler_data.service_name
-        )
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
+            # the service is in the process of stopping
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.STOPPING,
+                service_message=scheduler_data.dynamic_sidecar.status.info,
+            )
+        try:
+            sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
+                # the service_name is unique and will not collide with other names
+                # it can be used in place of the service_id here, as the docker API accepts both
+                service_id=scheduler_data.service_name
+            )
+        except DockerServiceNotFoundError:
+            # the dynamic sidecar does not exist
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.FAILED,
+                service_message=scheduler_data.dynamic_sidecar.status.info,
+            )
 
         # while the dynamic-sidecar state is not RUNNING report it's state
         if sidecar_state != ServiceState.RUNNING:
