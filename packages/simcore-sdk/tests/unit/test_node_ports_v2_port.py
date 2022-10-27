@@ -300,7 +300,7 @@ class PortParams(NamedTuple):
                 new_value=str(this_node_file_name()),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/no_file/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -323,7 +323,7 @@ class PortParams(NamedTuple):
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/no_file_with_default/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -392,7 +392,7 @@ class PortParams(NamedTuple):
                     key="some_file_on_datcore",
                     value={
                         "store": datcore_store_id(),
-                        "path": f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                        "path": f"{project_id()}/{node_uuid()}/some_file_on_datcore/{this_node_file_name().name}",
                         "dataset": "some blahblah",
                         "label": "some blahblah",
                     },
@@ -401,7 +401,7 @@ class PortParams(NamedTuple):
                 exp_value_converter=Path,
                 exp_value=FileLink(
                     store=datcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/some_file_on_datcore/{this_node_file_name().name}",
                     dataset="some blahblah",
                     label="some blahblah",
                 ),
@@ -411,7 +411,7 @@ class PortParams(NamedTuple):
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/some_file_on_datcore/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -440,7 +440,7 @@ class PortParams(NamedTuple):
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/download_link/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -472,7 +472,7 @@ class PortParams(NamedTuple):
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/download_link_with_file_to_key/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -503,7 +503,7 @@ class PortParams(NamedTuple):
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/file_port_link/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -537,7 +537,7 @@ class PortParams(NamedTuple):
                 new_value=this_node_file_name(),
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
-                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    path=f"{project_id()}/{node_uuid()}/file_port_link_with_file_to_key_map/{this_node_file_name().name}",
                     e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
@@ -643,7 +643,7 @@ async def test_valid_port(
         exp_get_value.touch()
 
     if exp_get_value is None:
-        assert await port.get() == None
+        assert await port.get() is None
     else:
         assert await port.get() == exp_get_value
         if isinstance(exp_value, PortLink) and isinstance(exp_get_value, Path):
@@ -661,7 +661,7 @@ async def test_valid_port(
         exp_new_get_value.parent.mkdir(parents=True, exist_ok=True)
         exp_new_get_value.touch()
     if exp_new_get_value is None:
-        assert await port.get() == None
+        assert await port.get() is None
     else:
         assert await port.get() == exp_new_get_value
         assert await port.get() == exp_new_get_value
@@ -728,4 +728,4 @@ async def test_invalid_file_type_setter(
 
     # set a folder fails too
     with pytest.raises(exceptions.InvalidItemTypeError):
-        await port.set_value(Path(__file__).parent)
+        await port.set_value(f"{Path(__file__).parent}")

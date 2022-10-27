@@ -201,9 +201,12 @@ async def push_file_to_store(
     node_id: str,
     io_log_redirect_cb: Optional[LogRedirectCB],
     r_clone_settings: Optional[RCloneSettings] = None,
+    file_base_path: Optional[Path] = None,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
-    s3_object = data_items_utils.create_simcore_file_id(file, project_id, node_id)
+    s3_object = data_items_utils.create_simcore_file_id(
+        file, project_id, node_id, file_base_path=file_base_path
+    )
     store_id, e_tag = await filemanager.upload_file(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,

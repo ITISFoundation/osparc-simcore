@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import pytest
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
@@ -20,7 +20,7 @@ from utils_port_v2 import create_valid_port_mapping
 )
 async def test_nodeports_auto_updates(
     mock_db_manager: Callable,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
     node_uuid: str,
@@ -75,7 +75,7 @@ async def test_nodeports_auto_updates(
 
 async def test_node_ports_accessors(
     mock_db_manager: Callable,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
     node_uuid: str,
@@ -128,7 +128,7 @@ async def test_node_ports_accessors(
     # test batch add
     await node_ports.set_multiple(
         {
-            port.key: port.value
+            port.key: (port.value, None)
             for port in list(original_inputs.values()) + list(original_outputs.values())
         }
     )
@@ -151,7 +151,7 @@ async def mock_upload_file(mocker, e_tag):
 
 async def test_node_ports_set_file_by_keymap(
     mock_db_manager: Callable,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
     node_uuid: str,
@@ -201,7 +201,7 @@ async def test_node_ports_set_file_by_keymap(
 
 async def test_node_ports_v2_packages(
     mock_db_manager: Callable,
-    default_configuration: Dict[str, Any],
+    default_configuration: dict[str, Any],
     user_id: int,
     project_id: str,
     node_uuid: str,
