@@ -76,6 +76,7 @@ class ServiceBootType(str, Enum):
 
 
 @total_ordering
+@unique
 class ServiceState(Enum):
     PENDING = "pending"
     PULLING = "pulling"
@@ -83,6 +84,7 @@ class ServiceState(Enum):
     RUNNING = "running"
     COMPLETE = "complete"
     FAILED = "failed"
+    STOPPING = "stopping"
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
@@ -102,7 +104,8 @@ class ServiceState(Enum):
             ServiceState.PULLING: 2,
             ServiceState.STARTING: 3,
             ServiceState.RUNNING: 4,
-            ServiceState.COMPLETE: 5,
+            ServiceState.STOPPING: 5,
+            ServiceState.COMPLETE: 6,
         }
 
 
