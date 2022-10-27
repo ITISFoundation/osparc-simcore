@@ -270,7 +270,7 @@ async def current_study(
 @pytest.fixture
 def workbench_dynamic_services(
     current_study: ProjectAtDB, sleeper_service: dict
-) -> dict[str, Node]:
+) -> dict[NodeIDStr, Node]:
     sleeper_key = sleeper_service["schema"]["key"]
     result = {k: v for k, v in current_study.workbench.items() if v.key != sleeper_key}
     assert len(result) == 2

@@ -97,9 +97,7 @@ async def upload_outputs(
             logger.debug("Checking port %s", port.key)
             if port_keys and port.key not in port_keys:
                 continue
-            logger.debug(
-                "uploading data to port '%s' with value '%s'...", port.key, port.value
-            )
+
             if _FILE_TYPE_PREFIX in port.property_type:
                 src_folder = outputs_path / port.key
                 files_and_folders_list = list(src_folder.rglob("*"))
@@ -154,7 +152,7 @@ async def upload_outputs(
                 if data_file.exists():
                     data = json.loads(data_file.read_text())
                     if port.key in data and data[port.key] is not None:
-                        ports_values[port.key] = data[port.key]
+                        ports_values[port.key] = (data[port.key], None)
                     else:
                         logger.debug("Port %s not found in %s", port.key, data)
                 else:
@@ -162,6 +160,7 @@ async def upload_outputs(
 
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
+
         await PORTS.set_multiple(ports_values)
 
         elapsed_time = time.perf_counter() - start_time
