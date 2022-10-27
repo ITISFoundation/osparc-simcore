@@ -48,6 +48,8 @@ RUN cd packages/service-integration \
 
 # -------------------------- Build stage -------------------
 
+FROM base as development
+# NOTE: this is necessary to allow to build development images but is the same as production here
 FROM base as production
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
