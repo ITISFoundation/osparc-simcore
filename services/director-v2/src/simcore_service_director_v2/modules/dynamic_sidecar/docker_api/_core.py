@@ -136,19 +136,26 @@ async def get_dynamic_sidecars_to_observe(
 
 
 async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
-    async with docker_client() as client:
-        running_services = await client.tasks.list(filters={"service": f"{service_id}"})
-        if not running_services:
-            raise DockerServiceNotFoundError(service_id=service_id)
+    try:
+        async with docker_client() as client:
+            running_services = await client.tasks.list(
+                filters={"service": f"{service_id}"}
+            )
+            if not running_services:
+                raise DockerServiceNotFoundError(service_id=service_id)
 
-        # The service might have more then one task because the
-        # previous might have died out.
-        # Only interested in the latest task as only one task per
-        # service will be running.
-        sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
+            # The service might have more then one task because the
+            # previous might have died out.
+            # Only interested in the latest task as only one task per
+            # service will be running.
+            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
 
-        last_task = sorted_tasks[-1]
-        return last_task
+            last_task = sorted_tasks[-1]
+            return last_task
+    except GenericDockerError as err:
+        if err.original_exception.status == 404:
+            raise DockerServiceNotFoundError(service_id=service_id) from err
+        raise
 
 
 async def get_dynamic_sidecar_placement(

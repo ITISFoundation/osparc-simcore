@@ -227,7 +227,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         # check if there was an error picked up by the scheduler
-        # and marked this service as failing
+        # and marked this service as failed
         if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
@@ -236,14 +236,16 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
+        # is the service stopping?
         if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
-            # the service is in the process of stopping
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
                 service_state=ServiceState.STOPPING,
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
+
+        # the service should be either running or starting
         try:
             sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
                 # the service_name is unique and will not collide with other names
@@ -251,11 +253,11 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_id=scheduler_data.service_name
             )
         except DockerServiceNotFoundError:
-            # the dynamic sidecar does not exist
+            # in this case, the service is starting, so state is pending
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
-                service_state=ServiceState.FAILED,
+                service_state=ServiceState.PENDING,
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
