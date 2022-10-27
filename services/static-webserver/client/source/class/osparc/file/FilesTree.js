@@ -219,11 +219,21 @@ qx.Class.define("osparc.file.FilesTree", {
     __populateStudyFiles: function(studyId) {
       const treeName = "Study Files";
       this.__resetTree(treeName);
-      const rootModel = this.getModel();
-      this.self().addLoadingChild(rootModel);
+      const studyModel = this.getModel();
+      this.self().addLoadingChild(studyModel);
 
-      console.log(studyId);
-      this.requestDatasetFiles("0", studyId);
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getFilesByLocationAndDataset("0", studyId)
+        .then(data => {
+          const {
+            files
+          } = data;
+
+          if (files.length && "project_name" in files[0]) {
+            this.__resetTree(files[0]["project_name"]);
+          }
+          this.__filesToDataset("0", studyId, files, studyModel);
+        });
     },
 
     __populateNodeFiles: function(nodeId) {
@@ -475,12 +485,12 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
-    __filesToDataset: function(locationId, datasetId, files) {
+    __filesToDataset: function(locationId, datasetId, files, model) {
       if (this.__datasets.has(datasetId)) {
         return;
       }
 
-      const datasetModel = this.__getDatasetModel(locationId, datasetId);
+      const datasetModel = model ? model : this.__getDatasetModel(locationId, datasetId);
       if (datasetModel) {
         datasetModel.getChildren().removeAll();
         if (files.length) {
