@@ -25,8 +25,8 @@ _1_MB: Final[PositiveInt] = _MB
 _500_MB: Final[PositiveInt] = 500 * _MB
 
 
-class BaseWaitPolicy(ABC):
-    def get_base(self) -> NonNegativeFloat:  # pylint:disable=no-self-use
+class BaseDelayPolicy(ABC):
+    def get_min_interval(self) -> NonNegativeFloat:  # pylint:disable=no-self-use
         return DEFAULT_OBSERVER_TIMEOUT
 
     @abstractmethod
@@ -34,7 +34,7 @@ class BaseWaitPolicy(ABC):
         """interval to wait based on directory size"""
 
 
-class DefaultWaitPolicy(BaseWaitPolicy):
+class DefaultDelayPolicy(BaseDelayPolicy):
     MIN_WAIT: Final[PositiveFloat] = 1
     MAX_WAIT: Final[PositiveFloat] = 10
 
@@ -57,18 +57,18 @@ class DefaultWaitPolicy(BaseWaitPolicy):
 @dataclass
 class TrackedEvent:
     last_detection: NonNegativeFloat
-    wait_interval: NonNegativeFloat
+    wait_interval: Optional[NonNegativeFloat] = None
 
 
 class EventFilter:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_manager: OutputsManager,
-        wait_policy: BaseWaitPolicy,
+        delay_policy: BaseDelayPolicy,
         io_log_redirect_cb: Optional[LogRedirectCB],
     ):
         self.outputs_manager = outputs_manager
-        self.wait_policy = wait_policy
+        self.delay_policy = delay_policy
         self.io_log_redirect_cb = io_log_redirect_cb
 
         self._events_queue: Queue[PortEvent] = Queue()
@@ -87,51 +87,62 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
             if event_tuple is None:
                 break
 
-            # NOTE/TODO: `event` is not used, maybe remove it?
+            # NOTE/TODO: `event` is not used for now, maybe remove it?
             port_key, _ = event_tuple
 
             if port_key not in self._port_key_tracked_event:
                 self._port_key_tracked_event[port_key] = TrackedEvent(
-                    last_detection=time.time(),
-                    wait_interval=self.wait_policy.get_base(),
+                    last_detection=time.time()
                 )
             else:
                 self._port_key_tracked_event[port_key].last_detection = time.time()
 
     def _blocking_worker_check_events(self) -> None:
+        repeat_interval = self.delay_policy.get_min_interval() * 0.49
         while self._keep_running:
+
             # can be iterated while modified
             for port_key in list(self._port_key_tracked_event.keys()):
                 tracked_event = self._port_key_tracked_event.get(port_key, None)
                 if tracked_event is None:  # can disappear while iterated
                     continue
 
-                # compute elapsed time
                 current_time = time.time()
                 elapsed_since_detection = current_time - tracked_event.last_detection
-                if elapsed_since_detection < tracked_event.wait_interval:
+
+                # ensure minimum interval has passed
+                if elapsed_since_detection < (
+                    tracked_event.wait_interval or self.delay_policy.get_min_interval()
+                ):
                     continue
 
-                # should trigger event now, let's check folder size and see if we need to adjust
-                # for some deltas
-                port_key_dir_path = self.outputs_manager.outputs_path / port_key
-                total_wait_for = self.wait_policy.get_wait_interval(
-                    # NOTE: this can be long running, on SSD with 1 million files
-                    # takes in the order of seconds
-                    get_dir_size(port_key_dir_path)
-                )
-                tracked_event.wait_interval = total_wait_for
+                # Set the wait_interval for future events.
+                # NOTE: Computing the size of a directory is a relatively difficult task,
+                # example: on SSD with 1 million files ~ 2 seconds
+                # Size of directory will only be computed if:
+                # - event was just added
+                # - already waited more than the wait_interval
+                if (
+                    tracked_event.wait_interval is None
+                    or elapsed_since_detection > tracked_event.wait_interval
+                ):
+                    port_key_dir_path = self.outputs_manager.outputs_path / port_key
+                    total_wait_for = self.delay_policy.get_wait_interval(
+                        get_dir_size(port_key_dir_path)
+                    )
+                    tracked_event.wait_interval = total_wait_for
 
-                # finally check one more time
+                # could require to wait more since wait_interval was just updated
                 elapsed_since_detection = current_time - tracked_event.last_detection
                 if elapsed_since_detection < tracked_event.wait_interval:
-                    # not enough time has passed will skip try next time
                     continue
 
+                # event chain has finished, request event to upload port and
+                # remove event chain from tracking
                 self._upload_events_queue.put_nowait(port_key)
                 self._port_key_tracked_event.pop(port_key, None)
 
-            time.sleep(self.wait_policy.get_base() * 0.49)
+            time.sleep(repeat_interval)
 
     async def _worker_check_events(self) -> None:
         """checks at fixed intervals if it should emit events to upload"""

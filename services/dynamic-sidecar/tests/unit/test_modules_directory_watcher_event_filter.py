@@ -10,12 +10,13 @@ import pytest
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.modules.directory_watcher._event_filter import (
-    BaseWaitPolicy,
+    BaseDelayPolicy,
     EventFilter,
-    DefaultWaitPolicy,
+    DefaultDelayPolicy,
 )
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from watchdog.events import FileModifiedEvent, FileSystemEvent
+
 
 # FIXTURES
 
@@ -64,13 +65,13 @@ def mocked_upload_after_port_change(
 
 
 @pytest.fixture
-def mock_wait_policy() -> BaseWaitPolicy:
+def mock_delay_policy() -> BaseDelayPolicy:
     VERY_FAST_BASE = 0.001
     SLOW_LONG_INTERVAL = VERY_FAST_BASE * 100
 
     # pylint:disable=no-self-use
-    class FastPolicy(BaseWaitPolicy):
-        def get_base(self) -> NonNegativeFloat:
+    class FastPolicy(BaseDelayPolicy):
+        def get_min_interval(self) -> NonNegativeFloat:
             return VERY_FAST_BASE
 
         def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:
@@ -80,8 +81,8 @@ def mock_wait_policy() -> BaseWaitPolicy:
 
 
 @pytest.fixture
-def mock_get_dir_size(mocker: MockerFixture) -> None:
-    mocker.patch(
+def mock_get_dir_size(mocker: MockerFixture) -> Iterator[AsyncMock]:
+    yield mocker.patch(
         "simcore_service_dynamic_sidecar.modules.directory_watcher._event_filter.get_dir_size",
         return_value=1,
     )
@@ -89,11 +90,11 @@ def mock_get_dir_size(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 async def event_filter(
-    outputs_manager: OutputsManager, mock_wait_policy: BaseWaitPolicy
+    outputs_manager: OutputsManager, mock_delay_policy: BaseDelayPolicy
 ) -> AsyncIterator[EventFilter]:
     event_filter = EventFilter(
         outputs_manager=outputs_manager,
-        wait_policy=mock_wait_policy,
+        delay_policy=mock_delay_policy,
         io_log_redirect_cb=None,
     )
     await event_filter.start()
@@ -105,11 +106,11 @@ async def event_filter(
 
 
 async def _wait_for_event_to_trigger(event_filter: EventFilter) -> None:
-    await asyncio.sleep(event_filter.wait_policy.get_base() * 2)
+    await asyncio.sleep(event_filter.delay_policy.get_min_interval() * 2)
 
 
 async def _wait_for_event_to_trigger_big_directory(event_filter: EventFilter) -> None:
-    await asyncio.sleep(event_filter.wait_policy.get_wait_interval(1) * 2)
+    await asyncio.sleep(event_filter.delay_policy.get_wait_interval(1) * 2)
 
 
 # TESTS
@@ -147,7 +148,7 @@ async def test_trigger_once_after_event_chain(
 
 
 async def test_always_trigger_after_delay(
-    mock_get_dir_size: None,
+    mock_get_dir_size: AsyncMock,
     event_filter: EventFilter,
     port_key_1: str,
     file_system_event: FileSystemEvent,
@@ -168,8 +169,58 @@ async def test_always_trigger_after_delay(
     assert mocked_upload_after_port_change.call_count == 2
 
 
-def test_default_wait_policy():
-    wait_policy = DefaultWaitPolicy()
+async def test_minimum_amount_of_get_dir_size_calls(
+    mock_get_dir_size: AsyncMock,
+    event_filter: EventFilter,
+    port_key_1: str,
+    file_system_event: FileSystemEvent,
+    mocked_upload_after_port_change: AsyncMock,
+):
+    event_filter.enqueue(port_key_1, file_system_event)
+    # wait a bit for the vent to be picked up
+    # by the workers and processed
+    await _wait_for_event_to_trigger(event_filter)
+    assert mock_get_dir_size.call_count == 1
+    assert mocked_upload_after_port_change.call_count == 0
+
+    # event finished processing and was dispatched
+    await _wait_for_event_to_trigger_big_directory(event_filter)
+    assert mock_get_dir_size.call_count == 2
+    assert mocked_upload_after_port_change.call_count == 1
+
+
+async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
+    mock_get_dir_size: AsyncMock,
+    event_filter: EventFilter,
+    port_key_1: str,
+    file_system_event: FileSystemEvent,
+    mocked_upload_after_port_change: AsyncMock,
+):
+    event_filter.enqueue(port_key_1, file_system_event)
+    # wait a bit for the vent to be picked up
+    # by the workers and processed
+    await _wait_for_event_to_trigger(event_filter)
+    assert mock_get_dir_size.call_count == 1
+    assert mocked_upload_after_port_change.call_count == 0
+
+    # while changes keep piling up, keep extending the duration
+    # no event will trigger
+    # size of directory will not be computed
+    VERY_LONG_EVENT_CHAIN = 1000
+    for _ in range(VERY_LONG_EVENT_CHAIN):
+        event_filter.enqueue(port_key_1, file_system_event)
+        await _wait_for_event_to_trigger(event_filter)
+        assert mock_get_dir_size.call_count == 1
+        assert mocked_upload_after_port_change.call_count == 0
+
+    # event finished processing and was dispatched
+    await _wait_for_event_to_trigger_big_directory(event_filter)
+    assert mock_get_dir_size.call_count == 2
+    assert mocked_upload_after_port_change.call_count == 1
+
+
+def test_default_delay_policy():
+    wait_policy = DefaultDelayPolicy()
 
     KB = 1024
     MB = 1024 * KB
@@ -177,7 +228,7 @@ def test_default_wait_policy():
     LOWER_BOUND = 1 * MB  # coming from the default policy
     UPPER_BOUND = 500 * MB  # coming from the default policy
 
-    assert wait_policy.get_base() == 1.0
+    assert wait_policy.get_min_interval() == 1.0
 
     assert wait_policy.get_wait_interval(-1) == 1.0
     assert wait_policy.get_wait_interval(LOWER_BOUND - 1) == 1.0
