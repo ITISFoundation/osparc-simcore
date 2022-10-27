@@ -1,12 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-import sys
 from pathlib import Path
 
 import pytest
-
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
@@ -21,38 +18,10 @@ def project_name(project_slug_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def src_dir(project_slug_dir: Path) -> Path:
-    _src_dir = project_slug_dir / "src"
-    assert _src_dir.exists()
-    return _src_dir
-
-
-@pytest.fixture(scope="session")
-def tests_dir(project_slug_dir: Path) -> Path:
-    _tests_dir = project_slug_dir / "tests"
-    assert _tests_dir.exists()
-    return _tests_dir
-
-
-@pytest.fixture(scope="session")
 def validation_dir(project_slug_dir: Path) -> Path:
     validation_dir = project_slug_dir / "validation"
     assert validation_dir.exists()
     return validation_dir
-
-
-@pytest.fixture(scope="session")
-def tools_dir(project_slug_dir: Path) -> Path:
-    tools_dir = project_slug_dir / "tools"
-    assert tools_dir.exists()
-    return tools_dir
-
-
-@pytest.fixture(scope="session")
-def docker_dir(project_slug_dir: Path) -> Path:
-    docker_dir = project_slug_dir / "docker"
-    assert docker_dir.exists()
-    return docker_dir
 
 
 @pytest.fixture(scope="session")
