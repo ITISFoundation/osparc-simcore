@@ -27,7 +27,7 @@ _500_MB: Final[PositiveInt] = 500 * _MB
 
 class BaseDelayPolicy(ABC):
     def get_min_interval(self) -> NonNegativeFloat:  # pylint:disable=no-self-use
-        return DEFAULT_OBSERVER_TIMEOUT
+        return DEFAULT_OBSERVER_TIMEOUT  # type: ignore
 
     @abstractmethod
     def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:

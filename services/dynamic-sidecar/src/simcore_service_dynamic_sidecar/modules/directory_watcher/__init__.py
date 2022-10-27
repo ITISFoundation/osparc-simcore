@@ -1,13 +1,13 @@
 from ._core import (
-    directory_watcher_disabled,
-    disable_directory_watcher,
-    enable_directory_watcher,
+    disable_outputs_watcher,
+    enable_outputs_watcher,
+    outputs_watcher_disabled,
     setup_directory_watcher,
 )
 
 __all__: tuple[str, ...] = (
-    "directory_watcher_disabled",
-    "disable_directory_watcher",
-    "enable_directory_watcher",
+    "outputs_watcher_disabled",
+    "disable_outputs_watcher",
+    "enable_outputs_watcher",
     "setup_directory_watcher",
 )

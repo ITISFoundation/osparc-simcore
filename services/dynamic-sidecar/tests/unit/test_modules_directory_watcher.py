@@ -1,38 +1,116 @@
-# pylint: disable=unused-argument
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 from shutil import move
-from typing import Iterator
+from typing import AsyncIterable, AsyncIterator, Iterator, Optional
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest import MonkeyPatch
+from faker import Faker
+from pydantic import NonNegativeFloat, NonNegativeInt
+from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.directory_watcher import (
     _core as directory_watcher_core,
 )
 from simcore_service_dynamic_sidecar.modules.directory_watcher._core import (
-    DirectoryWatcherObservers,
+    OutputsWatcher,
 )
+from simcore_service_dynamic_sidecar.modules.directory_watcher._event_filter import (
+    BaseDelayPolicy,
+)
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
+from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
 TICK_INTERVAL = 0.001
+WAIT_INTERVAL = TICK_INTERVAL * 10
+
+# FIXTURES
 
 
 @pytest.fixture
-def patch_directory_watcher(monkeypatch: MonkeyPatch) -> Iterator[AsyncMock]:
-    mocked_upload_data = AsyncMock(return_value=None)
+def mounted_volumes(faker: Faker, tmp_path: Path) -> MountedVolumes:
+    return MountedVolumes(
+        run_id=faker.uuid4(cast_to=None),
+        node_id=faker.uuid4(cast_to=None),
+        inputs_path=tmp_path / "inputs",
+        outputs_path=tmp_path / "outputs",
+        state_paths=[],
+        state_exclude=set(),
+        compose_namespace="",
+        dy_volumes=tmp_path,
+    )
 
-    monkeypatch.setattr(directory_watcher_core, "DETECTION_INTERVAL", TICK_INTERVAL)
-    monkeypatch.setattr(directory_watcher_core, "_push_directory", mocked_upload_data)
 
-    yield mocked_upload_data
+@pytest.fixture
+async def outputs_manager(
+    mounted_volumes: MountedVolumes,
+) -> AsyncIterable[OutputsManager]:
+    outputs_manager = OutputsManager(outputs_path=mounted_volumes.disk_outputs_path)
+    outputs_manager.outputs_port_keys.add("first_test")
+    outputs_manager.outputs_port_keys.add("second_test")
+    yield outputs_manager
+    await outputs_manager.shutdown()
 
 
-# UTILS
+@pytest.fixture
+async def outputs_watcher(
+    mocker: MockerFixture,
+    mounted_volumes: MountedVolumes,
+    outputs_manager: OutputsManager,
+) -> OutputsWatcher:
+    mocker.patch.object(
+        directory_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", TICK_INTERVAL
+    )
+    outputs_watcher = OutputsWatcher(
+        outputs_manager=outputs_manager, io_log_redirect_cb=None
+    )
+    outputs_watcher.observe_outputs_directory(mounted_volumes.disk_outputs_path)
+
+    return outputs_watcher
 
 
-async def _generate_event_burst(tmp_path: Path, subfolder: str = None) -> None:
+@pytest.fixture
+async def running_outputs_watcher(
+    outputs_watcher: OutputsWatcher,
+) -> AsyncIterator[OutputsWatcher]:
+    await outputs_watcher.start()
+    yield outputs_watcher
+    await outputs_watcher.shutdown()
+
+
+@pytest.fixture
+def mock_event_filter_upload_trigger(
+    mocker: MockerFixture,
+    outputs_watcher: OutputsWatcher,
+) -> Iterator[AsyncMock]:
+    mock_enqueue = AsyncMock(return_value=None)
+
+    mocker.patch.object(
+        outputs_watcher._event_filter.outputs_manager,
+        "upload_after_port_change",
+        mock_enqueue,
+    )
+
+    class FastDelayPolicy(BaseDelayPolicy):
+        def get_min_interval(self) -> NonNegativeFloat:
+            return WAIT_INTERVAL
+
+        def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:
+            return WAIT_INTERVAL
+
+    outputs_watcher._event_filter.delay_policy = FastDelayPolicy()
+
+    yield mock_enqueue
+
+
+async def _generate_event_burst(
+    tmp_path: Path, subfolder: Optional[str] = None
+) -> None:
     full_dir_path = tmp_path if subfolder is None else tmp_path / subfolder
     full_dir_path.mkdir(parents=True, exist_ok=True)
     file_path_1 = full_dir_path / "file1.txt"
@@ -46,65 +124,76 @@ async def _generate_event_burst(tmp_path: Path, subfolder: str = None) -> None:
     # delete
     file_path_2.unlink()
     # let fs events trigger
-    await asyncio.sleep(TICK_INTERVAL)
+    await asyncio.sleep(WAIT_INTERVAL)
 
 
 async def _wait_for_events_to_trigger() -> None:
-    await asyncio.sleep(3)
+    await asyncio.sleep(DEFAULT_OBSERVER_TIMEOUT + WAIT_INTERVAL)
 
 
 async def test_run_observer(
-    patch_directory_watcher: AsyncMock,
-    tmp_path: Path,
+    mock_event_filter_upload_trigger: AsyncMock,
+    mounted_volumes: MountedVolumes,
+    outputs_watcher: OutputsWatcher,
 ) -> None:
 
-    directory_watcher_observers = DirectoryWatcherObservers(io_log_redirect_cb=None)
-    directory_watcher_observers.observe_directory(tmp_path)
+    assert outputs_watcher._outputs_event_handler
+    assert (  # pylint:disable=protected-access
+        outputs_watcher._outputs_event_handler._is_enabled is True
+    )
 
-    directory_watcher_observers.start()
-    directory_watcher_observers.start()
+    await outputs_watcher.start()
+    await outputs_watcher.start()
 
-    await asyncio.sleep(TICK_INTERVAL)
+    await _wait_for_events_to_trigger()
 
     # generates the first event chain
-    await _generate_event_burst(tmp_path)
+    await _generate_event_burst(mounted_volumes.disk_outputs_path, "first_test")
 
     await _wait_for_events_to_trigger()
 
     # generates the second event chain
-    await _generate_event_burst(tmp_path, "ciao")
+    await _generate_event_burst(mounted_volumes.disk_outputs_path, "second_test")
 
-    await directory_watcher_observers.stop()
-    await directory_watcher_observers.stop()
+    await outputs_watcher.shutdown()
+    await outputs_watcher.shutdown()
 
     # pylint: disable=protected-access
-    assert directory_watcher_observers._keep_running is False
-    assert directory_watcher_observers._blocking_task is None
+    assert outputs_watcher._keep_running is False
+    assert outputs_watcher._blocking_task is None
 
-    assert patch_directory_watcher.call_count == 2
+    assert mock_event_filter_upload_trigger.call_count == 2
 
 
 async def test_does_not_trigger_on_attribute_change(
-    patch_directory_watcher: AsyncMock, tmp_path: Path
+    mock_event_filter_upload_trigger: AsyncMock,
+    mounted_volumes: MountedVolumes,
+    running_outputs_watcher: OutputsWatcher,
 ):
-    directory_watcher_observers = DirectoryWatcherObservers(io_log_redirect_cb=None)
-    directory_watcher_observers.observe_directory(tmp_path)
 
-    directory_watcher_observers.start()
-
-    await asyncio.sleep(TICK_INTERVAL)
+    await asyncio.sleep(WAIT_INTERVAL)
 
     # crate a file in the directory
-    tmp_path.mkdir(parents=True, exist_ok=True)
-    file_path_1 = tmp_path / "file1.txt"
+    mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
+    file_path_1 = mounted_volumes.disk_outputs_path / "first_test" / "file1.txt"
+    file_path_1.parent.mkdir(parents=True, exist_ok=True)
     file_path_1.touch()
 
     await _wait_for_events_to_trigger()
-    assert patch_directory_watcher.call_count == 1
+    assert mock_event_filter_upload_trigger.call_count == 1
 
     # apply an attribute change
     file_path_1.chmod(0o744)
 
     await _wait_for_events_to_trigger()
     # same call count as before, event was ignored
-    assert patch_directory_watcher.call_count == 1
+    assert mock_event_filter_upload_trigger.call_count == 1
+
+
+# TODO: write a test that does the following. simulates 10 directories
+# writes files in parallel to these 10 directories that are a bit big, with different chunksizes
+# figure out how events should be handeled
+# we want to trigger uploads per `port_key` that are individual
+# we require a unique manager that detects this uploads, it also has to take care of cancelling ongoing uplods
+# per previous `ports_key`
+# also keeps track of last `port_key` change in order to consider if it requires upload of the object again
