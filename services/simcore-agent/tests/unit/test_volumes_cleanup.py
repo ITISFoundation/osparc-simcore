@@ -23,13 +23,12 @@ async def mock_volumes_folders(
     unused_volume_path: Path,
     used_volume_path: Path,
 ) -> None:
-    # overwrite to test locally not against volume
-    # root permissions are required to access this
-    # only returning the volumes which are interesting
 
     unused_volume_path.mkdir(parents=True, exist_ok=True)
     used_volume_path.mkdir(parents=True, exist_ok=True)
 
+    # root permissions are required to access the /var/docker data
+    # overwriting with a mocked path for this test
     unused_volume_data = await unused_volume.show()
     unused_volume_data["Mountpoint"] = f"{unused_volume_path}"
     used_volume_data = await used_volume.show()

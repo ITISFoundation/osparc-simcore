@@ -18,7 +18,6 @@ class ApplicationSettings(BaseCustomSettings):
     SIMCORE_AGENT_S3_BUCKET: str
     SIMCORE_AGENT_S3_PROVIDER: S3Provider
 
-    # not required
     SIMCORE_AGENT_S3_REGION: str = "us-east-1"
     SIMCORE_AGENT_S3_RETRIES: int = Field(
         3, description="upload retries in case of error"
