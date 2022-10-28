@@ -148,12 +148,12 @@ def test_running_service_details_make_status(
     assert running_service_details_dict == expected_running_service_details
 
 
-# def test_all_states_are_mapped():
-#     service_state_defined: set[ServiceState] = _all_states()
-#     comparison_mapped: set[ServiceState] = set(ServiceState.comparison_order().keys())
-#     assert (
-#         service_state_defined == comparison_mapped
-#     ), "entries from _COMPARISON_ORDER do not match all states in ServiceState"
+def test_all_states_are_mapped():
+    service_state_defined: set[ServiceState] = _all_states()
+    comparison_mapped: set[ServiceState] = set(ServiceState.comparison_order().keys())
+    assert (
+        service_state_defined == comparison_mapped
+    ), "entries from _COMPARISON_ORDER do not match all states in ServiceState"
 
 
 def test_equality():
