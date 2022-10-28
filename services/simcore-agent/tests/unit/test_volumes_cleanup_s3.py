@@ -25,25 +25,22 @@ def _get_file_hashes_in_path(
 ) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
-        with open(path, "rb") as file:  # pylint:disable=unspecified-encoding
+        with path.open("rb") as file:
             # Read and update hash string value in blocks of 4K
             for byte_block in iter(lambda: file.read(4096), b""):
                 sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
 
-    def _relative_path(root_path: Path, full_path: Path) -> Path:
-        return full_path.relative_to(root_path)
-
     if path_to_hash.is_file():
-        return {(_relative_path(path_to_hash, path_to_hash), _hash_path(path_to_hash))}
+        return {(path_to_hash.relative_to(path_to_hash), _hash_path(path_to_hash))}
 
     if exclude_files is None:
         exclude_files = set()
 
     return {
-        (_relative_path(path_to_hash, path), _hash_path(path))
+        (path.relative_to(path_to_hash), _hash_path(path))
         for path in path_to_hash.rglob("*")
-        if path.is_file() and _relative_path(path_to_hash, path) not in exclude_files
+        if path.is_file() and path.relative_to(path_to_hash) not in exclude_files
     }
 
 
