@@ -26,7 +26,6 @@ from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 
-router = APIRouter()
 logger = logging.getLogger(__name__)
 
 ServicesSelection = set[tuple[str, str]]
@@ -62,6 +61,13 @@ def _prepare_service_details(
 
 def _build_cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['user_id']}_{kwargs['x_simcore_products_name']}_{kwargs['details']}"
+
+
+#
+# Routes
+#
+
+router = APIRouter()
 
 
 # NOTE: this call is pretty expensive and can be called several times
