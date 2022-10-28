@@ -46,10 +46,6 @@ on:
       - ".github/workflows/ci-testing-deploy.yml"
       - "ci/**"
 env:
-  # secrets can be set in settings/secrets on github
-  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
 
@@ -1769,6 +1765,11 @@ jobs:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
+    env:
+      # secrets can be set in settings/secrets on github
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
       - name: setup docker buildx
