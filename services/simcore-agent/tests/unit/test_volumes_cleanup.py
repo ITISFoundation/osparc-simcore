@@ -53,19 +53,6 @@ async def unused_volume_name(unused_volume: DockerVolume) -> str:
     return (await unused_volume.show())["Name"]
 
 
-@pytest.fixture
-def env(monkeypatch: MonkeyPatch, mocked_s3_server_url: HttpUrl, bucket: str) -> None:
-    mock_dict = {
-        "SIMCORE_AGENT_S3_ENDPOINT": mocked_s3_server_url,
-        "SIMCORE_AGENT_S3_ACCESS_KEY": "xxx",
-        "SIMCORE_AGENT_S3_SECRET_KEY": "xxx",
-        "SIMCORE_AGENT_S3_BUCKET": bucket,
-        "SIMCORE_AGENT_S3_PROVIDER": S3Provider.MINIO,
-    }
-    for key, value in mock_dict.items():
-        monkeypatch.setenv(key, value)
-
-
 async def test_workflow(
     mock_volumes_folders: None,
     caplog_info_debug: LogCaptureFixture,
