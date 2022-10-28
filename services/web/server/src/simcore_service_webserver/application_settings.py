@@ -313,12 +313,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def to_client_statics(self) -> dict[str, Any]:
         data = self._export_by_alias(
             include={
-                "APP_NAME",
-                "API_VERSION",
-                "SC_VCS_URL",
-                "SC_VCS_REF",
-                "SC_BUILD_DATE",
-                "SWARM_STACK_NAME",
+                "APP_NAME": True,
+                "API_VERSION": True,
+                "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
+                "SC_VCS_URL": True,
+                "SC_VCS_REF": True,
+                "SC_BUILD_DATE": True,
+                "SWARM_STACK_NAME": True,
             },
             exclude_none=True,
         )
