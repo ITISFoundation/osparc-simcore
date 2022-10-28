@@ -3,14 +3,19 @@
 # pylint: disable=unused-argument
 
 import asyncio
+from collections import deque
+from dataclasses import dataclass
 from pathlib import Path
+from random import randbytes, shuffle
 from shutil import move, rmtree
-from typing import AsyncIterable, AsyncIterator, Iterator, Optional
-from unittest.mock import AsyncMock
+from typing import AsyncIterable, AsyncIterator, Final, Iterator, Optional, Awaitable
+from unittest.mock import AsyncMock, call
 
+import aiofiles
 import pytest
 from faker import Faker
-from pydantic import NonNegativeFloat, NonNegativeInt
+from pydantic import NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
+from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
@@ -22,9 +27,14 @@ from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter impor
     BaseDelayPolicy,
 )
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
+from aiofiles import os
 
-TICK_INTERVAL = 0.001
-WAIT_INTERVAL = TICK_INTERVAL * 10
+TICK_INTERVAL: Final[PositiveFloat] = 0.001
+WAIT_INTERVAL: Final[PositiveFloat] = TICK_INTERVAL * 10
+SLEEP_FOREVER: Final[PositiveInt] = 1000000
+
+_KB: Final[PositiveInt] = 1024
+_MB: Final[PositiveInt] = 1024 * _KB
 
 # FIXTURES
 
@@ -46,12 +56,16 @@ def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
 
 
 @pytest.fixture
+def port_keys() -> list[str]:
+    return [f"port_key_{x}" for x in range(4)]
+
+
+@pytest.fixture
 async def outputs_manager(
-    mounted_volumes: MountedVolumes,
+    mounted_volumes: MountedVolumes, port_keys: list[str]
 ) -> AsyncIterable[OutputsManager]:
     outputs_manager = OutputsManager(outputs_path=mounted_volumes.disk_outputs_path)
-    outputs_manager.outputs_port_keys.add("first_test")
-    outputs_manager.outputs_port_keys.add("second_test")
+    outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()
 
@@ -105,6 +119,123 @@ def mock_event_filter_upload_trigger(
     yield mock_enqueue
 
 
+@pytest.fixture
+def mock_long_running_upload_outputs(
+    mocker: MockerFixture,
+    outputs_watcher: OutputsWatcher,
+) -> Iterator[AsyncMock]:
+    async def mock_upload_outputs(*args, **kwargs) -> None:
+        await asyncio.sleep(SLEEP_FOREVER)
+
+    mock = mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
+        sire_effect=mock_upload_outputs,
+    )
+
+    class FastDelayPolicy(BaseDelayPolicy):
+        def get_min_interval(self) -> NonNegativeFloat:
+            return WAIT_INTERVAL * 10
+
+        def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:
+            return WAIT_INTERVAL * 10
+
+    outputs_watcher._event_filter.delay_policy = FastDelayPolicy()
+
+    yield mock
+
+
+@pytest.fixture(params=[1, 2, 4])
+def files_per_port_key(request: FixtureRequest) -> NonNegativeInt:
+    return request.param
+
+
+@dataclass
+class FileGenerationInfo:
+    size: NonNegativeInt
+    chunk_size: NonNegativeInt
+
+
+@pytest.fixture(
+    params=[
+        FileGenerationInfo(size=100, chunk_size=1),
+        FileGenerationInfo(size=100 * _KB, chunk_size=1 * _KB),
+        FileGenerationInfo(size=100 * _MB, chunk_size=1 * _MB),
+        FileGenerationInfo(size=100 * _MB, chunk_size=10 * _MB),
+    ]
+)
+def file_generation_info(request: FixtureRequest) -> FileGenerationInfo:
+    return request.param
+
+
+# UTILS
+
+
+async def random_events_in_path(
+    *,
+    port_key_path: Path,
+    files_per_port_key: NonNegativeInt,
+    size: NonNegativeInt,
+    chunk_size: NonNegativeInt,
+    empty_files: NonNegativeInt = 10,
+    moved_files: NonNegativeInt = 10,
+    removed_files: NonNegativeInt = 10,
+) -> None:
+    """
+    Simulates some random user activity"""
+
+    async def _empty_file(file_path: Path) -> None:
+        assert file_path.exists() is False
+        async with aiofiles.open(file_path, "wb"):
+            pass
+        assert file_path.exists() is True
+
+    async def _random_file(
+        file_path: Path,
+        *,
+        size: NonNegativeInt,
+        chunk_size: NonNegativeInt,
+    ) -> None:
+        async with aiofiles.open(file_path, "wb") as file:
+            for _ in range(size // chunk_size):
+                await file.write(randbytes(chunk_size))
+            await file.write(randbytes(size % chunk_size))
+        assert file_path.stat().st_size == size
+
+    async def _move_existing_file(file_path: Path) -> None:
+        await _empty_file(file_path)
+        destination = file_path.parent / f"{file_path.name}_"
+        await os.rename(file_path, destination)
+        assert file_path.exists() is False
+        assert destination.exists() is True
+
+    async def _remove_file(file_path: Path) -> None:
+        await _empty_file(file_path)
+        await os.remove(file_path)
+        assert file_path.exists() is False
+
+    event_awaitables: deque[Awaitable] = deque()
+
+    for i in range(empty_files):
+        event_awaitables.append(_empty_file(port_key_path / f"empty_file_{i}"))
+    for i in range(moved_files):
+        event_awaitables.append(_move_existing_file(port_key_path / f"moved_file_{i}"))
+    for i in range(removed_files):
+        event_awaitables.append(_remove_file(port_key_path / f"removed_file_{i}"))
+
+    for i in range(files_per_port_key):
+        event_awaitables.append(
+            _random_file(
+                port_key_path / f"big_file{i}", size=size, chunk_size=chunk_size
+            )
+        )
+
+    shuffle(event_awaitables)
+    # NOTE: wait for events to be generated events in sequence
+    # this is the worst case scenario and will catch more issues
+    for awaitable in event_awaitables:
+        await awaitable
+
+
 async def _generate_event_burst(
     tmp_path: Path, subfolder: Optional[str] = None
 ) -> None:
@@ -125,13 +256,14 @@ async def _generate_event_burst(
 
 
 async def _wait_for_events_to_trigger() -> None:
-    await asyncio.sleep(DEFAULT_OBSERVER_TIMEOUT + WAIT_INTERVAL)
+    await asyncio.sleep(DEFAULT_OBSERVER_TIMEOUT + WAIT_INTERVAL * 2)
 
 
 async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     mounted_volumes: MountedVolumes,
     outputs_watcher: OutputsWatcher,
+    port_keys: list[str],
 ) -> None:
 
     assert outputs_watcher._outputs_event_handler
@@ -145,12 +277,12 @@ async def test_run_observer(
     await _wait_for_events_to_trigger()
 
     # generates the first event chain
-    await _generate_event_burst(mounted_volumes.disk_outputs_path, "first_test")
+    await _generate_event_burst(mounted_volumes.disk_outputs_path, port_keys[0])
 
     await _wait_for_events_to_trigger()
 
     # generates the second event chain
-    await _generate_event_burst(mounted_volumes.disk_outputs_path, "second_test")
+    await _generate_event_burst(mounted_volumes.disk_outputs_path, port_keys[1])
 
     await outputs_watcher.shutdown()
     await outputs_watcher.shutdown()
@@ -165,14 +297,14 @@ async def test_run_observer(
 async def test_does_not_trigger_on_attribute_change(
     mock_event_filter_upload_trigger: AsyncMock,
     mounted_volumes: MountedVolumes,
+    port_keys: list[str],
     running_outputs_watcher: OutputsWatcher,
 ):
-
-    await asyncio.sleep(WAIT_INTERVAL)
+    await _wait_for_events_to_trigger()
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
-    file_path_1 = mounted_volumes.disk_outputs_path / "first_test" / "file1.txt"
+    file_path_1 = mounted_volumes.disk_outputs_path / port_keys[0] / "file1.txt"
     file_path_1.parent.mkdir(parents=True, exist_ok=True)
     file_path_1.touch()
 
@@ -187,9 +319,40 @@ async def test_does_not_trigger_on_attribute_change(
     assert mock_event_filter_upload_trigger.call_count == 1
 
 
-# TODO: write a test to simulate more impactful workload
-# - have it write X files per directory sequentially
-# - in total 10 directories
-# - would like to detect that only 1 event per port key for upload was triggered
+async def test_port_key_sequential_event_generation(
+    mock_long_running_upload_outputs: AsyncMock,
+    mounted_volumes: MountedVolumes,
+    running_outputs_watcher: OutputsWatcher,
+    files_per_port_key: NonNegativeInt,
+    file_generation_info: FileGenerationInfo,
+    port_keys: list[str],
+):
+    # await _wait_for_events_to_trigger()
+    # writing ports sequentially
+    for port_key in port_keys:
+        port_dir = mounted_volumes.disk_outputs_path / port_key
+        port_dir.mkdir(parents=True, exist_ok=True)
+        await random_events_in_path(
+            port_key_path=port_dir,
+            files_per_port_key=files_per_port_key,
+            size=file_generation_info.size,
+            chunk_size=file_generation_info.chunk_size,
+        )
 
-# TODO: run the above test in parallel
+    await _wait_for_events_to_trigger()
+
+    # expect at most `len(port_keys)` calls in total
+    assert mock_long_running_upload_outputs.call_count == len(
+        port_keys
+    ), "\n" + "\n".join(map(str, mock_long_running_upload_outputs.call_args_list))
+    mock_long_running_upload_outputs.assert_has_calls(
+        [
+            call(
+                outputs_path=mounted_volumes.disk_outputs_path,
+                port_keys=[port_key],
+                io_log_redirect_cb=None,
+            )
+            for port_key in port_keys
+        ],
+        any_order=True,
+    )
