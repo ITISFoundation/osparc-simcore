@@ -8,11 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
-from typing import AsyncIterable, AsyncIterator, Final, Iterator, Optional, Awaitable
+from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator, Optional
 from unittest.mock import AsyncMock, call
 
 import aiofiles
 import pytest
+from aiofiles import os
 from faker import Faker
 from pydantic import NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
 from pytest import FixtureRequest
@@ -23,14 +24,13 @@ from simcore_service_dynamic_sidecar.modules.outputs_watcher import (
     _core as outputs_watcher_core,
 )
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._core import OutputsWatcher
-from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
-    BaseDelayPolicy,
-)
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._directory_utils import (
     get_dir_size,
 )
+from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
+    BaseDelayPolicy,
+)
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
-from aiofiles import os
 
 TICK_INTERVAL: Final[PositiveFloat] = 0.001
 WAIT_INTERVAL: Final[PositiveFloat] = TICK_INTERVAL * 10
