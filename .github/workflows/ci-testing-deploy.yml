@@ -1202,12 +1202,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1266,12 +1260,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1332,12 +1320,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1398,12 +1380,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1467,12 +1443,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1490,8 +1460,6 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
@@ -1551,12 +1519,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1614,12 +1576,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1678,12 +1634,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1760,12 +1710,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
