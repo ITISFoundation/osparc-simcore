@@ -109,7 +109,8 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
         case "user-files-tree":
           control = new osparc.file.FilesTree().set({
             minWidth: 150,
-            width: 200
+            width: 200,
+            backgroundColor: "transparent"
           });
           break;
         case "folder-viewer":
@@ -163,6 +164,14 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       nodeFolder.addListener("selectionChanged", e => {
         const selectionData = e.getData();
         this.__selectionChanged(selectionData);
+      }, this);
+      nodeFolder.addListener("folderUp", e => {
+        const currentFolder = e.getData();
+        const parent = nodeFilesTree.getParent(currentFolder);
+        if (parent) {
+          nodeFilesTree.setSelection(new qx.data.Array([parent]));
+          nodeFolder.setFolder(parent);
+        }
       }, this);
 
       nodeTreeLayout.add(nodeTreeFolderLayout, {

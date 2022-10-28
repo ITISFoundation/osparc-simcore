@@ -491,7 +491,7 @@ async def test_upload_same_file_uuid_aborts_previous_upload(
 
 @pytest.fixture
 def complex_file_name(faker: Faker) -> str:
-    return f"some file name with spaces and special characters  -_ü!öäàé+|}} {{3245_{faker.file_name()}"
+    return f"subfolder_1/sub_folder 2/some file name with spaces and special characters  -_ü!öäàé+|}} {{3245_{faker.file_name()}"
 
 
 @pytest.mark.parametrize(

@@ -118,6 +118,13 @@ qx.Class.define("osparc.file.FilesTree", {
             .splice(i, 1);
         }
       }
+    },
+
+    attachPathLabel: function(srcPathLabel, data) {
+      data["pathLabel"] = srcPathLabel.concat(data["label"]);
+      if ("children" in data) {
+        data.children.forEach(child => this.self().attachPathLabel(data["pathLabel"], child));
+      }
     }
   },
 
@@ -221,8 +228,8 @@ qx.Class.define("osparc.file.FilesTree", {
             this.__resetTree(nodeTreeName);
             const rootNodeModel = this.getModel();
             if (nodeData.children.length) {
-              const filesOnly = nodeData.children;
-              this.__filesToRoot(filesOnly);
+              const nodeItemsOnly = nodeData.children;
+              this.__itemsToNode(nodeItemsOnly);
             }
             this.openNode(rootNodeModel);
 
@@ -395,11 +402,11 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
-    __filesToRoot: function(files) {
+    __itemsToNode: function(files) {
       const currentModel = this.getModel();
       this.self().removeLoadingChild(currentModel);
 
-      files.forEach(file => file["pathLabel"] = currentModel.getPathLabel().concat(file["label"]));
+      files.forEach(file => this.self().attachPathLabel(currentModel.getPathLabel(), file));
       const newModelToAdd = qx.data.marshal.Json.createModel(files, true);
       currentModel.getChildren().append(newModelToAdd);
       this.setModel(currentModel);
@@ -464,7 +471,7 @@ qx.Class.define("osparc.file.FilesTree", {
           const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
           const datasetData = locationData[0].children;
           datasetData[0].children.forEach(data => {
-            data["pathLabel"] = datasetModel.getPathLabel().concat(data["label"]);
+            this.self().attachPathLabel(datasetModel.getPathLabel(), data);
             const filesModel = qx.data.marshal.Json.createModel(data, true);
             datasetModel.getChildren().append(filesModel);
           });

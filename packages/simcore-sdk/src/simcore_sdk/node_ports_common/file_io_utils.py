@@ -93,14 +93,14 @@ async def _raise_for_status(response: ClientResponse) -> None:
             response.history,
             body,
             status=response.status,
-            message=response.reason,
+            message=response.reason or "",
             headers=response.headers,
         )
 
 
 def _compute_tqdm_miniters(byte_size: int) -> float:
-    """ensures tqdm minimal iteration is 1 %"""
-    return min(byte_size / 100, 1.0)
+    """ensures tqdm minimal iteration is 1.5 %"""
+    return min(1.5 * byte_size / 100.0, 1.0)
 
 
 async def _file_object_chunk_reader(
@@ -240,19 +240,12 @@ async def _upload_file_part(
     part_index: int,
     file_offset: int,
     file_part_size: int,
-    num_parts: int,
     upload_url: AnyUrl,
     pbar: tqdm,
     num_retries: int,
     *,
     io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> tuple[int, ETag]:
-    log.debug(
-        "--> uploading %s of %s, [%s]...",
-        f"{file_part_size=} bytes",
-        f"{file_to_upload=}",
-        f"{part_index+1}/{num_parts}",
-    )
     file_uploader = _file_chunk_reader(
         file_to_upload,  # type: ignore
         offset=file_offset,
@@ -290,13 +283,6 @@ async def _upload_file_part(
                 assert response.headers  # nosec
                 assert "Etag" in response.headers  # nosec
                 received_e_tag = json.loads(response.headers["Etag"])
-                log.info(
-                    "--> completed upload %s of %s, [%s], %s",
-                    f"{file_part_size=}",
-                    f"{file_to_upload=}",
-                    f"{part_index+1}/{num_parts}",
-                    f"{received_e_tag=}",
-                )
                 return (part_index, received_e_tag)
     raise exceptions.S3TransferError(
         f"Unexpected error while transferring {file_to_upload} to {upload_url}"
@@ -320,8 +306,6 @@ async def upload_file_to_presigned_links(
         file_size = file_to_upload.file_size
         file_name = file_to_upload.file_name
 
-    log.debug("Uploading from %s to %s", f"{file_name=}", f"{file_upload_links=}")
-
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
@@ -342,7 +326,6 @@ async def upload_file_to_presigned_links(
                     index,
                     index * file_chunk_size,
                     this_file_chunk_size,
-                    num_urls,
                     upload_url,
                     pbar,
                     num_retries,
@@ -360,11 +343,6 @@ async def upload_file_to_presigned_links(
             part_to_etag = [
                 UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
             ]
-            log.info(
-                "Uploaded %s, received %s",
-                f"{file_name=}",
-                f"{part_to_etag=}",
-            )
             return part_to_etag
         except ClientError as exc:
             raise exceptions.S3TransferError(

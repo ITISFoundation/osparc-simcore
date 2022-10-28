@@ -17,7 +17,7 @@ from uuid import uuid4
 import np_helpers
 import pytest
 import sqlalchemy as sa
-from models_library.projects_nodes_io import LocationID, NodeIDStr
+from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
@@ -60,15 +60,15 @@ async def _check_port_valid(
     if "defaultValue" in port_schema:
         assert port.default_value == port_schema["defaultValue"]
     else:
-        assert port.default_value == None
+        assert port.default_value is None
     if "fileToKeyMap" in port_schema:
         assert port.file_to_key_map == port_schema["fileToKeyMap"]
     else:
-        assert port.file_to_key_map == None
+        assert port.file_to_key_map is None
     if "widget" in port_schema:
         assert port.widget == port_schema["widget"]
     else:
-        assert port.widget == None
+        assert port.widget is None
 
     # check payload values
     port_values = config_dict[port_type]
@@ -83,7 +83,7 @@ async def _check_port_valid(
     elif "defaultValue" in port_schema:
         assert port.value == port_schema["defaultValue"]
     else:
-        assert port.value == None
+        assert port.value is None
 
 
 async def _check_ports_valid(ports: Nodeports, config_dict: dict, port_type: str):
@@ -294,7 +294,9 @@ async def test_port_file_accessors(
     assert received_file_link["store"] == s3_simcore_location
     assert (
         received_file_link["path"]
-        == Path(f"{project_id}", f"{node_uuid}", Path(item_value).name).as_posix()
+        == Path(
+            f"{project_id}", f"{node_uuid}", "out_34", Path(item_value).name
+        ).as_posix()
     )
     # the eTag is created by the S3 server
     assert received_file_link["eTag"]
@@ -589,6 +591,7 @@ async def test_file_mapping(
     item_alias: str,
     item_pytype: type,
     option_r_clone_settings: Optional[RCloneSettings],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
 ):
     config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],
@@ -637,7 +640,7 @@ async def test_file_mapping(
         await PORTS.set_file_by_keymap(invalid_alias)
     assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)
-    file_id = np_helpers.file_uuid(file_path, project_id, node_uuid)
+    file_id = create_valid_file_uuid("out_1", file_path)
     received_file_link = (await PORTS.outputs)["out_1"].value.dict(
         by_alias=True, exclude_unset=True
     )
@@ -739,11 +742,11 @@ async def test_batch_update_inputs_outputs(
     await check_config_valid(PORTS, config_dict)
 
     await PORTS.set_multiple(
-        {port.key: k for k, port in enumerate((await PORTS.outputs).values())}
+        {port.key: (k, None) for k, port in enumerate((await PORTS.outputs).values())}
     )
     await PORTS.set_multiple(
         {
-            port.key: k
+            port.key: (k, None)
             for k, port in enumerate((await PORTS.inputs).values(), start=1000)
         }
     )
@@ -762,4 +765,4 @@ async def test_batch_update_inputs_outputs(
 
     # test missing key raises error
     with pytest.raises(UnboundPortError):
-        await PORTS.set_multiple({"missing_key_in_both": 123132})
+        await PORTS.set_multiple({"missing_key_in_both": (123132, None)})

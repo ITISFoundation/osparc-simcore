@@ -30,9 +30,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     this.setPaddingLeft(10);
 
     const folderUpBtn = this.getChildControl("folder-up");
-    folderUpBtn.addListener("execute", () => {
-      this.fireDataEvent("folderUp", this.getFolder());
-    }, this);
+    folderUpBtn.addListener("execute", () => this.fireDataEvent("folderUp", this.getFolder()), this);
     this.getChildControl("folder-path");
     this.getChildControl("view-options-icons");
     this.getChildControl("view-options-list");

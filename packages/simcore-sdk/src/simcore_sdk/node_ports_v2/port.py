@@ -1,5 +1,6 @@
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Optional
@@ -55,6 +56,11 @@ def can_parse_as(v, *types) -> bool:
         return True
     except ValidationError:
         return False
+
+
+@dataclass(frozen=True)
+class SetKWargs:
+    file_base_path: Optional[Path] = None
 
 
 class Port(BaseServiceIOModel):
@@ -284,7 +290,11 @@ class Port(BaseServiceIOModel):
             self.value_concrete = v
         return v
 
-    async def _set(self, new_concrete_value: ItemConcreteValue) -> None:
+    async def _set(
+        self,
+        new_concrete_value: Optional[ItemConcreteValue],
+        set_kwargs: Optional[SetKWargs] = None,
+    ) -> None:
         """
         :raises InvalidItemTypeError
         :raises ValidationError
@@ -310,6 +320,11 @@ class Port(BaseServiceIOModel):
 
                 _check_if_symlink_is_valid(converted_value)
 
+                # NOTE: the file will be saved in S3 as PROJECT_ID/NODE_ID/(set_kwargs.file_base_path)/PORT_KEY/file.ext
+                base_path = Path(self.key)
+                if set_kwargs and set_kwargs.file_base_path:
+                    base_path = set_kwargs.file_base_path / self.key
+
                 new_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,
@@ -317,6 +332,7 @@ class Port(BaseServiceIOModel):
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
+                    file_base_path=base_path,
                 )
             else:
                 new_value = converted_value
@@ -326,13 +342,13 @@ class Port(BaseServiceIOModel):
         self.value_concrete = None
         self._used_default_value = False
 
-    async def set(self, new_value: ItemConcreteValue) -> None:
+    async def set(self, new_value: ItemConcreteValue, **set_kwargs) -> None:
         """sets a value to the port, by default it is also stored in the database
 
         :raises InvalidItemTypeError
         :raises ValidationError
         """
-        await self._set(new_concrete_value=new_value)
+        await self._set(new_concrete_value=new_value, **set_kwargs)
         await self._node_ports.save_to_db_cb(self._node_ports)
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
