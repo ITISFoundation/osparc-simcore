@@ -152,7 +152,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         if user_id == project_id is None:
             return all_tracked_service_uuids
         # let's filter
-        def _filter_scheduler_data(node_id: NodeID) -> bool:
+        def _is_scheduled(node_id: NodeID) -> bool:
             try:
                 scheduler_data = self.get_scheduler_data(node_id)
                 if user_id and scheduler_data.user_id != user_id:
@@ -163,11 +163,12 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             except DynamicSidecarNotFoundError:
                 return False
 
-        filtered_tracked_service_uuids = filter(
-            _filter_scheduler_data,
-            (n for n in all_tracked_service_uuids),
+        return list(
+            filter(
+                _is_scheduled,
+                (n for n in all_tracked_service_uuids),
+            )
         )
-        return list(filtered_tracked_service_uuids)
 
     async def mark_service_for_removal(
         self, node_uuid: NodeID, can_save: Optional[bool]
