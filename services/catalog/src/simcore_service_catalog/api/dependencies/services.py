@@ -30,7 +30,7 @@ async def get_service_from_registry(
     director_client: DirectorApi = Depends(get_director_api),
 ) -> ServiceGet:
     """
-    Retrieves service metadata
+    Retrieves service metadata from the docker registry via the director
     """
     try:
         if is_function_service(service_key):
