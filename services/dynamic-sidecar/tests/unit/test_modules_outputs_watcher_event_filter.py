@@ -83,7 +83,7 @@ def mock_delay_policy() -> BaseDelayPolicy:
 @pytest.fixture
 def mock_get_dir_size(mocker: MockerFixture) -> Iterator[AsyncMock]:
     yield mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.directory_watcher._event_filter.get_dir_size",
+        "simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter.get_dir_size",
         return_value=1,
     )
 

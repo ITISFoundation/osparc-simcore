@@ -10,8 +10,8 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import PositiveFloat
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
-from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
+from .mounted_fs import MountedVolumes
 from .nodeports import upload_outputs
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class OutputsManager:
         self,
         port_key: str,
         io_log_redirect_cb: Optional[LogRedirectCB],
-    ) -> None:
+    ) -> Task:
         task = self._current_uploads[port_key] = create_task(
             upload_outputs(
                 outputs_path=self.outputs_path,
@@ -56,6 +56,7 @@ class OutputsManager:
         task.add_done_callback(
             partial(lambda s, _: self._current_uploads.pop(s, None), port_key)
         )
+        return task
 
     async def _cancel_task(self, port_key: str) -> None:
         task = self._current_uploads.get(port_key, None)
@@ -80,7 +81,7 @@ class OutputsManager:
         content_changed: bool,
         port_key: str,
         io_log_redirect_cb: Optional[LogRedirectCB],
-    ) -> None:
+    ) -> Optional[Task]:
         """
         If an upload is already ongoing decides if it must
         keep it or cancel it and retry.
@@ -94,24 +95,22 @@ class OutputsManager:
 
             # an upload is already ongoing
             if upload_ongoing and not content_changed:
-                return
+                return None
 
             # if content is out of data cancel upload and retry
             if upload_ongoing and content_changed:
                 await self._cancel_task(port_key)
 
-                self._nodeports_upload_port(port_key, io_log_redirect_cb)
-                return
+                return self._nodeports_upload_port(port_key, io_log_redirect_cb)
 
             # always upload if content changed
             if content_changed:
-                self._nodeports_upload_port(port_key, io_log_redirect_cb)
-                return
+                return self._nodeports_upload_port(port_key, io_log_redirect_cb)
 
             # is it always requested to upload
             if self.upload_upon_api_request:
-                self._nodeports_upload_port(port_key, io_log_redirect_cb)
-                return
+                return self._nodeports_upload_port(port_key, io_log_redirect_cb)
+        return None
 
     async def shutdown(self) -> None:
         # dictionary can change during iteration
@@ -136,15 +135,17 @@ class OutputsManager:
 
     async def upload_port(
         self, port_key: str, io_log_redirect_cb: Optional[LogRedirectCB]
-    ) -> None:
+    ) -> Optional[Task]:
         """
         Request a port upload.
+        returns: a task relative to  an upload if one is required.
+        Returned task can be optionally awaited.
 
         Used by the API endpoint.
         """
         self._check_port_key(port_key)
 
-        await self._trigger_port_upload(
+        return await self._trigger_port_upload(
             content_changed=False,
             port_key=port_key,
             io_log_redirect_cb=io_log_redirect_cb,
@@ -153,10 +154,10 @@ class OutputsManager:
 
 def setup_outputs_manager(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
         app.state.outputs_manager = OutputsManager(
-            outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS
+            outputs_path=mounted_volumes.disk_outputs_path
         )
 
         logger.info("outputs manger started")

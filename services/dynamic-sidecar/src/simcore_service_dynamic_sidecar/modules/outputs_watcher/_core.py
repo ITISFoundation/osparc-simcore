@@ -158,7 +158,7 @@ class OutputsWatcher:
         await self._event_filter.shutdown()
 
 
-def setup_directory_watcher(app: FastAPI) -> None:
+def setup_outputs_watcher(app: FastAPI) -> None:
     async def on_startup() -> None:
         mounted_volumes: MountedVolumes
         mounted_volumes = app.state.mounted_volumes  # nosec

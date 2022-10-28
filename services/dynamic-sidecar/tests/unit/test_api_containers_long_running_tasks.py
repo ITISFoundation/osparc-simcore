@@ -39,7 +39,9 @@ from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
+from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -211,7 +213,7 @@ def mock_data_manager(mocker: MockerFixture) -> None:
 @pytest.fixture()
 def mock_nodeports(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
         return_value=None,
     )
     mocker.patch(
@@ -228,7 +230,10 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-def mock_port_keys(request: FixtureRequest) -> list[str]:
+def mock_port_keys(request: FixtureRequest, client: Client) -> Optional[list[str]]:
+    outputs_manager: OutputsManager = AppState(client.app).outputs_manager
+    if request.param is not None:
+        outputs_manager.outputs_port_keys.update(request.param)
     return request.param
 
 
@@ -243,7 +248,7 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
         raise NodeNotFound(missing_node_uuid)
 
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
         side_effect=_mocked,
     )
 
@@ -287,7 +292,7 @@ async def _get_task_id_state_save(
 
 
 async def _get_task_id_task_ports_inputs_pull(
-    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys
@@ -298,7 +303,7 @@ async def _get_task_id_task_ports_inputs_pull(
 
 
 async def _get_task_id_task_ports_outputs_pull(
-    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys
@@ -309,7 +314,7 @@ async def _get_task_id_task_ports_outputs_pull(
 
 
 async def _get_task_id_task_ports_outputs_push(
-    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/outputs:push", json=port_keys
@@ -486,7 +491,7 @@ async def test_container_save_state(
 async def test_container_pull_input_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -503,7 +508,7 @@ async def test_container_pull_input_ports(
 async def test_container_pull_output_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -520,7 +525,7 @@ async def test_container_pull_output_ports(
 async def test_container_push_output_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -537,11 +542,11 @@ async def test_container_push_output_ports(
 async def test_container_push_output_ports_missing_node(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     missing_node_uuid: str,
     mock_node_missing: None,
 ):
-    with pytest.raises(TaskClientResultError) as exec_info:
+    async def _test_code() -> None:
         async with periodic_task_result(
             client=client,
             task_id=await _get_task_id_task_ports_outputs_push(
@@ -551,7 +556,13 @@ async def test_container_push_output_ports_missing_node(
             status_poll_interval=FAST_STATUS_POLL,
         ):
             pass
-    assert f"the node id {missing_node_uuid} was not found" in f"{exec_info.value}"
+
+    if not mock_port_keys:
+        await _test_code()
+    else:
+        with pytest.raises(TaskClientResultError) as exec_info:
+            await _test_code()
+        assert f"the node id {missing_node_uuid} was not found" in f"{exec_info.value}"
 
 
 async def test_containers_restart(

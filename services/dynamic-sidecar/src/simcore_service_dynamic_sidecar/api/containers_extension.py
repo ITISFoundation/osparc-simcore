@@ -9,9 +9,10 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..modules import directory_watcher
+from ..modules import outputs_watcher
 from ..modules.mounted_fs import MountedVolumes
-from ._dependencies import get_application, get_mounted_volumes
+from ..modules.outputs_manager import OutputsManager
+from ._dependencies import get_application, get_mounted_volumes, get_outputs_manager
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class CreateDirsRequestItem(BaseModel):
     outputs_labels: dict[str, ServiceOutput]
 
 
-class PatchDirectoryWatcherItem(BaseModel):
+class PatchOutputsWatcherItem(BaseModel):
     is_enabled: bool
 
 
@@ -43,19 +44,19 @@ router = APIRouter()
 
 
 @router.patch(
-    "/containers/directory-watcher",
-    summary="Enable/disable directory-watcher event propagation",
+    "/containers/outputs-watcher",
+    summary="Enable/disable outputs-watcher event propagation",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def toggle_directory_watcher(
-    patch_directory_watcher_item: PatchDirectoryWatcherItem,
+async def toggle_outputs_watcher(
+    patch_outputs_watcher_item: PatchOutputsWatcherItem,
     app: FastAPI = Depends(get_application),
 ) -> None:
-    if patch_directory_watcher_item.is_enabled:
-        directory_watcher.enable_directory_watcher(app)
+    if patch_outputs_watcher_item.is_enabled:
+        outputs_watcher.enable_outputs_watcher(app)
     else:
-        directory_watcher.disable_directory_watcher(app)
+        outputs_watcher.disable_outputs_watcher(app)
 
 
 @router.post(
@@ -72,12 +73,14 @@ async def toggle_directory_watcher(
 async def create_output_dirs(
     request_mode: CreateDirsRequestItem,
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    outputs_manager: OutputsManager = Depends(get_outputs_manager),
 ) -> None:
     outputs_path = mounted_volumes.disk_outputs_path
     for port_key, service_output in request_mode.outputs_labels.items():
         if is_file_type(service_output.property_type):
             dir_to_create = outputs_path / port_key
             dir_to_create.mkdir(parents=True, exist_ok=True)
+            outputs_manager.outputs_port_keys.add(port_key)
 
 
 @router.post(

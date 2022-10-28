@@ -28,10 +28,12 @@ from ..modules.long_running_tasks import (
     task_save_state,
 )
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.outputs_manager import OutputsManager
 from ._dependencies import (
     get_application,
     get_application_health,
     get_mounted_volumes,
+    get_outputs_manager,
     get_rabbitmq,
     get_settings,
     get_shared_store,
@@ -286,7 +288,7 @@ async def ports_outputs_push_task(
     port_keys: Optional[list[str]] = None,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    outputs_manager: OutputsManager = Depends(get_outputs_manager),
 ) -> TaskId:
     assert request  # nosec
 
@@ -296,7 +298,7 @@ async def ports_outputs_push_task(
             task=task_ports_outputs_push,
             unique=True,
             port_keys=port_keys,
-            mounted_volumes=mounted_volumes,
+            outputs_manager=outputs_manager,
             rabbitmq=rabbitmq,
         )
         return task_id

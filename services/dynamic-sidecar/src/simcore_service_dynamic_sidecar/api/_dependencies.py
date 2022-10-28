@@ -4,6 +4,7 @@
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
+from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
@@ -40,3 +41,7 @@ def get_rabbitmq(app_state: State = Depends(get_app_state)) -> RabbitMQ:
 
 def get_mounted_volumes(app_state: State = Depends(get_app_state)) -> MountedVolumes:
     return app_state.mounted_volumes  # type: ignore
+
+
+def get_outputs_manager(app_state: State = Depends(get_app_state)) -> OutputsManager:
+    return app_state.outputs_manager  # type: ignore

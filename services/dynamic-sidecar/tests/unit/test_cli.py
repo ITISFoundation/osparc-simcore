@@ -46,7 +46,7 @@ def test_list_state_dirs(
     )
 
 
-def test_outputs_push_interface(
+def test_outputs_save_interface(
     cli_runner: CliRunner, mock_rabbitmq: None, mock_data_manager: None
 ):
     result = cli_runner.invoke(main, ["state-save"])
@@ -54,7 +54,7 @@ def test_outputs_push_interface(
     assert result.stdout == "state save finished successfully\n"
 
 
-def test_state_save_interface(
+def test_state_push_outputs(
     cli_runner: CliRunner, mock_rabbitmq: None, mock_nodeports: None
 ):
     result = cli_runner.invoke(main, ["outputs-push"])

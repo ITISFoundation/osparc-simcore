@@ -304,18 +304,18 @@
         }
       }
     },
-    "/v1/containers/directory-watcher": {
+    "/v1/containers/outputs-watcher": {
       "patch": {
         "tags": [
           "containers"
         ],
-        "summary": "Enable/disable directory-watcher event propagation",
-        "operationId": "toggle_directory_watcher_v1_containers_directory_watcher_patch",
+        "summary": "Enable/disable outputs-watcher event propagation",
+        "operationId": "toggle_outputs_watcher_v1_containers_outputs_watcher_patch",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
+                "$ref": "#/components/schemas/PatchOutputsWatcherItem"
               }
             }
           },
@@ -802,8 +802,8 @@
           }
         }
       },
-      "PatchDirectoryWatcherItem": {
-        "title": "PatchDirectoryWatcherItem",
+      "PatchOutputsWatcherItem": {
+        "title": "PatchOutputsWatcherItem",
         "required": [
           "is_enabled"
         ],

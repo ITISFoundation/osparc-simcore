@@ -1,5 +1,6 @@
 import functools
 import logging
+from asyncio import Task
 from collections import deque
 from typing import Any, Awaitable, Final, Optional
 
@@ -30,8 +31,9 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
-from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.outputs_manager import OutputsManager
+from ..modules.outputs_watcher import outputs_watcher_disabled
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +107,7 @@ async def task_create_service_containers(
     await send_message(rabbitmq, "starting service containers")
     assert shared_store.compose_spec  # nosec
 
-    with directory_watcher_disabled(app):
+    with outputs_watcher_disabled(app):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         await docker_compose_rm(shared_store.compose_spec, settings)
@@ -288,18 +290,25 @@ async def task_ports_outputs_pull(
 async def task_ports_outputs_push(
     progress: TaskProgress,
     port_keys: Optional[list[str]],
-    mounted_volumes: MountedVolumes,
+    outputs_manager: OutputsManager,
     rabbitmq: RabbitMQ,
 ) -> None:
     progress.update(message="starting outputs pushing", percent=0.0)
-    port_keys = [] if port_keys is None else port_keys
+
+    port_keys = list(outputs_manager.outputs_port_keys) if not port_keys else port_keys
 
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
-    await nodeports.upload_outputs(
-        mounted_volumes.disk_outputs_path,
-        port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(send_message, rabbitmq),
-    )
+
+    upload_tasks: deque[Task] = deque()
+    for port_key in port_keys:
+        ongoing_upload_task = await outputs_manager.upload_port(
+            port_key, io_log_redirect_cb=functools.partial(send_message, rabbitmq)
+        )
+        if ongoing_upload_task is not None:
+            upload_tasks.append(ongoing_upload_task)
+
+    await logged_gather(*upload_tasks)
+
     await send_message(rabbitmq, "Finished pulling outputs")
     progress.update(message="finished outputs pushing", percent=0.99)
 

@@ -4,7 +4,7 @@
 
 import asyncio
 from pathlib import Path
-from shutil import move
+from shutil import move, rmtree
 from typing import AsyncIterable, AsyncIterator, Iterator, Optional
 from unittest.mock import AsyncMock
 
@@ -15,7 +15,7 @@ from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs_watcher import (
-    _core as directory_watcher_core,
+    _core as outputs_watcher_core,
 )
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._core import OutputsWatcher
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
@@ -30,8 +30,8 @@ WAIT_INTERVAL = TICK_INTERVAL * 10
 
 
 @pytest.fixture
-def mounted_volumes(faker: Faker, tmp_path: Path) -> MountedVolumes:
-    return MountedVolumes(
+def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
+    mounted_volumes = MountedVolumes(
         run_id=faker.uuid4(cast_to=None),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=tmp_path / "inputs",
@@ -41,6 +41,8 @@ def mounted_volumes(faker: Faker, tmp_path: Path) -> MountedVolumes:
         compose_namespace="",
         dy_volumes=tmp_path,
     )
+    yield mounted_volumes
+    rmtree(tmp_path)
 
 
 @pytest.fixture
@@ -60,9 +62,7 @@ async def outputs_watcher(
     mounted_volumes: MountedVolumes,
     outputs_manager: OutputsManager,
 ) -> OutputsWatcher:
-    mocker.patch.object(
-        directory_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", TICK_INTERVAL
-    )
+    mocker.patch.object(outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", TICK_INTERVAL)
     outputs_watcher = OutputsWatcher(
         outputs_manager=outputs_manager, io_log_redirect_cb=None
     )
@@ -187,10 +187,9 @@ async def test_does_not_trigger_on_attribute_change(
     assert mock_event_filter_upload_trigger.call_count == 1
 
 
-# TODO: write a test that does the following. simulates 10 directories
-# writes files in parallel to these 10 directories that are a bit big, with different chunksizes
-# figure out how events should be handeled
-# we want to trigger uploads per `port_key` that are individual
-# we require a unique manager that detects this uploads, it also has to take care of cancelling ongoing uplods
-# per previous `ports_key`
-# also keeps track of last `port_key` change in order to consider if it requires upload of the object again
+# TODO: write a test to simulate more impactful workload
+# - have it write X files per directory sequentially
+# - in total 10 directories
+# - would like to detect that only 1 event per port key for upload was triggered
+
+# TODO: run the above test in parallel
