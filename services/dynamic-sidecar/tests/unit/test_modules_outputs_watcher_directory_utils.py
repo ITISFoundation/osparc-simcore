@@ -3,6 +3,7 @@
 import shutil
 import time
 from pathlib import Path
+from random import randbytes
 from typing import Iterable
 from uuid import uuid4
 
@@ -20,7 +21,7 @@ def _create_files(path: Path, files: NonNegativeInt) -> PositiveInt:
     total = 0
     for _ in range(files):
         file_path = path / f"f{uuid4()}"
-        file_path.write_bytes(b"0")
+        file_path.write_bytes(randbytes(1))
         total += file_path.stat().st_size
     return total
 
