@@ -185,7 +185,7 @@ async def _get_updated_project(aiopg_engine: Engine, project_id: str) -> dict[st
 async def random_project_with_files(
     aiopg_engine: Engine,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
-    create_project_node: Callable[[ProjectID], Awaitable[NodeID]],
+    create_project_node: Callable[..., Awaitable[NodeID]],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     upload_file: Callable[
         [ByteSize, str, str], Awaitable[tuple[Path, SimcoreS3FileID]]
@@ -207,7 +207,11 @@ async def random_project_with_files(
         src_projects_list: dict[NodeID, dict[SimcoreS3FileID, Path]] = {}
         upload_tasks: deque[Awaitable] = deque()
         for _node_index in range(num_nodes):
-            src_node_id = await create_project_node(ProjectID(project["uuid"]))
+            # NOTE: we put some more outputs in there to simuate a real case better
+            src_node_id = await create_project_node(
+                ProjectID(project["uuid"]),
+                outputs={"output_1": faker.pyint(), "output_2": faker.pystr()},
+            )
             src_projects_list[src_node_id] = {}
 
             async def _upload_file_and_update_project(project, src_node_id):
