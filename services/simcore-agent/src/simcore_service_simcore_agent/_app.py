@@ -1,9 +1,10 @@
 import asyncio
+from collections import deque
 import logging
 import signal
 import traceback
 from contextlib import suppress
-from typing import Any, Callable, Coroutine, Final, Optional
+from typing import Any, Awaitable, Callable, Coroutine, Final, Optional
 
 from pydantic import PositiveFloat, PositiveInt
 
@@ -32,10 +33,17 @@ class Application:
         self._registered_coroutines: set[str] = set()
 
     async def _exit_gracefully(self, loop: asyncio.AbstractEventLoop):
-        for task in self._tasks:
-            task.cancel()
+        async def _wat_for_task(task: asyncio.Task) -> None:
             with suppress(asyncio.CancelledError):
                 await task
+
+        tasks_to_wait: deque[Awaitable] = deque()
+        for task in self._tasks:
+            task.cancel()
+
+            tasks_to_wait.append(_wat_for_task(task))
+
+        await asyncio.gather(*tasks_to_wait)
 
         logger.info(APP_FINISHED_BANNER_MSG)
         loop.stop()
