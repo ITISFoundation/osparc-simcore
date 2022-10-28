@@ -22,6 +22,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.projects_nodes import Node
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
@@ -551,7 +552,11 @@ class ProjectDBAPI:
         return template_prj
 
     async def patch_user_project_workbench(
-        self, partial_workbench_data: dict[str, Any], user_id: int, project_uuid: str
+        self,
+        partial_workbench_data: dict[str, Any],
+        user_id: int,
+        project_uuid: str,
+        product_name: Optional[str] = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
@@ -583,10 +588,18 @@ class ProjectDBAPI:
                         current_node_data = project.get("workbench", {}).get(node_key)
 
                         if current_node_data is None:
-                            log.debug(
-                                "node %s is missing from project, no patch", node_key
-                            )
-                            raise NodeNotFoundError(project_uuid, node_key)
+                            # if it's a new node, let's check that it validates
+                            try:
+                                Node.parse_obj(new_node_data)
+                                project["workbench"][node_key] = new_node_data
+                                current_node_data = new_node_data
+                            except ValidationError as err:
+                                log.debug(
+                                    "node %s is missing from project, and %s is no new node, no patch",
+                                    node_key,
+                                    f"{new_node_data=}",
+                                )
+                                raise NodeNotFoundError(project_uuid, node_key) from err
                         # find changed keys
                         changed_entries.update(
                             {
@@ -621,6 +634,10 @@ class ProjectDBAPI:
                 )
                 project = await result.fetchone()
                 assert project  # nosec
+                if product_name:
+                    await self.upsert_project_linked_product(
+                        ProjectID(project_uuid), product_name, conn=conn
+                    )
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),

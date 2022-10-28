@@ -196,23 +196,22 @@ async def add_project_node(
     # ensure the project is up-to-date in the database prior to start any potential service
     project_workbench = project.get("workbench", {})
     assert node_uuid not in project_workbench  # nosec
-    project_workbench[node_uuid] = jsonable_encoder(
-        Node.parse_obj(
-            {
-                "key": service_key,
-                "version": service_version,
-                "label": service_key.split("/")[-1],
-            }
+    partial_workbench_data: dict[str, Any] = {
+        node_uuid: jsonable_encoder(
+            Node.parse_obj(
+                {
+                    "key": service_key,
+                    "version": service_version,
+                    "label": service_key.split("/")[-1],
+                }
+            ),
+            exclude_unset=True,
         ),
-        exclude_unset=True,
-    )
+    }
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.replace_user_project(
-        new_project_data=project,
-        user_id=user_id,
-        product_name=product_name,
-        project_uuid=project["uuid"],
+    await db.patch_user_project_workbench(
+        partial_workbench_data, user_id, project["uuid"], product_name
     )
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]

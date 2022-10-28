@@ -3,15 +3,18 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import re
 from collections import UserDict
 from copy import deepcopy
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Awaitable, Callable
 from unittest import mock
 from uuid import UUID, uuid4
 
 import pytest
+import sqlalchemy as sa
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -20,6 +23,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
+from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -282,6 +286,80 @@ async def test_create_node(
             ].assert_not_called()
     else:
         assert error
+
+
+def standard_user_role() -> tuple[str, tuple]:
+    all_roles = standard_role_response()
+
+    return (all_roles[0], (pytest.param(*all_roles[1][2], id="standard user role"),))
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_create_many_nodes_in_parallel(
+    client: TestClient,
+    user_project: Callable[[int], Awaitable[ProjectDict]],
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+    postgres_db: sa.engine.Engine,
+):
+    assert client.app
+    # create a starting project with no dy-services
+    project = await user_project(0)
+
+    @dataclass
+    class _RunninServices:
+        running_services_uuids: list[str] = field(default_factory=list)
+
+        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+            return [
+                {"service_uuid": service_uuid}
+                for service_uuid in self.running_services_uuids
+            ]
+
+        def inc_running_services(self, *args, **kwargs):
+            self.running_services_uuids.append(kwargs["service_uuid"])
+
+    # let's count the started services
+    running_services = _RunninServices()
+    assert running_services.running_services_uuids == []
+    mocked_director_v2_api[
+        "director_v2_api.get_dynamic_services"
+    ].side_effect = running_services.num_services
+    mocked_director_v2_api[
+        "director_v2_api.run_dynamic_service"
+    ].side_effect = running_services.inc_running_services
+
+    # let's create more than the allowed max amount in parallel
+    url = client.app.router["create_node"].url_for(project_id=project["uuid"])
+    body = {
+        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_version": faker.numerify("%.#.#"),
+    }
+    NUM_DY_SERVICES = 2000
+    responses = await asyncio.gather(
+        *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
+    )
+    # all shall have worked
+    for response in responses:
+        await assert_status(response, expected.created)
+    # but only the allowed number of services should have started
+    assert (
+        mocked_director_v2_api["director_v2_api.run_dynamic_service"].call_count
+        == NUM_DY_SERVICES
+    )
+    assert len(running_services.running_services_uuids) == NUM_DY_SERVICES
+    # check that we do have NUM_DY_SERVICES nodes in the project
+    with postgres_db.connect() as conn:
+        result = conn.execute(
+            sa.select([projects_db_model.c.workbench]).where(
+                projects_db_model.c.uuid == project["uuid"]
+            )
+        )
+        assert result
+        workbench = result.one()[projects_db_model.c.workbench]
+    assert len(workbench) == NUM_DY_SERVICES
 
 
 @pytest.mark.parametrize(
