@@ -205,28 +205,32 @@ async def test_containers_docker_status_api_error(
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == {}
 
 
-async def test_service_disable_dir_watcher(
+async def test_service_disable_outputs_watcher(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
 ) -> None:
     with get_patched_client(
-        "patch_containers_directory_watcher",
+        "patch_containers_outputs_watcher",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
-            await client.service_disable_dir_watcher(dynamic_sidecar_endpoint) == None
+            await client.service_disable_outputs_watcher(dynamic_sidecar_endpoint)
+            == None
         )
 
 
-async def test_service_enable_dir_watcher(
+async def test_service_enable_outputs_watcher(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
 ) -> None:
     with get_patched_client(
-        "patch_containers_directory_watcher",
+        "patch_containers_outputs_watcher",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
-        assert await client.service_enable_dir_watcher(dynamic_sidecar_endpoint) == None
+        assert (
+            await client.service_enable_outputs_watcher(dynamic_sidecar_endpoint)
+            == None
+        )
 
 
 @pytest.mark.parametrize("outputs_labels", [{}, {"ok": "data"}])
