@@ -8,7 +8,11 @@ from pydantic import BaseModel, Field
 
 from ...models.schemas.constants import RESPONSE_MODEL_POLICY
 from ...models.schemas.services import ServiceGet
-from ..dependencies.services import get_service_from_registry
+from ..dependencies.services import (
+    AccessInfo,
+    check_service_read_access,
+    get_service_from_registry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +61,9 @@ router = APIRouter()
     **RESPONSE_MODEL_POLICY,
 )
 async def list_service_ports(
-    user_id: int,
+    _user: AccessInfo = Depends(check_service_read_access),
     service: ServiceGet = Depends(get_service_from_registry),
 ):
-    assert user_id  # nosec
-    # FIXME: auth !!!
-    # FIXME: product?
     ports: list[ServicePortGet] = []
 
     if service.inputs:

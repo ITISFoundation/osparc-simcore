@@ -57,11 +57,19 @@ async def director_service_api_mockup(
     mock_catalog_background_task: None,
     disable_service_caching: None,
     director_mockup: MockRouter,
+    user_id: int,
     product_name: str,
     service_key: str,
     service_version: str,
     service_metadata: dict[str, Any],
+    mocker,
 ):
+    # MOCKS access
+    mocker.patch(
+        "simcore_service_catalog.api.routes.check_service_read_access",
+        return_value={"uid": user_id, "product": product_name, "gid": []},
+    )
+
     # SEE services/director/src/simcore_service_director/api/v0/openapi.yaml
     director_mockup.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}",

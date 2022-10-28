@@ -1,16 +1,20 @@
 import urllib.parse
+from dataclasses import dataclass
 from typing import Any, cast
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.requests import Request
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ResourcesDict
 
 from ...core.settings import AppSettings
+from ...db.repositories.groups import GroupsRepository
+from ...db.repositories.services import ServicesRepository
 from ...models.schemas.services import ServiceGet
 from ...models.schemas.services_specifications import ServiceSpecifications
 from ...services.director import DirectorApi
 from ...services.function_services import get_function_service, is_function_service
+from .database import get_repository
 from .director import DirectorApi, get_director_api
 
 
@@ -22,6 +26,49 @@ def get_default_service_resources(request: Request) -> ResourcesDict:
 def get_default_service_specifications(request: Request) -> ServiceSpecifications:
     app_settings: AppSettings = request.app.state.settings
     return app_settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+
+
+@dataclass(frozen=True)
+class AccessInfo:
+    uid: int
+    gid: list[int]
+    product: str
+
+
+async def check_service_read_access(
+    user_id: int,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
+    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    x_simcore_products_name: str = Header(None),
+) -> AccessInfo:
+
+    # get the user's groups
+    user_groups = await groups_repository.list_user_groups(user_id)
+    if not user_groups:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have unsufficient rights to access the service",
+        )
+
+    # check the user has access to this service and to which extent
+    if not await services_repo.get_service(
+        service_key,
+        service_version,
+        gids=[group.gid for group in user_groups],
+        product_name=x_simcore_products_name,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot access this service. It is either not published or not exposed to this user.",
+        )
+
+    return AccessInfo(
+        uid=user_id,
+        gid=[group.gid for group in user_groups],
+        product=x_simcore_products_name,
+    )
 
 
 async def get_service_from_registry(
