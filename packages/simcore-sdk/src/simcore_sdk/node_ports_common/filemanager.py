@@ -1,3 +1,4 @@
+from asyncio import CancelledError
 import logging
 from pathlib import Path
 from typing import Optional, Union
@@ -351,7 +352,11 @@ async def upload_file(
                 upload_links,
                 uploaded_parts,
             )
-        except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
+        except (
+            CancelledError,
+            r_clone.RCloneFailedError,
+            exceptions.S3TransferError,
+        ) as exc:
             log.error("The upload failed with an unexpected error:", exc_info=True)
             if upload_links:
                 # abort the upload correctly, so it can revert back to last version
