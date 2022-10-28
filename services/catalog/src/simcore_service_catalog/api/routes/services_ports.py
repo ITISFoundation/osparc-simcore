@@ -17,34 +17,24 @@ logger = logging.getLogger(__name__)
 # Models -----------------------------------------------------------------------------------------------
 #
 
-KindStr = Literal["input", "output"]
+PortKindStr = Literal["input", "output"]
 
 
 class ServicePortGet(BaseModel):
     name: str = Field(
         ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
     )
-    kind: KindStr = Field(..., description="Kind of port: input or output")
-
+    kind: PortKindStr
     display_name: str
-
-    # https://swagger.io/docs/specification/describing-request-body/
-    # https://www.iana.org/assignments/media-types/media-types.xhtml
-    # media_type: str = Field(..., description="file or in-memory data and if former, what type ?")
-    # FIXME: a file is passed in a variaty of
-    #
     content_schema: Optional[dict[str, Any]] = None
-
-    # TODO: here in the future there is more metadata on the port
 
     @classmethod
     def from_service_io(
         cls,
-        kind: KindStr,
+        kind: PortKindStr,
         name: str,
         io: Union[ServiceInput, ServiceOutput],
     ) -> "ServicePortGet":
-        # TODO: for old formats, should we converted to_json_schema??
         return cls(
             name=name,
             display_name=io.label,
