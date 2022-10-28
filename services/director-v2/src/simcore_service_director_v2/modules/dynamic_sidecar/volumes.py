@@ -6,10 +6,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
+from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from settings_library.r_clone import S3Provider
 
 from ...core.settings import RCloneSettings
-from ...models.schemas.constants import DY_SIDECAR_NAMED_VOLUME_PREFIX
 from .errors import DynamicSidecarError
 
 DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
@@ -102,7 +102,7 @@ class DynamicSidecarVolumesPathsResolver:
         # and state folders are very long and share the same subdirectory path.
         # Reversing volume name to prevent these issues from happening.
         reversed_volume_name = cls._volume_name(path)[::-1]
-        unique_name = f"{DY_SIDECAR_NAMED_VOLUME_PREFIX}_{run_id}_{node_uuid}_{reversed_volume_name}"
+        unique_name = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}_{reversed_volume_name}"
         return unique_name[:255]
 
     @classmethod

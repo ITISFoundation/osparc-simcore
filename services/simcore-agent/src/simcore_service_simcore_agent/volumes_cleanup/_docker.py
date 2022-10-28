@@ -1,12 +1,12 @@
 from collections import deque
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Final
+from typing import AsyncIterator
 
 from aiodocker import Docker
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 
-PREFIX: Final[str] = "dyv_"
+from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 
 
 @asynccontextmanager
@@ -19,7 +19,7 @@ async def get_dyv_volumes(docker: Docker) -> list[dict]:
     dyv_volumes: deque[dict] = deque()
     volumes = await docker.volumes.list()
     for volume in volumes["Volumes"]:
-        if volume["Name"].startswith(PREFIX):
+        if volume["Name"].startswith(f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_"):
             dyv_volumes.append(volume)
     return list(dyv_volumes)
 
