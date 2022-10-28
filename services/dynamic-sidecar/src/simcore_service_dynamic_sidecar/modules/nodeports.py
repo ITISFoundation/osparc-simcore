@@ -63,8 +63,8 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
 )
 
 
-# NOTE: outputs_manager guarantees that no parallel uploads
-# per port_key occur
+# NOTE: outputs_manager guarantees that no parallel upload
+# request per `port_key` occurs
 async def upload_outputs(
     outputs_path: Path,
     port_keys: list[str],
