@@ -50,6 +50,8 @@ async def get_service_from_registry(
         service: ServiceGet = ServiceGet.parse_obj(_service_data)
         return service
 
+    except HTTPException:
+        raise
     except Exception as exc:  # FIXME: ValidationERror, director_clietn exceptions?
         # All HTTPExceptions get handled by http_error_handler
         raise HTTPException(
