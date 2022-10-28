@@ -61,7 +61,7 @@ class ProjectStartsTooManyDynamicNodes(ProjectsException):
 
     def __init__(self, user_id: UserID, project_uuid: ProjectID):
         super().__init__(
-            "User cannot start so many nodes, please manually select nodes to run"
+            "The maximal amount of concurrently running dynamic services was reached. Please manually switch off a service and retry."
         )
         self.user_id = user_id
         self.project_uuid = project_uuid
