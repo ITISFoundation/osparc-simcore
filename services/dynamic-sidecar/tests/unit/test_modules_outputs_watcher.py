@@ -26,6 +26,9 @@ from simcore_service_dynamic_sidecar.modules.outputs_watcher._core import Output
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
     BaseDelayPolicy,
 )
+from simcore_service_dynamic_sidecar.modules.outputs_watcher._directory_utils import (
+    get_dir_size,
+)
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 from aiofiles import os
 
@@ -120,28 +123,14 @@ def mock_event_filter_upload_trigger(
 
 
 @pytest.fixture
-def mock_long_running_upload_outputs(
-    mocker: MockerFixture,
-    outputs_watcher: OutputsWatcher,
-) -> Iterator[AsyncMock]:
+def mock_long_running_upload_outputs(mocker: MockerFixture) -> Iterator[AsyncMock]:
     async def mock_upload_outputs(*args, **kwargs) -> None:
         await asyncio.sleep(SLEEP_FOREVER)
 
-    mock = mocker.patch(
+    yield mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
         sire_effect=mock_upload_outputs,
     )
-
-    class FastDelayPolicy(BaseDelayPolicy):
-        def get_min_interval(self) -> NonNegativeFloat:
-            return WAIT_INTERVAL * 10
-
-        def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:
-            return WAIT_INTERVAL * 10
-
-    outputs_watcher._event_filter.delay_policy = FastDelayPolicy()
-
-    yield mock
 
 
 @pytest.fixture(params=[1, 2, 4])
@@ -329,6 +318,7 @@ async def test_port_key_sequential_event_generation(
 ):
     # await _wait_for_events_to_trigger()
     # writing ports sequentially
+    wait_interval_for_port: deque[float] = deque()
     for port_key in port_keys:
         port_dir = mounted_volumes.disk_outputs_path / port_key
         port_dir.mkdir(parents=True, exist_ok=True)
@@ -338,10 +328,20 @@ async def test_port_key_sequential_event_generation(
             size=file_generation_info.size,
             chunk_size=file_generation_info.chunk_size,
         )
+        wait_interval_for_port.append(
+            running_outputs_watcher._event_filter.delay_policy.get_wait_interval(
+                get_dir_size(port_dir)
+            )
+        )
 
-    await _wait_for_events_to_trigger()
+    # Depending on the size of the files inside the directory it is required to wait more or less
+    # for the events to be triggered
+    MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
+    sleep_for = max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER
+    print(f"Waiting {sleep_for} seconds for events to be processed")
+    await asyncio.sleep(sleep_for)
 
-    # expect at most `len(port_keys)` calls in total
+    # expect exactly `len(port_keys)` calls in total
     assert mock_long_running_upload_outputs.call_count == len(
         port_keys
     ), "\n" + "\n".join(map(str, mock_long_running_upload_outputs.call_args_list))
