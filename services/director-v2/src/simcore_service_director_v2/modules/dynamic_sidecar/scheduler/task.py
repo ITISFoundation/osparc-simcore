@@ -148,8 +148,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         project_id: Optional[ProjectID] = None,
     ) -> list[NodeID]:
         """Returns the list of tracked service UUIDs"""
-        all_tracked_service_uuids = list(self._inverse_search_mapping)
-        if user_id == project_id == None:
+        all_tracked_service_uuids = list(self._inverse_search_mapping.keys())
+        if user_id == project_id is None:
             return all_tracked_service_uuids
         # let's filter
         def _filter_scheduler_data(node_id: NodeID) -> bool:
@@ -282,7 +282,6 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
         except ClientHttpError:
             # error fetching docker_statues, probably someone should check
-            # TODO: ANE this needs review I believe... nobody is checking this...
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
@@ -291,7 +290,6 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
 
         # wait for containers to start
-        # TODO: ANE what if it is stopping???
         if len(user_services_docker_statuses) == 0:
             # marks status as waiting for containers
             return RunningDynamicServiceDetails.from_scheduler_data(
