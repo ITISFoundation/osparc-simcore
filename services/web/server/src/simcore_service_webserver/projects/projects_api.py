@@ -273,7 +273,7 @@ async def add_project_node(
 
     if _is_node_dynamic(service_key):
         with suppress(ProjectStartsTooManyDynamicNodes):
-            # NOTE: we do not start the start if there are already too many
+            # NOTE: we do not start the service if there are already too many
             await _start_dynamic_service(
                 request,
                 service_key,
