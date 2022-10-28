@@ -29,9 +29,10 @@ async def get_service_from_registry(
     service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
 ) -> ServiceGet:
+    """
+    Retrieves service metadata
+    """
     try:
-
-        # check the service exists (raise HTTP_404_NOT_FOUND)
         if is_function_service(service_key):
             frontend_service: dict[str, Any] = get_function_service(
                 key=service_key, version=service_version
