@@ -518,6 +518,15 @@
             },
             "name": "user_id",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "X-Simcore-Products-Name",
+              "type": "string"
+            },
+            "name": "x-simcore-products-name",
+            "in": "header"
           }
         ],
         "responses": {
@@ -2937,8 +2946,7 @@
               "input",
               "output"
             ],
-            "type": "string",
-            "description": "Kind of port: input or output"
+            "type": "string"
           },
           "display_name": {
             "title": "Display Name",
