@@ -827,7 +827,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4
@@ -1211,7 +1211,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4
@@ -1571,7 +1571,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4
@@ -1881,6 +1881,7 @@ jobs:
         unit-test-director,
         unit-test-director-v2,
         unit-test-dynamic-sidecar,
+        unit-test-simcore-agent,
         unit-test-dask-task-models-library,
         unit-test-dask-sidecar,
         unit-test-service-integration,
@@ -1943,6 +1944,7 @@ jobs:
         unit-test-director-v2,
         unit-test-director,
         unit-test-dynamic-sidecar,
+        unit-test-simcore-agent,
         unit-test-frontend,
         unit-test-models-library,
         unit-test-postgres-database,
