@@ -269,7 +269,7 @@ async def user_project_with_num_dynamic_services(
                 )
             )
             assert len(dynamic_services) == num_dyn_services
-            assert project["workbench"]
+
             return project
 
         yield _creator
