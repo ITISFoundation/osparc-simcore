@@ -14,18 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 #
-# Models
+# Models -----------------------------------------------------------------------------------------------
 #
 
-
-PortKindStr = Literal["input", "output"]
+KindStr = Literal["input", "output"]
 
 
 class ServicePortGet(BaseModel):
     name: str = Field(
         ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
     )
-    kind: PortKindStr = Field(..., description="Kind of port: input or output")
+    kind: KindStr = Field(..., description="Kind of port: input or output")
 
     display_name: str
 
@@ -41,26 +40,24 @@ class ServicePortGet(BaseModel):
     @classmethod
     def from_service_io(
         cls,
-        kind: PortKindStr,
+        kind: KindStr,
         name: str,
-        service_io: Union[ServiceInput, ServiceOutput],
+        io: Union[ServiceInput, ServiceOutput],
     ) -> "ServicePortGet":
         # TODO: for old formats, should we converted to_json_schema??
         return cls(
             name=name,
-            display_name=service_io.label,
+            display_name=io.label,
             kind=kind,
-            content_schema=service_io.content_schema,
+            content_schema=io.content_schema,
         )
 
 
 #
-# Routes
+# Routes -----------------------------------------------------------------------------------------------
 #
 
 router = APIRouter()
-
-# TODO: update version
 
 
 @router.get(
@@ -76,8 +73,6 @@ async def list_service_ports(
     assert user_id  # nosec
     # FIXME: auth !!!
     # FIXME: product?
-    # TODO: add e.g. filter='kind==input'?
-
     ports: list[ServicePortGet] = []
 
     if service.inputs:
