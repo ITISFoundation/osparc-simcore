@@ -54,7 +54,7 @@ from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
     attempt_pod_removal_and_data_saving,
-    disabled_directory_watcher,
+    disabled_outputs_watcher,
     get_director_v0_client,
     get_repository,
     parse_containers_inspect,
@@ -305,7 +305,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         )
 
         async def _pull_outputs_and_state():
-            async with disabled_directory_watcher(
+            async with disabled_outputs_watcher(
                 dynamic_sidecar_client, dynamic_sidecar_endpoint
             ):
                 tasks = [

@@ -48,7 +48,7 @@ RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
 @asynccontextmanager
-async def disabled_directory_watcher(
+async def disabled_outputs_watcher(
     dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: AnyHttpUrl
 ) -> AsyncIterator[None]:
     """
@@ -60,12 +60,12 @@ async def disabled_directory_watcher(
         can be again synced via nodeports upon change.
     """
     try:
-        await dynamic_sidecar_client.service_disable_dir_watcher(
+        await dynamic_sidecar_client.service_disable_outputs_watcher(
             dynamic_sidecar_endpoint
         )
         yield
     finally:
-        await dynamic_sidecar_client.service_enable_dir_watcher(
+        await dynamic_sidecar_client.service_enable_outputs_watcher(
             dynamic_sidecar_endpoint
         )
 
