@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": " Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.3.2"
+    "version": "0.4.0"
   },
   "paths": {
     "/v0/meta": {
@@ -464,6 +464,73 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServiceSpecificationsGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}/ports": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List Service Ports",
+        "description": "Returns a list of service ports starting with inputs and followed by outputs",
+        "operationId": "list_service_ports_v0_services__service_key___service_version__ports_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Service Ports V0 Services  Service Key   Service Version  Ports Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServicePortGet"
+                  }
                 }
               }
             }
@@ -2848,6 +2915,40 @@
         },
         "additionalProperties": false,
         "description": "Base class for service input/outputs"
+      },
+      "ServicePortGet": {
+        "title": "ServicePortGet",
+        "required": [
+          "name",
+          "kind",
+          "display_name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "pattern": "^[^_\\W0-9]\\w*$",
+            "type": "string",
+            "description": "port identifier name"
+          },
+          "kind": {
+            "title": "Kind",
+            "enum": [
+              "input",
+              "output"
+            ],
+            "type": "string",
+            "description": "Kind of port: input or output"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "content_schema": {
+            "title": "Content Schema",
+            "type": "object"
+          }
+        }
       },
       "ServiceSpec": {
         "title": "ServiceSpec",
