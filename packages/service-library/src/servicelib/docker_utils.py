@@ -1,6 +1,7 @@
 from datetime import datetime
 
-DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
+_DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
+
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
@@ -10,5 +11,5 @@ def to_datetime(docker_timestamp: str) -> datetime:
     # The 099 before the Z is not clear, therefore we will truncate the last part
     # NOTE: must be in UNIX Timestamp format
     return datetime.strptime(
-        docker_timestamp[:DOCKER_TIMESTAMP_LENGTH], "%Y-%m-%dT%H:%M:%S.%f"
+        docker_timestamp[:_DOCKER_TIMESTAMP_LENGTH], "%Y-%m-%dT%H:%M:%S.%f"
     )
