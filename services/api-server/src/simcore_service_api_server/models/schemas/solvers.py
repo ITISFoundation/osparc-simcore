@@ -110,7 +110,6 @@ class Solver(BaseModel):
 PortKindStr = Literal["input", "output"]
 
 
-# TODO: can parse catalog's ServicePortGet
 class SolverPort(BaseModel):
     name: str = Field(
         ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
