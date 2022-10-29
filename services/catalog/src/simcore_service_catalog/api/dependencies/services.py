@@ -1,3 +1,4 @@
+import logging
 import urllib.parse
 from dataclasses import dataclass
 from typing import Any, cast
@@ -6,6 +7,7 @@ from fastapi import Depends, Header, HTTPException, status
 from fastapi.requests import Request
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ResourcesDict
+from pydantic import ValidationError
 
 from ...core.settings import AppSettings
 from ...db.repositories.groups import GroupsRepository
@@ -71,6 +73,9 @@ async def check_service_read_access(
     )
 
 
+logger = logging.getLogger(__name__)
+
+
 async def get_service_from_registry(
     service_key: ServiceKey,
     service_version: ServiceVersion,
@@ -86,7 +91,7 @@ async def get_service_from_registry(
             )
             _service_data = frontend_service
         else:
-            # FIXME: what if error?
+            # NOTE: raises HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) on ANY failure
             services_in_registry = cast(
                 list[Any],
                 await director_client.get(
@@ -98,10 +103,12 @@ async def get_service_from_registry(
         service: ServiceGet = ServiceGet.parse_obj(_service_data)
         return service
 
-    except HTTPException:
-        raise
-    except Exception as exc:  # FIXME: ValidationERror, director_clietn exceptions?
-        # All HTTPExceptions get handled by http_error_handler
+    except ValidationError as exc:
+        logger.warning(
+            "Invalid service metadata in registry. Audit registry data for %s %s",
+            f"{service_key=}",
+            f"{service_version=}",
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Service {service_key}:{service_version} not found",

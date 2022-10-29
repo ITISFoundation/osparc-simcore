@@ -6,6 +6,7 @@ import urllib.parse
 from typing import Any, Callable
 
 import pytest
+from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from starlette import status
 from starlette.testclient import TestClient
@@ -53,23 +54,28 @@ def service_metadata(
 
 
 @pytest.fixture
-async def director_service_api_mockup(
-    mock_catalog_background_task: None,
-    disable_service_caching: None,
+async def mock_check_service_read_access(
+    mocker: MockerFixture, user_groups_ids: dict[str, Any]
+):
+    # MOCKS functionality inside "simcore_service_catalog.api.dependencies.services.check_service_read_access"
+    # to provide read access to a service to user_groups_ids
+    #
+    print(user_groups_ids)
+
+    mocker.patch(
+        "simcore_service_catalog.api.dependencies.services.ServicesRepository.get_service",
+        autospec=True,
+        return_value=True,
+    )
+
+
+@pytest.fixture
+async def mock_director_service_api(
     director_mockup: MockRouter,
-    user_id: int,
-    product_name: str,
     service_key: str,
     service_version: str,
     service_metadata: dict[str, Any],
-    mocker,
 ):
-    # MOCKS access
-    mocker.patch(
-        "simcore_service_catalog.api.routes.check_service_read_access",
-        return_value={"uid": user_id, "product": product_name, "gid": []},
-    )
-
     # SEE services/director/src/simcore_service_director/api/v0/openapi.yaml
     director_mockup.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
@@ -85,7 +91,10 @@ async def director_service_api_mockup(
 
 
 async def test_list_service_ports(
-    director_service_api_mockup: None,
+    disable_service_caching: None,
+    mock_catalog_background_task: None,
+    mock_check_service_read_access: None,
+    mock_director_service_api: None,
     client: TestClient,
     product_name: str,
     user_id: int,
