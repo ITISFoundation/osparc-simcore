@@ -36,16 +36,16 @@ def mocked_catalog_service_api(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_CATALOG.api_base_url,
+        base_url=settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
 
-        respx_mock.get("/meta").respond(200, json=schemas["Meta"]["example"])
+        respx_mock.get("/v0/meta").respond(200, json=schemas["Meta"]["example"])
 
         # ----
         respx_mock.get(
-            "/services?user_id=1&details=false", name="list_services"
+            "/v0/services?user_id=1&details=false", name="list_services"
         ).respond(
             200,
             json=[
@@ -65,9 +65,10 @@ def mocked_catalog_service_api(
         # NOTE: we could use https://python-jsonschema.readthedocs.io/en/stable/
         #
 
-        # https://regex101.com/r/drVAGr/1
         respx_mock.get(
-            path__regex=r"/services/(?P<service_key>[\w%]+)/(?P<service_version>[\d\.]+)/ports\?user_id=(?P<user_id>\d+)",
+            # NOTE: regex does not work even if tested https://regex101.com/r/drVAGr/1
+            # path__regex=r"/v0/services/(?P<service_key>[\w/%]+)/(?P<service_version>[\d\.]+)/ports\?user_id=(?P<user_id>\d+)",
+            path__startswith="/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.1.4/ports",
             name="list_service_ports",
         ).respond(
             200,
