@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 
 from ...core.settings import ApplicationSettings
-from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
+from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper, get_settings
 from ..dependencies.authentication import get_current_user_id
@@ -162,4 +162,35 @@ async def get_solver_release(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_key}:{version} not found",
+        ) from err
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/ports", response_model=list[SolverPort]
+)
+async def list_solver_ports(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    user_id: int = Depends(get_current_user_id),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+    app_settings: ApplicationSettings = Depends(get_settings),
+):
+    """Lists inputs and outputs of a given solver"""
+    try:
+
+        ports = await catalog_client.get_solver_ports(
+            user_id,
+            solver_key,
+            version,
+            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+        )
+        return ports
+
+    except (
+        ValidationError,
+        HTTPStatusError,
+    ) as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ports for solver {solver_key}:{version} not found",
         ) from err
