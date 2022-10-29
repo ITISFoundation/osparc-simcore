@@ -116,7 +116,6 @@ class SolverPort(BaseModel):
         ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
     )
     kind: PortKindStr
-    display_name: str
     content_schema: Optional[dict[str, Any]] = None
 
     class Config:
@@ -125,7 +124,6 @@ class SolverPort(BaseModel):
             "example": {
                 "name": "input_2",
                 "kind": "input",
-                "display_name": "Sleep interval",
                 "content_schema": {
                     "title": "Sleep interval",
                     "type": "integer",
