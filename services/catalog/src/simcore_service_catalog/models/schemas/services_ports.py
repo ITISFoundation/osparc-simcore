@@ -39,6 +39,7 @@ def _property_type_to_schema(
         if default is not None:
             schema["default"] = default
         return schema
+    return None
 
 
 def _guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
