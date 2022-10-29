@@ -123,3 +123,65 @@ async def test_list_service_ports(
     assert [p["name"] for p in ports if p["kind"] == "output"] == list(
         expected_outputs.keys()
     )
+
+    assert ports == [
+        {
+            "name": "input_1",
+            "kind": "input",
+            "content_media_type": "text/plain",
+            "content_schema": {
+                "type": "string",
+                "title": "File with int number",
+                "description": "Pick a file containing only one integer",
+            },
+        },
+        {
+            "name": "input_2",
+            "kind": "input",
+            "content_schema": {
+                "title": "Sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+                "minimum": 0,
+                "maximum": 5,
+            },
+        },
+        {
+            "name": "input_3",
+            "kind": "input",
+            "content_schema": {
+                "title": "Fail after sleep",
+                "type": "boolean",
+                "description": "If set to true will cause service to fail after it sleeps",
+                "default": False,
+            },
+        },
+        {
+            "name": "input_4",
+            "kind": "input",
+            "content_schema": {
+                "title": "Distance to bed",
+                "type": "integer",
+                "x_unit": "meter",
+            },
+        },
+        {
+            "name": "output_1",
+            "kind": "output",
+            "content_media_type": "text/plain",
+            "content_schema": {
+                "type": "string",
+                "title": "File containing one random integer",
+                "description": "Integer is generated in range [1-9]",
+            },
+        },
+        {
+            "name": "output_2",
+            "kind": "output",
+            "content_schema": {
+                "title": "Random sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+            },
+        },
+    ]
