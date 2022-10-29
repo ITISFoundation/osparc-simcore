@@ -2929,8 +2929,7 @@
         "title": "ServicePortGet",
         "required": [
           "name",
-          "kind",
-          "display_name"
+          "kind"
         ],
         "type": "object",
         "properties": {
@@ -2948,13 +2947,24 @@
             ],
             "type": "string"
           },
-          "display_name": {
-            "title": "Display Name",
+          "content_media_type": {
+            "title": "Content Media Type",
             "type": "string"
           },
           "content_schema": {
             "title": "Content Schema",
             "type": "object"
+          }
+        },
+        "example": {
+          "name": "input_1",
+          "kind": "input",
+          "content_schema": {
+            "title": "Sleep interval",
+            "type": "integer",
+            "x_unit": "second",
+            "minimum": 0,
+            "maximum": 5
           }
         }
       },
