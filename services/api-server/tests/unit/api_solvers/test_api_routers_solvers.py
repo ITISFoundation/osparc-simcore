@@ -64,9 +64,9 @@ async def test_list_solvers(
 
 
 async def test_list_solver_ports(
+    mocked_catalog_service_api: MockRouter,
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_catalog_service_api: MockRouter,
 ):
     resp = await client.get(
         "/v0/solvers/simcore/services/comp/itis/sleeper/releases/2.1.4/ports",
