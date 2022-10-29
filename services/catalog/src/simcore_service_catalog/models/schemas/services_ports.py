@@ -3,11 +3,8 @@ from copy import deepcopy
 from typing import Any, Literal, Optional, Union
 
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
-from models_library.services import (
-    PROPERTY_TYPE_TO_PYTHON_TYPE_MAP,
-    ServiceInput,
-    ServiceOutput,
-)
+from models_library.services import ServiceInput, ServiceOutput
+from models_library.services_constants import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP
 from pydantic import BaseModel, Field, schema_of
 
 PortKindStr = Literal["input", "output"]
