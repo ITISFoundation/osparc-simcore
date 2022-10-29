@@ -47,7 +47,12 @@ KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_R
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
-
+PROPERTY_TYPE_TO_PYTHON_TYPE_MAP = {
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "string": str,
+}
 
 FILENAME_RE = r".+"
 
