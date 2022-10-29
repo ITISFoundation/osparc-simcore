@@ -1,13 +1,10 @@
 import logging
-from typing import Any, Literal, Optional, Union
 
 from fastapi import APIRouter, Depends
-from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
-from models_library.services import ServiceInput, ServiceOutput
-from pydantic import BaseModel, Field
 
 from ...models.schemas.constants import RESPONSE_MODEL_POLICY
 from ...models.schemas.services import ServiceGet
+from ...models.schemas.services_ports import ServicePortGet
 from ..dependencies.services import (
     AccessInfo,
     check_service_read_access,
@@ -15,36 +12,6 @@ from ..dependencies.services import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-#
-# Models -----------------------------------------------------------------------------------------------
-#
-
-PortKindStr = Literal["input", "output"]
-
-
-class ServicePortGet(BaseModel):
-    name: str = Field(
-        ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
-    )
-    kind: PortKindStr
-    display_name: str
-    content_schema: Optional[dict[str, Any]] = None
-
-    @classmethod
-    def from_service_io(
-        cls,
-        kind: PortKindStr,
-        name: str,
-        io: Union[ServiceInput, ServiceOutput],
-    ) -> "ServicePortGet":
-        return cls(
-            name=name,
-            display_name=io.label,
-            kind=kind,
-            content_schema=io.content_schema,
-        )
 
 
 #
