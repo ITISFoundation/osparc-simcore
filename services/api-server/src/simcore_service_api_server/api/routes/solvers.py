@@ -7,7 +7,7 @@ from httpx import HTTPStatusError
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 
-from ...core.settings import ApplicationSettings
+from ...core.settings import ApplicationSettings, BasicSettings
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper, get_settings
@@ -17,7 +17,7 @@ from ..dependencies.services import get_api_client
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
+settings = BasicSettings.create_from_envs()
 
 ## SOLVERS -----------------------------------------------------------------------------------------
 #
@@ -166,7 +166,9 @@ async def get_solver_release(
 
 
 @router.get(
-    "/{solver_key:path}/releases/{version}/ports", response_model=list[SolverPort]
+    "/{solver_key:path}/releases/{version}/ports",
+    response_model=list[SolverPort],
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
@@ -175,7 +177,10 @@ async def list_solver_ports(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     app_settings: ApplicationSettings = Depends(get_settings),
 ):
-    """Lists inputs and outputs of a given solver"""
+    """Lists inputs and outputs of a given solver
+
+    New in versions 0.5.0 (STILL UNRELEASED)
+    """
     try:
 
         ports = await catalog_client.get_solver_ports(
