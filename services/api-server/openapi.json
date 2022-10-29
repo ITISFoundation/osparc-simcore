@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public web API specifications",
-    "version": "0.5.0",
+    "version": "0.4.0",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
       "altText": "osparc-simcore logo"
@@ -503,69 +503,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Solver"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
-      }
-    },
-    "/v0/solvers/{solver_key}/releases/{version}/ports": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "List Solver Ports",
-        "description": "Lists inputs and outputs of a given solver",
-        "operationId": "list_solver_ports",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
-              "type": "string"
-            },
-            "name": "solver_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
-            "name": "version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response List Solver Ports V0 Solvers  Solver Key  Releases  Version  Ports Get",
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SolverPort"
-                  }
                 }
               }
             }
@@ -1637,51 +1574,6 @@
           "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1"
         }
       },
-      "SolverPort": {
-        "title": "SolverPort",
-        "required": [
-          "name",
-          "kind",
-          "display_name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "pattern": "^[^_\\W0-9]\\w*$",
-            "type": "string",
-            "description": "port identifier name"
-          },
-          "kind": {
-            "title": "Kind",
-            "enum": [
-              "input",
-              "output"
-            ],
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
-          "content_schema": {
-            "title": "Content Schema",
-            "type": "object"
-          }
-        },
-        "example": {
-          "name": "input_2",
-          "kind": "input",
-          "display_name": "Sleep interval",
-          "content_schema": {
-            "title": "Sleep interval",
-            "type": "integer",
-            "x_unit": "second",
-            "minimum": 0,
-            "maximum": 5
-          }
-        }
-      },
       "TaskStates": {
         "title": "TaskStates",
         "enum": [
@@ -1745,14 +1637,7 @@
             "title": "Location",
             "type": "array",
             "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
+              "type": "string"
             }
           },
           "msg": {
