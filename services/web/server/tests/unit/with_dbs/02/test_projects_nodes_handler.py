@@ -256,6 +256,7 @@ async def test_create_node(
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     mocker: MockerFixture,
+    postgres_db: sa.engine.Engine,
 ):
     create_or_update_mock = mocker.patch(
         "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
@@ -269,7 +270,7 @@ async def test_create_node(
     # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
         "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
-        "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
+        "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(url.path, json=body)
     data, error = await assert_status(response, expected.created)
@@ -284,6 +285,18 @@ async def test_create_node(
             mocked_director_v2_api[
                 "director_v2_api.run_dynamic_service"
             ].assert_not_called()
+
+        assert "node_id" in data
+        create_node_id = data["node_id"]
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                sa.select([projects_db_model.c.workbench]).where(
+                    projects_db_model.c.uuid == user_project["uuid"]
+                )
+            )
+        assert result
+        workbench = result.one()[projects_db_model.c.workbench]
+        assert create_node_id in workbench
     else:
         assert error
 
@@ -330,12 +343,13 @@ async def test_create_many_nodes_in_parallel(
     ].side_effect = running_services.inc_running_services
 
     # let's create more than the allowed max amount in parallel
+    num_services_in_project = len(user_project["workbench"])
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": f"simcore/services/dynamic/{faker.pystr()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES = 2000
+    NUM_DY_SERVICES = 250
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )
@@ -357,7 +371,7 @@ async def test_create_many_nodes_in_parallel(
         )
         assert result
         workbench = result.one()[projects_db_model.c.workbench]
-    assert len(workbench) == NUM_DY_SERVICES
+    assert len(workbench) == NUM_DY_SERVICES + num_services_in_project
 
 
 @pytest.mark.parametrize(
@@ -391,3 +405,18 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert not data
     # this does not start anything in the backend since this node is deprecated
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_delete_node(
+    node_class: str,
+    expect_run_service_call: bool,
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    faker: Faker,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    mocker: MockerFixture,
+):
+    ...
