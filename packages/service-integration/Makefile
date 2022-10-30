@@ -85,14 +85,15 @@ build build-nc: ## [docker] builds docker image of executable w/ or w/o cache
 	docker run local/${PACKAGE_NAME}:production --version
 
 .PHONY: inspect
-inspect:
-	docker image inspect local/${PACKAGE_NAME}:production | jq '.[0] | .RepoTags, .Config.Labels, .Architecture'
+inspect: ## [docker] inspects container
+	docker image inspect \
+		local/${PACKAGE_NAME}:production | jq '.[0] | .RepoTags, .Config.Labels, .Architecture'
 
 
 _src_dir = $(if $(target),$(target),$(PWD))
 
 .PHONY: shell
-shell:
+shell: ## [docker] opens shell in container
 	docker run \
 		-it \
 		--volume="/etc/group:/etc/group:ro" \
