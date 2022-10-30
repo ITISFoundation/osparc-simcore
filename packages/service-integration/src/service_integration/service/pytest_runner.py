@@ -17,7 +17,7 @@ def main(
     pytest_args = [
         # global cache options
         "--cache-clear",
-        f"--override-ini=cache_dir={tempfile.gettempdir()}/.pytest_cache",
+        f"--override-ini=cache_dir={tempfile.gettempdir()}/.pytest_cache__service_integration",
         # tests
         f"{CURRENT_DIR /'tests'}",
         # custom options
