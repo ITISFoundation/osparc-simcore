@@ -9,7 +9,7 @@ from collections import UserDict
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable
+from typing import Any
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -297,7 +297,7 @@ def standard_user_role() -> tuple[str, tuple]:
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_many_nodes_in_parallel(
     client: TestClient,
-    user_project: Callable[[int], Awaitable[ProjectDict]],
+    user_project: ProjectDict,
     expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -305,8 +305,6 @@ async def test_create_many_nodes_in_parallel(
     postgres_db: sa.engine.Engine,
 ):
     assert client.app
-    # create a starting project with no dy-services
-    project = await user_project(0)
 
     @dataclass
     class _RunninServices:
@@ -332,7 +330,7 @@ async def test_create_many_nodes_in_parallel(
     ].side_effect = running_services.inc_running_services
 
     # let's create more than the allowed max amount in parallel
-    url = client.app.router["create_node"].url_for(project_id=project["uuid"])
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": f"simcore/services/dynamic/{faker.pystr()}",
         "service_version": faker.numerify("%.#.#"),
@@ -354,7 +352,7 @@ async def test_create_many_nodes_in_parallel(
     with postgres_db.connect() as conn:
         result = conn.execute(
             sa.select([projects_db_model.c.workbench]).where(
-                projects_db_model.c.uuid == project["uuid"]
+                projects_db_model.c.uuid == user_project["uuid"]
             )
         )
         assert result
