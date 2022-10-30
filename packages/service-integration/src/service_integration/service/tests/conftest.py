@@ -7,8 +7,6 @@ from pathlib import Path
 
 import pytest
 
-pytest_plugins = []
-
 
 def pytest_addoption(parser: pytest.Parser):
     parser.addoption(
@@ -19,8 +17,9 @@ def pytest_addoption(parser: pytest.Parser):
 @pytest.fixture
 def service_under_test_dir(pytestconfig: pytest.Config) -> Path:
     """Base directory of the service under test (--service-under-test-dir)"""
-    dir_path = pytestconfig.getoption("--service-under-test-dir")
-    assert dir_path is not pytest.notset
-    dir_path = Path(dir_path)
+    try:
+        dir_path = Path(pytestconfig.getoption("--service-under-test-dir"))
+    except TypeError:
+        pytest.fail("Invalid path --service-under-test-dir")
     assert dir_path.exists()
     return dir_path

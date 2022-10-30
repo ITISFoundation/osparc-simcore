@@ -2,15 +2,18 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from pathlib import Path
-from typing import Union
 
 import pytest
-from _pytest.config import Notset, notset
 
 
 @pytest.fixture(scope="session")
 def project_slug_dir(request: pytest.FixtureRequest) -> Path:
-    root_dir: Union[Path, Notset] = request.config.getoption("--service-dir")
+    try:
+        root_dir = Path(request.config.getoption("--service-dir"))
+    except TypeError:
+        pytest.fail("--service-dir is not set")
+
+    assert isinstance(root_dir, Path)
     assert root_dir.exists()
     assert any(root_dir.glob(".osparc"))
     return root_dir
@@ -31,8 +34,9 @@ def validation_dir(project_slug_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def metadata_file(project_slug_dir: Path, request: pytest.FixtureRequest) -> Path:
-    metadata_file = request.config.getoption("--metadata")
-    if metadata_file is notset:
+    try:
+        metadata_file = Path(request.config.getoption("--metadata"))
+    except TypeError:
         metadata_file = project_slug_dir / "metadata" / "metadata.yml"
 
     assert isinstance(metadata_file, Path)
