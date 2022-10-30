@@ -89,15 +89,16 @@ inspect:
 	docker image inspect local/${PACKAGE_NAME}:production | jq '.[0] | .RepoTags, .Config.Labels, .Architecture'
 
 
+_src_dir = $(if $(target),$(target),$(PWD))
+
 .PHONY: shell
 shell:
 	docker run \
-    -it \
-    --rm \
-    --volume="/etc/group:/etc/group:ro" \
-    --volume="/etc/passwd:/etc/passwd:ro" \
-    --user="$(id --user "$(USER)")":"$(id --group "$(USER)")" \
-    --volume "$(PWD)":/src \
-    --workdir=/src \
+		-it \
+		--volume="/etc/group:/etc/group:ro" \
+		--volume="/etc/passwd:/etc/passwd:ro" \
+		--user="$(shell id --user "$(USER)")":scu \
 		--entrypoint bash \
+		--volume "$(_src_dir)":/src \
+		--workdir=/src \
 		local/${PACKAGE_NAME}:production
