@@ -7,6 +7,8 @@ from typing import Optional
 import pytest
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+TESTS_DIR = CURRENT_DIR / "tests"
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ def main(
         "--cache-clear",
         f"--override-ini=cache_dir={tempfile.gettempdir()}/.pytest_cache__service_integration",
         # tests
-        f"{CURRENT_DIR /'tests'}",
+        f"{TESTS_DIR}",
         # custom options
         f"--service-under-test-dir={service_dir}",
     ]
