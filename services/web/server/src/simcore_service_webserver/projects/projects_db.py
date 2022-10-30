@@ -790,7 +790,7 @@ class ProjectDBAPI:
                 .select_from(projects_to_products)
                 .where(projects_to_products.c.project_uuid == f"{project_uuid}")
             )
-            assert num_products_linked_to_project  # nosec
+            assert isinstance(num_products_linked_to_project, int)  # nosec
         if num_products_linked_to_project > 1:
             # NOTE:
             # in agreement with @odeimaiz :
@@ -828,18 +828,20 @@ class ProjectDBAPI:
     async def _get_user_email(conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        email: Optional[str] = await conn.scalar(
+        email = await conn.scalar(
             sa.select([users.c.email]).where(users.c.id == user_id)
         )
+        assert isinstance(email, str) or email is None  # nosec
         return email or "Unknown"
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
-        primary_gid: Optional[int] = await conn.scalar(
+        primary_gid = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
         if not primary_gid:
             raise UserNotFoundError(uid=user_id)
+        assert isinstance(primary_gid, int)
         return primary_gid
 
     @staticmethod
@@ -858,6 +860,7 @@ class ProjectDBAPI:
                 .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
             )
         assert num_entries is not None  # nosec
+        assert isinstance(num_entries, int)  # nosec
         return bool(num_entries > 0)
 
     async def get_node_ids_from_project(self, project_uuid: str) -> set[str]:
@@ -878,7 +881,7 @@ class ProjectDBAPI:
             async for row in conn.execute(
                 sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
             ):
-                result.append(row[0])
+                result.append(row[projects.c.uuid])
             return list(result)
 
     async def update_project_without_checking_permissions(
