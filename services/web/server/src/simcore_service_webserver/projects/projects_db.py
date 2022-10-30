@@ -557,7 +557,7 @@ class ProjectDBAPI:
         user_id: int,
         project_uuid: str,
         product_name: Optional[str] = None,
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    ) -> tuple[ProjectDict, dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
         """
@@ -592,7 +592,7 @@ class ProjectDBAPI:
                             try:
                                 Node.parse_obj(new_node_data)
                                 project["workbench"][node_key] = new_node_data
-                                current_node_data = new_node_data
+                                changed_entries.update({node_key: new_node_data})
                             except ValidationError as err:
                                 log.debug(
                                     "node %s is missing from project, and %s is no new node, no patch",
@@ -600,18 +600,19 @@ class ProjectDBAPI:
                                     f"{new_node_data=}",
                                 )
                                 raise NodeNotFoundError(project_uuid, node_key) from err
-                        # find changed keys
-                        changed_entries.update(
-                            {
-                                node_key: find_changed_node_keys(
-                                    current_node_data,
-                                    new_node_data,
-                                    look_for_removed_keys=False,
-                                )
-                            }
-                        )
-                        # patch
-                        current_node_data.update(new_node_data)
+                        else:
+                            # find changed keys
+                            changed_entries.update(
+                                {
+                                    node_key: find_changed_node_keys(
+                                        current_node_data,
+                                        new_node_data,
+                                        look_for_removed_keys=False,
+                                    )
+                                }
+                            )
+                            # patch
+                            current_node_data.update(new_node_data)
                     return (project, changed_entries)
 
                 new_project_data, changed_entries = _patch_workbench(
