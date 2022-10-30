@@ -7,7 +7,6 @@ from ..service import pytest_runner
 
 
 def main(
-    ctx: typer.Context,
     service_dir: Path = typer.Argument(
         ..., help="Root directory of the service under test"
     ),
