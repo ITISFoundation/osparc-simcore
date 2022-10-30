@@ -1,3 +1,11 @@
+import warnings
+
+warnings.warn(
+    f"{__name__} is deprecated >0.4, Use directoy test CLI instead.",
+    DeprecationWarning,
+)
+
+
 def pytest_addoption(parser):
     group = parser.getgroup("service-integration")
     group.addoption(
