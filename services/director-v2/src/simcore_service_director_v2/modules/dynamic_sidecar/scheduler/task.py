@@ -149,7 +149,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     ) -> list[NodeID]:
         """Returns the list of tracked service UUIDs"""
         all_tracked_service_uuids = list(self._inverse_search_mapping.keys())
-        if user_id == project_id is None:
+        if user_id is None and project_id is None:
             return all_tracked_service_uuids
         # let's filter
         def _is_scheduled(node_id: NodeID) -> bool:
