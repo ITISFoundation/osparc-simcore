@@ -174,17 +174,17 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
             await self._channel_queues[self.CHANNEL_LOG].put(message)
 
     async def close(self) -> None:
-        if self._channel is not None:
-            await self._channel.close()
-        if self._connection is not None:
-            await self._connection.close()
-
         # wait for queues to be empty before sending the last messages
         self._keep_running = False
         if self._queues_worker is not None:
             self._queues_worker.cancel()
             with suppress(asyncio.CancelledError):
                 await self._queues_worker
+
+        if self._channel is not None:
+            await self._channel.close()
+        if self._connection is not None:
+            await self._connection.close()
 
 
 async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
