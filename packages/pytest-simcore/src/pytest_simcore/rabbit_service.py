@@ -111,12 +111,8 @@ async def rabbit_channel(
             print("sender was '{sender}'")
 
     # create channel
-    channel = await rabbit_connection.channel(publisher_confirms=False)
-    assert channel
-    channel.close_callbacks.add(_channel_close_callback)
-    yield channel
-    # close channel
-    await channel.close()
+    async with rabbit_connection.channel(publisher_confirms=False) as channel:
+        yield channel
 
 
 @dataclass
