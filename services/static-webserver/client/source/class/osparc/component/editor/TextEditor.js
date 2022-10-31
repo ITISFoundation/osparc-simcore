@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.editor.TextEditor", {
     * @param initText {String} Initialization text
     * @param subtitleText {String} Text to be shown under the text area
     */
-  construct: function(initText = "", subtitleText = "") {
+  construct: function(initText = "", subtitleText = qx.locale.Manager.tr("Supports Markdown")) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(2));
