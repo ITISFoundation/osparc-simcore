@@ -1,9 +1,8 @@
 # pylint: disable=redefined-outer-name
 import datetime
 import random
-import string
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import openpyxl
 import pytest
@@ -54,7 +53,7 @@ def get_workbook(xls_path: Path) -> Workbook:
 
 
 def assert_expected_layout(
-    workbook: Workbook, expected_layout: Dict[str, Dict[str, Any]]
+    workbook: Workbook, expected_layout: dict[str, dict[str, Any]]
 ) -> bool:
     for sheet_name in expected_layout:
         sheet = workbook[sheet_name]
