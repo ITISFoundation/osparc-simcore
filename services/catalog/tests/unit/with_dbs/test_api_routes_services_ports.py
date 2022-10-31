@@ -117,16 +117,16 @@ async def test_list_service_ports(
     expected_inputs = service_metadata["inputs"]
     expected_outputs = service_metadata["outputs"]
 
-    assert [p["name"] for p in ports if p["kind"] == "input"] == list(
+    assert [p["key"] for p in ports if p["kind"] == "input"] == list(
         expected_inputs.keys()
     )
-    assert [p["name"] for p in ports if p["kind"] == "output"] == list(
+    assert [p["key"] for p in ports if p["kind"] == "output"] == list(
         expected_outputs.keys()
     )
 
     assert ports == [
         {
-            "name": "input_1",
+            "key": "input_1",
             "kind": "input",
             "content_media_type": "text/plain",
             "content_schema": {
@@ -136,7 +136,7 @@ async def test_list_service_ports(
             },
         },
         {
-            "name": "input_2",
+            "key": "input_2",
             "kind": "input",
             "content_schema": {
                 "title": "Sleep interval",
@@ -147,7 +147,7 @@ async def test_list_service_ports(
             },
         },
         {
-            "name": "input_3",
+            "key": "input_3",
             "kind": "input",
             "content_schema": {
                 "title": "Fail after sleep",
@@ -157,7 +157,7 @@ async def test_list_service_ports(
             },
         },
         {
-            "name": "input_4",
+            "key": "input_4",
             "kind": "input",
             "content_schema": {
                 "title": "Distance to bed",
@@ -166,7 +166,7 @@ async def test_list_service_ports(
             },
         },
         {
-            "name": "output_1",
+            "key": "output_1",
             "kind": "output",
             "content_media_type": "text/plain",
             "content_schema": {
@@ -176,7 +176,7 @@ async def test_list_service_ports(
             },
         },
         {
-            "name": "output_2",
+            "key": "output_2",
             "kind": "output",
             "content_schema": {
                 "title": "Random sleep interval",

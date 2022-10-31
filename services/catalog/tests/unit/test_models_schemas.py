@@ -50,7 +50,7 @@ def test_service_port_with_file():
     )
 
     assert port == {
-        "name": "input_1",
+        "key": "input_1",
         "kind": "input",
         "content_media_type": "text/plain",  # <-- deduced from extension
         "content_schema": {
@@ -78,7 +78,7 @@ def test_service_port_with_boolean():
     )
 
     assert port == {
-        "name": "input_1",
+        "key": "input_1",
         "kind": "input",
         # "content_media_type": None,  # <-- no content media
         "content_schema": {

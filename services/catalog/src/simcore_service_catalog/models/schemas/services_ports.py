@@ -57,7 +57,7 @@ def _guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
 
 
 class ServicePortGet(BaseModel):
-    name: str = Field(
+    key: str = Field(
         ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
     )
     kind: PortKindStr
@@ -70,7 +70,7 @@ class ServicePortGet(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "name": "input_1",
+                "key": "input_1",
                 "kind": "input",
                 "content_schema": {
                     "title": "Sleep interval",
@@ -86,10 +86,10 @@ class ServicePortGet(BaseModel):
     def from_service_io(
         cls,
         kind: PortKindStr,
-        name: str,
+        key: str,
         io: Union[ServiceInput, ServiceOutput],
     ) -> "ServicePortGet":
-        kwargs: dict[str, Any] = {"name": name, "kind": kind}
+        kwargs: dict[str, Any] = {"key": key, "kind": kind}
 
         # Convert old format into schemas
         schema = io.content_schema
