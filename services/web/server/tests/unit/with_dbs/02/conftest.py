@@ -12,22 +12,10 @@ import pytest
 from aiohttp import web
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
-from models_library.services_resources import (
-    ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
-)
-from pydantic import parse_obj_as
+from models_library.services_resources import ServiceResourcesDict
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-
-
-@pytest.fixture
-def mock_service_resources() -> ServiceResourcesDict:
-    return parse_obj_as(
-        ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
-    )
 
 
 @pytest.fixture
