@@ -254,7 +254,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         copy_data: Optional[bool] = None,
     ) -> ProjectDict:
 
-        url, project_data, expected_data = _setup(
+        url, project_data, expected_data = await _setup(
             client,
             project=project,
             from_study=from_study,
