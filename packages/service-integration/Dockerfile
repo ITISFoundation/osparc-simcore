@@ -3,6 +3,29 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
+RUN set -eux \
+  && apt-get update \
+  && apt-get install -y \
+  git \
+  && rm -rf /var/lib/apt/lists/* \
+  # verify that the binary works
+  && git --version
+
+# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
+ENV SC_USER_ID=8004 \
+  SC_USER_NAME=scu \
+  SC_BUILD_TARGET=base \
+  SC_BOOT_MODE=default
+
+RUN adduser \
+  --uid ${SC_USER_ID} \
+  --disabled-password \
+  --gecos "" \
+  --shell /bin/sh \
+  --home /home/${SC_USER_NAME} \
+  ${SC_USER_NAME}
+
+
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
@@ -51,6 +74,8 @@ RUN cd packages/service-integration \
 FROM base as development
 # NOTE: this is necessary to allow to build development images but is the same as production here
 FROM base as production
+
+USER scu
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
