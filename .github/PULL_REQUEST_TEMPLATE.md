@@ -49,8 +49,9 @@ Add here YOUR checklist/notes to guide and monitor the progress of the case!
 
 e.g.
 
-- [ ] Openapi changes? ``make openapi-specs``, ``git commit ...`` and then ``make version-*``)
-- [ ] Database migration script? ``cd packages/postgres-database``, ``make setup-commit``, ``sc-pg review -m "my changes"``
+- [ ] ``make version-*``
+- [ ] ``make openapi.json``
+- [ ] ``cd packages/postgres-database``, ``make setup-commit``, ``sc-pg review -m "my changes"``
 - [ ] Unit tests for the changes exist
 - [ ] Runs in the swarm
 - [ ] Documentation reflects the changes
