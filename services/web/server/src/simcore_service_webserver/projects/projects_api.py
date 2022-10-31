@@ -254,7 +254,7 @@ async def delete_project_node(
     list_running_dynamic_services = await director_v2_api.get_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
-    if [s for s in list_running_dynamic_services if s["service_uuid"] == node_uuid]:
+    if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
         # no need to save the state of the node when deleting it
         await director_v2_api.stop_dynamic_service(
             request.app,
