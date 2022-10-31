@@ -217,6 +217,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         return self._to_observe[service_name]
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
+        # pylint: disable=too-many-return-statements
         """
 
         raises DynamicSidecarNotFoundError
