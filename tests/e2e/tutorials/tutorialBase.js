@@ -456,7 +456,7 @@ class TutorialBase {
       );
       console.log("Service data items", items);
       const outputsFolder = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.filter(el => el.textContent === "outputs")
+        elements => elements.filter(el => el.textContent.includes("outputs"))
       );
       if (outputsFolder.length) {
         // open 'outputs' folder
