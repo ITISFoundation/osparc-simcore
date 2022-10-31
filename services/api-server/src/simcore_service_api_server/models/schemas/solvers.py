@@ -111,17 +111,23 @@ PortKindStr = Literal["input", "output"]
 
 
 class SolverPort(BaseModel):
-    name: str = Field(
-        ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
+    key: str = Field(
+        ...,
+        description="port identifier name",
+        regex=PUBLIC_VARIABLE_NAME_RE,
+        title="Key name",
     )
     kind: PortKindStr
-    content_schema: Optional[dict[str, Any]] = None
+    content_schema: Optional[dict[str, Any]] = Field(
+        None,
+        description="jsonschema for the port's value. SEE https://json-schema.org",
+    )
 
     class Config:
         extra = Extra.ignore
         schema_extra = {
             "example": {
-                "name": "input_2",
+                "key": "input_2",
                 "kind": "input",
                 "content_schema": {
                     "title": "Sleep interval",

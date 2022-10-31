@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
+from servicelib.error_codes import create_error_code
 
 from ...core.settings import ApplicationSettings, BasicSettings
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort, VersionStr
@@ -191,10 +192,20 @@ async def list_solver_ports(
         )
         return ports
 
-    except (
-        ValidationError,
-        HTTPStatusError,
-    ) as err:
+    except ValidationError as err:
+        error_code = create_error_code(err)
+        logger.exception(
+            "Corrupted port data for service %s [%s]",
+            f"{solver_key}:{version}",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Port definition of {solver_key}:{version} seems corrupted [{error_code}]",
+        ) from err
+
+    except HTTPStatusError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Ports for solver {solver_key}:{version} not found",

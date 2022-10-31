@@ -76,7 +76,7 @@ async def test_list_solver_ports(
 
     assert resp.json() == [
         {
-            "name": "input_1",
+            "key": "input_1",
             "kind": "input",
             "content_schema": {
                 "title": "Sleep interval",
