@@ -114,6 +114,9 @@ jobs:
               - 'packages/**'
             api:
               - 'api/**'
+            api-server:
+              - 'packages/**'
+              - 'services/api-server/**'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
@@ -1748,12 +1751,7 @@ jobs:
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs:
-      [
-        unit-tests,
-        integration-tests,
-        system-tests
-      ]
+    needs: [unit-tests, integration-tests, system-tests]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

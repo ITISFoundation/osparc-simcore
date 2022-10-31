@@ -79,20 +79,20 @@ async def rabbit_service(
 @pytest.fixture(scope="function")
 async def rabbit_connection(
     rabbit_settings: RabbitSettings,
-) -> AsyncIterator[aio_pika.RobustConnection]:
+) -> AsyncIterator[aio_pika.abc.AbstractConnection]:
     def _reconnect_callback():
         pytest.fail("rabbit reconnected")
 
     # create connection
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-    connection: aio_pika.RobustConnection = await aio_pika.connect_robust(
+    connection = await aio_pika.connect_robust(
         rabbit_settings.dsn + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
         client_properties={"connection_name": "pytest read connection"},
     )
     assert connection
     assert not connection.is_closed
-    connection.add_reconnect_callback(_reconnect_callback)
+    connection.reconnect_callbacks.add(_reconnect_callback)
 
     yield connection
     # close connection
@@ -102,8 +102,8 @@ async def rabbit_connection(
 
 @pytest.fixture(scope="function")
 async def rabbit_channel(
-    rabbit_connection: aio_pika.RobustConnection,
-) -> AsyncIterator[aio_pika.Channel]:
+    rabbit_connection: aio_pika.abc.AbstractConnection,
+) -> AsyncIterator[aio_pika.abc.AbstractChannel]:
     def _channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
         if exc:
             pytest.fail("rabbit channel closed!")
@@ -111,22 +111,15 @@ async def rabbit_channel(
             print("sender was '{sender}'")
 
     # create channel
-    channel: aio_pika.Channel = await rabbit_connection.channel(
-        publisher_confirms=False
-    )
-    assert channel
-    channel.add_close_callback(_channel_close_callback)
-    yield channel
-    # close channel
-    channel.remove_close_callback(_channel_close_callback)
-    await channel.close()
+    async with rabbit_connection.channel(publisher_confirms=False) as channel:
+        yield channel
 
 
 @dataclass
 class RabbitExchanges:
-    logs: aio_pika.Exchange
-    progress: aio_pika.Exchange
-    instrumentation: aio_pika.Exchange
+    logs: aio_pika.abc.AbstractExchange
+    progress: aio_pika.abc.AbstractExchange
+    instrumentation: aio_pika.abc.AbstractExchange
 
 
 @pytest.fixture(scope="function")
@@ -168,7 +161,7 @@ async def rabbit_exchanges(
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
     rabbit_exchanges: RabbitExchanges,
-) -> AsyncIterator[aio_pika.Queue]:
+) -> AsyncIterator[aio_pika.abc.AbstractQueue]:
     queue = await rabbit_channel.declare_queue(exclusive=True)
     assert queue
 
