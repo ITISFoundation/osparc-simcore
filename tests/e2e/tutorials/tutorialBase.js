@@ -461,6 +461,8 @@ class TutorialBase {
         const text = await items[i].evaluate(el => el.textContent);
         if (text.includes("output")) {
           console.log("Opening outputs folder");
+          // that's the way to double click........
+          await items[i].click();
           await items[i].click({
             clickCount: 2
           });
