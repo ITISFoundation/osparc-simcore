@@ -5,7 +5,6 @@
 
 
 import asyncio
-import cgi
 import itertools
 import json
 import logging
@@ -15,6 +14,7 @@ import tempfile
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
+from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
@@ -488,6 +488,14 @@ async def test_import_export_import_duplicate(
     Checks if the full "import -> export -> import -> duplicate" cycle
     produces the same result in the DB.
     """
+
+    def _get_header_params(header):
+        # cgi Deprecated since version 3.11, will be removed in version 3.13:
+        # Used recommended alternative https://docs.python.org/3/library/cgi.html?highlight=parse_header#cgi.parse_header
+        msg = EmailMessage()
+        msg["content-type"] = header
+        return msg["content-type"].params
+
     assert client.app
     user = await login_user(client)
     export_file_name = export_version.name
@@ -516,10 +524,9 @@ async def test_import_export_import_duplicate(
     ) as export_response:
         assert export_response.status == 200, await export_response.text()
 
-        content_disposition_header = export_response.headers["Content-Disposition"]
-        file_to_download_name = cgi.parse_header(content_disposition_header)[1][
-            "filename"
-        ]
+        file_to_download_name = _get_header_params(
+            export_response.headers["Content-Disposition"]
+        )["filename"]
         assert file_to_download_name.endswith(".osparc")
 
         with assemble_tmp_file_path(file_to_download_name) as downloaded_file_path:
