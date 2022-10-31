@@ -17,7 +17,7 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-astroid==2.12.11
+astroid==2.12.12
     # via pylint
 async-timeout==4.0.2
     # via
@@ -209,7 +209,7 @@ pyasn1==0.4.8
     #   rsa
 pycparser==2.21
     # via cffi
-pylint==2.15.4
+pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via

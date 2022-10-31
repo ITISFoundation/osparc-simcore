@@ -14,7 +14,7 @@ anyio==3.6.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.12.11
+astroid==2.12.12
     # via pylint
 attrs==21.4.0
     # via
@@ -224,7 +224,7 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.15.4
+pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
