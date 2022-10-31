@@ -9,7 +9,6 @@ from itertools import repeat
 from typing import Any, Callable
 from unittest.mock import MagicMock, Mock
 
-import faker
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient

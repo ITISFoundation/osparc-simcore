@@ -174,7 +174,7 @@ def get_exported_projects() -> list[Path]:
     # when the formatter be finished
     exporter_dir = DATA_DIR / "exporter"
     assert exporter_dir.exists()
-    exported_files = [x for x in exporter_dir.glob("*.osparc")]
+    exported_files = list(exporter_dir.glob("*.osparc"))
     assert exported_files, "expected *.osparc files, none found"
     return exported_files
 
@@ -260,7 +260,7 @@ def push_services_to_registry(docker_registry: str, node_meta_schema: dict) -> N
 def assemble_tmp_file_path(file_name: str) -> Iterator[Path]:
     # pylint: disable=protected-access
     # let us all thank codeclimate for this beautiful piece of code
-    tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
+    tmp_store_dir = Path("/") / f"tmp/{ tempfile._get_candidate_names()[0]}"
     tmp_store_dir.mkdir(parents=True, exist_ok=True)
     file_path = tmp_store_dir / file_name
 
@@ -460,6 +460,7 @@ async def import_study_from_file(
     url_import = client.app.router["import_project"].url_for()
     assert url_import == URL(API_PREFIX + "/projects:import")
 
+    # pylint: disable=consider-using-with
     data = {"fileName": open(file_path, mode="rb")}
     async with client.post(
         url_import, data=data, headers=headers, timeout=10

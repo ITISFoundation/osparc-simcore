@@ -107,7 +107,7 @@ def user_id() -> int:
     return 132
 
 
-@pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
+@pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
 def test_project_access_rights_creation(
     group_id: int, project_access_rights: ProjectAccessRights
 ):
