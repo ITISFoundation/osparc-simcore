@@ -1,4 +1,9 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+
 import datetime
 import random
 from pathlib import Path
@@ -219,6 +224,7 @@ def test_dataset_description(temp_dir: Path):
 
 
 def test_code_description(temp_dir: Path):
+    # pylint: disable=too-many-statements
     rrid_entires = [
         RRIDEntry(
             rrid_term=random_text(f"rrid_term{i}"),
