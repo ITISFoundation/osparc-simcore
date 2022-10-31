@@ -14,7 +14,7 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, standard_role_response
+from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -242,6 +242,88 @@ def standard_user_role() -> tuple[str, tuple]:
 
 
 @pytest.mark.parametrize(*standard_user_role())
+async def test_create_and_delete_many_nodes_in_parallel(
+    disable_max_number_of_running_dynamic_nodes: dict[str, str],
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    faker: Faker,
+    postgres_db: sa.engine.Engine,
+    storage_subsystem_mock: MockedStorageSubsystem,
+):
+    assert client.app
+
+    @dataclass
+    class _RunninServices:
+        running_services_uuids: list[str] = field(default_factory=list)
+
+        def num_services(self, *args, **kwargs) -> list[dict[str, Any]]:
+            return [
+                {"service_uuid": service_uuid}
+                for service_uuid in self.running_services_uuids
+            ]
+
+        def inc_running_services(self, *args, **kwargs):
+            self.running_services_uuids.append(kwargs["service_uuid"])
+
+    # let's count the started services
+    running_services = _RunninServices()
+    assert running_services.running_services_uuids == []
+    mocked_director_v2_api[
+        "director_v2_api.get_dynamic_services"
+    ].side_effect = running_services.num_services
+    mocked_director_v2_api[
+        "director_v2_api.run_dynamic_service"
+    ].side_effect = running_services.inc_running_services
+
+    # let's create many nodes
+    num_services_in_project = len(user_project["workbench"])
+    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
+    body = {
+        "service_key": f"simcore/services/dynamic/{faker.pystr()}",
+        "service_version": faker.numerify("%.#.#"),
+    }
+    NUM_DY_SERVICES = 250
+    responses = await asyncio.gather(
+        *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
+    )
+    # all shall have worked
+    await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
+
+    # but only the allowed number of services should have started
+    assert (
+        mocked_director_v2_api["director_v2_api.run_dynamic_service"].call_count
+        == NUM_DY_SERVICES
+    )
+    assert len(running_services.running_services_uuids) == NUM_DY_SERVICES
+    # check that we do have NUM_DY_SERVICES nodes in the project
+    with postgres_db.connect() as conn:
+        result = conn.execute(
+            sa.select([projects_db_model.c.workbench]).where(
+                projects_db_model.c.uuid == user_project["uuid"]
+            )
+        )
+        assert result
+        workbench = result.one()[projects_db_model.c.workbench]
+    assert len(workbench) == NUM_DY_SERVICES + num_services_in_project
+    print(f"--> {NUM_DY_SERVICES} nodes were created concurrently")
+    #
+    # delete now
+    #
+    delete_node_tasks = []
+    for node_id in workbench:
+        delete_url = client.app.router["delete_node"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        delete_node_tasks.append(client.delete(f"{delete_url}"))
+    responses = await asyncio.gather(*delete_node_tasks)
+    await asyncio.gather(*(assert_status(r, expected.no_content) for r in responses))
+    print("--> deleted all nodes concurrently")
+
+
+@pytest.mark.parametrize(*standard_user_role())
 async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_many_running(
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
@@ -313,13 +395,13 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "service_key": f"simcore/services/dynamic/{faker.pystr()}",
         "service_version": faker.numerify("%.#.#"),
     }
-    NUM_DY_SERVICES = 2000
+    NUM_DY_SERVICES = 250
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )
     # all shall have worked
-    for response in responses:
-        await assert_status(response, expected.created)
+    await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
+
     # but only the allowed number of services should have started
     assert (
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].call_count
@@ -400,6 +482,73 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert not data
     # this does not start anything in the backend since this node is deprecated
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "dy_service_running",
+    [
+        pytest.param(True, id="dy-service-running"),
+        pytest.param(False, id="dy-service-NOT-running"),
+    ],
+)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_delete_node(
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    storage_subsystem_mock: MockedStorageSubsystem,
+    dy_service_running: bool,
+    postgres_db: sa.engine.Engine,
+):
+    # first create a node
+    assert client.app
+    assert "workbench" in user_project
+    assert isinstance(user_project["workbench"], dict)
+    running_dy_services = [
+        service_uuid
+        for service_uuid, service_data in user_project["workbench"].items()
+        if "/dynamic/" in service_data["key"] and dy_service_running
+    ]
+    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+        {"service_uuid": service_uuid} for service_uuid in running_dy_services
+    ]
+    for node_id in user_project["workbench"]:
+        url = client.app.router["delete_node"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        response = await client.delete(url.path)
+        data, error = await assert_status(response, expected.no_content)
+        assert not data
+        if error:
+            continue
+
+        mocked_director_v2_api[
+            "director_v2_api.get_dynamic_services"
+        ].assert_called_once()
+        mocked_director_v2_api["director_v2_api.get_dynamic_services"].reset_mock()
+
+        if node_id in running_dy_services:
+            mocked_director_v2_api[
+                "director_v2_api.stop_dynamic_service"
+            ].assert_called_once_with(mock.ANY, node_id, save_state=False)
+            mocked_director_v2_api["director_v2_api.stop_dynamic_service"].reset_mock()
+        else:
+            mocked_director_v2_api[
+                "director_v2_api.stop_dynamic_service"
+            ].assert_not_called()
+
+        # ensure the node is gone
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                sa.select([projects_db_model.c.workbench]).where(
+                    projects_db_model.c.uuid == user_project["uuid"]
+                )
+            )
+            assert result
+            workbench = result.one()[projects_db_model.c.workbench]
+            assert node_id not in workbench
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
