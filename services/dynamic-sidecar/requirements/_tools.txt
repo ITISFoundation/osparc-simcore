@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-astroid==2.12.11
+astroid==2.12.12
     # via pylint
 black==22.10.0
     # via -r requirements/../../../requirements/devenv.txt
@@ -57,7 +57,7 @@ platformdirs==2.5.2
     #   virtualenv
 pre-commit==2.20.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.15.4
+pylint==2.15.5
     # via -r requirements/_tools.in
 pyparsing==3.0.9
     # via
