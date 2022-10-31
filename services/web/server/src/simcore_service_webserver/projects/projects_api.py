@@ -194,8 +194,6 @@ async def add_project_node(
     node_uuid = service_id if service_id else str(uuid4())
 
     # ensure the project is up-to-date in the database prior to start any potential service
-    project_workbench = project.get("workbench", {})
-    assert node_uuid not in project_workbench  # nosec
     partial_workbench_data: dict[str, Any] = {
         node_uuid: jsonable_encoder(
             Node.parse_obj(
