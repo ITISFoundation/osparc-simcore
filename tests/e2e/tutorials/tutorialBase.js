@@ -447,9 +447,23 @@ class TutorialBase {
     await this.waitAndClick("nodeDataManagerCloseBtn");
   }
 
-  async __checkNItemsInFolder(fileNames) {
+  async __checkNItemsInFolder(fileNames, openOutputsFolder = false) {
     await this.takeScreenshot("checkNodeOutputs_before");
     console.log("N items in folder. Expected:", fileNames);
+    if (openOutputsFolder) {
+      const outputsFolder = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.filter(el => el.textContent == "outputs")
+      );
+      if (outputsFolder.length) {
+        // open 'outputs' folder
+        await outputsFolder[0].click({
+          clickCount: 2
+        });
+      }
+      else {
+        throw("outputs folder not found");
+      }
+    }
     const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
       elements => elements.map(el => el.textContent)
     );
@@ -466,11 +480,11 @@ class TutorialBase {
     }
   }
 
-  async checkNodeOutputs(nodePos, fileNames) {
+  async checkNodeOutputs(nodePos, fileNames, openOutputsFolder = false) {
     try {
       const nodeId = await auto.openNode(this.__page, nodePos);
       await this.openNodeFiles(nodeId);
-      await this.__checkNItemsInFolder(fileNames);
+      await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
       console.error("Results don't match", err);
@@ -478,10 +492,10 @@ class TutorialBase {
     }
   }
 
-  async checkNodeOutputsAppMode(nodeId, fileNames) {
+  async checkNodeOutputsAppMode(nodeId, fileNames, openOutputsFolder = false) {
     try {
       await this.openNodeFilesAppMode(nodeId);
-      await this.__checkNItemsInFolder(fileNames);
+      await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
       console.error("Results don't match", err);
