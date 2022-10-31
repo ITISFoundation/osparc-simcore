@@ -117,7 +117,7 @@ qx.Class.define("osparc.component.editor.TextEditor", {
           this._add(control);
           break;
         case "buttons":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
           }));
           this._add(control);

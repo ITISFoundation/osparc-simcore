@@ -128,7 +128,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
 
     __editText: function() {
       const title = this.tr("Edit Description");
-      const textEditor = new osparc.component.editor.TextEditor("**Hallo**");
+      const textEditor = new osparc.component.editor.TextEditor(this.getDescription());
       textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 500, 300);
       textEditor.addListener("textChanged", e => {

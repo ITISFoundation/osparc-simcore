@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
 
     const disable = this.getChildControl("disable");
     disable.addListener("execute", () => this.__disableSlides(), this);
-    const enable = this.getChildControl("enable");
+    const enable = this.getChildControl("save-button");
     enable.addListener("execute", () => this.__enableSlides(), this);
 
     const model = this.__initRoot();
@@ -90,8 +90,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           buttons.add(control);
           break;
         }
-        case "enable": {
-          control = new qx.ui.form.Button(this.tr("Enable")).set({
+        case "save-button": {
+          control = new qx.ui.form.Button(this.tr("Save")).set({
             allowGrowX: false,
             appearance: "no-shadow-button"
           });
