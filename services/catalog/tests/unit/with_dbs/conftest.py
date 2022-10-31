@@ -1,7 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=not-context-manager
+# pylint: disable=not-context-manager
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import itertools
 import random
@@ -249,7 +249,6 @@ async def service_metadata_faker(faker: Faker) -> Callable:
     """Returns a factory to produce fake
     service metadata
     """
-    # TODO: use ServiceDockerData.Config.schema_extra as well
     template = {
         "integration-version": "1.0.0",
         "key": "simcore/services/comp/itis/sleeper",

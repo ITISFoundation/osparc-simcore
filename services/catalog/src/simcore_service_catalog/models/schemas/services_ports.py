@@ -62,7 +62,10 @@ class ServicePortGet(BaseModel):
     )
     kind: PortKindStr
     content_media_type: Optional[str] = None
-    content_schema: Optional[dict[str, Any]] = None
+    content_schema: Optional[dict[str, Any]] = Field(
+        None,
+        description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
+    )
 
     class Config:
         schema_extra = {
