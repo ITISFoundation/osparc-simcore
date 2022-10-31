@@ -31,7 +31,6 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
@@ -55,14 +54,6 @@ def app_environment(
     # disable the garbage collector
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
-
-
-@pytest.fixture
-def mock_service_resources() -> ServiceResourcesDict:
-    return parse_obj_as(
-        ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
-    )
 
 
 def assert_replaced(current_project, update_data):
