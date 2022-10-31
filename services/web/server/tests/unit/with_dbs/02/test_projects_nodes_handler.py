@@ -5,14 +5,12 @@
 
 import asyncio
 import re
-from collections import UserDict
-from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import choice
 from typing import Any, Awaitable, Callable
 from unittest import mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -159,67 +157,6 @@ async def test_replace_node_resources(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_create_node_properly_upgrade_database(
-    client: TestClient,
-    logged_user: UserDict,
-    user_project: ProjectDict,
-    expected: ExpectedResponse,
-    faker: Faker,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
-    mock_catalog_api: dict[str, mock.Mock],
-    catalog_subsystem_mock,
-    mocker: MockerFixture,
-):
-    create_or_update_mock = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
-        autospec=True,
-        return_value=None,
-    )
-
-    assert client.app
-    url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-
-    # Use-case 1.: not passing a service UUID will generate a new one on the fly
-    body = {
-        "service_key": f"simcore/services/frontend/{faker.pystr()}",
-        "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
-    }
-    response = await client.post(url.path, json=body)
-    data, error = await assert_status(response, expected.created)
-    if not error:
-        assert data
-        assert "node_id" in data
-        assert UUID(data["node_id"])
-        new_node_uuid = UUID(data["node_id"])
-        expected_project_data = deepcopy(user_project)
-        expected_project_data["workbench"][f"{new_node_uuid}"] = {
-            "key": body["service_key"],
-            "version": body["service_version"],
-        }
-        # give access to services inside the project
-        catalog_subsystem_mock([expected_project_data])
-        # check the project was updated
-        get_url = client.app.router["get_project"].url_for(
-            project_id=user_project["uuid"]
-        )
-        response = await client.get(get_url.path)
-        prj_data, error = await assert_status(response, expected.ok)
-        assert prj_data
-        assert not error
-        assert "workbench" in prj_data
-        assert (
-            f"{new_node_uuid}" in prj_data["workbench"]
-        ), f"node {new_node_uuid} is missing from project workbench! workbench nodes {list(prj_data['workbench'].keys())}"
-
-        create_or_update_mock.assert_called_once_with(
-            mock.ANY, logged_user["id"], user_project["uuid"]
-        )
-
-    # this does not start anything in the backend since this is not a dynamic service
-    mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
-
-
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_node_returns_422_if_body_is_missing(
     client: TestClient,
     user_project: ProjectDict,
@@ -257,26 +194,22 @@ async def test_create_node(
     mocked_director_v2_api: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     mocker: MockerFixture,
+    postgres_db: sa.engine.Engine,
 ):
-    create_or_update_mock = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
-        autospec=True,
-        return_value=None,
-    )
-
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
 
-    # Use-case 1.: not passing a service UUID will generate a new one on the fly
     body = {
         "service_key": f"simcore/services/{node_class}/{faker.pystr()}",
-        "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
+        "service_version": faker.numerify("%.#.#"),
     }
     response = await client.post(url.path, json=body)
     data, error = await assert_status(response, expected.created)
     if data:
         assert not error
-        create_or_update_mock.assert_called_once()
+        mocked_director_v2_api[
+            "director_v2_api.create_or_update_pipeline"
+        ].assert_called_once()
         if expect_run_service_call:
             mocked_director_v2_api[
                 "director_v2_api.run_dynamic_service"
@@ -285,6 +218,19 @@ async def test_create_node(
             mocked_director_v2_api[
                 "director_v2_api.run_dynamic_service"
             ].assert_not_called()
+
+        # check database is updated
+        assert "node_id" in data
+        create_node_id = data["node_id"]
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                sa.select([projects_db_model.c.workbench]).where(
+                    projects_db_model.c.uuid == user_project["uuid"]
+                )
+            )
+        assert result
+        workbench = result.one()[projects_db_model.c.workbench]
+        assert create_node_id in workbench
     else:
         assert error
 

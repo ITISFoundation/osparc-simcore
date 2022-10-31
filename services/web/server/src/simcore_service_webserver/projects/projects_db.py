@@ -29,6 +29,7 @@ from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
@@ -560,10 +561,17 @@ class ProjectDBAPI:
     ) -> tuple[ProjectDict, dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
+
+        - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
+        - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
+        - Example: to remove a node ```{node_id: None}```
         """
-        log.info("Patching project %s for user %s", project_uuid, user_id)
-        async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+        with log_context(
+            log,
+            logging.DEBUG,
+            msg=f"Patching project {project_uuid} for user {user_id}",
+        ):
+            async with self.engine.acquire() as conn, conn.begin() as _transaction:
                 current_project: dict = await self._get_project(
                     conn,
                     user_id,
@@ -580,11 +588,15 @@ class ProjectDBAPI:
                 )
 
                 def _patch_workbench(
-                    project: dict[str, Any], new_partial_workbench_data: dict[str, Any]
+                    project: dict[str, Any],
+                    new_partial_workbench_data: dict[str, Any],
                 ) -> tuple[dict[str, Any], dict[str, Any]]:
                     """patch the project workbench with the values in new_data and returns the changed project and changed values"""
                     changed_entries = {}
-                    for node_key, new_node_data in new_partial_workbench_data.items():
+                    for (
+                        node_key,
+                        new_node_data,
+                    ) in new_partial_workbench_data.items():
                         current_node_data = project.get("workbench", {}).get(node_key)
 
                         if current_node_data is None:
@@ -600,6 +612,10 @@ class ProjectDBAPI:
                                     f"{new_node_data=}",
                                 )
                                 raise NodeNotFoundError(project_uuid, node_key) from err
+                        elif new_node_data is None:
+                            # remove the node
+                            project["workbench"].pop(node_key)
+                            changed_entries.update({node_key: None})
                         else:
                             # find changed keys
                             changed_entries.update(

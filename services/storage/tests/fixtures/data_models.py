@@ -79,7 +79,7 @@ async def project_id(
 async def create_project_node(
     user_id: UserID, aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[NodeID]]]:
-    async def _creator(project_id: ProjectID) -> NodeID:
+    async def _creator(project_id: ProjectID, **kwargs) -> NodeID:
         async with aiopg_engine.acquire() as conn:
             result = await conn.execute(
                 sa.select([projects.c.workbench]).where(
@@ -90,15 +90,13 @@ async def create_project_node(
             assert row
             project_workbench: dict[str, Any] = row[projects.c.workbench]
             new_node_id = NodeID(faker.uuid4())
-            project_workbench.update(
-                {
-                    f"{new_node_id}": {
-                        "key": "simcore/services/frontend/file-picker",
-                        "version": "1.0.0",
-                        "label": "pytest_fake_node",
-                    }
-                }
-            )
+            node_data = {
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "label": "pytest_fake_node",
+            }
+            node_data.update(**kwargs)
+            project_workbench.update({f"{new_node_id}": node_data})
             await conn.execute(
                 projects.update()
                 .where(projects.c.uuid == f"{project_id}")

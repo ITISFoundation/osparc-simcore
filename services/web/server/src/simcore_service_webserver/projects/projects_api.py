@@ -245,8 +245,6 @@ async def add_project_node(
     node_uuid = service_id if service_id else f"{uuid4()}"
 
     # ensure the project is up-to-date in the database prior to start any potential service
-    project_workbench = project.get("workbench", {})
-    assert node_uuid not in project_workbench  # nosec
     partial_workbench_data: dict[str, Any] = {
         node_uuid: jsonable_encoder(
             Node.parse_obj(
@@ -305,34 +303,39 @@ async def start_project_node(
 
 
 async def delete_project_node(
-    request: web.Request, project_uuid: str, user_id: int, node_uuid: str
+    request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: str
 ) -> None:
     log.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_v2_api.get_dynamic_services(
-        request.app, project_id=project_uuid, user_id=user_id
+    list_running_dynamic_services = await director_v2_api.get_dynamic_services(
+        request.app, project_id=f"{project_uuid}", user_id=user_id
     )
-    # stop the service if it is running
-    for service in list_of_services:
-        if service["service_uuid"] == node_uuid:
-            log.info(
-                "Stopping dynamic %s in prj/node=%s",
-                f"{service}",
-                f"{project_uuid}/{node_uuid}",
-            )
-            # no need to save the state of the node when deleting it
-            await director_v2_api.stop_dynamic_service(
-                request.app,
-                node_uuid,
-                save_state=False,
-            )
-            break
-    # remove its data if any
+    if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
+        # no need to save the state of the node when deleting it
+        await director_v2_api.stop_dynamic_service(
+            request.app,
+            node_uuid,
+            save_state=False,
+        )
+
+    # remove the node's data if any
     await storage_api.delete_data_folders_of_project_node(
-        request.app, project_uuid, node_uuid, user_id
+        request.app, f"{project_uuid}", node_uuid, user_id
     )
+
+    # remove the node from the db
+    partial_workbench_data: dict[str, Any] = {
+        node_uuid: None,
+    }
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    await db.patch_user_project_workbench(
+        partial_workbench_data, user_id, f"{project_uuid}"
+    )
+    # also ensure the project is updated by director-v2 since services
+    await director_v2_api.create_or_update_pipeline(request.app, user_id, project_uuid)
 
 
 async def update_project_linked_product(
