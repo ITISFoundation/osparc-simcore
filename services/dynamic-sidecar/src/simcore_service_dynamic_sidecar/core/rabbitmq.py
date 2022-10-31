@@ -57,7 +57,7 @@ async def _wait_till_rabbit_responsive(url: str) -> None:
         **RabbitMQRetryPolicyUponInitialization().kwargs
     ):
         with attempt:
-            connection: aio_pika.Connection = await aio_pika.connect(url, timeout=1.0)
+            connection = await aio_pika.connect(url, timeout=1.0)
             await connection.close()
 
 
@@ -73,10 +73,10 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         self._project_id: ProjectID = settings.DY_SIDECAR_PROJECT_ID
         self._node_id: NodeID = settings.DY_SIDECAR_NODE_ID
 
-        self._connection: aio_pika.Connection | None = None
-        self._channel: aio_pika.Channel | None = None
-        self._logs_exchange: aio_pika.Exchange | None = None
-        self._events_exchange: aio_pika.Exchange | None = None
+        self._connection: aio_pika.abc.AbstractConnection | None = None
+        self._channel: aio_pika.abc.AbstractChannel | None = None
+        self._logs_exchange: aio_pika.abc.AbstractExchange | None = None
+        self._events_exchange: aio_pika.abc.AbstractExchange | None = None
 
         self.max_messages_to_send: int = max_messages_to_send
         # pylint: disable=unsubscriptable-object
@@ -97,11 +97,11 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
                 "connection_name": f"dynamic-sidecar_{self._node_id} {hostname}"
             },
         )
-        self._connection.add_close_callback(_close_callback)
+        self._connection.close_callbacks.add(_close_callback)
 
         log.debug("Creating channel")
         self._channel = await self._connection.channel(publisher_confirms=False)
-        self._channel.add_close_callback(_channel_close_callback)
+        self._channel.close_callbacks.add(_channel_close_callback)
 
         log.debug("Declaring %s exchange", self._rabbit_settings.RABBIT_CHANNELS["log"])
         self._logs_exchange = await self._channel.declare_exchange(
@@ -174,17 +174,17 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
             await self._channel_queues[self.CHANNEL_LOG].put(message)
 
     async def close(self) -> None:
-        if self._channel is not None:
-            await self._channel.close()
-        if self._connection is not None:
-            await self._connection.close()
-
         # wait for queues to be empty before sending the last messages
         self._keep_running = False
         if self._queues_worker is not None:
             self._queues_worker.cancel()
             with suppress(asyncio.CancelledError):
                 await self._queues_worker
+
+        if self._channel is not None:
+            await self._channel.close()
+        if self._connection is not None:
+            await self._connection.close()
 
 
 async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
