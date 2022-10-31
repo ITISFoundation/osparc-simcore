@@ -6,10 +6,16 @@ from typing import Callable, Optional
 
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
-from pydantic import EmailStr, Extra, ValidationError
+from pydantic import EmailStr, Extra, ValidationError, parse_obj_as
 from settings_library.catalog import CatalogSettings
 
-from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
+from ..models.schemas.solvers import (
+    LATEST_VERSION,
+    Solver,
+    SolverKeyId,
+    SolverPort,
+    VersionStr,
+)
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 ## from ..utils.client_decorators import JSON, handle_errors, handle_retry
@@ -132,6 +138,25 @@ class CatalogApi(BaseServiceClientApi):
         ), "Expected by SolverName regex"
 
         return service.to_solver()
+
+    async def get_solver_ports(
+        self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
+    ):
+
+        assert version != LATEST_VERSION  # nosec
+
+        service_key = urllib.parse.quote_plus(name)
+        service_version = version
+
+        resp = await self.client.get(
+            f"/services/{service_key}/{service_version}/ports",
+            params={"user_id": user_id},
+            headers={"x-simcore-products-name": product_name},
+        )
+        resp.raise_for_status()
+
+        solver_ports = parse_obj_as(list[SolverPort], resp.json())
+        return solver_ports
 
     async def list_latest_releases(
         self, user_id: int, *, product_name: str
