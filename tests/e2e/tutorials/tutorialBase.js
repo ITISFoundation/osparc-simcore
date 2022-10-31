@@ -451,18 +451,24 @@ class TutorialBase {
     await this.takeScreenshot("checkNodeOutputs_before");
     console.log("N items in folder. Expected:", fileNames);
     if (openOutputsFolder) {
-      const items = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+      const itemTexts = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
         elements => elements.map(el => el.textContent)
       );
-      console.log("Service data items", items);
-      const outputsFolder = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.filter(el => el.textContent.includes("outputs"))
-      );
-      if (outputsFolder.length) {
-        // open 'outputs' folder
-        await outputsFolder[0].click({
-          clickCount: 2
-        });
+      console.log("Service data items", itemTexts);
+      const items = await this.__page.$$('[osparc-test-id="FolderViewerItem"]');
+      let outputsFound = false;
+      for (let i=0; i<items.length; i++) {
+        const text = await items[i].evaluate(el => el.textContent);
+        if (text.includes("output")) {
+          console.log("Opening outputs folder");
+          await items[i].click({
+            clickCount: 2
+          });
+          outputsFound = true;
+        }
+      }
+      if (outputsFound) {
+        await this.takeScreenshot("outputs_folder");
       }
       else {
         throw("outputs folder not found");
