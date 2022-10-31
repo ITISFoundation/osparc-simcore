@@ -1,6 +1,4 @@
-from typing import List
-
-from models_library.services import PropertyName
+from models_library.services import ServicePortKey
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -11,7 +9,7 @@ from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDeta
 
 
 class RetrieveDataIn(BaseModel):
-    port_keys: List[PropertyName] = Field(
+    port_keys: list[ServicePortKey] = Field(
         ..., description="The port keys to retrieve data from"
     )
 

@@ -51,7 +51,7 @@ LATEST_INTEGRATION_VERSION = "1.0.0"
 
 # CONSTRAINT TYPES -------------------------------------------
 
-PropertyName = constr(regex=PROPERTY_KEY_RE)
+ServicePortKey = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 
 ServiceKey = constr(regex=KEY_RE)
@@ -176,7 +176,7 @@ class BaseServiceIOModel(BaseModel):
     )
 
     # value
-    file_to_key_map: Optional[dict[FileName, PropertyName]] = Field(
+    file_to_key_map: Optional[dict[FileName, ServicePortKey]] = Field(
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
@@ -409,8 +409,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         return value
 
 
-ServiceInputsDict = dict[PropertyName, ServiceInput]
-ServiceOutputsDict = dict[PropertyName, ServiceOutput]
+ServiceInputsDict = dict[ServicePortKey, ServiceInput]
+ServiceOutputsDict = dict[ServicePortKey, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
