@@ -1,37 +1,28 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-import sys
 from pathlib import Path
 
 import pytest
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 @pytest.fixture(scope="session")
-def project_slug_dir() -> Path:
-    raise NotImplementedError("Override fixture 'project_slug_dir' REQUIRED")
+def project_slug_dir(request: pytest.FixtureRequest) -> Path:
+    try:
+        root_dir = Path(request.config.getoption("--service-dir"))
+    except TypeError:
+        pytest.fail("--service-dir is not set")
+
+    assert isinstance(root_dir, Path)
+    assert root_dir.exists()
+    assert any(root_dir.glob(".osparc"))
+    return root_dir
 
 
 @pytest.fixture(scope="session")
 def project_name(project_slug_dir: Path) -> str:
     # Override if it does not apply
     return project_slug_dir.name
-
-
-@pytest.fixture(scope="session")
-def src_dir(project_slug_dir: Path) -> Path:
-    _src_dir = project_slug_dir / "src"
-    assert _src_dir.exists()
-    return _src_dir
-
-
-@pytest.fixture(scope="session")
-def tests_dir(project_slug_dir: Path) -> Path:
-    _tests_dir = project_slug_dir / "tests"
-    assert _tests_dir.exists()
-    return _tests_dir
 
 
 @pytest.fixture(scope="session")
@@ -42,22 +33,13 @@ def validation_dir(project_slug_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def tools_dir(project_slug_dir: Path) -> Path:
-    tools_dir = project_slug_dir / "tools"
-    assert tools_dir.exists()
-    return tools_dir
+def metadata_file(project_slug_dir: Path, request: pytest.FixtureRequest) -> Path:
+    try:
+        metadata_file = Path(request.config.getoption("--metadata"))
+    except TypeError:
+        metadata_file = project_slug_dir / "metadata" / "metadata.yml"
 
-
-@pytest.fixture(scope="session")
-def docker_dir(project_slug_dir: Path) -> Path:
-    docker_dir = project_slug_dir / "docker"
-    assert docker_dir.exists()
-    return docker_dir
-
-
-@pytest.fixture(scope="session")
-def metadata_file(project_slug_dir: Path) -> Path:
-    metadata_file = project_slug_dir / "metadata" / "metadata.yml"
+    assert isinstance(metadata_file, Path)
     assert metadata_file.exists()
     return metadata_file
 

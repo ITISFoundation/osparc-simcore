@@ -6,7 +6,7 @@ import rich
 import typer
 
 from ._meta import __version__
-from .commands import compose, config, metadata, run_creator
+from .commands import compose, config, metadata, run_creator, test
 from .settings import AppSettings
 
 app = typer.Typer()
@@ -54,6 +54,7 @@ def main(
 # new
 app.command("compose")(compose.main)
 app.command("config")(config.main)
+app.command("test")(test.main)
 # legacy
 app.command("bump-version")(metadata.bump_version)
 app.command("get-version")(metadata.get_version)

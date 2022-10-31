@@ -1120,8 +1120,10 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
 
             except ClientError as err:
                 log.warning(
-                    "Could not save state because {service_host_name} is unreachable [{err}]."
-                    "Resuming stop_service."
+                    "Could not save state because %s is unreachable [%s]."
+                    "Resuming stop_service.",
+                    service_host_name,
+                    err
                 )
 
         # remove the services
