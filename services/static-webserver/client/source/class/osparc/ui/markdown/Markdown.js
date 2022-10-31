@@ -77,7 +77,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
      */
-    _applyMarkdown: function(value) {
+    _applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         const renderer = new marked.Renderer();
         const linkRenderer = renderer.link;
