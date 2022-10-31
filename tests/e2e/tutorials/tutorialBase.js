@@ -451,8 +451,12 @@ class TutorialBase {
     await this.takeScreenshot("checkNodeOutputs_before");
     console.log("N items in folder. Expected:", fileNames);
     if (openOutputsFolder) {
+      const items = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent)
+      );
+      console.log("Service data items", items);
       const outputsFolder = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.filter(el => el.textContent == "outputs")
+        elements => elements.filter(el => el.textContent === "outputs")
       );
       if (outputsFolder.length) {
         // open 'outputs' folder
