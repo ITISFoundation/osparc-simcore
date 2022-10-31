@@ -241,7 +241,7 @@ def standard_user_role() -> tuple[str, tuple]:
 
 
 @pytest.mark.parametrize(*standard_user_role())
-async def test_create_many_nodes_in_parallel(
+async def test_create_and_delete_many_nodes_in_parallel(
     client: TestClient,
     user_project: ProjectDict,
     expected: ExpectedResponse,
@@ -249,6 +249,7 @@ async def test_create_many_nodes_in_parallel(
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     postgres_db: sa.engine.Engine,
+    storage_subsystem_mock: MockedStorageSubsystem,
 ):
     assert client.app
 
@@ -275,7 +276,7 @@ async def test_create_many_nodes_in_parallel(
         "director_v2_api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
-    # let's create more than the allowed max amount in parallel
+    # let's create many nodes
     num_services_in_project = len(user_project["workbench"])
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
@@ -287,8 +288,8 @@ async def test_create_many_nodes_in_parallel(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )
     # all shall have worked
-    for response in responses:
-        await assert_status(response, expected.created)
+    await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
+
     # but only the allowed number of services should have started
     assert (
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].call_count
@@ -305,6 +306,19 @@ async def test_create_many_nodes_in_parallel(
         assert result
         workbench = result.one()[projects_db_model.c.workbench]
     assert len(workbench) == NUM_DY_SERVICES + num_services_in_project
+    print(f"--> {NUM_DY_SERVICES} nodes were created concurrently")
+    #
+    # delete now
+    #
+    delete_node_tasks = []
+    for node_id in workbench:
+        delete_url = client.app.router["delete_node"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        delete_node_tasks.append(client.delete(f"{delete_url}"))
+    responses = await asyncio.gather(*delete_node_tasks)
+    await asyncio.gather(*(assert_status(r, expected.no_content) for r in responses))
+    print("--> deleted all nodes concurrently")
 
 
 @pytest.mark.parametrize(
