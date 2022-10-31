@@ -2928,13 +2928,13 @@
       "ServicePortGet": {
         "title": "ServicePortGet",
         "required": [
-          "name",
+          "key",
           "kind"
         ],
         "type": "object",
         "properties": {
-          "name": {
-            "title": "Name",
+          "key": {
+            "title": "Key name",
             "pattern": "^[^_\\W0-9]\\w*$",
             "type": "string",
             "description": "port identifier name"
@@ -2953,11 +2953,12 @@
           },
           "content_schema": {
             "title": "Content Schema",
-            "type": "object"
+            "type": "object",
+            "description": "jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/"
           }
         },
         "example": {
-          "name": "input_1",
+          "key": "input_1",
           "kind": "input",
           "content_schema": {
             "title": "Sleep interval",

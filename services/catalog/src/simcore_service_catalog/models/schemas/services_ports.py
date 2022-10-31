@@ -58,7 +58,10 @@ def _guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
 
 class ServicePortGet(BaseModel):
     key: str = Field(
-        ..., description="port identifier name", regex=PUBLIC_VARIABLE_NAME_RE
+        ...,
+        description="port identifier name",
+        regex=PUBLIC_VARIABLE_NAME_RE,
+        title="Key name",
     )
     kind: PortKindStr
     content_media_type: Optional[str] = None
