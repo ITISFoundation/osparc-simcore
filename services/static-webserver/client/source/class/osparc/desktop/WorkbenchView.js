@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
-    TAB_BUTTON_HEIGHT: 50,
+    TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -307,6 +307,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
         paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
       });
@@ -371,6 +372,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
         paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
       });
@@ -410,6 +412,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewMain.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4"
       });
       this.__addTopBarSpacer(topBar);

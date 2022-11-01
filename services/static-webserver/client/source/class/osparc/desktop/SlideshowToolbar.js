@@ -132,6 +132,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.form.Button().set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             label: this.tr("App Mode"),
+            toolTipText: this.tr("Stop App Mode"),
             icon: "@FontAwesome5Solid/stop/14",
             visibility: osparc.data.Permissions.getInstance().canDo("study.slides.stop") ? "visible" : "excluded"
           });
