@@ -10,7 +10,7 @@ aiohttp==3.8.3
     #   pytest-aiohttp
 aiosignal==1.2.0
     # via aiohttp
-astroid==2.12.11
+astroid==2.12.12
     # via pylint
 async-timeout==4.0.2
     # via aiohttp
@@ -76,7 +76,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py==1.11.0
     # via pytest
-pylint==2.15.4
+pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
