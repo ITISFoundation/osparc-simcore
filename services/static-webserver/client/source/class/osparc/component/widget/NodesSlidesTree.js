@@ -123,7 +123,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         children: [],
         nodeId: study.getUuid(),
         position: null,
-        description: null
+        instructions: null
       };
       return qx.data.marshal.Json.createModel(rootData, true);
     },
@@ -136,14 +136,14 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           c.bindProperty("nodeId", "nodeId", null, item, id);
           c.bindProperty("label", "label", null, item, id);
           c.bindProperty("position", "position", null, item, id);
-          c.bindProperty("description", "description", null, item, id);
+          c.bindProperty("instructions", "instructions", null, item, id);
         },
         configureItem: item => {
           item.addListener("showNode", () => this.__itemActioned(item, "show"), this);
           item.addListener("hideNode", () => this.__itemActioned(item, "hide"), this);
           item.addListener("moveUp", () => this.__itemActioned(item, "moveUp"), this);
           item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
-          item.addListener("saveDescription", e => this.__saveDescription(item, e.getData()), this);
+          item.addListener("saveInstructions", e => this.__saveInstructions(item, e.getData()), this);
           item.addListener("tap", () => this.fireDataEvent("changeSelectedNode", item.getNodeId()), this);
         },
         sorter: (a, b) => {
@@ -176,8 +176,8 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         };
         const pos = this.__study.getUi().getSlideshow().getPosition(nodeId);
         nodeInTree.position = pos;
-        const description = this.__study.getUi().getSlideshow().getDescription(nodeId);
-        nodeInTree.description = description;
+        const instructions = this.__study.getUi().getSlideshow().getInstructions(nodeId);
+        nodeInTree.instructions = instructions;
         children.push(nodeInTree);
       }
       return children;
@@ -292,9 +292,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
       return false;
     },
 
-    __saveDescription: function(item, description) {
+    __saveInstructions: function(item, instructions) {
       const itemMdl = item.getModel();
-      itemMdl.setDescription(description);
+      itemMdl.setInstructions(instructions);
     },
 
     __serialize: function() {
@@ -305,7 +305,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         if (child.getPosition() !== -1) {
           slideshow[child.getNodeId()] = {
             "position": child.getPosition(),
-            "description": child.getDescription()
+            "instructions": child.getInstructions()
           };
         }
       });

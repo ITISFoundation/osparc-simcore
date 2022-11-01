@@ -36,9 +36,9 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       nullable: true
     },
 
-    description: {
+    instructions: {
       check: "String",
-      event: "changeDescription",
+      event: "changeInstructions",
       nullable: true
     }
   },
@@ -48,7 +48,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
     "hideNode": "qx.event.type.Event",
     "moveUp": "qx.event.type.Event",
     "moveDown": "qx.event.type.Event",
-    "saveDescription": "qx.event.type.Data"
+    "saveInstructions": "qx.event.type.Data"
   },
 
   members: {
@@ -115,7 +115,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
       this.addWidget(showBtn);
 
       const editTextBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/10").set({
-        toolTipText: this.tr("Edit Description"),
+        toolTipText: this.tr("Edit Instructions"),
         marginRight: 5,
         appearance: "no-shadow-button"
       });
@@ -127,13 +127,13 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
     },
 
     __editText: function() {
-      const title = this.tr("Edit Description");
-      const textEditor = new osparc.component.editor.TextEditor(this.getDescription());
+      const title = this.tr("Edit Instructions");
+      const textEditor = new osparc.component.editor.TextEditor(this.getInstructions());
       textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 500, 300);
       textEditor.addListener("textChanged", e => {
         const newText = e.getData();
-        this.fireDataEvent("saveDescription", newText);
+        this.fireDataEvent("saveInstructions", newText);
         win.close();
       }, this);
     }
