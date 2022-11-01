@@ -78,6 +78,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _header: null,
     __inputsButton: null,
     __preparingInputs: null,
+    __instructionsBtn: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -127,12 +128,21 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
+      const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/17").set({
+        padding: 3,
         backgroundColor: "transparent",
         toolTipText: this.tr("Information")
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
+
+      const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/book/17").set({
+        padding: 3,
+        backgroundColor: "transparent",
+        toolTipText: this.tr("Instructions")
+      });
+      instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
+      header.add(instructionsBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
@@ -204,6 +214,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const width = 600;
       const height = 700;
       osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+    },
+
+    __openInstructions: function() {
+      const desc = this.getNode().getSlideshowDescription();
+      if (desc) {
+        const descView = new osparc.ui.markdown.Markdown().set({
+          value: desc,
+          padding: 3,
+          noMargin: true
+        });
+        const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
+        const width = 600;
+        const height = 700;
+        const win = osparc.ui.window.Window.popUpInWindow(descView, title, width, height).set({
+          modal: false,
+          clickAwayClose: false
+        });
+        win.getContentElement().setStyles({
+          "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
+        });
+      }
     },
 
     getHeaderLayout: function() {
@@ -320,6 +351,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
       this.__preparingInputs.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
       this.__dependeciesChanged();
+
+      this.__instructionsBtn.setVisibility(node.getSlideshowDescription() ? "visible" : "excluded");
 
       this._mainView.removeAll();
       this._addSettings();

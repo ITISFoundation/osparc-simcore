@@ -288,6 +288,11 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getStudy().getWorkbench();
     },
 
+    getSlideshowDescription: function() {
+      const slideshow = this.getStudy().getUi().getSlideshow();
+      return slideshow.getDescription(this.getNodeId());
+    },
+
     isInKey: function(str) {
       if (this.getMetaData() === null) {
         return false;
