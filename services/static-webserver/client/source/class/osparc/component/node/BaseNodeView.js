@@ -137,10 +137,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
 
-      const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/book/17").set({
+      const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
         padding: 3,
-        backgroundColor: "transparent",
-        toolTipText: this.tr("Instructions")
+        backgroundColor: "transparent"
       });
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
