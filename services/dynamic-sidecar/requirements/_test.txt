@@ -22,6 +22,8 @@ charset-normalizer==2.0.12
     #   requests
 coverage==6.5.0
     # via pytest-cov
+exceptiongroup==1.0.0
+    # via pytest
 faker==15.1.0
     # via -r requirements/_test.in
 idna==2.10
@@ -40,13 +42,11 @@ packaging==21.3
     #   pytest
 pluggy==1.0.0
     # via pytest
-py==1.11.0
-    # via pytest
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
