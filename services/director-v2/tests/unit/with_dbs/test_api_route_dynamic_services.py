@@ -7,8 +7,7 @@ import logging
 import os
 import urllib.parse
 from contextlib import asynccontextmanager
-from time import sleep
-from typing import Any, AsyncIterator, Final, Iterator, NamedTuple, Optional
+from typing import Any, AsyncIterator, Iterator, NamedTuple, Optional
 from uuid import UUID
 
 import pytest
@@ -43,9 +42,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-WAIT_FOR_HEALTH_CALLS: Final[float] = 1.0
 
 
 class ServiceParams(NamedTuple):
@@ -308,8 +304,6 @@ def test_create_dynamic_services(
     if exp_status_code == status.HTTP_201_CREATED:
         # check the returned data
         pass
-
-    sleep(WAIT_FOR_HEALTH_CALLS)
 
 
 @pytest.mark.parametrize(

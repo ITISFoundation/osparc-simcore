@@ -9,11 +9,16 @@ from typing import Optional, Union
 from aiohttp import web
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
 #
 # projects/*/nodes COLLECTION -------------------------
 #
 from pydantic import BaseModel
+from servicelib.aiohttp.long_running_tasks.server import (
+    TaskProgress,
+    start_long_running_task,
+)
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -23,10 +28,15 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
+from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import NodeNotFoundError, ProjectNotFoundError
+from .projects_exceptions import (
+    NodeNotFoundError,
+    ProjectNotFoundError,
+    ProjectStartsTooManyDynamicNodes,
+)
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
@@ -120,24 +130,35 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_state: Union[
-            dict, list
-        ] = await director_v2_api.get_dynamic_service_state(
+        service_data: Union[dict, list] = await director_v2_api.get_dynamic_service(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 
-        if "data" not in service_state:
+        if "data" not in service_data:
             # dynamic-service NODE STATE
-            return web.json_response({"data": service_state}, dumps=json_dumps)
+            return web.json_response({"data": service_data}, dumps=json_dumps)
 
         # LEGACY-service NODE STATE
-        return web.json_response({"data": service_state["data"]}, dumps=json_dumps)
+        return web.json_response({"data": service_data["data"]}, dumps=json_dumps)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
         ) from exc
     except NodeNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Node {path_params.node_id} not found") from exc
+    except DirectorServiceError as exc:
+        if exc.status == web.HTTPNotFound.status_code:
+            # the service was not started, so it's state is not started or idle
+            return web.json_response(
+                {
+                    "data": {
+                        "service_state": "idle",
+                        "service_uuid": f"{path_params.node_id}",
+                    }
+                },
+                dumps=json_dumps,
+            )
+        raise
 
 
 @login_required
@@ -191,6 +212,72 @@ async def retrieve_node(request: web.Request) -> web.Response:
     )
 
 
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start")
+@login_required
+@permission_required("project.update")
+async def start_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    try:
+
+        await projects_api.start_project_node(
+            request, req_ctx.user_id, path_params.project_id, path_params.node_id
+        )
+
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    except ProjectStartsTooManyDynamicNodes as exc:
+        raise web.HTTPConflict(reason=f"{exc}") from exc
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Node {path_params.node_id} not found in project"
+        ) from exc
+
+
+async def _stop_dynamic_service_with_progress(
+    _task_progress: TaskProgress, path_params: _NodePathParams, *args, **kwargs
+):
+    try:
+        await director_v2_api.stop_dynamic_service(*args, **kwargs)
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_id} not found"
+        ) from exc
+    except NodeNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Node {path_params.node_id} not found in project"
+        ) from exc
+    except DirectorServiceError as exc:
+        if exc.status == web.HTTPNotFound.status_code:
+            # already stopped, it's all right
+            raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON) from exc
+        raise
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
+@login_required
+@permission_required("project.update")
+async def stop_node(request: web.Request) -> web.Response:
+    """Has only effect on nodes associated to dynamic services"""
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+
+    return await start_long_running_task(
+        request,
+        _stop_dynamic_service_with_progress,
+        task_context=jsonable_encoder(req_ctx),
+        path_params=path_params,
+        app=request.app,
+        service_uuid=f"{path_params.node_id}",
+        fire_and_forget=True,
+    )
+
+
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
 @login_required
 @permission_required("project.node.read")
@@ -201,7 +288,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    return web.HTTPNoContent()
+    raise web.HTTPNoContent()
 
 
 #

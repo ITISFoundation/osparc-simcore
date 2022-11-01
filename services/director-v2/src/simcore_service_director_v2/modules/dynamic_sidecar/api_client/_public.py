@@ -338,8 +338,7 @@ class DynamicSidecarClient:
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             _debug_progress_callback,
         )
-        assert transferred_bytes  # nosec
-        return transferred_bytes
+        return transferred_bytes or 0
 
     async def pull_service_output_ports(
         self,

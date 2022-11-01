@@ -53,8 +53,7 @@ async def get_dynamic_services(
     return services
 
 
-@log_decorator(logger=log)
-async def get_dynamic_service_state(app: web.Application, node_uuid: str) -> DataType:
+async def get_dynamic_service(app: web.Application, node_uuid: str) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
 

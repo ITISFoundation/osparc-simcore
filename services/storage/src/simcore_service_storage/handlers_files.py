@@ -220,7 +220,7 @@ async def abort_upload_file(request: web.Request):
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
     await dsm.abort_file_upload(query_params.user_id, path_params.file_id)
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete", name="complete_upload_file")  # type: ignore
@@ -325,7 +325,7 @@ async def delete_file(request: web.Request):
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
     await dsm.delete_file(query_params.user_id, path_params.file_id)
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")  # type: ignore
