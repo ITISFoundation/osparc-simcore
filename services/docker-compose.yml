@@ -349,7 +349,7 @@ services:
       - storage_subnet
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.8.0-management
+    image: itisfoundation/rabbitmq:3.11.2-management
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
