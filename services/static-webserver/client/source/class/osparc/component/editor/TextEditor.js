@@ -104,7 +104,9 @@ qx.Class.define("osparc.component.editor.TextEditor", {
           const previewPage = new qx.ui.tabview.Page(this.tr("Preview")).set({
             layout: new qx.ui.layout.VBox(5)
           });
-          previewPage.add(control, {
+          const scrollContainer = new qx.ui.container.Scroll();
+          scrollContainer.add(control);
+          previewPage.add(scrollContainer, {
             flex: 1
           });
           tabs.add(previewPage);
