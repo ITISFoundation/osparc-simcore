@@ -214,6 +214,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __applyNode: function(node) {
+      if (node.isDynamic()) {
+        const startBtn = new qx.ui.menu.Button().set({
+          label: this.tr("Start"),
+          icon: "@FontAwesome5Solid/play/10"
+        });
+        startBtn.addListener("execute", () => node.requestStartNode());
+        node.getStatus().bind("interactive", startBtn, "enabled", {
+          converter: state => state === "idle"
+        });
+        this._optionsMenu.addAt(startBtn, 0);
+
+        const stopBtn = new qx.ui.menu.Button().set({
+          label: this.tr("Stop"),
+          icon: "@FontAwesome5Solid/stop/10"
+        });
+        stopBtn.addListener("execute", () => node.requestStopNode());
+        node.getStatus().bind("interactive", stopBtn, "enabled", {
+          converter: state => state === "ready"
+        });
+        this._optionsMenu.addAt(stopBtn, 1);
+      }
+
       if (node.getKey().includes("parameter/int")) {
         const makeIterator = new qx.ui.menu.Button().set({
           label: this.tr("Convert to Iterator"),

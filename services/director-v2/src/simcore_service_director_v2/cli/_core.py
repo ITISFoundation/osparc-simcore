@@ -20,7 +20,7 @@ from tenacity.wait import wait_random_exponential
 
 from ..core.application import create_base_app
 from ..core.settings import AppSettings
-from ..models.domains.dynamic_services import DynamicServiceOut
+from ..models.domains.dynamic_services import DynamicServiceGet
 from ..models.schemas.dynamic_services import (
     DynamicSidecarNamesHelper,
     ServiceBootType,
@@ -146,7 +146,7 @@ class RenderData(BaseModel):
 
 async def _get_dy_service_state(
     client: AsyncClient, node_uuid: NodeIDStr
-) -> Optional[DynamicServiceOut]:
+) -> Optional[DynamicServiceGet]:
     try:
         result = await client.get(
             f"http://localhost:8000/v2/dynamic_services/{node_uuid}",  # NOSONAR
@@ -160,7 +160,7 @@ async def _get_dy_service_state(
         return None
 
     result_dict = result.json()
-    return DynamicServiceOut(
+    return DynamicServiceGet(
         **(result_dict["data"] if "data" in result_dict else result_dict)
     )
 

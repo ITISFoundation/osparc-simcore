@@ -2,7 +2,6 @@
 States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
 import logging
-from typing import Dict, Set, Tuple
 
 from ...models.schemas.dynamic_services import ServiceState
 
@@ -10,15 +9,15 @@ logger = logging.getLogger(__name__)
 
 # For all available task states SEE
 # https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-TASK_STATES_FAILED: Set[str] = {"failed", "rejected", "orphaned"}
-TASK_STATES_PENDING: Set[str] = {"new", "assigned", "accepted", "pending"}
-TASK_STATES_PULLING: Set[str] = {"preparing"}
-TASK_STATES_STARTING: Set[str] = {"ready", "starting"}
-TASK_STATES_RUNNING: Set[str] = {"running"}
-TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown", "remove"}
+TASK_STATES_FAILED: set[str] = {"failed", "rejected", "orphaned"}
+TASK_STATES_PENDING: set[str] = {"new", "assigned", "accepted", "pending"}
+TASK_STATES_PULLING: set[str] = {"preparing"}
+TASK_STATES_STARTING: set[str] = {"ready", "starting"}
+TASK_STATES_RUNNING: set[str] = {"running"}
+TASK_STATES_COMPLETE: set[str] = {"complete", "shutdown", "remove"}
 
 
-TASK_STATES_ALL: Set[str] = (
+TASK_STATES_ALL: set[str] = (
     TASK_STATES_FAILED
     | TASK_STATES_PENDING
     | TASK_STATES_PULLING
@@ -31,13 +30,16 @@ TASK_STATES_ALL: Set[str] = (
 # mapping container states into 4 categories
 # For all avaliable containerstates SEE
 # https://github.com/moby/moby/blob/master/container/state.go#L140
-CONTAINER_STATUSES_FAILED: Set[str] = {"restarting", "dead", "paused"}
-CONTAINER_STATUSES_STARTING: Set[str] = {"created"}
-CONTAINER_STATUSES_RUNNING: Set[str] = {"running"}
-CONTAINER_STATUSES_COMPLETE: Set[str] = {"removing", "exited"}
+CONTAINER_STATUSES_FAILED: set[str] = {"restarting", "dead", "paused"}
+CONTAINER_STATUSES_STARTING: set[str] = {"created"}
+CONTAINER_STATUSES_RUNNING: set[str] = {"running"}
+CONTAINER_STATUSES_COMPLETE: set[str] = {
+    "removing",
+    "exited",
+}  # TODO: ANE what if exited with error???
 
 
-_TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
+_TASK_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
     **dict.fromkeys(TASK_STATES_FAILED, ServiceState.FAILED),
     **dict.fromkeys(TASK_STATES_PENDING, ServiceState.PENDING),
     **dict.fromkeys(TASK_STATES_PULLING, ServiceState.PULLING),
@@ -47,7 +49,7 @@ _TASK_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
 }
 
 
-_CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
+_CONTAINER_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
     **dict.fromkeys(CONTAINER_STATUSES_FAILED, ServiceState.FAILED),
     **dict.fromkeys(CONTAINER_STATUSES_STARTING, ServiceState.STARTING),
     **dict.fromkeys(CONTAINER_STATUSES_RUNNING, ServiceState.RUNNING),
@@ -55,16 +57,19 @@ _CONTAINER_STATE_TO_SERVICE_STATE: Dict[str, ServiceState] = {
 }
 
 
-def extract_task_state(task_status: Dict[str, str]) -> Tuple[ServiceState, str]:
+def extract_task_state(task_status: dict[str, str]) -> tuple[ServiceState, str]:
     last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
 
     task_state = _TASK_STATE_TO_SERVICE_STATE[task_status["State"]]
     return (task_state, last_task_error_msg)
 
 
+ServiceMessage = str
+
+
 def _extract_container_status(
-    container_status: Dict[str, str]
-) -> Tuple[ServiceState, str]:
+    container_status: dict[str, str]
+) -> tuple[ServiceState, ServiceMessage]:
     last_task_error_msg = (
         container_status["Error"] if "Error" in container_status else ""
     )
@@ -74,8 +79,8 @@ def _extract_container_status(
 
 
 def extract_containers_minimim_statuses(
-    containers_status: Dict[str, Dict[str, str]]
-) -> Tuple[ServiceState, str]:
+    containers_status: dict[str, dict[str, str]]
+) -> tuple[ServiceState, ServiceMessage]:
     """
     Because more then one container can be started by the dynamic-sidecar,
     the lowest (considered worst) state will be forwarded to the frontend.
@@ -86,7 +91,7 @@ def extract_containers_minimim_statuses(
         k: _extract_container_status(value)
         for k, value in enumerate(containers_status.values())
     }
-    result: Tuple[ServiceState, str] = min(
+    result: tuple[ServiceState, str] = min(
         remapped_service_statuses.values(), key=lambda x: x
     )
     return result
