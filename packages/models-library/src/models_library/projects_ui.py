@@ -21,9 +21,9 @@ class WorkbenchUI(BaseModel):
 
 class Slideshow(BaseModel):
     position: int = Field(..., description="Slide's position", examples=["0", "2"])
-    description: str = Field(
+    instructions: str = Field(
         ...,
-        description="Description or instructions about what to do in this step",
+        description="Instructions about what to do in this step",
         examples=[
             "This is a **sleeper**",
             "Please, select the config file defined [in this link](asdf)"

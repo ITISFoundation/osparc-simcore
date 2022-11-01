@@ -1554,9 +1554,9 @@ components:
                       example:
                         - 0
                         - 2
-                    description:
+                    instructions:
                       type: string
-                      description: Description or instructions about what to do in this step
+                      description: Instructions about what to do in this step
                       example:
                         - 'This is a **sleeper**'
                         - 'Please, select the config file defined [in this link](asdf)'
