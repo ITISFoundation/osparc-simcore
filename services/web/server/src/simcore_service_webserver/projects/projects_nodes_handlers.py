@@ -225,7 +225,7 @@ async def start_node(request: web.Request) -> web.Response:
             request, req_ctx.user_id, path_params.project_id, path_params.node_id
         )
 
-        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectStartsTooManyDynamicNodes as exc:
         raise web.HTTPConflict(reason=f"{exc}") from exc
     except ProjectNotFoundError as exc:
@@ -243,7 +243,7 @@ async def _stop_dynamic_service_with_progress(
 ):
     try:
         await director_v2_api.stop_dynamic_service(*args, **kwargs)
-        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_id} not found"
@@ -255,7 +255,7 @@ async def _stop_dynamic_service_with_progress(
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # already stopped, it's all right
-            return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+            raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON) from exc
         raise
 
 
@@ -288,7 +288,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    return web.HTTPNoContent()
+    raise web.HTTPNoContent()
 
 
 #
