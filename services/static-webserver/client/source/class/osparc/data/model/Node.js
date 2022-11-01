@@ -288,9 +288,9 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getStudy().getWorkbench();
     },
 
-    getSlideshowDescription: function() {
+    getSlideshowInstructions: function() {
       const slideshow = this.getStudy().getUi().getSlideshow();
-      return slideshow.getDescription(this.getNodeId());
+      return slideshow.getInstructions(this.getNodeId());
     },
 
     isInKey: function(str) {

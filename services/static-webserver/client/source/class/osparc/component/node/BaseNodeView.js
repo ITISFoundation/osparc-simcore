@@ -221,7 +221,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.getInstructionsWindow().center();
         return;
       }
-      const desc = this.getNode().getSlideshowDescription();
+      const desc = this.getNode().getSlideshowInstructions();
       if (desc) {
         const descView = new osparc.ui.markdown.Markdown().set({
           value: desc,
@@ -364,7 +364,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__preparingInputs.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
       this.__dependeciesChanged();
 
-      this.__instructionsBtn.setVisibility(node.getSlideshowDescription() ? "visible" : "excluded");
+      this.__instructionsBtn.setVisibility(node.getSlideshowInstructions() ? "visible" : "excluded");
 
       this._mainView.removeAll();
       this._addSettings();

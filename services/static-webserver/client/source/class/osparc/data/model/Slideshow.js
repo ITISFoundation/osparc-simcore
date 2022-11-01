@@ -89,7 +89,7 @@ qx.Class.define("osparc.data.model.Slideshow", {
       }
       slideshow[nodeId] = {
         position: pos,
-        description: null
+        instructions: null
       };
     },
 
@@ -115,10 +115,10 @@ qx.Class.define("osparc.data.model.Slideshow", {
       return -1;
     },
 
-    getDescription: function(nodeId) {
+    getInstructions: function(nodeId) {
       const slideshow = this.getData();
-      if (nodeId in slideshow && "description" in slideshow[nodeId]) {
-        return slideshow[nodeId].description;
+      if (nodeId in slideshow && "instructions" in slideshow[nodeId]) {
+        return slideshow[nodeId].instructions;
       }
       return "";
     },
