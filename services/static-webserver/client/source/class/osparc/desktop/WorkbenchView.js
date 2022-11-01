@@ -882,7 +882,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowButtons.add(editSlidesBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
-        label: this.tr("Start App"),
+        label: this.tr("Start"),
         icon: "@FontAwesome5Solid/play/14",
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
