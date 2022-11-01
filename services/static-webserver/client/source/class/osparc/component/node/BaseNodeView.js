@@ -79,6 +79,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __inputsButton: null,
     __preparingInputs: null,
     __instructionsBtn: null,
+    __instructionsWindow: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -217,6 +218,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __openInstructions: function() {
+      if (this.getInstructionsWindow()) {
+        this.getInstructionsWindow().center();
+        return;
+      }
       const desc = this.getNode().getSlideshowDescription();
       if (desc) {
         const descView = new osparc.ui.markdown.Markdown().set({
@@ -234,7 +239,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         win.getContentElement().setStyles({
           "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });
+        win.addListener("close", () => this.__instructionsWindow = null, this);
+        this.__instructionsWindow = win;
       }
+    },
+
+    getInstructionsWindow: function() {
+      return this.__instructionsWindow;
     },
 
     getHeaderLayout: function() {
