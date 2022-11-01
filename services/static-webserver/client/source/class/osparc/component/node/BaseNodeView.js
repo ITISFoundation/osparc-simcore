@@ -251,8 +251,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const scrollContainer = new qx.ui.container.Scroll();
         scrollContainer.add(descView);
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
-        const width = 600;
-        const height = 600;
+        const width = 500;
+        const height = 500;
         const win = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
           modal: false,
           clickAwayClose: false

@@ -123,7 +123,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
-        if (elemHeight > this.getMaxHeight()) {
+        if (this.getMaxHeight() && elemHeight > this.getMaxHeight()) {
           this.setHeight(elemHeight);
         } else {
           this.setMinHeight(elemHeight);
