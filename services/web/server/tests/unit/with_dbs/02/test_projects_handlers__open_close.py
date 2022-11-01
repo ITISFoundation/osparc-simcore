@@ -364,7 +364,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
 ):
     assert client.app
     num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
-        min_value=3
+        min_value=3, max_value=250
     )
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
@@ -429,7 +429,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
 ):
     assert client.app
     assert max_amount_of_auto_started_dyn_services == 0, "setting not disabled!"
-    num_of_dyn_services = faker.pyint(min_value=20)
+    num_of_dyn_services = faker.pyint(min_value=20, max_value=250)
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
@@ -449,7 +449,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     logged_user,
     user_project,
     client_session_id_factory: Callable,
-    expected,
+    expected: ExpectedResponse,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services,
@@ -460,7 +460,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     ).isoformat()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id_factory())
-    await assert_status(resp, expected)
+    await assert_status(resp, expected.ok)
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
 
 
