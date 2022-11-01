@@ -104,6 +104,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __currentNodeId: null,
     __startAppButton: null,
     __editSlidesButton: null,
+    __startAppButtonTB: null,
     __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -408,6 +409,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewMain);
 
       const topBar = tabViewMain.getChildControl("bar");
+      topBar.set({
+        backgroundColor: "background-main-4"
+      });
       this.__addTopBarSpacer(topBar);
 
 
@@ -428,6 +432,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
+      const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
+        label: this.tr("App Mode"),
+        toolTipText: this.tr("Start App Mode"),
+        icon: "@FontAwesome5Solid/play/14",
+        alignY: "middle",
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+      });
+      startAppButtonTB.addListener("execute", () => this.fireEvent("slidesAppStart"));
+      topBar.add(startAppButtonTB);
 
       const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
       [
@@ -866,7 +879,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowButtons.add(editSlidesBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
-        label: this.tr("Start"),
+        label: this.tr("Start App"),
         icon: "@FontAwesome5Solid/play/14",
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
@@ -884,7 +897,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (study && this.__editSlidesButton) {
         const isOwner = osparc.data.model.Study.isOwner(study);
         this.__editSlidesButton.setEnabled(isOwner);
-        this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
+        const canStart = study.hasSlideshow() || study.getWorkbench().isPipelineLinear();
+        this.__startAppButton.setEnabled(canStart);
+        this.__startAppButtonTB.setVisibility(canStart ? "visible" : "hidden");
       }
     },
 
