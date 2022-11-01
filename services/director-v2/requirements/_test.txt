@@ -187,7 +187,7 @@ pamqp==3.2.1
     # via
     #   -c requirements/_base.txt
     #   aiormq
-pillow==9.2.0
+pillow==9.3.0
     # via bokeh
 platformdirs==2.5.2
     # via pylint
