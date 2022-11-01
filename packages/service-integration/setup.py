@@ -70,6 +70,12 @@ SETUP = dict(
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
+    package_data={
+        "": [
+            "service/tests/**/*.py",
+            "service/tests/unit/*.py",
+        ]
+    },
     test_suite="tests",
     tests_require=TEST_REQUIREMENTS,
     extras_require={},

@@ -85,10 +85,21 @@ build build-nc: ## [docker] builds docker image of executable w/ or w/o cache
 	docker run local/${PACKAGE_NAME}:production --version
 
 .PHONY: inspect
-inspect:
-	docker image inspect local/${PACKAGE_NAME}:production | jq '.[0] | .RepoTags, .Config.Labels, .Architecture'
+inspect: ## [docker] inspects container
+	docker image inspect \
+		local/${PACKAGE_NAME}:production | jq '.[0] | .RepoTags, .Config.Labels, .Architecture'
 
+
+_src_dir = $(if $(target),$(target),$(PWD))
 
 .PHONY: shell
-shell:
-	docker run -it --entrypoint bash local/${PACKAGE_NAME}:production
+shell: ## [docker] opens shell in container
+	docker run \
+		-it \
+		--volume="/etc/group:/etc/group:ro" \
+		--volume="/etc/passwd:/etc/passwd:ro" \
+		--user="$(shell id --user "$(USER)")":scu \
+		--entrypoint bash \
+		--volume "$(_src_dir)":/src \
+		--workdir=/src \
+		local/${PACKAGE_NAME}:production

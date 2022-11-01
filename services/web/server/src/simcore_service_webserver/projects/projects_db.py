@@ -22,12 +22,14 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.projects_nodes import Node
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
@@ -551,14 +553,25 @@ class ProjectDBAPI:
         return template_prj
 
     async def patch_user_project_workbench(
-        self, partial_workbench_data: dict[str, Any], user_id: int, project_uuid: str
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        self,
+        partial_workbench_data: dict[str, Any],
+        user_id: int,
+        project_uuid: str,
+        product_name: Optional[str] = None,
+    ) -> tuple[ProjectDict, dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
+
+        - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
+        - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
+        - Example: to remove a node ```{node_id: None}```
         """
-        log.info("Patching project %s for user %s", project_uuid, user_id)
-        async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+        with log_context(
+            log,
+            logging.DEBUG,
+            msg=f"Patching project {project_uuid} for user {user_id}",
+        ):
+            async with self.engine.acquire() as conn, conn.begin() as _transaction:
                 current_project: dict = await self._get_project(
                     conn,
                     user_id,
@@ -575,30 +588,47 @@ class ProjectDBAPI:
                 )
 
                 def _patch_workbench(
-                    project: dict[str, Any], new_partial_workbench_data: dict[str, Any]
+                    project: dict[str, Any],
+                    new_partial_workbench_data: dict[str, Any],
                 ) -> tuple[dict[str, Any], dict[str, Any]]:
                     """patch the project workbench with the values in new_data and returns the changed project and changed values"""
                     changed_entries = {}
-                    for node_key, new_node_data in new_partial_workbench_data.items():
+                    for (
+                        node_key,
+                        new_node_data,
+                    ) in new_partial_workbench_data.items():
                         current_node_data = project.get("workbench", {}).get(node_key)
 
                         if current_node_data is None:
-                            log.debug(
-                                "node %s is missing from project, no patch", node_key
-                            )
-                            raise NodeNotFoundError(project_uuid, node_key)
-                        # find changed keys
-                        changed_entries.update(
-                            {
-                                node_key: find_changed_node_keys(
-                                    current_node_data,
-                                    new_node_data,
-                                    look_for_removed_keys=False,
+                            # if it's a new node, let's check that it validates
+                            try:
+                                Node.parse_obj(new_node_data)
+                                project["workbench"][node_key] = new_node_data
+                                changed_entries.update({node_key: new_node_data})
+                            except ValidationError as err:
+                                log.debug(
+                                    "node %s is missing from project, and %s is no new node, no patch",
+                                    node_key,
+                                    f"{new_node_data=}",
                                 )
-                            }
-                        )
-                        # patch
-                        current_node_data.update(new_node_data)
+                                raise NodeNotFoundError(project_uuid, node_key) from err
+                        elif new_node_data is None:
+                            # remove the node
+                            project["workbench"].pop(node_key)
+                            changed_entries.update({node_key: None})
+                        else:
+                            # find changed keys
+                            changed_entries.update(
+                                {
+                                    node_key: find_changed_node_keys(
+                                        current_node_data,
+                                        new_node_data,
+                                        look_for_removed_keys=False,
+                                    )
+                                }
+                            )
+                            # patch
+                            current_node_data.update(new_node_data)
                     return (project, changed_entries)
 
                 new_project_data, changed_entries = _patch_workbench(
@@ -621,6 +651,10 @@ class ProjectDBAPI:
                 )
                 project = await result.fetchone()
                 assert project  # nosec
+                if product_name:
+                    await self.upsert_project_linked_product(
+                        ProjectID(project_uuid), product_name, conn=conn
+                    )
                 log.debug(
                     "DB updated returned row project=%s",
                     json_dumps(dict(project.items())),
@@ -772,7 +806,7 @@ class ProjectDBAPI:
                 .select_from(projects_to_products)
                 .where(projects_to_products.c.project_uuid == f"{project_uuid}")
             )
-            assert num_products_linked_to_project  # nosec
+            assert isinstance(num_products_linked_to_project, int)  # nosec
         if num_products_linked_to_project > 1:
             # NOTE:
             # in agreement with @odeimaiz :
@@ -810,18 +844,20 @@ class ProjectDBAPI:
     async def _get_user_email(conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        email: Optional[str] = await conn.scalar(
+        email = await conn.scalar(
             sa.select([users.c.email]).where(users.c.id == user_id)
         )
+        assert isinstance(email, str) or email is None  # nosec
         return email or "Unknown"
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
-        primary_gid: Optional[int] = await conn.scalar(
+        primary_gid = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
         if not primary_gid:
             raise UserNotFoundError(uid=user_id)
+        assert isinstance(primary_gid, int)
         return primary_gid
 
     @staticmethod
@@ -840,6 +876,7 @@ class ProjectDBAPI:
                 .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
             )
         assert num_entries is not None  # nosec
+        assert isinstance(num_entries, int)  # nosec
         return bool(num_entries > 0)
 
     async def get_node_ids_from_project(self, project_uuid: str) -> set[str]:
@@ -860,7 +897,7 @@ class ProjectDBAPI:
             async for row in conn.execute(
                 sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
             ):
-                result.append(row[0])
+                result.append(row[projects.c.uuid])
             return list(result)
 
     async def update_project_without_checking_permissions(

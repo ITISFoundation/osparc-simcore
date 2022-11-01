@@ -114,6 +114,9 @@ jobs:
               - 'packages/**'
             api:
               - 'api/**'
+            api-server:
+              - 'packages/**'
+              - 'services/api-server/**'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
@@ -859,7 +862,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9", "3.10"]
+        python: ["3.9", "3.10", "3.11"]
         os: [ubuntu-20.04]
         docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
@@ -1748,12 +1751,7 @@ jobs:
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs:
-      [
-        unit-tests,
-        integration-tests,
-        system-tests
-      ]
+    needs: [unit-tests, integration-tests, system-tests]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

@@ -7,7 +7,7 @@ import tempfile
 import uuid
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Dict, Iterator, List, Set, Tuple
+from typing import Iterator
 
 import pytest
 from simcore_service_webserver.exporter.archiving import (
@@ -35,8 +35,8 @@ def temp_dir2() -> Iterator[Path]:
 
 
 @pytest.fixture
-def temp_file() -> Iterator[Path]:
-    file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
+def temp_file(tmp_path: Path) -> Iterator[Path]:
+    file_path = tmp_path / "file"
     file_path.write_text("test_data")
     yield file_path
     file_path.unlink()
@@ -82,7 +82,7 @@ def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
     return Path(str(input_path).replace(_to_strip, ""))
 
 
-def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
+def get_all_files_in_dir(dir_path: Path) -> set[Path]:
     return {
         strip_directory_from_path(x, dir_path)
         for x in dir_path.rglob("*")
@@ -90,7 +90,7 @@ def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
     }
 
 
-def _compute_hash(file_path: Path) -> Tuple[Path, str]:
+def _compute_hash(file_path: Path) -> tuple[Path, str]:
     with open(file_path, "rb") as file_to_hash:
         file_hash = hashlib.md5()
         chunk = file_to_hash.read(8192)
@@ -101,7 +101,7 @@ def _compute_hash(file_path: Path) -> Tuple[Path, str]:
     return file_path, file_hash.hexdigest()
 
 
-async def compute_hashes(file_paths: List[Path]) -> Dict[Path, str]:
+async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
     """given a list of files computes hashes for the files on a process pool"""
 
     loop = asyncio.get_event_loop()
@@ -111,10 +111,10 @@ async def compute_hashes(file_paths: List[Path]) -> Dict[Path, str]:
             loop.run_in_executor(prcess_pool_executor, _compute_hash, file_path)
             for file_path in file_paths
         ]
-        return {k: v for k, v in await asyncio.gather(*tasks)}
+        return dict(await asyncio.gather(*tasks))
 
 
-def full_file_path_from_dir_and_subdirs(dir_path: Path) -> List[Path]:
+def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
@@ -189,10 +189,8 @@ def test_validate_osparc_file_name_more_then_one_extention():
 def test_validate_osparc_file_name_too_many_shasums():
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name(
-            (
-                "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e118"
-                "0e9b5a892SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892.osparc"
-            )
+            "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e118"
+            "0e9b5a892SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892.osparc"
         )
 
     assert exc_info.type is ExporterException

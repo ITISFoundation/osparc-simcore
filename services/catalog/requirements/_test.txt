@@ -18,7 +18,7 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
-astroid==2.12.11
+astroid==2.12.12
     # via pylint
 async-timeout==4.0.2
     # via
@@ -136,7 +136,7 @@ py==1.11.0
     # via pytest
 py-cpuinfo==8.0.0
     # via pytest-benchmark
-pylint==2.15.4
+pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
