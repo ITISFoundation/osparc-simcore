@@ -80,6 +80,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __preparingInputs: null,
     __instructionsBtn: null,
     __instructionsWindow: null,
+    __nodeStartButton: null,
+    __nodeStopButton: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -120,8 +122,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const inputsStateBtn = this.__inputsButton = new qx.ui.form.Button().set({
         width: 110,
         label: this.tr("Inputs"),
-        icon: "@FontAwesome5Solid/sign-in-alt/14",
-        backgroundColor: "transparent"
+        icon: "@FontAwesome5Solid/sign-in-alt/14"
       });
       inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
       header.add(inputsStateBtn);
@@ -139,8 +140,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       header.add(infoBtn);
 
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
-        padding: 3,
-        backgroundColor: "transparent"
+        padding: 3
       });
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
@@ -172,8 +172,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton().set({
         width: 110,
         label: this.tr("Outputs"),
-        icon: "@FontAwesome5Solid/sign-out-alt/14",
-        backgroundColor: "transparent"
+        icon: "@FontAwesome5Solid/sign-out-alt/14"
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
