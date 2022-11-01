@@ -379,15 +379,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
 
       if (node.isDynamic()) {
-        this.__nodeStartButton.show();
+        node.getStatus().bind("interactive", this.__nodeStartButton, "visibility", {
+          converter: state => (state === "ready") ? "excluded" : "visible"
+        });
         node.getStatus().bind("interactive", this.__nodeStartButton, "enabled", {
           converter: state => state === "idle"
         });
         this.__nodeStartButton.addListener("execute", () => node.requestStartNode());
 
-        this.__nodeStopButton.show();
-        node.getStatus().bind("interactive", this.__nodeStopButton, "enabled", {
-          converter: state => state === "ready"
+        node.getStatus().bind("interactive", this.__nodeStopButton, "visibility", {
+          converter: state => (state === "ready") ? "visible" : "excluded"
         });
         this.__nodeStopButton.addListener("execute", () => node.requestStopNode());
       }
