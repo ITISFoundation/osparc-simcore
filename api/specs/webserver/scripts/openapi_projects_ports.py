@@ -35,7 +35,7 @@ TAGS: list[Union[str, Enum]] = [
     operation_id="get_project_inputs",
 )
 async def get_project_inputs(project_id: ProjectID):
-    ...
+    """New in version *0.10*"""
 
 
 @app.put(
@@ -45,7 +45,7 @@ async def get_project_inputs(project_id: ProjectID):
     operation_id="replace_project_inputs",
 )
 async def replace_project_inputs(project_id: ProjectID, updates: list[ProjectPort]):
-    ...
+    """New in version *0.10*"""
 
 
 @app.post(
@@ -55,7 +55,7 @@ async def replace_project_inputs(project_id: ProjectID, updates: list[ProjectPor
     operation_id="get_project_outputs",
 )
 async def get_project_outputs(project_id: ProjectID):
-    ...
+    """New in version *0.10*"""
 
 
 if __name__ == "__main__":

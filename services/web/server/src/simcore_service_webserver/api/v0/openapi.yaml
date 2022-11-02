@@ -3106,6 +3106,7 @@ paths:
       tags:
         - project
       summary: Replace Project Inputs
+      description: New in version *0.10.0*
       operationId: replace_project_inputs
       parameters:
         - required: true
@@ -3174,6 +3175,7 @@ paths:
       tags:
         - project
       summary: Get Project Inputs
+      description: New in version *0.10.0*
       operationId: get_project_inputs
       parameters:
         - required: true
@@ -3195,6 +3197,7 @@ paths:
       tags:
         - project
       summary: Get Project Outputs
+      description: New in version *0.10.0*
       operationId: get_project_outputs
       parameters:
         - required: true
