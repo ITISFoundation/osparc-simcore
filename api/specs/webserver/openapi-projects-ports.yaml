@@ -1,10 +1,31 @@
 paths:
   /projects/{project_id}/inputs:
+    get:
+      tags:
+      - project
+      summary: Get Project Inputs
+      description: New in version *0.10*
+      operationId: get_project_inputs
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
     put:
       tags:
       - project
       summary: Replace Project Inputs
-      description: New in version *0.10.0*
+      description: New in version *0.10*
       operationId: replace_project_inputs
       parameters:
       - required: true
@@ -30,33 +51,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
-    post:
-      tags:
-      - project
-      summary: Get Project Inputs
-      description: New in version *0.10.0*
-      operationId: get_project_inputs
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
   /projects/{project_id}/outputs:
-    post:
+    get:
       tags:
       - project
       summary: Get Project Outputs
-      description: New in version *0.10.0*
+      description: New in version *0.10*
       operationId: get_project_outputs
       parameters:
       - required: true

@@ -28,7 +28,7 @@ TAGS: list[Union[str, Enum]] = [
 ]
 
 
-@app.post(
+@app.get(
     "/projects/{project_id}/inputs",
     response_model=Envelope[dict[NodeID, ProjectPortGet]],
     tags=TAGS,
@@ -48,7 +48,7 @@ async def replace_project_inputs(project_id: ProjectID, updates: list[ProjectPor
     """New in version *0.10*"""
 
 
-@app.post(
+@app.get(
     "/projects/{project_id}/outputs",
     response_model=Envelope[dict[NodeID, ProjectPortGet]],
     tags=TAGS,
