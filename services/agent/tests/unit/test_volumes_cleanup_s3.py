@@ -143,7 +143,7 @@ async def test_store_to_s3(
         s3_provider=S3Provider.MINIO,
         s3_parallelism=3,
         s3_retries=1,
-        exclude_files=settings.SIMCORE_AGENT_EXCLUDE_FILES,
+        exclude_files=settings.AGENT_EXCLUDE_FILES,
     )
 
     await _download_files_from_bucket(
@@ -159,7 +159,7 @@ async def test_store_to_s3(
     )
 
     hashes_on_disk = _get_file_hashes_in_path(
-        unused_volume_path, set(map(Path, settings.SIMCORE_AGENT_EXCLUDE_FILES))
+        unused_volume_path, set(map(Path, settings.AGENT_EXCLUDE_FILES))
     )
     hashes_in_s3 = _get_file_hashes_in_path(save_to)
     assert len(hashes_on_disk) > 0
