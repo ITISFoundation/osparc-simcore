@@ -220,6 +220,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           icon: "@FontAwesome5Solid/play/10"
         });
         startBtn.addListener("execute", () => node.requestStartNode());
+        node.getStatus().bind("interactive", startBtn, "visibility", {
+          converter: state => (state === "ready") ? "excluded" : "visible"
+        });
         node.getStatus().bind("interactive", startBtn, "enabled", {
           converter: state => state === "idle"
         });
@@ -230,8 +233,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           icon: "@FontAwesome5Solid/stop/10"
         });
         stopBtn.addListener("execute", () => node.requestStopNode());
-        node.getStatus().bind("interactive", stopBtn, "enabled", {
-          converter: state => state === "ready"
+        node.getStatus().bind("interactive", stopBtn, "visibility", {
+          converter: state => (state === "ready") ? "visible" : "excluded"
         });
         this._optionsMenu.addAt(stopBtn, 1);
       }

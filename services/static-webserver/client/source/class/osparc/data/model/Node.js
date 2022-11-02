@@ -288,6 +288,11 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getStudy().getWorkbench();
     },
 
+    getSlideshowInstructions: function() {
+      const slideshow = this.getStudy().getUi().getSlideshow();
+      return slideshow.getInstructions(this.getNodeId());
+    },
+
     isInKey: function(str) {
       if (this.getMetaData() === null) {
         return false;
@@ -1157,7 +1162,9 @@ qx.Class.define("osparc.data.model.Node", {
       switch (serviceState) {
         case "idle": {
           status.setInteractive(serviceState);
-          if (starting) {
+          if (starting && this.__unresponsiveRetries>0) {
+            // a bit of a hack. We will get rid of it when the backend pushes the states
+            this.__unresponsiveRetries--;
             const interval = 2000;
             qx.event.Timer.once(() => this.__nodeState(starting), this, interval);
           }

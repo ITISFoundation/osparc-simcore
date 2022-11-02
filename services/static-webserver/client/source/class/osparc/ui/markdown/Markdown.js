@@ -77,14 +77,15 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
      */
-    _applyMarkdown: function(value) {
+    _applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         const renderer = new marked.Renderer();
         const linkRenderer = renderer.link;
         renderer.link = (href, title, text) => {
+          const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
           const html = linkRenderer.call(renderer, href, title, text);
           // eslint-disable-next-line quotes
-          const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ qx.theme.manager.Color.getInstance().getTheme().colors["link"] + '"');
+          const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ linkColor + ' !important"');
           return linkWithRightColor;
         };
         // eslint-disable-next-line object-curly-spacing
@@ -122,7 +123,11 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
-        this.setHeight(elemHeight);
+        if (this.getMaxHeight() && elemHeight > this.getMaxHeight()) {
+          this.setHeight(elemHeight);
+        } else {
+          this.setMinHeight(elemHeight);
+        }
       }
     },
 
