@@ -14,6 +14,7 @@
 asgi_lifespan
 coverage
 coveralls
+docker
 faker
 flaky
 openapi-spec-validator
