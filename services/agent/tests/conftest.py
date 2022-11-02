@@ -159,11 +159,11 @@ async def used_volume(
 @pytest.fixture
 def env(monkeypatch: MonkeyPatch, mocked_s3_server_url: HttpUrl, bucket: str) -> None:
     mock_dict = {
-        "AGENT_S3_ENDPOINT": mocked_s3_server_url,
-        "AGENT_S3_ACCESS_KEY": "xxx",
-        "AGENT_S3_SECRET_KEY": "xxx",
-        "AGENT_S3_BUCKET": bucket,
-        "AGENT_S3_PROVIDER": S3Provider.MINIO,
+        "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
+        "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
+        "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
+        "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
+        "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
     }
     for key, value in mock_dict.items():
         monkeypatch.setenv(key, value)

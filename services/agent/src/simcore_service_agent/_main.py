@@ -24,7 +24,7 @@ def create_application() -> Application:
     app.add_job(
         backup_and_remove_volumes,
         settings,
-        repeat_interval_s=settings.AGENT_INTERVAL_VOLUMES_CLEANUP_S,
+        repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
     )
     app.add_job(info_exposer, app)
 

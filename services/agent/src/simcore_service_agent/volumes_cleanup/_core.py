@@ -26,15 +26,15 @@ async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
             try:
                 await store_to_s3(
                     dyv_volume=dyv_volume,
-                    s3_endpoint=settings.AGENT_S3_ENDPOINT,
-                    s3_access_key=settings.AGENT_S3_ACCESS_KEY,
-                    s3_secret_key=settings.AGENT_S3_SECRET_KEY,
-                    s3_bucket=settings.AGENT_S3_BUCKET,
-                    s3_region=settings.AGENT_S3_REGION,
-                    s3_provider=settings.AGENT_S3_PROVIDER,
-                    s3_retries=settings.AGENT_S3_RETRIES,
-                    s3_parallelism=settings.AGENT_S3_PARALLELISM,
-                    exclude_files=settings.AGENT_EXCLUDE_FILES,
+                    s3_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
+                    s3_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
+                    s3_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
+                    s3_bucket=settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
+                    s3_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
+                    s3_provider=settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER,
+                    s3_retries=settings.AGENT_VOLUMES_CLEANUP_RETRIES,
+                    s3_parallelism=settings.AGENT_VOLUMES_CLEANUP_PARALLELISM,
+                    exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
                 )
             except RuntimeError as e:
                 logger.error("%s", e)
