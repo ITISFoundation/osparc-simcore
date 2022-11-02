@@ -31,7 +31,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
   statics: {
     BUTTON_OPTIONS: {
-      backgroundColor: "background-main",
+      backgroundColor: "background-main-1",
       allowGrowX: false,
       allowGrowY: false
     },

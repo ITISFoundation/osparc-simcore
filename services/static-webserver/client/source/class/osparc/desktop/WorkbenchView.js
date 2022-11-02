@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
-    TAB_BUTTON_HEIGHT: 50,
+    TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -104,6 +104,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __currentNodeId: null,
     __startAppButton: null,
     __editSlidesButton: null,
+    __startAppButtonTB: null,
     __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -306,6 +307,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
         paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
       });
@@ -370,6 +372,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
         paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
       });
@@ -408,6 +411,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewMain);
 
       const topBar = tabViewMain.getChildControl("bar");
+      topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
+        backgroundColor: "background-main-4"
+      });
       this.__addTopBarSpacer(topBar);
 
 
@@ -428,6 +435,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
+      const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
+        label: this.tr("App Mode"),
+        toolTipText: this.tr("Start App Mode"),
+        icon: "@FontAwesome5Solid/play/14",
+        alignY: "middle",
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+      });
+      startAppButtonTB.addListener("execute", () => this.fireEvent("slidesAppStart"));
+      topBar.add(startAppButtonTB);
 
       const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
       [
@@ -884,7 +900,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (study && this.__editSlidesButton) {
         const isOwner = osparc.data.model.Study.isOwner(study);
         this.__editSlidesButton.setEnabled(isOwner);
-        this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
+        const canStart = study.hasSlideshow() || study.getWorkbench().isPipelineLinear();
+        this.__startAppButton.setEnabled(canStart);
+        this.__startAppButtonTB.setVisibility(canStart ? "visible" : "hidden");
       }
     },
 

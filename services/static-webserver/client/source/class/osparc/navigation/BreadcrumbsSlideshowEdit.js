@@ -49,6 +49,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
       const slideshow = study.getUi().getSlideshow();
       let currentPos = 0;
       nodeIds.forEach((nodeId, i) => {
+        if (slideshow.getPosition(nodeId) === -1) {
+          return;
+        }
         newServiceBtn.rightNodeId = nodeId;
         if (!study.getWorkbench().getNode(nodeId).hasInputs()) {
           newServiceBtn.exclude();

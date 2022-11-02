@@ -78,6 +78,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _header: null,
     __inputsButton: null,
     __preparingInputs: null,
+    __instructionsBtn: null,
+    __instructionsWindow: null,
+    __nodeStartButton: null,
+    __nodeStopButton: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -119,7 +123,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         width: 110,
         label: this.tr("Inputs"),
         icon: "@FontAwesome5Solid/sign-in-alt/14",
-        backgroundColor: "transparent"
+        backgroundColor: "background-main-4"
       });
       inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
       header.add(inputsStateBtn);
@@ -128,16 +132,25 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
+      const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/17").set({
+        padding: 3,
         backgroundColor: "transparent",
         toolTipText: this.tr("Information")
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
 
+      const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
+        padding: 3,
+        backgroundColor: "background-main-4"
+      });
+      instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
+      header.add(instructionsBtn);
+
       const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
         label: this.tr("Start"),
         icon: "@FontAwesome5Solid/play/14",
+        backgroundColor: "background-main-4",
         visibility: "excluded"
       });
       header.add(startBtn);
@@ -145,6 +158,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const stopBtn = this.__nodeStopButton = new qx.ui.form.Button().set({
         label: this.tr("Stop"),
         icon: "@FontAwesome5Solid/stop/14",
+        backgroundColor: "background-main-4",
         visibility: "excluded"
       });
       header.add(stopBtn);
@@ -163,7 +177,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         width: 110,
         label: this.tr("Outputs"),
         icon: "@FontAwesome5Solid/sign-out-alt/14",
-        backgroundColor: "transparent"
+        backgroundColor: "background-main-4"
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
       header.add(outputsBtn);
@@ -220,6 +234,39 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const width = 600;
       const height = 700;
       osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+    },
+
+    __openInstructions: function() {
+      if (this.getInstructionsWindow()) {
+        this.getInstructionsWindow().center();
+        return;
+      }
+      const desc = this.getNode().getSlideshowInstructions();
+      if (desc) {
+        const descView = new osparc.ui.markdown.Markdown().set({
+          value: desc,
+          padding: 3,
+          noMargin: true
+        });
+        const scrollContainer = new qx.ui.container.Scroll();
+        scrollContainer.add(descView);
+        const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
+        const width = 500;
+        const height = 500;
+        const win = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
+          modal: false,
+          clickAwayClose: false
+        });
+        win.getContentElement().setStyles({
+          "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
+        });
+        win.addListener("close", () => this.__instructionsWindow = null, this);
+        this.__instructionsWindow = win;
+      }
+    },
+
+    getInstructionsWindow: function() {
+      return this.__instructionsWindow;
     },
 
     getHeaderLayout: function() {
@@ -332,15 +379,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
 
       if (node.isDynamic()) {
-        this.__nodeStartButton.show();
+        node.getStatus().bind("interactive", this.__nodeStartButton, "visibility", {
+          converter: state => (state === "ready") ? "excluded" : "visible"
+        });
         node.getStatus().bind("interactive", this.__nodeStartButton, "enabled", {
           converter: state => state === "idle"
         });
         this.__nodeStartButton.addListener("execute", () => node.requestStartNode());
 
-        this.__nodeStopButton.show();
-        node.getStatus().bind("interactive", this.__nodeStopButton, "enabled", {
-          converter: state => state === "ready"
+        node.getStatus().bind("interactive", this.__nodeStopButton, "visibility", {
+          converter: state => (state === "ready") ? "visible" : "excluded"
         });
         this.__nodeStopButton.addListener("execute", () => node.requestStopNode());
       }
@@ -350,6 +398,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__preparingInputs.addListener("startPartialPipeline", e => this.fireDataEvent("startPartialPipeline", e.getData()));
       this.__preparingInputs.addListener("stopPipeline", () => this.fireEvent("stopPipeline"));
       this.__dependeciesChanged();
+
+      this.__instructionsBtn.setVisibility(node.getSlideshowInstructions() ? "visible" : "excluded");
 
       this._mainView.removeAll();
       this._addSettings();

@@ -88,7 +88,8 @@ qx.Class.define("osparc.data.model.Slideshow", {
         }
       }
       slideshow[nodeId] = {
-        position: pos
+        position: pos,
+        instructions: null
       };
     },
 
@@ -112,6 +113,14 @@ qx.Class.define("osparc.data.model.Slideshow", {
         return slideshow[nodeId].position;
       }
       return -1;
+    },
+
+    getInstructions: function(nodeId) {
+      const slideshow = this.getData();
+      if (nodeId in slideshow && "instructions" in slideshow[nodeId]) {
+        return slideshow[nodeId].instructions;
+      }
+      return "";
     },
 
     addNodeToSlideshow: function(newNode, leftNodeId, rightNodeId) {

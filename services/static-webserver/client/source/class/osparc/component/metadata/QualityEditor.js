@@ -405,8 +405,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         const button = osparc.utils.Utils.getEditButton();
         button.addListener("execute", () => {
           const title = this.tr("Edit References");
-          const subtitle = this.tr("Supports Markdown");
-          const textEditor = new osparc.component.editor.TextEditor(currentRule.references, subtitle, title);
+          const textEditor = new osparc.component.editor.TextEditor(currentRule.references);
           textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
           const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
           textEditor.addListener("textChanged", e => {
@@ -581,8 +580,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const button = osparc.utils.Utils.getEditButton();
       button.addListener("execute", () => {
         const title = this.tr("Edit Annotations");
-        const subtitle = this.tr("Supports Markdown");
-        const textEditor = new osparc.component.editor.TextEditor(annotationsObj[fieldKey], subtitle, title);
+        const textEditor = new osparc.component.editor.TextEditor(annotationsObj[fieldKey]);
         textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
         const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
         textEditor.addListener("textChanged", e => {

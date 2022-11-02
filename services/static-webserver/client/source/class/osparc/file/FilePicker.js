@@ -123,7 +123,7 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       const outputs = node.getOutputs();
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
-      if (outLabel) {
+      if (outLabel && node.getLabel().includes("File Picker")) {
         node.setLabel(outputValue.label);
       }
       node.getStatus().setProgress(outputValue ? 100 : 0);
@@ -189,7 +189,6 @@ qx.Class.define("osparc.file.FilePicker", {
                   entry.setValue(val);
                 } else if (key === "last_modified") {
                   const val = osparc.utils.Utils.formatDateAndTime(new Date(value));
-                  console.log(key, value, val);
                   entry.setValue(val);
                 } else {
                   entry.setValue(value.toString());
@@ -362,8 +361,6 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       resetFileBtn.addListener("execute", () => {
         osparc.file.FilePicker.resetOutputValue(node);
-        node.setLabel("File Picker");
-        node.getStudy().getWorkbench().giveUniqueNameToNode(node, "File Picker");
         this.fireEvent("itemReset");
       }, this);
       return resetFileBtn;
