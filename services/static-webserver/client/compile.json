@@ -54,7 +54,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.zmt.ThemeDark",
       "name": "s4llight",
-      "title": "Sim4Life - ZMT",
+      "title": "Sim4Life Light - ZMT",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
