@@ -1024,8 +1024,12 @@ qx.Class.define("osparc.data.model.Node", {
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
         const loadIframe = () => {
-          this.getIFrame().resetSource();
-          this.getIFrame().setSource(this.getServiceUrl());
+          const status = this.getStatus().getInteractive();
+          // it might have been stopped
+          if (status === "ready") {
+            this.getIFrame().resetSource();
+            this.getIFrame().setSource(this.getServiceUrl());
+          }
         };
 
         // restart button pushed
