@@ -234,6 +234,12 @@ paths:
   /projects/{project_id}/nodes/{node_id}/resources:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1resources"
 
+  /projects/{project_id}/inputs:
+    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1inputs"
+
+  /projects/{project_id}/outputs:
+    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1outputs"
+
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"
 
