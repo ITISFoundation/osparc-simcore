@@ -34,6 +34,7 @@ qx.Class.define("osparc.utils.issue.Fogbugz", {
       let urlHead = staticsData.osparcIssuesNewUrl;
       switch (product) {
         case "s4l":
+        case "s4l-light":
           urlHead = staticsData.s4lIssuesNewUrl;
           break;
         case "tis":
