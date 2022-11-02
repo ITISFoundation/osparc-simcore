@@ -1353,7 +1353,7 @@ qx.Class.define("osparc.data.model.Node", {
         converter: state => (state === "ready") ? "excluded" : "visible"
       });
       this.getStatus().bind("interactive", startButton, "enabled", {
-        converter: state => state === "idle"
+        converter: state => ["idle", "failed"].includes(state)
       });
       startButton.addListener("execute", () => this.requestStartNode());
     },
