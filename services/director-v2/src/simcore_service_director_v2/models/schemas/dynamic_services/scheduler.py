@@ -86,12 +86,12 @@ class Status(BaseModel):
 
 class DockerStatus(str, Enum):
     CREATED = "created"
-    RUNNING = "running"
-    PAUSED = "paused"
-    RESTARTING = "restarting"
-    REMOVING = "removing"
-    EXITED = "exited"
     DEAD = "dead"
+    EXITED = "exited"
+    PAUSED = "paused"
+    REMOVING = "removing"
+    RESTARTING = "restarting"
+    RUNNING = "running"
 
 
 class DockerContainerInspect(BaseModel):

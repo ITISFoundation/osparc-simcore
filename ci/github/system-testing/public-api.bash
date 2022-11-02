@@ -11,9 +11,6 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-# in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
-DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-export DOCKER_IMAGE_TAG
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
@@ -21,7 +18,6 @@ install() {
   pip3 install -r requirements/ci.txt
   pip freeze
   popd
-  make tag-version
   make .env
   pip list -v
   make info-images

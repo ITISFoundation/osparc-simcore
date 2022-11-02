@@ -1,6 +1,6 @@
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.errors import ErrorDict
@@ -9,9 +9,9 @@ from models_library.projects_nodes import InputsDict, NodeID, OutputsDict
 from models_library.projects_state import RunningState
 from models_library.services import (
     KEY_RE,
-    PropertyName,
     ServiceInputsDict,
     ServiceOutput,
+    ServicePortKey,
 )
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.types import PositiveInt
@@ -88,7 +88,7 @@ class _ServiceOutputOverride(ServiceOutput):
         extra = Extra.ignore
 
 
-_ServiceOutputsOverride = Dict[PropertyName, _ServiceOutputOverride]
+_ServiceOutputsOverride = dict[ServicePortKey, _ServiceOutputOverride]
 
 
 class NodeSchema(BaseModel):
@@ -133,7 +133,7 @@ class CompTaskAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    def to_db_model(self, **exclusion_rules) -> Dict[str, Any]:
+    def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
         comp_task_dict = self.dict(by_alias=True, exclude_unset=True, **exclusion_rules)
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value

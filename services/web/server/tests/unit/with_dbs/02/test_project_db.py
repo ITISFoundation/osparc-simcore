@@ -18,6 +18,7 @@ from uuid import UUID, uuid5
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
@@ -38,6 +39,10 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
+)
+from simcore_service_webserver.projects.projects_exceptions import (
+    NodeNotFoundError,
+    ProjectNotFoundError,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -102,7 +107,7 @@ def user_id() -> int:
     return 132
 
 
-@pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
+@pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
 def test_project_access_rights_creation(
     group_id: int, project_access_rights: ProjectAccessRights
 ):
@@ -476,9 +481,109 @@ async def test_add_project_to_db(
 
 @pytest.mark.parametrize(
     "user_role",
-    [
-        (UserRole.USER),
-    ],
+    [(UserRole.USER)],
+)
+async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
+    fake_project: dict[str, Any],
+    logged_user: dict[str, Any],
+    db_api: ProjectDBAPI,
+    faker: Faker,
+):
+    partial_workbench_data = {
+        faker.uuid4(): {
+            "key": "simcore/services/comp/sleepers",
+            "version": faker.numerify("%.#.#"),
+            "label": "I am a test node",
+        }
+    }
+    with pytest.raises(ProjectNotFoundError):
+        await db_api.patch_user_project_workbench(
+            partial_workbench_data,
+            logged_user["id"],
+            fake_project["uuid"],
+        )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [(UserRole.USER)],
+)
+async def test_patch_user_project_workbench_creates_nodes(
+    fake_project: dict[str, Any],
+    logged_user: dict[str, Any],
+    db_api: ProjectDBAPI,
+    faker: Faker,
+    osparc_product_name: str,
+):
+    empty_fake_project = deepcopy(fake_project)
+    workbench = empty_fake_project.setdefault("workbench", {})
+    assert isinstance(workbench, dict)
+    workbench.clear()
+
+    new_project = await db_api.add_project(
+        prj=empty_fake_project,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    partial_workbench_data = {
+        faker.uuid4(): {
+            "key": f"simcore/services/comp/{faker.pystr()}",
+            "version": faker.numerify("%.#.#"),
+            "label": faker.text(),
+        }
+        for _ in range(faker.pyint(min_value=5, max_value=30))
+    }
+    patched_project, changed_entries = await db_api.patch_user_project_workbench(
+        partial_workbench_data,
+        logged_user["id"],
+        new_project["uuid"],
+    )
+    for node_id in partial_workbench_data:
+        assert node_id in patched_project["workbench"]
+        assert partial_workbench_data[node_id] == patched_project["workbench"][node_id]
+        assert node_id in changed_entries
+        assert changed_entries[node_id] == partial_workbench_data[node_id]
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [(UserRole.USER)],
+)
+async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node_is_passed(
+    fake_project: dict[str, Any],
+    logged_user: dict[str, Any],
+    db_api: ProjectDBAPI,
+    faker: Faker,
+    osparc_product_name: str,
+):
+    empty_fake_project = deepcopy(fake_project)
+    workbench = empty_fake_project.setdefault("workbench", {})
+    assert isinstance(workbench, dict)
+    workbench.clear()
+
+    new_project = await db_api.add_project(
+        prj=empty_fake_project,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    partial_workbench_data = {
+        faker.uuid4(): {
+            "version": faker.numerify("%.#.#"),
+            "label": faker.text(),
+        }
+        for _ in range(faker.pyint(min_value=5, max_value=30))
+    }
+    with pytest.raises(NodeNotFoundError):
+        await db_api.patch_user_project_workbench(
+            partial_workbench_data,
+            logged_user["id"],
+            new_project["uuid"],
+        )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [(UserRole.USER)],
 )
 @pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])
 async def test_patch_user_project_workbench_concurrently(

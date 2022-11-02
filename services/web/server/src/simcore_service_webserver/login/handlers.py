@@ -240,7 +240,7 @@ async def register_phone(request: web.Request):
         )
 
         raise web.HTTPServiceUnavailable(
-            reason=f"Currently our system cannot register phones ({error_code})",
+            reason=f"Currently our system cannot register phone numbers ({error_code})",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from e
 

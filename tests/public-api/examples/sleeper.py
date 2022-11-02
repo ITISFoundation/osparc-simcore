@@ -20,6 +20,7 @@ from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert CLIENT_VERSION >= (0, 4, 3)
 
+
 Path("file_with_number.txt").write_text("3")
 
 
@@ -30,7 +31,12 @@ cfg = osparc.Configuration(
     username=os.environ["OSPARC_API_KEY"],
     password=os.environ["OSPARC_API_SECRET"],
 )
+cfg.debug = True
+
+print("-" * 100)
+print(cfg.to_debug_report())
 print(cfg.host)
+print("-" * 100)
 
 with osparc.ApiClient(cfg) as api_client:
 
@@ -106,7 +112,9 @@ with osparc.ApiClient(cfg) as api_client:
             fzip.extractall(f"{extract_dir}")
 
         logfiles = list(extract_dir.glob("*.log*"))
-        print("Unzipped", logfiles[0], "contains:\n", logfiles[0].read_text())
+        print("Unzipped", logfiles[0], "contains:")
+        print(logfiles[0].read_text())
+        print("-" * 100)
 
     #
     # Job 19fc28f7-46fb-4e96-9129-5e924801f088 got these results:

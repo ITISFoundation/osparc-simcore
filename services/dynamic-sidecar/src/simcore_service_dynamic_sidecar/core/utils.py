@@ -105,8 +105,7 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
 @asynccontextmanager
 async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
     """Disposes of file on exit"""
-    # pylint: disable=protected-access,stop-iteration-return
-    file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"  # type: ignore
+    file_path = Path(tempfile.mkdtemp()) / "file"
     async with aiofiles.open(file_path, mode="w") as tmp_file:
         await tmp_file.write(file_contents)
     try:

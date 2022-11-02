@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
+from servicelib.error_codes import create_error_code
 
-from ...core.settings import ApplicationSettings
-from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
+from ...core.settings import ApplicationSettings, BasicSettings
+from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper, get_settings
 from ..dependencies.authentication import get_current_user_id
@@ -17,7 +18,7 @@ from ..dependencies.services import get_api_client
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
+settings = BasicSettings.create_from_envs()
 
 ## SOLVERS -----------------------------------------------------------------------------------------
 #
@@ -162,4 +163,50 @@ async def get_solver_release(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_key}:{version} not found",
+        ) from err
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/ports",
+    response_model=list[SolverPort],
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def list_solver_ports(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    user_id: int = Depends(get_current_user_id),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+    app_settings: ApplicationSettings = Depends(get_settings),
+):
+    """Lists inputs and outputs of a given solver
+
+    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    """
+    try:
+
+        ports = await catalog_client.get_solver_ports(
+            user_id,
+            solver_key,
+            version,
+            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+        )
+        return ports
+
+    except ValidationError as err:
+        error_code = create_error_code(err)
+        logger.exception(
+            "Corrupted port data for service %s [%s]",
+            f"{solver_key}:{version}",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Port definition of {solver_key}:{version} seems corrupted [{error_code}]",
+        ) from err
+
+    except HTTPStatusError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Ports for solver {solver_key}:{version} not found",
         ) from err

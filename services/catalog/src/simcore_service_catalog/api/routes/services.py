@@ -21,12 +21,12 @@ from ...models.schemas.constants import (
     RESPONSE_MODEL_POLICY,
 )
 from ...models.schemas.services import ServiceGet, ServiceUpdate
-from ...services.function_services import get_function_service, is_function_service
+from ...services.function_services import is_function_service
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
+from ..dependencies.services import get_service_from_registry
 
-router = APIRouter()
 logger = logging.getLogger(__name__)
 
 ServicesSelection = set[tuple[str, str]]
@@ -62,6 +62,13 @@ def _prepare_service_details(
 
 def _build_cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['user_id']}_{kwargs['x_simcore_products_name']}_{kwargs['details']}"
+
+
+#
+# Routes
+#
+
+router = APIRouter()
 
 
 # NOTE: this call is pretty expensive and can be called several times
@@ -179,30 +186,11 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-    director_client: DirectorApi = Depends(get_director_api),
+    service: ServiceGet = Depends(get_service_from_registry),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(None),
 ):
-    # check the service exists (raise HTTP_404_NOT_FOUND)
-    if is_function_service(service_key):
-        frontend_service: dict[str, Any] = get_function_service(
-            key=service_key, version=service_version
-        )
-        _service_data = frontend_service
-    else:
-        services_in_registry = cast(
-            list[Any],
-            await director_client.get(
-                f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-            ),
-        )
-        _service_data = services_in_registry[0]
-
-    service: ServiceGet = ServiceGet.parse_obj(_service_data)
-
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
@@ -213,8 +201,8 @@ async def get_service(
         )
     # check the user has access to this service and to which extent
     service_in_db = await services_repo.get_service(
-        service_key,
-        service_version,
+        service.key,
+        service.version,
         gids=[group.gid for group in user_groups],
         write_access=True,
         product_name=x_simcore_products_name,
@@ -230,8 +218,8 @@ async def get_service(
     else:
         # check if we have executable rights
         service_in_db = await services_repo.get_service(
-            service_key,
-            service_version,
+            service.key,
+            service.version,
             gids=[group.gid for group in user_groups],
             execute_access=True,
             product_name=x_simcore_products_name,
@@ -357,11 +345,11 @@ async def update_service(
 
     # now return the service
     return await get_service(
-        user_id,
-        service_key,
-        service_version,
-        director_client,
-        groups_repository,
-        services_repo,
-        x_simcore_products_name,
+        user_id=user_id,
+        service=await get_service_from_registry(
+            service_key, service_version, director_client
+        ),
+        groups_repository=groups_repository,
+        services_repo=services_repo,
+        x_simcore_products_name=x_simcore_products_name,
     )

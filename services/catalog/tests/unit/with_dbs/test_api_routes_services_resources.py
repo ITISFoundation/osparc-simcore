@@ -185,7 +185,7 @@ async def test_get_service_resources(
     )
     assert type(expected_service_resources) == dict
 
-    assert received_resources == expected_service_resources, "%s\n%s" % (
+    assert received_resources == expected_service_resources, "{}\n{}".format(
         json.dumps(received_resources, indent=2),
         json.dumps(expected_service_resources, indent=2),
     )

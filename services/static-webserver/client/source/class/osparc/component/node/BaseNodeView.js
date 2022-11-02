@@ -51,8 +51,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     openNodeDataManager: function(node) {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(node);
-      nodeDataManager.getChildControl("node-files-tree").exclude();
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(null, node.getNodeId());
       const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, node.getLabel(), 900, 600).set({
         appearance: "service-window"
       });
@@ -117,6 +116,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
 
       const inputsStateBtn = this.__inputsButton = new qx.ui.form.Button().set({
+        width: 110,
         label: this.tr("Inputs"),
         icon: "@FontAwesome5Solid/sign-in-alt/14",
         backgroundColor: "transparent"
@@ -135,6 +135,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
 
+      const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
+        label: this.tr("Start"),
+        icon: "@FontAwesome5Solid/play/14",
+        visibility: "excluded"
+      });
+      header.add(startBtn);
+
+      const stopBtn = this.__nodeStopButton = new qx.ui.form.Button().set({
+        label: this.tr("Stop"),
+        icon: "@FontAwesome5Solid/stop/14",
+        visibility: "excluded"
+      });
+      header.add(stopBtn);
+
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
       });
@@ -146,6 +160,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
 
       const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton().set({
+        width: 110,
         label: this.tr("Outputs"),
         icon: "@FontAwesome5Solid/sign-out-alt/14",
         backgroundColor: "transparent"
@@ -291,7 +306,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     setUpstreamDependencies: function(upstreamDependencies) {
-      this.__inputsButton.setVisibility(upstreamDependencies.length > 0 ? "visible" : "excluded");
+      this.__inputsButton.setVisibility(upstreamDependencies.length > 0 ? "visible" : "hidden");
       const monitoredNodes = [];
       const workbench = this.getNode().getStudy().getWorkbench();
       upstreamDependencies.forEach(nodeId => monitoredNodes.push(workbench.getNode(nodeId)));
@@ -314,6 +329,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __applyNode: function(node) {
       if (this.__nodeStatusUI) {
         this.__nodeStatusUI.setNode(node);
+      }
+
+      if (node.isDynamic()) {
+        this.__nodeStartButton.show();
+        node.getStatus().bind("interactive", this.__nodeStartButton, "enabled", {
+          converter: state => state === "idle"
+        });
+        this.__nodeStartButton.addListener("execute", () => node.requestStartNode());
+
+        this.__nodeStopButton.show();
+        node.getStatus().bind("interactive", this.__nodeStopButton, "enabled", {
+          converter: state => state === "ready"
+        });
+        this.__nodeStopButton.addListener("execute", () => node.requestStopNode());
       }
 
       this.__preparingInputs = new osparc.component.widget.PreparingInputs(node.getStudy());

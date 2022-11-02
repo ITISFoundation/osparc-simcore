@@ -22,7 +22,7 @@ from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,
 )
 from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceOut,
+    DynamicServiceGet,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
@@ -104,7 +104,7 @@ def node_id(faker: Faker) -> NodeID:
 def mock_get_node_state(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.cli._core._get_dy_service_state",
-        return_value=DynamicServiceOut.parse_obj(
+        return_value=DynamicServiceGet.parse_obj(
             RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         ),
     )

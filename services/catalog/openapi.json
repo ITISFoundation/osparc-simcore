@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": " Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.3.2"
+    "version": "0.4.0"
   },
   "paths": {
     "/v0/meta": {
@@ -351,6 +351,212 @@
         }
       }
     },
+    "/v0/services/{service_key}/{service_version}/resources": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Resources",
+        "operationId": "get_service_resources_v0_services__service_key___service_version__resources_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "[\\w/-]+",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "[\\w/.]+",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Service Resources V0 Services  Service Key   Service Version  Resources Get",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}/specifications": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Specifications",
+        "operationId": "get_service_specifications_v0_services__service_key___service_version__specifications_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "user_id",
+            "in": "query"
+          },
+          {
+            "description": "if True only the version specs will be retrieved, if False the latest version will be used instead",
+            "required": false,
+            "schema": {
+              "title": "Strict",
+              "type": "boolean",
+              "description": "if True only the version specs will be retrieved, if False the latest version will be used instead",
+              "default": false
+            },
+            "name": "strict",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceSpecificationsGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}/ports": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List Service Ports",
+        "description": "Returns a list of service ports starting with inputs and followed by outputs",
+        "operationId": "list_service_ports_v0_services__service_key___service_version__ports_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "X-Simcore-Products-Name",
+              "type": "string"
+            },
+            "name": "x-simcore-products-name",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Service Ports V0 Services  Service Key   Service Version  Ports Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServicePortGet"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/services": {
       "get": {
         "tags": [
@@ -399,61 +605,8 @@
                   "title": "Response List Services V0 Services Get",
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ServiceOut"
+                    "$ref": "#/components/schemas/ServiceGet"
                   }
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/services/{service_key}/{service_version}/resources": {
-      "get": {
-        "tags": [
-          "services"
-        ],
-        "summary": "Get Service Resources",
-        "operationId": "get_service_resources_v0_services__service_key___service_version__resources_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
-              "type": "string"
-            },
-            "name": "service_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
-            "name": "service_version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServiceResources"
                 }
               }
             }
@@ -524,7 +677,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServiceOut"
+                  "$ref": "#/components/schemas/ServiceGet"
                 }
               }
             }
@@ -545,8 +698,8 @@
         "tags": [
           "services"
         ],
-        "summary": "Modify Service",
-        "operationId": "modify_service_v0_services__service_key___service_version__patch",
+        "summary": "Update Service",
+        "operationId": "update_service_v0_services__service_key___service_version__patch",
         "parameters": [
           {
             "required": true,
@@ -603,7 +756,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServiceOut"
+                  "$ref": "#/components/schemas/ServiceGet"
                 }
               }
             }
@@ -695,6 +848,27 @@
         },
         "additionalProperties": false
       },
+      "BindOptions": {
+        "title": "BindOptions",
+        "type": "object",
+        "properties": {
+          "Propagation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Propagation"
+              }
+            ],
+            "description": "A propagation mode with the value `[r]private`, `[r]shared`, or `[r]slave`."
+          },
+          "NonRecursive": {
+            "title": "Nonrecursive",
+            "type": "boolean",
+            "description": "Disable recursive bind mount.",
+            "default": false
+          }
+        },
+        "description": "Optional configuration for the `bind` type."
+      },
       "BootChoice": {
         "title": "BootChoice",
         "required": [
@@ -743,6 +917,268 @@
             }
           }
         }
+      },
+      "Condition": {
+        "title": "Condition",
+        "enum": [
+          "none",
+          "on-failure",
+          "any"
+        ],
+        "description": "Condition for restart."
+      },
+      "Config1": {
+        "title": "Config1",
+        "type": "object",
+        "properties": {
+          "File": {
+            "title": "File",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/File1"
+              }
+            ],
+            "description": "File represents a specific target that is backed by a file.\n\n<p><br /><p>\n\n> **Note**: `Configs.File` and `Configs.Runtime` are mutually exclusive\n"
+          },
+          "Runtime": {
+            "title": "Runtime",
+            "type": "object",
+            "description": "Runtime represents a target that is not mounted into the\ncontainer but is used by the task\n\n<p><br /><p>\n\n> **Note**: `Configs.File` and `Configs.Runtime` are mutually\n> exclusive\n"
+          },
+          "ConfigID": {
+            "title": "Configid",
+            "type": "string",
+            "description": "ConfigID represents the ID of the specific config that we're\nreferencing.\n"
+          },
+          "ConfigName": {
+            "title": "Configname",
+            "type": "string",
+            "description": "ConfigName is the name of the config that this references,\nbut this is just provided for lookup/display purposes. The\nconfig in the reference will be identified by its ID.\n"
+          }
+        }
+      },
+      "ContainerSpec": {
+        "title": "ContainerSpec",
+        "type": "object",
+        "properties": {
+          "Image": {
+            "title": "Image",
+            "type": "string",
+            "description": "The image name to use for the container"
+          },
+          "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "User-defined key/value data."
+          },
+          "Command": {
+            "title": "Command",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The command to be run in the image."
+          },
+          "Args": {
+            "title": "Args",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Arguments to the command."
+          },
+          "Hostname": {
+            "title": "Hostname",
+            "type": "string",
+            "description": "The hostname to use for the container, as a valid\n[RFC 1123](https://tools.ietf.org/html/rfc1123) hostname.\n"
+          },
+          "Env": {
+            "title": "Env",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of environment variables in the form `VAR=value`.\n"
+          },
+          "Dir": {
+            "title": "Dir",
+            "type": "string",
+            "description": "The working directory for commands to run in."
+          },
+          "User": {
+            "title": "User",
+            "type": "string",
+            "description": "The user inside the container."
+          },
+          "Groups": {
+            "title": "Groups",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of additional groups that the container process will run as.\n"
+          },
+          "Privileges": {
+            "title": "Privileges",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Privileges"
+              }
+            ],
+            "description": "Security options for the container"
+          },
+          "TTY": {
+            "title": "Tty",
+            "type": "boolean",
+            "description": "Whether a pseudo-TTY should be allocated."
+          },
+          "OpenStdin": {
+            "title": "Openstdin",
+            "type": "boolean",
+            "description": "Open `stdin`"
+          },
+          "ReadOnly": {
+            "title": "Readonly",
+            "type": "boolean",
+            "description": "Mount the container's root filesystem as read only."
+          },
+          "Mounts": {
+            "title": "Mounts",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mount"
+            },
+            "description": "Specification for mounts to be added to containers created as part\nof the service.\n"
+          },
+          "StopSignal": {
+            "title": "Stopsignal",
+            "type": "string",
+            "description": "Signal to stop the container."
+          },
+          "StopGracePeriod": {
+            "title": "Stopgraceperiod",
+            "type": "integer",
+            "description": "Amount of time to wait for the container to terminate before\nforcefully killing it.\n"
+          },
+          "HealthCheck": {
+            "$ref": "#/components/schemas/HealthConfig"
+          },
+          "Hosts": {
+            "title": "Hosts",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of hostname/IP mappings to add to the container's `hosts`\nfile. The format of extra hosts is specified in the\n[hosts(5)](http://man7.org/linux/man-pages/man5/hosts.5.html)\nman page:\n\n    IP_address canonical_hostname [aliases...]\n"
+          },
+          "DNSConfig": {
+            "title": "Dnsconfig",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DNSConfig"
+              }
+            ],
+            "description": "Specification for DNS related configurations in resolver configuration\nfile (`resolv.conf`).\n"
+          },
+          "Secrets": {
+            "title": "Secrets",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Secret"
+            },
+            "description": "Secrets contains references to zero or more secrets that will be\nexposed to the service.\n"
+          },
+          "Configs": {
+            "title": "Configs",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Config1"
+            },
+            "description": "Configs contains references to zero or more configs that will be\nexposed to the service.\n"
+          },
+          "Isolation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Isolation"
+              }
+            ],
+            "description": "Isolation technology of the containers running the service.\n(Windows only)\n"
+          },
+          "Init": {
+            "title": "Init",
+            "type": "boolean",
+            "description": "Run an init inside the container that forwards signals and reaps\nprocesses. This field is omitted if empty, and the default (as\nconfigured on the daemon) is used.\n"
+          },
+          "Sysctls": {
+            "title": "Sysctls",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Set kernel namedspaced parameters (sysctls) in the container.\nThe Sysctls option on services accepts the same sysctls as the\nare supported on containers. Note that while the same sysctls are\nsupported, no guarantees or checks are made about their\nsuitability for a clustered environment, and it's up to the user\nto determine whether a given sysctl will work properly in a\nService.\n"
+          },
+          "CapabilityAdd": {
+            "title": "Capabilityadd",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of kernel capabilities to add to the default set\nfor the container.\n",
+            "example": [
+              "CAP_NET_RAW",
+              "CAP_SYS_ADMIN",
+              "CAP_SYS_CHROOT",
+              "CAP_SYSLOG"
+            ]
+          },
+          "CapabilityDrop": {
+            "title": "Capabilitydrop",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of kernel capabilities to drop from the default set\nfor the container.\n",
+            "example": [
+              "CAP_NET_RAW"
+            ]
+          },
+          "Ulimits": {
+            "title": "Ulimits",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Ulimit1"
+            },
+            "description": "A list of resource limits to set in the container. For example: `{\"Name\": \"nofile\", \"Soft\": 1024, \"Hard\": 2048}`\"\n"
+          }
+        },
+        "description": "    Container spec for the service.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`."
+      },
+      "CredentialSpec": {
+        "title": "CredentialSpec",
+        "type": "object",
+        "properties": {
+          "Config": {
+            "title": "Config",
+            "type": "string",
+            "description": "Load credential spec from a Swarm Config with the given ID.\nThe specified config must also be present in the Configs\nfield with the Runtime property set.\n\n<p><br /></p>\n\n\n> **Note**: `CredentialSpec.File`, `CredentialSpec.Registry`,\n> and `CredentialSpec.Config` are mutually exclusive.\n",
+            "example": "0bt9dmxjvjiqermk6xrop3ekq"
+          },
+          "File": {
+            "title": "File",
+            "type": "string",
+            "description": "Load credential spec from this file. The file is read by\nthe daemon, and must be present in the `CredentialSpecs`\nsubdirectory in the docker data directory, which defaults\nto `C:\\ProgramData\\Docker\\` on Windows.\n\nFor example, specifying `spec.json` loads\n`C:\\ProgramData\\Docker\\CredentialSpecs\\spec.json`.\n\n<p><br /></p>\n\n> **Note**: `CredentialSpec.File`, `CredentialSpec.Registry`,\n> and `CredentialSpec.Config` are mutually exclusive.\n",
+            "example": "spec.json"
+          },
+          "Registry": {
+            "title": "Registry",
+            "type": "string",
+            "description": "Load credential spec from this value in the Windows\nregistry. The specified registry value must be located in:\n\n`HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Virtualization\\Containers\\CredentialSpecs`\n\n<p><br /></p>\n\n\n> **Note**: `CredentialSpec.File`, `CredentialSpec.Registry`,\n> and `CredentialSpec.Config` are mutually exclusive.\n"
+          }
+        },
+        "description": "CredentialSpec for managed service account (Windows only)"
       },
       "DAGIn": {
         "title": "DAGIn",
@@ -835,6 +1271,37 @@
           }
         }
       },
+      "DNSConfig": {
+        "title": "DNSConfig",
+        "type": "object",
+        "properties": {
+          "Nameservers": {
+            "title": "Nameservers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The IP addresses of the name servers."
+          },
+          "Search": {
+            "title": "Search",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A search list for host-name lookup."
+          },
+          "Options": {
+            "title": "Options",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of internal resolver variables to be modified (e.g.,\n`debug`, `ndots:3`, etc.).\n"
+          }
+        },
+        "description": "    Specification for DNS related configurations in resolver configuration\nfile (`resolv.conf`)."
+      },
       "DatCoreFileLink": {
         "title": "DatCoreFileLink",
         "required": [
@@ -847,20 +1314,21 @@
         "properties": {
           "store": {
             "title": "Store",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "description": "The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore"
+            "type": "integer",
+            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
           },
           "path": {
             "title": "Path",
-            "pattern": "^.+$",
-            "type": "string",
+            "anyOf": [
+              {
+                "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
+                "type": "string"
+              },
+              {
+                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$",
+                "type": "string"
+              }
+            ],
             "description": "The path to the file in the storage provider domain"
           },
           "label": {
@@ -888,11 +1356,18 @@
           "label": "initial_WTstates"
         }
       },
-      "DictModel_str__ResourceValue_": {
-        "title": "DictModel[str, ResourceValue]",
+      "DiscreteResourceSpec": {
+        "title": "DiscreteResourceSpec",
         "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/ResourceValue"
+        "properties": {
+          "Kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "Value": {
+            "title": "Value",
+            "type": "integer"
+          }
         }
       },
       "DownloadLink": {
@@ -917,6 +1392,194 @@
         "additionalProperties": false,
         "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
       },
+      "DriverConfig": {
+        "title": "DriverConfig",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the driver to use to create the volume."
+          },
+          "Options": {
+            "title": "Options",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "key/value map of driver specific options."
+          }
+        },
+        "description": "Map of driver specific options"
+      },
+      "EndpointPortConfig": {
+        "title": "EndpointPortConfig",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "Protocol": {
+            "$ref": "#/components/schemas/Type"
+          },
+          "TargetPort": {
+            "title": "Targetport",
+            "type": "integer",
+            "description": "The port inside the container."
+          },
+          "PublishedPort": {
+            "title": "Publishedport",
+            "type": "integer",
+            "description": "The port on the swarm hosts."
+          },
+          "PublishMode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishMode"
+              }
+            ],
+            "description": "The mode in which port is published.\n\n<p><br /></p>\n\n- \"ingress\" makes the target port accessible on every node,\n  regardless of whether there is a task for the service running on\n  that node or not.\n- \"host\" bypasses the routing mesh and publish the port directly on\n  the swarm node where that service is running.\n",
+            "default": "ingress",
+            "example": "ingress"
+          }
+        }
+      },
+      "EndpointSpec": {
+        "title": "EndpointSpec",
+        "type": "object",
+        "properties": {
+          "Mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Mode1"
+              }
+            ],
+            "description": "The mode of resolution to use for internal load balancing between tasks.\n",
+            "default": "vip"
+          },
+          "Ports": {
+            "title": "Ports",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndpointPortConfig"
+            },
+            "description": "List of exposed ports that this service is accessible on from the\noutside. Ports can only be provided if `vip` resolution mode is used.\n"
+          }
+        },
+        "description": "Properties that can be configured to access and load balance a service."
+      },
+      "FailureAction": {
+        "title": "FailureAction",
+        "enum": [
+          "continue",
+          "pause",
+          "rollback"
+        ],
+        "description": "    Action to take if an updated task fails to run, or stops running\nduring the update."
+      },
+      "FailureAction1": {
+        "title": "FailureAction1",
+        "enum": [
+          "continue",
+          "pause"
+        ],
+        "description": "    Action to take if an rolled back task fails to run, or stops\nrunning during the rollback."
+      },
+      "File": {
+        "title": "File",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name represents the final filename in the filesystem.\n"
+          },
+          "UID": {
+            "title": "Uid",
+            "type": "string",
+            "description": "UID represents the file UID."
+          },
+          "GID": {
+            "title": "Gid",
+            "type": "string",
+            "description": "GID represents the file GID."
+          },
+          "Mode": {
+            "title": "Mode",
+            "type": "integer",
+            "description": "Mode represents the FileMode of the file."
+          }
+        },
+        "description": "File represents a specific target that is backed by a file."
+      },
+      "File1": {
+        "title": "File1",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name represents the final filename in the filesystem.\n"
+          },
+          "UID": {
+            "title": "Uid",
+            "type": "string",
+            "description": "UID represents the file UID."
+          },
+          "GID": {
+            "title": "Gid",
+            "type": "string",
+            "description": "GID represents the file GID."
+          },
+          "Mode": {
+            "title": "Mode",
+            "type": "integer",
+            "description": "Mode represents the FileMode of the file."
+          }
+        },
+        "description": "    File represents a specific target that is backed by a file.\n\n<p><br /><p>\n\n> **Note**: `Configs.File` and `Configs.Runtime` are mutually exclusive"
+      },
+      "GenericResource": {
+        "title": "GenericResource",
+        "type": "object",
+        "properties": {
+          "NamedResourceSpec": {
+            "$ref": "#/components/schemas/NamedResourceSpec"
+          },
+          "DiscreteResourceSpec": {
+            "$ref": "#/components/schemas/DiscreteResourceSpec"
+          }
+        }
+      },
+      "GenericResources": {
+        "title": "GenericResources",
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GenericResource"
+        },
+        "description": "User-defined resources can be either Integer resources (e.g, `SSD=3`) or\nString resources (e.g, `GPU=UUID1`).\n",
+        "example": [
+          {
+            "DiscreteResourceSpec": {
+              "Kind": "SSD",
+              "Value": 3
+            }
+          },
+          {
+            "NamedResourceSpec": {
+              "Kind": "GPU",
+              "Value": "UUID1"
+            }
+          },
+          {
+            "NamedResourceSpec": {
+              "Kind": "GPU",
+              "Value": "UUID2"
+            }
+          }
+        ]
+      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -930,6 +1593,41 @@
           }
         }
       },
+      "HealthConfig": {
+        "title": "HealthConfig",
+        "type": "object",
+        "properties": {
+          "Test": {
+            "title": "Test",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The test to perform. Possible values are:\n\n- `[]` inherit healthcheck from image or parent image\n- `[\"NONE\"]` disable healthcheck\n- `[\"CMD\", args...]` exec arguments directly\n- `[\"CMD-SHELL\", command]` run command with system's default shell\n"
+          },
+          "Interval": {
+            "title": "Interval",
+            "type": "integer",
+            "description": "The time to wait between checks in nanoseconds. It should be 0 or at\nleast 1000000 (1 ms). 0 means inherit.\n"
+          },
+          "Timeout": {
+            "title": "Timeout",
+            "type": "integer",
+            "description": "The time to wait before considering the check to have hung. It should\nbe 0 or at least 1000000 (1 ms). 0 means inherit.\n"
+          },
+          "Retries": {
+            "title": "Retries",
+            "type": "integer",
+            "description": "The number of consecutive failures needed to consider a container as\nunhealthy. 0 means inherit.\n"
+          },
+          "StartPeriod": {
+            "title": "Startperiod",
+            "type": "integer",
+            "description": "Start period for the container to initialize before starting\nhealth-retries countdown in nanoseconds. It should be 0 or at least\n1000000 (1 ms). 0 means inherit.\n"
+          }
+        },
+        "description": "A test to perform to check that the container is healthy."
+      },
       "ImageResources": {
         "title": "ImageResources",
         "required": [
@@ -942,10 +1640,14 @@
             "title": "Image",
             "pattern": "[\\w/-]+:[\\w.@]+",
             "type": "string",
-            "description": "used by the fro"
+            "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
           "resources": {
-            "$ref": "#/components/schemas/DictModel_str__ResourceValue_"
+            "title": "Resources",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ResourceValue"
+            }
           }
         },
         "example": {
@@ -973,6 +1675,57 @@
             }
           }
         }
+      },
+      "Isolation": {
+        "title": "Isolation",
+        "enum": [
+          "default",
+          "process",
+          "hyperv"
+        ],
+        "description": "Isolation technology of the container. (Windows only)"
+      },
+      "Limit": {
+        "title": "Limit",
+        "type": "object",
+        "properties": {
+          "NanoCPUs": {
+            "title": "Nanocpus",
+            "type": "integer",
+            "example": 4000000000
+          },
+          "MemoryBytes": {
+            "title": "Memorybytes",
+            "type": "integer",
+            "example": 8272408576
+          },
+          "Pids": {
+            "title": "Pids",
+            "type": "integer",
+            "description": "Limits the maximum number of PIDs in the container. Set `0` for unlimited.\n",
+            "default": 0,
+            "example": 100
+          }
+        },
+        "description": "An object describing a limit on resources which can be requested by a task."
+      },
+      "LogDriver1": {
+        "title": "LogDriver1",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "Options": {
+            "title": "Options",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "    Specifies the log driver to use for tasks created from this spec. If\nnot present, the default one for the swarm will be used, finally\nfalling back to the engine default if not specified."
       },
       "Meta": {
         "title": "Meta",
@@ -1009,6 +1762,157 @@
             "v2": "2.4.45"
           }
         }
+      },
+      "Mode": {
+        "title": "Mode",
+        "type": "object",
+        "properties": {
+          "Replicated": {
+            "$ref": "#/components/schemas/Replicated"
+          },
+          "Global": {
+            "title": "Global",
+            "type": "object"
+          },
+          "ReplicatedJob": {
+            "title": "Replicatedjob",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReplicatedJob"
+              }
+            ],
+            "description": "The mode used for services with a finite number of tasks that run\nto a completed state.\n"
+          },
+          "GlobalJob": {
+            "title": "Globaljob",
+            "type": "object",
+            "description": "The mode used for services which run a task to the completed state\non each valid node.\n"
+          }
+        },
+        "description": "Scheduling mode for the service."
+      },
+      "Mode1": {
+        "title": "Mode1",
+        "enum": [
+          "vip",
+          "dnsrr"
+        ],
+        "description": "The mode of resolution to use for internal load balancing between tasks."
+      },
+      "Mount": {
+        "title": "Mount",
+        "type": "object",
+        "properties": {
+          "Target": {
+            "title": "Target",
+            "type": "string",
+            "description": "Container path."
+          },
+          "Source": {
+            "title": "Source",
+            "type": "string",
+            "description": "Mount source (e.g. a volume name, a host path)."
+          },
+          "Type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Type1"
+              }
+            ],
+            "description": "The mount type. Available types:\n\n- `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container.\n- `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed.\n- `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs.\n- `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container.\n"
+          },
+          "ReadOnly": {
+            "title": "Readonly",
+            "type": "boolean",
+            "description": "Whether the mount should be read-only."
+          },
+          "Consistency": {
+            "title": "Consistency",
+            "type": "string",
+            "description": "The consistency requirement for the mount: `default`, `consistent`, `cached`, or `delegated`."
+          },
+          "BindOptions": {
+            "title": "Bindoptions",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BindOptions"
+              }
+            ],
+            "description": "Optional configuration for the `bind` type."
+          },
+          "VolumeOptions": {
+            "title": "Volumeoptions",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VolumeOptions"
+              }
+            ],
+            "description": "Optional configuration for the `volume` type."
+          },
+          "TmpfsOptions": {
+            "title": "Tmpfsoptions",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TmpfsOptions"
+              }
+            ],
+            "description": "Optional configuration for the `tmpfs` type."
+          }
+        }
+      },
+      "NamedResourceSpec": {
+        "title": "NamedResourceSpec",
+        "type": "object",
+        "properties": {
+          "Kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "Value": {
+            "title": "Value",
+            "type": "string"
+          }
+        }
+      },
+      "NetworkAttachmentConfig": {
+        "title": "NetworkAttachmentConfig",
+        "type": "object",
+        "properties": {
+          "Target": {
+            "title": "Target",
+            "type": "string",
+            "description": "The target network for attachment. Must be a network name or ID.\n"
+          },
+          "Aliases": {
+            "title": "Aliases",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Discoverable alternate names for the service on this network.\n"
+          },
+          "DriverOpts": {
+            "title": "Driveropts",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Driver attachment options for the network target.\n"
+          }
+        },
+        "description": "Specifies how a service should be attached to a particular network."
+      },
+      "NetworkAttachmentSpec": {
+        "title": "NetworkAttachmentSpec",
+        "type": "object",
+        "properties": {
+          "ContainerID": {
+            "title": "Containerid",
+            "type": "string",
+            "description": "ID of the container represented by this task"
+          }
+        },
+        "description": "    Read-only spec type for non-swarm containers attached to swarm overlay\nnetworks.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`."
       },
       "Node": {
         "title": "Node",
@@ -1177,6 +2081,143 @@
         },
         "additionalProperties": false
       },
+      "Order": {
+        "title": "Order",
+        "enum": [
+          "stop-first",
+          "start-first"
+        ],
+        "description": "    The order of operations when rolling out an updated task. Either\nthe old task is shut down before the new task is started, or the\nnew task is started before the old task is shut down."
+      },
+      "Placement": {
+        "title": "Placement",
+        "type": "object",
+        "properties": {
+          "Constraints": {
+            "title": "Constraints",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "An array of constraint expressions to limit the set of nodes where\na task can be scheduled. Constraint expressions can either use a\n_match_ (`==`) or _exclude_ (`!=`) rule. Multiple constraints find\nnodes that satisfy every expression (AND match). Constraints can\nmatch node or Docker Engine labels as follows:\n\nnode attribute       | matches                        | example\n---------------------|--------------------------------|-----------------------------------------------\n`node.id`            | Node ID                        | `node.id==2ivku8v2gvtg4`\n`node.hostname`      | Node hostname                  | `node.hostname!=node-2`\n`node.role`          | Node role (`manager`/`worker`) | `node.role==manager`\n`node.platform.os`   | Node operating system          | `node.platform.os==windows`\n`node.platform.arch` | Node architecture              | `node.platform.arch==x86_64`\n`node.labels`        | User-defined node labels       | `node.labels.security==high`\n`engine.labels`      | Docker Engine's labels         | `engine.labels.operatingsystem==ubuntu-14.04`\n\n`engine.labels` apply to Docker Engine labels like operating system,\ndrivers, etc. Swarm administrators add `node.labels` for operational\npurposes by using the [`node update endpoint`](#operation/NodeUpdate).\n",
+            "example": [
+              "node.hostname!=node3.corp.example.com",
+              "node.role!=manager",
+              "node.labels.type==production",
+              "node.platform.os==linux",
+              "node.platform.arch==x86_64"
+            ]
+          },
+          "Preferences": {
+            "title": "Preferences",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Preference"
+            },
+            "description": "Preferences provide a way to make the scheduler aware of factors\nsuch as topology. They are provided in order from highest to\nlowest precedence.\n",
+            "example": [
+              {
+                "Spread": {
+                  "SpreadDescriptor": "node.labels.datacenter"
+                }
+              },
+              {
+                "Spread": {
+                  "SpreadDescriptor": "node.labels.rack"
+                }
+              }
+            ]
+          },
+          "MaxReplicas": {
+            "title": "Maxreplicas",
+            "type": "integer",
+            "description": "Maximum number of replicas for per node (default value is 0, which\nis unlimited)\n",
+            "default": 0
+          },
+          "Platforms": {
+            "title": "Platforms",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Platform"
+            },
+            "description": "Platforms stores all the platforms that the service's image can\nrun on. This field is used in the platform filter for scheduling.\nIf empty, then the platform filter is off, meaning there are no\nscheduling restrictions.\n"
+          }
+        }
+      },
+      "Platform": {
+        "title": "Platform",
+        "type": "object",
+        "properties": {
+          "Architecture": {
+            "title": "Architecture",
+            "type": "string",
+            "description": "Architecture represents the hardware architecture (for example,\n`x86_64`).\n",
+            "example": "x86_64"
+          },
+          "OS": {
+            "title": "Os",
+            "type": "string",
+            "description": "OS represents the Operating System (for example, `linux` or `windows`).\n",
+            "example": "linux"
+          }
+        },
+        "description": "Platform represents the platform (Arch/OS)."
+      },
+      "PluginPrivilege": {
+        "title": "PluginPrivilege",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "example": "network"
+          },
+          "Description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "Value": {
+            "title": "Value",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "host"
+            ]
+          }
+        },
+        "description": "    Describes a permission the user has to accept upon installing\nthe plugin."
+      },
+      "PluginSpec": {
+        "title": "PluginSpec",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "description": "The name or 'alias' to use for the plugin."
+          },
+          "Remote": {
+            "title": "Remote",
+            "type": "string",
+            "description": "The plugin image reference to use."
+          },
+          "Disabled": {
+            "title": "Disabled",
+            "type": "boolean",
+            "description": "Disable the plugin once scheduled."
+          },
+          "PluginPrivilege": {
+            "title": "Pluginprivilege",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PluginPrivilege"
+            }
+          }
+        },
+        "description": "    Plugin spec for the service.  *(Experimental release only.)*\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`."
+      },
       "PortLink": {
         "title": "PortLink",
         "required": [
@@ -1228,6 +2269,108 @@
         },
         "additionalProperties": false
       },
+      "Preference": {
+        "title": "Preference",
+        "type": "object",
+        "properties": {
+          "Spread": {
+            "$ref": "#/components/schemas/Spread"
+          }
+        }
+      },
+      "Privileges": {
+        "title": "Privileges",
+        "type": "object",
+        "properties": {
+          "CredentialSpec": {
+            "title": "Credentialspec",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CredentialSpec"
+              }
+            ],
+            "description": "CredentialSpec for managed service account (Windows only)"
+          },
+          "SELinuxContext": {
+            "title": "Selinuxcontext",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SELinuxContext"
+              }
+            ],
+            "description": "SELinux labels of the container"
+          }
+        },
+        "description": "Security options for the container"
+      },
+      "Propagation": {
+        "title": "Propagation",
+        "enum": [
+          "private",
+          "rprivate",
+          "shared",
+          "rshared",
+          "slave",
+          "rslave"
+        ],
+        "description": "A propagation mode with the value `[r]private`, `[r]shared`, or `[r]slave`."
+      },
+      "PublishMode": {
+        "title": "PublishMode",
+        "enum": [
+          "ingress",
+          "host"
+        ],
+        "description": "    The mode in which port is published.\n\n<p><br /></p>\n\n- \"ingress\" makes the target port accessible on every node,\n  regardless of whether there is a task for the service running on\n  that node or not.\n- \"host\" bypasses the routing mesh and publish the port directly on\n  the swarm node where that service is running."
+      },
+      "Replicated": {
+        "title": "Replicated",
+        "type": "object",
+        "properties": {
+          "Replicas": {
+            "title": "Replicas",
+            "type": "integer"
+          }
+        }
+      },
+      "ReplicatedJob": {
+        "title": "ReplicatedJob",
+        "type": "object",
+        "properties": {
+          "MaxConcurrent": {
+            "title": "Maxconcurrent",
+            "type": "integer",
+            "description": "The maximum number of replicas to run simultaneously.\n",
+            "default": 1
+          },
+          "TotalCompletions": {
+            "title": "Totalcompletions",
+            "type": "integer",
+            "description": "The total number of replicas desired to reach the Completed\nstate. If unset, will default to the value of `MaxConcurrent`\n"
+          }
+        },
+        "description": "    The mode used for services with a finite number of tasks that run\nto a completed state."
+      },
+      "ResourceObject": {
+        "title": "ResourceObject",
+        "type": "object",
+        "properties": {
+          "NanoCPUs": {
+            "title": "Nanocpus",
+            "type": "integer",
+            "example": 4000000000
+          },
+          "MemoryBytes": {
+            "title": "Memorybytes",
+            "type": "integer",
+            "example": 8272408576
+          },
+          "GenericResources": {
+            "$ref": "#/components/schemas/GenericResources"
+          }
+        },
+        "description": "    An object describing the resources which can be advertised by a node and\nrequested by a task."
+      },
       "ResourceValue": {
         "title": "ResourceValue",
         "required": [
@@ -1266,6 +2409,107 @@
           }
         }
       },
+      "Resources1": {
+        "title": "Resources1",
+        "type": "object",
+        "properties": {
+          "Limits": {
+            "title": "Limits",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Limit"
+              }
+            ],
+            "description": "Define resources limits."
+          },
+          "Reservation": {
+            "title": "Reservation",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceObject"
+              }
+            ],
+            "description": "Define resources reservation."
+          }
+        },
+        "description": "    Resource requirements which apply to each individual container created\nas part of the service."
+      },
+      "RestartPolicy1": {
+        "title": "RestartPolicy1",
+        "type": "object",
+        "properties": {
+          "Condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Condition"
+              }
+            ],
+            "description": "Condition for restart."
+          },
+          "Delay": {
+            "title": "Delay",
+            "type": "integer",
+            "description": "Delay between restart attempts."
+          },
+          "MaxAttempts": {
+            "title": "Maxattempts",
+            "type": "integer",
+            "description": "Maximum attempts to restart a given container before giving up\n(default value is 0, which is ignored).\n",
+            "default": 0
+          },
+          "Window": {
+            "title": "Window",
+            "type": "integer",
+            "description": "Windows is the time window used to evaluate the restart policy\n(default value is 0, which is unbounded).\n",
+            "default": 0
+          }
+        },
+        "description": "    Specification for the restart policy which applies to containers\ncreated as part of this service."
+      },
+      "RollbackConfig": {
+        "title": "RollbackConfig",
+        "type": "object",
+        "properties": {
+          "Parallelism": {
+            "title": "Parallelism",
+            "type": "integer",
+            "description": "Maximum number of tasks to be rolled back in one iteration (0 means\nunlimited parallelism).\n"
+          },
+          "Delay": {
+            "title": "Delay",
+            "type": "integer",
+            "description": "Amount of time between rollback iterations, in nanoseconds.\n"
+          },
+          "FailureAction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FailureAction1"
+              }
+            ],
+            "description": "Action to take if an rolled back task fails to run, or stops\nrunning during the rollback.\n"
+          },
+          "Monitor": {
+            "title": "Monitor",
+            "type": "integer",
+            "description": "Amount of time to monitor each rolled back task for failures, in\nnanoseconds.\n"
+          },
+          "MaxFailureRatio": {
+            "title": "Maxfailureratio",
+            "type": "number",
+            "description": "The fraction of tasks that may fail during a rollback before the\nfailure action is invoked, specified as a floating point number\nbetween 0 and 1.\n",
+            "default": 0
+          },
+          "Order": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ],
+            "description": "The order of operations when rolling back a task. Either the old\ntask is shut down before the new task is started, or the new task\nis started before the old task is shut down.\n"
+          }
+        },
+        "description": "Specification for the rollback strategy of the service."
+      },
       "RunningState": {
         "title": "RunningState",
         "enum": [
@@ -1281,6 +2525,63 @@
         ],
         "type": "string",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+      },
+      "SELinuxContext": {
+        "title": "SELinuxContext",
+        "type": "object",
+        "properties": {
+          "Disable": {
+            "title": "Disable",
+            "type": "boolean",
+            "description": "Disable SELinux"
+          },
+          "User": {
+            "title": "User",
+            "type": "string",
+            "description": "SELinux user label"
+          },
+          "Role": {
+            "title": "Role",
+            "type": "string",
+            "description": "SELinux role label"
+          },
+          "Type": {
+            "title": "Type",
+            "type": "string",
+            "description": "SELinux type label"
+          },
+          "Level": {
+            "title": "Level",
+            "type": "string",
+            "description": "SELinux level label"
+          }
+        },
+        "description": "SELinux labels of the container"
+      },
+      "Secret": {
+        "title": "Secret",
+        "type": "object",
+        "properties": {
+          "File": {
+            "title": "File",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              }
+            ],
+            "description": "File represents a specific target that is backed by a file.\n"
+          },
+          "SecretID": {
+            "title": "Secretid",
+            "type": "string",
+            "description": "SecretID represents the ID of the specific secret that we're\nreferencing.\n"
+          },
+          "SecretName": {
+            "title": "Secretname",
+            "type": "string",
+            "description": "SecretName is the name of the secret that this references,\nbut this is just provided for lookup/display purposes. The\nsecret in the reference will be identified by its ID.\n"
+          }
+        }
       },
       "SelectBox": {
         "title": "SelectBox",
@@ -1300,104 +2601,8 @@
         },
         "additionalProperties": false
       },
-      "ServiceGroupAccessRights": {
-        "title": "ServiceGroupAccessRights",
-        "type": "object",
-        "properties": {
-          "execute_access": {
-            "title": "Execute Access",
-            "type": "boolean",
-            "description": "defines whether the group can execute the service",
-            "default": false
-          },
-          "write_access": {
-            "title": "Write Access",
-            "type": "boolean",
-            "description": "defines whether the group can modify the service",
-            "default": false
-          }
-        }
-      },
-      "ServiceInput": {
-        "title": "ServiceInput",
-        "required": [
-          "label",
-          "description",
-          "type"
-        ],
-        "type": "object",
-        "properties": {
-          "displayOrder": {
-            "title": "Displayorder",
-            "type": "number",
-            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
-            "deprecated": true
-          },
-          "label": {
-            "title": "Label",
-            "type": "string",
-            "description": "short name for the property",
-            "example": "Age"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "description of the property",
-            "example": "Age in seconds since 1970"
-          },
-          "type": {
-            "title": "Type",
-            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-            "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed"
-          },
-          "contentSchema": {
-            "title": "Contentschema",
-            "type": "object",
-            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
-          },
-          "fileToKeyMap": {
-            "title": "Filetokeymap",
-            "type": "object",
-            "description": "Place the data associated with the named keys in files"
-          },
-          "unit": {
-            "title": "Unit",
-            "type": "string",
-            "description": "Units, when it refers to a physical quantity"
-          },
-          "defaultValue": {
-            "title": "Defaultvalue",
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "integer"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "widget": {
-            "title": "Widget",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Widget"
-              }
-            ],
-            "description": "custom widget to use instead of the default one determined from the data-type"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Metadata on a service input port"
-      },
-      "ServiceOut": {
-        "title": "ServiceOut",
+      "ServiceGet": {
+        "title": "ServiceGet",
         "required": [
           "name",
           "description",
@@ -1429,6 +2634,12 @@
             "title": "Description",
             "type": "string",
             "description": "human readable description of the purpose of the node"
+          },
+          "deprecated": {
+            "title": "Deprecated",
+            "type": "string",
+            "description": "If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
+            "format": "date-time"
           },
           "classifiers": {
             "title": "Classifiers",
@@ -1539,11 +2750,11 @@
           "type": "dynamic",
           "authors": [
             {
-              "name": "Odei Maiz",
-              "email": "maiz@itis.swiss"
+              "name": "Red Pandas",
+              "email": "redpandas@wonderland.com"
             }
           ],
-          "contact": "maiz@itis.swiss",
+          "contact": "redpandas@wonderland.com",
           "inputs": {},
           "outputs": {
             "outFile": {
@@ -1553,8 +2764,104 @@
               "type": "data:*/*"
             }
           },
-          "owner": "maiz@itis.swiss"
+          "owner": "redpandas@wonderland.com"
         }
+      },
+      "ServiceGroupAccessRights": {
+        "title": "ServiceGroupAccessRights",
+        "type": "object",
+        "properties": {
+          "execute_access": {
+            "title": "Execute Access",
+            "type": "boolean",
+            "description": "defines whether the group can execute the service",
+            "default": false
+          },
+          "write_access": {
+            "title": "Write Access",
+            "type": "boolean",
+            "description": "defines whether the group can modify the service",
+            "default": false
+          }
+        }
+      },
+      "ServiceInput": {
+        "title": "ServiceInput",
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "type": "object",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string",
+            "description": "Units, when it refers to a physical quantity"
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Metadata on a service input port"
       },
       "ServiceOutput": {
         "title": "ServiceOutput",
@@ -1618,11 +2925,124 @@
         "additionalProperties": false,
         "description": "Base class for service input/outputs"
       },
-      "ServiceResources": {
-        "title": "ServiceResources",
+      "ServicePortGet": {
+        "title": "ServicePortGet",
+        "required": [
+          "key",
+          "kind"
+        ],
         "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/ImageResources"
+        "properties": {
+          "key": {
+            "title": "Key name",
+            "pattern": "^[^_\\W0-9]\\w*$",
+            "type": "string",
+            "description": "port identifier name"
+          },
+          "kind": {
+            "title": "Kind",
+            "enum": [
+              "input",
+              "output"
+            ],
+            "type": "string"
+          },
+          "content_media_type": {
+            "title": "Content Media Type",
+            "type": "string"
+          },
+          "content_schema": {
+            "title": "Content Schema",
+            "type": "object",
+            "description": "jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/"
+          }
+        },
+        "example": {
+          "key": "input_1",
+          "kind": "input",
+          "content_schema": {
+            "title": "Sleep interval",
+            "type": "integer",
+            "x_unit": "second",
+            "minimum": 0,
+            "maximum": 5
+          }
+        }
+      },
+      "ServiceSpec": {
+        "title": "ServiceSpec",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of the service."
+          },
+          "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "User-defined key/value metadata."
+          },
+          "TaskTemplate": {
+            "$ref": "#/components/schemas/TaskSpec"
+          },
+          "Mode": {
+            "title": "Mode",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Mode"
+              }
+            ],
+            "description": "Scheduling mode for the service."
+          },
+          "UpdateConfig": {
+            "title": "Updateconfig",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateConfig"
+              }
+            ],
+            "description": "Specification for the update strategy of the service."
+          },
+          "RollbackConfig": {
+            "title": "Rollbackconfig",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RollbackConfig"
+              }
+            ],
+            "description": "Specification for the rollback strategy of the service."
+          },
+          "Networks": {
+            "title": "Networks",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkAttachmentConfig"
+            },
+            "description": "Specifies which networks the service should attach to."
+          },
+          "EndpointSpec": {
+            "$ref": "#/components/schemas/EndpointSpec"
+          }
+        },
+        "description": "User modifiable configuration for a service."
+      },
+      "ServiceSpecificationsGet": {
+        "title": "ServiceSpecificationsGet",
+        "type": "object",
+        "properties": {
+          "sidecar": {
+            "title": "Sidecar",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceSpec"
+              }
+            ],
+            "description": "schedule-time specifications for the service sidecar (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.25/#operation/ServiceCreate)"
+          }
         }
       },
       "ServiceType": {
@@ -1662,6 +3082,12 @@
           "description": {
             "title": "Description",
             "type": "string"
+          },
+          "deprecated": {
+            "title": "Deprecated",
+            "type": "string",
+            "description": "If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
+            "format": "date-time"
           },
           "classifiers": {
             "title": "Classifiers",
@@ -1763,20 +3189,21 @@
         "properties": {
           "store": {
             "title": "Store",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "description": "The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore"
+            "type": "integer",
+            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
           },
           "path": {
             "title": "Path",
-            "pattern": "^.+$",
-            "type": "string",
+            "anyOf": [
+              {
+                "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
+                "type": "string"
+              },
+              {
+                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$",
+                "type": "string"
+              }
+            ],
             "description": "The path to the file in the storage provider domain"
           },
           "label": {
@@ -1798,10 +3225,21 @@
         "additionalProperties": false,
         "description": "I/O port type to hold a link to a file in simcore S3 storage",
         "example": {
-          "store": "0",
+          "store": 0,
           "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
           "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
           "label": "input.txt"
+        }
+      },
+      "Spread": {
+        "title": "Spread",
+        "type": "object",
+        "properties": {
+          "SpreadDescriptor": {
+            "title": "Spreaddescriptor",
+            "type": "string",
+            "description": "label descriptor, such as `engine.labels.az`.\n"
+          }
         }
       },
       "Structure": {
@@ -1833,6 +3271,88 @@
         },
         "additionalProperties": false
       },
+      "TaskSpec": {
+        "title": "TaskSpec",
+        "type": "object",
+        "properties": {
+          "PluginSpec": {
+            "title": "Pluginspec",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PluginSpec"
+              }
+            ],
+            "description": "Plugin spec for the service.  *(Experimental release only.)*\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`.\n"
+          },
+          "ContainerSpec": {
+            "title": "Containerspec",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerSpec"
+              }
+            ],
+            "description": "Container spec for the service.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`.\n"
+          },
+          "NetworkAttachmentSpec": {
+            "title": "Networkattachmentspec",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NetworkAttachmentSpec"
+              }
+            ],
+            "description": "Read-only spec type for non-swarm containers attached to swarm overlay\nnetworks.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`.\n"
+          },
+          "Resources": {
+            "title": "Resources",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Resources1"
+              }
+            ],
+            "description": "Resource requirements which apply to each individual container created\nas part of the service.\n"
+          },
+          "RestartPolicy": {
+            "title": "Restartpolicy",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RestartPolicy1"
+              }
+            ],
+            "description": "Specification for the restart policy which applies to containers\ncreated as part of this service.\n"
+          },
+          "Placement": {
+            "$ref": "#/components/schemas/Placement"
+          },
+          "ForceUpdate": {
+            "title": "Forceupdate",
+            "type": "integer",
+            "description": "A counter that triggers an update even if no relevant parameters have\nbeen changed.\n"
+          },
+          "Runtime": {
+            "title": "Runtime",
+            "type": "string",
+            "description": "Runtime is the type of runtime specified for the task executor.\n"
+          },
+          "Networks": {
+            "title": "Networks",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkAttachmentConfig"
+            },
+            "description": "Specifies which networks the service should attach to."
+          },
+          "LogDriver": {
+            "title": "Logdriver",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LogDriver1"
+              }
+            ],
+            "description": "Specifies the log driver to use for tasks created from this spec. If\nnot present, the default one for the swarm will be used, finally\nfalling back to the engine default if not specified.\n"
+          }
+        },
+        "description": "User modifiable task configuration."
+      },
       "TextArea": {
         "title": "TextArea",
         "required": [
@@ -1850,6 +3370,107 @@
         },
         "additionalProperties": false
       },
+      "TmpfsOptions": {
+        "title": "TmpfsOptions",
+        "type": "object",
+        "properties": {
+          "SizeBytes": {
+            "title": "Sizebytes",
+            "type": "integer",
+            "description": "The size for the tmpfs mount in bytes."
+          },
+          "Mode": {
+            "title": "Mode",
+            "type": "integer",
+            "description": "The permission mode for the tmpfs mount in an integer."
+          }
+        },
+        "description": "Optional configuration for the `tmpfs` type."
+      },
+      "Type": {
+        "title": "Type",
+        "enum": [
+          "tcp",
+          "udp",
+          "sctp"
+        ],
+        "description": "An enumeration."
+      },
+      "Type1": {
+        "title": "Type1",
+        "enum": [
+          "bind",
+          "volume",
+          "tmpfs",
+          "npipe"
+        ],
+        "description": "    The mount type:\n\n- `bind` a mount of a file or directory from the host into the container.\n- `volume` a docker volume with the given `Name`.\n- `tmpfs` a `tmpfs`.\n- `npipe` a named pipe from the host into the container."
+      },
+      "Ulimit1": {
+        "title": "Ulimit1",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "title": "Name",
+            "type": "string",
+            "description": "Name of ulimit"
+          },
+          "Soft": {
+            "title": "Soft",
+            "type": "integer",
+            "description": "Soft limit"
+          },
+          "Hard": {
+            "title": "Hard",
+            "type": "integer",
+            "description": "Hard limit"
+          }
+        }
+      },
+      "UpdateConfig": {
+        "title": "UpdateConfig",
+        "type": "object",
+        "properties": {
+          "Parallelism": {
+            "title": "Parallelism",
+            "type": "integer",
+            "description": "Maximum number of tasks to be updated in one iteration (0 means\nunlimited parallelism).\n"
+          },
+          "Delay": {
+            "title": "Delay",
+            "type": "integer",
+            "description": "Amount of time between updates, in nanoseconds."
+          },
+          "FailureAction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FailureAction"
+              }
+            ],
+            "description": "Action to take if an updated task fails to run, or stops running\nduring the update.\n"
+          },
+          "Monitor": {
+            "title": "Monitor",
+            "type": "integer",
+            "description": "Amount of time to monitor each updated task for failures, in\nnanoseconds.\n"
+          },
+          "MaxFailureRatio": {
+            "title": "Maxfailureratio",
+            "type": "number",
+            "description": "The fraction of tasks that may fail during an update before the\nfailure action is invoked, specified as a floating point number\nbetween 0 and 1.\n",
+            "default": 0
+          },
+          "Order": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ],
+            "description": "The order of operations when rolling out an updated task. Either\nthe old task is shut down before the new task is started, or the\nnew task is started before the old task is shut down.\n"
+          }
+        },
+        "description": "Specification for the update strategy of the service."
+      },
       "ValidationError": {
         "title": "ValidationError",
         "required": [
@@ -1863,7 +3484,14 @@
             "title": "Location",
             "type": "array",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
             }
           },
           "msg": {
@@ -1875,6 +3503,36 @@
             "type": "string"
           }
         }
+      },
+      "VolumeOptions": {
+        "title": "VolumeOptions",
+        "type": "object",
+        "properties": {
+          "NoCopy": {
+            "title": "Nocopy",
+            "type": "boolean",
+            "description": "Populate volume with data from the target.",
+            "default": false
+          },
+          "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "User-defined key/value metadata."
+          },
+          "DriverConfig": {
+            "title": "Driverconfig",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DriverConfig"
+              }
+            ],
+            "description": "Map of driver specific options"
+          }
+        },
+        "description": "Optional configuration for the `volume` type."
       },
       "Widget": {
         "title": "Widget",

@@ -419,7 +419,7 @@ qx.Class.define("osparc.file.FilePicker", {
         alignY: "middle"
       }));
 
-      layout.add(new qx.ui.basic.Label(this.tr("Provide Download Link")));
+      layout.add(new qx.ui.basic.Label(this.tr("Provide Link")));
 
       const fileDownloadLink = this.__fileDownloadLink = new osparc.file.FileDownloadLink().set({
         allowGrowY: false
@@ -440,7 +440,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const options = [
         this.tr("- Upload a file"),
         this.tr("- Select a file from tree"),
-        this.tr("- Provide Download Link")
+        this.tr("- Provide Link")
       ];
       for (let i=0; i<options.length; i++) {
         msg += "<br>" + options[i];

@@ -24,6 +24,7 @@ from pydantic import (
 
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
+from .services_constants import FILENAME_RE, PROPERTY_TYPE_RE
 from .services_ui import Widget
 from .utils.json_schema import (
     InvalidJsonSchema,
@@ -32,7 +33,7 @@ from .utils.json_schema import (
 )
 
 # CONSTANTS -------------------------------------------
-
+# NOTE: move to _constants.py: SEE https://github.com/ITISFoundation/osparc-simcore/issues/3486
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
 
@@ -44,18 +45,13 @@ COMPUTATIONAL_SERVICE_KEY_FORMAT = "simcore/services/comp/{service_name}"
 
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 
-
-PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
-
-
-FILENAME_RE = r".+"
 
 LATEST_INTEGRATION_VERSION = "1.0.0"
 
 # CONSTRAINT TYPES -------------------------------------------
 
-PropertyName = constr(regex=PROPERTY_KEY_RE)
+ServicePortKey = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 
 ServiceKey = constr(regex=KEY_RE)
@@ -180,7 +176,7 @@ class BaseServiceIOModel(BaseModel):
     )
 
     # value
-    file_to_key_map: Optional[dict[FileName, PropertyName]] = Field(
+    file_to_key_map: Optional[dict[FileName, ServicePortKey]] = Field(
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
@@ -413,8 +409,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         return value
 
 
-ServiceInputsDict = dict[PropertyName, ServiceInput]
-ServiceOutputsDict = dict[PropertyName, ServiceOutput]
+ServiceInputsDict = dict[ServicePortKey, ServiceInput]
+ServiceOutputsDict = dict[ServicePortKey, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):

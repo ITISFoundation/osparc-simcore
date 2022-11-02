@@ -34,13 +34,19 @@ def _run_git(*args) -> str:
 def _run_git_or_empty_string(*args) -> str:
     try:
         return _run_git(*args)
+    except FileNotFoundError as err:
+        error_console.print(
+            "WARNING: Defaulting label to emtpy string",
+            "since git is not installed or cannot be executed:",
+            err,
+        )
     except subprocess.CalledProcessError as err:
         error_console.print(
             "WARNING: Defaulting label to emtpy string",
             "due to:",
             err.stderr,
         )
-        return ""
+    return ""
 
 
 def create_docker_compose_image_spec(

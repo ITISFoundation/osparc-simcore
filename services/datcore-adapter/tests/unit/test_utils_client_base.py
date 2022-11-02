@@ -5,7 +5,6 @@
 
 from dataclasses import dataclass
 
-import pytest
 import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
@@ -13,8 +12,6 @@ from simcore_service_datcore_adapter.utils.client_base import (
     BaseServiceClientApi,
     setup_client_instance,
 )
-
-pytestmark = pytest.mark.asyncio
 
 
 async def test_setup_client_instance():

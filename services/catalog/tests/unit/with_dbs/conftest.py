@@ -1,10 +1,11 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=not-context-manager
+# pylint: disable=not-context-manager
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import itertools
 import random
+from copy import deepcopy
 from datetime import datetime
 from random import randint
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, Optional
@@ -15,6 +16,7 @@ import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from fastapi import FastAPI
+from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.products import products
@@ -240,6 +242,100 @@ async def services_db_tables_injector(
                 )
             )
         )
+
+
+@pytest.fixture()
+async def service_metadata_faker(faker: Faker) -> Callable:
+    """Returns a factory to produce fake
+    service metadata
+    """
+    template = {
+        "integration-version": "1.0.0",
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "2.1.4",
+        "type": "computational",
+        "name": "sleeper",
+        "authors": [
+            {
+                "name": faker.name(),
+                "email": faker.email(),
+                "affiliation": "IT'IS Foundation",
+            },
+        ],
+        "contact": faker.email(),
+        "description": "A service which awaits for time to pass, two times.",
+        "inputs": {
+            "input_1": {
+                "displayOrder": 1,
+                "label": "File with int number",
+                "description": "Pick a file containing only one integer",
+                "type": "data:text/plain",
+                "fileToKeyMap": {"single_number.txt": "input_1"},
+            },
+            "input_2": {
+                "displayOrder": 2,
+                "label": "Sleep interval",
+                "description": "Choose an amount of time to sleep in range [0-5]",
+                "defaultValue": 2,
+                "type": "ref_contentSchema",
+                "contentSchema": {
+                    "title": "Sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                    "minimum": 0,
+                    "maximum": 5,
+                },
+            },
+            "input_3": {
+                "displayOrder": 3,
+                "label": "Fail after sleep",
+                "description": "If set to true will cause service to fail after it sleeps",
+                "type": "boolean",
+                "defaultValue": False,
+            },
+            "input_4": {
+                "displayOrder": 4,
+                "label": "Distance to bed",
+                "description": "It will first walk the distance to bed",
+                "defaultValue": 0,
+                "type": "ref_contentSchema",
+                "contentSchema": {
+                    "title": "Distance to bed",
+                    "type": "integer",
+                    "x_unit": "meter",
+                },
+            },
+        },
+        "outputs": {
+            "output_1": {
+                "displayOrder": 1,
+                "label": "File containing one random integer",
+                "description": "Integer is generated in range [1-9]",
+                "type": "data:text/plain",
+                "fileToKeyMap": {"single_number.txt": "output_1"},
+            },
+            "output_2": {
+                "displayOrder": 2,
+                "label": "Random sleep interval",
+                "description": "Interval is generated in range [1-9]",
+                "type": "ref_contentSchema",
+                "contentSchema": {
+                    "title": "Random sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                },
+            },
+        },
+    }
+
+    def _fake_factory(**overrides):
+        data = deepcopy(template)
+        data.update(**overrides)
+
+        assert ServiceDockerData.parse_obj(data), "Invalid fake data. Out of sync!"
+        return data
+
+    return _fake_factory
 
 
 @pytest.fixture()

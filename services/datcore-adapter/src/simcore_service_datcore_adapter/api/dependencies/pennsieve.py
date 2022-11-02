@@ -1,3 +1,5 @@
+from typing import cast
+
 from fastapi import Depends, FastAPI
 from fastapi.requests import Request
 
@@ -11,4 +13,6 @@ def _get_app(request: Request) -> FastAPI:
 def get_pennsieve_api_client(
     app: FastAPI = Depends(_get_app),
 ) -> PennsieveApiClient:
-    return PennsieveApiClient.get_instance(app)
+    client = PennsieveApiClient.get_instance(app)
+    assert client  # nosec
+    return cast(PennsieveApiClient, client)
