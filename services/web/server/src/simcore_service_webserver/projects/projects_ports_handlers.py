@@ -45,9 +45,7 @@ class ProjectPortGet(ProjectPort):
     label: str
 
 
-@routes.post(
-    f"/{VTAG}/projects/{{project_id}}/inputs", operation_id="get_project_inputs"
-)
+@routes.post(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
 @login_required
 @permission_required("project.read")
 async def get_project_inputs(request: web.Request) -> web.Response:
@@ -80,7 +78,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
 
 
-@routes.put(f"/{VTAG}/projects/{{project_id}}/inputs")
+@routes.put(f"/{VTAG}/projects/{{project_id}}/inputs", name="replace_project_inputs")
 @login_required
 @permission_required("project.update")
 async def replace_project_inputs(request: web.Request) -> web.Response:
@@ -140,7 +138,7 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
 #
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/outputs")
+@routes.post(f"/{VTAG}/projects/{{project_id}}/outputs", name="get_project_outputs")
 @login_required
 @permission_required("project.read")
 async def get_project_outputs(request: web.Request) -> web.Response:
