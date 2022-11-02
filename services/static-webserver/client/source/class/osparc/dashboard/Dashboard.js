@@ -101,7 +101,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         }
         tabs.push();
       }
-      if (permissions.canDo("dashboard.services.read")) {
+      if (!osparc.utils.Utils.isProduct("s4l-light") && permissions.canDo("dashboard.services.read")) {
         tabs.push({
           label: this.tr("SERVICES"),
           buildLayout: this.__createServiceBrowser
