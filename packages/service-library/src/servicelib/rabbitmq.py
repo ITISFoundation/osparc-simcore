@@ -1,6 +1,7 @@
 import os
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
 import aio_pika
 from settings_library.rabbit import RabbitSettings
@@ -18,19 +19,21 @@ async def _get_connection(
 @dataclass
 class RabbitMQClient:
     settings: RabbitSettings
-    _connection_pool: aio_pika.pool.Pool
-    _channel_pool: aio_pika.pool.Pool
+    _connection_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
+    _channel_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
 
     def __post_init__(self):
         self._connection_pool = aio_pika.pool.Pool(_get_connection, max_size=2)
         self._channel_pool = aio_pika.pool.Pool(self.get_channel, max_size=10)
 
     async def get_channel(self) -> aio_pika.abc.AbstractChannel:
+        assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection
             return await connection.channel()
 
     async def consume(self, queue_name: str) -> None:
+        assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             await channel.set_qos(10)
@@ -47,6 +50,7 @@ class RabbitMQClient:
                     await message.ack()
 
     async def publish(self, queue_name: str) -> None:
+        assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             await channel.default_exchange.publish(
