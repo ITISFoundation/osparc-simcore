@@ -59,7 +59,7 @@ async def rabbit_settings(
 
 @pytest.fixture(scope="function")
 async def rabbit_service(
-    rabbit_settings: RabbitSettings, monkeypatch
+    rabbit_settings: RabbitSettings, monkeypatch: pytest.MonkeyPatch
 ) -> RabbitSettings:
     """Sets env vars for a rabbit service is up and responsive and returns its settings as well
 
@@ -112,7 +112,9 @@ async def rabbit_channel(
 
     # create channel
     async with rabbit_connection.channel(publisher_confirms=False) as channel:
+        channel.close_callbacks.add(_channel_close_callback)
         yield channel
+    assert channel.is_closed
 
 
 @dataclass
