@@ -92,10 +92,14 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
-        tabs.push({
+        const templatesTab = {
           label: this.tr("TEMPLATES"),
           buildLayout: this.__createTemplateBrowser
-        });
+        };
+        if (osparc.utils.Utils.isProduct("s4l-light")) {
+          templatesTab.label = this.tr("TUTORIALS");
+        }
+        tabs.push();
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
@@ -103,7 +107,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (!osparc.utils.Utils.isProduct("s4l")) {
+      if (!osparc.utils.Utils.isProduct("s4l-light")) {
         tabs.push({
           label: this.tr("DATA"),
           buildLayout: this.__createDataBrowser}
