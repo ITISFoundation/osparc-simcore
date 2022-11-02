@@ -1348,6 +1348,23 @@ qx.Class.define("osparc.data.model.Node", {
       this.callRetrieveInputs();
     },
 
+    attachHandlersToStartButton: function(startButton) {
+      this.getStatus().bind("interactive", startButton, "visibility", {
+        converter: state => (state === "ready") ? "excluded" : "visible"
+      });
+      this.getStatus().bind("interactive", startButton, "enabled", {
+        converter: state => state === "idle"
+      });
+      startButton.addListener("execute", () => this.requestStartNode());
+    },
+
+    attachHandlersToStopButton: function(stopButton) {
+      this.getStatus().bind("interactive", stopButton, "visibility", {
+        converter: state => (state === "ready") ? "visible" : "excluded"
+      });
+      stopButton.addListener("execute", () => this.requestStopNode());
+    },
+
     __removeInnerNodes: function() {
       const innerNodes = Object.values(this.getInnerNodes());
       for (let i = 0; i < innerNodes.length; i++) {

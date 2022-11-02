@@ -379,18 +379,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
 
       if (node.isDynamic()) {
-        node.getStatus().bind("interactive", this.__nodeStartButton, "visibility", {
-          converter: state => (state === "ready") ? "excluded" : "visible"
-        });
-        node.getStatus().bind("interactive", this.__nodeStartButton, "enabled", {
-          converter: state => state === "idle"
-        });
-        this.__nodeStartButton.addListener("execute", () => node.requestStartNode());
-
-        node.getStatus().bind("interactive", this.__nodeStopButton, "visibility", {
-          converter: state => (state === "ready") ? "visible" : "excluded"
-        });
-        this.__nodeStopButton.addListener("execute", () => node.requestStopNode());
+        node.attachHandlersToStartButton(this.__nodeStartButton);
+        node.attachHandlersToStopButton(this.__nodeStopButton);
       }
 
       this.__preparingInputs = new osparc.component.widget.PreparingInputs(node.getStudy());
