@@ -16,17 +16,18 @@ on:
     tags-ignore:
       - "*"
     paths:
+      - "!.vscode/**"
       - "!*.md"
       - "!*.png"
       - "!*.svg"
       - "!docs/**"
-      - "!.vscode/**"
-      - "**.py"
+      - ".github/workflows/ci-testing-deploy.yml"
       - "**.js"
-      - "**/requirements/*.txt"
       - "**.json"
       - "**.Makefile"
-      - ".github/workflows/ci-testing-deploy.yml"
+      - "**.py"
+      - "**/requirements/*.txt"
+      - "**/services/docker-compose*"
       - "ci/**"
   pull_request:
     branches:

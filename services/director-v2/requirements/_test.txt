@@ -12,7 +12,7 @@ aioboto3==10.1.0
     # via -r requirements/_test.in
 aiobotocore==2.4.0
     # via aioboto3
-aiohttp==3.8.1
+aiohttp==3.8.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -99,6 +99,8 @@ docker==6.0.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
+exceptiongroup==1.0.0
+    # via pytest
 execnet==1.9.0
     # via pytest-xdist
 faker==15.1.0
@@ -185,7 +187,7 @@ pamqp==3.2.1
     # via
     #   -c requirements/_base.txt
     #   aiormq
-pillow==9.2.0
+pillow==9.3.0
     # via bokeh
 platformdirs==2.5.2
     # via pylint
@@ -198,9 +200,7 @@ psycopg2-binary==2.9.3
     #   -c requirements/_base.txt
     #   sqlalchemy
 py==1.11.0
-    # via
-    #   pytest
-    #   pytest-forked
+    # via pytest-forked
 pycparser==2.21
     # via cffi
 pylint==2.15.5
@@ -209,7 +209,7 @@ pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
