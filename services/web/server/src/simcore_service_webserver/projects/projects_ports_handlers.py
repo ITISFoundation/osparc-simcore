@@ -1,5 +1,6 @@
-""" Handlers for CRUD operations on /projects/{*}/nodes/{*}
-
+""" Handlers for some CRUD operations for
+    - /projects/{*}/inputs
+    - /projects/{*}/outputs
 """
 
 import logging
@@ -24,11 +25,12 @@ from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
+routes = web.RouteTableDef()
+
+
 #
 # projects/*/inputs COLLECTION -------------------------
 #
-
-routes = web.RouteTableDef()
 
 
 class ProjectPort(BaseModel):
@@ -53,6 +55,8 @@ class ProjectPortsReplace(BaseModel):
 async def get_project_inputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    assert request.app  # nosec
 
     project: ProjectDict = await projects_api.get_project_for_user(
         request.app,
@@ -85,7 +89,9 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
     app_db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    set_inputs = await parse_request_body_as(ProjectPortsReplace, request)
+    inputs_updates = await parse_request_body_as(list[ProjectPort], request)
+
+    assert request.app  # nosec
 
     project: ProjectDict = await projects_api.get_project_for_user(
         request.app,
@@ -100,10 +106,12 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
 
     partial_workbench_data = {}
 
-    for node_id, value in set_inputs.items():
+    for input_update in inputs_updates:
+        node_id = input_update.key
         if node_id not in current_inputs.keys():
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
-        workbench[node_id].outputs = {"out_1": value}
+
+        workbench[node_id].outputs = {"out_1": input_update.value}
         partial_workbench_data[node_id] = workbench[node_id].dict(
             include={"outputs"}, exclude_unset=True
         )
@@ -140,6 +148,8 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
 async def get_project_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    assert request.app  # nosec
 
     project: ProjectDict = await projects_api.get_project_for_user(
         request.app,
