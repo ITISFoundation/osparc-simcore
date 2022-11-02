@@ -4,11 +4,11 @@
 """
 
 import logging
-from typing import Any, Iterator
+from typing import Any
 
 from aiohttp import web
 from models_library.projects_nodes import Node, NodeID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -34,22 +34,20 @@ routes = web.RouteTableDef()
 
 
 class ProjectPort(BaseModel):
-    key: NodeID
-    value: Any
+    key: NodeID = Field(
+        ...,
+        description="Project port UID. It corresponds to the node ID of the associated parameter node",
+    )
+    value: Any = Field(..., description="Value assigned to this i/o port")
 
 
 class ProjectPortGet(ProjectPort):
     label: str
 
 
-class ProjectPortsReplace(BaseModel):
-    __root__: list[ProjectPort]
-
-    def items(self) -> Iterator[tuple[NodeID, Any]]:
-        return ((p.key, p.value) for p in self.__root__)
-
-
-@routes.post(f"/{VTAG}/projects/{{project_id}}/inputs")
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/inputs", operation_id="get_project_inputs"
+)
 @login_required
 @permission_required("project.read")
 async def get_project_inputs(request: web.Request) -> web.Response:
