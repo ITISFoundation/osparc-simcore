@@ -10,7 +10,7 @@ black==22.10.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   -r requirements/_tools.in
-build==0.8.0
+build==0.9.0
     # via pip-tools
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -28,14 +28,14 @@ distlib==0.3.6
     # via virtualenv
 filelock==3.8.0
     # via virtualenv
-identify==2.5.6
+identify==2.5.8
     # via pre-commit
 isort==5.10.1
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   -r requirements/_tools.in
     #   pylint
-lazy-object-proxy==1.7.1
+lazy-object-proxy==1.8.0
     # via astroid
 mccabe==0.7.0
     # via pylint
@@ -86,7 +86,7 @@ tomli==2.0.1
     #   build
     #   pep517
     #   pylint
-tomlkit==0.11.5
+tomlkit==0.11.6
     # via pylint
 typing-extensions==4.4.0
     # via
@@ -95,7 +95,7 @@ typing-extensions==4.4.0
     #   astroid
     #   black
     #   pylint
-virtualenv==20.16.5
+virtualenv==20.16.6
     # via pre-commit
 watchdog==2.1.9
     # via -r requirements/_tools.in

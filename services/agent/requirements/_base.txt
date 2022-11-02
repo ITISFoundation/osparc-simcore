@@ -66,7 +66,7 @@ pyinstrument==4.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==3.0.9
     # via packaging
-pyrsistent==0.18.1
+pyrsistent==0.19.1
     # via jsonschema
 pyyaml==5.4.1
     # via
