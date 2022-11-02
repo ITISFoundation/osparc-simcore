@@ -562,7 +562,8 @@ class TutorialBase {
       }
       if (i === nTries) {
         console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
-        this.fetchRemoveStudy(studyId)
+        // do not call the API
+        // this.fetchRemoveStudy(studyId)
       }
     }
     catch (err) {

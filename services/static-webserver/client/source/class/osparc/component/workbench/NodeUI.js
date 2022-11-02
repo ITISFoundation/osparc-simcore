@@ -215,28 +215,19 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __applyNode: function(node) {
       if (node.isDynamic()) {
-        const startBtn = new qx.ui.menu.Button().set({
+        const startButton = new qx.ui.menu.Button().set({
           label: this.tr("Start"),
           icon: "@FontAwesome5Solid/play/10"
         });
-        startBtn.addListener("execute", () => node.requestStartNode());
-        node.getStatus().bind("interactive", startBtn, "visibility", {
-          converter: state => (state === "ready") ? "excluded" : "visible"
-        });
-        node.getStatus().bind("interactive", startBtn, "enabled", {
-          converter: state => state === "idle"
-        });
-        this._optionsMenu.addAt(startBtn, 0);
+        node.attachHandlersToStartButton(startButton);
+        this._optionsMenu.addAt(startButton, 0);
 
-        const stopBtn = new qx.ui.menu.Button().set({
+        const stopButton = new qx.ui.menu.Button().set({
           label: this.tr("Stop"),
           icon: "@FontAwesome5Solid/stop/10"
         });
-        stopBtn.addListener("execute", () => node.requestStopNode());
-        node.getStatus().bind("interactive", stopBtn, "visibility", {
-          converter: state => (state === "ready") ? "visible" : "excluded"
-        });
-        this._optionsMenu.addAt(stopBtn, 1);
+        node.attachHandlersToStopButton(stopButton);
+        this._optionsMenu.addAt(stopButton, 1);
       }
 
       if (node.getKey().includes("parameter/int")) {
