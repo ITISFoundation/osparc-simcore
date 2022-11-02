@@ -66,6 +66,7 @@ jobs:
       service-library: ${{ steps.filter.outputs.service-library }}
       settings-library: ${{ steps.filter.outputs.settings-library }}
       simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
+      agent: ${{ steps.filter.outputs.agent }}
       api: ${{ steps.filter.outputs.api }}
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
@@ -112,6 +113,9 @@ jobs:
               - 'packages/settings-library/**'
             simcore-sdk:
               - 'packages/**'
+            agent:
+              - 'packages/**'
+              - 'services/agent/**'
             api:
               - 'api/**'
             api-server:
