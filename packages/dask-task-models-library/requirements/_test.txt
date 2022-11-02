@@ -36,6 +36,8 @@ dill==0.3.5.1
     # via pylint
 docopt==0.6.2
     # via coveralls
+exceptiongroup==1.0.0
+    # via pytest
 faker==15.1.0
     # via -r requirements/_test.in
 frozenlist==1.3.1
@@ -74,15 +76,13 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-py==1.11.0
-    # via pytest
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp

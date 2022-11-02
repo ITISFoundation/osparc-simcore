@@ -81,7 +81,7 @@ partd==1.2.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-pillow==9.0.1
+pillow==9.3.0
     # via
     #   -c requirements/./_base.txt
     #   bokeh
