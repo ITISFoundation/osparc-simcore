@@ -31,6 +31,7 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 # cat services/docker-compose-build.yml | yq ".services | keys | sort"
 #
 SERVICES_NAMES_TO_BUILD := \
+	agent \
   api-server \
   autoscaling \
   catalog \
@@ -40,7 +41,6 @@ SERVICES_NAMES_TO_BUILD := \
   director-v2 \
   dynamic-sidecar \
   migration \
-	simcore-agent \
   service-integration \
   static-webserver \
   storage \

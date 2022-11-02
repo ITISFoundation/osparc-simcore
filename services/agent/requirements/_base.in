@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'services/simcore-agent/src'
+# Specifies third-party dependencies for 'services/agent/src'
 #
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt

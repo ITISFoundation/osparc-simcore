@@ -814,11 +814,11 @@ jobs:
           flags: unittests #optional
 
 
-  unit-test-simcore-agent:
+  unit-test-agent:
     needs: changes
-    if: ${{ needs.changes.outputs.simcore-agent == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] simcore-agent"
+    name: "[unit] agent"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -845,16 +845,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: "pip"
-          cache-dependency-path: "services/simcore-agent/requirements/ci.txt"
+          cache-dependency-path: "services/agent/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
-        run: ./ci/github/unit-testing/simcore-agent.bash install
+        run: ./ci/github/unit-testing/agent.bash install
       - name: typecheck
-        run: ./ci/github/unit-testing/simcore-agent.bash typecheck
+        run: ./ci/github/unit-testing/agent.bash typecheck
       - name: test
         if: always()
-        run: ./ci/github/unit-testing/simcore-agent.bash test
+        run: ./ci/github/unit-testing/agent.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional

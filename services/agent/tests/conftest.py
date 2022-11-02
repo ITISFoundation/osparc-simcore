@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import aiodocker
 import pytest
-import simcore_service_simcore_agent
+import simcore_service_agent
 from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
 from moto.server import ThreadedMotoServer
@@ -16,7 +16,7 @@ from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.r_clone import S3Provider
-from simcore_service_simcore_agent._settings import ApplicationSettings
+from simcore_service_agent._settings import ApplicationSettings
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,15 +28,15 @@ pytest_plugins = [
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # fixtures in pytest_simcore.environs
-    service_folder = osparc_simcore_root_dir / "services" / "simcore-agent"
+    service_folder = osparc_simcore_root_dir / "services" / "agent"
     assert service_folder.exists()
-    assert any(service_folder.glob("src/simcore_service_simcore_agent"))
+    assert any(service_folder.glob("src/simcore_service_agent"))
     return service_folder
 
 
 @pytest.fixture(scope="session")
 def installed_package_dir() -> Path:
-    dirpath = Path(simcore_service_simcore_agent.__file__).resolve().parent
+    dirpath = Path(simcore_service_agent.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
 

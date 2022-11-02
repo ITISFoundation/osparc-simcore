@@ -1,4 +1,4 @@
-# Shortcut to install 'services/simcore-agent' for production
+# Shortcut to install 'services/agent' for production
 #
 # - As ci.txt but w/o tests
 #

@@ -1,5 +1,5 @@
 #
-# DEVELOPMENT recipes for simcore-agent
+# DEVELOPMENT recipes for agent
 #
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile

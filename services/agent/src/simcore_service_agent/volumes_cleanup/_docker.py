@@ -5,7 +5,6 @@ from typing import AsyncIterator
 from aiodocker import Docker
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
-
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 
 

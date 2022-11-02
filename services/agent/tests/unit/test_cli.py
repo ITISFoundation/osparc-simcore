@@ -10,12 +10,9 @@ from threading import Timer
 import pytest
 from _pytest.logging import LogCaptureFixture
 from click.testing import Result
-from simcore_service_simcore_agent._app import Application
-from simcore_service_simcore_agent._meta import (
-    APP_FINISHED_BANNER_MSG,
-    APP_STARTED_BANNER_MSG,
-)
-from simcore_service_simcore_agent.cli import main
+from simcore_service_agent._app import Application
+from simcore_service_agent._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
+from simcore_service_agent.cli import main
 from typer.testing import CliRunner
 
 

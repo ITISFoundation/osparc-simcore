@@ -22,7 +22,7 @@ def read_reqs(reqs_path: Path) -> set[str]:
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-NAME = "simcore-service-simcore-agent"
+NAME = "simcore-service-agent"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
 AUTHORS = ("Andrei Neagu (GitHK)",)
 DESCRIPTION = 'Service for executing commands on docker nodes'
@@ -57,7 +57,7 @@ SETUP = dict(
     extras_require={"test": TEST_REQUIREMENTS},
     entry_points={
         "console_scripts": [
-            "simcore-service-simcore-agent = simcore_service_simcore_agent.cli:main",
+            "simcore-service-agent = simcore_service_agent.cli:main",
         ],
     },
 )

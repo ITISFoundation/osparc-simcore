@@ -10,7 +10,7 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd services/simcore-agent
+  pushd services/agent
   make install-ci
   popd
   .venv/bin/pip list --verbose
@@ -19,7 +19,7 @@ install() {
 codestyle-ci() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd services/simcore-agent
+  pushd services/agent
   make codestyle-ci
   popd
 }
@@ -27,13 +27,13 @@ codestyle-ci() {
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd services/simcore-agent
+  pushd services/agent
   make test-ci-unit
   popd
 }
 
 typecheck() {
-  pushd services/simcore-agent
+  pushd services/agent
   make mypy
   popd
 }

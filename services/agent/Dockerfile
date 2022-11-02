@@ -3,9 +3,9 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 #
 #  USAGE:
-#     cd sercices/simcore-agent
-#     docker build -f Dockerfile -t simcore-agent:prod --target production ../../
-#     docker run simcore-agent:prod
+#     cd sercices/agent
+#     docker build -f Dockerfile -t agent:prod --target production ../../
+#     docker run agent:prod
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
@@ -77,7 +77,7 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY  --chown=scu:scu services/simcore-agent/requirements/_base.txt .
+COPY  --chown=scu:scu services/agent/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 # rclone installation
@@ -89,16 +89,16 @@ RUN ./install_rclone.bash
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
-#    + services/simcore-agent [scu:scu] WORKDIR
+#    + services/agent [scu:scu] WORKDIR
 #
 FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
 COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/simcore-agent /build/services/simcore-agent
+COPY --chown=scu:scu services/agent /build/services/agent
 
-WORKDIR /build/services/simcore-agent
+WORKDIR /build/services/agent
 
 RUN pip3 --no-cache-dir install -r requirements/prod.txt \
   && pip3 --no-cache-dir list -v
@@ -109,7 +109,7 @@ RUN pip3 --no-cache-dir install -r requirements/prod.txt \
 # Runs as scu (non-root user)
 #
 #  + /home/scu     $HOME = WORKDIR
-#    + services/simcore-agent [scu:scu]
+#    + services/agent [scu:scu]
 #
 FROM base as production
 
@@ -124,18 +124,18 @@ WORKDIR /home/scu
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=scu:scu services/simcore-agent/docker services/simcore-agent/docker
-RUN chmod +x services/simcore-agent/docker/*.sh
+COPY --chown=scu:scu services/agent/docker services/agent/docker
+RUN chmod +x services/agent/docker/*.sh
 
 
 HEALTHCHECK --interval=30s \
   --timeout=20s \
   --start-period=30s \
   --retries=3 \
-  CMD ["/bin/sh", "services/simcore-agent/docker/healthcheck.sh"]
+  CMD ["/bin/sh", "services/agent/docker/healthcheck.sh"]
 
-ENTRYPOINT [ "/bin/sh", "services/simcore-agent/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/simcore-agent/docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/agent/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -149,11 +149,11 @@ CMD ["/bin/sh", "services/simcore-agent/docker/boot.sh"]
 FROM build as development
 
 ENV SC_BUILD_TARGET=development \
-  SC_DEVEL_MOUNT=/devel/services/simcore-agent
+  SC_DEVEL_MOUNT=/devel/services/agent
 
 WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
 
-ENTRYPOINT ["/bin/sh", "services/simcore-agent/docker/entrypoint.sh"]
-CMD ["/bin/sh", "services/simcore-agent/docker/boot.sh"]
+ENTRYPOINT ["/bin/sh", "services/agent/docker/entrypoint.sh"]
+CMD ["/bin/sh", "services/agent/docker/boot.sh"]

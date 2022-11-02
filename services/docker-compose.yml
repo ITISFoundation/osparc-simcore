@@ -272,8 +272,8 @@ services:
       - default
       - interactive_services_subnet
 
-  simcore-agent:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-agent:${DOCKER_IMAGE_TAG:-latest}
+  agent:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     deploy:

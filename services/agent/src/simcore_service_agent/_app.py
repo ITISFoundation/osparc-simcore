@@ -1,8 +1,8 @@
 import asyncio
-from collections import deque
 import logging
 import signal
 import traceback
+from collections import deque
 from contextlib import suppress
 from typing import Any, Awaitable, Callable, Coroutine, Final, Optional
 

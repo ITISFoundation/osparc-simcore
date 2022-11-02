@@ -113,10 +113,10 @@ services:
       - SC_BOOT_MODE=debug-ptvsd
       - STORAGE_LOGLEVEL=DEBUG
 
-  simcore-agent:
+  agent:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
       - LOGLEVEL=DEBUG
     volumes:
-      - ./simcore-agent:/devel/services/simcore-agent
+      - ./agent:/devel/services/agent
       - ../packages:/devel/packages

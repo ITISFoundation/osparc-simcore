@@ -2,10 +2,7 @@
 # pylint: disable=unused-argument
 
 from aiodocker.volumes import DockerVolume
-from simcore_service_simcore_agent.volumes_cleanup._docker import (
-    docker_client,
-    is_volume_used,
-)
+from simcore_service_agent.volumes_cleanup._docker import docker_client, is_volume_used
 
 
 async def test_is_volume_mounted_true(used_volume: DockerVolume):

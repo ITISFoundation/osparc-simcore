@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'services/simcore-agent'
+# Shortcut to install all packages for the contigous integration (CI) of 'services/agent'
 #
 # - As ci.txt but w/ tests
 #

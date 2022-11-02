@@ -23,7 +23,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/simcore-agent || exit 1
+  cd services/agent || exit 1
   pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
@@ -36,7 +36,7 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-    simcore-service-simcore-agent run
+    simcore-service-agent run
 else
-  exec simcore-service-simcore-agent run
+  exec simcore-service-agent run
 fi

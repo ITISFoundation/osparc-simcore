@@ -7,9 +7,9 @@ from typing import AsyncIterator, Final
 
 import pytest
 from pydantic import PositiveFloat
-from simcore_service_simcore_agent._app import Application
-from simcore_service_simcore_agent.info._consumer import _async_request_info
-from simcore_service_simcore_agent.info._provider import info_exposer
+from simcore_service_agent._app import Application
+from simcore_service_agent.info._consumer import _async_request_info
+from simcore_service_agent.info._provider import info_exposer
 
 WAIF_FOR_SERVER_TO_START: Final[PositiveFloat] = 0.1
 
