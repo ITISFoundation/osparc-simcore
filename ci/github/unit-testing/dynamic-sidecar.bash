@@ -16,7 +16,7 @@ install() {
   .venv/bin/pip list --verbose
 }
 
-codestyle() {
+codestyle-ci() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/dynamic-sidecar
