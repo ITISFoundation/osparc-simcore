@@ -1017,6 +1017,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
+      if (osparc.utils.Utils.isProduct("s4l-light")) {
+        iframe.setShowZoomButton(false);
+      }
       iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
     },
