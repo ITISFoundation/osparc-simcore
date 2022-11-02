@@ -222,6 +222,12 @@ paths:
   /projects/{project_id}/nodes/{node_id}:retrieve:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1retrieve"
 
+  /projects/{project_id}/nodes/{node_id}:start:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1start"
+
+  /projects/{project_id}/nodes/{node_id}:stop:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1stop"
+
   /projects/{project_id}/nodes/{node_id}:restart:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1restart"
 

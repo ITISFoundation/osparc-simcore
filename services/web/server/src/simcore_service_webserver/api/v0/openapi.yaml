@@ -2301,6 +2301,12 @@ paths:
                               example:
                                 - 0
                                 - 2
+                            instructions:
+                              type: string
+                              description: Instructions about what to do in this step
+                              example:
+                                - 'This is a **sleeper**'
+                                - 'Please, select the config file defined [in this link](asdf)'
                       additionalProperties: true
                     currentNodeId:
                       type: string
@@ -2471,12 +2477,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: $response.body#/data/task_id
+                task_id: '$response.body#/data/task_id'
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: $response.body#/data/task_id
+                task_id: '$response.body#/data/task_id'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:
@@ -2957,6 +2963,50 @@ paths:
                       size_bytes:
                         type: integer
                         description: amount of transferred bytes
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/{node_id}:start':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - project
+      description: Starts a project dynamic service
+      operationId: start_node
+      responses:
+        '204':
+          description: started service (needs to be long running though)
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/nodes/{node_id}:stop':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - project
+      description: Stops a project node
+      operationId: stop_node
+      responses:
+        '204':
+          description: stopped service
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_id}/nodes/{node_id}:restart':

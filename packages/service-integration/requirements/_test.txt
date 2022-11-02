@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.12.11
+astroid==2.12.12
     # via pylint
 attrs==22.1.0
     # via
@@ -29,6 +29,10 @@ dill==0.3.5.1
     # via pylint
 docopt==0.6.2
     # via coveralls
+exceptiongroup==1.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 idna==3.4
     # via
     #   -c requirements/_base.txt
@@ -54,17 +58,13 @@ pluggy==1.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-py==1.11.0
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
-pylint==2.15.4
+pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

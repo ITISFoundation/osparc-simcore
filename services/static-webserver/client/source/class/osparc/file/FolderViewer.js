@@ -30,9 +30,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     this.setPaddingLeft(10);
 
     const folderUpBtn = this.getChildControl("folder-up");
-    folderUpBtn.addListener("execute", () => {
-      this.fireDataEvent("folderUp", this.getFolder());
-    }, this);
+    folderUpBtn.addListener("execute", () => this.fireDataEvent("folderUp", this.getFolder()), this);
     this.getChildControl("folder-path");
     this.getChildControl("view-options-icons");
     this.getChildControl("view-options-list");
@@ -177,9 +175,9 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           control.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
           control.setColumnWidth(this.self().T_POS.TYPE, 30);
-          control.setColumnWidth(this.self().T_POS.NAME, 400);
-          control.setColumnWidth(this.self().T_POS.DATE, 150);
-          control.setColumnWidth(this.self().T_POS.SIZE, 50);
+          control.setColumnWidth(this.self().T_POS.NAME, 360);
+          control.setColumnWidth(this.self().T_POS.DATE, 170);
+          control.setColumnWidth(this.self().T_POS.SIZE, 70);
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
           });
@@ -228,8 +226,8 @@ qx.Class.define("osparc.file.FolderViewer", {
           const row = [];
           row.push(entry.getIcon ? entry.getIcon() : this.__getIcon(entry));
           row.push(entry.getLabel());
-          row.push(entry.getLastModified ? entry.getLastModified() : "");
-          row.push(entry.getSize ? entry.getSize() : "");
+          row.push(entry.getLastModified ? osparc.utils.Utils.formatDateAndTime(new Date(entry.getLastModified())) : "");
+          row.push(entry.getSize ? osparc.utils.Utils.bytesToSize(entry.getSize()) : "");
           if (entry.getItemId) {
             row.push(entry.getItemId());
           }

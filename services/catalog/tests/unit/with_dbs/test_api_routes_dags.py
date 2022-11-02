@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -51,7 +51,7 @@ def test_standard_operations_on_resource(
     director_mockup: MockRouter,
     app: FastAPI,
     client: TestClient,
-    fake_data_dag_in: Dict[str, Any],
+    fake_data_dag_in: dict[str, Any],
 ):
 
     response = client.post("/v0/dags", json=fake_data_dag_in)

@@ -41,7 +41,7 @@ qx.Class.define("osparc.file.FileDrop", {
       this.tr("Upload file"),
       this.tr("Drop file from explorer"),
       this.tr("Drop file from tree"),
-      this.tr("Provide Download Link")
+      this.tr("Provide Link")
     ];
     for (let i=0; i<options.length; i++) {
       msg += options[i];

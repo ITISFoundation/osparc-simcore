@@ -27,8 +27,12 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       const btns = [];
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const currentNodeId = study.getUi().getCurrentNodeId();
+      const slideshow = study.getUi().getSlideshow();
       if (nodesIds.length) {
         nodesIds.forEach(nodeId => {
+          if (slideshow.getPosition(nodeId) === -1) {
+            return;
+          }
           const btn = this.__createBtn(nodeId);
           if (nodeId === currentNodeId) {
             btn.setValue(true);

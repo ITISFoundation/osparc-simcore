@@ -297,6 +297,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__prevNextButtons.setNode(node);
 
         if (view) {
+          if (this.__nodeView && this.__nodeView.getInstructionsWindow()) {
+            this.__nodeView.getInstructionsWindow().close();
+          }
           if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
             this.__mainView.remove(this.__nodeView);
           }

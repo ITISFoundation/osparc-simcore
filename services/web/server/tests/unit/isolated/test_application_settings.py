@@ -229,10 +229,10 @@ def test_settings_to_client_statics_plugins(
     monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
     disable_plugins.add("WEBSERVER_VERSION_CONTROL")
 
-    settings = ApplicationSettings()
+    settings = ApplicationSettings.create_from_envs()
     statics = settings.to_client_statics()
 
-    print(json.dumps(statics, indent=1))
+    print("STATICS:\n", json.dumps(statics, indent=1))
 
     assert set(statics["pluginsDisabled"]) == disable_plugins
 

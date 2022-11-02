@@ -108,6 +108,7 @@ def init_app(settings: Optional[ApplicationSettings] = None) -> FastAPI:
     api_router = create_router(settings)
     app.include_router(api_router, prefix=f"/{API_VTAG}")
 
+    # NOTE: cleanup all OpenAPIs https://github.com/ITISFoundation/osparc-simcore/issues/3487
     use_route_names_as_operation_ids(app)
     config_all_loggers()
     return app

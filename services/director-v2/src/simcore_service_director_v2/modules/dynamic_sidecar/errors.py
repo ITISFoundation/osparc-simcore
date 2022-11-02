@@ -23,7 +23,14 @@ class DynamicSidecarNotFoundError(DirectorException):
         super().__init__(f"node {node_uuid} not found")
 
 
-class EntrypointContainerNotFoundError(DirectorException):
+class DockerServiceNotFoundError(DirectorException):
+    """Raised when an expected docker service is not found"""
+
+    def __init__(self, service_id: str):
+        super().__init__(f"docker service with {service_id=} not found")
+
+
+class EntrypointContainerNotFoundError(DynamicSidecarError):
     """Raised while the entrypoint container was nto yet started"""
 
 

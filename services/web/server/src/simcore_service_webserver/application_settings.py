@@ -198,9 +198,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # List of plugins under-development (keep up-to-date)
         # TODO: consider mark as dev-feature in field extras of Config attr.
         # Then they can be automtically advertised
+        "WEBSERVER_CLUSTERS",
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
-        "WEBSERVER_CLUSTERS",
         pre=True,
         always=True,
     )
@@ -271,9 +271,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # SEE https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator
         #
         config_fields = {
-            "SC_VCS_URL": "vcs_url",
-            "SC_VCS_REF": "vcs_ref",
             "SC_BUILD_DATE": "build_date",
+            "SC_VCS_REF": "vcs_ref",
+            "SC_VCS_URL": "vcs_url",
             "SWARM_STACK_NAME": "stack_name",
         }
         config_alias_generator = lambda s: s.lower()
@@ -299,11 +299,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         data.update(
             self._export_by_alias(
                 include={
-                    "APP_NAME",
                     "API_VERSION",
-                    "SC_VCS_URL",
-                    "SC_VCS_REF",
+                    "APP_NAME",
                     "SC_BUILD_DATE",
+                    "SC_VCS_REF",
+                    "SC_VCS_URL",
                 },
                 exclude_none=True,
             )
@@ -313,12 +313,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def to_client_statics(self) -> dict[str, Any]:
         data = self._export_by_alias(
             include={
-                "APP_NAME",
-                "API_VERSION",
-                "SC_VCS_URL",
-                "SC_VCS_REF",
-                "SC_BUILD_DATE",
-                "SWARM_STACK_NAME",
+                "API_VERSION": True,
+                "APP_NAME": True,
+                "SC_BUILD_DATE": True,
+                "SC_VCS_REF": True,
+                "SC_VCS_URL": True,
+                "SWARM_STACK_NAME": True,
+                "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
             },
             exclude_none=True,
         )

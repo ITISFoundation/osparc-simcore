@@ -275,7 +275,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW};\
-printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15762" admin adminadmin;\
+printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Storage S3 Filestash" "http://$(get_my_ip).nip.io:9002" 12345678 12345678;\
 printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
@@ -455,14 +455,11 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*/client/*" \
 											-not -path "*egg*" \
 											-not -path "*migration*" \
-											-not -path "*datcore.py" \
 											-not -path "*sandbox*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
 											-not -path "*build*" \
-											-not -path "*datcore.py" \
-											-not -path "*/director/*" \
-											-not -path "*web/server*"))"
+											-not -path "*/director/*"))"
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
 

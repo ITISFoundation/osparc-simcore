@@ -1,12 +1,12 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import orjson
 from models_library.services import (
     KEY_RE,
     VERSION_RE,
-    PropertyName,
     ServiceInput,
     ServiceOutput,
+    ServicePortKey,
 )
 from models_library.utils.change_case import snake_to_camel
 from pint import UnitRegistry
@@ -17,8 +17,8 @@ from .catalog_units import UnitHtmlFormat, get_html_formatted_unit
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
-ServiceInputKey = PropertyName
-ServiceOutputKey = PropertyName
+ServiceInputKey = ServicePortKey
+ServiceOutputKey = ServicePortKey
 
 
 def json_dumps(v, *, default=None) -> str:
@@ -95,7 +95,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     @classmethod
     def from_catalog_service_api_model(
         cls,
-        service: Dict[str, Any],
+        service: dict[str, Any],
         input_key: ServiceInputKey,
         ureg: Optional[UnitRegistry] = None,
     ):
@@ -136,7 +136,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     @classmethod
     def from_catalog_service_api_model(
         cls,
-        service: Dict[str, Any],
+        service: dict[str, Any],
         output_key: ServiceOutputKey,
         ureg: Optional[UnitRegistry] = None,
     ):
@@ -166,7 +166,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
 
 
 def replace_service_input_outputs(
-    service: Dict[str, Any],
+    service: dict[str, Any],
     *,
     unit_registry: Optional[UnitRegistry] = None,
     **export_options,

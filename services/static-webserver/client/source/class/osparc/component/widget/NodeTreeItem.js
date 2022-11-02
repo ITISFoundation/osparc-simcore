@@ -138,6 +138,21 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();
+
+        const startButton = this.getChildControl("start-button");
+        node.getStatus().bind("interactive", startButton, "visibility", {
+          converter: state => (state === "ready") ? "excluded" : "visible"
+        });
+        node.getStatus().bind("interactive", startButton, "enabled", {
+          converter: state => state === "idle"
+        });
+        startButton.addListener("execute", () => node.requestStartNode());
+
+        const stopButton = this.getChildControl("stop-button");
+        node.getStatus().bind("interactive", stopButton, "visibility", {
+          converter: state => (state === "ready") ? "visible" : "excluded"
+        });
+        stopButton.addListener("execute", () => node.requestStopNode());
       }
 
       const markerBtn = this.getChildControl("marker-button");
@@ -195,6 +210,26 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           });
           const part = this.getChildControl("buttons");
           part.add(control);
+          break;
+        }
+        case "start-button": {
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Start"),
+            icon: "@FontAwesome5Solid/play/10",
+            visibility: "excluded"
+          });
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
+          break;
+        }
+        case "stop-button": {
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Stop"),
+            icon: "@FontAwesome5Solid/stop/10",
+            visibility: "excluded"
+          });
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
           break;
         }
         case "rename-button": {
@@ -295,6 +330,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       });
 
       this.getChildControl("fullscreen-button");
+      this.getChildControl("start-button");
+      this.getChildControl("stop-button");
       this.getChildControl("rename-button");
       this.getChildControl("marker-button");
       this.getChildControl("info-button");
