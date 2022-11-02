@@ -53,7 +53,7 @@
     {
       "class": "osparc.Application",
       "theme": "osparc.theme.zmt.ThemeDark",
-      "name": "s4l-light",
+      "name": "s4llight",
       "title": "Sim4Life - ZMT",
       "include": [
         "iconfont.material.Load",
@@ -61,7 +61,7 @@
         "osparc.theme.zmt.ThemeLight"
       ],
       "environment": {
-        "product.name": "s4l-light"
+        "product.name": "s4llight"
       },
       "bootPath": "source/boot"
     },

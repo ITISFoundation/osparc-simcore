@@ -96,18 +96,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           label: this.tr("TEMPLATES"),
           buildLayout: this.__createTemplateBrowser
         };
-        if (osparc.utils.Utils.isProduct("s4l-light")) {
+        if (osparc.utils.Utils.isProduct("s4llight")) {
           templatesTab.label = this.tr("TUTORIALS");
         }
         tabs.push();
       }
-      if (!osparc.utils.Utils.isProduct("s4l-light") && permissions.canDo("dashboard.services.read")) {
+      if (!osparc.utils.Utils.isProduct("s4llight") && permissions.canDo("dashboard.services.read")) {
         tabs.push({
           label: this.tr("SERVICES"),
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (!osparc.utils.Utils.isProduct("s4l-light")) {
+      if (!osparc.utils.Utils.isProduct("s4llight")) {
         tabs.push({
           label: this.tr("DATA"),
           buildLayout: this.__createDataBrowser}

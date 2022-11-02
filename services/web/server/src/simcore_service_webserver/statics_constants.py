@@ -1,7 +1,7 @@
 # these are the apps built right now by static-webserver/client
 
-FRONTEND_APPS_AVAILABLE = frozenset({"osparc", "tis", "s4l", "s4l-light"})
-FRONTEND_APP_DEFAULT = "osparc"
+FRONTEND_APPS_AVAILABLE = frozenset({"osparc", "tis", "s4l", "s4llight"})
+FRONTEND_APP_DEFAULT = "s4llight"
 
 assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE  # nosec
 
