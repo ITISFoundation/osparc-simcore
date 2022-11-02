@@ -846,6 +846,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "services/agent/requirements/ci.txt"
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
