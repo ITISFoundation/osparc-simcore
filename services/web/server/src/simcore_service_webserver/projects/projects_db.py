@@ -175,6 +175,17 @@ class ProjectDBAPI:
         if self._engine is None:
             raise ValueError("Database subsystem was not initialized")
 
+    @classmethod
+    def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
+        return app[APP_PROJECT_DBAPI]
+
+    @classmethod
+    def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
+        if app.get(APP_PROJECT_DBAPI) is None:
+            db = ProjectDBAPI(app)
+            app[APP_PROJECT_DBAPI] = db
+        return app[APP_PROJECT_DBAPI]
+
     @property
     def engine(self) -> Engine:
         # lazy evaluation
@@ -946,7 +957,4 @@ class ProjectDBAPI:
 
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
-    if app.get(APP_PROJECT_DBAPI) is None:
-        db = ProjectDBAPI(app)
-        app[APP_PROJECT_DBAPI] = db
-    return app[APP_PROJECT_DBAPI]
+    return ProjectDBAPI.set_once_in_app_context(app)
