@@ -4,15 +4,16 @@ These functions are analogous to `pydantic.tools.parse_obj_as(model_class, obj)`
 """
 
 from contextlib import contextmanager
-from typing import Iterator, TypeVar
+from typing import Iterator, TypeVar, Union
 
 from aiohttp import web
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
+ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list[BaseModel]])
 
 
 @contextmanager
@@ -126,11 +127,11 @@ def parse_request_query_parameters_as(
 
 
 async def parse_request_body_as(
-    model_schema: type[ModelType],
+    model_schema: type[ModelOrListType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
-) -> ModelType:
+) -> ModelOrListType:
     """Parses and validates request body against schema
 
     :raises HTTPBadRequest
@@ -141,4 +142,6 @@ async def parse_request_body_as(
         use_error_v1=use_enveloped_error_v1,
     ):
         body = await request.json()
-        return model_schema.parse_obj(body)
+        if isinstance(model_schema, BaseModel):
+            return model_schema.parse(body)
+        return parse_obj_as(model_schema, body)
