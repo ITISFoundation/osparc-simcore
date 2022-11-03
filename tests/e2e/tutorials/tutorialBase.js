@@ -19,6 +19,8 @@ class TutorialBase {
     this.__page = null;
     this.__responsesQueue = null;
 
+    this.__services = null;
+
     this.__interval = null;
 
     this.__failed = false;
@@ -169,6 +171,9 @@ class TutorialBase {
         const resp = await this.__responsesQueue.waitUntilResponse(resource.request);
         const respData = resp["data"];
         console.log(resource.name + " received:", respData.length);
+        if (resource.name === "Services") {
+          this.__services = respData;
+        }
         if (resource.listThem) {
           respData.forEach(item => {
             console.log(" - ", item.name);
@@ -180,6 +185,10 @@ class TutorialBase {
         throw (err);
       }
     }
+  }
+
+  getReceivedServices() {
+    return this.__services;
   }
 
   async checkFirstStudyId(studyId) {
@@ -224,6 +233,28 @@ class TutorialBase {
     }
     await this.waitFor(2000);
     await this.takeScreenshot("startNewPlan_after");
+    return resp;
+  }
+
+  async startSim4LifeLight() {
+    await this.takeScreenshot("startSim4LifeLight_before");
+    this.__responsesQueue.addResponseListener("projects?from_study=");
+    this.__responsesQueue.addResponseListener(":open");
+    let resp = null;
+    try {
+      await this.waitFor(2000);
+      await auto.dashboardStartSim4LifeLight(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(`Sim4Life Light could not be started:\n`, err);
+      throw (err);
+    }
+    await this.waitFor(2000);
+    await this.takeScreenshot("startSim4LifeLight_after");
     return resp;
   }
 

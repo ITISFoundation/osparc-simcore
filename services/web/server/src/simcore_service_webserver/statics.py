@@ -26,8 +26,8 @@ def setup_statics(app: web.Application) -> None:
     settings: StaticWebserverModuleSettings = get_plugin_settings(app)
     assert settings  # nosec
 
-    # serves information composed by making 3 http requests (once for each product)
-    # to the index.html in each of the 3 product directories /osparc, /tis and /s4l
+    # serves information composed by making 4 http requests (once for each product)
+    # to the index.html in each of the 4 product directories /osparc, /s4l, /s4llight and /tis
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
     # statics.json is computed here and contains information used
     # by the frontend to properly render the client
