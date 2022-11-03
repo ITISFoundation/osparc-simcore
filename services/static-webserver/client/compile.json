@@ -53,6 +53,21 @@
     {
       "class": "osparc.Application",
       "theme": "osparc.theme.zmt.ThemeDark",
+      "name": "s4llight",
+      "title": "Sim4Life Light - ZMT",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.zmt.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "s4llight"
+      },
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.zmt.ThemeDark",
       "name": "tis",
       "title": "TI Plan - IT'IS",
       "include": [
