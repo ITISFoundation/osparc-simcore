@@ -201,10 +201,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(mode, services, serviceKey) {
+    __addNewStudyFromServiceButtons: function(mode, services, serviceKey, newButtonInfo) {
+      // Make sure we have access to that service
       const versions = osparc.utils.Services.getVersions(services, serviceKey);
-      if (versions.length) {
-        const newButtonInfo = this.self().EXPECTED_S4L_SERVICE_KEYS[serviceKey];
+      if (versions.length && newButtonInfo) {
         const title = newButtonInfo.title;
         const desc = newButtonInfo.decription;
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
@@ -223,8 +223,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       store.getServicesOnly(false)
         .then(services => {
           // add new plus buttons if key services exists
-          Object.keys(this.self().EXPECTED_S4L_SERVICE_KEYS).forEach(serviceKey => {
-            this.__addNewStudyFromServiceButtons(mode, services, serviceKey);
+          const newButtonsInfo = this.self().EXPECTED_S4L_SERVICE_KEYS;
+          Object.keys(newButtonsInfo).forEach(serviceKey => {
+            this.__addNewStudyFromServiceButtons(mode, services, serviceKey, newButtonsInfo[serviceKey]);
           });
         });
     },
@@ -234,8 +235,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       store.getServicesOnly(false)
         .then(services => {
           // add new plus buttons if key services exists
-          Object.keys(this.self().EXPECTED_S4L_LIGHT_SERVICE_KEYS).forEach(serviceKey => {
-            this.__addNewStudyFromServiceButtons(mode, services, serviceKey);
+          const newButtonsInfo = this.self().EXPECTED_S4L_LIGHT_SERVICE_KEYS;
+          Object.keys(newButtonsInfo).forEach(serviceKey => {
+            this.__addNewStudyFromServiceButtons(mode, services, serviceKey, newButtonsInfo[serviceKey]);
           });
         });
     },

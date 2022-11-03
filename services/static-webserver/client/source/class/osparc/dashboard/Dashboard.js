@@ -88,11 +88,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createMainViewLayout: function() {
       const permissions = osparc.data.Permissions.getInstance();
       const tabs = [{
+        id: "studiesTabBtn",
         label: osparc.utils.Utils.isProduct("s4llight") ? this.tr("PROJECTS") : this.tr("STUDIES"),
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         const templatesTab = {
+          id: "templatesTabBtn",
           label: osparc.utils.Utils.isProduct("s4llight") ? this.tr("TUTORIALS") : this.tr("TEMPLATES"),
           buildLayout: this.__createTemplateBrowser
         };
@@ -100,17 +102,19 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }
       if (!osparc.utils.Utils.isProduct("s4llight") && permissions.canDo("dashboard.services.read")) {
         tabs.push({
+          id: "servicesTabBtn",
           label: this.tr("SERVICES"),
           buildLayout: this.__createServiceBrowser
         });
       }
       if (!osparc.utils.Utils.isProduct("s4llight")) {
         tabs.push({
+          id: "dataTabBtn",
           label: this.tr("DATA"),
           buildLayout: this.__createDataBrowser}
         );
       }
-      tabs.forEach(({label, buildLayout}) => {
+      tabs.forEach(({id, label, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label).set({
           appearance: "dashboard-page"
         });
@@ -119,7 +123,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           font: "text-16",
           minWidth: 70
         });
-        const id = label.getMessageId().toLowerCase() + "TabBtn";
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
