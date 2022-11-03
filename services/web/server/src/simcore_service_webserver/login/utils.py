@@ -201,6 +201,7 @@ async def send_mail(app: web.Application, msg: MIMEText):
         elif cfg.SMTP_PROTOCOL == EmailProtocol.TLS:
             await smtp.connect(use_tls=True, port=cfg.SMTP_PORT)
         elif cfg.SMTP_PROTOCOL == EmailProtocol.UNENCRYPTED:
+            await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
             log.debug("Unencrypted connection attempt to mailserver ...")
         #
         if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
