@@ -23,7 +23,12 @@ async function runTutorial() {
 
     // make sure only sim4life-dy is available
     const services = tutorial.getReceivedServices();
-    console.log("services", services);
+    if (services.length && services.every(service => service.key === "simcore/services/dynamic/sim4life-dy")) {
+      console.log("Expected services received");
+    }
+    else {
+      throw "Check exposed services";
+    }
 
     // start Sim4Life Light
     const studyData = await tutorial.startSim4LifeLight();
