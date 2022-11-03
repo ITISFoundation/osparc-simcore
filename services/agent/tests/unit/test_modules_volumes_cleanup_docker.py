@@ -1,6 +1,3 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-
 from aiodocker.volumes import DockerVolume
 from simcore_service_agent.modules.volumes_cleanup._docker import (
     docker_client,

@@ -48,5 +48,5 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @validator("LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value) -> str:
-        return cls.validate_log_level(value)
+    def valid_log_level(cls, value) -> LogLevel:
+        return LogLevel(cls.validate_log_level(value))
