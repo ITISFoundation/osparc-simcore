@@ -120,7 +120,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "ready":
           return qx.locale.Manager.tr("Ready");
         case "failed":
-          return qx.locale.Manager.tr("Error");
+          return qx.locale.Manager.tr("Failed");
         case "deprecated":
           return qx.locale.Manager.tr("Deprecated");
         case "starting":

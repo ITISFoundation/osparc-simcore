@@ -991,9 +991,26 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initLoadingPage: function() {
-      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), true);
+      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llight");
+      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
-      this.getStatus().addListener("changeInteractive", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
+      this.getStatus().addListener("changeInteractive", () => {
+        loadingPage.setHeader(this.__getLoadingPageHeader());
+        const status = this.getStatus().getInteractive();
+        if (["idle", "failed"].includes(status)) {
+          const startButton = new qx.ui.form.Button().set({
+            label: this.tr("Start"),
+            icon: "@FontAwesome5Solid/play/18",
+            font: "text-18",
+            allowGrowX: false,
+            height: 32
+          });
+          startButton.addListener("execute", () => this.requestStartNode());
+          loadingPage.addWidgetToMessages(startButton);
+        } else {
+          loadingPage.setMessages([]);
+        }
+      }, this);
       this.setLoadingPage(loadingPage);
     },
 
@@ -1001,6 +1018,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
+      if (osparc.utils.Utils.isProduct("s4llight")) {
+        iframe.setShowZoomButton(false);
+      }
       iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
     },
@@ -1008,8 +1028,12 @@ qx.Class.define("osparc.data.model.Node", {
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
         const loadIframe = () => {
-          this.getIFrame().resetSource();
-          this.getIFrame().setSource(this.getServiceUrl());
+          const status = this.getStatus().getInteractive();
+          // it might have been stopped
+          if (status === "ready") {
+            this.getIFrame().resetSource();
+            this.getIFrame().setSource(this.getServiceUrl());
+          }
         };
 
         // restart button pushed
@@ -1346,6 +1370,23 @@ qx.Class.define("osparc.data.model.Node", {
       }, this, waitFor);
 
       this.callRetrieveInputs();
+    },
+
+    attachHandlersToStartButton: function(startButton) {
+      this.getStatus().bind("interactive", startButton, "visibility", {
+        converter: state => (state === "ready") ? "excluded" : "visible"
+      });
+      this.getStatus().bind("interactive", startButton, "enabled", {
+        converter: state => ["idle", "failed"].includes(state)
+      });
+      startButton.addListener("execute", () => this.requestStartNode());
+    },
+
+    attachHandlersToStopButton: function(stopButton) {
+      this.getStatus().bind("interactive", stopButton, "visibility", {
+        converter: state => (state === "ready") ? "visible" : "excluded"
+      });
+      stopButton.addListener("execute", () => this.requestStopNode());
     },
 
     __removeInnerNodes: function() {
