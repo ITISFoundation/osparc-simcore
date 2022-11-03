@@ -62,9 +62,6 @@ class TaskMonitor:
 
         self._to_start: dict[str, _TaskData] = {}
 
-    def list_running(self) -> str:
-        return "\n- ".join(["Running tasks:"] + list(self._to_start.keys()))
-
     def register_job(
         self,
         target: Callable,
@@ -96,14 +93,16 @@ class TaskMonitor:
                 await task
 
         tasks_to_wait: deque[Awaitable] = deque()
-        for task in self._tasks:
+        for task in set(self._tasks):
             logger.info("Cancel and stop task '%s'", task.get_name())
 
             task.cancel()
             tasks_to_wait.append(_wait_for_task(task))
+            self._tasks.remove(task)
 
         await asyncio.gather(*tasks_to_wait)
         self._started = False
+        self._to_start = {}
 
 
 def setup(app: FastAPI) -> None:
