@@ -4,7 +4,7 @@
 # pylint: disable=no-member
 
 import asyncio
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest.mock import call
 
 import aiodocker
@@ -36,7 +36,7 @@ def service_version() -> str:
 
 
 @pytest.fixture()
-def command() -> List[str]:
+def command() -> list[str]:
     return ["sh", "-c", "some_app"]
 
 
@@ -53,10 +53,10 @@ async def test_create_container_config(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     boot_mode: BootMode,
-    task_max_resources: Dict[str, Any],
+    task_max_resources: dict[str, Any],
 ):
 
     container_config = await create_container_config(
@@ -89,6 +89,7 @@ async def test_create_container_config(
                 ],
                 "Init": True,
                 "Memory": task_max_resources.get("RAM", 1024**3),
+                "MemorySwap": task_max_resources.get("RAM", 1024**3),
                 "NanoCPUs": task_max_resources.get("CPU", 1) * 1e9,
             },
         }
@@ -188,7 +189,7 @@ async def test_create_container_config(
         ),
     ],
 )
-async def test_parse_line(log_line: str, expected_parsing: Tuple[LogType, str, str]):
+async def test_parse_line(log_line: str, expected_parsing: tuple[LogType, str, str]):
     assert await parse_line(log_line) == expected_parsing
 
 
@@ -204,7 +205,7 @@ async def test_managed_container_always_removes_container(
     docker_registry: str,
     service_key: str,
     service_version: str,
-    command: List[str],
+    command: list[str],
     comp_volume_mount_point: str,
     mocker: MockerFixture,
     exception_type: Exception,
