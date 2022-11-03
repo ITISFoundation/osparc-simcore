@@ -13,6 +13,7 @@ __version__: str = _current_distribution.version
 
 APP_NAME: Final[str] = _current_distribution.project_name
 VERSION: Final[Version] = Version(__version__)
+API_VTAG: str = f"v{VERSION.major}"
 
 
 def get_summary() -> str:
@@ -36,9 +37,9 @@ APP_STARTED_BANNER_MSG = rf"""
 \__ \ | | | | | | (_| (_) | | |  __/_____| (_| | (_| |  __/ | | | |_
 |___/_|_| |_| |_|\___\___/|_|  \___|      \__,_|\__, |\___|_| |_|\__|
                                                 |___/
-    v{__version__}"""
+    {API_VTAG}"""
 
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format(
-    f"🎉 App {APP_NAME}=={__version__} shutdown completed 🎉"
+    f"🎉 App {APP_NAME}=={VERSION} shutdown completed 🎉"
 )
