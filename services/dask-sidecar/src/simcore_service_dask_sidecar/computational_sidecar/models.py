@@ -27,8 +27,21 @@ class ContainerHostConfig(BaseModel):
 
     @validator("memory_swap", pre=True, always=True)
     @classmethod
-    def ensure_memory_swap_is_same_as_memory_when_empty(cls, v, values):
+    def ensure_no_memory_swap_means_no_swap(cls, v, values):
         if v is None:
+            # if not set it will be the same value as memory to ensure swap is disabled
+            return values["memory"]
+        return v
+
+    @validator("memory_swap")
+    @classmethod
+    def ensure_memory_swap_is_either_disabled_or_greater_or_equal_to_memory(
+        cls, v, values
+    ):
+        if v <= -1:
+            # if not set it will be the same value as memory to ensure swap is disabled
+            return -1
+        if v < values["memory"]:
             return values["memory"]
         return v
 
