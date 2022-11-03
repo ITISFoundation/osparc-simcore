@@ -85,11 +85,7 @@ async def get_project_total_size_simcore_s3(
             for file_metadata in list_of_files_enveloped.data:
                 project_size_bytes += file_metadata.file_size
         project_size = parse_obj_as(ByteSize, project_size_bytes)
-        log.info(
-            "%s total size in S3 is %s",
-            f"{project_uuid}",
-            f"{project_size.human_readable()}",
-        )
+
         return project_size
 
 
