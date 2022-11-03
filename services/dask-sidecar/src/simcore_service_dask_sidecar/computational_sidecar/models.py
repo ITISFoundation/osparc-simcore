@@ -7,6 +7,11 @@ LEGACY_INTEGRATION_VERSION = version.Version("0")
 
 
 class ContainerHostConfig(BaseModel):
+    # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3506
+    # Be careful! --priviledged, --pid=host --cap-add XXX should never be usable here!!
+    # at the moment they are not part of the possible configuration but if they were
+    # to, ensure they are properly validated
+
     binds: list[str] = Field(
         ..., alias="Binds", description="A list of volume bindings for this container"
     )
