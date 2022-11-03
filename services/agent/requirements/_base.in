@@ -11,5 +11,6 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 
 aiodocker
+fastapi
 packaging
 pydantic

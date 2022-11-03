@@ -54,7 +54,7 @@ certifi==2022.9.24
     # via requests
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.70.0
+cfn-lint==0.70.1
     # via moto
 charset-normalizer==2.1.1
     # via
@@ -81,7 +81,7 @@ cryptography==38.0.3
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==6.0.0
+docker==6.0.1
     # via moto
 docopt==0.6.2
     # via coveralls
@@ -189,7 +189,7 @@ pyparsing==3.0.9
     #   -c requirements/_base.txt
     #   moto
     #   packaging
-pyrsistent==0.19.1
+pyrsistent==0.19.2
     # via
     #   -c requirements/_base.txt
     #   jsonschema
