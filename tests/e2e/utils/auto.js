@@ -100,6 +100,13 @@ async function dashboardNewPlan(page) {
   await utils.waitAndClick(page, '[osparc-test-id="newPlanButton"]');
 }
 
+async function dashboardStartSim4LifeLight(page) {
+  console.log("Start Sim4Lide from + button");
+
+  await __dashboardStudiesBrowser(page);
+  await utils.waitAndClick(page, '[osparc-test-id="startS4LButton"]');
+}
+
 async function toDashboard(page) {
   console.log("To Dashboard");
 
@@ -370,6 +377,7 @@ module.exports = {
   dashboardAbout,
   dashboardPreferences,
   dashboardNewPlan,
+  dashboardStartSim4LifeLight,
   dashboardOpenFirstTemplate,
   dashboardOpenService,
   showLogger,
