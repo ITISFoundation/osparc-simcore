@@ -31,7 +31,7 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 # cat services/docker-compose-build.yml | yq ".services | keys | sort"
 #
 SERVICES_NAMES_TO_BUILD := \
-	agent \
+  agent \
   api-server \
   autoscaling \
   catalog \
