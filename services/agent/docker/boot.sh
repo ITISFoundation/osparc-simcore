@@ -35,7 +35,11 @@ fi
 #
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
+  exec watchmedo auto-restart \
+    --recursive \
+    --pattern="*.py;*/src/*" \
+    --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
+    --ignore-directories -- \
     simcore-service-agent run
 else
   exec simcore-service-agent run
