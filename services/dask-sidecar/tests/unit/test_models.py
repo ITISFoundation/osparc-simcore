@@ -46,7 +46,7 @@ def test_container_host_config_sets_swap_if_set_bigger_than_memory(
         Binds=[faker.pystr() for _ in range(5)],
         Memory=ByteSize(faker.pyint(min_value=234, max_value=434234)),
         NanoCPUs=faker.pyfloat(min_value=0.1),
-        MemorySwap=ByteSize(faker.pyint(min_value=434235)),
+        MemorySwap=ByteSize(faker.pyint(min_value=434235, max_value=12343424234)),
     )
     assert instance.memory_swap
     assert instance.memory < instance.memory_swap
