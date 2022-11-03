@@ -194,25 +194,25 @@ async def send_mail(app: web.Application, msg: MIMEText):
         # this is a workaround
         smtp = aiosmtplib.SMTP(**smtp_args)
         if cfg.SMTP_PROTOCOL == EmailProtocol.STARTTLS:
-            log.debug("Unencrypted connection attempt to mailserver ...")
+            log.info("Unencrypted connection attempt to mailserver ...")
             await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-            log.debug("Starting STARTTLS ...")
+            log.info("Starting STARTTLS ...")
             await smtp.starttls()
         elif cfg.SMTP_PROTOCOL == EmailProtocol.TLS:
             await smtp.connect(use_tls=True, port=cfg.SMTP_PORT)
         elif cfg.SMTP_PROTOCOL == EmailProtocol.UNENCRYPTED:
             await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-            log.debug("Unencrypted connection attempt to mailserver ...")
+            log.info("Unencrypted connection attempt to mailserver ...")
         #
         if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
-            log.debug("Attempting a login into the email server ...")
+            log.info("Attempting a login into the email server ...")
             await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value())
         await smtp.send_message(msg)
         await smtp.quit()
     else:
         async with aiosmtplib.SMTP(**smtp_args) as smtp:
             if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
-                log.debug("Login email server ...")
+                log.info("Login email server ...")
                 await smtp.login(
                     cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value()
                 )
