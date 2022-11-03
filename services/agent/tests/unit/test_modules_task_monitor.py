@@ -35,7 +35,7 @@ async def test_task_monitor_recovers_from_error(
     log_messages = caplog_info_debug.text
     print(log_messages)
 
-    assert f"Running '{_error_raising_job.__name__}'" in log_messages
+    assert f"Starting '{_error_raising_job.__name__}' ..." in log_messages
     assert 'RuntimeError("raised expected error")' in log_messages
     assert (
         f"Will run '{_error_raising_job.__name__}' again in {repeat_interval_s} seconds"

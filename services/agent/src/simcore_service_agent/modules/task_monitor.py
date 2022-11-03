@@ -11,6 +11,7 @@ from pydantic import PositiveFloat, PositiveInt
 
 from ..core.settings import ApplicationSettings
 from .volumes_cleanup import backup_and_remove_volumes
+from servicelib.logging_utils import log_context
 
 logger = logging.getLogger(__name__)
 
@@ -25,34 +26,34 @@ class _TaskData:
 
 
 async def _task_runner(task_data: _TaskData) -> None:
-    while True:
-        coroutine: Coroutine = task_data.callable(*task_data.args)
-        logger.info("Running '%s'", coroutine.__name__)
-        try:
-            await coroutine
-        except Exception as e:  # pylint: disable=broad-except
-            logger.error(
-                "Had an error while running '%s':\n%s",
-                coroutine.__name__,
-                "\n".join(traceback.format_tb(e.__traceback__)),
-            )
+    with log_context(logger, logging.INFO, msg=f"'{task_data.callable.__name__}'"):
+        while True:
+            coroutine: Coroutine = task_data.callable(*task_data.args)
+            try:
+                await coroutine
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(
+                    "Had an error while running '%s':\n%s",
+                    coroutine.__name__,
+                    "\n".join(traceback.format_tb(e.__traceback__)),
+                )
 
-        if task_data.repeat_interval_s is None:
-            logger.warning(
-                "Unexpected termination of '%s'; it will be restarted",
-                coroutine.__name__,
-            )
+            if task_data.repeat_interval_s is None:
+                logger.warning(
+                    "Unexpected termination of '%s'; it will be restarted",
+                    coroutine.__name__,
+                )
 
-        logger.info(
-            "Will run '%s' again in %s seconds",
-            coroutine.__name__,
-            task_data.repeat_interval_s,
-        )
-        await asyncio.sleep(
-            DEFAULT_TASK_WAIT_ON_ERROR
-            if task_data.repeat_interval_s is None
-            else task_data.repeat_interval_s
-        )
+            logger.info(
+                "Will run '%s' again in %s seconds",
+                coroutine.__name__,
+                task_data.repeat_interval_s,
+            )
+            await asyncio.sleep(
+                DEFAULT_TASK_WAIT_ON_ERROR
+                if task_data.repeat_interval_s is None
+                else task_data.repeat_interval_s
+            )
 
 
 class TaskMonitor:
@@ -104,7 +105,7 @@ class TaskMonitor:
             tasks_to_wait.append(_wait_for_task(task))
             self._tasks.remove(task)
 
-        await asyncio.gather(*tasks_to_wait)
+        await asyncio.gather(*tasks_to_wait, return_exceptions=True)
         self._running = False
         self._to_start = {}
 
