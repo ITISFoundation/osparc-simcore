@@ -4,7 +4,7 @@ import typer
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import APP_NAME
-from .core._settings import ApplicationSettings
+from .core.settings import ApplicationSettings
 
 log = logging.getLogger(__name__)
 

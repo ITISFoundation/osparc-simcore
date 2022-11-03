@@ -10,7 +10,7 @@ import aioboto3
 import pytest
 from aiodocker.volumes import DockerVolume
 from pydantic import HttpUrl
-from simcore_service_agent.core._settings import ApplicationSettings
+from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._s3 import (
     S3Provider,
     _get_s3_path,

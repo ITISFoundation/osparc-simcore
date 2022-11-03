@@ -3,9 +3,14 @@ import logging
 import traceback
 from collections import deque
 from contextlib import suppress
-from typing import Any, Awaitable, Callable, Coroutine, Final, Optional
 from dataclasses import dataclass
+from typing import Any, Awaitable, Callable, Coroutine, Final, Optional
+
+from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
+
+from ..core.settings import ApplicationSettings
+from .volumes_cleanup import backup_and_remove_volumes
 
 logger = logging.getLogger(__name__)
 
@@ -99,3 +104,31 @@ class TaskMonitor:
 
         await asyncio.gather(*tasks_to_wait)
         self._started = False
+
+
+def setup(app: FastAPI) -> None:
+    async def _on_startup() -> None:
+        task_monitor = app.state.task_monitor = TaskMonitor()
+        settings: ApplicationSettings = app.state.settings
+
+        # setup all relative jobs
+        task_monitor.register_job(
+            backup_and_remove_volumes,
+            settings,
+            repeat_interval_s=settings.AGENT_VOLUMES_CLEANUP_INTERVAL_S,
+        )
+
+        await task_monitor.start()
+
+    async def _on_shutdown() -> None:
+        task_monitor: TaskMonitor = app.state.task_monitor
+        await task_monitor.shutdown()
+
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
+
+
+__all__: tuple[str, ...] = (
+    "setup",
+    "TaskMonitor",
+)

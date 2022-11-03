@@ -15,8 +15,9 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
+from ..modules import task_monitor
 from ._routes import router
-from ._settings import ApplicationSettings
+from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +30,12 @@ def _setup_logger(settings: ApplicationSettings):
 
 
 def create_app() -> FastAPI:
-    # settings
+    # SETTINGS
     settings = ApplicationSettings.create_from_envs()
     _setup_logger(settings)
     logger.debug(settings.json(indent=2))
 
-    # minimal
+    assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=settings.SC_BOOT_MODE.is_devel_mode(),
         title=APP_NAME,
@@ -46,9 +47,11 @@ def create_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = settings
 
+    # ROUTERS
     app.include_router(router)
 
-    # EVENTS ---------------------
+    # EVENTS
+    task_monitor.setup(app)
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)

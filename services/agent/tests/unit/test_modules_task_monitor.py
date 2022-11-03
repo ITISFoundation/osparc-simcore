@@ -1,5 +1,6 @@
-from typing import Final, Optional
 import asyncio
+from typing import Final, Optional
+
 import pytest
 from pydantic import PositiveFloat
 from pytest import LogCaptureFixture
