@@ -16,14 +16,6 @@ install() {
   .venv/bin/pip list --verbose
 }
 
-codestyle-ci() {
-  # shellcheck source=/dev/null
-  source .venv/bin/activate
-  pushd services/agent
-  make codestyle-ci
-  popd
-}
-
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
