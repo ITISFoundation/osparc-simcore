@@ -275,13 +275,14 @@ services:
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     deploy:
       mode: global
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: "200MB"
+      # TODO: this requires some fixing
+      # resources:
+      #   limits:
+      #     cpus: "1.0"
+      #     memory: 200M
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

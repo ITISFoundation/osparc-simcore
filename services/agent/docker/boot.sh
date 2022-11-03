@@ -33,14 +33,27 @@ fi
 #
 # RUNNING application
 #
+APP_LOG_LEVEL=${LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
+SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
+echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
+
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  exec watchmedo auto-restart \
-    --recursive \
-    --pattern="*.py;*/src/*" \
-    --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
-    --ignore-directories -- \
-    simcore-service-agent run
+  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+
+  exec sh -c "
+    cd services/agent/src/simcore_service_agent && \
+    uvicorn main:the_app \
+      --host 0.0.0.0 \
+      --port 8000 \
+      --reload \
+      $reload_dir_packages
+      --reload-dir . \
+      --log-level \"${SERVER_LOG_LEVEL}\"
+  "
 else
-  exec simcore-service-agent run
+  exec uvicorn simcore_service_agent.main:the_app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --log-level "${SERVER_LOG_LEVEL}"
 fi

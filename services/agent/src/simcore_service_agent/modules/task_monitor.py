@@ -57,10 +57,14 @@ async def _task_runner(task_data: _TaskData) -> None:
 
 class TaskMonitor:
     def __init__(self):
-        self._started: bool = False
+        self._running: bool = False
         self._tasks: set[asyncio.Task] = set()
 
         self._to_start: dict[str, _TaskData] = {}
+
+    @property
+    def is_running(self) -> bool:
+        return self._running
 
     def register_job(
         self,
@@ -68,7 +72,7 @@ class TaskMonitor:
         *args: Any,
         repeat_interval_s: Optional[PositiveFloat] = None,
     ) -> None:
-        if self._started:
+        if self._running:
             raise RecursionError(
                 "Cannot add more tasks, monitor already running with: "
                 f"{[x.get_name() for x in self._tasks]}"
@@ -80,7 +84,7 @@ class TaskMonitor:
         self._to_start[target.__name__] = _TaskData(target, args, repeat_interval_s)
 
     async def start(self) -> None:
-        self._started = True
+        self._running = True
         for name, task_data in self._to_start.items():
             logger.info("Starting task '%s'", name)
             self._tasks.add(
@@ -101,7 +105,7 @@ class TaskMonitor:
             self._tasks.remove(task)
 
         await asyncio.gather(*tasks_to_wait)
-        self._started = False
+        self._running = False
         self._to_start = {}
 
 
@@ -118,10 +122,12 @@ def setup(app: FastAPI) -> None:
         )
 
         await task_monitor.start()
+        logger.info("Started 🔍 task_monitor")
 
     async def _on_shutdown() -> None:
         task_monitor: TaskMonitor = app.state.task_monitor
         await task_monitor.shutdown()
+        logger.info("Stopped 🔍 task_monitor")
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

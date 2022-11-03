@@ -44,9 +44,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-EXPOSE 8000
-EXPOSE 3000
-
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
@@ -132,7 +129,9 @@ HEALTHCHECK --interval=30s \
   --timeout=20s \
   --start-period=30s \
   --retries=3 \
-  CMD ["/bin/sh", "services/agent/docker/healthcheck.sh"]
+  CMD ["python3", "services/agent/docker/healthcheck.py", "http://localhost:8000/health"]
+
+EXPOSE 8000
 
 ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]
@@ -154,6 +153,9 @@ ENV SC_BUILD_TARGET=development \
 WORKDIR /devel
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
+
+EXPOSE 8000
+EXPOSE 3000
 
 ENTRYPOINT ["/bin/sh", "services/agent/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]

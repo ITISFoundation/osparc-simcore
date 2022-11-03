@@ -11,6 +11,7 @@ import pytest
 import simcore_service_agent
 from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
+from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch
@@ -159,6 +160,8 @@ async def used_volume(
 @pytest.fixture
 def env(monkeypatch: MonkeyPatch, mocked_s3_server_url: HttpUrl, bucket: str) -> None:
     mock_dict = {
+        "LOGLEVEL": "DEBUG",
+        "SC_BOOT_MODE": BootModeEnum.DEBUG,
         "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
         "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
         "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
