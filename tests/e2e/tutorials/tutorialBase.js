@@ -447,11 +447,38 @@ class TutorialBase {
     await this.waitAndClick("nodeDataManagerCloseBtn");
   }
 
-  async __checkNItemsInFolder(fileNames) {
+  async __checkNItemsInFolder(fileNames, openOutputsFolder = false) {
     await this.takeScreenshot("checkNodeOutputs_before");
     console.log("N items in folder. Expected:", fileNames);
+    if (openOutputsFolder) {
+      const itemTexts = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent)
+      );
+      console.log("Service data items", itemTexts);
+      const items = await this.__page.$$('[osparc-test-id="FolderViewerItem"]');
+      let outputsFound = false;
+      for (let i=0; i<items.length; i++) {
+        const text = await items[i].evaluate(el => el.textContent);
+        if (text.includes("output")) {
+          console.log("Opening outputs folder");
+          // that's the way to double click........
+          await items[i].click();
+          await items[i].click({
+            clickCount: 2
+          });
+          outputsFound = true;
+        }
+      }
+      if (outputsFound) {
+        await this.takeScreenshot("outputs_folder");
+      }
+      else {
+        throw("outputs folder not found");
+      }
+    }
     const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.map(el => el.textContent));
+      elements => elements.map(el => el.textContent)
+    );
     console.log("N items in folder. Received:", files);
     if (files.length === fileNames.length) {
       console.log("Number of files is correct")
@@ -465,11 +492,11 @@ class TutorialBase {
     }
   }
 
-  async checkNodeOutputs(nodePos, fileNames) {
+  async checkNodeOutputs(nodePos, fileNames, openOutputsFolder = false) {
     try {
       const nodeId = await auto.openNode(this.__page, nodePos);
       await this.openNodeFiles(nodeId);
-      await this.__checkNItemsInFolder(fileNames);
+      await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
       console.error("Results don't match", err);
@@ -477,10 +504,10 @@ class TutorialBase {
     }
   }
 
-  async checkNodeOutputsAppMode(nodeId, fileNames) {
+  async checkNodeOutputsAppMode(nodeId, fileNames, openOutputsFolder = false) {
     try {
       await this.openNodeFilesAppMode(nodeId);
-      await this.__checkNItemsInFolder(fileNames);
+      await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
       console.error("Results don't match", err);
@@ -535,7 +562,8 @@ class TutorialBase {
       }
       if (i === nTries) {
         console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
-        this.fetchRemoveStudy(studyId)
+        // do not call the API
+        // this.fetchRemoveStudy(studyId)
       }
     }
     catch (err) {

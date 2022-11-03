@@ -28,8 +28,9 @@ from models_library.services import (
     ServiceType,
 )
 from pydantic.class_validators import validator
+from pydantic.config import Extra
 from pydantic.fields import Field
-from pydantic.main import BaseModel, Extra
+from pydantic.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
 from .errors import ConfigNotFound
@@ -65,7 +66,9 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
     """picks up configurations used to overwrite the docker-compuse output"""
 
     @classmethod
-    def create_default(cls, service_name: str = None) -> "DockerComposeOverwriteCfg":
+    def create_default(
+        cls, service_name: Optional[str] = None
+    ) -> "DockerComposeOverwriteCfg":
         return cls.parse_obj(
             {
                 "services": {
@@ -123,6 +126,7 @@ class MetaConfig(ServiceDockerData):
 
     def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
+        assert isinstance(self.key, str)  # nosec
         return self.key.split("/")[-1].replace(" ", "")
 
     def image_name(self, settings: AppSettings, registry="local") -> str:

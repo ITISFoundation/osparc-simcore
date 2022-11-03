@@ -123,7 +123,7 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       const outputs = node.getOutputs();
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
-      if (outLabel) {
+      if (outLabel && node.getLabel().includes("File Picker")) {
         node.setLabel(outputValue.label);
       }
       node.getStatus().setProgress(outputValue ? 100 : 0);
@@ -189,7 +189,6 @@ qx.Class.define("osparc.file.FilePicker", {
                   entry.setValue(val);
                 } else if (key === "last_modified") {
                   const val = osparc.utils.Utils.formatDateAndTime(new Date(value));
-                  console.log(key, value, val);
                   entry.setValue(val);
                 } else {
                   entry.setValue(value.toString());
@@ -362,8 +361,6 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       resetFileBtn.addListener("execute", () => {
         osparc.file.FilePicker.resetOutputValue(node);
-        node.setLabel("File Picker");
-        node.getStudy().getWorkbench().giveUniqueNameToNode(node, "File Picker");
         this.fireEvent("itemReset");
       }, this);
       return resetFileBtn;
@@ -419,7 +416,7 @@ qx.Class.define("osparc.file.FilePicker", {
         alignY: "middle"
       }));
 
-      layout.add(new qx.ui.basic.Label(this.tr("Provide Download Link")));
+      layout.add(new qx.ui.basic.Label(this.tr("Provide Link")));
 
       const fileDownloadLink = this.__fileDownloadLink = new osparc.file.FileDownloadLink().set({
         allowGrowY: false
@@ -440,7 +437,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const options = [
         this.tr("- Upload a file"),
         this.tr("- Select a file from tree"),
-        this.tr("- Provide Download Link")
+        this.tr("- Provide Link")
       ];
       for (let i=0; i<options.length; i++) {
         msg += "<br>" + options[i];

@@ -6,13 +6,15 @@
 #
 aiobotocore==2.3.3
     # via s3fs
+aiodebug==2.3.0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
     # via -r requirements/_base.in
 aiofiles==0.8.0
     # via
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.8.1
+aiohttp==3.8.3
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -65,23 +67,24 @@ click==8.1.3
     # via
     #   dask-gateway
     #   distributed
+    #   typer
 cloudpickle==2.0.0
     # via
     #   dask
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2022.6.0
+dask==2022.9.2
     # via
-    #   -c requirements/../../../packages/dask-task-models-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   dask-gateway
     #   distributed
-dask-gateway==2022.6.1
+dask-gateway==2022.10.0
     # via -r requirements/_base.in
 defusedxml==0.7.1
     # via nbconvert
-distributed==2022.6.0
+distributed==2022.9.2
     # via
     #   dask
     #   dask-gateway
@@ -89,8 +92,6 @@ dnspython==2.0.0
     # via email-validator
 email-validator==1.2.1
     # via pydantic
-entrypoints==0.3
-    # via nbconvert
 fastjsonschema==2.15.3
     # via nbformat
 frozenlist==1.3.0
@@ -110,6 +111,8 @@ idna==2.10
     #   email-validator
     #   requests
     #   yarl
+importlib-metadata==5.0.0
+    # via nbconvert
 jinja2==3.1.2
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -127,15 +130,15 @@ jmespath==1.0.0
     # via botocore
 jsonschema==3.2.0
     # via
-    #   -c requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   nbformat
 jupyter-client==6.1.12
     # via
     #   jupyter-server
     #   nbclient
-jupyter-core==4.7.1
+jupyter-core==4.11.2
     # via
     #   jupyter-client
     #   jupyter-server
@@ -157,7 +160,7 @@ markupsafe==2.1.1
     # via
     #   jinja2
     #   nbconvert
-mistune==0.8.4
+mistune==2.0.4
     # via nbconvert
 msgpack==1.0.3
     # via distributed
@@ -167,7 +170,7 @@ multidict==6.0.2
     #   yarl
 nbclient==0.5.3
     # via nbconvert
-nbconvert==6.4.5
+nbconvert==7.2.1
     # via jupyter-server
 nbformat==5.3.0
     # via
@@ -189,6 +192,7 @@ packaging==21.3
     #   dask
     #   distributed
     #   jupyter-server
+    #   nbconvert
 pandas==1.2.4
     # via
     #   -r requirements/_base.in
@@ -197,7 +201,7 @@ pandocfilters==1.4.3
     # via nbconvert
 partd==1.2.0
     # via dask
-pillow==9.0.1
+pillow==9.3.0
     # via bokeh
 prometheus-client==0.14.1
     # via jupyter-server
@@ -211,20 +215,22 @@ pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
 pygments==2.9.0
     # via
     #   jupyterlab-pygments
     #   nbconvert
+pyinstrument==4.3.0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
@@ -245,9 +251,9 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   bokeh
     #   dask
     #   dask-gateway
@@ -279,9 +285,11 @@ soupsieve==2.3.2
     # via beautifulsoup4
 tblib==1.7.0
     # via distributed
+tenacity==8.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 terminado==0.10.1
     # via jupyter-server
-testpath==0.5.0
+tinycss2==1.1.1
     # via nbconvert
 toolz==0.11.1
     # via
@@ -297,6 +305,8 @@ tornado==6.1
     #   jupyter-client
     #   jupyter-server
     #   terminado
+tqdm==4.64.1
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 traitlets==5.1.1
     # via
     #   jupyter-client
@@ -305,8 +315,11 @@ traitlets==5.1.1
     #   nbclient
     #   nbconvert
     #   nbformat
+typer==0.6.1
+    # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.3.0
     # via
+    #   aiodebug
     #   aiodocker
     #   aioitertools
     #   bokeh
@@ -323,7 +336,9 @@ urllib3==1.26.9
     #   distributed
     #   requests
 webencodings==0.5.1
-    # via bleach
+    # via
+    #   bleach
+    #   tinycss2
 websocket-client==0.59.0
     # via jupyter-server
 wrapt==1.14.1
@@ -332,6 +347,8 @@ yarl==1.7.2
     # via aiohttp
 zict==2.2.0
     # via distributed
+zipp==3.9.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

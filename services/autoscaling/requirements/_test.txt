@@ -8,13 +8,13 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
-astroid==2.12.10
+astroid==2.12.12
     # via pylint
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-botocore-stubs==1.27.80
+botocore-stubs==1.27.89
     # via types-aiobotocore
 certifi==2022.9.14
     # via
@@ -28,7 +28,7 @@ charset-normalizer==2.1.1
     #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
-coverage==6.4.4
+coverage==6.5.0
     # via
     #   -r requirements/_test.in
     #   codecov
@@ -40,7 +40,9 @@ dill==0.3.5.1
     # via pylint
 docopt==0.6.2
     # via coveralls
-faker==14.2.1
+exceptiongroup==1.0.0
+    # via pytest
+faker==15.1.0
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -77,15 +79,13 @@ platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via pytest
-py==1.11.0
-    # via pytest
-pylint==2.15.3
+pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -93,9 +93,9 @@ pytest==7.1.3
     #   pytest-mock
 pytest-asyncio==0.19.0
     # via -r requirements/_test.in
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via -r requirements/_test.in
-pytest-mock==3.8.2
+pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -130,13 +130,13 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-tomlkit==0.11.4
+tomlkit==0.11.5
     # via pylint
-types-aiobotocore==2.4.0
+types-aiobotocore==2.4.0.post1
     # via -r requirements/_test.in
-types-aiobotocore-s3==2.4.0
+types-aiobotocore-s3==2.4.0.post1
     # via types-aiobotocore
-types-awscrt==0.14.6
+types-awscrt==0.14.7
     # via botocore-stubs
 typing-extensions==4.3.0
     # via

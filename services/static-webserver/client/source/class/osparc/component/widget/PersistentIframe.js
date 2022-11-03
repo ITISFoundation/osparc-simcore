@@ -88,12 +88,8 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     // override
     _createContentElement : function() {
       let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
-      iframe.addListener("load", e => {
-        this.fireEvent("load");
-      });
-      iframe.addListener("navigate", e => {
-        this.fireDataEvent("navigate", e.getData());
-      });
+      iframe.addListener("load", () => this.fireEvent("load"));
+      iframe.addListener("navigate", e => this.fireDataEvent("navigate", e.getData()));
 
       let standin = new qx.html.Element("div");
       let appRoot = this.getApplicationRoot();

@@ -16,21 +16,25 @@ coverage:
           - api
           - packages
           - services
+        carryforward: true
       api:
         informational: true
         threshold: 1%
         paths:
           - api
+        carryforward: true
       packages:
         informational: true
         threshold: 1%
         paths:
           - packages
+        carryforward: true
       services:
         informational: true
         threshold: 1%
         paths:
           - services
+        carryforward: true
 
     patch:
       default:

@@ -1,6 +1,15 @@
+from contextlib import suppress
 from typing import Optional
 
-from pydantic import AnyUrl, BaseModel, EmailStr, Field
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    EmailStr,
+    Field,
+    ValidationError,
+    parse_obj_as,
+    validator,
+)
 
 #
 # GROUPS MODELS defined in OPENAPI specs
@@ -39,6 +48,15 @@ class UsersGroup(BaseModel):
         description="Maps user's column and regular expression",
         alias="inclusionRules",
     )
+
+    @validator("thumbnail", pre=True)
+    @classmethod
+    def sanitize_legacy_data(cls, v):
+        if v:
+            # Enforces null if thumbnail is not valid URL or empty
+            with suppress(ValidationError):
+                return parse_obj_as(AnyUrl, v)
+        return None
 
     class Config:
         schema_extra = {

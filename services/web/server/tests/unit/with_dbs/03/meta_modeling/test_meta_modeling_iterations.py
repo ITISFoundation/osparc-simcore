@@ -63,6 +63,8 @@ async def test_iterators_workflow(
     director_v2_service_mock: None,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
+    # pylint: disable=too-many-statements
+
     #
     # NOTE: all TODOs below shall be addressed in next version of the iterator
     # SEE SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735

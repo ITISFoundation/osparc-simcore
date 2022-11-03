@@ -6,6 +6,7 @@ set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 my_dir="$(dirname "$0")"
+# shellcheck source=/dev/null
 source "$my_dir/../../scripts/helpers/logger.bash"
 
 
@@ -81,3 +82,7 @@ DOCKER_IMAGE_TAG=$TAG_PREFIX-$(date --utc +"%Y-%m-%d--%H-%M").$(git rev-parse HE
 export DOCKER_IMAGE_TAG
 log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}..."
 make push-version
+
+# show the final images
+log_info "Locally available images after push:"
+make info-images

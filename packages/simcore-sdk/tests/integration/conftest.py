@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable, Iterable, Iterator, Optional
 from uuid import uuid4
 
-import np_helpers
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientSession
@@ -17,6 +16,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
@@ -81,15 +81,16 @@ def node_uuid() -> NodeIDStr:
 
 @pytest.fixture(scope="session")
 def s3_simcore_location() -> LocationID:
-    return np_helpers.SIMCORE_STORE
+    return 0
 
 
 @pytest.fixture
 def create_valid_file_uuid(
     project_id: str, node_uuid: str
-) -> Callable[[Path], SimcoreS3FileID]:
-    def _create(file_path: Path) -> SimcoreS3FileID:
-        return np_helpers.file_uuid(file_path, project_id, node_uuid)
+) -> Callable[[str, Path], SimcoreS3FileID]:
+    def _create(key: str, file_path: Path) -> SimcoreS3FileID:
+        clean_path = Path(f"{project_id}/{node_uuid}/{key}/{file_path.name}")
+        return parse_obj_as(SimcoreS3FileID, f"{clean_path}")
 
     return _create
 
@@ -122,7 +123,7 @@ def create_node_link() -> Callable[[str], dict[str, str]]:
 
 @pytest.fixture()
 def create_store_link(
-    create_valid_file_uuid: Callable[[Path], SimcoreS3FileID],
+    create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     user_id: int,
     project_id: str,
@@ -133,7 +134,7 @@ def create_store_link(
         file_path = Path(file_path)
         assert file_path.exists()
 
-        file_id = create_valid_file_uuid(file_path)
+        file_id = create_valid_file_uuid("", file_path)
         url = URL(
             f"{storage_service}/v0/locations/{s3_simcore_location}/files/{urllib.parse.quote(file_id, safe='')}"
         ).with_query(user_id=user_id, file_size=0)

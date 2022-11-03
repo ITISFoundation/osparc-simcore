@@ -96,7 +96,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
       switch (id) {
         case "downloadLinkField":
           control = new qx.ui.form.TextField().set({
-            placeholder: this.tr("Type a Download Link")
+            placeholder: this.tr("Type a Link")
           });
           this._add(control, {
             flex: 1

@@ -5,6 +5,7 @@ from .routes import (
     clusters,
     computations,
     computations_tasks,
+    dynamic_scheduler,
     dynamic_services,
     health,
     meta,
@@ -38,6 +39,11 @@ v2_router.include_router(
     dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
 )
 v2_router.include_router(clusters.router, tags=["clusters"], prefix="/clusters")
+
+v2_router.include_router(
+    dynamic_scheduler.router, tags=["dynamic scheduler"], prefix="/dynamic_scheduler"
+)
+
 
 # root
 api_router = APIRouter()

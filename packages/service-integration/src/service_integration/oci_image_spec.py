@@ -11,7 +11,7 @@ from typing import Any
 
 from models_library.basic_types import SHA1Str, VersionStr
 from pydantic import BaseModel, Field
-from pydantic.main import Extra
+from pydantic.config import Extra
 from pydantic.networks import AnyUrl
 
 from .labels_annotations import from_labels, to_labels

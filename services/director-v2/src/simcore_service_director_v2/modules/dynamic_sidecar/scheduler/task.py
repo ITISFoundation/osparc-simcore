@@ -21,13 +21,14 @@ from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
 from dataclasses import dataclass, field
 from math import floor
-from typing import Optional
-from uuid import UUID
+from typing import Optional, Union
 
 from fastapi import FastAPI
+from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from models_library.users import UserID
 from pydantic import AnyHttpUrl
 from servicelib.error_codes import create_error_code
 
@@ -53,16 +54,19 @@ from ..docker_api import (
 )
 from ..docker_states import ServiceState, extract_containers_minimim_statuses
 from ..errors import (
+    DockerServiceNotFoundError,
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
     GenericDockerError,
 )
 from ._task_utils import apply_observation_cycle
-from ._utils import attempt_user_create_services_removal_and_data_saving
+from ._utils import attempt_pod_removal_and_data_saving
 
 logger = logging.getLogger(__name__)
 
 ServiceName = str
+
+_DISABLED_MARK = object()
 
 
 def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
@@ -77,16 +81,38 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
     _lock: Lock = field(default_factory=Lock)
     _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
-    _service_observation_task: dict[ServiceName, asyncio.Task] = field(
-        default_factory=dict
-    )
+    _service_observation_task: dict[
+        ServiceName, Optional[Union[asyncio.Task, object]]
+    ] = field(default_factory=dict)
     _keep_running: bool = False
-    _inverse_search_mapping: dict[UUID, str] = field(default_factory=dict)
+    _inverse_search_mapping: dict[NodeID, str] = field(default_factory=dict)
     _scheduler_task: Optional[Task] = None
     _cleanup_volume_removal_services_task: Optional[Task] = None
     _trigger_observation_queue_task: Optional[Task] = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
+
+    def toggle_observation_cycle(self, node_uuid: NodeID, disable: bool) -> bool:
+        """
+        returns True if it managed to toggle the current state
+
+        raises DynamicSidecarNotFoundError
+        """
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
+
+        service_task = self._service_observation_task.get(service_name)
+
+        if isinstance(service_task, asyncio.Task):
+            return False
+
+        if disable:
+            self._service_observation_task[service_name] = _DISABLED_MARK
+        else:
+            self._service_observation_task.pop(service_name, None)
+
+        return True
 
     async def add_service(self, scheduler_data: SchedulerData) -> None:
         """Invoked before the service is started
@@ -114,6 +140,35 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             self._to_observe[scheduler_data.service_name] = scheduler_data
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
+
+    def list_services(
+        self,
+        *,
+        user_id: Optional[UserID] = None,
+        project_id: Optional[ProjectID] = None,
+    ) -> list[NodeID]:
+        """Returns the list of tracked service UUIDs"""
+        all_tracked_service_uuids = list(self._inverse_search_mapping.keys())
+        if user_id is None and project_id is None:
+            return all_tracked_service_uuids
+        # let's filter
+        def _is_scheduled(node_id: NodeID) -> bool:
+            try:
+                scheduler_data = self.get_scheduler_data(node_id)
+                if user_id and scheduler_data.user_id != user_id:
+                    return False
+                if project_id and scheduler_data.project_id != project_id:
+                    return False
+                return True
+            except DynamicSidecarNotFoundError:
+                return False
+
+        return list(
+            filter(
+                _is_scheduled,
+                (n for n in all_tracked_service_uuids),
+            )
+        )
 
     async def mark_service_for_removal(
         self, node_uuid: NodeID, can_save: Optional[bool]
@@ -151,7 +206,18 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
         logger.debug("Removed service '%s' from scheduler", service_name)
 
+    def get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
+        """
+
+        raises DynamicSidecarNotFoundError
+        """
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
+        return self._to_observe[service_name]
+
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
+        # pylint: disable=too-many-return-statements
         """
 
         raises DynamicSidecarNotFoundError
@@ -163,7 +229,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         # check if there was an error picked up by the scheduler
-        # and marked this service as failing
+        # and marked this service as failed
         if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
@@ -172,19 +238,38 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_message=scheduler_data.dynamic_sidecar.status.info,
             )
 
-        service_state, service_message = await get_dynamic_sidecar_state(
-            # the service_name is unique and will not collide with other names
-            # it can be used in place of the service_id here, as the docker API accepts both
-            service_id=scheduler_data.service_name
-        )
-
-        # while the dynamic-sidecar state is not RUNNING report it's state
-        if service_state != ServiceState.RUNNING:
+        # is the service stopping?
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
                 scheduler_data=scheduler_data,
-                service_state=service_state,
-                service_message=service_message,
+                service_state=ServiceState.STOPPING,
+                service_message=scheduler_data.dynamic_sidecar.status.info,
+            )
+
+        # the service should be either running or starting
+        try:
+            sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
+                # the service_name is unique and will not collide with other names
+                # it can be used in place of the service_id here, as the docker API accepts both
+                service_id=scheduler_data.service_name
+            )
+        except DockerServiceNotFoundError:
+            # in this case, the service is starting, so state is pending
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=ServiceState.PENDING,
+                service_message=scheduler_data.dynamic_sidecar.status.info,
+            )
+
+        # while the dynamic-sidecar state is not RUNNING report it's state
+        if sidecar_state != ServiceState.RUNNING:
+            return RunningDynamicServiceDetails.from_scheduler_data(
+                node_uuid=node_uuid,
+                scheduler_data=scheduler_data,
+                service_state=sidecar_state,
+                service_message=sidecar_message,
             )
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
@@ -192,7 +277,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         )
 
         try:
-            docker_statuses: Optional[
+            user_services_docker_statuses: Optional[
                 dict[str, dict[str, str]]
             ] = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.endpoint
@@ -207,7 +292,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
 
         # wait for containers to start
-        if len(docker_statuses) == 0:
+        if len(user_services_docker_statuses) == 0:
             # marks status as waiting for containers
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
@@ -218,7 +303,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
         # compute composed containers states
         container_state, container_message = extract_containers_minimim_statuses(
-            docker_statuses
+            user_services_docker_statuses
         )
         return RunningDynamicServiceDetails.from_scheduler_data(
             node_uuid=node_uuid,
@@ -361,7 +446,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                         scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                             False
                         )
-                        await attempt_user_create_services_removal_and_data_saving(
+                        await attempt_pod_removal_and_data_saving(
                             self.app, scheduler_data
                         )
 
@@ -369,9 +454,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
                 # use-cases: 1, 2
                 # Cleanup all resources related to the dynamic-sidecar.
-                await attempt_user_create_services_removal_and_data_saving(
-                    self.app, scheduler_data
-                )
+                await attempt_pod_removal_and_data_saving(self.app, scheduler_data)
                 return
 
             scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

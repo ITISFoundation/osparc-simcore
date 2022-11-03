@@ -3,14 +3,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from contextlib import AsyncExitStack
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, AsyncIterator, Callable
+from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
 from unittest import mock
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from faker import Faker
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -19,7 +22,10 @@ from models_library.services_resources import (
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from simcore_service_webserver.application_settings import get_settings
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 
 @pytest.fixture
@@ -205,3 +211,66 @@ def assert_get_same_project_caller() -> Callable:
         return data
 
     return _assert_it
+
+
+@pytest.fixture
+def disable_max_number_of_running_dynamic_nodes(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    monkeypatch.setenv("PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES", "0")
+    return app_environment | {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES": "0"}
+
+
+@pytest.fixture
+def max_amount_of_auto_started_dyn_services(client: TestClient) -> int:
+    assert client.app
+    projects_settings = get_settings(client.app).WEBSERVER_PROJECTS
+    assert projects_settings
+    return projects_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+
+
+@pytest.fixture
+async def user_project_with_num_dynamic_services(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    faker: Faker,
+) -> AsyncIterator[Callable[[int], Awaitable[ProjectDict]]]:
+
+    async with AsyncExitStack() as stack:
+
+        async def _creator(num_dyn_services: int) -> ProjectDict:
+            project_data = {
+                "workbench": {
+                    faker.uuid4(): {
+                        "key": f"simcore/services/dynamic/{faker.pystr()}",
+                        "version": faker.numerify("#.#.#"),
+                        "label": faker.name(),
+                    }
+                    for _ in range(num_dyn_services)
+                }
+            }
+            project = await stack.enter_async_context(
+                NewProject(
+                    project_data,
+                    client.app,
+                    user_id=logged_user["id"],
+                    product_name=osparc_product_name,
+                    tests_data_dir=tests_data_dir,
+                )
+            )
+            print("-----> added project", project["name"])
+            assert "workbench" in project
+            dynamic_services = list(
+                filter(
+                    lambda service: "/dynamic/" in service["key"],
+                    project["workbench"].values(),
+                )
+            )
+            assert len(dynamic_services) == num_dyn_services
+
+            return project
+
+        yield _creator
+    print("<----- cleaned up projects")

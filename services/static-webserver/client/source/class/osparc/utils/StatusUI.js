@@ -61,10 +61,11 @@ qx.Class.define("osparc.utils.StatusUI", {
 
         // dynamics
         case "idle":
-          return "";
+          return "@FontAwesome5Solid/hourglass-end/"+size;
         case "ready":
           return "@FontAwesome5Solid/check/"+size;
         case "starting":
+        case "stopping":
         case "pending":
         case "pulling":
         case "connecting":
@@ -114,14 +115,18 @@ qx.Class.define("osparc.utils.StatusUI", {
           return qx.locale.Manager.tr("Idle");
 
         // dynamics
+        case "idle":
+          return qx.locale.Manager.tr("Idle");
         case "ready":
           return qx.locale.Manager.tr("Ready");
         case "failed":
-          return qx.locale.Manager.tr("Error");
+          return qx.locale.Manager.tr("Failed");
         case "deprecated":
           return qx.locale.Manager.tr("Deprecated");
         case "starting":
           return qx.locale.Manager.tr("Starting...");
+        case "stopping":
+          return qx.locale.Manager.tr("Stopping...");
         case "pending":
           return qx.locale.Manager.tr("Pending...");
         case "pulling":
@@ -157,6 +162,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "ready":
           return "ready-green";
         case "starting":
+        case "stopping":
         case "pulling":
         case "pending":
         case "connecting":

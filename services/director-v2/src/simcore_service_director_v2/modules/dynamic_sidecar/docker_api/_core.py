@@ -26,7 +26,7 @@ from ....models.schemas.constants import (
 from ....models.schemas.dynamic_services import SchedulerData, ServiceState, ServiceType
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
-from ..errors import DynamicSidecarError, GenericDockerError
+from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
 from ._utils import docker_client
 
 NO_PENDING_OVERWRITE = {
@@ -135,6 +135,29 @@ async def get_dynamic_sidecars_to_observe(
     ]
 
 
+async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
+    try:
+        async with docker_client() as client:
+            running_services = await client.tasks.list(
+                filters={"service": f"{service_id}"}
+            )
+            if not running_services:
+                raise DockerServiceNotFoundError(service_id=service_id)
+
+            # The service might have more then one task because the
+            # previous might have died out.
+            # Only interested in the latest task as only one task per
+            # service will be running.
+            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
+
+            last_task = sorted_tasks[-1]
+            return last_task
+    except GenericDockerError as err:
+        if err.original_exception.status == 404:
+            raise DockerServiceNotFoundError(service_id=service_id) from err
+        raise
+
+
 async def get_dynamic_sidecar_placement(
     service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> str:
@@ -163,28 +186,12 @@ async def get_dynamic_sidecar_placement(
         Waits for dynamic-sidecar task to be `running` and returns the
         task data.
         """
-        async with docker_client() as client:
-            running_services = await client.tasks.list(
-                filters={"service": f"{service_id}"}
-            )
-            service_container_count = len(running_services)
+        task = await _get_service_latest_task(service_id)
+        service_state = task["Status"]["State"]
 
-            if service_container_count == 0:
-                raise TryAgain()
-
-            # The service might have more then one task because the
-            # previous might have died out.
-            # Only interested in the latest task as only one task per
-            # service will be running.
-            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
-
-            task = sorted_tasks[-1]
-            service_state = task["Status"]["State"]
-
-            if service_state not in TASK_STATES_RUNNING:
-                raise TryAgain()
-
-            return task
+        if service_state not in TASK_STATES_RUNNING:
+            raise TryAgain()
+        return task
 
     task = await _get_task_data_when_service_running(service_id=service_id)
 
@@ -199,40 +206,8 @@ async def get_dynamic_sidecar_placement(
 
 
 async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]:
-    def _make_pending() -> tuple[ServiceState, str]:
-        pending_task_state = {"State": ServiceState.PENDING.value}
-        return extract_task_state(task_status=pending_task_state)
-
-    try:
-        async with docker_client() as client:
-            running_services = await client.tasks.list(
-                filters={"service": f"{service_id}"}
-            )
-
-        service_container_count = len(running_services)
-
-        if service_container_count == 0:
-            # if the service is not present, return pending
-            return _make_pending()
-
-        last_task = running_services[0]
-
-    # GenericDockerError
-    except GenericDockerError as e:
-        if e.original_exception.status == 404:
-            # because the service is not there yet return a pending state
-            # it is looking for a service or something with no error message
-            return _make_pending()
-        raise e
-
-    service_state, message = extract_task_state(task_status=last_task["Status"])
-
-    # to avoid creating confusion for the user, always return the status
-    # as pending while the dynamic-sidecar is starting, with
-    # FAILED and COMPLETED and RUNNING being the only exceptions
-    if service_state not in NO_PENDING_OVERWRITE:
-        return ServiceState.PENDING, message
-
+    service_task = await _get_service_latest_task(service_id)
+    service_state, message = extract_task_state(task_status=service_task["Status"])
     return service_state, message
 
 
@@ -259,7 +234,7 @@ async def is_dynamic_sidecar_stack_missing(
     return len(stack_services) == 0
 
 
-async def are_all_services_present(
+async def are_sidecar_and_proxy_services_present(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """
