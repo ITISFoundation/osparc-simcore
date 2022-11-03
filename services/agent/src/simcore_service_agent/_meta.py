@@ -28,17 +28,15 @@ def get_summary() -> str:
 
 SUMMARY: Final[str] = get_summary()
 
-# pylint: disable=anomalous-backslash-in-string
-APP_STARTED_BANNER_MSG = """
+
+APP_STARTED_BANNER_MSG = rf"""
      _                                                           _
  ___(_)_ __ ___   ___ ___  _ __ ___        __ _  __ _  ___ _ __ | |_
 / __| | '_ ` _ \ / __/ _ \| '__/ _ \_____ / _` |/ _` |/ _ \ '_ \| __|
 \__ \ | | | | | | (_| (_) | | |  __/_____| (_| | (_| |  __/ | | | |_
 |___/_|_| |_| |_|\___\___/|_|  \___|      \__,_|\__, |\___|_| |_|\__|
                                                 |___/
-    {0}""".format(
-    f"v{__version__}"
-)
+    v{__version__}"""
 
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format(
