@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from pathlib import Path
+from typing import Final
 
 from settings_library.r_clone import S3Provider
 
@@ -16,6 +17,7 @@ endpoint = {destination_endpoint}
 region = {destination_region}
 acl = private
 """
+VOLUME_NAME_FIXED_PORTION: Final[int] = 78
 
 
 def get_config_file_path(
@@ -37,7 +39,14 @@ def get_config_file_path(
     return conf_path
 
 
-def _get_s3_path(s3_bucket: str, labels: dict[str, str]) -> Path:
+def _get_dir_name(volume_name: str) -> str:
+    # from: "dyv_a0430d06-40d2-4c92-9490-6aca30e00fc7_898fff63-d402-5566-a99b-091522dd2ae9_stuptuo_krow_nayvoj_emoh_"
+    # gets: "home_jovyan_work_outputs"
+    return volume_name[VOLUME_NAME_FIXED_PORTION:][::-1].strip("_")
+
+
+def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Path:
+
     joint_key = "/".join(
         (
             s3_bucket,
@@ -45,6 +54,7 @@ def _get_s3_path(s3_bucket: str, labels: dict[str, str]) -> Path:
             labels["study_id"],
             labels["node_uuid"],
             labels["run_id"],
+            _get_dir_name(volume_name),
         )
     )
     return Path(f"/{joint_key}")
@@ -56,6 +66,7 @@ async def _read_stream(stream):
 
 
 async def store_to_s3(  # pylint:disable=too-many-locals
+    volume_name: str,
     dyv_volume: dict,
     s3_endpoint: str,
     s3_access_key: str,
@@ -76,7 +87,7 @@ async def store_to_s3(  # pylint:disable=too-many-locals
     )
 
     source_dir = dyv_volume["Mountpoint"]
-    s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"])
+    s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"], volume_name)
 
     r_clone_command = [
         "rclone",

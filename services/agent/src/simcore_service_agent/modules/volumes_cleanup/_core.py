@@ -25,6 +25,7 @@ async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
 
             try:
                 await store_to_s3(
+                    volume_name=volume_name,
                     dyv_volume=dyv_volume,
                     s3_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
                     s3_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,

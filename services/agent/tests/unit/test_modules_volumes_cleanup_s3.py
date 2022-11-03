@@ -14,6 +14,7 @@ from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._s3 import (
     S3Provider,
     _get_s3_path,
+    _get_dir_name,
     store_to_s3,
 )
 
@@ -110,8 +111,8 @@ async def test_get_s3_path(
     bucket: str,
 ):
     volume_data = await unused_volume.show()
-    assert _get_s3_path(bucket, volume_data["Labels"]) == Path(
-        f"/{bucket}/{swarm_stack_name}/{study_id}/{node_uuid}/{run_id}"
+    assert _get_s3_path(bucket, volume_data["Labels"], unused_volume.name) == Path(
+        f"/{bucket}/{swarm_stack_name}/{study_id}/{node_uuid}/{run_id}/{_get_dir_name(unused_volume.name)}"
     )
 
 
@@ -134,6 +135,7 @@ async def test_store_to_s3(
     dyv_volume["Mountpoint"] = unused_volume_path
 
     await store_to_s3(
+        volume_name=unused_volume.name,
         dyv_volume=dyv_volume,
         s3_access_key="xxx",
         s3_secret_key="xxx",
@@ -161,7 +163,8 @@ async def test_store_to_s3(
     hashes_on_disk = _get_file_hashes_in_path(
         unused_volume_path, set(map(Path, settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES))
     )
-    hashes_in_s3 = _get_file_hashes_in_path(save_to)
+    volume_path_without_source_dir = save_to / _get_dir_name(unused_volume.name)
+    hashes_in_s3 = _get_file_hashes_in_path(volume_path_without_source_dir)
     assert len(hashes_on_disk) > 0
     assert len(hashes_in_s3) > 0
     assert hashes_on_disk == hashes_in_s3
