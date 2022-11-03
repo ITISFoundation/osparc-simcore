@@ -257,9 +257,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         envs["SMTP_SENDER"] = section.get("sender")
         envs["SMTP_HOST"] = section.get("host")
         envs["SMTP_PORT"] = section.get("port")
-        envs["SMTP_TLS_ENABLED"] = section.get("tls")
-        envs["SMTP_STARTTLS_ENABLED"] = section.get("starttls")
-
         envs["SMTP_USERNAME"] = section.get("username")
         envs["SMTP_PASSWORD"] = section.get("password")
 

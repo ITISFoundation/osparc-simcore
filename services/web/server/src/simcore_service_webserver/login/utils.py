@@ -198,9 +198,8 @@ async def send_mail(app: web.Application, msg: MIMEText):
             log.debug("Unencrypted connection attempt to mailserver ...")
             await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
             log.debug("Starting STARTTLS ...")
-            log.warning(
-                "Certificates are not validated for STARTTLS (as it happens for TLS) on port %s!",
-                str(cfg.SMTP_PORT),
+            log.info(
+                f"Certificates are not validated for STARTTLS (as it happens for TLS) on port {cfg.SMTP_PORT=}!"
             )
             await smtp.starttls(validate_certs=False)
         elif cfg.SMTP_PROTOCOL == EmailProtocol.TLS:

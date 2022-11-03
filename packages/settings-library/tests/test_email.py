@@ -55,7 +55,6 @@ def test_smtp_configuration_ok(cfg: dict[str, Any]):
     [
         {"SMTP_HOST": "test", "SMTP_PORT": 113, "SMTP_USERNAME": "test"},
         {"SMTP_HOST": "test", "SMTP_PORT": 113, "SMTP_PASSWORD": "test"},
-        {"SMTP_HOST": "test", "SMTP_PORT": 113, "SMTP_TLS_ENABLED": True},
         {
             "SMTP_HOST": "test",
             "SMTP_PORT": 113,
