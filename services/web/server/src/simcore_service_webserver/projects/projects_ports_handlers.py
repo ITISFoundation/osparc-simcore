@@ -10,7 +10,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import _servicelib_jsonable_encoder
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -27,6 +27,13 @@ from .projects_db import ProjectDBAPI
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
+
+
+def enveloped_json_response(data: Any):
+    return web.json_response(
+        {"data": jsonable_encoder(data)},
+        dumps=json_dumps,
+    )
 
 
 async def _get_validated_workbench_model(
@@ -60,9 +67,6 @@ class ProjectPort(BaseModel):
     )
     value: Any = Field(..., description="Value assigned to this i/o port")
 
-    def data(self, **export_kwargs):
-        return _servicelib_jsonable_encoder(self.dict(**export_kwargs))
-
 
 class ProjectPortGet(ProjectPort):
     label: str
@@ -82,16 +86,13 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
     inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
-    return web.json_response(
-        {
-            "data": {
-                f"{node_id}": ProjectPortGet(
-                    key=node_id, label=workbench[node_id].label, value=value
-                ).data()
-                for node_id, value in inputs.items()
-            }
-        },
-        dumps=json_dumps,
+    return enveloped_json_response(
+        data={
+            node_id: ProjectPortGet(
+                key=node_id, label=workbench[node_id].label, value=value
+            )
+            for node_id, value in inputs.items()
+        }
     )
 
 
@@ -131,16 +132,13 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
     inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
-    return web.json_response(
-        {
-            "data": {
-                f"{node_id}": ProjectPortGet(
-                    key=node_id, label=workbench[node_id].label, value=value
-                ).data()
-                for node_id, value in inputs.items()
-            }
-        },
-        dumps=json_dumps,
+    return enveloped_json_response(
+        data={
+            node_id: ProjectPortGet(
+                key=node_id, label=workbench[node_id].label, value=value
+            )
+            for node_id, value in inputs.items()
+        }
     )
 
 
@@ -166,13 +164,10 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     # FIXME: resolve references in outputs before return!!
 
     return web.json_response(
-        {
-            "data": {
-                f"{node_id}": ProjectPortGet(
-                    key=node_id, label=workbench[node_id].label, value=value
-                ).data()
-                for node_id, value in outputs.items()
-            }
-        },
-        dumps=json_dumps,
+        data={
+            node_id: ProjectPortGet(
+                key=node_id, label=workbench[node_id].label, value=value
+            )
+            for node_id, value in outputs.items()
+        }
     )
