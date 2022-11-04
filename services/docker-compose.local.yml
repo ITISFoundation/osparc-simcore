@@ -86,8 +86,6 @@ services:
       - "3011:3000"
 
   agent:
-    volumes:
-      - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
       - LOGLEVEL=${LOG_LEVEL:-INFO}
       - AGENT_VOLUMES_CLEANUP_S3_SECURE=${S3_SECURE}
