@@ -316,6 +316,10 @@ qx.Class.define("osparc.utils.Services", {
 
     DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
     RETIRED_SERVICE_TEXT: qx.locale.Manager.tr("Service retired"),
+    getDeprecationDateText: function(metadata) {
+      const deprecationTime = new Date(metadata["deprecated"]);
+      return qx.locale.Manager.tr("It will be Retired: ") + osparc.utils.Utils.formatDate(deprecationTime);
+    },
     DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please, download the Service data and upload them to an updated version"),
     DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please, instantiate an updated version"),
 

@@ -275,9 +275,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         deprecatedIcon.set({
           textColor: osparc.utils.StatusUI.getColor("deprecated")
         });
+        let ttMsg = osparc.utils.Services.DEPRECATED_SERVICE_TEXT;
+        const deprecatedDateMsg = osparc.utils.Services.getDeprecationDateText(node.getMetaData());
+        if (deprecatedDateMsg) {
+          ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
+        }
         const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        if (deprecatedTTMsg) {
+          ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+        }
         const toolTip = new qx.ui.tooltip.ToolTip().set({
-          label: osparc.utils.Services.DEPRECATED_SERVICE_TEXT + "<br>" + deprecatedTTMsg,
+          label: ttMsg,
           icon: osparc.utils.StatusUI.getIconSource("deprecated"),
           rich: true,
           maxWidth: 250
@@ -290,9 +298,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         retiredIcon.set({
           textColor: osparc.utils.StatusUI.getColor("retired")
         });
+
+        let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
         const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        if (deprecatedTTMsg) {
+          ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+        }
         const toolTip = new qx.ui.tooltip.ToolTip().set({
-          label: osparc.utils.Services.RETIRED_SERVICE_TEXT + "<br>" + deprecatedTTMsg,
+          label: ttMsg,
           icon: osparc.utils.StatusUI.getIconSource("retired"),
           rich: true,
           maxWidth: 250

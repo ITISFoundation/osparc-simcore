@@ -1074,6 +1074,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const chip = node.isDeprecated() ? osparc.utils.StatusUI.createServiceDeprecatedChip() : osparc.utils.StatusUI.createServiceRetiredChip();
         this.__outputsPage.add(chip);
 
+        if (node.isDeprecated()) {
+          const deprecateDateText = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
+            rich: true
+          });
+          this.__outputsPage.add(deprecateDateText);
+        }
+
         const deprecatedMsg = new qx.ui.basic.Label(osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS).set({
           rich: true
         });
