@@ -489,7 +489,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     )
                     for output in node.get("outputs", {}).values()
                     if isinstance(output, dict)
-                    and int(output.get("store", self.location_id)) == DATCORE_ID
+                    and (int(output.get("store", self.location_id)) == DATCORE_ID)
                 ]
             )
         await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
