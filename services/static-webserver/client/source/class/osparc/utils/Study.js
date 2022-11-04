@@ -77,6 +77,25 @@ qx.Class.define("osparc.utils.Study", {
       });
     },
 
+    isWorkbenchRetired: function(workbench) {
+      const services = new Set(this.extractServices(workbench));
+      const filtered = [];
+      services.forEach(srv => {
+        const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
+        if (idx === -1) {
+          filtered.push(srv);
+        }
+      });
+      const retired = filtered.some(srv => {
+        const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
+        if (srvMetadata) {
+          return osparc.utils.Services.isRetired(srvMetadata);
+        }
+        return false;
+      });
+      return retired;
+    },
+
     isWorkbenchDeprecated: function(workbench) {
       const services = new Set(this.extractServices(workbench));
       const filtered = [];
@@ -89,7 +108,7 @@ qx.Class.define("osparc.utils.Study", {
       const deprecated = filtered.some(srv => {
         const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
         if (srvMetadata) {
-          return osparc.utils.Services.isDeprecated(srvMetadata) || osparc.utils.Services.isRetired(srvMetadata);
+          return osparc.utils.Services.isDeprecated(srvMetadata);
         }
         return false;
       });
