@@ -279,10 +279,10 @@ services:
     deploy:
       mode: global
       # TODO: this requires some fixing
-      # resources:
-      #   limits:
-      #     cpus: "1.0"
-      #     memory: 200M
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 200M
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes/:/var/lib/docker/volumes/
