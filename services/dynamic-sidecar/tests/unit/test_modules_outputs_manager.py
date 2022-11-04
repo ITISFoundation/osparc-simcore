@@ -11,6 +11,7 @@ import pytest
 from pydantic import PositiveFloat
 from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
+from simcore_sdk.node_ports_v2 import Nodeports
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 
 
@@ -48,10 +49,15 @@ def outputs_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
+def nodeports() -> Nodeports:
+    return AsyncMock()
+
+
+@pytest.fixture
 async def outputs_manager(
-    outputs_path: Path, port_keys: list[str]
+    outputs_path: Path, port_keys: list[str], nodeports: Nodeports
 ) -> AsyncIterator[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=outputs_path, nodeports=AsyncMock())
+    outputs_manager = OutputsManager(outputs_path=outputs_path, nodeports=nodeports)
     outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()
@@ -63,6 +69,7 @@ async def test_upload_port_sequential_calls(
     port_keys: list[str],
     upload_duration: PositiveFloat,
     outputs_path: Path,
+    nodeports: Nodeports,
 ):
     assert mock_upload_outputs.call_count == 0
     for port_key in port_keys:
@@ -71,7 +78,7 @@ async def test_upload_port_sequential_calls(
         call_counter = mock_upload_outputs.call_count
         await outputs_manager.upload_port(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key]
+            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -102,6 +109,7 @@ async def test_upload_after_port_change_sequential_calls(
     port_keys: list[str],
     upload_duration: PositiveFloat,
     outputs_path: Path,
+    nodeports: Nodeports,
 ):
     assert mock_upload_outputs.call_count == 0
     for port_key in port_keys:
@@ -110,7 +118,7 @@ async def test_upload_after_port_change_sequential_calls(
         call_counter = mock_upload_outputs.call_count
         await outputs_manager.upload_after_port_change(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key]
+            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -141,6 +149,7 @@ async def test_upload_after_port_change_cancels_upload_port(
     outputs_manager: OutputsManager,
     port_keys: list[str],
     outputs_path: Path,
+    nodeports: Nodeports,
 ):
     assert mock_upload_outputs.call_count == 0
     for port_key in port_keys:
@@ -149,7 +158,7 @@ async def test_upload_after_port_change_cancels_upload_port(
         call_counter = mock_upload_outputs.call_count
         await outputs_manager.upload_port(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key]
+            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -170,6 +179,7 @@ async def test_upload_port_does_not_cancel_upload_after_port_change(
     outputs_manager: OutputsManager,
     port_keys: list[str],
     outputs_path: Path,
+    nodeports: Nodeports,
 ):
     assert mock_upload_outputs.call_count == 0
     for port_key in port_keys:
@@ -178,7 +188,7 @@ async def test_upload_port_does_not_cancel_upload_after_port_change(
         call_counter = mock_upload_outputs.call_count
         await outputs_manager.upload_after_port_change(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key]
+            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 

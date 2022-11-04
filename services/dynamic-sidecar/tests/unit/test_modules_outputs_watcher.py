@@ -15,11 +15,17 @@ import aiofiles
 import pytest
 from aiofiles import os
 from faker import Faker
-from pydantic import NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
+from pydantic import (
+    ByteSize,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveFloat,
+    PositiveInt,
+    parse_obj_as,
+)
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from simcore_sdk.node_ports_v2 import Nodeports
-from pydantic import parse_obj_as, ByteSize
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs_watcher import (
