@@ -94,27 +94,32 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-
+        const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
+        const isRetired = osparc.utils.Services.isRetired(metadata);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
-        const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-        const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
         const updatable = node["version"] !== latestCompatibleMetadata["version"];
         if (updatable) {
           updatableServices.push(nodeId);
         }
-
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "text-14"
         });
         if (isDeprecated) {
           currentVersionLabel.set({
             textColor: "contrasted-text-dark",
-            backgroundColor: "failed-red",
+            backgroundColor: "warning-yellow",
             toolTipText: this.tr("Service deprecated, please update")
+          });
+        } else if (isRetired) {
+          currentVersionLabel.set({
+            textColor: "contrasted-text-dark",
+            backgroundColor: "failed-red",
+            toolTipText: this.tr("Service retired, please update")
           });
         } else if (updatable) {
           currentVersionLabel.set({

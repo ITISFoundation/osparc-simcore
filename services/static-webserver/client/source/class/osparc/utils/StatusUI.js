@@ -172,7 +172,7 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "connecting":
           return "busy-orange";
         case "deprecated":
-          return "busy-orange";
+          return "warning-yellow";
         case "retired":
         case "failed":
           return "failed-red";
