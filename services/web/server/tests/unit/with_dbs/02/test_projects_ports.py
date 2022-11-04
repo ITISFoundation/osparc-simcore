@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 import re
+from copy import deepcopy
 from typing import Any
 
 import pytest
@@ -12,7 +13,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects_nodes import Node, NodeID
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver._meta import API_VTAG as VX
@@ -24,6 +25,7 @@ from simcore_service_webserver.projects._ports import (
     get_project_outputs,
     set_project_inputs,
 )
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 
 @pytest.mark.parametrize(
@@ -102,13 +104,13 @@ def workbench_db_column() -> dict[str, Any]:
         "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
             "key": "simcore/services/frontend/parameter/integer",
             "version": "1.0.0",
-            "label": "x1",
+            "label": "X",
             "inputs": {},
             "inputsUnits": {},
             "inputNodes": [],
             "parent": None,
             "thumbnail": "",
-            "outputs": {"out_1": 1},
+            "outputs": {"out_1": 43},
             "runHash": None,
         },
         "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa": {
@@ -133,11 +135,22 @@ def workbench_db_column() -> dict[str, Any]:
             ],
             "parent": None,
             "thumbnail": "",
+            "state": {"currentStatus": "SUCCESS"},
+            "progress": 100,
+            "outputs": {
+                "output_1": {
+                    "store": 0,
+                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
+                    "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
+                },
+                "output_2": 6,
+            },
+            "runHash": "5d55ebe569aa0abeb5287104dc5989eabc755f160c9a5c9a1cc783fe1e058b66",
         },
         "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
             "key": "simcore/services/frontend/parameter/integer",
             "version": "1.0.0",
-            "label": "y",
+            "label": "Z",
             "inputs": {},
             "inputsUnits": {},
             "inputNodes": [],
@@ -149,19 +162,19 @@ def workbench_db_column() -> dict[str, Any]:
         "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
             "key": "simcore/services/frontend/parameter/boolean",
             "version": "1.0.0",
-            "label": "flag",
+            "label": "on",
             "inputs": {},
             "inputsUnits": {},
             "inputNodes": [],
             "parent": None,
             "thumbnail": "",
-            "outputs": {"out_1": True},
+            "outputs": {"out_1": False},
             "runHash": None,
         },
         "09fd512e-0768-44ca-81fa-0cecab74ec1a": {
             "key": "simcore/services/frontend/iterator-consumer/probe/integer",
             "version": "1.0.0",
-            "label": "Random sleep interval",
+            "label": "Random sleep interval_2",
             "inputs": {
                 "in_1": {
                     "nodeUuid": "13220a1d-a569-49de-b375-904301af9295",
@@ -251,59 +264,113 @@ def test_get_project_outputs(workbench: dict[NodeID, Node]):
         assert list(output_node.inputs.keys()) == ["in_1"]
 
 
+@pytest.fixture
+def user_project(
+    user_project: dict[str, Any], workbench_db_column: dict[str, Any]
+) -> ProjectDict:
+    # OVERRIDES user_project
+    project = deepcopy(user_project)
+    project["workbench"] = workbench_db_column
+    return project
+
+
 @pytest.mark.skip(reason="UNDER DEV")
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPNotImplemented),
+        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        # (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        # (UserRole.TESTER, web.HTTPNotImplemented),
     ],
 )
-async def test_it1(
+async def test_user_story(
     client: TestClient,
     logged_user: UserInfoDict,
-    user_project: dict[str, Any],
+    user_project: ProjectDict,
     mock_catalog_service_api_responses: None,
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
-        url = client.app.router["replace_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
-        response = await client.put(f"{url}", json={})
-        await assert_status(response, expected)
+
+    # project_workbench = user_project["workbench"]
+    # for node_id in project_workbench:
+    #     url = client.app.router["replace_node_resources"].url_for(
+    #         project_id=user_project["uuid"], node_id=node_id
+    #     )
+    #     response = await client.put(f"{url}", json={})
+    #     await assert_status(response, expected)
 
     project_id = user_project["uuid"]
-    node_id = list(project_workbench.keys())[0]
 
-    # clone_project
     resp = await client.get(f"/v0/projects/{project_id}:clone")
-    project_clone = (await resp.json())["data"]
+    project_clone, _ = await assert_status(resp, expected_cls=expected)
 
-    # get_project_ports
-    # resp = await client.get(f"/v0/projects/{project_clone.uuid}/ports")
-    # project_ports = (await resp.json())["data"]
+    # Now, on the cloned project
+    project_id = project_clone["uuid"]
 
-    # ports is metadata => schemas
-    # inputs/outputs are data
+    # get_project_inputs
+    resp = await client.get(f"/v0/projects/{project_id}/inputs")
+    project_inputs, _ = await assert_status(resp, expected_cls=expected)
 
-    # replace_project_inputs = set
-    resp = await client.put(f"/v0/projects/{project_clone.uuid}/inputs")
+    assert project_inputs == {
+        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
+            "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
+            "value": 43,
+            "label": "X",
+        },
+        "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
+            "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+            "value": 1,
+            "label": "Z",
+        },
+        "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
+            "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+            "value": False,
+            "label": "on",
+        },
+    }
 
-    # update_project_inputs
-    resp = await client.patch(f"/v0/projects/{project_clone.uuid}/inputs")
+    # update_project_inputs = set
+    resp = await client.patch(
+        f"/v0/projects/{project_id}/inputs",
+        json=[{"key": "38a0d401-af4b-4ea7-ab4c-5005c712a5469", "value": 42}],
+    )
+    project_inputs, _ = await assert_status(resp, expected_cls=expected)
 
-    # get_project_inputs (actual data)
-    resp = await client.get(f"/v0/projects/{project_clone.uuid}/inputs")
+    assert project_inputs == {
+        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
+            "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
+            "value": 42,  # <----
+            "label": "X",
+        },
+        "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
+            "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+            "value": 1,
+            "label": "Z",
+        },
+        "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
+            "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+            "value": False,
+            "label": "on",
+        },
+    }
 
     # get_project_outputs (actual data)
-    resp = await client.get(f"/v0/projects/{project_clone.uuid}/outputs")
+    resp = await client.get(f"/v0/projects/{project_id}/outputs")
+    project_outputs, error = await assert_error(resp, expected_cls=expected)
 
-    # ---
-    resp = await client.get(
-        f"/v0/projects/{project_id}/nodes/{node_id}/ports/{port_key}"
-    )
+    assert project_outputs == {
+        "data": {
+            "09fd512e-0768-44ca-81fa-0cecab74ec1a": {
+                "key": "09fd512e-0768-44ca-81fa-0cecab74ec1a",
+                "value": None,  # was not computed!
+                "label": "Random sleep interval_2",
+            },
+            "76f607b4-8761-4f96-824d-cab670bc45f5": {
+                "key": "76f607b4-8761-4f96-824d-cab670bc45f5",
+                "value": 6,  #
+                "label": "Random sleep interval",
+            },
+        }
+    }
