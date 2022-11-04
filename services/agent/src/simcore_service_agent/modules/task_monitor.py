@@ -1,17 +1,16 @@
 import asyncio
 import logging
-import traceback
 from collections import deque
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Coroutine, Final, Optional
 
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
+from servicelib.logging_utils import log_context
 
 from ..core.settings import ApplicationSettings
 from .volumes_cleanup import backup_and_remove_volumes
-from servicelib.logging_utils import log_context
 
 logger = logging.getLogger(__name__)
 
@@ -20,33 +19,37 @@ DEFAULT_TASK_WAIT_ON_ERROR: Final[PositiveInt] = 10
 
 @dataclass
 class _TaskData:
-    callable: Callable
+    target: Callable
     args: Any
     repeat_interval_s: Optional[PositiveFloat]
 
+    @property
+    def name(self) -> str:
+        return self.target.__name__
+
+    def get_coroutine(self) -> Coroutine:
+        coroutine = self.target(*self.args)
+        assert isinstance(coroutine, Coroutine)  # nosec
+        return coroutine
+
 
 async def _task_runner(task_data: _TaskData) -> None:
-    with log_context(logger, logging.INFO, msg=f"'{task_data.callable.__name__}'"):
+    with log_context(logger, logging.INFO, msg=f"'{task_data.name}'"):
         while True:
-            coroutine: Coroutine = task_data.callable(*task_data.args)
             try:
-                await coroutine
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error(
-                    "Had an error while running '%s':\n%s",
-                    coroutine.__name__,
-                    "\n".join(traceback.format_tb(e.__traceback__)),
-                )
+                await task_data.get_coroutine()
+            except Exception:  # pylint: disable=broad-except
+                logger.exception("Had an error while running '%s'", task_data.name)
 
             if task_data.repeat_interval_s is None:
                 logger.warning(
                     "Unexpected termination of '%s'; it will be restarted",
-                    coroutine.__name__,
+                    task_data.name,
                 )
 
             logger.info(
                 "Will run '%s' again in %s seconds",
-                coroutine.__name__,
+                task_data.name,
                 task_data.repeat_interval_s,
             )
             await asyncio.sleep(
@@ -56,16 +59,15 @@ async def _task_runner(task_data: _TaskData) -> None:
             )
 
 
+@dataclass
 class TaskMonitor:
-    def __init__(self):
-        self._running: bool = False
-        self._tasks: set[asyncio.Task] = set()
-
-        self._to_start: dict[str, _TaskData] = {}
+    _was_started: bool = False
+    _tasks: set[asyncio.Task] = field(default_factory=set)
+    _to_start: dict[str, _TaskData] = field(default_factory=dict)
 
     @property
-    def is_running(self) -> bool:
-        return self._running
+    def was_started(self) -> bool:
+        return self._was_started
 
     def register_job(
         self,
@@ -73,19 +75,20 @@ class TaskMonitor:
         *args: Any,
         repeat_interval_s: Optional[PositiveFloat] = None,
     ) -> None:
-        if self._running:
-            raise RecursionError(
+        if self._was_started:
+            raise RuntimeError(
                 "Cannot add more tasks, monitor already running with: "
                 f"{[x.get_name() for x in self._tasks]}"
             )
 
-        if target.__name__ in self._to_start:
+        task_data = _TaskData(target, args, repeat_interval_s)
+        if task_data.name in self._to_start:
             raise RuntimeError(f"{target.__name__} is already registered")
 
-        self._to_start[target.__name__] = _TaskData(target, args, repeat_interval_s)
+        self._to_start[target.__name__] = task_data
 
     async def start(self) -> None:
-        self._running = True
+        self._was_started = True
         for name, task_data in self._to_start.items():
             logger.info("Starting task '%s'", name)
             self._tasks.add(
@@ -106,7 +109,7 @@ class TaskMonitor:
             self._tasks.remove(task)
 
         await asyncio.gather(*tasks_to_wait, return_exceptions=True)
-        self._running = False
+        self._was_started = False
         self._to_start = {}
 
 
