@@ -122,4 +122,4 @@ class MockedStorageSubsystem(NamedTuple):
     copy_data_folders_from_project: mock.MagicMock
     delete_project: mock.MagicMock
     delete_node: mock.MagicMock
-    get_project_total_size: mock.MagicMock
+    get_project_total_size_simcore_s3: mock.MagicMock
