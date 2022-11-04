@@ -21,6 +21,9 @@ from simcore_service_webserver.projects.projects_ports_handlers import (
     ProjectPortGet,
 )
 
+# TODO: how to ensure this is in sync with projects_ports_handlers.routes ??
+# this is the source of truth.
+
 app = FastAPI(redoc_url=None)
 
 TAGS: list[Union[str, Enum]] = [
