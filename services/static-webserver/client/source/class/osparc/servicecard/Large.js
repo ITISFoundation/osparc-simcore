@@ -184,6 +184,10 @@ qx.Class.define("osparc.servicecard.Large", {
       if (isDeprecated) {
         return osparc.utils.StatusUI.createServiceDeprecatedChip();
       }
+      const isRetired = osparc.utils.Services.isRetired(this.getService());
+      if (isRetired) {
+        return osparc.utils.StatusUI.createServiceRetiredChip();
+      }
       return null;
     },
 

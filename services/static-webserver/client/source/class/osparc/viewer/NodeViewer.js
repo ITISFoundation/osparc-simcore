@@ -156,6 +156,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         case "complete":
           break;
         case "deprecated":
+        case "retired":
         case "failed": {
           const msg = this.tr("Service failed: ") + data["service_message"];
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
