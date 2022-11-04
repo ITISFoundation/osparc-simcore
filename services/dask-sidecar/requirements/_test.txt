@@ -102,6 +102,8 @@ pprintpp==0.4.0
     # via pytest-icdiff
 ptvsd==4.3.2
     # via -r requirements/_test.in
+py==1.11.0
+    # via -r requirements/_test.in
 pycparser==2.20
     # via
     #   -c requirements/_base.txt
@@ -161,7 +163,7 @@ six==1.15.0
     #   -c requirements/_base.txt
     #   python-dateutil
     #   websocket-client
-termcolor==2.0.1
+termcolor==2.1.0
     # via pytest-sugar
 tomli==2.0.1
     # via

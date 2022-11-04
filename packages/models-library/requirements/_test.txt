@@ -89,6 +89,8 @@ pprintpp==0.4.0
     # via pytest-icdiff
 psycopg2-binary==2.9.4
     # via sqlalchemy
+py==1.11.0
+    # via -r requirements/_test.in
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
@@ -136,7 +138,7 @@ sqlalchemy==1.4.41
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-termcolor==2.0.1
+termcolor==2.1.0
     # via pytest-sugar
 tomli==2.0.1
     # via

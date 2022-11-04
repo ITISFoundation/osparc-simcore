@@ -154,7 +154,9 @@ psycopg2-binary==2.9.3
 ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
-    # via pytest-forked
+    # via
+    #   -r requirements/_test.in
+    #   pytest-forked
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
@@ -235,7 +237,7 @@ tenacity==8.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-termcolor==2.0.1
+termcolor==2.1.0
     # via pytest-sugar
 tomli==2.0.1
     # via
