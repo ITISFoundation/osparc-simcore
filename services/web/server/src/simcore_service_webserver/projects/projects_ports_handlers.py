@@ -7,7 +7,10 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
+from models_library.users import UserID
+from models_library.utils.fastapi_encoders import _servicelib_jsonable_encoder
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -25,12 +28,29 @@ from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
-routes = web.RouteTableDef()
+
+async def _get_validated_workbench_model(
+    app: web.Application, project_id: ProjectID, user_id: UserID
+) -> dict[NodeID, Node]:
+
+    # TODO: get directly unvalidated workbench
+    project: ProjectDict = await projects_api.get_project_for_user(
+        app,
+        project_uuid=f"{project_id}",
+        user_id=user_id,
+        include_templates=False,
+        include_state=False,
+    )
+
+    workbench = parse_obj_as(dict[NodeID, Node], project["workbench"])
+    return workbench
 
 
 #
 # projects/*/inputs COLLECTION -------------------------
 #
+
+routes = web.RouteTableDef()
 
 
 class ProjectPort(BaseModel):
@@ -39,6 +59,9 @@ class ProjectPort(BaseModel):
         description="Project port UID. It corresponds to the node ID of the associated parameter node",
     )
     value: Any = Field(..., description="Value assigned to this i/o port")
+
+    def data(self, **export_kwargs):
+        return _servicelib_jsonable_encoder(self.dict(**export_kwargs))
 
 
 class ProjectPortGet(ProjectPort):
@@ -54,24 +77,17 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    # TODO: get directly unvalidated workbench
-    project: ProjectDict = await projects_api.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-        include_templates=False,
-        include_state=False,
+    workbench = await _get_validated_workbench_model(
+        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-
-    workbench = parse_obj_as(dict[NodeID, Node], project["workbench"])
     inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
     return web.json_response(
         {
             "data": {
-                node_id: ProjectPortGet(
+                f"{node_id}": ProjectPortGet(
                     key=node_id, label=workbench[node_id].label, value=value
-                ).dict()
+                ).data()
                 for node_id, value in inputs.items()
             }
         },
@@ -90,15 +106,9 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    project: ProjectDict = await projects_api.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-        include_templates=False,
-        include_state=False,
+    workbench = await _get_validated_workbench_model(
+        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-
-    workbench = parse_obj_as(dict[NodeID, Node], project["workbench"])
     current_inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
     partial_workbench_data = {}
@@ -124,9 +134,9 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
     return web.json_response(
         {
             "data": {
-                node_id: ProjectPortGet(
+                f"{node_id}": ProjectPortGet(
                     key=node_id, label=workbench[node_id].label, value=value
-                ).dict()
+                ).data()
                 for node_id, value in inputs.items()
             }
         },
@@ -148,23 +158,19 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    project: ProjectDict = await projects_api.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-        include_templates=False,
-        include_state=False,
+    workbench = await _get_validated_workbench_model(
+        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-
-    workbench = parse_obj_as(dict[NodeID, Node], project["workbench"])
     outputs: dict[NodeID, Any] = _ports.get_project_outputs(workbench)
+
+    # FIXME: resolve references in outputs before return!!
 
     return web.json_response(
         {
             "data": {
-                node_id: ProjectPortGet(
+                f"{node_id}": ProjectPortGet(
                     key=node_id, label=workbench[node_id].label, value=value
-                ).dict()
+                ).data()
                 for node_id, value in outputs.items()
             }
         },
