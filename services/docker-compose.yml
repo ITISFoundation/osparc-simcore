@@ -272,6 +272,22 @@ services:
       - default
       - interactive_services_subnet
 
+  agent:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    deploy:
+      mode: global
+      # TODO: this requires some fixing
+      # resources:
+      #   limits:
+      #     cpus: "1.0"
+      #     memory: 200M
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      LOGLEVEL: ${LOG_LEVEL:-INFO}
+
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true

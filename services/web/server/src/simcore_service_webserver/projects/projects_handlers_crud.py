@@ -40,7 +40,10 @@ from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resourc
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
-from ..storage_api import copy_data_folders_from_project, get_project_total_size
+from ..storage_api import (
+    copy_data_folders_from_project,
+    get_project_total_size_simcore_s3,
+)
 from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
@@ -164,7 +167,9 @@ async def _prepare_project_copy(
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
         # get project total data size
-        project_data_size = await get_project_total_size(app, user_id, src_project_uuid)
+        project_data_size = await get_project_total_size_simcore_s3(
+            app, user_id, src_project_uuid
+        )
         if project_data_size >= max_bytes:
             raise web.HTTPUnprocessableEntity(
                 reason=f"Source project data size is {project_data_size.human_readable()}."

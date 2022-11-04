@@ -1,16 +1,15 @@
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import AsyncGenerator, Final, Generator, Iterator
+from typing import AsyncGenerator, Generator, Iterator
 
 from fastapi import FastAPI
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
+from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 
 from ..core.docker_utils import get_volume_by_label
-
-DOCKER_VOLUME_PREFIX: Final[str] = "dyv"
 
 
 def _ensure_path(path: Path) -> Path:
@@ -60,15 +59,24 @@ class MountedVolumes:
     @cached_property
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
-        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}_{self.node_id}_{_name_from_full_path(self.inputs_path)[::-1]}"
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+            f"_{_name_from_full_path(self.inputs_path)[::-1]}"
+        )
 
     @cached_property
     def volume_name_outputs(self) -> str:
-        return f"{DOCKER_VOLUME_PREFIX}_{self.run_id}_{self.node_id}_{_name_from_full_path(self.outputs_path)[::-1]}"
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+            f"_{_name_from_full_path(self.outputs_path)[::-1]}"
+        )
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
         for state_path in self.state_paths:
-            yield f"{DOCKER_VOLUME_PREFIX}_{self.run_id}_{self.node_id}_{_name_from_full_path(state_path)[::-1]}"
+            yield (
+                f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+                f"_{_name_from_full_path(state_path)[::-1]}"
+            )
 
     @cached_property
     def disk_inputs_path(self) -> Path:
