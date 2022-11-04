@@ -84,9 +84,10 @@ async def test_rabbit_client_pub_sub(
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
 
-    await publisher.publish(random_queue_name, faker.text())
+    message = faker.text()
+    await publisher.publish(random_queue_name, message)
 
-    mocked_message_parser = mocker.MagicMock(return_value=True)
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
     await consumer.consume(random_queue_name, mocked_message_parser)
 
     async for attempt in AsyncRetrying(
@@ -98,4 +99,40 @@ async def test_rabbit_client_pub_sub(
         with attempt:
             # NOTE: this sleep is here to ensure that there are not multiple messages coming in
             await asyncio.sleep(1)
-            mocked_message_parser.assert_called_once()
+            mocked_message_parser.assert_called_once_with(message)
+
+
+async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_queue_name: str,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    publisher = rabbitmq_client("publisher")
+    consumer = rabbitmq_client("consumer")
+
+    message = faker.text()
+    await publisher.publish(random_queue_name, message)
+
+    def _raise_once_then_true(*args, **kwargs):
+        _raise_once_then_true.calls += 1
+
+        if _raise_once_then_true.calls == 1:
+            raise KeyError("this is a test!")
+        if _raise_once_then_true.calls == 2:
+            return False
+        return True
+
+    _raise_once_then_true.calls = 0
+    mocked_message_parser = mocker.AsyncMock(side_effect=_raise_once_then_true)
+    await consumer.consume(random_queue_name, mocked_message_parser)
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(15),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert mocked_message_parser.call_count == 3
+            mocked_message_parser.assert_called_with(message)

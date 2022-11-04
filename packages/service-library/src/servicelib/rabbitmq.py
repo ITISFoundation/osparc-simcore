@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Optional
 
 import aio_pika
+from servicelib.logging_utils import log_context
 from settings_library.rabbit import RabbitSettings
 
 log = logging.getLogger(__name__)
@@ -58,16 +59,17 @@ class RabbitMQClient:
             queue = await channel.declare_queue(
                 queue_name,
                 durable=False,
-                auto_delete=False,
             )
 
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
             ) -> None:
-                async with message.process():
-                    log.debug("Message received: %s", message)
-                    if not await message_handler(message.body):
-                        await message.nack()
+                async with message.process(requeue=True):
+                    with log_context(
+                        log, logging.DEBUG, msg=f"Message received {message}"
+                    ):
+                        if not await message_handler(message.body.decode()):
+                            await message.nack()
 
             await queue.consume(_on_message)
 
@@ -79,7 +81,6 @@ class RabbitMQClient:
             queue = await channel.declare_queue(
                 queue_name,
                 durable=False,
-                auto_delete=False,
             )
 
             await channel.default_exchange.publish(
