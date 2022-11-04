@@ -62,11 +62,15 @@ openapi-schema-validator==0.2.3
 openapi-spec-validator==0.4.0
     # via openapi-core
 packaging==21.3
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-sugar
 parse==1.19.0
     # via openapi-core
 pluggy==1.0.0
     # via pytest
+py==1.11.0
+    # via -r requirements.in
 pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
@@ -78,6 +82,7 @@ pytest==7.2.0
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-instafail
+    #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements.in
 pytest-asyncio==0.19.0
@@ -85,6 +90,8 @@ pytest-asyncio==0.19.0
 pytest-cov==4.0.0
     # via -r requirements.in
 pytest-instafail==0.4.2
+    # via -r requirements.in
+pytest-sugar==0.9.5
     # via -r requirements.in
 pyyaml==6.0
     # via
@@ -94,6 +101,8 @@ six==1.16.0
     # via
     #   isodate
     #   openapi-core
+termcolor==2.1.0
+    # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage

@@ -51,12 +51,15 @@ packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   pytest
+    #   pytest-sugar
 platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest
+py==1.11.0
+    # via -r requirements/_test.in
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
@@ -69,16 +72,21 @@ pytest==7.2.0
     #   -r requirements/_test.in
     #   pytest-cov
     #   pytest-instafail
+    #   pytest-sugar
 pytest-cov==4.0.0
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
+pytest-sugar==0.9.5
+    # via -r requirements/_test.in
 requests==2.28.1
     # via
     #   -c requirements/_base.txt
     #   coveralls
+termcolor==2.1.0
+    # via pytest-sugar
 tomli==2.0.1
     # via
     #   -c requirements/_base.txt
