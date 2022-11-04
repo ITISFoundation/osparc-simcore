@@ -278,7 +278,6 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     deploy:
       mode: global
-      # TODO: this requires some fixing
       resources:
         limits:
           cpus: "1.0"
