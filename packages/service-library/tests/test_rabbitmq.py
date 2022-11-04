@@ -79,20 +79,23 @@ async def test_rabbit_client_pub_sub(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_queue_name: str,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
 
-    await publisher.publish(random_queue_name)
+    await publisher.publish(random_queue_name, faker.text())
 
     mocked_message_parser = mocker.MagicMock(return_value=True)
     await consumer.consume(random_queue_name, mocked_message_parser)
 
     async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
+        wait=wait_fixed(0.1),
         stop=stop_after_delay(5),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
         with attempt:
+            # NOTE: this sleep is here to ensure that there are not multiple messages coming in
+            await asyncio.sleep(1)
             mocked_message_parser.assert_called_once()

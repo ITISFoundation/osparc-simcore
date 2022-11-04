@@ -71,7 +71,7 @@ class RabbitMQClient:
 
             await queue.consume(_on_message)
 
-    async def publish(self, queue_name: str) -> None:
+    async def publish(self, queue_name: str, message: str) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
@@ -83,6 +83,6 @@ class RabbitMQClient:
             )
 
             await channel.default_exchange.publish(
-                aio_pika.Message(("Channel: %r" % channel).encode()),
+                aio_pika.Message(message.encode()),
                 routing_key=queue.name,
             )
