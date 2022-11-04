@@ -56,6 +56,7 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
+export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
