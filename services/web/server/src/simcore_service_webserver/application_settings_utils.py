@@ -112,7 +112,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             "sender": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_SENDER", None),
             "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
             "port": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PORT", None),
-            "tls": int(getattr(app_settings.WEBSERVER_EMAIL, "SMTP_TLS_ENABLED", 0)),
             "username": str(
                 getattr(app_settings.WEBSERVER_EMAIL, "SMTP_USERNAME", None)
             ),
@@ -258,8 +257,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         envs["SMTP_SENDER"] = section.get("sender")
         envs["SMTP_HOST"] = section.get("host")
         envs["SMTP_PORT"] = section.get("port")
-        envs["SMTP_TLS_ENABLED"] = section.get("tls")
-
         envs["SMTP_USERNAME"] = section.get("username")
         envs["SMTP_PASSWORD"] = section.get("password")
 
