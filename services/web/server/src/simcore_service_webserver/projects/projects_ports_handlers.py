@@ -54,6 +54,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
+    # TODO: get directly unvalidated workbench
     project: ProjectDict = await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
