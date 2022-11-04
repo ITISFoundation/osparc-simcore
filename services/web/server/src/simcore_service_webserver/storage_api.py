@@ -6,7 +6,11 @@ import logging
 from typing import Any, AsyncGenerator
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
-from models_library.api_schemas_storage import FileLocationArray, FileMetaDataGet
+from models_library.api_schemas_storage import (
+    FileLocation,
+    FileLocationArray,
+    FileMetaDataGet,
+)
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -18,6 +22,7 @@ from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
     long_running_task_request,
 )
+from servicelib.logging_utils import log_context
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_utils import NodesMap
 from yarl import URL
@@ -54,31 +59,34 @@ async def get_storage_locations(
         return locations_enveloped.data
 
 
-async def get_project_total_size(
+async def get_project_total_size_simcore_s3(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> ByteSize:
-    log.debug("getting %s total size for %s", f"{project_uuid=}", f"{user_id=}")
-    user_accessible_locations = await get_storage_locations(app, user_id)
-    session, api_endpoint = _get_storage_client(app)
+    with log_context(
+        log,
+        logging.DEBUG,
+        msg=f"getting {project_uuid=} total size in S3 for {user_id=}",
+    ):
+        # NOTE: datcore does not handle filtering and is too slow for this, so for now this is hard-coded
+        user_accessible_locations = [FileLocation(name="simcore.s3", id=0)]
+        session, api_endpoint = _get_storage_client(app)
 
-    project_size_bytes = 0
-    for location in user_accessible_locations:
-        files_metadata_url = (
-            api_endpoint / "locations" / f"{location.id}" / "files" / "metadata"
-        ).with_query(user_id=user_id, uuid_filter=f"{project_uuid}")
-        async with session.get(f"{files_metadata_url}") as response:
-            response.raise_for_status()
-            list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
-                await response.json()
-            )
-            assert list_of_files_enveloped.data is not None  # nosec
-        for file_metadata in list_of_files_enveloped.data:
-            project_size_bytes += file_metadata.file_size
-    project_size = parse_obj_as(ByteSize, project_size_bytes)
-    log.info(
-        "%s total size is %s", f"{project_uuid}", f"{project_size.human_readable()}"
-    )
-    return project_size
+        project_size_bytes = 0
+        for location in user_accessible_locations:
+            files_metadata_url = (
+                api_endpoint / "locations" / f"{location.id}" / "files" / "metadata"
+            ).with_query(user_id=user_id, uuid_filter=f"{project_uuid}")
+            async with session.get(f"{files_metadata_url}") as response:
+                response.raise_for_status()
+                list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
+                    await response.json()
+                )
+                assert list_of_files_enveloped.data is not None  # nosec
+            for file_metadata in list_of_files_enveloped.data:
+                project_size_bytes += file_metadata.file_size
+        project_size = parse_obj_as(ByteSize, project_size_bytes)
+
+        return project_size
 
 
 async def copy_data_folders_from_project(
