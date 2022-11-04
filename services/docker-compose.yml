@@ -275,7 +275,7 @@ services:
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     deploy:
       mode: global
       # TODO: this requires some fixing
