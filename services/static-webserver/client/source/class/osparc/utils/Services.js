@@ -298,6 +298,15 @@ qx.Class.define("osparc.utils.Services", {
 
     isDeprecated: function(metadata) {
       if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
+        const deprecationTime = new Date(metadata["deprecated"]);
+        const now = new Date();
+        return deprecationTime.getTime() > now.getTime();
+      }
+      return false;
+    },
+
+    isRetired: function(metadata) {
+      if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
         const depTime = new Date(metadata["deprecated"]);
         const now = new Date();
         return depTime.getTime() < now.getTime();
