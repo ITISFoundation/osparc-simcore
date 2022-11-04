@@ -180,11 +180,14 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getVersions: function(services, key) {
+    getVersions: function(services, key, filterDeprecates = true) {
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
+        if (filterDeprecates) {
+          versions = versions.filter(version => (services[key][version]["deprecated"] === null));
+        }
         versions.sort(osparc.utils.Utils.compareVersionNumbers);
       }
       return versions;
@@ -192,7 +195,7 @@ qx.Class.define("osparc.utils.Services", {
 
     getLatest: function(services, key) {
       if (key in services) {
-        const versions = this.getVersions(services, key);
+        const versions = this.getVersions(services, key, false);
         return services[key][versions[versions.length - 1]];
       }
       return null;
@@ -202,21 +205,6 @@ qx.Class.define("osparc.utils.Services", {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
       return osparc.component.permissions.Service.canAnyGroupWrite(serviceData["access_rights"], orgIDs);
-    },
-
-    getOwnedServices: function(services, key) {
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-      const ownedVersions = [];
-      if (key in services) {
-        this.getVersions(services, key).forEach(version => {
-          if (osparc.component.permissions.Service.canAnyGroupWrite(services[key][version]["access_rights"], orgIDs)) {
-            ownedVersions.push(version);
-          }
-        });
-        ownedVersions.sort(osparc.utils.Utils.compareVersionNumbers);
-      }
-      return ownedVersions;
     },
 
     /**
@@ -261,7 +249,7 @@ qx.Class.define("osparc.utils.Services", {
 
     getLatestCompatible: function(services, srcKey, srcVersion) {
       const srcNode = this.getFromObject(services, srcKey, srcVersion);
-      let versions = this.getVersions(services, srcKey);
+      let versions = this.getVersions(services, srcKey, false);
       // only allow patch versions
       versions = versions.filter(version => {
         const v1 = version.split(".");
