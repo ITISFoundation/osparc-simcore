@@ -16,6 +16,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
 
     const grid = this._getLayout();
     grid.setColumnAlign(this.self().GRID_POS.CURRENT_VERSION, "center", "middle");
+    grid.setColumnAlign(this.self().GRID_POS.COMPATIBLE_VERSION, "center", "middle");
     grid.setColumnAlign(this.self().GRID_POS.LATEST_VERSION, "center", "middle");
   },
 
@@ -23,8 +24,27 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     GRID_POS: {
       ...osparc.component.metadata.ServicesInStudy.GRID_POS,
       CURRENT_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length,
-      LATEST_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+1,
-      UPDATE_BUTTON: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+2
+      COMPATIBLE_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+1,
+      LATEST_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+2,
+      UPDATE_BUTTON: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+3
+    },
+
+    colorVersionLabel: function(versionLabel, metadata) {
+      const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
+      const isRetired = osparc.utils.Services.isRetired(metadata);
+      if (isDeprecated) {
+        versionLabel.set({
+          textColor: "contrasted-text-dark",
+          backgroundColor: osparc.utils.StatusUI.getColor("deprecated"),
+          toolTipText: qx.locale.Manager.tr("Service deprecated, please update")
+        });
+      } else if (isRetired) {
+        versionLabel.set({
+          textColor: "contrasted-text-dark",
+          backgroundColor: osparc.utils.StatusUI.getColor("retired"),
+          toolTipText: qx.locale.Manager.tr("Service retired, please update")
+        });
+      }
     }
   },
 
@@ -62,16 +82,25 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         row: 0,
         column: this.self().GRID_POS.CURRENT_VERSION
       });
+
+      this._add(new qx.ui.basic.Label(this.tr("Compatible")).set({
+        font: "title-14",
+        toolTipText: this.tr("Latest compatible version")
+      }), {
+        row: 0,
+        column: this.self().GRID_POS.COMPATIBLE_VERSION
+      });
+
       this._add(new qx.ui.basic.Label(this.tr("Latest")).set({
         font: "title-14",
-        toolTipText: this.tr("Latest compatible patch")
+        toolTipText: this.tr("Latest available version")
       }), {
         row: 0,
         column: this.self().GRID_POS.LATEST_VERSION
       });
 
       const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
-        appearance: "strong-button",
+        backgroundColor: "strong-main",
         visibility: "excluded"
       });
       this._add(updateAllButton, {
@@ -94,10 +123,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-        const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
-        const isRetired = osparc.utils.Services.isRetired(metadata);
+        const nodeMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
+        const latestMetadata = osparc.utils.Services.getLatest(this._services, node["key"]);
         if (latestCompatibleMetadata === null) {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
@@ -109,33 +137,25 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "text-14"
         });
-        if (isDeprecated) {
-          currentVersionLabel.set({
-            textColor: "contrasted-text-dark",
-            backgroundColor: osparc.utils.StatusUI.getColor("deprecated"),
-            toolTipText: this.tr("Service deprecated, please update")
-          });
-        } else if (isRetired) {
-          currentVersionLabel.set({
-            textColor: "contrasted-text-dark",
-            backgroundColor: osparc.utils.StatusUI.getColor("retired"),
-            toolTipText: this.tr("Service retired, please update")
-          });
-        } else if (autoUpdatable) {
-          currentVersionLabel.set({
-            textColor: "contrasted-text-dark",
-            backgroundColor: "warning-yellow"
-          });
-        }
+        this.self().colorVersionLabel(currentVersionLabel, nodeMetadata);
         this._add(currentVersionLabel, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
         });
 
-        const latestCompatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
+        const compatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
           font: "text-14"
         });
-        this._add(latestCompatibleVersionLabel, {
+        this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
+        this._add(compatibleVersionLabel, {
+          row: i,
+          column: this.self().GRID_POS.COMPATIBLE_VERSION
+        });
+
+        const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
+          font: "text-14"
+        });
+        this._add(latestVersionLabel, {
           row: i,
           column: this.self().GRID_POS.LATEST_VERSION
         });
@@ -143,11 +163,19 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
-            label: autoUpdatable ? this.tr("Update") : this.tr("Up-to-date"),
             enabled: autoUpdatable
           });
+          if (latestCompatibleMetadata["version"] === node["version"]) {
+            updateButton.setLabel(this.tr("Up-to-date"));
+          }
+          if (latestCompatibleMetadata["version"] !== latestMetadata["version"]) {
+            updateButton.setLabel(this.tr("Update manually"));
+          }
           if (autoUpdatable) {
-            updateButton.setAppearance("strong-button");
+            updateButton.set({
+              backgroundColor: "strong-main",
+              label: this.tr("Update")
+            });
           }
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
           this._add(updateButton, {
