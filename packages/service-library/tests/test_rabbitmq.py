@@ -4,6 +4,8 @@
 # pylint:disable=protected-access
 
 
+import asyncio
+
 import pytest
 from faker import Faker
 from servicelib.rabbitmq import RabbitMQClient
@@ -24,9 +26,16 @@ async def test_rabbit_client(rabbit_client_name: str, rabbit_service: RabbitSett
     assert client
     # check it is correctly initialized
     assert client._connection_pool
+    assert not client._connection_pool.is_closed
     assert client._channel_pool
+    assert not client._channel_pool.is_closed
     assert client.client_name == rabbit_client_name
     assert client.settings == rabbit_service
+    await client.close()
+    assert client._connection_pool
+    assert client._connection_pool.is_closed
+    assert client._channel_pool
+    assert client._channel_pool.is_closed
 
 
 async def test_rabbit_client_pub_sub(
@@ -39,4 +48,15 @@ async def test_rabbit_client_pub_sub(
 
     queue_name = faker.pystr()
     await publisher.publish(queue_name)
-    await consumer.consume(queue_name)
+    task = asyncio.create_task(consumer.consume(queue_name), name="consumer")
+    await asyncio.sleep(3)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    await asyncio.gather(*(client.close() for client in (publisher, consumer)))
+    for client in (publisher, consumer):
+        assert client._channel_pool
+        assert client._channel_pool.is_closed
+        assert publisher._connection_pool
+        assert publisher._connection_pool.is_closed

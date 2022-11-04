@@ -32,6 +32,12 @@ class RabbitMQClient:
         )
         self._channel_pool = aio_pika.pool.Pool(self.get_channel, max_size=10)
 
+    async def close(self) -> None:
+        assert self._channel_pool  # nosec
+        await self._channel_pool.close()
+        assert self._connection_pool  # nosec
+        await self._connection_pool.close()
+
     async def get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
