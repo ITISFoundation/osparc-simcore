@@ -3,6 +3,7 @@
     - /projects/{*}/outputs
 """
 
+import functools
 import logging
 from typing import Any
 
@@ -24,23 +25,45 @@ from ..security_decorators import permission_required
 from . import _ports, projects_api
 from .project_models import ProjectDict
 from .projects_db import ProjectDBAPI
+from .projects_exceptions import (
+    NodeNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
 
-def enveloped_json_response(data: Any):
+def _web_json_response_enveloped(data: Any):
     return web.json_response(
-        {"data": jsonable_encoder(data)},
+        {
+            "data": jsonable_encoder(data),
+        },
         dumps=json_dumps,
     )
 
 
-# def handle_exceptions_as_http_errors():
-#    try:
-#        yield
-#    except ProjectInvalidRightsError as exc:
-#        raise web.HTTPUnauthorized from exc
+def _handle_project_exceptions(handler):
+    @functools.wraps(handler)
+    async def wrapper(request: web.Request) -> web.Response:
+        try:
+            return await handler(request)
+
+        except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(
+                reason=f"Project '{exc.project_uuid}' not found"
+            ) from exc
+
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPUnauthorized from exc
+
+        except NodeNotFoundError as exc:
+            raise web.HTTPNotFound(
+                reason=f"Port '{exc.node_uuid}' not found in node '{exc.project_uuid}'"
+            ) from exc
+
+    return wrapper
 
 
 async def _get_validated_workbench_model(
@@ -82,6 +105,7 @@ class ProjectPortGet(ProjectPort):
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
 @login_required
 @permission_required("project.read")
+@_handle_project_exceptions
 async def get_project_inputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -93,7 +117,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
     inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
-    return enveloped_json_response(
+    return _web_json_response_enveloped(
         data={
             node_id: ProjectPortGet(
                 key=node_id, label=workbench[node_id].label, value=value
@@ -103,11 +127,12 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
 
 
-@routes.put(f"/{VTAG}/projects/{{project_id}}/inputs", name="replace_project_inputs")
+@routes.patch(f"/{VTAG}/projects/{{project_id}}/inputs", name="replace_project_inputs")
 @login_required
 @permission_required("project.update")
-async def replace_project_inputs(request: web.Request) -> web.Response:
-    app_db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+@_handle_project_exceptions
+async def update_project_inputs(request: web.Request) -> web.Response:
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectPort], request)
@@ -117,36 +142,33 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-
-    # FIXME: handle NodeNotFoundError
     current_inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
+    # build workbench patch
     partial_workbench_data = {}
-
     for input_update in inputs_updates:
         node_id = input_update.key
         if node_id not in current_inputs.keys():
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
 
+        # TODO: validate input_update.value against json-schema!
         workbench[node_id].outputs = {"out_1": input_update.value}
         partial_workbench_data[node_id] = workbench[node_id].dict(
             include={"outputs"}, exclude_unset=True
         )
 
-    assert app_db  # nosec
-    updated_project, _ = await app_db.patch_user_project_workbench(
+    # patch workbench
+    assert db  # nosec
+    updated_project, _ = await db.patch_user_project_workbench(
         jsonable_encoder(partial_workbench_data),
         req_ctx.user_id,
         f"{path_params.project_id}",
     )
 
-    # TODO: handler errors ValidationError NodeNotFoundError ProjectInvalidRightsError) and convert into http errors
-    # TODO: validate against schema!
-
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
     inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
-    return enveloped_json_response(
+    return _web_json_response_enveloped(
         data={
             node_id: ProjectPortGet(
                 key=node_id, label=workbench[node_id].label, value=value
@@ -164,6 +186,7 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}/outputs", name="get_project_outputs")
 @login_required
 @permission_required("project.read")
+@_handle_project_exceptions
 async def get_project_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -175,9 +198,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     )
     outputs: dict[NodeID, Any] = _ports.get_project_outputs(workbench)
 
-    # FIXME: resolve references in outputs before return!!
-
-    return web.json_response(
+    return _web_json_response_enveloped(
         data={
             node_id: ProjectPortGet(
                 key=node_id, label=workbench[node_id].label, value=value

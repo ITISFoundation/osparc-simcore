@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import Any, Iterator, Literal, Optional
 
 from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes_io import PortLink
+from pydantic import ValidationError
 
 #
 #  service/*/ports -> schemas/descriptors CLASS
@@ -77,10 +79,12 @@ def _iter_project_ports(
 
 def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     """Returns the values assigned to each input node"""
-    data = {}
+    input_to_value = {}
     for port in _iter_project_ports(workbench, "input"):
-        data[port.node_id] = port.node.outputs["out_1"] if port.node.outputs else None
-    return data
+        input_to_value[port.node_id] = (
+            port.node.outputs["out_1"] if port.node.outputs else None
+        )
+    return input_to_value
 
 
 def set_project_inputs(
@@ -96,9 +100,28 @@ def set_project_inputs(
     # TODO: Get schemas from catalog's new ports entry or since they are function-services, perhaps we just import it?? faster??
 
 
+class _PortLink(PortLink):
+    class Config(PortLink.Config):
+        allow_population_by_field_name = True
+
+
 def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     """Returns values assigned to each output node"""
-    data = {}
+    output_to_value = {}
     for port in _iter_project_ports(workbench, "output"):
-        data[port.node_id] = port.node.inputs["in_1"] if port.node.inputs else None
-    return data
+        if port.node.inputs:
+            try:
+                # is link?
+                port_link = _PortLink.parse_obj(port.node.inputs["in_1"])
+                # resolve
+                node = workbench[port_link.node_uuid]
+                # might still not have results
+                value = node.outputs[port_link.output] if node.outputs else None
+            except ValidationError:
+                # not a link
+                value = port.node.inputs["in_1"]
+        else:
+            value = None
+
+        output_to_value[port.node_id] = value
+    return output_to_value
