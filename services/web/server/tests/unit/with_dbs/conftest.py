@@ -268,7 +268,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     )
 
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size",
+        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
