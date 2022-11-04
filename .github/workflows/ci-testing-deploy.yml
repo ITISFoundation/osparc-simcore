@@ -67,6 +67,7 @@ jobs:
       service-library: ${{ steps.filter.outputs.service-library }}
       settings-library: ${{ steps.filter.outputs.settings-library }}
       simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
+      agent: ${{ steps.filter.outputs.agent }}
       api: ${{ steps.filter.outputs.api }}
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
@@ -113,6 +114,9 @@ jobs:
               - 'packages/settings-library/**'
             simcore-sdk:
               - 'packages/**'
+            agent:
+              - 'packages/**'
+              - 'services/agent/**'
             api:
               - 'api/**'
             api-server:
@@ -365,6 +369,53 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash install
       - name: test
         run: ./ci/github/unit-testing/storage.bash test
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
+
+  unit-test-agent:
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] agent"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/agent/requirements/ci.txt"
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/agent.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/agent.bash typecheck
+      - name: test
+        if: always()
+        run: ./ci/github/unit-testing/agent.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
@@ -1133,7 +1184,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4
@@ -1156,6 +1207,7 @@ jobs:
     if: always()
     needs:
       [
+        unit-test-agent,
         unit-test-api,
         unit-test-api-server,
         unit-test-autoscaling,
@@ -1451,7 +1503,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4

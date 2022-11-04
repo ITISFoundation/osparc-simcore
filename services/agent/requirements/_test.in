@@ -1,0 +1,23 @@
+#
+# Specifies dependencies required to run 'services/api-server/test'
+#  both for unit and integration tests!!
+#
+--constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
+
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
+#
+--constraint _base.txt
+
+aioboto3
+codecov
+coverage
+coveralls
+faker
+moto[server] # mock out tests based on AWS-S3
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+pytest-runner

@@ -5,7 +5,6 @@ from typing import Final
 DYNAMIC_SIDECAR_SERVICE_PREFIX: Final[str] = "dy-sidecar"
 DYNAMIC_PROXY_SERVICE_PREFIX: Final[str] = "dy-proxy"
 DYNAMIC_VOLUME_REMOVER_PREFIX: Final[str] = "dy-volrm"
-DY_SIDECAR_NAMED_VOLUME_PREFIX: Final[str] = "dyv"
 
 # label storing scheduler_data to allow service
 # monitoring recovery after director-v2 reboots
