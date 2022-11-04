@@ -146,7 +146,6 @@ packaging==21.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   docker
     #   pytest
-    #   pytest-sugar
 pamqp==3.2.1
     # via aiormq
 pint==0.19.2
@@ -194,7 +193,6 @@ pytest==7.2.0
     #   pytest-cov
     #   pytest-instafail
     #   pytest-mock
-    #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.19.0
@@ -206,8 +204,6 @@ pytest-instafail==0.4.2
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
-    # via -r requirements/_test.in
-pytest-sugar==0.9.5
     # via -r requirements/_test.in
 python-dotenv==0.21.0
     # via -r requirements/_test.in
@@ -258,8 +254,6 @@ tenacity==8.1.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_test.in
-termcolor==2.0.1
-    # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage

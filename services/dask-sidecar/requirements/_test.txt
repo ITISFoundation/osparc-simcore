@@ -93,7 +93,6 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   docker
     #   pytest
-    #   pytest-sugar
 platformdirs==2.5.2
     # via pylint
 pluggy==1.0.0
@@ -126,7 +125,6 @@ pytest==7.2.0
     #   pytest-instafail
     #   pytest-localftpserver
     #   pytest-mock
-    #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.19.0
@@ -140,8 +138,6 @@ pytest-instafail==0.4.2
 pytest-localftpserver==1.1.4
     # via -r requirements/_test.in
 pytest-mock==3.10.0
-    # via -r requirements/_test.in
-pytest-sugar==0.9.5
     # via -r requirements/_test.in
 python-dateutil==2.8.1
     # via
@@ -161,8 +157,6 @@ six==1.15.0
     #   -c requirements/_base.txt
     #   python-dateutil
     #   websocket-client
-termcolor==2.0.1
-    # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage

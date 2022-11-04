@@ -36,9 +36,7 @@ multidict==6.0.2
     #   aiohttp
     #   yarl
 packaging==21.3
-    # via
-    #   pytest
-    #   pytest-sugar
+    # via pytest
 pluggy==1.0.0
     # via pytest
 pydantic==1.10.2
@@ -57,7 +55,6 @@ pytest==7.2.0
     #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-instafail
-    #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/requirements.in
 pytest-asyncio==0.19.0
@@ -65,8 +62,6 @@ pytest-asyncio==0.19.0
 pytest-instafail==0.4.2
     # via -r requirements/requirements.in
 pytest-runner==6.0.0
-    # via -r requirements/requirements.in
-pytest-sugar==0.9.5
     # via -r requirements/requirements.in
 pyyaml==5.4.1
     # via
@@ -76,8 +71,6 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-termcolor==2.0.1
-    # via pytest-sugar
 tomli==2.0.1
     # via pytest
 typing-extensions==4.4.0

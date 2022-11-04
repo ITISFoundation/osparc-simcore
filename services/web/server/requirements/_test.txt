@@ -139,7 +139,6 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   docker
     #   pytest
-    #   pytest-sugar
     #   redis
 platformdirs==2.5.2
     # via pylint
@@ -176,7 +175,6 @@ pytest==7.2.0
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
-    #   pytest-sugar
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
@@ -195,8 +193,6 @@ pytest-instafail==0.4.2
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
-    # via -r requirements/_test.in
-pytest-sugar==0.9.5
     # via -r requirements/_test.in
 pytest-xdist==2.5.0
     # via -r requirements/_test.in
@@ -235,8 +231,6 @@ tenacity==8.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-termcolor==2.0.1
-    # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage
