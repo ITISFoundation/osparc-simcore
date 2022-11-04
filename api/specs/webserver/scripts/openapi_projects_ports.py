@@ -41,13 +41,13 @@ async def get_project_inputs(project_id: ProjectID):
     """New in version *0.10*"""
 
 
-@app.put(
+@app.patch(
     "/projects/{project_id}/inputs",
     response_model=Envelope[dict[NodeID, ProjectPortGet]],
     tags=TAGS,
-    operation_id="replace_project_inputs",
+    operation_id="update_project_inputs",
 )
-async def replace_project_inputs(project_id: ProjectID, updates: list[ProjectPort]):
+async def update_project_inputs(project_id: ProjectID, updates: list[ProjectPort]):
     """New in version *0.10*"""
 
 

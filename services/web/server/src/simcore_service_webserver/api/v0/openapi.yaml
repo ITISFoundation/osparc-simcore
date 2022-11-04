@@ -2305,7 +2305,7 @@ paths:
                               type: string
                               description: Instructions about what to do in this step
                               example:
-                                - 'This is a **sleeper**'
+                                - This is a **sleeper**
                                 - 'Please, select the config file defined [in this link](asdf)'
                       additionalProperties: true
                     currentNodeId:
@@ -3139,7 +3139,7 @@ paths:
                         key:
                           title: Key
                           type: string
-                          description: Project port UID. It corresponds to the node ID of the associated parameter node
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
                           format: uuid
                         value:
                           title: Value
@@ -3149,12 +3149,12 @@ paths:
                           type: string
                   error:
                     title: Error
-    put:
+    patch:
       tags:
         - project
-      summary: Replace Project Inputs
+      summary: Update Project Inputs
       description: New in version *0.10*
-      operationId: replace_project_inputs
+      operationId: update_project_inputs
       parameters:
         - required: true
           schema:
@@ -3179,7 +3179,7 @@ paths:
                   key:
                     title: Key
                     type: string
-                    description: Project port UID. It corresponds to the node ID of the associated parameter node
+                    description: Project port's unique identifer. Same as the UUID of the associated port node
                     format: uuid
                   value:
                     title: Value
