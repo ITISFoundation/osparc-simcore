@@ -20,6 +20,7 @@ from passlib import pwd
 from servicelib import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
+from settings_library.email import EmailProtocol
 from simcore_service_webserver.products import get_product_template_path
 
 from .._resources import resources
@@ -184,20 +185,27 @@ async def send_mail(app: web.Application, msg: MIMEText):
     smtp_args = dict(
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=cfg.SMTP_TLS_ENABLED,
+        use_tls=cfg.SMTP_PROTOCOL == EmailProtocol.TLS,
+        start_tls=cfg.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
     if cfg.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly
-        # plaintext first, then use starttls
         # this is a workaround
         smtp = aiosmtplib.SMTP(**smtp_args)
-        await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
-        if cfg.SMTP_TLS_ENABLED:
-            log.info("Starting TLS ...")
-            await smtp.starttls(validate_certs=False)
+        if cfg.SMTP_PROTOCOL == EmailProtocol.STARTTLS:
+            log.info("Unencrypted connection attempt to mailserver ...")
+            await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
+            log.info("Starting STARTTLS ...")
+            await smtp.starttls()
+        elif cfg.SMTP_PROTOCOL == EmailProtocol.TLS:
+            await smtp.connect(use_tls=True, port=cfg.SMTP_PORT)
+        elif cfg.SMTP_PROTOCOL == EmailProtocol.UNENCRYPTED:
+            await smtp.connect(use_tls=False, port=cfg.SMTP_PORT)
+            log.info("Unencrypted connection attempt to mailserver ...")
+        #
         if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
-            log.info("Login email server ...")
+            log.info("Attempting a login into the email server ...")
             await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value())
         await smtp.send_message(msg)
         await smtp.quit()

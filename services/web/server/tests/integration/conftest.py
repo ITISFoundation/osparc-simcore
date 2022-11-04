@@ -120,13 +120,13 @@ def _default_app_config_for_integration_tests(
     test_environ.update(webserver_environ)
 
     # DEFAULTS if not defined in environ
-    # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yamla
+    # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yaml
     # as docker-compose does: i.e. x = ${VARIABLE:default}.
     #
-    # Instead, the variable has to be defined here ------------
+    # Instead, the variables have to be defined here ------------
     test_environ["SMTP_USERNAME"] = "None"
     test_environ["SMTP_PASSWORD"] = "None"
-    test_environ["SMTP_TLS_ENABLED"] = "0"
+    test_environ["SMTP_PROTOCOL"] = "UNENCRYPTED"
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
