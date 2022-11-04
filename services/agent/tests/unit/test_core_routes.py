@@ -28,12 +28,12 @@ def test_client(initialized_app: FastAPI) -> TestClient:
 def test_health_ok(env: None, test_client: TestClient):
     response = test_client.get("/health")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"task_monitor": True}
+    assert response.json() == None
 
 
 def test_health_fails(env: None, initialized_app: FastAPI, test_client: TestClient):
     task_monitor: TaskMonitor = initialized_app.state.task_monitor
-    task_monitor._running = False
+    task_monitor._was_started = False
 
     response = test_client.get("/health")
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
