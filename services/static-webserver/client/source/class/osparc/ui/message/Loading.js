@@ -172,7 +172,6 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.__messages.add(widget);
     },
 
-
     // from osparc.component.widget.PersistentIframe
     maximizeIFrame: function(maximize) {
       if (maximize) {
