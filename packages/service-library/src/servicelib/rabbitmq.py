@@ -66,7 +66,8 @@ class RabbitMQClient:
             ) -> None:
                 async with message.process():
                     log.debug("Message received: %s", message)
-                    await message_handler(message)
+                    if not await message_handler(message.body):
+                        await message.nack()
 
             await queue.consume(_on_message)
 
