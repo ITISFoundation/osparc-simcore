@@ -78,7 +78,6 @@ def random_queue_name(faker: Faker) -> str:
 async def test_rabbit_client_pub_sub(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_queue_name: str,
-    faker: Faker,
     mocker: MockerFixture,
 ):
     publisher = rabbitmq_client("publisher")
@@ -91,8 +90,9 @@ async def test_rabbit_client_pub_sub(
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(10),
+        stop=stop_after_delay(5),
         retry=retry_if_exception_type(AssertionError),
+        reraise=True,
     ):
         with attempt:
             mocked_message_parser.assert_called_once()
