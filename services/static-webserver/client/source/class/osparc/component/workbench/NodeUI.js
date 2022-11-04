@@ -286,7 +286,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       if (node.isRetired()) {
-        const retiredIcon = this.getChildControl("retired-icon");
+        const retiredIcon = this.getChildControl("deprecated-icon");
         retiredIcon.set({
           textColor: osparc.utils.StatusUI.getColor("retired")
         });

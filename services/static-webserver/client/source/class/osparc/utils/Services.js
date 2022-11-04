@@ -315,7 +315,7 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
-    DEPRECATED_RETIRED_TEXT: qx.locale.Manager.tr("Service retired"),
+    RETIRED_SERVICE_TEXT: qx.locale.Manager.tr("Service retired"),
     DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please, download the Service data and upload them to an updated version"),
     DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please, instantiate an updated version"),
 
