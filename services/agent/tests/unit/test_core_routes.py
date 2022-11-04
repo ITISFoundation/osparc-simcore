@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=protected-access
 
+from time import time
 from typing import AsyncIterator
 
 import pytest
@@ -31,9 +32,26 @@ def test_health_ok(env: None, test_client: TestClient):
     assert response.json() == None
 
 
-def test_health_fails(env: None, initialized_app: FastAPI, test_client: TestClient):
+def test_health_fails_not_started(
+    env: None, initialized_app: FastAPI, test_client: TestClient
+):
     task_monitor: TaskMonitor = initialized_app.state.task_monitor
+    # emulate monitor not being started
     task_monitor._was_started = False
+
+    response = test_client.get("/health")
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.json() == {"detail": "unhealthy"}
+
+
+def test_health_fails_hanging_tasks(
+    env: None, initialized_app: FastAPI, test_client: TestClient
+):
+    task_monitor: TaskMonitor = initialized_app.state.task_monitor
+
+    # emulate tasks hanging
+    for task_data in task_monitor._to_start.values():
+        task_data._start_time = time() - 1e6
 
     response = test_client.get("/health")
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE

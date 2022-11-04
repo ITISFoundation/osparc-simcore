@@ -3,7 +3,8 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Coroutine, Final, Optional
+from time import time
+from typing import Any, Awaitable, Callable, Final, Optional
 
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
@@ -22,22 +23,38 @@ class _TaskData:
     target: Callable
     args: Any
     repeat_interval_s: Optional[PositiveFloat]
+    _start_time: Optional[PositiveFloat] = None
 
     @property
     def name(self) -> str:
         return self.target.__name__
 
-    def get_coroutine(self) -> Coroutine:
+    async def run(self) -> None:
         coroutine = self.target(*self.args)
-        assert isinstance(coroutine, Coroutine)  # nosec
-        return coroutine
+
+        self._start_time = time()
+
+        try:
+            await coroutine
+        finally:
+            self._start_time = None
+
+    def is_hanging(self) -> bool:
+        # NOTE: tasks with no repeat_interval_s are design to run forever
+        if self.repeat_interval_s is None:
+            return False
+
+        if self._start_time is None:
+            return False
+
+        return (time() - self._start_time) > self.repeat_interval_s
 
 
 async def _task_runner(task_data: _TaskData) -> None:
     with log_context(logger, logging.INFO, msg=f"'{task_data.name}'"):
         while True:
             try:
-                await task_data.get_coroutine()
+                await task_data.run()
             except Exception:  # pylint: disable=broad-except
                 logger.exception("Had an error while running '%s'", task_data.name)
 
@@ -68,6 +85,15 @@ class TaskMonitor:
     @property
     def was_started(self) -> bool:
         return self._was_started
+
+    @property
+    def are_tasks_hanging(self) -> bool:
+        hanging_tasks_detected = False
+        for name, task_data in self._to_start.items():
+            if task_data.is_hanging():
+                logger.warning("Task '%s' is hanging", name)
+                hanging_tasks_detected = True
+        return hanging_tasks_detected
 
     def register_job(
         self,
