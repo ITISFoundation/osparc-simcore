@@ -38,3 +38,6 @@ services:
 
   dynamic-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+
+  agent:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
