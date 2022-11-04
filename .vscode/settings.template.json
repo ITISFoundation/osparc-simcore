@@ -59,7 +59,7 @@
   },
   "python.testing.pytestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx",
-  "hadolint.hadolintPath": "scripts/hadolint.bash",
+  "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "hadolint.cliOptions": [],
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
