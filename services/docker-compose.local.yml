@@ -12,10 +12,6 @@
 #
 version: "3.8"
 services:
-  agent:
-    ports:
-      - "8013:8000"
-      - "3013:3000"
   api-server:
     ports:
       - "8006:8000"
