@@ -40,14 +40,9 @@ class ContainerHostConfig(BaseModel):
 
     @validator("memory_swap")
     @classmethod
-    def ensure_memory_swap_is_either_disabled_or_greater_or_equal_to_memory(
-        cls, v, values
-    ):
-        if v <= -1:
-            # if not set it will be the same value as memory to ensure swap is disabled
-            return -1
+    def ensure_memory_swap_cannot_be_unlimited_nor_smaller_than_memory(cls, v, values):
         if v < values["memory"]:
-            return values["memory"]
+            raise ValueError("Memory swap cannot be set to a smaller value than memory")
         return v
 
 
