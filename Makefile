@@ -31,6 +31,7 @@ $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead.
 # cat services/docker-compose-build.yml | yq ".services | keys | sort"
 #
 SERVICES_NAMES_TO_BUILD := \
+  agent \
   api-server \
   autoscaling \
   catalog \
@@ -55,6 +56,7 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
+export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)

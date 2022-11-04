@@ -1,0 +1,26 @@
+
+#
+# CONSTRAINTS DUE TO TEST LIBRARIES
+#
+
+#
+# BELOW COSNTRAINTS are required to install moto[server]
+#
+
+# There are incompatible versions in the resolved dependencies:
+#   boto3==1.21.21 (from -c requirements/./constraints.txt (line 3))
+#   boto3<1.24.60,>=1.24.59 (from aiobotocore[boto3]==2.4.0->aioboto3==10.1.0->-r requirements/_test.in (line 13))
+#   boto3>=1.9.201 (from moto[server]==4.0.1->-r requirements/_test.in (line 18))
+aioboto3<=9.6.0
+# There are incompatible versions in the resolved dependencies:
+#   botocore>=1.12.201 (from moto[server]==4.0.1->-r requirements/_test.in (line 18))
+#   botocore>=1.11.3 (from aws-xray-sdk==2.10.0->moto[server]==4.0.1->-r requirements/_test.in (line 18))
+#   botocore<1.28.0,>=1.27.95 (from boto3==1.24.95->moto[server]==4.0.1->-r requirements/_test.in (line 18))
+#   botocore<1.24.22,>=1.24.21 (from aiobotocore[boto3]==2.3.0->aioboto3==9.6.0->-r requirements/_test.in (line 13))
+boto3<=1.21.21
+# There are incompatible versions in the resolved dependencies:
+#   jsonschema==3.2.0 (from -c requirements/_base.txt (line 159))
+#   jsonschema~=3.2 (from -c requirements/./constraints.txt (line 12))
+#   jsonschema<5,>=3.0 (from cfn-lint==0.64.1->moto[server]==4.0.1->-r requirements/_test.in (line 21))
+#   jsonschema<5.0.0,>=4.0.0 (from openapi-spec-validator==0.5.1->moto[server]==4.0.1->-r requirements/_test.in (line 21))
+openapi-spec-validator<0.5.0

@@ -24,6 +24,7 @@ Makefile                                  @pcrespov @sanderegg
 /scripts/demo/                            @odeimaiz @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects/               @odeimaiz @pcrespov
+/services/agent                           @GitHK
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @Surfict @sanderegg @pcrespov
 /services/catalog/                        @pcrespov @sanderegg

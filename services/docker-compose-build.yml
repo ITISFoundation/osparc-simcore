@@ -249,3 +249,27 @@ services:
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
         io.osparc.api-version: "${STORAGE_API_VERSION}"
+
+  agent:
+    image: local/agent:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/agent/Dockerfile
+      args:
+        - tag=latest
+        - VCS_REF=${VCS_REF}
+        - VCS_REF_CLIENT=${VCS_REF_CLIENT}
+        - VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT}
+        - VCS_URL=${VCS_URL}
+      cache_from:
+        - local/agent:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/agent:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/agent:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/agent:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "${VCS_URL}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+        io.osparc.api-version: "${AGENT_API_VERSION}"
