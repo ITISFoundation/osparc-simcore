@@ -65,7 +65,7 @@ async def _read_stream(stream):
         logger.info(line.decode().strip("\n"))
 
 
-async def store_to_s3(  # pylint:disable=too-many-locals
+async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     volume_name: str,
     dyv_volume: dict,
     s3_endpoint: str,
