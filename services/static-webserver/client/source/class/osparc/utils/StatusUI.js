@@ -220,10 +220,21 @@ qx.Class.define("osparc.utils.StatusUI", {
 
     createServiceDeprecatedChip: function() {
       const chip = new osparc.ui.basic.Chip().set({
-        label: osparc.utils.Services.DEPRECATED_SERVICE,
-        icon: "@FontAwesome5Solid/exclamation-triangle/12",
+        label: osparc.utils.Services.DEPRECATED_SERVICE_TEXT,
+        icon: osparc.utils.StatusUI.getIconSource("deprecated"),
         textColor: "contrasted-text-dark",
-        backgroundColor: "failed-red",
+        backgroundColor: osparc.utils.StatusUI.getColor("deprecated"),
+        allowGrowX: false
+      });
+      return chip;
+    },
+
+    createServiceRetiredChip: function() {
+      const chip = new osparc.ui.basic.Chip().set({
+        label: osparc.utils.Services.DEPRECATED_SERVICE_TEXT,
+        icon: osparc.utils.StatusUI.getIconSource("retired"),
+        textColor: "contrasted-text-dark",
+        backgroundColor: osparc.utils.StatusUI.getColor("retired"),
         allowGrowX: false
       });
       return chip;

@@ -89,7 +89,7 @@ qx.Class.define("osparc.utils.Study", {
       const deprecated = filtered.some(srv => {
         const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
         if (srvMetadata) {
-          return osparc.utils.Services.isDeprecated(srvMetadata);
+          return osparc.utils.Services.isDeprecated(srvMetadata) || osparc.utils.Services.isRetired(srvMetadata);
         }
         return false;
       });
