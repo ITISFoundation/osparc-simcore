@@ -63,7 +63,7 @@ routes = web.RouteTableDef()
 class ProjectPort(BaseModel):
     key: NodeID = Field(
         ...,
-        description="Project port UID. It corresponds to the node ID of the associated parameter node",
+        description="Project port's unique identifer. Same as the UUID of the associated port node",
     )
     value: Any = Field(..., description="Value assigned to this i/o port")
 
@@ -110,6 +110,8 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
+
+    # FIXME: handle NodeNotFoundError
     current_inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)
 
     partial_workbench_data = {}
