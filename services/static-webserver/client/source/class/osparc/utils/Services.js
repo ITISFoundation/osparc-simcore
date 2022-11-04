@@ -307,9 +307,9 @@ qx.Class.define("osparc.utils.Services", {
 
     isRetired: function(metadata) {
       if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {
-        const depTime = new Date(metadata["deprecated"]);
+        const deprecationTime = new Date(metadata["deprecated"]);
         const now = new Date();
-        return depTime.getTime() < now.getTime();
+        return deprecationTime.getTime() < now.getTime();
       }
       return false;
     },

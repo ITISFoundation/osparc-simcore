@@ -231,7 +231,7 @@ qx.Class.define("osparc.utils.StatusUI", {
 
     createServiceRetiredChip: function() {
       const chip = new osparc.ui.basic.Chip().set({
-        label: osparc.utils.Services.DEPRECATED_SERVICE_TEXT,
+        label: osparc.utils.Services.RETIRED_SERVICE_TEXT,
         icon: osparc.utils.StatusUI.getIconSource("retired"),
         textColor: "contrasted-text-dark",
         backgroundColor: osparc.utils.StatusUI.getColor("retired"),
