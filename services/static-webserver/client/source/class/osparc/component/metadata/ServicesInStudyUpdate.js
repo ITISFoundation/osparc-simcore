@@ -102,8 +102,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
-        const updatable = node["version"] !== latestCompatibleMetadata["version"];
-        if (updatable) {
+        const autoUpdatable = node["version"] !== latestCompatibleMetadata["version"];
+        if (autoUpdatable) {
           updatableServices.push(nodeId);
         }
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
@@ -121,7 +121,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
             backgroundColor: osparc.utils.StatusUI.getColor("retired"),
             toolTipText: this.tr("Service retired, please update")
           });
-        } else if (updatable) {
+        } else if (autoUpdatable) {
           currentVersionLabel.set({
             textColor: "contrasted-text-dark",
             backgroundColor: "warning-yellow"
@@ -132,10 +132,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.CURRENT_VERSION
         });
 
-        const latestVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
+        const latestCompatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
           font: "text-14"
         });
-        this._add(latestVersionLabel, {
+        this._add(latestCompatibleVersionLabel, {
           row: i,
           column: this.self().GRID_POS.LATEST_VERSION
         });
@@ -143,10 +143,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
-            label: updatable ? this.tr("Update") : this.tr("Up-to-date"),
-            enabled: updatable
+            label: autoUpdatable ? this.tr("Update") : this.tr("Up-to-date"),
+            enabled: autoUpdatable
           });
-          if (updatable) {
+          if (autoUpdatable) {
             updateButton.setAppearance("strong-button");
           }
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
