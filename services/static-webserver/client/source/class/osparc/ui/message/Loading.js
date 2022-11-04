@@ -130,9 +130,7 @@ qx.Class.define("osparc.ui.message.Loading", {
           decorator: null
         });
         osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
-        maxButton.addListener("execute", e => {
-          this.maximizeIFrame(!this.hasState("maximized"));
-        }, this);
+        maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
 
         const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
           maxWidth: 40
