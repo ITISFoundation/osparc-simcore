@@ -36,6 +36,13 @@ def enveloped_json_response(data: Any):
     )
 
 
+# def handle_exceptions_as_http_errors():
+#    try:
+#        yield
+#    except ProjectInvalidRightsError as exc:
+#        raise web.HTTPUnauthorized from exc
+
+
 async def _get_validated_workbench_model(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> dict[NodeID, Node]:
@@ -128,8 +135,13 @@ async def replace_project_inputs(request: web.Request) -> web.Response:
 
     assert app_db  # nosec
     updated_project, _ = await app_db.patch_user_project_workbench(
-        partial_workbench_data, req_ctx.user_id, f"{path_params.project_id}"
+        jsonable_encoder(partial_workbench_data),
+        req_ctx.user_id,
+        f"{path_params.project_id}",
     )
+
+    # TODO: handler errors ValidationError NodeNotFoundError ProjectInvalidRightsError) and convert into http errors
+    # TODO: validate against schema!
 
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
     inputs: dict[NodeID, Any] = _ports.get_project_inputs(workbench)

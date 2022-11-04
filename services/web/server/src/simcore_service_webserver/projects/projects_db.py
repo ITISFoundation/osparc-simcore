@@ -576,6 +576,9 @@ class ProjectDBAPI:
         - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
         - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
         - Example: to remove a node ```{node_id: None}```
+
+        raises NodeNotFoundError, ProjectInvalidRightsError
+
         """
         with log_context(
             log,
@@ -692,6 +695,8 @@ class ProjectDBAPI:
         """replaces a project from a user
         this method completely replaces a user project with new_project_data only keeping
         the old entries from the project workbench if they exists in the new project workbench.
+
+        :raises ProjectInvalidRightsError
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
