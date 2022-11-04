@@ -13,8 +13,10 @@ def get_application(request: Request) -> FastAPI:
 
 
 def get_settings(app: FastAPI = Depends(get_application)) -> ApplicationSettings:
-    return app.state.settings  # type: ignore
+    assert isinstance(app.state.settings, ApplicationSettings)  # nosec
+    return app.state.settings
 
 
 def get_task_monitor(app: FastAPI = Depends(get_application)) -> TaskMonitor:
-    return app.state.task_monitor  # type: ignore
+    assert isinstance(app.state.task_monitor, TaskMonitor)  # nosec
+    return app.state.task_monitor
