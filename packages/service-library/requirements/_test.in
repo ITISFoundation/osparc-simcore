@@ -25,5 +25,5 @@ pytest-docker
 pytest-instafail
 pytest-mock
 pytest-runner
-pytest-sugar
+# pytest-sugar ## broken w/ pytest==7.2.0. SEE https://github.com/Teemu/pytest-sugar/issues/243
 pytest-xdist
