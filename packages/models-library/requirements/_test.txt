@@ -76,7 +76,9 @@ multidict==6.0.2
     #   aiohttp
     #   yarl
 packaging==21.3
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-sugar
 pint==0.19.2
     # via -r requirements/_test.in
 platformdirs==2.5.2
@@ -87,6 +89,8 @@ pprintpp==0.4.0
     # via pytest-icdiff
 psycopg2-binary==2.9.4
     # via sqlalchemy
+py==1.11.0
+    # via -r requirements/_test.in
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
@@ -100,6 +104,7 @@ pytest==7.2.0
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
+    #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.19.0
@@ -113,6 +118,8 @@ pytest-instafail==0.4.2
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
+    # via -r requirements/_test.in
+pytest-sugar==0.9.5
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
@@ -131,6 +138,8 @@ sqlalchemy==1.4.41
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
+termcolor==2.1.0
+    # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage
