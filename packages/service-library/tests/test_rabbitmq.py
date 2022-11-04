@@ -25,6 +25,8 @@ async def test_rabbit_client(rabbit_client_name: str, rabbit_service: RabbitSett
     # check it is correctly initialized
     assert client._connection_pool
     assert client._channel_pool
+    assert client.client_name == rabbit_client_name
+    assert client.settings == rabbit_service
 
 
 async def test_rabbit_client_pub_sub(
