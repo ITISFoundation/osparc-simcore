@@ -3,6 +3,7 @@
 These functions are analogous to `pydantic.tools.parse_obj_as(model_class, obj)` for aiohttp's requests
 """
 
+import json.decoder
 from contextlib import contextmanager
 from typing import Iterator, TypeVar, Union
 
@@ -13,7 +14,7 @@ from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
-ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list[BaseModel]])
+ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
 
 
 @contextmanager
@@ -72,7 +73,7 @@ def handle_validation_as_http_error(
                 }
             )
 
-        raise web.HTTPUnprocessableEntity(
+        raise web.HTTPUnprocessableEntity(  # 422
             reason=reason_msg,
             text=error_str,
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -95,7 +96,7 @@ def parse_request_path_parameters_as(
 ) -> ModelType:
     """Parses path parameters from 'request' and validates against 'parameters_schema'
 
-    :raises HTTPBadRequest if validation of parameters  fail
+    :raises HTTPUnprocessableEntity (422) if validation of parameters  fail
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid parameter/s '{failed}' in request path",
@@ -114,7 +115,7 @@ def parse_request_query_parameters_as(
 ) -> ModelType:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
 
-    :raises HTTPBadRequest if validation of queries fail
+    :raises HTTPUnprocessableEntity (422) if validation of queries fail
     """
 
     with handle_validation_as_http_error(
@@ -134,14 +135,19 @@ async def parse_request_body_as(
 ) -> ModelOrListType:
     """Parses and validates request body against schema
 
-    :raises HTTPBadRequest
+    :raises HTTPUnprocessableEntity (422), HTTPBadRequest(400)
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid field/s '{failed}' in request body",
         resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
-        body = await request.json()
-        if isinstance(model_schema, BaseModel):
-            return model_schema.parse(body)
+        try:
+            body = await request.json()
+        except json.decoder.JSONDecodeError as err:
+            raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}")
+
+        if issubclass(model_schema, type) and issubclass(model_schema, BaseModel):
+            return model_schema.parse_obj(body)
+
         return parse_obj_as(model_schema, body)
