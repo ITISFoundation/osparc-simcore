@@ -18,6 +18,8 @@ from faker import Faker
 from pydantic import NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
+from simcore_sdk.node_ports_v2 import Nodeports
+from pydantic import parse_obj_as, ByteSize
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs_watcher import (
@@ -36,8 +38,6 @@ TICK_INTERVAL: Final[PositiveFloat] = 0.001
 WAIT_INTERVAL: Final[PositiveFloat] = TICK_INTERVAL * 10
 SLEEP_FOREVER: Final[PositiveInt] = 1000000
 
-_KB: Final[PositiveInt] = 1024
-_MB: Final[PositiveInt] = 1024 * _KB
 
 # FIXTURES
 
@@ -64,10 +64,17 @@ def port_keys() -> list[str]:
 
 
 @pytest.fixture
+def nodeports() -> Nodeports:
+    return AsyncMock()
+
+
+@pytest.fixture
 async def outputs_manager(
-    mounted_volumes: MountedVolumes, port_keys: list[str]
+    mounted_volumes: MountedVolumes, port_keys: list[str], nodeports: Nodeports
 ) -> AsyncIterable[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=mounted_volumes.disk_outputs_path)
+    outputs_manager = OutputsManager(
+        outputs_path=mounted_volumes.disk_outputs_path, nodeports=nodeports
+    )
     outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()
@@ -80,9 +87,7 @@ async def outputs_watcher(
     outputs_manager: OutputsManager,
 ) -> OutputsWatcher:
     mocker.patch.object(outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", TICK_INTERVAL)
-    outputs_watcher = OutputsWatcher(
-        outputs_manager=outputs_manager, io_log_redirect_cb=None
-    )
+    outputs_watcher = OutputsWatcher(outputs_manager=outputs_manager)
     outputs_watcher.observe_outputs_directory(mounted_volumes.disk_outputs_path)
 
     return outputs_watcher
@@ -146,10 +151,22 @@ class FileGenerationInfo:
 
 @pytest.fixture(
     params=[
-        FileGenerationInfo(size=100, chunk_size=1),
-        FileGenerationInfo(size=100 * _KB, chunk_size=1 * _KB),
-        FileGenerationInfo(size=100 * _MB, chunk_size=1 * _MB),
-        FileGenerationInfo(size=100 * _MB, chunk_size=10 * _MB),
+        FileGenerationInfo(
+            size=parse_obj_as(ByteSize, "100b"),
+            chunk_size=parse_obj_as(ByteSize, "1b"),
+        ),
+        FileGenerationInfo(
+            size=parse_obj_as(ByteSize, "100kib"),
+            chunk_size=parse_obj_as(ByteSize, "1kib"),
+        ),
+        FileGenerationInfo(
+            size=parse_obj_as(ByteSize, "100mib"),
+            chunk_size=parse_obj_as(ByteSize, "1mib"),
+        ),
+        FileGenerationInfo(
+            size=parse_obj_as(ByteSize, "100mib"),
+            chunk_size=parse_obj_as(ByteSize, "10mib"),
+        ),
     ]
 )
 def file_generation_info(request: FixtureRequest) -> FileGenerationInfo:
@@ -315,6 +332,7 @@ async def test_port_key_sequential_event_generation(
     files_per_port_key: NonNegativeInt,
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
+    nodeports: Nodeports,
 ):
     # await _wait_for_events_to_trigger()
     # writing ports sequentially
@@ -350,7 +368,7 @@ async def test_port_key_sequential_event_generation(
             call(
                 outputs_path=mounted_volumes.disk_outputs_path,
                 port_keys=[port_key],
-                io_log_redirect_cb=None,
+                nodeports=nodeports,
             )
             for port_key in port_keys
         ],

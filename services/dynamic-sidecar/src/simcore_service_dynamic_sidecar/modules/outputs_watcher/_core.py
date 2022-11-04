@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import logging
 from collections import deque
 from contextlib import contextmanager, suppress
@@ -7,11 +6,9 @@ from pathlib import Path
 from typing import Any, Deque, Generator, Optional
 
 from fastapi import FastAPI
-from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT, BaseObserver
 
-from ...core.rabbitmq import send_message
 from ..mounted_fs import MountedVolumes
 from ..outputs_manager import OutputsManager
 from ._event_filter import EventFilter
@@ -26,7 +23,6 @@ class OutputsEventHandler(FileSystemEventHandler):
         path_to_observe: Path,
         outputs_manager: OutputsManager,
         event_filter: EventFilter,
-        io_log_redirect_cb: Optional[LogRedirectCB],
     ):
         super().__init__()
 
@@ -35,7 +31,6 @@ class OutputsEventHandler(FileSystemEventHandler):
         self.event_filter: EventFilter = event_filter
         self._is_enabled: bool = True
         self._background_tasks: set[asyncio.Task[Any]] = set()
-        self.io_log_redirect_cb: Optional[LogRedirectCB] = io_log_redirect_cb
 
     def toggle(self, *, is_enabled: bool) -> None:
         self._is_enabled = is_enabled
@@ -75,10 +70,8 @@ class OutputsWatcher:
         self,
         *,
         outputs_manager: OutputsManager,
-        io_log_redirect_cb: Optional[LogRedirectCB],
     ) -> None:
         self.outputs_manager = outputs_manager
-        self.io_log_redirect_cb: Optional[LogRedirectCB] = io_log_redirect_cb
 
         self._observers: Deque[BaseObserver] = deque()
 
@@ -86,9 +79,7 @@ class OutputsWatcher:
         self._blocking_task: Optional[asyncio.Task] = None
         self._outputs_event_handler: Optional[OutputsEventHandler] = None
 
-        self._event_filter = EventFilter(
-            outputs_manager=outputs_manager, io_log_redirect_cb=self.io_log_redirect_cb
-        )
+        self._event_filter = EventFilter(outputs_manager=outputs_manager)
 
     def observe_outputs_directory(
         self,
@@ -103,7 +94,6 @@ class OutputsWatcher:
             path_to_observe=path_to_observe,
             outputs_manager=self.outputs_manager,
             event_filter=self._event_filter,
-            io_log_redirect_cb=self.io_log_redirect_cb,
         )
         observer = ExtendedInotifyObserver()
         observer.schedule(self._outputs_event_handler, f"{path}", recursive=recursive)
@@ -165,16 +155,7 @@ def setup_outputs_watcher(app: FastAPI) -> None:
         outputs_manager: OutputsManager
         outputs_manager = app.state.outputs_manager  # nosec
 
-        io_log_redirect_cb = None
-        if app.state.settings.RABBIT_SETTINGS:
-            io_log_redirect_cb = functools.partial(send_message, app.state.rabbitmq)
-        logger.debug(
-            "setting up directory watcher %s",
-            "with redirection of logs..." if io_log_redirect_cb else "...",
-        )
-        app.state.outputs_watcher = OutputsWatcher(
-            outputs_manager=outputs_manager, io_log_redirect_cb=io_log_redirect_cb
-        )
+        app.state.outputs_watcher = OutputsWatcher(outputs_manager=outputs_manager)
         app.state.outputs_watcher.observe_outputs_directory(
             mounted_volumes.disk_outputs_path
         )

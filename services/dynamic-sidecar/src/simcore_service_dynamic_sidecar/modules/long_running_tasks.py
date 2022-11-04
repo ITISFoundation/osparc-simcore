@@ -301,9 +301,7 @@ async def task_ports_outputs_push(
 
     upload_tasks: deque[Task] = deque()
     for port_key in port_keys:
-        ongoing_upload_task = await outputs_manager.upload_port(
-            port_key, io_log_redirect_cb=functools.partial(send_message, rabbitmq)
-        )
+        ongoing_upload_task = await outputs_manager.upload_port(port_key)
         if ongoing_upload_task is not None:
             upload_tasks.append(ongoing_upload_task)
 

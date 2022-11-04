@@ -7,8 +7,14 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Final, Optional
 
-from pydantic import NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
-from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
+from pydantic import (
+    ByteSize,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveFloat,
+    PositiveInt,
+    parse_obj_as,
+)
 from watchdog.events import FileSystemEvent
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
@@ -19,10 +25,9 @@ PortEvent = Optional[tuple[str, FileSystemEvent]]
 
 logger = logging.getLogger(__name__)
 
-_KB: Final[PositiveInt] = 1024
-_MB: Final[PositiveInt] = 1024 * _KB
-_1_MB: Final[PositiveInt] = _MB
-_500_MB: Final[PositiveInt] = 500 * _MB
+
+_1_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "1mib")
+_500_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "500mib")
 
 
 class BaseDelayPolicy(ABC):
@@ -64,12 +69,10 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_manager: OutputsManager,
-        io_log_redirect_cb: Optional[LogRedirectCB],
         delay_policy: BaseDelayPolicy = DefaultDelayPolicy(),
     ):
         self.outputs_manager = outputs_manager
         self.delay_policy = delay_policy
-        self.io_log_redirect_cb = io_log_redirect_cb
 
         self._events_queue: Queue[PortEvent] = Queue()
         self._upload_events_queue: Queue[Optional[str]] = Queue()
@@ -158,9 +161,7 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
             if port_key is None:
                 break
 
-            await self.outputs_manager.upload_after_port_change(
-                port_key, self.io_log_redirect_cb
-            )
+            await self.outputs_manager.upload_after_port_change(port_key)
 
     def enqueue(self, port_key: str, event: FileSystemEvent) -> None:
         self._events_queue.put_nowait((port_key, event))

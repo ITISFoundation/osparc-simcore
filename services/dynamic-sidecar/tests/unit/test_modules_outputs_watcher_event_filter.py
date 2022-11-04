@@ -7,7 +7,7 @@ from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import NonNegativeFloat, NonNegativeInt
+from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
@@ -46,7 +46,7 @@ def port_keys(outputs_path: Path, port_key_1: str) -> list[str]:
 async def outputs_manager(
     outputs_path: Path, port_keys: list[str]
 ) -> AsyncIterator[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=outputs_path)
+    outputs_manager = OutputsManager(outputs_path=outputs_path, nodeports=AsyncMock())
     outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()
@@ -93,9 +93,7 @@ async def event_filter(
     outputs_manager: OutputsManager, mock_delay_policy: BaseDelayPolicy
 ) -> AsyncIterator[EventFilter]:
     event_filter = EventFilter(
-        outputs_manager=outputs_manager,
-        delay_policy=mock_delay_policy,
-        io_log_redirect_cb=None,
+        outputs_manager=outputs_manager, delay_policy=mock_delay_policy
     )
     await event_filter.start()
     yield event_filter
@@ -222,11 +220,9 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
 def test_default_delay_policy():
     wait_policy = DefaultDelayPolicy()
 
-    KB = 1024
-    MB = 1024 * KB
-    GB = 1024 * MB
-    LOWER_BOUND = 1 * MB  # coming from the default policy
-    UPPER_BOUND = 500 * MB  # coming from the default policy
+    # below items are defined by the default policy
+    LOWER_BOUND = parse_obj_as(ByteSize, "1mib")
+    UPPER_BOUND = parse_obj_as(ByteSize, "500mib")
 
     assert wait_policy.get_min_interval() == 1.0
 
@@ -238,4 +234,4 @@ def test_default_delay_policy():
     assert wait_policy.get_wait_interval(UPPER_BOUND - 1) < 10.0
     assert wait_policy.get_wait_interval(UPPER_BOUND) == 10.0
     assert wait_policy.get_wait_interval(UPPER_BOUND + 1) == 10.0
-    assert wait_policy.get_wait_interval(1024 * GB) == 10.0
+    assert wait_policy.get_wait_interval(parse_obj_as(ByteSize, "1Tib")) == 10.0

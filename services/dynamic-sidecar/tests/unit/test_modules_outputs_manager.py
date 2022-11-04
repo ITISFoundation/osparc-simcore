@@ -51,7 +51,7 @@ def outputs_path(tmp_path: Path) -> Path:
 async def outputs_manager(
     outputs_path: Path, port_keys: list[str]
 ) -> AsyncIterator[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=outputs_path)
+    outputs_manager = OutputsManager(outputs_path=outputs_path, nodeports=AsyncMock())
     outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()
@@ -69,9 +69,9 @@ async def test_upload_port_sequential_calls(
 
         # `upload_port` calls upload_outputs
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_port(port_key=port_key, io_log_redirect_cb=None)
+        await outputs_manager.upload_port(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], io_log_redirect_cb=None
+            outputs_path=outputs_path, port_keys=[port_key]
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -80,7 +80,7 @@ async def test_upload_port_sequential_calls(
         call_counter = mock_upload_outputs.call_count
         assert port_key in outputs_manager._current_uploads
         first_task_id = outputs_manager._current_uploads[port_key]
-        await outputs_manager.upload_port(port_key=port_key, io_log_redirect_cb=None)
+        await outputs_manager.upload_port(port_key=port_key)
         assert mock_upload_outputs.call_count == call_counter
         second_task_id = outputs_manager._current_uploads[port_key]
         assert first_task_id == second_task_id
@@ -90,7 +90,7 @@ async def test_upload_port_sequential_calls(
         await asyncio.sleep(upload_duration * 2)
         assert port_key not in outputs_manager._current_uploads
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_port(port_key=port_key, io_log_redirect_cb=None)
+        await outputs_manager.upload_port(port_key=port_key)
         assert mock_upload_outputs.call_count == call_counter + 1
         third_task_id = outputs_manager._current_uploads[port_key]
         assert second_task_id != third_task_id
@@ -108,11 +108,9 @@ async def test_upload_after_port_change_sequential_calls(
 
         # `upload_after_port_change` calls upload_outputs
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_after_port_change(
-            port_key=port_key, io_log_redirect_cb=None
-        )
+        await outputs_manager.upload_after_port_change(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], io_log_redirect_cb=None
+            outputs_path=outputs_path, port_keys=[port_key]
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -121,9 +119,7 @@ async def test_upload_after_port_change_sequential_calls(
         assert port_key in outputs_manager._current_uploads
         first_task_id = outputs_manager._current_uploads[port_key]
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_after_port_change(
-            port_key=port_key, io_log_redirect_cb=None
-        )
+        await outputs_manager.upload_after_port_change(port_key=port_key)
         assert mock_upload_outputs.call_count == call_counter + 1
         assert port_key in outputs_manager._current_uploads
         second_task_id = outputs_manager._current_uploads[port_key]
@@ -134,9 +130,7 @@ async def test_upload_after_port_change_sequential_calls(
         await asyncio.sleep(upload_duration * 2)
         assert port_key not in outputs_manager._current_uploads
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_after_port_change(
-            port_key=port_key, io_log_redirect_cb=None
-        )
+        await outputs_manager.upload_after_port_change(port_key=port_key)
         assert mock_upload_outputs.call_count == call_counter + 1
         third_task_id = outputs_manager._current_uploads[port_key]
         assert second_task_id != third_task_id
@@ -153,9 +147,9 @@ async def test_upload_after_port_change_cancels_upload_port(
 
         # `upload_port` calls upload_outputs
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_port(port_key=port_key, io_log_redirect_cb=None)
+        await outputs_manager.upload_port(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], io_log_redirect_cb=None
+            outputs_path=outputs_path, port_keys=[port_key]
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -164,9 +158,7 @@ async def test_upload_after_port_change_cancels_upload_port(
         assert port_key in outputs_manager._current_uploads
         first_task_id = outputs_manager._current_uploads[port_key]
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_after_port_change(
-            port_key=port_key, io_log_redirect_cb=None
-        )
+        await outputs_manager.upload_after_port_change(port_key=port_key)
         assert mock_upload_outputs.call_count == call_counter + 1
         assert port_key in outputs_manager._current_uploads
         second_task_id = outputs_manager._current_uploads[port_key]
@@ -184,11 +176,9 @@ async def test_upload_port_does_not_cancel_upload_after_port_change(
 
         # `upload_after_port_change` calls upload_outputs
         call_counter = mock_upload_outputs.call_count
-        await outputs_manager.upload_after_port_change(
-            port_key=port_key, io_log_redirect_cb=None
-        )
+        await outputs_manager.upload_after_port_change(port_key=port_key)
         mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], io_log_redirect_cb=None
+            outputs_path=outputs_path, port_keys=[port_key]
         )
         assert mock_upload_outputs.call_count == call_counter + 1
 
@@ -197,7 +187,7 @@ async def test_upload_port_does_not_cancel_upload_after_port_change(
         call_counter = mock_upload_outputs.call_count
         assert port_key in outputs_manager._current_uploads
         first_task_id = outputs_manager._current_uploads[port_key]
-        await outputs_manager.upload_port(port_key=port_key, io_log_redirect_cb=None)
+        await outputs_manager.upload_port(port_key=port_key)
         assert mock_upload_outputs.call_count == call_counter
         second_task_id = outputs_manager._current_uploads[port_key]
         assert first_task_id == second_task_id
