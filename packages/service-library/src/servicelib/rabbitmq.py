@@ -2,7 +2,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Awaitable, Callable, Optional
 
 import aio_pika
 from settings_library.rabbit import RabbitSettings
@@ -17,6 +17,9 @@ async def _get_connection(
     return await aio_pika.connect_robust(
         url, client_properties={"connection_name": connection_name}
     )
+
+
+MessageHandler = Callable[[Any], Awaitable[bool]]
 
 
 @dataclass
@@ -44,22 +47,28 @@ class RabbitMQClient:
             connection: aio_pika.RobustConnection
             return await connection.channel()
 
-    async def consume(self, queue_name: str) -> None:
+    async def consume(self, queue_name: str, message_handler: MessageHandler) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             await channel.set_qos(10)
 
+            # NOTE: durable=True makes the queue persistent between RabbitMQ restarts/crashes
+            # consumer/publisher must set the same configuration for same queue
             queue = await channel.declare_queue(
                 queue_name,
                 durable=False,
                 auto_delete=False,
             )
 
-            async with queue.iterator() as queue_iter:
-                async for message in queue_iter:
+            async def _on_message(
+                message: aio_pika.abc.AbstractIncomingMessage,
+            ) -> None:
+                async with message.process():
                     log.debug("Message received: %s", message)
-                    await message.ack()
+                    await message_handler(message)
+
+            await queue.consume(_on_message)
 
     async def publish(self, queue_name: str) -> None:
         assert self._channel_pool  # nosec

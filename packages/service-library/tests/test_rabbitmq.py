@@ -10,6 +10,10 @@ import pytest
 from faker import Faker
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -48,11 +52,23 @@ async def test_rabbit_client_pub_sub(
 
     queue_name = faker.pystr()
     await publisher.publish(queue_name)
-    task = asyncio.create_task(consumer.consume(queue_name), name="consumer")
-    await asyncio.sleep(3)
-    task.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await task
+
+    received_messages = []
+
+    async def _message_parser(message) -> bool:
+        print(f"<-- received message {message}")
+        received_messages.append(message)
+        return True
+
+    await consumer.consume(queue_name, _message_parser)
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert len(received_messages) == 1, "no message received!"
 
     await asyncio.gather(*(client.close() for client in (publisher, consumer)))
     for client in (publisher, consumer):
