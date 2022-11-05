@@ -21,6 +21,7 @@ from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import projects_ports_handlers
 from simcore_service_webserver.projects._ports import (
+    InvalidInputValue,
     get_project_inputs,
     get_project_outputs,
     set_project_inputs,
@@ -235,14 +236,20 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
     input_1 = input_port_ids[1]
     input_2 = input_port_ids[2]
 
-    set_project_inputs(
+    modified = set_project_inputs(
         workbench=workbench, update={input_0: 42, input_1: 3, input_2: False}
     )
+    assert modified == {input_0, input_1}
     assert get_project_inputs(workbench=workbench) == {
         input_0: 42,
         input_1: 3,
         input_2: False,
     }
+
+    with pytest.raises(InvalidInputValue):
+        set_project_inputs(
+            workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"}
+        )
 
 
 def test_get_project_outputs(workbench: dict[NodeID, Node]):

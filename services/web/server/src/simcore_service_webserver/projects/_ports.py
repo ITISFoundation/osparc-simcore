@@ -1,17 +1,17 @@
 from dataclasses import dataclass
 from typing import Any, Iterator, Literal, Optional
 
+from models_library.function_services_catalog.api import catalog
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import PortLink
+from models_library.utils.json_schema import (
+    JsonSchemaValidationError,
+    jsonschema_validate_data,
+)
 from pydantic import ValidationError
 
-#
-#  service/*/ports -> schemas/descriptors CLASS
-#  node/*/ports -> values INSTANCE
-#
 
-
-@dataclass
+@dataclass(frozen=True)
 class _ProjectPort:
     kind: Literal["input", "output"]
     node_id: NodeID
@@ -21,6 +21,15 @@ class _ProjectPort:
     @property
     def key(self):
         return f"{self.node_id}.{self.io_key}"
+
+    def get_schema(self) -> Optional[dict[str, Any]]:
+        node_metadata = catalog.get_metadata(self.node.key, self.node.version)
+        if self.kind == "input" and node_metadata.outputs:
+            if schema := node_metadata.outputs[self.io_key]:
+                return schema.content_schema
+        elif self.kind == "output" and node_metadata.inputs:
+            if schema := node_metadata.inputs[self.io_key]:
+                return schema.content_schema
 
 
 def _iter_project_ports(
@@ -53,7 +62,6 @@ def _iter_project_ports(
             assert list(node.outputs.keys()) == ["out_1"]  # nosec
 
             for output_key in node.outputs.keys():
-                # TODO: out_1 always. Can I have more outputs? who guarantees this?
                 yield _ProjectPort(
                     kind="input", node_id=node_id, io_key=output_key, node=node
                 )
@@ -71,7 +79,6 @@ def _iter_project_ports(
             assert list(node.inputs.keys()) == ["in_1"]  # nosec
 
             for inputs_key in node.inputs.keys():
-                # TODO: in_1 always. Can I have more outputs? who guarantees this?
                 yield _ProjectPort(
                     kind="output", node_id=node_id, io_key=inputs_key, node=node
                 )
@@ -87,17 +94,38 @@ def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     return input_to_value
 
 
+class InvalidInputValue(ValueError):
+    pass
+
+
 def set_project_inputs(
     workbench: dict[NodeID, Node], update: dict[NodeID, Any]
-) -> None:
-    """Updates selected input nodes"""
-    # TODO: add schema validation!
-    for node_id, value in update.items():
-        workbench[node_id].outputs = {"out_1": value}
+) -> set[NodeID]:
+    """Updates selected input nodes and
+    Returns the ids of nodes that actually changed
 
-    #
-    # TODO: returns ALL
-    # TODO: Get schemas from catalog's new ports entry or since they are function-services, perhaps we just import it?? faster??
+    raises InvalidInputValue
+    """
+    modified = set()
+    for node_id, value in update.items():
+        output = {"out_1": value}
+
+        if (node := workbench[node_id]) and node.outputs != output:
+            # validates value against jsonschema
+            try:
+                port = _ProjectPort(
+                    kind="input", node_id=node_id, io_key="out_1", node=node
+                )
+                if schema := port.get_schema():
+                    jsonschema_validate_data(value, schema)
+            except JsonSchemaValidationError as err:
+                raise InvalidInputValue(
+                    f"Invalid value for input '{node_id}': {err.message} for {value=}"
+                ) from err
+
+            workbench[node_id].outputs = output
+            modified.add(node_id)
+    return modified
 
 
 class _PortLink(PortLink):
