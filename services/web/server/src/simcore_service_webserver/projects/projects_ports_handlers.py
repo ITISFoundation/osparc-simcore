@@ -127,7 +127,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
 
 
-@routes.patch(f"/{VTAG}/projects/{{project_id}}/inputs", name="replace_project_inputs")
+@routes.patch(f"/{VTAG}/projects/{{project_id}}/inputs", name="update_project_inputs")
 @login_required
 @permission_required("project.update")
 @_handle_project_exceptions

@@ -30,6 +30,7 @@ class _ProjectPort:
         elif self.kind == "output" and node_metadata.inputs:
             if schema := node_metadata.inputs[self.io_key]:
                 return schema.content_schema
+        return None
 
 
 def _iter_project_ports(
