@@ -20,6 +20,9 @@ def get_service_io_json_schema(
     """Get json-schema for a i/o service
 
     For legacy metadata with property_type = integer, etc ... , it applies a conversion
+
+    NOTE: For the moment, this is a free function. It migh become in the future a member
+    of BaseServiceIO once we proceed to a full deprecation of legacy fields like units, etc
     """
     if io.content_schema:
         return deepcopy(io.content_schema)

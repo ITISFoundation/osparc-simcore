@@ -8,6 +8,7 @@ from models_library.utils.json_schema import (
     JsonSchemaValidationError,
     jsonschema_validate_data,
 )
+from models_library.utils.services_io import get_service_io_json_schema
 from pydantic import ValidationError
 
 
@@ -23,13 +24,13 @@ class _ProjectPort:
         return f"{self.node_id}.{self.io_key}"
 
     def get_schema(self) -> Optional[dict[str, Any]]:
-        node_metadata = catalog.get_metadata(self.node.key, self.node.version)
-        if self.kind == "input" and node_metadata.outputs:
-            if schema := node_metadata.outputs[self.io_key]:
-                return schema.content_schema
-        elif self.kind == "output" and node_metadata.inputs:
-            if schema := node_metadata.inputs[self.io_key]:
-                return schema.content_schema
+        node_meta = catalog.get_metadata(self.node.key, self.node.version)
+        if self.kind == "input" and node_meta.outputs:
+            if input_meta := node_meta.outputs[self.io_key]:
+                return get_service_io_json_schema(input_meta)
+        elif self.kind == "output" and node_meta.inputs:
+            if output_meta := node_meta.inputs[self.io_key]:
+                return get_service_io_json_schema(output_meta)
         return None
 
 
