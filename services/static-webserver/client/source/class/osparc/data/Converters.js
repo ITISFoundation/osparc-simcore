@@ -39,7 +39,7 @@ qx.Class.define("osparc.data.Converters", {
       }
     },
 
-    sortByLabel: function(model) {
+    sortModelByLabel: function(model) {
       model.getChildren().sort((a, b) => {
         if (a.getLabel() > b.getLabel()) {
           return 1;
@@ -52,6 +52,15 @@ qx.Class.define("osparc.data.Converters", {
     },
 
     fromDSMToVirtualTreeModel: function(datasetId, files) {
+      files.sort((a, b) => {
+        if (a["file_uuid"] > b["file_uuid"]) {
+          return 1;
+        }
+        if (a["file_uuid"] < b["file_uuid"]) {
+          return -1;
+        }
+        return 0;
+      });
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];

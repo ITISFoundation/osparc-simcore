@@ -475,7 +475,7 @@ qx.Class.define("osparc.file.FilesTree", {
         }
       });
       // sort datasets
-      osparc.data.Converters.sortByLabel(locationModel);
+      osparc.data.Converters.sortModelByLabel(locationModel);
 
       this.__rerender(locationModel);
 
@@ -504,7 +504,7 @@ qx.Class.define("osparc.file.FilesTree", {
           });
         }
         // sort files
-        osparc.data.Converters.sortByLabel(datasetModel);
+        osparc.data.Converters.sortModelByLabel(datasetModel);
 
         this.__rerender(datasetModel);
 
