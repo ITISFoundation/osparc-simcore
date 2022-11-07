@@ -204,6 +204,8 @@ async def copy_study_to_account(
                 f"{user['id']}",
                 f"{lr_task.progress=}",
             )
+            if lr_task.done():
+                await lr_task.result()
 
     return project_uuid
 
