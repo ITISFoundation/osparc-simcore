@@ -13,7 +13,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects_nodes import Node, NodeID
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_assert import assert_error, assert_status
+from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver._meta import API_VTAG as VX
@@ -27,6 +27,7 @@ from simcore_service_webserver.projects._ports import (
     set_project_inputs,
 )
 from simcore_service_webserver.projects.project_models import ProjectDict
+from yarl import URL
 
 
 @pytest.mark.parametrize(
@@ -285,10 +286,10 @@ def user_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        # (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPUnauthorized),
         (UserRole.USER, web.HTTPOk),
-        # (UserRole.TESTER, web.HTTPNotImplemented),
+        (UserRole.TESTER, web.HTTPOk),
     ],
 )
 async def test_user_story(
@@ -300,23 +301,21 @@ async def test_user_story(
 ):
     assert client.app
 
-    # project_workbench = user_project["workbench"]
-    # for node_id in project_workbench:
-    #     url = client.app.router["replace_node_resources"].url_for(
-    #         project_id=user_project["uuid"], node_id=node_id
-    #     )
-    #     response = await client.put(f"{url}", json={})
-    #     await assert_status(response, expected)
-
     project_id = user_project["uuid"]
 
-    resp = await client.get(f"/v0/projects/{project_id}:clone")
-    project_clone, _ = await assert_status(resp, expected_cls=expected)
+    # NOTE: next PR we will implement this part
+    # resp = await client.get(f"/v0/projects/{project_id}:clone")
+    # project_clone, _ = await assert_status(resp, expected_cls=expected)
 
     # Now, on the cloned project
-    project_id = project_clone["uuid"]
+    # project_id = project_clone["uuid"]
 
     # get_project_inputs
+    expected_url = client.app.router["get_project_inputs"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/inputs") == expected_url
+
     resp = await client.get(f"/v0/projects/{project_id}/inputs")
     project_inputs, _ = await assert_status(resp, expected_cls=expected)
 
@@ -338,7 +337,12 @@ async def test_user_story(
         },
     }
 
-    # update_project_inputs = set
+    # update_project_inputs
+    expected_url = client.app.router["update_project_inputs"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/inputs") == expected_url
+
     resp = await client.patch(
         f"/v0/projects/{project_id}/inputs",
         json=[{"key": "38a0d401-af4b-4ea7-ab4c-5005c712a5469", "value": 42}],
@@ -348,7 +352,7 @@ async def test_user_story(
     assert project_inputs == {
         "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
             "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
-            "value": 42,  # <----
+            "value": 42,  # <---- updated
             "label": "X",
         },
         "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
@@ -364,14 +368,19 @@ async def test_user_story(
     }
 
     # get_project_outputs (actual data)
+    expected_url = client.app.router["get_project_outputs"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/outputs") == expected_url
+
     resp = await client.get(f"/v0/projects/{project_id}/outputs")
-    project_outputs, error = await assert_error(resp, expected_cls=expected)
+    project_outputs, _ = await assert_status(resp, expected_cls=expected)
 
     assert project_outputs == {
         "data": {
             "09fd512e-0768-44ca-81fa-0cecab74ec1a": {
                 "key": "09fd512e-0768-44ca-81fa-0cecab74ec1a",
-                "value": None,  # was not computed!
+                "value": None,  # <---- was not computed!
                 "label": "Random sleep interval_2",
             },
             "76f607b4-8761-4f96-824d-cab670bc45f5": {
