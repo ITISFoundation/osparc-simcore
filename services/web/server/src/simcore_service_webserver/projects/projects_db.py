@@ -163,6 +163,10 @@ def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
     )
 
 
+# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
+# pylint: disable=too-many-public-methods
+
+
 class ProjectDBAPI:
     def __init__(self, app: web.Application):
         # TODO: shall be a weak pointer since it is also contained by app??
