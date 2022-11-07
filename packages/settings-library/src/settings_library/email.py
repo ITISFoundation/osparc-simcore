@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 
 from pydantic import root_validator
@@ -6,6 +7,12 @@ from pydantic.types import SecretStr
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
+
+
+class EmailProtocol(str, Enum):
+    UNENCRYPTED = "UNENCRYPTED"
+    TLS = "TLS"
+    STARTTLS = "STARTTLS"
 
 
 class SMTPSettings(BaseCustomSettings):
@@ -17,7 +24,10 @@ class SMTPSettings(BaseCustomSettings):
     SMTP_HOST: str
     SMTP_PORT: PortInt
 
-    SMTP_TLS_ENABLED: bool = Field(False, description="Enables Secure Mode")
+    SMTP_PROTOCOL: EmailProtocol = Field(
+        EmailProtocol.UNENCRYPTED,
+        description="Select between TLS, STARTTLS Secure Mode or unencrypted communication",
+    )
     SMTP_USERNAME: Optional[str] = Field(None, min_length=1)
     SMTP_PASSWORD: Optional[SecretStr] = Field(None, min_length=1)
 
@@ -37,12 +47,16 @@ class SMTPSettings(BaseCustomSettings):
     @root_validator
     @classmethod
     def enabled_tls_required_authentication(cls, values):
-        tls_enabled = values.get("SMTP_TLS_ENABLED")
+        smtp_protocol = values.get("SMTP_PROTOCOL")
+
         username = values.get("SMTP_USERNAME")
         password = values.get("SMTP_PASSWORD")
 
-        if tls_enabled and not (username or password):
+        tls_enabled = smtp_protocol == EmailProtocol.TLS
+        starttls_enabled = smtp_protocol == EmailProtocol.STARTTLS
+
+        if (tls_enabled or starttls_enabled) and not (username or password):
             raise ValueError(
-                "when using SMTP_TLS_ENABLED is True username and password are required"
+                "when using SMTP_PROTOCOL other than UNENCRYPTED username and password are required"
             )
         return values
