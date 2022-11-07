@@ -20,12 +20,6 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import projects_ports_handlers
-from simcore_service_webserver.projects._ports import (
-    InvalidInputValue,
-    get_project_inputs,
-    get_project_outputs,
-    set_project_inputs,
-)
 from simcore_service_webserver.projects.project_models import ProjectDict
 from yarl import URL
 
@@ -210,66 +204,6 @@ def workbench_db_column() -> dict[str, Any]:
 def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
     # convert to  model
     return parse_obj_as(dict[NodeID, Node], workbench_db_column)
-
-
-def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
-
-    # get all inputs in the workbench
-    project_inputs: dict[NodeID, Any] = get_project_inputs(workbench=workbench)
-
-    assert project_inputs
-    assert len(project_inputs) == 3
-
-    # check input invariants
-    for node_id in project_inputs:
-        input_node = workbench[node_id]
-
-        # has no inputs
-        assert not input_node.inputs
-        # has only one output called out_1
-        assert input_node.outputs
-        assert list(input_node.outputs.keys()) == ["out_1"]
-
-    # update
-    input_port_ids = list(project_inputs.keys())
-    assert input_port_ids == 3
-    input_0 = input_port_ids[0]
-    input_1 = input_port_ids[1]
-    input_2 = input_port_ids[2]
-
-    modified = set_project_inputs(
-        workbench=workbench, update={input_0: 42, input_1: 3, input_2: False}
-    )
-    assert modified == {input_0, input_1}
-    assert get_project_inputs(workbench=workbench) == {
-        input_0: 42,
-        input_1: 3,
-        input_2: False,
-    }
-
-    with pytest.raises(InvalidInputValue):
-        set_project_inputs(
-            workbench=workbench, update={input_2: "THIS SHOULD HAVE BEEN A BOOL"}
-        )
-
-
-def test_get_project_outputs(workbench: dict[NodeID, Node]):
-
-    # get all outputs in the workbench
-    project_outputs: dict[NodeID, Any] = get_project_outputs(workbench=workbench)
-
-    assert project_outputs
-    assert len(project_outputs) == 2
-
-    # check output node invariant
-    for node_id in project_outputs:
-        output_node = workbench[node_id]
-
-        # has no outputs
-        assert not output_node.outputs
-        # has only one input called in_1
-        assert output_node.inputs
-        assert list(output_node.inputs.keys()) == ["in_1"]
 
 
 @pytest.fixture
