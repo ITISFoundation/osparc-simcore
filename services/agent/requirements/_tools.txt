@@ -54,7 +54,7 @@ pep517==0.13.0
     # via build
 pip-tools==6.9.0
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.5.2
+platformdirs==2.5.3
     # via
     #   black
     #   pylint
@@ -99,7 +99,7 @@ virtualenv==20.16.6
     # via pre-commit
 watchdog==2.1.9
     # via -r requirements/_tools.in
-wheel==0.37.1
+wheel==0.38.2
     # via pip-tools
 wrapt==1.14.1
     # via
