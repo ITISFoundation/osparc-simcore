@@ -4,15 +4,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import re
 from typing import Any
 
 import pytest
 from models_library.projects_nodes import Node, NodeID
 from models_library.utils.json_schema import jsonschema_validate_schema
 from pydantic import parse_obj_as
-from settings_library.catalog import CatalogSettings
-from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.projects._ports import (
     InvalidInputValue,
     _iter_project_ports,
@@ -20,37 +17,6 @@ from simcore_service_webserver.projects._ports import (
     get_project_outputs,
     set_project_inputs,
 )
-
-
-@pytest.fixture
-def mock_catalog_service_api_responses(client, aioresponses_mocker):
-    settings: CatalogSettings = get_plugin_settings(client.app)
-    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
-
-    aioresponses_mocker.get(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.post(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.put(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.patch(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.delete(
-        url_pattern,
-        repeat=True,
-    )
 
 
 @pytest.fixture

@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import re
 from copy import deepcopy
 from typing import Any
 
@@ -15,9 +14,7 @@ from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from settings_library.catalog import CatalogSettings
 from simcore_service_webserver._meta import API_VTAG as VX
-from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects import projects_ports_handlers
 from simcore_service_webserver.projects.project_models import ProjectDict
@@ -44,37 +41,6 @@ def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
         openapi_specs.paths[path].operations[route.method.lower()].operation_id
         == route.kwargs["name"]
     ), "route's name differs from OAS operation_id"
-
-
-@pytest.fixture
-def mock_catalog_service_api_responses(client, aioresponses_mocker):
-    settings: CatalogSettings = get_plugin_settings(client.app)
-    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
-
-    aioresponses_mocker.get(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.post(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.put(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.patch(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.delete(
-        url_pattern,
-        repeat=True,
-    )
 
 
 @pytest.fixture
@@ -241,14 +207,6 @@ async def test_io_workflow(
     assert client.app
 
     project_id = user_project["uuid"]
-
-    # NOTE: next PR we will implement this part
-    #
-    # resp = await client.get(f"/v0/projects/{project_id}:clone")
-    # project_clone, _ = await assert_status(resp, expected_cls=expected)
-    # Now, on the cloned project
-    # project_id = project_clone["uuid"]
-    #
 
     # get_project_inputs
     expected_url = client.app.router["get_project_inputs"].url_for(
