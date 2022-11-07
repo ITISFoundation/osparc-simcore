@@ -12,8 +12,6 @@ aiopg==1.4.0
     # via -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-astroid==2.12.12
-    # via pylint
 async-timeout==4.0.2
     # via
     #   aiohttp
@@ -39,8 +37,6 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.6
-    # via pylint
 docopt==0.6.2
     # via coveralls
 exceptiongroup==1.0.1
@@ -64,12 +60,6 @@ idna==3.4
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
-lazy-object-proxy==1.8.0
-    # via astroid
-mccabe==0.7.0
-    # via pylint
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
@@ -79,8 +69,6 @@ packaging==21.3
     # via
     #   -c requirements/_migration.txt
     #   pytest
-platformdirs==2.5.3
-    # via pylint
 pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.9.5
@@ -89,8 +77,6 @@ psycopg2-binary==2.9.5
     #   -c requirements/_migration.txt
     #   aiopg
     #   sqlalchemy
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_migration.txt
@@ -138,21 +124,12 @@ sqlalchemy==1.4.43
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.6
-    # via pylint
-typing-extensions==4.4.0
-    # via
-    #   astroid
-    #   pylint
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt
     #   requests
-wrapt==1.14.1
-    # via astroid
 yarl==1.8.1
     # via
     #   -c requirements/_base.txt

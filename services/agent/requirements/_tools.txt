@@ -62,7 +62,7 @@ platformdirs==2.5.3
 pre-commit==2.20.0
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.15.5
-    # via -r requirements/_tools.in
+    # via -r requirements/../../../requirements/devenv.txt
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt

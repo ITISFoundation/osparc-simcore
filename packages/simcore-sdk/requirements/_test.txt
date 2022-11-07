@@ -27,8 +27,6 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-astroid==2.12.12
-    # via pylint
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -65,8 +63,6 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.6
-    # via pylint
 docker==6.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
@@ -97,14 +93,10 @@ idna==3.4
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-lazy-object-proxy==1.8.0
-    # via astroid
 mako==1.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -114,8 +106,6 @@ markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-mccabe==0.7.0
-    # via pylint
 minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -131,8 +121,6 @@ packaging==21.3
     #   docker
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.3
-    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
@@ -141,8 +129,6 @@ psycopg2-binary==2.9.5
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -206,16 +192,11 @@ termcolor==2.1.0
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.6
-    # via pylint
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
     #   aioitertools
-    #   astroid
-    #   pylint
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -226,9 +207,7 @@ urllib3==1.26.12
 websocket-client==1.4.2
     # via docker
 wrapt==1.14.1
-    # via
-    #   aiobotocore
-    #   astroid
+    # via aiobotocore
 yarl==1.8.1
     # via
     #   -c requirements/_base.txt

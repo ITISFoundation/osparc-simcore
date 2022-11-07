@@ -14,8 +14,6 @@ anyio==3.6.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.12.12
-    # via pylint
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
@@ -81,8 +79,6 @@ cryptography==36.0.2
     #   moto
     #   python-jose
     #   sshpubkeys
-dill==0.3.6
-    # via pylint
 docker==6.0.1
     # via
     #   -r requirements/_test.in
@@ -134,8 +130,6 @@ importlib-metadata==5.0.0
     # via flask
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
 itsdangerous==2.1.2
     # via
     #   -c requirements/_base.txt
@@ -170,8 +164,6 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
-lazy-object-proxy==1.8.0
-    # via astroid
 mako==1.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -183,8 +175,6 @@ markupsafe==2.1.1
     #   jinja2
     #   mako
     #   moto
-mccabe==0.7.0
-    # via pylint
 moto==4.0.1
     # via
     #   -c requirements/./constraints.txt
@@ -208,8 +198,6 @@ pbr==5.11.0
     # via
     #   jschema-to-python
     #   sarif-om
-platformdirs==2.5.3
-    # via pylint
 pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.9.3
@@ -224,8 +212,6 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -319,10 +305,7 @@ toml==0.10.2
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.6
-    # via pylint
 types-awscrt==0.15.2
     # via botocore-stubs
 types-boto3==1.0.2
@@ -334,9 +317,7 @@ types-toml==0.10.8
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
-    #   astroid
     #   boto3-stubs
-    #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -352,9 +333,7 @@ werkzeug==2.1.2
     #   flask
     #   moto
 wrapt==1.14.1
-    # via
-    #   astroid
-    #   aws-xray-sdk
+    # via aws-xray-sdk
 xmltodict==0.13.0
     # via moto
 zipp==3.10.0

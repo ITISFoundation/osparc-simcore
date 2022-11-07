@@ -17,8 +17,6 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-astroid==2.12.12
-    # via pylint
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -80,8 +78,6 @@ cryptography==38.0.3
     #   moto
     #   python-jose
     #   sshpubkeys
-dill==0.3.6
-    # via pylint
 docker==6.0.1
     # via
     #   -r requirements/_test.in
@@ -122,8 +118,6 @@ importlib-metadata==5.0.0
     # via flask
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
 itsdangerous==2.1.2
     # via flask
 jinja2==3.1.2
@@ -156,18 +150,12 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
-lazy-object-proxy==1.7.1
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
 markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2
     #   moto
     #   werkzeug
-mccabe==0.7.0
-    # via pylint
 moto==4.0.9
     # via -r requirements/_test.in
 multidict==6.0.2
@@ -198,8 +186,6 @@ pbr==5.11.0
     # via
     #   jschema-to-python
     #   sarif-om
-platformdirs==2.5.3
-    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
@@ -210,8 +196,6 @@ pyasn1==0.4.8
     #   rsa
 pycparser==2.21
     # via cffi
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   moto
@@ -308,17 +292,9 @@ toml==0.10.2
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.6
-    # via pylint
 types-toml==0.10.8
     # via responses
-typing-extensions==4.3.0
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
-    #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -338,7 +314,6 @@ werkzeug==2.2.2
 wrapt==1.14.1
     # via
     #   -c requirements/_base.txt
-    #   astroid
     #   aws-xray-sdk
 xmltodict==0.13.0
     # via moto

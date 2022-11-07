@@ -18,8 +18,6 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
-astroid==2.12.12
-    # via pylint
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -55,8 +53,6 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.6
-    # via pylint
 docker==6.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
@@ -95,14 +91,10 @@ idna==2.10
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-lazy-object-proxy==1.8.0
-    # via astroid
 mako==1.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -112,8 +104,6 @@ markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-mccabe==0.7.0
-    # via pylint
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
@@ -124,8 +114,6 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   docker
     #   pytest
-platformdirs==2.5.3
-    # via pylint
 pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.9.3
@@ -136,8 +124,6 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -202,15 +188,7 @@ sqlalchemy==1.4.37
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.6
-    # via pylint
-typing-extensions==4.3.0
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
-    #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -219,8 +197,6 @@ urllib3==1.26.9
     #   requests
 websocket-client==1.4.2
     # via docker
-wrapt==1.14.1
-    # via astroid
 yarl==1.7.2
     # via
     #   -c requirements/_base.txt

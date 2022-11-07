@@ -10,8 +10,6 @@ anyio==3.6.2
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.12.12
-    # via pylint
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
@@ -34,8 +32,6 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.6
-    # via pylint
 docopt==0.6.2
     # via coveralls
 exceptiongroup==1.0.1
@@ -67,24 +63,14 @@ idna==3.4
     #   rfc3986
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
-lazy-object-proxy==1.8.0
-    # via astroid
-mccabe==0.7.0
-    # via pylint
 packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.3
-    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via packaging
 pytest==7.2.0
@@ -143,19 +129,9 @@ termcolor==2.1.0
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.6
-    # via pylint
-typing-extensions==4.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
-    #   pylint
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-wrapt==1.14.1
-    # via astroid
