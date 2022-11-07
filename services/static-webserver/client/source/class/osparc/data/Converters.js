@@ -39,6 +39,37 @@ qx.Class.define("osparc.data.Converters", {
       }
     },
 
+    sortFiles: function(children) {
+      if (children && children.length) {
+        children.sort((a, b) => {
+          if (a["label"] > b["label"]) {
+            return 1;
+          }
+          if (a["label"] < b["label"]) {
+            return -1;
+          }
+          return 0;
+        });
+        children.forEach(child => {
+          if ("children" in child) {
+            this.sortFiles(child["children"]);
+          }
+        });
+      }
+    },
+
+    sortModelByLabel: function(model) {
+      model.getChildren().sort((a, b) => {
+        if (a.getLabel() > b.getLabel()) {
+          return 1;
+        }
+        if (a.getLabel() < b.getLabel()) {
+          return -1;
+        }
+        return 0;
+      });
+    },
+
     fromDSMToVirtualTreeModel: function(datasetId, files) {
       let children = [];
       for (let i=0; i<files.length; i++) {
@@ -76,17 +107,19 @@ qx.Class.define("osparc.data.Converters", {
         }
 
         // create file
-        const fileInfo = this.createFileEntry(
+        const fileInfo = this.__createFileEntry(
           splitted[splitted.length-1],
           file["location_id"],
           datasetId,
           file["file_id"],
           file["last_modified"],
-          file["file_size"]);
+          file["file_size"]
+        );
         parent.children.push(fileInfo);
         this.__mergeFileTreeChildren(children, fileInTree);
       }
 
+      this.sortFiles(children);
       return children;
     },
 
@@ -103,7 +136,7 @@ qx.Class.define("osparc.data.Converters", {
       };
     },
 
-    createFileEntry: function(label, location, datasetId, fileId, lastModified, size) {
+    __createFileEntry: function(label, location, datasetId, fileId, lastModified, size) {
       if (label === undefined) {
         label = "Unknown label";
       }
@@ -128,84 +161,6 @@ qx.Class.define("osparc.data.Converters", {
         lastModified,
         size
       };
-    },
-
-    __mergeAPITreeChildren: function(one, two) {
-      let newDir = true;
-      for (let i=0; i<one.length; i++) {
-        if (one[i].key === two.key) {
-          newDir = false;
-          if ("children" in two) {
-            this.__mergeAPITreeChildren(one[i].children, two.children[0]);
-          }
-        }
-      }
-      // if (one.length === 0 || "fileId" in two || newDir) {
-      if (one.length === 0 || newDir) {
-        one.push(two);
-      }
-    },
-
-    fromAPITreeToVirtualTreeModel: function(treeItems, showLeavesAsDirs, portKey) {
-      let children = [];
-      for (let i=0; i<treeItems.length; i++) {
-        const treeItem = treeItems[i];
-        let splitted = treeItem.label.split("/");
-        let newItem = {
-          label: splitted[0],
-          open: false,
-          portKey
-        };
-        if (splitted.length === 1) {
-          // leaf already
-          newItem.key = treeItem.key;
-          if (showLeavesAsDirs) {
-            newItem.children = [];
-          }
-        } else {
-          // branch
-          newItem.key = splitted[0];
-          newItem.children = [];
-          let parent = newItem;
-          for (let j=1; j<splitted.length-1; j++) {
-            let branch = {
-              label: splitted[j],
-              key: parent.key +"/"+ splitted[j],
-              open: false,
-              children: []
-            };
-            parent.children.push(branch);
-            parent = branch;
-          }
-          let leaf = {
-            label: splitted[splitted.length-1],
-            open: false,
-            key: parent.key +"/"+ splitted[splitted.length-1]
-          };
-          if (showLeavesAsDirs) {
-            leaf.children = [];
-          }
-          parent.children.push(leaf);
-        }
-        this.__mergeAPITreeChildren(children, newItem);
-      }
-      return children;
-    },
-
-    fromAPIListToVirtualListModel: function(listItems) {
-      let list = [];
-      for (let i=0; i<listItems.length; i++) {
-        const listItem = listItems[i];
-        let item = {
-          key: listItem["key"],
-          label: listItem["label"]
-        };
-        if (listItem.thumbnail) {
-          item["thumbnail"] = listItem["thumbnail"];
-        }
-        list.push(item);
-      }
-      return list;
     },
 
     fromTypeToIcon: function(type) {
