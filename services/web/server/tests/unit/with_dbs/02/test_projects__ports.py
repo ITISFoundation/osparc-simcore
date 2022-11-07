@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
@@ -8,11 +9,13 @@ from typing import Any
 
 import pytest
 from models_library.projects_nodes import Node, NodeID
+from models_library.utils.json_schema import jsonschema_validate_schema
 from pydantic import parse_obj_as
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.projects._ports import (
     InvalidInputValue,
+    _iter_project_ports,
     get_project_inputs,
     get_project_outputs,
     set_project_inputs,
@@ -237,3 +240,14 @@ def test_get_project_outputs(workbench: dict[NodeID, Node]):
         # has only one input called in_1
         assert output_node.inputs
         assert list(output_node.inputs.keys()) == ["in_1"]
+
+
+def test_project_port_get_schema(workbench):
+
+    for port in _iter_project_ports(workbench):
+        # eval json-schema
+        schema = port.get_schema()
+        assert schema
+
+        # should not raise
+        jsonschema_validate_schema(schema=schema)
