@@ -39,6 +39,18 @@ qx.Class.define("osparc.data.Converters", {
       }
     },
 
+    sortByLabel: function(model) {
+      model.getChildren().sort((a, b) => {
+        if (a.getLabel() > b.getLabel()) {
+          return 1;
+        }
+        if (a.getLabel() < b.getLabel()) {
+          return -1;
+        }
+        return 0;
+      });
+    },
+
     fromDSMToVirtualTreeModel: function(datasetId, files) {
       let children = [];
       for (let i=0; i<files.length; i++) {
@@ -74,8 +86,6 @@ qx.Class.define("osparc.data.Converters", {
           parent.children.push(newItem);
           parent = newItem;
         }
-        // sort folders
-        console.log("sort folders", parent.children);
 
         // create file
         const fileInfo = this.__createFileEntry(
@@ -87,8 +97,6 @@ qx.Class.define("osparc.data.Converters", {
           file["file_size"]);
         parent.children.push(fileInfo);
         this.__mergeFileTreeChildren(children, fileInTree);
-        // sort folders
-        console.log("sort folders", parent.children);
       }
 
       return children;

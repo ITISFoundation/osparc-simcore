@@ -248,7 +248,7 @@ qx.Class.define("osparc.file.FilesTree", {
         },
         configureItem: item => {
           const openButton = item.getChildControl("open");
-          openButton.addListener("tap", e => {
+          openButton.addListener("tap", () => {
             if (item.isOpen() && !item.getLoaded() && item.getIsDataset()) {
               item.setLoaded(true);
               const locationId = item.getLocation();
@@ -256,9 +256,7 @@ qx.Class.define("osparc.file.FilesTree", {
               this.requestDatasetFiles(locationId, datasetId);
             }
           }, this);
-          item.addListener("dbltap", e => {
-            this.__itemSelected();
-          }, this);
+          item.addListener("dbltap", () => this.__itemSelected(), this);
           this.__addDragAndDropMechanisms(item);
         }
       });
@@ -476,6 +474,8 @@ qx.Class.define("osparc.file.FilesTree", {
           openThis = datasetModel;
         }
       });
+      // sort datasets
+      osparc.data.Converters.sortByLabel(locationModel);
 
       this.__rerender(locationModel);
 
@@ -503,6 +503,8 @@ qx.Class.define("osparc.file.FilesTree", {
             datasetModel.getChildren().append(filesModel);
           });
         }
+        // sort files
+        osparc.data.Converters.sortByLabel(datasetModel);
 
         this.__rerender(datasetModel);
 
