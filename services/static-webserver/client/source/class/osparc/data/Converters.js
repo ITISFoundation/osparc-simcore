@@ -39,6 +39,25 @@ qx.Class.define("osparc.data.Converters", {
       }
     },
 
+    sortFiles: function(children) {
+      if (children && children.length) {
+        children.sort((a, b) => {
+          if (a["label"] > b["label"]) {
+            return 1;
+          }
+          if (a["label"] < b["label"]) {
+            return -1;
+          }
+          return 0;
+        });
+        children.forEach(child => {
+          if ("children" in child) {
+            this.sortFiles(child["children"]);
+          }
+        });
+      }
+    },
+
     sortModelByLabel: function(model) {
       model.getChildren().sort((a, b) => {
         if (a.getLabel() > b.getLabel()) {
@@ -52,15 +71,6 @@ qx.Class.define("osparc.data.Converters", {
     },
 
     fromDSMToVirtualTreeModel: function(datasetId, files) {
-      files.sort((a, b) => {
-        if (a["file_uuid"] > b["file_uuid"]) {
-          return 1;
-        }
-        if (a["file_uuid"] < b["file_uuid"]) {
-          return -1;
-        }
-        return 0;
-      });
       let children = [];
       for (let i=0; i<files.length; i++) {
         const file = files[i];
@@ -103,11 +113,13 @@ qx.Class.define("osparc.data.Converters", {
           datasetId,
           file["file_id"],
           file["last_modified"],
-          file["file_size"]);
+          file["file_size"]
+        );
         parent.children.push(fileInfo);
         this.__mergeFileTreeChildren(children, fileInTree);
       }
 
+      this.sortFiles(children);
       return children;
     },
 
