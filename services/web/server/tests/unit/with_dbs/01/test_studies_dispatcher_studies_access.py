@@ -415,7 +415,7 @@ async def test_access_cookie_of_expired_user(
 @pytest.mark.parametrize(
     "number_of_simultaneous_requests",
     [
-        512,
+        1,
     ],
 )
 async def test_guest_user_is_not_garbage_collected(
