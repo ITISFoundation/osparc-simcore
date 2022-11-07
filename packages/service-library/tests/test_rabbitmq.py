@@ -72,7 +72,7 @@ async def rabbitmq_client(
 
 @pytest.fixture
 def random_queue_name(faker: Faker) -> str:
-    return faker.pystr()
+    return f"pytest_fake_queue_{faker.pystr()}"
 
 
 async def test_rabbit_client_pub_sub(
@@ -81,6 +81,7 @@ async def test_rabbit_client_pub_sub(
     mocker: MockerFixture,
     faker: Faker,
 ):
+
     publisher = rabbitmq_client("publisher")
     consumer = rabbitmq_client("consumer")
 

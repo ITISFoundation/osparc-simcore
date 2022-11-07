@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 async def _get_connection(
     rabbit_broker: str, connection_name: str
 ) -> aio_pika.abc.AbstractRobustConnection:
-    url = f"{rabbit_broker}?name={__name__}_{socket.gethostname()}_{os.getpid()}"
+    url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
     return await aio_pika.connect_robust(
         url, client_properties={"connection_name": connection_name}
     )
