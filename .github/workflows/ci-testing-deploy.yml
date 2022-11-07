@@ -239,8 +239,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
-      - name: test isolated
-        run: ./ci/github/unit-testing/webserver.bash test_isolated
+      # - name: test isolated
+      #   run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01/test_studies_dispatcher_studies_access.py
       - uses: codecov/codecov-action@v3.1.1
