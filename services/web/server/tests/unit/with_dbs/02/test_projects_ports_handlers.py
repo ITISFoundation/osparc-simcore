@@ -216,7 +216,7 @@ def user_project(
     return project
 
 
-@pytest.mark.skip(reason="UNDER DEV")
+@pytest.mark.acceptance_test
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -226,23 +226,29 @@ def user_project(
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_user_story(
+async def test_io_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mock_catalog_service_api_responses: None,
     expected: type[web.HTTPException],
 ):
+    """This tests implements a minimal workflow to support the MVP
+
+    It later stage, this test might be split into smaller unit-tests
+    """
+
     assert client.app
 
     project_id = user_project["uuid"]
 
     # NOTE: next PR we will implement this part
+    #
     # resp = await client.get(f"/v0/projects/{project_id}:clone")
     # project_clone, _ = await assert_status(resp, expected_cls=expected)
-
     # Now, on the cloned project
     # project_id = project_clone["uuid"]
+    #
 
     # get_project_inputs
     expected_url = client.app.router["get_project_inputs"].url_for(
