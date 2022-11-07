@@ -203,6 +203,8 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+py==1.11.0
+    # via -r requirements/_test.in
 pyasn1==0.4.8
     # via
     #   python-jose
@@ -300,7 +302,7 @@ six==1.16.0
     #   simcore-service-storage-sdk
 sshpubkeys==3.3.1
     # via moto
-termcolor==2.0.1
+termcolor==2.1.0
     # via pytest-sugar
 toml==0.10.2
     # via responses

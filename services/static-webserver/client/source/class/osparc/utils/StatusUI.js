@@ -71,6 +71,8 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "connecting":
           return "@FontAwesome5Solid/circle-notch/"+size;
         case "deprecated":
+          return "@FontAwesome5Solid/exclamation-triangle/"+size;
+        case "retired":
         case "failed":
           return "@FontAwesome5Solid/exclamation-circle/"+size;
 
@@ -123,6 +125,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return qx.locale.Manager.tr("Failed");
         case "deprecated":
           return qx.locale.Manager.tr("Deprecated");
+        case "retired":
+          return qx.locale.Manager.tr("Retired");
         case "starting":
           return qx.locale.Manager.tr("Starting...");
         case "stopping":
@@ -168,6 +172,8 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "connecting":
           return "busy-orange";
         case "deprecated":
+          return "warning-yellow";
+        case "retired":
         case "failed":
           return "failed-red";
 
@@ -214,10 +220,21 @@ qx.Class.define("osparc.utils.StatusUI", {
 
     createServiceDeprecatedChip: function() {
       const chip = new osparc.ui.basic.Chip().set({
-        label: osparc.utils.Services.DEPRECATED_SERVICE,
-        icon: "@FontAwesome5Solid/exclamation-triangle/12",
+        label: osparc.utils.Services.DEPRECATED_SERVICE_TEXT,
+        icon: osparc.utils.StatusUI.getIconSource("deprecated"),
         textColor: "contrasted-text-dark",
-        backgroundColor: "failed-red",
+        backgroundColor: osparc.utils.StatusUI.getColor("deprecated"),
+        allowGrowX: false
+      });
+      return chip;
+    },
+
+    createServiceRetiredChip: function() {
+      const chip = new osparc.ui.basic.Chip().set({
+        label: osparc.utils.Services.RETIRED_SERVICE_TEXT,
+        icon: osparc.utils.StatusUI.getIconSource("retired"),
+        textColor: "contrasted-text-dark",
+        backgroundColor: osparc.utils.StatusUI.getColor("retired"),
         allowGrowX: false
       });
       return chip;

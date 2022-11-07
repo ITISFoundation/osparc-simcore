@@ -69,6 +69,8 @@ parse==1.19.0
     # via openapi-core
 pluggy==1.0.0
     # via pytest
+py==1.11.0
+    # via -r requirements.in
 pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
@@ -99,7 +101,7 @@ six==1.16.0
     # via
     #   isodate
     #   openapi-core
-termcolor==2.0.1
+termcolor==2.1.0
     # via pytest-sugar
 tomli==2.0.1
     # via

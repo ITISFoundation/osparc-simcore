@@ -265,6 +265,10 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.utils.Services.isDeprecated(metaData);
     },
 
+    isRetired: function(metaData) {
+      return osparc.utils.Services.isRetired(metaData);
+    },
+
     getOutput: function(outputs, outputKey) {
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
@@ -329,6 +333,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isDeprecated: function() {
       return osparc.data.model.Node.isDeprecated(this.getMetaData());
+    },
+
+    isRetired: function() {
+      return osparc.data.model.Node.isRetired(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -523,8 +531,8 @@ qx.Class.define("osparc.data.model.Node", {
           let errorMsg = this.tr("Error when starting ") + key + ":" + version;
           this.getStatus().setInteractive("failed");
           if ("status" in err && err.status === 406) {
-            errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is deprecated");
-            this.getStatus().setInteractive("deprecated");
+            errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
+            this.getStatus().setInteractive("retired");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1281,8 +1289,8 @@ qx.Class.define("osparc.data.model.Node", {
         .catch(err => {
           let errorMsg = `Error retrieving ${this.getLabel()} status: ${err}`;
           if ("status" in err && err.status === 406) {
-            errorMsg = this.getKey() + ":" + this.getVersion() + "is deprecated";
-            this.getStatus().setInteractive("deprecated");
+            errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
+            this.getStatus().setInteractive("retired");
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
           }
           const errorMsgData = {

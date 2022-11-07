@@ -104,7 +104,9 @@ platformdirs==2.5.2
 pluggy==1.0.0
     # via pytest
 py==1.11.0
-    # via pytest-forked
+    # via
+    #   -r requirements/_test.in
+    #   pytest-forked
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
@@ -165,7 +167,7 @@ sniffio==1.3.0
     # via
     #   -c requirements/_fastapi.txt
     #   asgi-lifespan
-termcolor==2.0.1
+termcolor==2.1.0
     # via pytest-sugar
 tomli==2.0.1
     # via

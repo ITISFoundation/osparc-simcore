@@ -359,11 +359,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
         e.stopPropagation();
         this.__openUpdateServices();
       }, this);
-      if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
+      if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText: this.tr("Service(s) retired, please update"),
+          textColor: osparc.utils.StatusUI.getColor("retired")
+        });
+      } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
         updateStudy.show();
         updateStudy.set({
           toolTipText: this.tr("Service(s) deprecated, please update"),
-          textColor: "failed-red"
+          textColor: osparc.utils.StatusUI.getColor("deprecated")
         });
       } else {
         osparc.utils.Study.isWorkbenchUpdatable(workbench)
