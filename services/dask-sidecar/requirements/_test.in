@@ -12,8 +12,6 @@ coveralls
 docker
 faker
 minio
-ptvsd
-pylint
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov

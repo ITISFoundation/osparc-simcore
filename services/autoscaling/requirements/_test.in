@@ -14,7 +14,6 @@ codecov
 coverage
 coveralls
 faker
-pylint
 pytest
 pytest-asyncio
 pytest-cov
