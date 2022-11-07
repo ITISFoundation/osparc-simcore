@@ -205,6 +205,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "start-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Start"),
             icon: "@FontAwesome5Solid/play/10",
             visibility: "excluded"
@@ -215,6 +216,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "stop-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Stop"),
             icon: "@FontAwesome5Solid/stop/10",
             visibility: "excluded"
@@ -225,6 +227,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "rename-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Rename"),
             icon: "@FontAwesome5Solid/i-cursor/10"
           });
@@ -236,6 +239,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "marker-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             icon: "@FontAwesome5Solid/bookmark/10",
             visibility: "excluded"
           });
@@ -246,6 +250,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "info-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Information..."),
             icon: "@FontAwesome5Solid/info/10"
           });
@@ -257,6 +262,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "delete-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
           });
