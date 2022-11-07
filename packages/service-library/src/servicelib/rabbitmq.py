@@ -21,6 +21,7 @@ async def _get_connection(
 
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
+Message = str
 
 
 @dataclass
@@ -73,7 +74,7 @@ class RabbitMQClient:
 
             await queue.consume(_on_message)
 
-    async def publish(self, queue_name: str, message: str) -> None:
+    async def publish(self, queue_name: str, message: Message) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
@@ -86,4 +87,19 @@ class RabbitMQClient:
             await channel.default_exchange.publish(
                 aio_pika.Message(message.encode()),
                 routing_key=queue.name,
+            )
+
+    async def broadcast(self, exchange_name: str, message: Message) -> None:
+        assert self._channel_pool  # nosec
+        async with self._channel_pool.acquire() as channel:
+            channel: aio_pika.RobustChannel
+
+            exchange = await channel.declare_exchange(
+                exchange_name, aio_pika.ExchangeType.FANOUT
+            )
+
+            # NOTE: publishing to an exchange with no queue will not keep the messages
+            await exchange.publish(
+                aio_pika.Message(message.encode()),
+                routing_key="info",
             )
