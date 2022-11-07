@@ -70,7 +70,6 @@ async def _get_validated_workbench_model(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> dict[NodeID, Node]:
 
-    # TODO: get directly unvalidated workbench
     project: ProjectDict = await projects_api.get_project_for_user(
         app,
         project_uuid=f"{project_id}",

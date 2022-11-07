@@ -42,7 +42,7 @@ def _iter_project_ports(
 
     - A node in general has inputs and outputs:
       - Inputs can have values or references.
-      - Outputs have only values (TODO:  verify!! )
+      - Outputs have only values
 
     - A project defines its ports with special nodes:
         - An input node: has no inputs and stores its value as an output
