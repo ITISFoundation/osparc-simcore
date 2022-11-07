@@ -360,11 +360,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
         }
       }
-      const slideshowData = slideshow.getData();
       this.setPageContext(context);
       this.__slideshowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
-      const isValid = Object.keys(slideshowData).indexOf(currentNodeId) !== -1;
+      const isValid = slideshow.getPosition(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
         this.__moveToNode(currentNodeId);
       } else {
