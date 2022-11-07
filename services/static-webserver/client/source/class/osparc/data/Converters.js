@@ -74,9 +74,11 @@ qx.Class.define("osparc.data.Converters", {
           parent.children.push(newItem);
           parent = newItem;
         }
+        // sort folders
+        console.log("sort folders", parent.children);
 
         // create file
-        const fileInfo = this.createFileEntry(
+        const fileInfo = this.__createFileEntry(
           splitted[splitted.length-1],
           file["location_id"],
           datasetId,
@@ -85,6 +87,8 @@ qx.Class.define("osparc.data.Converters", {
           file["file_size"]);
         parent.children.push(fileInfo);
         this.__mergeFileTreeChildren(children, fileInTree);
+        // sort folders
+        console.log("sort folders", parent.children);
       }
 
       return children;
@@ -103,7 +107,7 @@ qx.Class.define("osparc.data.Converters", {
       };
     },
 
-    createFileEntry: function(label, location, datasetId, fileId, lastModified, size) {
+    __createFileEntry: function(label, location, datasetId, fileId, lastModified, size) {
       if (label === undefined) {
         label = "Unknown label";
       }
@@ -128,84 +132,6 @@ qx.Class.define("osparc.data.Converters", {
         lastModified,
         size
       };
-    },
-
-    __mergeAPITreeChildren: function(one, two) {
-      let newDir = true;
-      for (let i=0; i<one.length; i++) {
-        if (one[i].key === two.key) {
-          newDir = false;
-          if ("children" in two) {
-            this.__mergeAPITreeChildren(one[i].children, two.children[0]);
-          }
-        }
-      }
-      // if (one.length === 0 || "fileId" in two || newDir) {
-      if (one.length === 0 || newDir) {
-        one.push(two);
-      }
-    },
-
-    fromAPITreeToVirtualTreeModel: function(treeItems, showLeavesAsDirs, portKey) {
-      let children = [];
-      for (let i=0; i<treeItems.length; i++) {
-        const treeItem = treeItems[i];
-        let splitted = treeItem.label.split("/");
-        let newItem = {
-          label: splitted[0],
-          open: false,
-          portKey
-        };
-        if (splitted.length === 1) {
-          // leaf already
-          newItem.key = treeItem.key;
-          if (showLeavesAsDirs) {
-            newItem.children = [];
-          }
-        } else {
-          // branch
-          newItem.key = splitted[0];
-          newItem.children = [];
-          let parent = newItem;
-          for (let j=1; j<splitted.length-1; j++) {
-            let branch = {
-              label: splitted[j],
-              key: parent.key +"/"+ splitted[j],
-              open: false,
-              children: []
-            };
-            parent.children.push(branch);
-            parent = branch;
-          }
-          let leaf = {
-            label: splitted[splitted.length-1],
-            open: false,
-            key: parent.key +"/"+ splitted[splitted.length-1]
-          };
-          if (showLeavesAsDirs) {
-            leaf.children = [];
-          }
-          parent.children.push(leaf);
-        }
-        this.__mergeAPITreeChildren(children, newItem);
-      }
-      return children;
-    },
-
-    fromAPIListToVirtualListModel: function(listItems) {
-      let list = [];
-      for (let i=0; i<listItems.length; i++) {
-        const listItem = listItems[i];
-        let item = {
-          key: listItem["key"],
-          label: listItem["label"]
-        };
-        if (listItem.thumbnail) {
-          item["thumbnail"] = listItem["thumbnail"];
-        }
-        list.push(item);
-      }
-      return list;
     },
 
     fromTypeToIcon: function(type) {
