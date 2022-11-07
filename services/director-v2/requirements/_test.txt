@@ -39,8 +39,6 @@ anyio==3.6.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.12.12
-    # via pylint
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 async-timeout==4.0.2
@@ -53,7 +51,7 @@ attrs==21.4.0
     #   aiohttp
     #   pytest
     #   pytest-docker
-bokeh==2.4.3
+bokeh==3.0.1
     # via -r requirements/_test.in
 boto3==1.24.59
     # via aiobotocore
@@ -80,6 +78,8 @@ codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.7.0
     # via dask-gateway-server
+contourpy==1.0.6
+    # via bokeh
 coverage==6.5.0
     # via
     #   codecov
@@ -87,23 +87,21 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==38.0.1
+cryptography==38.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
 dask-gateway-server==2022.10.0
     # via -r requirements/_test.in
-dill==0.3.5.1
-    # via pylint
-docker==6.0.0
+docker==6.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-exceptiongroup==1.0.0
+exceptiongroup==1.0.1
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==15.1.0
+faker==15.2.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -140,8 +138,6 @@ idna==2.10
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
 jinja2==3.1.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -151,8 +147,6 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-lazy-object-proxy==1.7.1
-    # via astroid
 mako==1.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -163,8 +157,6 @@ markupsafe==2.1.1
     #   -c requirements/_base.txt
     #   jinja2
     #   mako
-mccabe==0.7.0
-    # via pylint
 minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -176,7 +168,10 @@ multidict==6.0.2
     #   async-asgi-testclient
     #   yarl
 numpy==1.23.4
-    # via bokeh
+    # via
+    #   bokeh
+    #   contourpy
+    #   pandas
 packaging==21.3
     # via
     #   -c requirements/_base.txt
@@ -187,10 +182,10 @@ pamqp==3.2.1
     # via
     #   -c requirements/_base.txt
     #   aiormq
+pandas==1.5.1
+    # via bokeh
 pillow==9.3.0
     # via bokeh
-platformdirs==2.5.2
-    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
@@ -199,12 +194,8 @@ psycopg2-binary==2.9.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-py==1.11.0
-    # via pytest-forked
 pycparser==2.21
     # via cffi
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -216,32 +207,32 @@ pytest==7.2.0
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
-    #   pytest-forked
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.19.0
+pytest-asyncio==0.20.1
     # via pytest-aiohttp
 pytest-cov==4.0.0
     # via -r requirements/_test.in
 pytest-docker==1.0.1
     # via -r requirements/_test.in
-pytest-forked==1.4.0
-    # via pytest-xdist
 pytest-icdiff==0.6
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-xdist==2.5.0
+pytest-xdist==3.0.2
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
     #   botocore
     #   faker
+    #   pandas
+pytz==2022.6
+    # via pandas
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -282,23 +273,17 @@ sqlalchemy==1.4.37
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.5
-    # via pylint
 tornado==6.1
     # via
     #   -c requirements/_base.txt
     #   bokeh
-traitlets==5.4.0
+traitlets==5.5.0
     # via dask-gateway-server
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
     #   aioitertools
-    #   astroid
-    #   bokeh
-    #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -307,13 +292,14 @@ urllib3==1.26.9
     #   docker
     #   minio
     #   requests
-websocket-client==1.4.1
+websocket-client==1.4.2
     # via docker
 wrapt==1.14.1
     # via
     #   -c requirements/_base.txt
     #   aiobotocore
-    #   astroid
+xyzservices==2022.9.0
+    # via bokeh
 yarl==1.7.2
     # via
     #   -c requirements/_base.txt

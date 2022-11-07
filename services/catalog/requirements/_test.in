@@ -9,29 +9,19 @@
 #
 --constraint _base.txt
 
-# 'services/catalog/tests/unit' dependencies
-jsonschema
-
-# testing
+alembic # migration due to pytest_simcore.postgres_service
+click
+codecov
+coveralls
+docker
+Faker
+jsonschema # 'services/catalog/tests/unit' dependencies
+ptvsd
 pytest
 pytest-aiohttp
 pytest-benchmark
 pytest-cov
+pytest-docker
 pytest-mock
 pytest-runner
-pytest-docker
-
-# fixtures
-Faker
 respx
-
-# migration due to pytest_simcore.postgres_service
-alembic
-docker
-click
-
-# tools
-pylint
-coveralls
-codecov
-ptvsd
