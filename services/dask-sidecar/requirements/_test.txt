@@ -102,8 +102,6 @@ pprintpp==0.4.0
     # via pytest-icdiff
 ptvsd==4.3.2
     # via -r requirements/_test.in
-py==1.11.0
-    # via -r requirements/_test.in
 pycparser==2.20
     # via
     #   -c requirements/_base.txt

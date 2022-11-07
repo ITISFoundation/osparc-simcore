@@ -158,8 +158,6 @@ psycopg2-binary==2.9.5
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiopg
     #   sqlalchemy
-py==1.11.0
-    # via -r requirements/_test.in
 pydantic==1.10.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

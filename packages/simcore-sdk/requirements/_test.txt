@@ -130,6 +130,7 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   docker
     #   pytest
+    #   pytest-sugar
 platformdirs==2.5.3
     # via pylint
 pluggy==1.0.0
@@ -156,6 +157,7 @@ pytest==7.2.0
     #   pytest-instafail
     #   pytest-lazy-fixture
     #   pytest-mock
+    #   pytest-sugar
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
@@ -172,6 +174,8 @@ pytest-lazy-fixture==0.6.3
 pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
+    # via -r requirements/_test.in
+pytest-sugar==0.9.6
     # via -r requirements/_test.in
 pytest-xdist==3.0.2
     # via -r requirements/_test.in
@@ -197,6 +201,8 @@ sqlalchemy==1.4.43
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
+termcolor==2.1.0
+    # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage

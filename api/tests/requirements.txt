@@ -69,8 +69,6 @@ parse==1.19.0
     # via openapi-core
 pluggy==1.0.0
     # via pytest
-py==1.11.0
-    # via -r requirements.in
 pyparsing==3.0.9
     # via packaging
 pyrsistent==0.19.2

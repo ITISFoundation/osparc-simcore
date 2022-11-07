@@ -76,8 +76,6 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-py==1.11.0
-    # via -r requirements/_test.in
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9

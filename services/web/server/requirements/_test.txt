@@ -153,8 +153,6 @@ psycopg2-binary==2.9.3
     #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
-py==1.11.0
-    # via -r requirements/_test.in
 pylint==2.15.5
     # via -r requirements/_test.in
 pyparsing==3.0.9
