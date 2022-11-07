@@ -42,6 +42,8 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
+docker==6.0.1
+    # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
 exceptiongroup==1.0.1
@@ -129,8 +131,6 @@ pytest-xdist==3.0.2
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.21.0
-    # via -r requirements/_test.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -162,6 +162,8 @@ urllib3==1.26.12
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
+websocket-client==1.4.2
+    # via docker
 yarl==1.8.1
     # via
     #   -c requirements/_aiohttp.txt
