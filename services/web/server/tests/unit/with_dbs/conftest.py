@@ -264,7 +264,14 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        autospec=True,
         side_effect=async_mock,
+    )
+
+    mock2 = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project_node",
+        autospec=True,
+        return_value=None,
     )
 
     mock3 = mocker.patch(
@@ -273,7 +280,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
 
-    return MockedStorageSubsystem(mock, mock1, mock3)
+    return MockedStorageSubsystem(mock, mock1, mock2, mock3)
 
 
 @pytest.fixture
