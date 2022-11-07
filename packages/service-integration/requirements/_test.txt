@@ -25,11 +25,11 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.5.1
+dill==0.3.6
     # via pylint
 docopt==0.6.2
     # via coveralls
-exceptiongroup==1.0.0
+exceptiongroup==1.0.1
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -43,7 +43,7 @@ iniconfig==1.1.1
     #   pytest
 isort==5.10.1
     # via pylint
-lazy-object-proxy==1.7.1
+lazy-object-proxy==1.8.0
     # via astroid
 mccabe==0.7.0
     # via pylint
@@ -52,7 +52,7 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.2
+platformdirs==2.5.3
     # via pylint
 pluggy==1.0.0
     # via
@@ -79,7 +79,7 @@ pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.5
+pytest-sugar==0.9.6
     # via -r requirements/_test.in
 requests==2.28.1
     # via
@@ -93,7 +93,7 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-tomlkit==0.11.5
+tomlkit==0.11.6
     # via pylint
 typing-extensions==4.4.0
     # via
