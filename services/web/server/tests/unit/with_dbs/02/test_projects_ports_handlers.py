@@ -207,11 +207,11 @@ def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
 
 
 @pytest.fixture
-def user_project(
-    user_project: dict[str, Any], workbench_db_column: dict[str, Any]
+def fake_project(
+    fake_project: ProjectDict, workbench_db_column: dict[str, Any]
 ) -> ProjectDict:
     # OVERRIDES user_project
-    project = deepcopy(user_project)
+    project = deepcopy(fake_project)
     project["workbench"] = workbench_db_column
     return project
 
@@ -221,7 +221,7 @@ def user_project(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
@@ -257,25 +257,26 @@ async def test_io_workflow(
     assert URL(f"/v0/projects/{project_id}/inputs") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/inputs")
-    project_inputs, _ = await assert_status(resp, expected_cls=expected)
+    project_inputs, error = await assert_status(resp, expected_cls=expected)
 
-    assert project_inputs == {
-        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
-            "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
-            "value": 43,
-            "label": "X",
-        },
-        "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
-            "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
-            "value": 1,
-            "label": "Z",
-        },
-        "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
-            "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
-            "value": False,
-            "label": "on",
-        },
-    }
+    if not error:
+        assert project_inputs == {
+            "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
+                "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
+                "value": 43,
+                "label": "X",
+            },
+            "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
+                "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+                "value": 1,
+                "label": "Z",
+            },
+            "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
+                "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+                "value": False,
+                "label": "on",
+            },
+        }
 
     # update_project_inputs
     expected_url = client.app.router["update_project_inputs"].url_for(
@@ -285,27 +286,29 @@ async def test_io_workflow(
 
     resp = await client.patch(
         f"/v0/projects/{project_id}/inputs",
-        json=[{"key": "38a0d401-af4b-4ea7-ab4c-5005c712a5469", "value": 42}],
+        json=[{"key": "38a0d401-af4b-4ea7-ab4c-5005c712a546", "value": 42}],
     )
-    project_inputs, _ = await assert_status(resp, expected_cls=expected)
+    project_inputs, error = await assert_status(resp, expected_cls=expected)
 
-    assert project_inputs == {
-        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
-            "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
-            "value": 42,  # <---- updated
-            "label": "X",
-        },
-        "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
-            "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
-            "value": 1,
-            "label": "Z",
-        },
-        "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
-            "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
-            "value": False,
-            "label": "on",
-        },
-    }
+    if not error:
+
+        assert project_inputs == {
+            "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
+                "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
+                "value": 42,  # <---- updated
+                "label": "X",
+            },
+            "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
+                "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+                "value": 1,
+                "label": "Z",
+            },
+            "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
+                "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+                "value": False,
+                "label": "on",
+            },
+        }
 
     # get_project_outputs (actual data)
     expected_url = client.app.router["get_project_outputs"].url_for(
@@ -314,10 +317,10 @@ async def test_io_workflow(
     assert URL(f"/v0/projects/{project_id}/outputs") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/outputs")
-    project_outputs, _ = await assert_status(resp, expected_cls=expected)
+    project_outputs, error = await assert_status(resp, expected_cls=expected)
 
-    assert project_outputs == {
-        "data": {
+    if not error:
+        assert project_outputs == {
             "09fd512e-0768-44ca-81fa-0cecab74ec1a": {
                 "key": "09fd512e-0768-44ca-81fa-0cecab74ec1a",
                 "value": None,  # <---- was not computed!
@@ -329,4 +332,3 @@ async def test_io_workflow(
                 "label": "Random sleep interval",
             },
         }
-    }
