@@ -10,46 +10,16 @@ name: CI
 # unit-tests, integration-tests, and system-tests
 
 on:
+  # NOTE: we trigger on any file path since the jobs are taking care of running or not
   push:
     branches:
       - "*"
     tags-ignore:
       - "*"
-    paths:
-      - "!.vscode-template/**"
-      - "!.vscode/**"
-      - "!*.md"
-      - "!*.png"
-      - "!*.svg"
-      - "!docs/**"
-      - ".github/workflows/ci-testing-deploy.yml"
-      - "**.js"
-      - "**.json"
-      - "**.Makefile"
-      - "**.py"
-      - "**/requirements/*.txt"
-      - "**/services/docker-compose*"
-      - "ci/**"
-      - "Makefile"
   pull_request:
     branches:
       - "*"
-    paths:
-      - "!.vscode-template/**"
-      - "!.vscode/**"
-      - "!*.md"
-      - "!*.png"
-      - "!*.svg"
-      - "!docs/**"
-      - ".github/workflows/ci-testing-deploy.yml"
-      - "**.js"
-      - "**.json"
-      - "**.Makefile"
-      - "**.py"
-      - "**/requirements/*.txt"
-      - "**/services/docker-compose*"
-      - "ci/**"
-      - "Makefile"
+    
 env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
