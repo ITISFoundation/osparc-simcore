@@ -1224,7 +1224,7 @@ jobs:
       - name: a previous job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         env:
-          NEEDS=${{ toJSON(needs) }}
+          NEEDS: ${{ toJSON(needs) }}
         run: |
           echo "::error  $NEEDS"
           abort()
