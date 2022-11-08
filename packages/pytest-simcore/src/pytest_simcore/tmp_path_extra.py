@@ -12,8 +12,8 @@
 from pathlib import Path
 
 import pytest
-from _pytest.fixtures import FixtureRequest
 from _pytest.tmpdir import TempPathFactory
+from pytest import FixtureRequest
 
 
 @pytest.fixture(scope="module")
