@@ -20,6 +20,8 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+astroid==2.12.12
+    # via pylint
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -60,17 +62,19 @@ deprecated==1.2.13
     # via
     #   -c requirements/_base.txt
     #   redis
-docker==6.0.1
+dill==0.3.5.1
+    # via pylint
+docker==6.0.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-exceptiongroup==1.0.1
+exceptiongroup==1.0.0rc9
     # via
     #   hypothesis
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==15.2.0
+faker==15.1.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -83,7 +87,7 @@ greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-hypothesis==6.56.4
+hypothesis==6.56.2
     # via -r requirements/_test.in
 icdiff==2.0.5
     # via pytest-icdiff
@@ -94,12 +98,18 @@ idna==3.3
     #   yarl
 iniconfig==1.1.1
     # via pytest
+isort==5.10.1
+    # via pylint
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
+lazy-object-proxy==1.7.1
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
 mako==1.2.2
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -109,6 +119,8 @@ markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
+mccabe==0.7.0
+    # via pylint
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
@@ -129,6 +141,8 @@ packaging==21.3
     #   pytest
     #   pytest-sugar
     #   redis
+platformdirs==2.5.2
+    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
@@ -141,8 +155,10 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
     # via
-    #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/_test.in
     #   pytest-forked
+pylint==2.15.5
+    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -166,7 +182,7 @@ pytest==7.2.0
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.20.1
+pytest-asyncio==0.19.0
     # via pytest-aiohttp
 pytest-cov==4.0.0
     # via -r requirements/_test.in
@@ -182,7 +198,7 @@ pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.5
     # via -r requirements/_test.in
 pytest-xdist==2.5.0
     # via -r requirements/_test.in
@@ -226,20 +242,29 @@ termcolor==2.1.0
 tomli==2.0.1
     # via
     #   coverage
+    #   pylint
     #   pytest
+tomlkit==0.11.5
+    # via pylint
+typing-extensions==4.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.11
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   docker
     #   requests
-websocket-client==1.4.2
+websocket-client==1.4.1
     # via docker
-websockets==10.4
+websockets==10.3
     # via -r requirements/_test.in
 wrapt==1.14.1
     # via
     #   -c requirements/_base.txt
+    #   astroid
     #   deprecated
 yarl==1.5.1
     # via
