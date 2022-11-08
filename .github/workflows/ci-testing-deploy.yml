@@ -202,7 +202,7 @@ jobs:
             docker_buildx: v0.8.2
             docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-            test-cmd: test
+          - test-cmd: test
             run-typecheck: false
             install-rclone: false
             install-rclone-volume-plugin: false
