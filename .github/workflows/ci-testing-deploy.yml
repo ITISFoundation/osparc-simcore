@@ -219,17 +219,16 @@ jobs:
           - webserver-02
           - webserver-03
         include:
-          # defaults
+          # defaults (will be added to each job if not defined explicitely)
           - python: "3.9"
           - os: ubuntu-20.04
           - docker_buildx: v0.8.2
           - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
           - test-cmd: test
           - run-typecheck: false
           - install-rclone: false
           - install-rclone-volume-plugin: false
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
           # unit-tests definitions
           - name: agent
             install-rclone: true
@@ -239,63 +238,63 @@ jobs:
             package-path: api/tests
           - name: api-server
             package-path: services/api-server
-          # - name: autoscaling
-          #   package-path: services/autoscaling
-          # - name: catalog
-          #   package-path: services/catalog
-          # - name: dask-sidecar
-          #   package-path: services/dask-sidecar
-          #   run-typecheck: true
-          # - name: dask-task-models-library
-          #   package-path: packages/dask-task-models-library
-          #   run-typecheck: true
-          # - name: datcore-adapter
-          #   package-path: services/datcore-adapter
-          #   run-typecheck: true
-          # - name: director
-          #   package-path: services/director
-          #   python: "3.6"
-          # - name: director-v2
-          #   package-path: services/director-v2
-          #   install-rclone-volume-plugin: true
-          # - name: dynamic-sidecar
-          #   package-path: services/dynamic-sidecar
-          #   run-typecheck: true
-          # - name: models-library
-          #   package-path: packages/models-library
-          # - name: postgres-database
-          #   package-path: packages/postgres-database
-          #   run-typecheck: true
-          # - name: pylint
-          #   package-path: packages/service-library
-          #   python: ["3.9", "3.10", "3.11"]
-          # - name: service-integration
-          #   package-path: packages/service-integration
-          # - name: service-library
-          #   package-path: packages/service-library
-          # - name: settings-library
-          #   package-path: packages/settings-library
-          # - name: simcore-sdk
-          #   package-path: packages/simcore-sdk
-          #   install-rclone: true
-          # - name: storage
-          #   package-path: services/storage
-          # - name: webserver-isolated
-          #   package-path: services/web/server
-          #   ci-bash-file: webserver
-          #   test-cmd: test_isolated
-          # - name: webserver-01
-          #   package-path: services/web/server
-          #   ci-bash-file: webserver
-          #   test-cmd: test_with_db 01
-          # - name: webserver-02
-          #   package-path: services/web/server
-          #   ci-bash-file: webserver
-          #   test-cmd: test_with_db 02
-          # - name: webserver-03
-          #   package-path: services/web/server
-          #   ci-bash-file: webserver
-          #   test-cmd: test_with_db 03
+          - name: autoscaling
+            package-path: services/autoscaling
+          - name: catalog
+            package-path: services/catalog
+          - name: dask-sidecar
+            package-path: services/dask-sidecar
+            run-typecheck: true
+          - name: dask-task-models-library
+            package-path: packages/dask-task-models-library
+            run-typecheck: true
+          - name: datcore-adapter
+            package-path: services/datcore-adapter
+            run-typecheck: true
+          - name: director
+            package-path: services/director
+            python: "3.6"
+          - name: director-v2
+            package-path: services/director-v2
+            install-rclone-volume-plugin: true
+          - name: dynamic-sidecar
+            package-path: services/dynamic-sidecar
+            run-typecheck: true
+          - name: models-library
+            package-path: packages/models-library
+          - name: postgres-database
+            package-path: packages/postgres-database
+            run-typecheck: true
+          - name: pylint
+            package-path: packages/service-library
+            python: ["3.9", "3.10", "3.11"]
+          - name: service-integration
+            package-path: packages/service-integration
+          - name: service-library
+            package-path: packages/service-library
+          - name: settings-library
+            package-path: packages/settings-library
+          - name: simcore-sdk
+            package-path: packages/simcore-sdk
+            install-rclone: true
+          - name: storage
+            package-path: services/storage
+          - name: webserver-isolated
+            package-path: services/web/server
+            ci-bash-file: webserver
+            test-cmd: test_isolated
+          - name: webserver-01
+            package-path: services/web/server
+            ci-bash-file: webserver
+            test-cmd: test_with_db 01
+          - name: webserver-02
+            package-path: services/web/server
+            ci-bash-file: webserver
+            test-cmd: test_with_db 02
+          - name: webserver-03
+            package-path: services/web/server
+            ci-bash-file: webserver
+            test-cmd: test_with_db 03
     uses: ./.github/workflows/ci-testing-unit-test-job.yml
     with:
       name: ${{ matrix.name }}
@@ -353,45 +352,6 @@ jobs:
     # - uses: codecov/codecov-action@v3.1.1
     #   with:
     #     flags: unittests #optional
-
-  # unit-test-python-linting:
-  #   needs: changes
-  #   if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
-  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
-  #   name: "[unit] python-linting"
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       python: ["3.9", "3.10", "3.11"]
-  #       os: [ubuntu-20.04]
-  #       docker_buildx: [v0.8.2]
-  #       docker_compose: [1.29.1]
-  #       include:
-  #         - docker_compose: 1.29.1
-  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: setup docker buildx
-  #       id: buildx
-  #       uses: docker/setup-buildx-action@v2
-  #       with:
-  #         version: ${{ matrix.docker_buildx }}
-  #         driver: docker-container
-  #     - name: setup docker-compose
-  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-  #     - name: setup python environment
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python }}
-  #         cache: "pip"
-  #         cache-dependency-path: "packages/service-library/requirements/_test.txt"
-  #     - name: show system version
-  #       run: ./ci/helpers/show_system_versions.bash
-  #     - name: install
-  #       run: ./ci/github/unit-testing/python-linting.bash install
-  #     - name: test
-  #       run: ./ci/github/unit-testing/python-linting.bash test
 
 
 
