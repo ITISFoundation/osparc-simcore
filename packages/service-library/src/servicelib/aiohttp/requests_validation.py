@@ -147,7 +147,11 @@ async def parse_request_body_as(
         except json.decoder.JSONDecodeError as err:
             raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}")
 
-        if issubclass(model_schema, type) and issubclass(model_schema, BaseModel):
+        if hasattr(model_schema, "parse_obj"):
+            # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
+            # with issubclass(model_schema, BaseModel)
+            assert issubclass(model_schema, BaseModel)  # nosec
             return model_schema.parse_obj(body)
 
+        # used for model_schema like 'list[T]' or 'dict[T]'
         return parse_obj_as(model_schema, body)
