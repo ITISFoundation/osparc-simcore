@@ -1221,18 +1221,11 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous job failed
+      - name: a previous unit-test job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-        env:
-          NEEDS: ${{ toJSON(needs) }}
         run: |
-          echo "::error file={name},line={line},endLine={endLine},title={ERROR}::{$NEEDS}"
+          echo "::error title={ERROR}::{one of the unit-tests failed!}"
           exit 1
-
-        # with:
-        #   script: |
-        #     core.setFailed('a previous job failed: $NEEDS')
-
       - name: all the previous jobs were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
         run: echo "::notice All good!"
