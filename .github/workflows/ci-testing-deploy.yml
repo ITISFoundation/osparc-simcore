@@ -1223,11 +1223,13 @@ jobs:
     steps:
       - name: a previous job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+        uses: actions/github-script@v3
         env:
           NEEDS: ${{ toJSON(needs) }}
-        run: |
-          echo "::error  $NEEDS"
-          abort()
+        with:
+          script: |
+            core.setFailed('a previous job failed: $NEEDS')
+
       - name: all the previous jobs were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
         run: echo "::notice All good!"
