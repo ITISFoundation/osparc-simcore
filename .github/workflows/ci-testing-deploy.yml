@@ -195,32 +195,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # generate the matrix from the job before?
         name:
-          - agent
-          - api
-          - api-server
-          - autoscaling
-          - catalog
-          - dask-sidecar
-          - dask-task-models-library
-          - datcore-adapter
+          # - agent
+          # - api
+          # - api-server
+          # - autoscaling
+          # - catalog
+          # - dask-sidecar
+          # - dask-task-models-library
+          # - datcore-adapter
           - director
-          - director-v2
-          - dynamic-sidecar
-          - models-library
-          - postgres-database
-          - pylint-3-9
-          - pylint-3-10
-          - pylint-3-11
-          - service-integration
-          - service-library
-          - settings-library
-          - simcore-sdk
-          - storage
-          - webserver-isolated
-          - webserver-01
-          - webserver-02
-          - webserver-03
+          # - director-v2
+          # - dynamic-sidecar
+          # - models-library
+          # - postgres-database
+          # - pylint-3-9
+          # - pylint-3-10
+          # - pylint-3-11
+          # - service-integration
+          # - service-library
+          # - settings-library
+          # - simcore-sdk
+          # - storage
+          # - webserver-isolated
+          # - webserver-01
+          # - webserver-02
+          # - webserver-03
 
         include:
           # defaults (will be added to each job if not defined explicitely)
