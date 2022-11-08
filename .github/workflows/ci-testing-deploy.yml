@@ -15,37 +15,23 @@ on:
       - "*"
     tags-ignore:
       - "*"
-    paths:
-      - "!.vscode/**"
-      - "!*.md"
-      - "!*.png"
-      - "!*.svg"
-      - "!docs/**"
-      - ".github/workflows/ci-testing-deploy.yml"
-      - "**.js"
-      - "**.json"
-      - "**.Makefile"
-      - "**.py"
-      - "**/requirements/*.txt"
-      - "**/services/docker-compose*"
-      - "ci/**"
   pull_request:
     branches:
       - "*"
-    paths:
-      - "!*.md"
-      - "!*.png"
-      - "!*.svg"
-      - "!docs/**"
-      - "!.vscode/**"
-      - "!.vscode-template/**"
-      - "**.py"
-      - "**.js"
-      - "**/requirements/*.txt"
-      - "**.json"
-      - "**.Makefile"
-      - ".github/workflows/ci-testing-deploy.yml"
-      - "ci/**"
+
+  workflow_dispatch:
+    inputs:
+      tests:
+        description: tests to run
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - unit-tests
+          - integration-tests
+          - system-tests
+          - all
+
 env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
@@ -1204,7 +1190,7 @@ jobs:
 
   unit-tests:
     # NOTE: this is a github required status check!
-    if: always()
+    if: ${{ always() }}
     needs:
       [
         unit-test-agent,
@@ -1233,12 +1219,19 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: all unit tests were run or skipped
-        run: echo "all unit tests were run or skipped"
+      - name: a previous unit-test job failed
+        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+        run: |
+          echo "::error title=ERROR::one of the unit-tests failed!"
+          exit 1
+      - name: all the previous unit-tests were run successfully or skipped
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        run: echo "::notice All good!"
+
 
   integration-test-webserver-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     runs-on: ${{ matrix.os }}
@@ -1296,7 +1289,7 @@ jobs:
 
   integration-test-webserver-02:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
     runs-on: ${{ matrix.os }}
@@ -1356,7 +1349,7 @@ jobs:
 
   integration-test-director-v2-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push'}}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push'}}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
     runs-on: ${{ matrix.os }}
@@ -1416,7 +1409,7 @@ jobs:
 
   integration-test-director-v2-02:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
     runs-on: ${{ matrix.os }}
@@ -1479,7 +1472,7 @@ jobs:
 
   integration-test-simcore-sdk:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     runs-on: ${{ matrix.os }}
@@ -1550,8 +1543,15 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: all unit tests were run or skipped
-        run: echo "all unit tests were run or skipped"
+      - name: a previous integration-test job failed
+        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+        run: |
+          echo "::error title=ERROR::one of the unit-tests failed!"
+          exit 1
+      - name: all the previous integration-tests were run successfully or skipped
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        run: echo "::notice All good!"
+
 
   system-test-public-api:
     needs: [changes, build-test-images]
@@ -1798,8 +1798,14 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: all unit tests were run or skipped
-        run: echo "all unit tests were run or skipped"
+      - name: a previous system-test job failed
+        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+        run: |
+          echo "::error title=ERROR::one of the unit-tests failed!"
+          exit 1
+      - name: all the previous system-tests were run successfully or skipped
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        run: echo "::notice All good!"
 
   deploy:
     name: deploy to dockerhub
