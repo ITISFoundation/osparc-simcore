@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 from dataclasses import dataclass
-from typing import AsyncIterable, Iterable
+from typing import AsyncIterable
 
 import pytest
 from aiohttp import ClientResponse, ClientSession
@@ -13,13 +13,7 @@ from simcore_sdk.node_ports_common.file_io_utils import (
     _raise_for_status,
 )
 
-A_TEST_ROUTE = "http://127.0.0.1:1249/test-route"
-
-
-@pytest.fixture
-def mock_service() -> Iterable[aioresponses]:
-    with aioresponses() as mock:
-        yield mock
+A_TEST_ROUTE = "http://a-fake-address:1249/test-route"
 
 
 @pytest.fixture
@@ -29,9 +23,11 @@ async def client_session() -> AsyncIterable[ClientSession]:
 
 
 async def test_raise_for_status(
-    mock_service: aioresponses, client_session: ClientSession
+    aioresponses_mocker: aioresponses, client_session: ClientSession
 ):
-    mock_service.get(A_TEST_ROUTE, body="OPSIE there was an error here", status=400)
+    aioresponses_mocker.get(
+        A_TEST_ROUTE, body="OPSIE there was an error here", status=400
+    )
 
     async with client_session.get(A_TEST_ROUTE) as resp:
         assert isinstance(resp, ClientResponse)
@@ -70,9 +66,11 @@ class _TestParams:
     ],
 )
 async def test_check_for_aws_http_errors(
-    mock_service: aioresponses, client_session: ClientSession, test_params: _TestParams
+    aioresponses_mocker: aioresponses,
+    client_session: ClientSession,
+    test_params: _TestParams,
 ):
-    mock_service.get(
+    aioresponses_mocker.get(
         A_TEST_ROUTE, body=test_params.body, status=test_params.status_code
     )
 
