@@ -46,7 +46,7 @@ on:
 
 jobs:
   unit-test:
-    name: ${{ inputs.name }}
+    # name: ${{ inputs.name }}
     # if: needs.changes.outputs.${{ inputs.name }} == 'true' || github.event_name == 'push'
     # if this timeout gets too small, then split the tests
     timeout-minutes: 15
