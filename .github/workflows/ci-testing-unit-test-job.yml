@@ -1,0 +1,95 @@
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+      python:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+      docker-buildx:
+        required: true
+        type: string
+      docker-compose:
+        required: true
+        type: string
+      docker-compose-sha:
+        required: true
+        type: string
+      run-typecheck:
+        required: false
+        type: boolean
+        default: false
+      package-path:
+        required: false
+        type: string
+        default: ""
+      ci-bash-file:
+        required: false
+        type: string
+        default: ""
+      test-cmd:
+        required: false
+        type: string
+        default: test
+      install-rclone:
+        required: false
+        type: boolean
+        default: false
+      install-rclone-volume-plugin:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  unit-test:
+    name: ${{ inputs.name }}
+    # if: needs.changes.outputs.${{ inputs.name }} == 'true' || github.event_name == 'push'
+    # if this timeout gets too small, then split the tests
+    timeout-minutes: 15
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ inputs.docker-buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ inputs.docker-compose }} ${{ inputs.docker-compose-sha }}
+      - name: install RClone
+        if: ${{ inputs.install-rclone }}
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: install RClone docker volume plugin
+        if: ${{ inputs.install-rclone-volume-plugin }}
+        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python }}
+          cache: "pip"
+          cache-dependency-path: |
+            ${{ inputs.package-path }}/**/ci.txt
+            ${{ inputs.package-path }}/**/requirements.txt
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install package
+        run: ./ci/github/unit-testing/${{ inputs.ci-bash-file || inputs.name }}.bash install
+      - name: typecheck
+        if: ${{ inputs.run-typecheck }}
+        run: ./ci/github/unit-testing/${{ inputs.ci-bash-file || inputs.name }}.bash typecheck
+      - name: tests
+        if: always()
+        run: ./ci/github/unit-testing/${{ inputs.ci-bash-file || inputs.name }}.bash ${{ inputs.test-cmd }}
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ${{ inputs.package-path }}/test_failures
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests
