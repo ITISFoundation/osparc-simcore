@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 from pathlib import Path
 from pprint import pformat
@@ -11,11 +12,10 @@ import distributed
 import fsspec
 import pytest
 import simcore_service_dask_sidecar
-from _pytest.tmpdir import TempPathFactory
 from faker import Faker
 from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
-from pytest import MonkeyPatch
+from pytest import MonkeyPatch, TempPathFactory
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
