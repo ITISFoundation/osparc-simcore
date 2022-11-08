@@ -1226,9 +1226,13 @@ jobs:
         uses: actions/github-script@v3
         env:
           NEEDS: ${{ toJSON(needs) }}
-        with:
-          script: |
-            core.setFailed('a previous job failed: $NEEDS')
+        run: |
+          echo "::error file={name},line={line},endLine={endLine},title={ERROR}::{$NEEDS}"
+          exit 1
+
+        # with:
+        #   script: |
+        #     core.setFailed('a previous job failed: $NEEDS')
 
       - name: all the previous jobs were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
