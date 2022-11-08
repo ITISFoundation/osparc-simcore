@@ -1192,7 +1192,7 @@ jobs:
 
   unit-tests:
     # NOTE: this is a github required status check!
-    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
+    if: ${{ always() && not contains(join(needs.*.result, ','), 'failure') }}
     needs:
       [
         unit-test-agent,
