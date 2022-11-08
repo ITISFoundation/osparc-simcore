@@ -18,6 +18,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
 from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
@@ -115,7 +116,9 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AsyncIterator[UserInfoDict]:
+async def logged_user(
+    client: TestClient, user_role: UserRole
+) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -157,7 +160,7 @@ def monkeypatch_setenv_from_app_config(
 
 
 @pytest.fixture
-def mock_projects_networks_network_name(mocker) -> None:
+def mock_projects_networks_network_name(mocker: MockerFixture) -> None:
     remove_orphaned_services = mocker.patch(
         "simcore_service_webserver.projects_networks._network_name",
         return_value=f"{PROJECT_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
