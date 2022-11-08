@@ -209,7 +209,9 @@ jobs:
           - dynamic-sidecar
           - models-library
           - postgres-database
-          - pylint
+          - pylint-3-9
+          - pylint-3-10
+          - pylint-3-11
           - service-integration
           - service-library
           - settings-library
@@ -267,9 +269,15 @@ jobs:
           - name: postgres-database
             package-path: packages/postgres-database
             run-typecheck: true
-          - name: pylint
+          - name: pylint-3-9
             package-path: packages/service-library
-            python: ["3.9", "3.10", "3.11"]
+            python: 3.9
+          - name: pylint-3-10
+            package-path: packages/service-library
+            python: 3.10
+          - name: pylint-3-11
+            package-path: packages/service-library
+            python: 3.11
           - name: service-integration
             package-path: packages/service-integration
           - name: service-library
