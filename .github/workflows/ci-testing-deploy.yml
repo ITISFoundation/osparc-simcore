@@ -191,7 +191,7 @@ jobs:
 
   unit-test-webserver-01:
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.webserver || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
@@ -235,7 +235,7 @@ jobs:
 
   unit-test-webserver-02:
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.webserver || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
@@ -277,7 +277,7 @@ jobs:
 
   unit-test-webserver-03:
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.webserver || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
@@ -319,7 +319,7 @@ jobs:
 
   unit-test-storage:
     needs: changes
-    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.storage || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
@@ -361,7 +361,7 @@ jobs:
 
   unit-test-agent:
     needs: changes
-    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.agent || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] agent"
     runs-on: ${{ matrix.os }}
@@ -408,7 +408,7 @@ jobs:
 
   unit-test-api:
     needs: changes
-    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.api || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api"
     runs-on: ${{ matrix.os }}
@@ -447,7 +447,7 @@ jobs:
 
   unit-test-api-server:
     needs: changes
-    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.api-server || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
@@ -489,7 +489,7 @@ jobs:
 
   unit-test-autoscaling:
     needs: changes
-    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.autoscaling || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
@@ -531,7 +531,7 @@ jobs:
 
   unit-test-catalog:
     needs: changes
-    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.catalog || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
@@ -579,7 +579,7 @@ jobs:
 
   unit-test-datcore-adapter:
     needs: changes
-    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.datcore-adapter || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] datcore-adapter"
     runs-on: ${{ matrix.os }}
@@ -630,7 +630,7 @@ jobs:
 
   unit-test-director:
     needs: changes
-    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.director || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
@@ -673,7 +673,7 @@ jobs:
 
   unit-test-director-v2:
     needs: changes
-    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.director-v2 || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
     runs-on: ${{ matrix.os }}
@@ -721,7 +721,7 @@ jobs:
 
   unit-test-dask-task-models-library:
     needs: changes
-    if: ${{ needs.changes.outputs.dask-task-models-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dask-task-models-library || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
     runs-on: ${{ matrix.os }}
@@ -766,7 +766,7 @@ jobs:
 
   unit-test-dask-sidecar:
     needs: changes
-    if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dask-sidecar || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-sidecar"
     runs-on: ${{ matrix.os }}
@@ -808,7 +808,7 @@ jobs:
 
   unit-test-dynamic-sidecar:
     needs: changes
-    if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.dynamic-sidecar || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
@@ -853,7 +853,7 @@ jobs:
 
   unit-test-frontend:
     needs: changes
-    if: ${{ needs.changes.outputs.static-webserver == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.static-webserver || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
@@ -894,7 +894,7 @@ jobs:
 
   unit-test-python-linting:
     needs: changes
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
@@ -933,7 +933,7 @@ jobs:
 
   unit-test-postgres-database:
     needs: changes
-    if: ${{ needs.changes.outputs.postgres-database == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.postgres-database || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
@@ -978,7 +978,7 @@ jobs:
 
   unit-test-service-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.service-integration == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.service-integration || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
@@ -1020,7 +1020,7 @@ jobs:
 
   unit-test-service-library:
     needs: changes
-    if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.service-library || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
@@ -1062,7 +1062,7 @@ jobs:
 
   unit-test-settings-library:
     needs: changes
-    if: ${{ needs.changes.outputs.settings-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.settings-library || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
     runs-on: ${{ matrix.os }}
@@ -1104,7 +1104,7 @@ jobs:
 
   unit-test-models-library:
     needs: changes
-    if: ${{ needs.changes.outputs.models-library == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.models-library || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
@@ -1146,7 +1146,7 @@ jobs:
 
   unit-test-simcore-sdk:
     needs: changes
-    if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.simcore-sdk || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
@@ -1555,7 +1555,7 @@ jobs:
 
   system-test-public-api:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything || github.event_name == 'push' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     runs-on: ${{ matrix.os }}
@@ -1612,7 +1612,7 @@ jobs:
 
   system-test-swarm-deploy:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     runs-on: ${{ matrix.os }}
@@ -1669,7 +1669,7 @@ jobs:
 
   system-test-e2e:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     runs-on: ${{ matrix.os }}
