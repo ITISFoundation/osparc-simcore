@@ -97,7 +97,7 @@ def test_client_3(
     )
 
 
-async def test__check_for_aws_http_errors_false(test_client_3: TestClient):
+async def test_check_for_aws_http_errors_false(test_client_3: TestClient):
     resp = await test_client_3.get("/")
     try:
         await _raise_for_status(resp)
