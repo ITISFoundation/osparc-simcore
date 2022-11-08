@@ -224,7 +224,7 @@ jobs:
 
         include:
           # defaults (will be added to each job if not defined explicitely)
-          - python: 3.9
+          - python: "3.9"
             os: ubuntu-20.04
             docker_buildx: v0.8.2
             docker_compose: 1.29.1
@@ -257,7 +257,7 @@ jobs:
             run-typecheck: true
           - name: director
             package-path: services/director
-            python: 3.6
+            python: "3.6"
           - name: director-v2
             package-path: services/director-v2
             install-rclone-volume-plugin: true
@@ -271,13 +271,13 @@ jobs:
             run-typecheck: true
           - name: pylint-3-9
             package-path: packages/service-library
-            python: 3.9
+            python: "3.9"
           - name: pylint-3-10
             package-path: packages/service-library
-            python: 3.10
+            python: "3.10"
           - name: pylint-3-11
             package-path: packages/service-library
-            python: 3.11
+            python: "3.11"
           - name: service-integration
             package-path: packages/service-integration
           - name: service-library
