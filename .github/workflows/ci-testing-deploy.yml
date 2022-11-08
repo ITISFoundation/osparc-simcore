@@ -24,7 +24,7 @@ on:
       tests:
         description: tests to run
         required: true
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - unit-tests
@@ -322,7 +322,48 @@ jobs:
       install-rclone: ${{ matrix.install-rclone }}
       install-rclone-volume-plugin: ${{ matrix.install-rclone-volume-plugin }}
 
-
+  unit-test-director:
+    needs: changes
+    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] director"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # KEEP 3.6 Development of this service is frozen
+        python: [3.6]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/director.bash install
+      - name: test
+        run: ./ci/github/unit-testing/director.bash test
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
 
   unit-test-frontend:
     needs: changes
@@ -364,8 +405,6 @@ jobs:
     # - uses: codecov/codecov-action@v3.1.1
     #   with:
     #     flags: unittests #optional
-
-
 
   # integration-test-webserver-01:
   #   needs: [changes, build-test-images]
@@ -689,7 +728,6 @@ jobs:
   #     - name: all the previous integration-tests were run successfully or skipped
   #       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
   #       run: echo "::notice All good!"
-
 
   # system-test-public-api:
   #   needs: [changes, build-test-images]
