@@ -10,7 +10,6 @@ name: CI
 # unit-tests, integration-tests, and system-tests
 
 on:
-  # NOTE: we trigger on any file path since the jobs are taking care of running or not
   push:
     branches:
       - "*"
