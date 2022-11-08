@@ -20,17 +20,17 @@ on:
       - "*"
 
   workflow_dispatch:
-    # inputs:
-    #   tests:
-    #     description: tests to run
-    #     required: true
-    #     default: 'all'
-    #     type: choice
-    #     options:
-    #       - unit-tests
-    #       - integration-tests
-    #       - system-tests
-    #       - all
+    inputs:
+      tests:
+        description: tests to run
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - unit-tests
+          - integration-tests
+          - system-tests
+          - all
 
 env:
   DEFAULT_MAX_NANO_CPUS: 10000000
