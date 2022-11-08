@@ -4,18 +4,18 @@
 
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional
+from typing import Any, Callable, Iterable, Iterator, Optional
 
 import dask
 import distributed
 import fsspec
 import pytest
 import simcore_service_dask_sidecar
-from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
 from faker import Faker
 from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
@@ -53,7 +53,7 @@ def installed_package_dir() -> Path:
 
 @pytest.fixture()
 def mock_service_envs(
-    mock_env_devel_environment: Dict[str, Optional[str]],
+    mock_env_devel_environment: dict[str, Optional[str]],
     monkeypatch: MonkeyPatch,
     mocker: MockerFixture,
     tmp_path_factory: TempPathFactory,
@@ -91,7 +91,7 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
 
 
 @pytest.fixture(scope="module")
-def ftp_server(ftpserver: ProcessFTPServer) -> List[URL]:
+def ftp_server(ftpserver: ProcessFTPServer) -> list[URL]:
     faker = Faker()
 
     files = ["file_1", "file_2", "file_3"]

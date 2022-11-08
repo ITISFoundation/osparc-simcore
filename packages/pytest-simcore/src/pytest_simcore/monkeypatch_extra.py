@@ -7,7 +7,7 @@ from typing import Iterator
 
 import pytest
 from _pytest.fixtures import FixtureRequest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 
 warnings.warn(
     f"{__name__} is deprecated, we highly recommend to use pytest.monkeypatch at function-scope level."

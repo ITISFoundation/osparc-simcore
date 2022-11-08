@@ -13,11 +13,11 @@ from uuid import UUID
 
 import pytest
 import simcore_service_webserver
-from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict

@@ -8,8 +8,8 @@ from uuid import uuid4
 
 import pytest
 import redis.asyncio as aioredis
-from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
+from pytest import MonkeyPatch
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings

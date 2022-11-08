@@ -12,11 +12,11 @@ import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from models_library.projects import ProjectAtDB
 from models_library.services_resources import ServiceResourcesDict
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings

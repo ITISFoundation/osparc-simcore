@@ -1,5 +1,5 @@
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 
 
 @pytest.fixture
