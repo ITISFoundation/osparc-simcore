@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.12.12
-    # via pylint
 attrs==22.1.0
     # via pytest
 certifi==2022.9.24
@@ -19,34 +17,20 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.5.1
-    # via pylint
 docopt==0.6.2
     # via coveralls
-exceptiongroup==1.0.0
+exceptiongroup==1.0.1
     # via pytest
 idna==3.4
     # via requests
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
-lazy-object-proxy==1.7.1
-    # via astroid
-mccabe==0.7.0
-    # via pylint
 packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.2
-    # via pylint
 pluggy==1.0.0
     # via pytest
-py==1.11.0
-    # via -r requirements/_test.in
-pylint==2.15.5
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via packaging
 pytest==7.2.0
@@ -64,7 +48,7 @@ pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.5
+pytest-sugar==0.9.6
     # via -r requirements/_test.in
 python-dotenv==0.21.0
     # via -r requirements/_test.in
@@ -75,18 +59,8 @@ termcolor==2.1.0
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.5
-    # via pylint
-typing-extensions==4.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
-    #   pylint
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-wrapt==1.14.1
-    # via astroid
