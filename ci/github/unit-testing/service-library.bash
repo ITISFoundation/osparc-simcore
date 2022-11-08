@@ -7,7 +7,7 @@ IFS=$'\n\t'
 
 # NOTE: notice that the CI uses [all]
 # TODO: add STEPS where pip-sync individual extras and test separately
-install_all() {
+install() {
   bash ci/helpers/ensure_python_pip.bash
   make devenv
   # shellcheck source=/dev/null
@@ -18,7 +18,7 @@ install_all() {
   .venv/bin/pip list --verbose
 }
 
-test_all() {
+test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/service-library
