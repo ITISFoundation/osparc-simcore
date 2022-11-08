@@ -139,6 +139,10 @@ psycopg2-binary==2.9.3
     #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
+py==1.11.0
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   pytest-forked
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -154,6 +158,7 @@ pytest==7.2.0
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
+    #   pytest-forked
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
@@ -167,6 +172,8 @@ pytest-cov==4.0.0
     # via -r requirements/_test.in
 pytest-docker==1.0.1
     # via -r requirements/_test.in
+pytest-forked==1.4.0
+    # via pytest-xdist
 pytest-icdiff==0.6
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
@@ -177,7 +184,7 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.6
     # via -r requirements/_test.in
-pytest-xdist==3.0.2
+pytest-xdist==2.5.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
