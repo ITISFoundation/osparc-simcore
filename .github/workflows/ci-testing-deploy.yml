@@ -1238,7 +1238,7 @@ jobs:
 
   integration-test-webserver-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py || needs.changes.outputs.webserver || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     runs-on: ${{ matrix.os }}
@@ -1296,7 +1296,7 @@ jobs:
 
   integration-test-webserver-02:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py || needs.changes.outputs.webserver || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
     runs-on: ${{ matrix.os }}
@@ -1356,7 +1356,7 @@ jobs:
 
   integration-test-director-v2-01:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push'}}
+    if: ${{ needs.changes.outputs.anything-py || needs.changes.outputs.director-v2 || github.event_name == 'push'}}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
     runs-on: ${{ matrix.os }}
@@ -1416,7 +1416,7 @@ jobs:
 
   integration-test-director-v2-02:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py || needs.changes.outputs.director-v2 || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
     runs-on: ${{ matrix.os }}
@@ -1479,7 +1479,7 @@ jobs:
 
   integration-test-simcore-sdk:
     needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py || needs.changes.outputs.simcore-sdk || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     runs-on: ${{ matrix.os }}
