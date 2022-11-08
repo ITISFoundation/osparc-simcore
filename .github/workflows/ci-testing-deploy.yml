@@ -193,6 +193,7 @@ jobs:
     name: "[unit]"
     needs: changes
     strategy:
+      fail-fast: false
       matrix:
         name:
           - agent
