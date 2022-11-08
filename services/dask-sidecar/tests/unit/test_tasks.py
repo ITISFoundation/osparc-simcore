@@ -19,7 +19,6 @@ from uuid import uuid4
 
 import fsspec
 import pytest
-from _pytest.logging import LogCaptureFixture
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
@@ -38,7 +37,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl, SecretStr
-from pytest import FixtureRequest
+from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (

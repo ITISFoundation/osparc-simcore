@@ -5,10 +5,9 @@ import asyncio
 from typing import Final
 
 import pytest
-from _pytest.logging import LogCaptureFixture
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
