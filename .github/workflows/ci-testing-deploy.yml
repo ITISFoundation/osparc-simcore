@@ -1223,8 +1223,10 @@ jobs:
     steps:
       - name: a previous job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+        env:
+          NEEDS=${{ toJSON(needs) }}
         run: |
-          echo "::error  ${{ toJSON(needs) }}"
+          echo "::error  $NEEDS"
           abort()
       - name: all the previous jobs were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
