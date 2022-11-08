@@ -248,7 +248,6 @@ jobs:
             package-path: services/catalog
           - name: dask-sidecar
             package-path: services/dask-sidecar
-            run-typecheck: true
           - name: dask-task-models-library
             package-path: packages/dask-task-models-library
             run-typecheck: true
@@ -272,12 +271,15 @@ jobs:
           - name: pylint-3-9
             package-path: packages/service-library
             python: "3.9"
+            ci-bash-file: python-linting
           - name: pylint-3-10
             package-path: packages/service-library
             python: "3.10"
+            ci-bash-file: python-linting
           - name: pylint-3-11
             package-path: packages/service-library
             python: "3.11"
+            ci-bash-file: python-linting
           - name: service-integration
             package-path: packages/service-integration
           - name: service-library
