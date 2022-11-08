@@ -1192,6 +1192,7 @@ jobs:
 
   unit-tests:
     # NOTE: this is a github required status check!
+    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
     needs:
       [
         unit-test-agent,
@@ -1221,7 +1222,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: all unit tests were run or skipped
-        run: echo "all unit tests were run or skipped"
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS"
 
   integration-test-webserver-01:
     needs: [changes, build-test-images]
