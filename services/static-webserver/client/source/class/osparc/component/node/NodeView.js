@@ -75,9 +75,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
         this.__iFrameChanged();
-        iFrame.addListener("load", () => {
-          this.__iFrameChanged();
-        });
+        iFrame.addListener("load", () => this.__iFrameChanged());
       } else {
         // This will keep what comes after at the bottom
         this._iFrameLayout.add(new qx.ui.core.Spacer(), {

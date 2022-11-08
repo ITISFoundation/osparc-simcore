@@ -22,7 +22,6 @@ docker
 Faker
 flaky
 minio
-pylint
 pytest
 pytest-aiohttp
 pytest-cov

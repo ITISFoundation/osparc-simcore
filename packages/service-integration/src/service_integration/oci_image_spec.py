@@ -7,11 +7,11 @@ SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md
 
 import os
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from models_library.basic_types import SHA1Str, VersionStr
 from pydantic import BaseModel, Field
-from pydantic.main import Extra
+from pydantic.config import Extra
 from pydantic.networks import AnyUrl
 
 from .labels_annotations import from_labels, to_labels
@@ -69,7 +69,6 @@ class OciImageSpecAnnotations(BaseModel):
         "The version MAY match a label or tag in the source code repository"
         "version MAY be Semantic versioning-compatible",
     )
-
     revision: str = Field(
         None,
         description="Source control revision identifier for the packaged software.",
@@ -84,19 +83,16 @@ class OciImageSpecAnnotations(BaseModel):
         "MIT",
         description="License(s) under which contained software is distributed as an SPDX License Expression.",
     )
-
     ref_name: str = Field(
         None,
         description="Name of the reference for a target (string).",
     )
 
     title: str = Field(None, description="Human-readable title of the image (string)")
-
     description: str = Field(
         None,
         description="Human-readable description of the software packaged in the image (string)",
     )
-
     base_digest: SHA1Str = Field(
         None,
         description="Digest of the image this image is based on (string)",
@@ -109,12 +105,12 @@ class OciImageSpecAnnotations(BaseModel):
 
     @classmethod
     def from_labels_annotations(
-        cls, labels: Dict[str, str]
+        cls, labels: dict[str, str]
     ) -> "OciImageSpecAnnotations":
         data = from_labels(labels, prefix_key=OCI_LABEL_PREFIX, trim_key_head=False)
         return cls.parse_obj(data)
 
-    def to_labels_annotations(self) -> Dict[str, str]:
+    def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OCI_LABEL_PREFIX,
@@ -146,7 +142,7 @@ class LabelSchemaAnnotations(BaseModel):
                 data[field_name] = value
         return cls(**data)
 
-    def to_oci_data(self) -> Dict[str, Any]:
+    def to_oci_data(self) -> dict[str, Any]:
         """Collects data that be converted to OCI labels.
 
         WARNING: label-schema has be deprecated in favor of OCI image specs

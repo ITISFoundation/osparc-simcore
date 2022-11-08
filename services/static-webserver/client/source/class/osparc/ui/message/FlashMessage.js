@@ -33,7 +33,8 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     this._setLayout(new qx.ui.layout.HBox(10));
 
     this.set({
-      maxWidth: 350,
+      padding: 15,
+      maxWidth: 400,
       allowStretchX: false,
       alignX: "center"
     });
@@ -56,6 +57,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       init: "flash",
       refine: true
     },
+
     message: {
       check: "String",
       nullable: true,
@@ -101,7 +103,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
           break;
         case "message":
           control = new qx.ui.basic.Label().set({
-            font: "text-14",
+            font: "text-16",
             rich: true
           });
           this._add(control, {

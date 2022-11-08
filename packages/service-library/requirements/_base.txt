@@ -12,18 +12,18 @@ pydantic==1.10.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pyinstrument==4.3.0
+pyinstrument==4.4.0
     # via -r requirements/_base.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/./constraints.txt
     #   -r requirements/_base.in
-tenacity==8.0.1
+tenacity==8.1.0
     # via -r requirements/_base.in
 tqdm==4.64.1
     # via -r requirements/_base.in
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via
     #   aiodebug
     #   pydantic

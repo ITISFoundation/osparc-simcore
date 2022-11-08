@@ -73,11 +73,6 @@ def dynamic_sidecar_settings(mock_env: dict[str, str]) -> DynamicSidecarSettings
 
 
 @pytest.fixture
-def dynamic_sidecar_network_id() -> str:
-    return "mocked_dynamic_sidecar_network_id"
-
-
-@pytest.fixture
 def swarm_network_id() -> str:
     return "mocked_swarm_network_id"
 
@@ -169,10 +164,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
             "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-        "networks": [
-            {"Target": "mocked_swarm_network_id"},
-            {"Target": "mocked_dynamic_sidecar_network_id"},
-        ],
+        "networks": [{"Target": "mocked_swarm_network_id"}],
         "task_template": {
             "ContainerSpec": {
                 "Env": {
@@ -343,7 +335,6 @@ def test_get_dynamic_proxy_spec(
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
@@ -367,7 +358,6 @@ def test_get_dynamic_proxy_spec(
         dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
@@ -430,7 +420,6 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
     expected_dynamic_sidecar_spec: dict[str, Any],
@@ -440,7 +429,6 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
-        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,

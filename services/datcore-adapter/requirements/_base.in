@@ -11,12 +11,12 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-
+aiocache
+boto3
 aiofiles
 fastapi
 fastapi-pagination
 httpx[http2]
-pennsieve
 pydantic[email]
 python-multipart # for fastapi multipart uploads
 uvicorn[standard]

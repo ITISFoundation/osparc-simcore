@@ -123,26 +123,23 @@ qx.Class.define("osparc.ui.message.Loading", {
       this._add(new qx.ui.core.Widget(), {
         flex: 1
       });
-      if (showMaximize) {
-        const maximize = false;
-        const maxButton = this.__maxButton = new qx.ui.form.Button(null).set({
-          icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
-          decorator: null
-        });
-        osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
-        maxButton.addListener("execute", e => {
-          this.maximizeIFrame(!this.hasState("maximized"));
-        }, this);
+      const maximize = false;
+      const maxButton = this.__maxButton = new qx.ui.form.Button(null).set({
+        icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
+        visibility: showMaximize ? "visible" : "excluded",
+        decorator: null
+      });
+      osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
+      maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
 
-        const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-          maxWidth: 40
-        });
-        maximizeLayout.add(maxButton);
-        maximizeLayout.add(new qx.ui.core.Widget(), {
-          flex: 1
-        });
-        this._add(maximizeLayout);
-      }
+      const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        maxWidth: 40
+      });
+      maximizeLayout.add(maxButton);
+      maximizeLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      this._add(maximizeLayout);
     },
 
     __applyHeader: function(value) {
@@ -171,7 +168,6 @@ qx.Class.define("osparc.ui.message.Loading", {
     addWidgetToMessages: function(widget) {
       this.__messages.add(widget);
     },
-
 
     // from osparc.component.widget.PersistentIframe
     maximizeIFrame: function(maximize) {

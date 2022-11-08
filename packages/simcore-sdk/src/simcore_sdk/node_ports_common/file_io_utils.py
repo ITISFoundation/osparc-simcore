@@ -93,14 +93,14 @@ async def _raise_for_status(response: ClientResponse) -> None:
             response.history,
             body,
             status=response.status,
-            message=response.reason,
+            message=response.reason or "",
             headers=response.headers,
         )
 
 
 def _compute_tqdm_miniters(byte_size: int) -> float:
-    """ensures tqdm minimal iteration is 1 %"""
-    return min(byte_size / 100, 1.0)
+    """ensures tqdm minimal iteration is 1.5 %"""
+    return min(1.5 * byte_size / 100.0, 1.0)
 
 
 async def _file_object_chunk_reader(
@@ -204,16 +204,33 @@ async def download_link_to_file(
                     raise exceptions.TransferError(url) from exc
 
 
-def _check_for_aws_500_issue(exc: BaseException) -> bool:
-    """Sometimes AWS responds with a 500 or 503 which shall be retried
-    see [AWS notes on that](https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/) about 500 and 503 in AWS
-    """
-    if isinstance(exc, ClientResponseError):
-        client_error = cast(ClientResponseError, exc)
-        return client_error.status in (
-            web.HTTPInternalServerError.status_code,
-            web.HTTPServiceUnavailable.status_code,
-        )
+def _check_for_aws_http_errors(exc: BaseException) -> bool:
+    """returns: True if it should retry when http exception is detected"""
+
+    if not isinstance(exc, ExtendedClientResponseError):
+        return False
+
+    client_error = cast(ExtendedClientResponseError, exc)
+
+    # Sometimes AWS responds with a 500 or 503 which shall be retried,
+    # form more information see:
+    # https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/
+    if client_error.status in (
+        web.HTTPInternalServerError.status_code,
+        web.HTTPServiceUnavailable.status_code,
+    ):
+        return True
+
+    # Sometimes the request to S3 can time out and a 400 with a `RequestTimeout`
+    # reason in the body will be received. This also needs retrying,
+    # for more information see:
+    # see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+    if (
+        client_error.status == web.HTTPBadRequest.status_code
+        and "RequestTimeout" in client_error.body
+    ):
+        return True
+
     return False
 
 
@@ -223,19 +240,12 @@ async def _upload_file_part(
     part_index: int,
     file_offset: int,
     file_part_size: int,
-    num_parts: int,
     upload_url: AnyUrl,
     pbar: tqdm,
     num_retries: int,
     *,
     io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> tuple[int, ETag]:
-    log.debug(
-        "--> uploading %s of %s, [%s]...",
-        f"{file_part_size=} bytes",
-        f"{file_to_upload=}",
-        f"{part_index+1}/{num_parts}",
-    )
     file_uploader = _file_chunk_reader(
         file_to_upload,  # type: ignore
         offset=file_offset,
@@ -253,7 +263,7 @@ async def _upload_file_part(
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
         retry=retry_if_exception_type(ClientConnectionError)
-        | retry_if_exception(_check_for_aws_500_issue),
+        | retry_if_exception(_check_for_aws_http_errors),
         before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
         after=after_log(log, log_level=logging.ERROR),
     ):
@@ -273,13 +283,6 @@ async def _upload_file_part(
                 assert response.headers  # nosec
                 assert "Etag" in response.headers  # nosec
                 received_e_tag = json.loads(response.headers["Etag"])
-                log.info(
-                    "--> completed upload %s of %s, [%s], %s",
-                    f"{file_part_size=}",
-                    f"{file_to_upload=}",
-                    f"{part_index+1}/{num_parts}",
-                    f"{received_e_tag=}",
-                )
                 return (part_index, received_e_tag)
     raise exceptions.S3TransferError(
         f"Unexpected error while transferring {file_to_upload} to {upload_url}"
@@ -303,8 +306,6 @@ async def upload_file_to_presigned_links(
         file_size = file_to_upload.file_size
         file_name = file_to_upload.file_name
 
-    log.debug("Uploading from %s to %s", f"{file_name=}", f"{file_upload_links=}")
-
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
@@ -325,7 +326,6 @@ async def upload_file_to_presigned_links(
                     index,
                     index * file_chunk_size,
                     this_file_chunk_size,
-                    num_urls,
                     upload_url,
                     pbar,
                     num_retries,
@@ -343,11 +343,6 @@ async def upload_file_to_presigned_links(
             part_to_etag = [
                 UploadedPart(number=index + 1, e_tag=e_tag) for index, e_tag in results
             ]
-            log.info(
-                "Uploaded %s, received %s",
-                f"{file_name=}",
-                f"{part_to_etag=}",
-            )
             return part_to_etag
         except ClientError as exc:
             raise exceptions.S3TransferError(

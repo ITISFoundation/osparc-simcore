@@ -16,19 +16,17 @@ install() {
   .venv/bin/pip list --verbose
 }
 
-codestyle() {
-  # shellcheck source=/dev/null
-  source .venv/bin/activate
-  pushd services/dynamic-sidecar
-  make codestyle-ci
-  popd
-}
-
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/dynamic-sidecar
   make test-ci-unit
+  popd
+}
+
+typecheck() {
+  pushd services/dynamic-sidecar
+  make mypy
   popd
 }
 

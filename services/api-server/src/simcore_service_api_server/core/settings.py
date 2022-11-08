@@ -72,16 +72,32 @@ class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
 # MAIN SETTINGS --------------------------------------------
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
 
-    # DOCKER
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    # DEVELOPMENT
+    API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
+        False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
+    )
 
     # LOGGING
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         env=["API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+
+    # DEBUGGING
+    API_SERVER_REMOTE_DEBUG_PORT: int = 3000
+
+    @validator("LOG_LEVEL", pre=True)
+    @classmethod
+    def _validate_loglevel(cls, value) -> str:
+        return cls.validate_log_level(value)
+
+
+class ApplicationSettings(BasicSettings):
+
+    # DOCKER BOOT
+    SC_BOOT_MODE: Optional[BootModeEnum]
 
     # POSTGRES
     API_SERVER_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
@@ -101,10 +117,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # DIAGNOSTICS
     API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
-    API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
-        False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
-    )
-    API_SERVER_REMOTE_DEBUG_PORT: int = 3000
 
     @cached_property
     def debug(self) -> bool:
@@ -114,8 +126,3 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             BootModeEnum.DEVELOPMENT,
             BootModeEnum.LOCAL,
         ]
-
-    @validator("LOG_LEVEL", pre=True)
-    @classmethod
-    def _validate_loglevel(cls, value) -> str:
-        return cls.validate_log_level(value)

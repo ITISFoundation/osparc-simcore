@@ -1,13 +1,11 @@
 --constraint ../../requirements/constraints.txt
 
-# testing
+
+aiohttp
 coverage
+openapi-core<0.15  # Broken compatibility. This library in any case is marked as deprecated and will be removed!
 pytest
-pytest-cov
 pytest-aiohttp
+pytest-cov
 pytest-instafail
 pytest-sugar
-
-# fixtures
-aiohttp
-openapi-core

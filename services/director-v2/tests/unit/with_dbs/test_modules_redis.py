@@ -257,7 +257,7 @@ async def test_lock_extension_expiration(
     node_rights_manager.lock_timeout_s = SHORT_INTERVAL
     node_rights_manager.concurrent_resource_slots = 1
 
-    with pytest.raises(LockNotOwnedError) as err_info:
+    with pytest.raises(LockNotOwnedError, match="Cannot release a lock") as err_info:
         async with node_rights_manager.acquire(
             docker_node_id, resource_name=TEST_RESOURCE
         ) as extend_lock:
@@ -278,11 +278,6 @@ async def test_lock_extension_expiration(
             assert await extend_lock._redis_lock.locked() is False
             assert await extend_lock._redis_lock.owned() is False
 
-    # since the lock expired we expect the lock to no longer be owned
-    assert (
-        err_info.traceback[-1].statement.__str__().strip()
-        == 'raise LockNotOwnedError("Cannot release a lock" " that\'s no longer owned")'
-    )
     # the error must be raised by the release method inside the ExtendLock
     assert (
         err_info.traceback[-2].statement.__str__().strip()

@@ -8,16 +8,12 @@
 #
 --constraint _base.txt
 
-# testing
 coverage
+coveralls
 pytest
 pytest-cov
 pytest-instafail
-pytest-runner
 pytest-mock
+pytest-runner
 pytest-sugar
-
-# tools
 python-dotenv
-pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
-coveralls

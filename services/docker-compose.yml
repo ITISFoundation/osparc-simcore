@@ -170,7 +170,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/tis/`,`/transpiled/`,`/resource/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llight`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llight/`,`/tis/`,`/transpiled/`,`/resource/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.service=${SWARM_STACK_NAME}_static_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
@@ -272,6 +272,22 @@ services:
       - default
       - interactive_services_subnet
 
+  agent:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    deploy:
+      mode: global
+      # TODO: this requires some fixing
+      # resources:
+      #   limits:
+      #     cpus: "1.0"
+      #     memory: 200M
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      LOGLEVEL: ${LOG_LEVEL:-INFO}
+
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -349,7 +365,7 @@ services:
       - storage_subnet
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.8.0-management
+    image: itisfoundation/rabbitmq:3.11.2-management
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
@@ -382,7 +398,7 @@ services:
       - default
 
   postgres:
-    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
+    image: "postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:

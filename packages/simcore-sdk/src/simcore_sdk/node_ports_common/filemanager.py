@@ -67,7 +67,6 @@ async def _complete_upload(
     :raises exceptions.S3TransferError: _description_
     :rtype: ETag
     """
-    log.debug("completing upload of %s", f"{upload_links=} with {parts=}")
     async with session.post(
         upload_links.links.complete_upload,
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
@@ -81,10 +80,9 @@ async def _complete_upload(
     state_url = file_upload_complete_response.data.links.state
     log.info(
         "completed upload of %s",
-        f"{parts=}, received {file_upload_complete_response.json(indent=2)}",
+        f"{len(parts)} parts, received {file_upload_complete_response.json(indent=2)}",
     )
 
-    log.debug("waiting for upload completion...")
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_fixed(1),

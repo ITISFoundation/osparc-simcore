@@ -1,6 +1,7 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ../../../packages/settings-library/requirements/_base.in
 --constraint ../../../packages/service-library/requirements/_base.in
+
 pydantic
 pytest
 pytest-aiohttp

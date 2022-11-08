@@ -13,32 +13,33 @@ integrates with osparc.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, NamedTuple, Optional
 
-from models_library.service_settings_labels import ContainerSpec, RestartPolicy
+from models_library.service_settings_labels import (
+    ContainerSpec,
+    PathMappingsLabel,
+    RestartPolicy,
+)
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
+    BootOptions,
     ServiceDockerData,
     ServiceType,
 )
 from pydantic.class_validators import validator
+from pydantic.config import Extra
 from pydantic.fields import Field
-from pydantic.main import BaseModel, Extra
+from pydantic.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
 from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
+from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
 
 CONFIG_FOLDER_NAME = ".osparc"
 
-
-# TODO: read from UserSettings all available registries
-REGISTRY_PREFIX = {
-    "local": "registry:5000",
-    "dockerhub": "itisfoundation",  # index.docker.io
-}
 
 SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -59,6 +60,32 @@ OSPARC_LABEL_PREFIXES = (
 #
 # Project config -> stored in repo's basedir/.osparc
 #
+
+
+class DockerComposeOverwriteCfg(ComposeSpecification):
+    """picks up configurations used to overwrite the docker-compuse output"""
+
+    @classmethod
+    def create_default(
+        cls, service_name: Optional[str] = None
+    ) -> "DockerComposeOverwriteCfg":
+        return cls.parse_obj(
+            {
+                "services": {
+                    service_name: {
+                        "build": {
+                            "dockerfile": "Dockerfile",
+                        }
+                    }
+                }
+            }
+        )
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "DockerComposeOverwriteCfg":
+        with path.open() as fh:
+            data = yaml_safe_load(fh)
+        return cls.parse_obj(data)
 
 
 class MetaConfig(ServiceDockerData):
@@ -83,13 +110,13 @@ class MetaConfig(ServiceDockerData):
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "MetaConfig":
+    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetaConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
         return cls.parse_obj(data)
 
-    def to_labels_annotations(self) -> Dict[str, str]:
+    def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
@@ -97,43 +124,21 @@ class MetaConfig(ServiceDockerData):
         )
         return labels
 
-    def service_name(self):
+    def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
+        assert isinstance(self.key, str)  # nosec
         return self.key.split("/")[-1].replace(" ", "")
 
-    def image_name(self, registry="local") -> str:
-        registry_prefix = REGISTRY_PREFIX[registry]
-        mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)
+    def image_name(self, settings: AppSettings, registry="local") -> str:
+        registry_prefix = f"{settings.REGISTRY_NAME}/" if settings.REGISTRY_NAME else ""
+        service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
             # TODO: check thisname is compatible with REGEX
-            mid_name = mid_name.replace("/", ".")
+            service_path = service_path.replace("/", ".")
 
-        tag = self.version
-        return f"{registry_prefix}/{mid_name}:{tag}"
-
-
-class PathsMapping(BaseModel):
-    inputs_path: Path = Field(
-        ..., description="folder path where the service expects all the inputs"
-    )
-    outputs_path: Path = Field(
-        ...,
-        description="folder path where the service is expected to provide all its outputs",
-    )
-    state_paths: List[Path] = Field(
-        [],
-        description="optional list of paths which contents need to be persisted",
-    )
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "outputs_path": "/outputs",
-                "inputs_path": "/inputs",
-                "state_paths": ["/workdir1", "/workdir2"],
-            }
-        }
+        service_version = self.version
+        return f"{registry_prefix}{service_path}:{service_version}"
 
 
 class SettingsItem(BaseModel):
@@ -174,9 +179,10 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    paths_mapping: Optional[PathsMapping] = None
+    paths_mapping: Optional[PathMappingsLabel] = None
+    boot_options: BootOptions = None
 
-    settings: List[SettingsItem] = []
+    settings: list[SettingsItem] = []
 
     class Config:
         alias_generator = lambda field_name: field_name.replace("_", "-")
@@ -190,11 +196,11 @@ class RuntimeConfig(BaseModel):
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "RuntimeConfig":
+    def from_labels_annotations(cls, labels: dict[str, str]) -> "RuntimeConfig":
         data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
         return cls.parse_obj(data)
 
-    def to_labels_annotations(self) -> Dict[str, str]:
+    def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
@@ -203,6 +209,13 @@ class RuntimeConfig(BaseModel):
 
 
 ## FILES -----------------------------------------------------------
+
+
+class ConfigFileDescriptor(NamedTuple):
+    glob_pattern: str
+    required: bool = True
+
+
 class ConfigFilesStructure:
     """
     Defines config file structure and how they
@@ -210,8 +223,11 @@ class ConfigFilesStructure:
     """
 
     FILES_GLOBS = {
-        MetaConfig.__name__: "metadata.y*ml",
-        RuntimeConfig.__name__: "runtime.y*ml",
+        DockerComposeOverwriteCfg.__name__: ConfigFileDescriptor(
+            glob_pattern="docker-compose.overwrite.y*ml", required=False
+        ),
+        MetaConfig.__name__: ConfigFileDescriptor(glob_pattern="metadata.y*ml"),
+        RuntimeConfig.__name__: ConfigFileDescriptor(glob_pattern="runtime.y*ml"),
     }
 
     @staticmethod
@@ -221,13 +237,14 @@ class ConfigFilesStructure:
             basedir = Path.home()
         return basedir / ".osparc" / "service-integration.json"
 
-    def search(self, start_dir: Path) -> Dict[str, Path]:
+    def search(self, start_dir: Path) -> dict[str, Path]:
         """Tries to match of any of file layouts
         and returns associated config files
         """
         found = {
             configtype: list(start_dir.rglob(pattern))
-            for configtype, pattern in self.FILES_GLOBS.items()
+            for configtype, (pattern, required) in self.FILES_GLOBS.items()
+            if required
         }
 
         if not found:

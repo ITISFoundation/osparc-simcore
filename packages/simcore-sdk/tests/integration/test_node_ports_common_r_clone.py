@@ -115,12 +115,12 @@ async def test_sync_local_to_s3(
     r_clone_settings: RCloneSettings,
     file_name: str,
     create_file_of_size: Callable[[ByteSize, str], Path],
-    create_valid_file_uuid: Callable[[Path], str],
+    create_valid_file_uuid: Callable[[str, Path], str],
     tmp_path: Path,
     faker: Faker,
 ) -> None:
     local_file = create_file_of_size(parse_obj_as(ByteSize, "10Mib"), file_name)
-    file_uuid = create_valid_file_uuid(local_file)
+    file_uuid = create_valid_file_uuid("", local_file)
     upload_file_link = _fake_upload_file_link(r_clone_settings, file_uuid)
     await r_clone.sync_local_to_s3(local_file, r_clone_settings, upload_file_link)
 

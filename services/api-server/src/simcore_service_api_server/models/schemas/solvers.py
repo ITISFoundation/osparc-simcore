@@ -1,7 +1,8 @@
 import urllib.parse
-from typing import Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import packaging.version
+from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
 from packaging.version import LegacyVersion, Version
 from pydantic import BaseModel, Extra, Field, HttpUrl, constr
@@ -104,3 +105,36 @@ class Solver(BaseModel):
     @classmethod
     def compose_resource_name(cls, solver_key, solver_version) -> str:
         return compose_resource_name("solvers", solver_key, "releases", solver_version)
+
+
+PortKindStr = Literal["input", "output"]
+
+
+class SolverPort(BaseModel):
+    key: str = Field(
+        ...,
+        description="port identifier name",
+        regex=PUBLIC_VARIABLE_NAME_RE,
+        title="Key name",
+    )
+    kind: PortKindStr
+    content_schema: Optional[dict[str, Any]] = Field(
+        None,
+        description="jsonschema for the port's value. SEE https://json-schema.org",
+    )
+
+    class Config:
+        extra = Extra.ignore
+        schema_extra = {
+            "example": {
+                "key": "input_2",
+                "kind": "input",
+                "content_schema": {
+                    "title": "Sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                    "minimum": 0,
+                    "maximum": 5,
+                },
+            }
+        }

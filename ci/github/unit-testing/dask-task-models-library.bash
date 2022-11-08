@@ -16,19 +16,17 @@ install() {
   .venv/bin/pip list --verbose
 }
 
-codestyle() {
-  # shellcheck source=/dev/null
-  source .venv/bin/activate
-  pushd packages/dask-task-models-library
-  make codestyle-ci
-  popd
-}
-
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/dask-task-models-library
   make tests-ci
+  popd
+}
+
+typecheck() {
+  pushd packages/dask-task-models-library
+  make mypy
   popd
 }
 

@@ -16,7 +16,6 @@ docker
 faker
 moto[server]
 pandas
-pylint
 pytest
 pytest-aiohttp
 pytest-cov

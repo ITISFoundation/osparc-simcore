@@ -25,6 +25,16 @@ def test_file_id_raises_error(file_id: str):
         "api/7b6b4e3d-39ae-3559-8765-4f815a49984e/tmpf_qatpzx_!...***",
         "api/6f788ad9-0ad8-3d0d-9722-72f08c24a212/output_data.json",
         "N:package:ce145b61-7e4f-470b-a113-033653e86d3d",
+        "f3c9be04-2d51-4e39-beb6-f4227468880b/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_file",
+        "f3c9be04-2d51-4e39-beb6-f4227468880b/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_file.ext",
+        "f3c9be04-2d51-4e39-beb6-f4227468880b/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_subfolder/some_file.ext",
+        "f3c9be04-2d51-4e39-beb6-f4227468880b/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_subfolder/another_subfolder/some_file.ext",
+        "f3c9be04-2d51-4e39-beb6-f4227468880b/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_subfolder/another_subfolder/yet_another_one/some_file.ext",
+        "api/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_file",
+        "api/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_file.ext",
+        "api/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_subfolder/some_file.ext",
+        "api/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_subfolder/another_subfolder/some_file.ext",
+        "api/cd597d18-e891-4f2b-b429-3dd42ed7de1e/some_subfolder/another_subfolder/yet_another_one/some_file.ext",
     ],
 )
 def test_file_id(file_id: str):

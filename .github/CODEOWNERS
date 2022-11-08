@@ -17,13 +17,14 @@ Makefile                                  @pcrespov @sanderegg
 /docs/                                    @pcrespov
 /packages/models-library/                 @sanderegg @pcrespov
 /packages/pytest-simcore/                 @pcrespov @sanderegg
-/packages/service-integration/            @pcrespov @sanderegg
+/packages/service-integration/            @pcrespov @sanderegg @GitHK
 /packages/service-library/                @pcrespov
 /packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov
 /scripts/demo/                            @odeimaiz @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects/               @odeimaiz @pcrespov
+/services/agent                           @GitHK
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @Surfict @sanderegg @pcrespov
 /services/catalog/                        @pcrespov @sanderegg

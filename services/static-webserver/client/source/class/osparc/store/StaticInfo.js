@@ -33,8 +33,8 @@ qx.Class.define("osparc.store.StaticInfo", {
             if (key in staticData) {
               resolve(staticData[key]);
             } else {
-              const errorMsg = "key not found in statics";
-              console.error(errorMsg);
+              const errorMsg = `${key} not found in statics`;
+              console.warn(errorMsg);
               reject(errorMsg);
             }
           })
@@ -51,6 +51,22 @@ qx.Class.define("osparc.store.StaticInfo", {
       const productName = osparc.utils.Utils.getProductName();
       const supportEmailKey = productName + "SupportEmail";
       return this.getValue(supportEmailKey);
+    },
+
+    getMaxNumberDyNodes: function() {
+      return new Promise(resolve => {
+        const wsKey = "webserverProjects";
+        this.getValue(wsKey)
+          .then(wsStaticData => {
+            const key = "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES";
+            if (key in wsStaticData) {
+              resolve(wsStaticData[key]);
+            } else {
+              resolve(null);
+            }
+          })
+          .catch(() => resolve(null));
+      });
     }
   }
 });

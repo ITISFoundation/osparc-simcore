@@ -53,6 +53,7 @@ async def test_workflow(
     request_update_project: Callable[[TestClient, UUID], Awaitable],
     director_v2_service_mock: None,
 ):
+    # pylint: disable=too-many-statements
 
     project_uuid = user_project["uuid"]
 

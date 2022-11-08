@@ -138,6 +138,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();
+
+        const startButton = this.getChildControl("start-button");
+        node.attachHandlersToStartButton(startButton);
+
+        const stopButton = this.getChildControl("stop-button");
+        node.attachHandlersToStopButton(stopButton);
       }
 
       const markerBtn = this.getChildControl("marker-button");
@@ -197,8 +203,31 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           part.add(control);
           break;
         }
+        case "start-button": {
+          control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
+            label: this.tr("Start"),
+            icon: "@FontAwesome5Solid/play/10",
+            visibility: "excluded"
+          });
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
+          break;
+        }
+        case "stop-button": {
+          control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
+            label: this.tr("Stop"),
+            icon: "@FontAwesome5Solid/stop/10",
+            visibility: "excluded"
+          });
+          const optionsMenu = this.getChildControl("options-menu-button");
+          optionsMenu.getMenu().add(control);
+          break;
+        }
         case "rename-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Rename"),
             icon: "@FontAwesome5Solid/i-cursor/10"
           });
@@ -210,6 +239,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "marker-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             icon: "@FontAwesome5Solid/bookmark/10",
             visibility: "excluded"
           });
@@ -220,6 +250,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "info-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Information..."),
             icon: "@FontAwesome5Solid/info/10"
           });
@@ -231,6 +262,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "delete-button": {
           control = new qx.ui.menu.Button().set({
+            backgroundColor: "background-main",
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
           });
@@ -295,6 +327,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       });
 
       this.getChildControl("fullscreen-button");
+      this.getChildControl("start-button");
+      this.getChildControl("stop-button");
       this.getChildControl("rename-button");
       this.getChildControl("marker-button");
       this.getChildControl("info-button");

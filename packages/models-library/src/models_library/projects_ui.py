@@ -21,6 +21,14 @@ class WorkbenchUI(BaseModel):
 
 class Slideshow(BaseModel):
     position: int = Field(..., description="Slide's position", examples=["0", "2"])
+    instructions: str = Field(
+        ...,
+        description="Instructions about what to do in this step",
+        examples=[
+            "This is a **sleeper**",
+            "Please, select the config file defined [in this link](asdf)"
+        ]
+    )
 
     class Config:
         extra = Extra.forbid

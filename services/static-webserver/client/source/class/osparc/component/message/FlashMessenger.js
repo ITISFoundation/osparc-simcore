@@ -122,7 +122,7 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
       this.__displayedMessagesCount++;
 
       const wordCount = message.getMessage().split(" ").length;
-      const readingTime = Math.max(5500, wordCount*370); // An average reader takes 300ms to read a word
+      const readingTime = Math.max(5500, wordCount*400); // An average reader takes 300ms to read a word
       qx.event.Timer.once(() => this.__removeMessage(message), this, readingTime);
     },
 

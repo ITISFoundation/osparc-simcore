@@ -184,6 +184,10 @@ qx.Class.define("osparc.servicecard.Large", {
       if (isDeprecated) {
         return osparc.utils.StatusUI.createServiceDeprecatedChip();
       }
+      const isRetired = osparc.utils.Services.isRetired(this.getService());
+      if (isRetired) {
+        return osparc.utils.StatusUI.createServiceRetiredChip();
+      }
       return null;
     },
 
@@ -434,8 +438,7 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
-      const subtitle = this.tr("Supports Markdown");
-      const textEditor = new osparc.component.editor.TextEditor(this.getService()["description"], subtitle, title);
+      const textEditor = new osparc.component.editor.TextEditor(this.getService()["description"]);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();

@@ -1,40 +1,40 @@
 from collections import OrderedDict
+from enum import Enum
 from pathlib import Path
 
-import click
+import rich
+import typer
 import yaml
 from models_library.services import ServiceDockerData
 
 from ..versioning import bump_version_string
 from ..yaml_utils import ordered_safe_dump, ordered_safe_load
 
-TARGET_VERSION_CHOICES = ["integration-version", "version"]
-UPGRADE_TAGS = ["major", "minor", "patch"]
+
+class TargetVersionChoices(str, Enum):
+    INTEGRATION_VERSION = "integration-version"
+    SEMANTIC_VERSION = "version"
 
 
-@click.command()
-@click.argument(
-    "target_version",
-    default="version",
-    type=click.Choice(TARGET_VERSION_CHOICES),
-)
-@click.option(
-    "--upgrade",
-    type=click.Choice(UPGRADE_TAGS),
-    required=True,
-)
-@click.option(
-    "--metadata-file",
-    "metadata_file_path",
-    help="The metadata yaml file",
-    type=Path,
-    required=False,
-    default="metadata/metadata.yml",
-)
-def bump_version(target_version, upgrade, metadata_file_path):
-    """Bumps target version in metadata"""
+class UpgradeTags(str, Enum):
+    MAJOR = "major"
+    MINOR = "minor"
+    PATCH = "patch"
+
+
+def bump_version(
+    target_version: TargetVersionChoices = typer.Argument(
+        TargetVersionChoices.SEMANTIC_VERSION
+    ),
+    upgrade: UpgradeTags = typer.Option(..., case_sensitive=False),
+    metadata_file: Path = typer.Option(
+        "metadata/metadata.yml",
+        help="The metadata yaml file",
+    ),
+):
+    """Bumps target version in metadata  (legacy)"""
     # load
-    raw_data: OrderedDict = ordered_safe_load(metadata_file_path.read_text())
+    raw_data: OrderedDict = ordered_safe_load(metadata_file.read_text())
 
     # parse and validate
     metadata = ServiceDockerData(**raw_data)
@@ -48,29 +48,23 @@ def bump_version(target_version, upgrade, metadata_file_path):
 
     # dump to file (preserving order!)
     text = ordered_safe_dump(raw_data)
-    metadata_file_path.write_text(text)
-    click.echo(f"{target_version.title()} bumped: {current_version} → {new_version}")
+    metadata_file.write_text(text)
+    rich.print(f"{target_version.title()} bumped: {current_version} → {new_version}")
 
 
-@click.command()
-@click.argument(
-    "target_version",
-    default="version",
-    type=click.Choice(TARGET_VERSION_CHOICES),
-)
-@click.option(
-    "--metadata-file",
-    "metadata_file_path",
-    help="The metadata yaml file",
-    type=Path,
-    required=False,
-    default=".osparc/metadata.yml",
-)
-def get_version(target_version, metadata_file_path):
-    """Prints to output requested version"""
+def get_version(
+    target_version: TargetVersionChoices = typer.Argument(
+        TargetVersionChoices.SEMANTIC_VERSION
+    ),
+    metadata_file: Path = typer.Option(
+        ".osparc/metadata.yml",
+        help="The metadata yaml file",
+    ),
+):
+    """Prints to output requested version (legacy)"""
 
     # parse and validate
-    metadata = ServiceDockerData(**yaml.safe_load(metadata_file_path.read_text()))
+    metadata = ServiceDockerData(**yaml.safe_load(metadata_file.read_text()))
 
     attrname = target_version.replace("-", "_")
     current_version: str = getattr(metadata, attrname)
@@ -78,4 +72,4 @@ def get_version(target_version, metadata_file_path):
     # MUST have no new line so that we can produce a VERSION file with no extra new-line
     # VERSION: $(METADATA)
     #    @osparc-service-integrator get-version --metadata-file $< > $@
-    click.echo(current_version, nl=False)
+    rich.print(current_version, end="")

@@ -75,6 +75,7 @@ def test_models_when_creating_new_empty_project():
         def default_thumbnail(cls, v):
             if not v:
                 return None
+            return v
 
     # use _ProjectCreate to parse & validate request payload in POST /projects
     project_req_payload = _ProjectCreate.parse_obj(NEW_PROJECT.request_payload)

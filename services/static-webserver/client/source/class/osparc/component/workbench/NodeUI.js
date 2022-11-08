@@ -214,6 +214,22 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __applyNode: function(node) {
+      if (node.isDynamic()) {
+        const startButton = new qx.ui.menu.Button().set({
+          label: this.tr("Start"),
+          icon: "@FontAwesome5Solid/play/10"
+        });
+        node.attachHandlersToStartButton(startButton);
+        this._optionsMenu.addAt(startButton, 0);
+
+        const stopButton = new qx.ui.menu.Button().set({
+          label: this.tr("Stop"),
+          icon: "@FontAwesome5Solid/stop/10"
+        });
+        node.attachHandlersToStopButton(stopButton);
+        this._optionsMenu.addAt(stopButton, 1);
+      }
+
       if (node.getKey().includes("parameter/int")) {
         const makeIterator = new qx.ui.menu.Button().set({
           label: this.tr("Convert to Iterator"),
@@ -257,16 +273,44 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isDeprecated()) {
         const deprecatedIcon = this.getChildControl("deprecated-icon");
         deprecatedIcon.set({
-          textColor: "failed-red"
+          textColor: osparc.utils.StatusUI.getColor("deprecated")
         });
+        let ttMsg = osparc.utils.Services.DEPRECATED_SERVICE_TEXT;
+        const deprecatedDateMsg = osparc.utils.Services.getDeprecationDateText(node.getMetaData());
+        if (deprecatedDateMsg) {
+          ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
+        }
         const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        if (deprecatedTTMsg) {
+          ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+        }
         const toolTip = new qx.ui.tooltip.ToolTip().set({
-          label: osparc.utils.Services.DEPRECATED_SERVICE + "<br>" + deprecatedTTMsg,
-          icon: "@FontAwesome5Solid/exclamation-triangle/12",
+          label: ttMsg,
+          icon: osparc.utils.StatusUI.getIconSource("deprecated"),
           rich: true,
           maxWidth: 250
         });
         deprecatedIcon.setToolTip(toolTip);
+      }
+
+      if (node.isRetired()) {
+        const retiredIcon = this.getChildControl("deprecated-icon");
+        retiredIcon.set({
+          textColor: osparc.utils.StatusUI.getColor("retired")
+        });
+
+        let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
+        const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+        if (deprecatedTTMsg) {
+          ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
+        }
+        const toolTip = new qx.ui.tooltip.ToolTip().set({
+          label: ttMsg,
+          icon: osparc.utils.StatusUI.getIconSource("retired"),
+          rich: true,
+          maxWidth: 250
+        });
+        retiredIcon.setToolTip(toolTip);
       }
     },
 

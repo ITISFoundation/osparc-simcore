@@ -4,8 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional
-from unittest.mock import MagicMock
+from typing import Any, AsyncIterator, Callable, Optional
 from uuid import uuid4
 
 import faker
@@ -16,10 +15,12 @@ import simcore_service_datcore_adapter
 from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
-from simcore_service_datcore_adapter.modules.pennsieve import _create_pennsieve_client
+from pytest_mock import MockFixture
+from simcore_service_datcore_adapter.modules.pennsieve import (
+    PennsieveAuthorizationHeaders,
+)
 from starlette import status
 from starlette.testclient import TestClient
-
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -54,7 +55,7 @@ def mocks_dir(project_slug_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def pennsieve_mock_dataset_packages(mocks_dir: Path) -> Dict[str, Any]:
+def pennsieve_mock_dataset_packages(mocks_dir: Path) -> dict[str, Any]:
     ps_packages_file = mocks_dir / "ps_packages.json"
     assert ps_packages_file.exists()
     return json.loads(ps_packages_file.read_text())
@@ -80,13 +81,15 @@ def app_envs(monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture()
-async def initialized_app(app_envs: None, minimal_app: FastAPI) -> Iterator[FastAPI]:
+async def initialized_app(
+    app_envs: None, minimal_app: FastAPI
+) -> AsyncIterator[FastAPI]:
     async with LifespanManager(minimal_app):
         yield minimal_app
 
 
 @pytest.fixture(scope="function")
-async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
+async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -203,42 +206,17 @@ def use_real_pennsieve_interface(request) -> bool:
 @pytest.fixture(scope="session")
 def pennsieve_api_headers(
     pennsieve_api_key: str, pennsieve_api_secret: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
     return {
         "x-datcore-api-key": pennsieve_api_key,
         "x-datcore-api-secret": pennsieve_api_secret,
     }
 
 
-@pytest.fixture()
-def pennsieve_client_mock(
-    use_real_pennsieve_interface: bool,
-    mocker,
-    pennsieve_api_key: str,
-    pennsieve_api_secret: str,
-) -> Optional[Any]:
-    if use_real_pennsieve_interface:
-        yield None
-    else:
-        # NOTE: this function is decorated with lru_cache. so before testing we clear it
-        _create_pennsieve_client.cache_clear()
-        # mock the Pennsieve python client
-        ps_mock = mocker.patch(
-            "simcore_service_datcore_adapter.modules.pennsieve.Pennsieve", autospec=True
-        )
-        ps_mock.return_value._api = MagicMock()  # pylint: disable=protected-access
-        yield ps_mock
-
-        # TODO: with lru cache it does not work anymore
-        ps_mock.assert_any_call(
-            api_secret=pennsieve_api_secret, api_token=pennsieve_api_key
-        )
-
-
 @pytest.fixture(scope="module")
 def pennsieve_random_fake_datasets(
     create_pennsieve_fake_dataset_id: Callable,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     datasets = {
         "datasets": [
             {"content": {"id": create_pennsieve_fake_dataset_id(), "name": fake.text()}}
@@ -249,17 +227,55 @@ def pennsieve_random_fake_datasets(
     return datasets
 
 
+@pytest.fixture
+def disable_aiocache(monkeypatch: MonkeyPatch):
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+
+@pytest.fixture
+def get_bearer_code_mock(
+    use_real_pennsieve_interface: bool,
+    disable_aiocache: None,
+    mocker: MockFixture,
+    faker: faker.Faker,
+):
+    if use_real_pennsieve_interface:
+        return
+
+    mocker.patch(
+        "simcore_service_datcore_adapter.modules.pennsieve._get_bearer_code",
+        autospec=True,
+        return_value=(
+            PennsieveAuthorizationHeaders(Authorization=f"Bearer {faker.uuid4()}"),
+            500,
+        ),
+    )
+
+
 @pytest.fixture()
 async def pennsieve_subsystem_mock(
-    pennsieve_client_mock,
-    pennsieve_random_fake_datasets: Dict[str, Any],
-    pennsieve_mock_dataset_packages: Dict[str, Any],
+    get_bearer_code_mock: None,
+    use_real_pennsieve_interface: bool,
+    pennsieve_random_fake_datasets: dict[str, Any],
+    pennsieve_mock_dataset_packages: dict[str, Any],
     pennsieve_dataset_id: str,
     pennsieve_collection_id: str,
     pennsieve_file_id: str,
-):
-    if pennsieve_client_mock:
+    faker: faker.Faker,
+) -> AsyncIterator[Optional[respx.MockRouter]]:
+    if use_real_pennsieve_interface:
+        yield
+    else:
         async with respx.mock as mock:
+            # get authentication cognito-config
+            mock.get("https://api.pennsieve.io/authentication/cognito-config").respond(
+                status.HTTP_200_OK,
+                json={
+                    "region": "pytest-1",
+                    "tokenPool": {"appClientId": faker.uuid4()},
+                },
+            )
+
             # get user
             mock.get("https://api.pennsieve.io/user/").respond(
                 status.HTTP_200_OK, json={"id": "some_user_id"}
@@ -305,11 +321,24 @@ async def pennsieve_subsystem_mock(
                 },
             )
             # get packages files
-            mock.get(url__regex=r"https://api.pennsieve.io/packages/.+/files$").respond(
+            mock.get(
+                url__regex=r"https://api.pennsieve.io/packages/.+/files\?limit=1&offset=0$"
+            ).respond(
                 status.HTTP_200_OK,
-                json=[{"content": {"size": 12345}}],
+                json=[{"content": {"size": 12345, "id": "fake_file_id"}}],
+            )
+
+            # download file
+            mock.get(
+                url__regex=r"https://api.pennsieve.io/packages/.+/files/[\S]+$"
+            ).respond(
+                status.HTTP_200_OK,
+                json={"url": faker.url()},
+            )
+
+            # mock delete object
+            mock.post("https://api.pennsieve.io/data/delete").respond(
+                status.HTTP_200_OK, json={"success": [], "failures": []}
             )
 
             yield mock
-    else:
-        yield

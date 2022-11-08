@@ -6,6 +6,7 @@ from . import api_client, scheduler
 
 def setup(app: FastAPI) -> None:
     long_running_tasks.client.setup(app)
+    long_running_tasks.server.setup(app)
 
     async def on_startup() -> None:
         await api_client.setup(app)

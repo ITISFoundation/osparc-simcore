@@ -1,8 +1,6 @@
-from typing import Dict, Optional
+from typing import Optional
 
-from pydantic import BaseSettings
-from pydantic.main import BaseModel
-from pydantic.types import SecretStr
+from pydantic import BaseModel, BaseSettings, Field, SecretStr
 
 
 class Registry(BaseModel):
@@ -11,12 +9,25 @@ class Registry(BaseModel):
     password: Optional[SecretStr] = None
 
 
-class UserSettings(BaseSettings):
+# NOTE: image names w/o a prefix default in dockerhub registry
+DOCKERHUB_REGISTRY_NAME = ""
 
-    DOCKER_REGISTRIES: Dict[str, Registry] = {
+
+class AppSettings(BaseSettings):
+
+    DOCKER_REGISTRIES: dict[str, Registry] = {
         "local": Registry(url_or_prefix="registry:5000")
     }
     DEFAULT_REGISTRY: str = "local"
+
+    REGISTRY_NAME: str = Field(
+        DOCKERHUB_REGISTRY_NAME,
+        description="name of the registry used as prefix in images",
+    )
+
+    COMPOSE_VERSION: str = Field(
+        "3.7", description="version of the docker-compose spec"
+    )
 
     class Config:
         env_file_encoding = "utf-8"

@@ -21,12 +21,12 @@ cloudpickle==2.0.0
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2022.6.0
+dask==2022.9.2
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
     #   distributed
-distributed==2022.6.0
+distributed==2022.9.2
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -81,7 +81,7 @@ partd==1.2.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-pillow==9.0.1
+pillow==9.3.0
     # via
     #   -c requirements/./_base.txt
     #   bokeh

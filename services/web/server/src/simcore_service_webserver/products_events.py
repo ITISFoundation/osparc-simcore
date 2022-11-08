@@ -5,6 +5,7 @@ from pathlib import Path
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from pydantic import ValidationError
+from servicelib.exceptions import InvalidConfig
 
 from ._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
 from .products_db import Product, iter_products
@@ -46,9 +47,9 @@ async def load_products_on_startup(app: web.Application):
                 log.warning("There is not front-end registered for this product")
 
         except ValidationError as err:
-            log.error(
-                "Invalid product in db '%s'. Skipping product info:\n %s", row, err
-            )
+            raise InvalidConfig(
+                f"Invalid product configuration in db '{row}':\n {err}"
+            ) from err
 
     if FRONTEND_APP_DEFAULT not in app_products.keys():
         log.warning("Default front-end app is not in the products table")

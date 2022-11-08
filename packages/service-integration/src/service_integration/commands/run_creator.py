@@ -1,12 +1,11 @@
 import stat
 from pathlib import Path
-from typing import Dict
 
-import click
+import typer
 import yaml
 
 
-def get_input_config(metadata_file: Path) -> Dict:
+def get_input_config(metadata_file: Path) -> dict:
     inputs = {}
     with metadata_file.open() as fp:
         metadata = yaml.safe_load(fp)
@@ -15,26 +14,20 @@ def get_input_config(metadata_file: Path) -> Dict:
     return inputs
 
 
-@click.command()
-@click.option(
-    "--metadata",
-    "--metadata-file",
-    "metadata_file_path",
-    help="The metadata yaml of the node",
-    type=Path,
-    required=False,
-    default=".osparc/metadata.yml",
-)
-@click.option(
-    "--runscript",
-    "run_script_file_path",
-    help="Path to the run script ",
-    type=Path,
-    required=True,
-)
-def main(metadata_file_path: Path, run_script_file_path: Path):
+def main(
+    metadata_file: Path = typer.Option(
+        ".osparc/metadata.yml",
+        "--metadata",
+        help="The metadata yaml of the node",
+    ),
+    run_script_file_path: Path = typer.Option(
+        ...,
+        "--runscript",
+        help="Path to the run script ",
+    ),
+):
     """Creates a sh script that uses jq tool to retrieve variables
-    to use in sh from a json file for use in an osparc service.
+    to use in sh from a json file for use in an osparc service (legacy).
 
     Usage python run_creator --folder path/to/inputs.json --runscript path/to/put/the/script
 
@@ -55,7 +48,7 @@ cd "$(dirname "$0")"
 json_input=$INPUT_FOLDER/inputs.json
     """
     ]
-    input_config = get_input_config(metadata_file_path)
+    input_config = get_input_config(metadata_file)
     for input_key, input_value in input_config.items():
         if "data:" in input_value["type"]:
             filename = input_key
@@ -80,7 +73,7 @@ exec execute.sh
     )
 
     # write shell script
-    shell_script = str("\n").join(input_script)
+    shell_script = "\n".join(input_script)
     run_script_file_path.write_text(shell_script)
     st = run_script_file_path.stat()
     run_script_file_path.chmod(st.st_mode | stat.S_IEXEC)
@@ -88,5 +81,4 @@ exec execute.sh
 
 if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
-
     main()

@@ -1,7 +1,7 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -50,7 +50,7 @@ class CommonServiceDetails(BaseModel):
 
 class ServiceDetails(CommonServiceDetails):
     basepath: Path = Field(
-        None,
+        default=None,
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
         alias="service_basepath",
     )
@@ -76,6 +76,7 @@ class ServiceBootType(str, Enum):
 
 
 @total_ordering
+@unique
 class ServiceState(Enum):
     PENDING = "pending"
     PULLING = "pulling"
@@ -83,6 +84,7 @@ class ServiceState(Enum):
     RUNNING = "running"
     COMPLETE = "complete"
     FAILED = "failed"
+    STOPPING = "stopping"
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
@@ -94,7 +96,7 @@ class ServiceState(Enum):
 
     @staticmethod
     @lru_cache(maxsize=2)
-    def comparison_order() -> Dict["ServiceState", int]:
+    def comparison_order() -> dict["ServiceState", int]:
         """States are comparable to supportmin() on a list of ServiceState"""
         return {
             ServiceState.FAILED: 0,
@@ -102,13 +104,14 @@ class ServiceState(Enum):
             ServiceState.PULLING: 2,
             ServiceState.STARTING: 3,
             ServiceState.RUNNING: 4,
-            ServiceState.COMPLETE: 5,
+            ServiceState.STOPPING: 5,
+            ServiceState.COMPLETE: 6,
         }
 
 
 class RunningDynamicServiceDetails(ServiceDetails):
     boot_type: ServiceBootType = Field(
-        ServiceBootType.V0,
+        default=ServiceBootType.V0,
         description=(
             "Describes how the dynamic services was started (legacy=V0, modern=V2)."
             "Since legacy services do not have this label it defaults to V0."
@@ -122,11 +125,13 @@ class RunningDynamicServiceDetails(ServiceDetails):
         ..., description="the service swarm internal port", alias="service_port"
     )
     published_port: PortInt = Field(
-        None, description="the service swarm published port if any", deprecated=True
+        default=None,
+        description="the service swarm published port if any",
+        deprecated=True,
     )
 
     entry_point: Optional[str] = Field(
-        None,
+        default=None,
         description="if empty the service entrypoint is on the root endpoint.",
         deprecated=True,
     )
@@ -134,7 +139,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
         ..., description="service current state", alias="service_state"
     )
     message: Optional[str] = Field(
-        None,
+        default=None,
         description="additional information related to service state",
         alias="service_message",
     )
@@ -155,13 +160,13 @@ class RunningDynamicServiceDetails(ServiceDetails):
             boot_type=ServiceBootType.V2,
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
-            node_uuid=node_uuid,
-            key=scheduler_data.key,
-            version=scheduler_data.version,
-            host=scheduler_data.service_name,
-            internal_port=scheduler_data.service_port,
-            state=service_state.value,
-            message=service_message,
+            service_uuid=node_uuid,
+            service_key=scheduler_data.key,
+            service_version=scheduler_data.version,
+            service_host=scheduler_data.service_name,
+            service_port=scheduler_data.service_port,
+            service_state=service_state.value,
+            service_message=service_message,
         )
 
     class Config(ServiceDetails.Config):

@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 import os
 import shutil
 from pathlib import Path
@@ -30,7 +29,7 @@ def test_create_new_osparc_config(
         "--from-spec-file",
         str(tmp_compose_spec),
     )
-    assert result.exit_code == os.EX_OK
+    assert result.exit_code == os.EX_OK, result.output
 
     assert osparc_dir.exists()
 

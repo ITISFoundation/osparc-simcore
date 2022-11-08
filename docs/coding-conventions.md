@@ -21,6 +21,16 @@ Have a look at `Pylint`'s configuration file [.pylintrc](.pylintrc).
 
 - name pattern: ```fk_$(this_table)_$(this_column)```, for example ```fk_projects_to_product_product_name```
 
+
+## Shell Scripts
+
+- Recommended style: https://google.github.io/styleguide/shellguide.html
+- Automatic analysis tool: [shellcheck](https://www.shellcheck.net)
+  - see ``scripts/shellcheck.bash`` and ``.vscode/settings.template.json``
+
+
+## General
+
 <!-- Add below this line coding agreed coding conventions and give them a number !-->
 
 ###  CC1: Can I use ``TODO:``, ``FIXME:``?

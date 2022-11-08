@@ -7,14 +7,13 @@ PREFIX:
   ♻️     Refactor code.
   🚑️    Critical hotfix.
   ⚗️     Perform experiments.
-  ⬆️    Upgrade dependencies.
+  ⬆️     Upgrade dependencies.
   📝    Add or update documentation.
-  🗑️    Deprecate code that needs to be cleaned up.
-  ⚰️     Remove dead code.
-  🔥    Remove code or files.
   🔨    Add or update development scripts.
+  🔒️    Fix security issues.
 
-or from https://gitmoji.dev/ and https://github.com/carloscuesta/gitmoji/blob/master/src/data/gitmojis.json
+
+or from https://gitmoji.dev/
 
 SUFFIX:
  (⚠️ devops)  changes in devops configuration required before deploying
@@ -49,8 +48,9 @@ Add here YOUR checklist/notes to guide and monitor the progress of the case!
 
 e.g.
 
-- [ ] Openapi changes? ``make openapi-specs``, ``git commit ...`` and then ``make version-*``)
-- [ ] Database migration script? ``cd packages/postgres-database``, ``make setup-commit``, ``sc-pg review -m "my changes"``
+- [ ] ``make version-*``
+- [ ] ``make openapi.json``
+- [ ] ``cd packages/postgres-database``, ``make setup-commit``, ``sc-pg review -m "my changes"``
 - [ ] Unit tests for the changes exist
 - [ ] Runs in the swarm
 - [ ] Documentation reflects the changes

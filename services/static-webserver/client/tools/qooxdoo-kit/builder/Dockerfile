@@ -71,7 +71,8 @@ USER ${SC_USER_NAME}
 
 FROM server-base as production
 # front-end client last we copy the client application directly inside
-COPY --from=build-client --chown=${SC_USER_NAME}:${SC_USER_NAME} \
+COPY --from=build-client \
+  --chown=${SC_USER_NAME}:${SC_USER_NAME} \
   /project/build-output "/static-content"
 ENV SC_BUILD_TARGET production
 

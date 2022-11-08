@@ -4,26 +4,24 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.1
+aiohttp==3.8.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
-aiopg==1.3.4
+aiopg==1.4.0
     # via -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-astroid==2.12.9
-    # via pylint
 async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
-attrs==21.4.0
+attrs==22.1.0
     # via
     #   aiohttp
     #   pytest
     #   pytest-docker
-certifi==2022.6.15
+certifi==2022.9.24
     # via
     #   -c requirements/_migration.txt
     #   requests
@@ -32,29 +30,29 @@ charset-normalizer==2.1.1
     #   -c requirements/_migration.txt
     #   aiohttp
     #   requests
-coverage==6.4.4
+coverage==6.5.0
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-dill==0.3.5.1
-    # via pylint
 docopt==0.6.2
     # via coveralls
-faker==14.2.0
+exceptiongroup==1.0.1
+    # via pytest
+faker==15.2.0
     # via -r requirements/_test.in
 frozenlist==1.3.1
     # via
     #   aiohttp
     #   aiosignal
-greenlet==1.1.3
+greenlet==2.0.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   sqlalchemy
-idna==3.3
+idna==3.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
@@ -62,12 +60,6 @@ idna==3.3
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.10.1
-    # via pylint
-lazy-object-proxy==1.7.1
-    # via astroid
-mccabe==0.7.0
-    # via pylint
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
@@ -77,25 +69,19 @@ packaging==21.3
     # via
     #   -c requirements/_migration.txt
     #   pytest
-platformdirs==2.5.2
-    # via pylint
 pluggy==1.0.0
     # via pytest
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.5
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   aiopg
     #   sqlalchemy
-py==1.11.0
-    # via pytest
-pylint==2.15.0
-    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_migration.txt
     #   packaging
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -105,11 +91,11 @@ pytest==7.1.3
     #   pytest-instafail
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.19.0
+pytest-asyncio==0.20.1
     # via pytest-aiohttp
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via -r requirements/_test.in
-pytest-docker==1.0.0
+pytest-docker==1.0.1
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
@@ -129,7 +115,7 @@ six==1.16.0
     # via
     #   -c requirements/_migration.txt
     #   python-dateutil
-sqlalchemy==1.4.41
+sqlalchemy==1.4.43
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -138,21 +124,12 @@ sqlalchemy==1.4.41
 tomli==2.0.1
     # via
     #   coverage
-    #   pylint
     #   pytest
-tomlkit==0.11.4
-    # via pylint
-typing-extensions==4.3.0
-    # via
-    #   astroid
-    #   pylint
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt
     #   requests
-wrapt==1.14.1
-    # via astroid
 yarl==1.8.1
     # via
     #   -c requirements/_base.txt

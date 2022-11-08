@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 from distributed.worker import get_worker
 from models_library.projects_state import RunningState
@@ -96,4 +96,4 @@ class TaskLogEvent(BaseTaskEvent):
         }
 
 
-DaskTaskEvents = Type[Union[TaskLogEvent, TaskProgressEvent, TaskStateEvent]]
+DaskTaskEvents = type[Union[TaskLogEvent, TaskProgressEvent, TaskStateEvent]]

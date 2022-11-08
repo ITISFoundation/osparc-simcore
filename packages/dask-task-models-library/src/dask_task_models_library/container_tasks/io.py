@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
@@ -26,7 +26,7 @@ class PortSchema(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: Dict[str, Any] = {
+        schema_extra: dict[str, Any] = {
             "examples": [
                 {
                     "required": True,
@@ -89,8 +89,8 @@ PortValue = Union[
     StrictFloat,
     StrictStr,
     FileUrl,
-    List[Any],
-    Dict[str, Any],
+    list[Any],
+    dict[str, Any],
     None,
 ]
 

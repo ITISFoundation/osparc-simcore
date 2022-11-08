@@ -264,16 +264,23 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
         "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        autospec=True,
         side_effect=async_mock,
     )
 
+    mock2 = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.storage_api.delete_data_folders_of_project_node",
+        autospec=True,
+        return_value=None,
+    )
+
     mock3 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size",
+        "simcore_service_webserver.projects.projects_handlers_crud.get_project_total_size_simcore_s3",
         autospec=True,
         return_value=parse_obj_as(ByteSize, "1Gib"),
     )
 
-    return MockedStorageSubsystem(mock, mock1, mock3)
+    return MockedStorageSubsystem(mock, mock1, mock2, mock3)
 
 
 @pytest.fixture
@@ -294,7 +301,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     #  via the director_v2_api or director_v2_core_dynamic_services modules
     #
     for func_name in (
-        "get_dynamic_service_state",
+        "get_dynamic_service",
         "get_dynamic_services",
         "run_dynamic_service",
         "stop_dynamic_service",
@@ -306,7 +313,11 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
                 autospec=True,
                 return_value={},
             )
-
+    mock["director_v2_api.create_or_update_pipeline"] = mocker.patch(
+        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        autospec=True,
+        return_value=None,
+    )
     return mock
 
 

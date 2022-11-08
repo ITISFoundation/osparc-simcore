@@ -1,5 +1,10 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 import json
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -10,7 +15,7 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 
 @pytest.fixture
-def data(faker: Faker) -> Dict[str, Any]:
+def data(faker: Faker) -> dict[str, Any]:
     class Point(BaseModel):
         x: int
         y: int
@@ -25,7 +30,7 @@ def data(faker: Faker) -> Dict[str, Any]:
     }
 
 
-def test_enveloped_successful_response(data: Dict):
+def test_enveloped_successful_response(data: dict):
     resp = envelope_json_response(data, web.HTTPCreated)
     assert resp.text is not None
 

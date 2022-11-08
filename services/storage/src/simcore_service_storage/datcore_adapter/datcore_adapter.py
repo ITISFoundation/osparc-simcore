@@ -17,6 +17,7 @@ from ..models import DatasetMetaData, FileMetaData
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
     DatcoreAdapterException,
+    DatcoreAdapterTimeoutError,
 )
 
 log = logging.getLogger(__file__)
@@ -39,15 +40,18 @@ async def _request(
     api_secret: str,
     method: str,
     path: str,
+    *,
     json: Optional[dict[str, Any]] = None,
     params: Optional[dict[str, Any]] = None,
+    **request_kwargs,
 ) -> Union[dict[str, Any], list[dict[str, Any]]]:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
     session: ClientSession = get_client_session(app)
 
     try:
-
+        if request_kwargs is None:
+            request_kwargs = {}
         async with session.request(
             method,
             url,
@@ -58,6 +62,7 @@ async def _request(
             },
             json=json,
             params=params,
+            **request_kwargs,
         ) as response:
             return await response.json()
 
@@ -65,7 +70,9 @@ async def _request(
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
 
     except asyncio.TimeoutError as exc:
-        raise DatcoreAdapterClientError("datcore-adapter server timed-out") from exc
+        raise DatcoreAdapterTimeoutError(
+            f"datcore-adapter server timed-out: {exc}"
+        ) from exc
 
     except aiohttp.ClientError as exc:
         raise DatcoreAdapterClientError(f"unexpected client error: {exc}") from exc
@@ -152,6 +159,9 @@ async def list_all_datasets_files_metadatas(
     return all_files_of_all_datasets
 
 
+_LIST_ALL_DATASETS_TIMEOUT_S = 60
+
+
 async def list_all_files_metadatas_in_dataset(
     app: web.Application,
     user_id: UserID,
@@ -167,10 +177,11 @@ async def list_all_files_metadatas_in_dataset(
             api_secret,
             "GET",
             f"/datasets/{dataset_id}/files_legacy",
+            timeout=aiohttp.ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
         ),
     )
     return [
-        FileMetaData(
+        FileMetaData.construct(
             file_uuid=d["path"],
             location_id=DATCORE_ID,
             location=DATCORE_STR,

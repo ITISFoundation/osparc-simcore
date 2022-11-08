@@ -42,7 +42,7 @@ def _human_readable_size(size, decimal_places=3):
 
 def _compute_tqdm_miniters(byte_size: int) -> float:
     """ensures tqdm minimal iteration is 1 %"""
-    return min(byte_size / 100, 1.0)
+    return min(byte_size / 100.0, 1.0)
 
 
 def _strip_undecodable_in_path(path: Path) -> Path:

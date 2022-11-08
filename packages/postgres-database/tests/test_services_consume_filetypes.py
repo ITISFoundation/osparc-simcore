@@ -4,8 +4,6 @@
 # pylint: disable=no-value-for-parameter
 
 
-from typing import List
-
 import pytest
 import sqlalchemy as sa
 from _pytest.fixtures import fixture
@@ -79,7 +77,7 @@ async def test_get_compatible_services(conn):
 
     assert result.returns_rows
 
-    rows: List[RowProxy] = await result.fetchall()
+    rows: list[RowProxy] = await result.fetchall()
 
     # only S4L
     assert all(row.service_key == "simcore/services/dynamic/sim4life" for row in rows)
@@ -107,7 +105,7 @@ async def test_get_supported_filetypes(conn):
     )
 
     result: ResultProxy = await conn.execute(stmt)
-    rows: List[RowProxy] = await result.fetchall()
+    rows: list[RowProxy] = await result.fetchall()
     assert [v for row in rows for v in row.values()] == ["DCM", "S4LCacheData"]
 
 
@@ -125,7 +123,7 @@ async def test_list_supported_filetypes(conn):
     )
 
     result: ResultProxy = await conn.execute(stmt)
-    rows: List[RowProxy] = await result.fetchall()
+    rows: list[RowProxy] = await result.fetchall()
     assert [v for row in rows for v in row.values()] == list_supported_filetypes()
 
 

@@ -57,7 +57,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     showZoomButton: {
       check: "Boolean",
       init: true,
-      apply: "__applyShowZoomButton"
+      event: "changeShowZoomButton"
     },
 
     /**
@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     showRestartButton: {
       check: "Boolean",
       init: true,
-      apply: "__applyShowRestartButton"
+      event: "changeShowRestartButton"
     }
   },
 
@@ -88,12 +88,8 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     // override
     _createContentElement : function() {
       let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
-      iframe.addListener("load", e => {
-        this.fireEvent("load");
-      });
-      iframe.addListener("navigate", e => {
-        this.fireDataEvent("navigate", e.getData());
-      });
+      iframe.addListener("load", () => this.fireEvent("load"));
+      iframe.addListener("navigate", e => this.fireDataEvent("navigate", e.getData()));
 
       let standin = new qx.html.Element("div");
       let appRoot = this.getApplicationRoot();
@@ -113,16 +109,22 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.fireEvent("restart");
       }, this);
       osparc.utils.Utils.setIdToWidget(restartButton, "iFrameRestartBtn");
+      this.bind("showRestartButton", restartButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      });
       appRoot.add(restartButton, {
         top: this.self().HIDDEN_TOP
       });
-      let zoomButton = this.__zoomButton = new qx.ui.form.Button(null).set({
+      const zoomButton = this.__zoomButton = new qx.ui.form.Button(null).set({
         icon: this.self().getZoomIcon(false),
         zIndex: 20,
         backgroundColor: "transparent",
         decorator: null
       });
       osparc.utils.Utils.setIdToWidget(zoomButton, this.self().getMaximizeWidgetId(false));
+      this.bind("showZoomButton", zoomButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      });
       appRoot.add(zoomButton, {
         top: this.self().HIDDEN_TOP
       });
@@ -177,14 +179,6 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       actionButton.setIcon(this.self().getZoomIcon(maximize));
       osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
-    },
-
-    __applyShowZoomButton: function(show) {
-      show ? this.__zoomButton.show() : this.__zoomButton.exclude();
-    },
-
-    __applyShowRestartButton: function(show) {
-      show ? this.__restartButton.show() : this.__restartButton.exclude();
     },
 
     __syncIframePos: function() {

@@ -90,7 +90,7 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
     /**
      * Function to set the visibility of a previously registered filter container.
      *
-     * @param {string} containerId Id of the container to change the visiblity.
+     * @param {string} containerId Id of the container to change the visibility.
      * @param {string} visibility New visibility setting for the container.
      */
     setContainerVisibility: function(containerId, visibility) {

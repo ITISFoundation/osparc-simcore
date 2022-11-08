@@ -39,15 +39,16 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5));
+    this._setLayout(new qx.ui.layout.HBox(10));
+
+    this.getChildControl("spacer");
+    this.getChildControl("selected-label");
 
     const downloadBtn = this.getChildControl("download-button");
     downloadBtn.addListener("execute", () => this.__retrieveURLAndDownload(), this);
 
     const deleteBtn = this.getChildControl("delete-button");
     deleteBtn.addListener("execute", () => this.__deleteFile(), this);
-
-    this.getChildControl("selected-label");
   },
 
   events: {
@@ -60,6 +61,18 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "spacer":
+          control = new qx.ui.core.Spacer();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "selected-label":
+          control = new qx.ui.basic.Label().set({
+            alignY: "middle"
+          });
+          this._add(control);
+          break;
         case "download-button":
           control = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
           osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
@@ -70,12 +83,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             appearance: "danger-button"
           });
           this._add(control);
-          break;
-        case "selected-label":
-          control = new qx.ui.basic.Label();
-          this._add(control, {
-            flex: 1
-          });
           break;
       }
       return control || this.base(arguments, id);

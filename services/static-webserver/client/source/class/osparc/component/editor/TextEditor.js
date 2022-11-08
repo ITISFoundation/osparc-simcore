@@ -25,15 +25,18 @@ qx.Class.define("osparc.component.editor.TextEditor", {
 
   /**
     * @param initText {String} Initialization text
-    * @param subtitleText {String} Text to be shown under the text area
     */
-  construct: function(initText = "", subtitleText = "") {
+  construct: function(initText = "") {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(2));
 
-    this.__populateTextArea(initText);
-    this.__addSubtitle(subtitleText);
+    this.__textArea = this.getChildControl("text-area");
+    this.getChildControl("preview");
+    if (initText) {
+      this.setText(initText);
+    }
+
     this.__addButtons();
   },
 
@@ -42,20 +45,73 @@ qx.Class.define("osparc.component.editor.TextEditor", {
     "cancel": "qx.event.type.Event"
   },
 
+  properties: {
+    text: {
+      check: "String",
+      event: "changeText",
+      init: "",
+      nullable: true
+    }
+  },
+
   members: {
     __textArea: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "text-area":
-          control = new qx.ui.form.TextArea().set({
-            allowGrowX: true
+        case "tabs":
+          control = new qx.ui.tabview.TabView().set({
+            contentPadding: 0,
+            barPosition: "top"
           });
           this._add(control, {
             flex: 1
           });
           break;
+        case "text-area": {
+          control = new qx.ui.form.TextArea().set({
+            allowGrowX: true
+          });
+          control.addListener("appear", () => {
+            if (control.getValue()) {
+              control.setTextSelection(0, control.getValue().length);
+            }
+          }, this);
+          this.bind("text", control, "value");
+          const tabs = this.getChildControl("tabs");
+          const writePage = new qx.ui.tabview.Page(this.tr("Write")).set({
+            layout: new qx.ui.layout.VBox(5)
+          });
+          writePage.add(control, {
+            flex: 1
+          });
+          const subtitle = this.getChildControl("subtitle").set({
+            value: this.tr("Supports Markdown")
+          });
+          writePage.add(subtitle);
+          tabs.add(writePage);
+          break;
+        }
+        case "preview": {
+          control = new osparc.ui.markdown.Markdown().set({
+            padding: 3,
+            noMargin: true
+          });
+          const textArea = this.getChildControl("text-area");
+          textArea.bind("value", control, "value");
+          const tabs = this.getChildControl("tabs");
+          const previewPage = new qx.ui.tabview.Page(this.tr("Preview")).set({
+            layout: new qx.ui.layout.VBox(5)
+          });
+          const scrollContainer = new qx.ui.container.Scroll();
+          scrollContainer.add(control);
+          previewPage.add(scrollContainer, {
+            flex: 1
+          });
+          tabs.add(previewPage);
+          break;
+        }
         case "subtitle":
           control = new qx.ui.basic.Label().set({
             font: "text-12"
@@ -63,7 +119,7 @@ qx.Class.define("osparc.component.editor.TextEditor", {
           this._add(control);
           break;
         case "buttons":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
           }));
           this._add(control);
@@ -89,25 +145,6 @@ qx.Class.define("osparc.component.editor.TextEditor", {
         }
       }
       return control || this.base(arguments, id);
-    },
-
-    __populateTextArea: function(initText) {
-      const textArea = this.__textArea = this.getChildControl("text-area").set({
-        value: initText
-      });
-      this.addListener("appear", () => {
-        if (textArea.getValue()) {
-          textArea.setTextSelection(0, textArea.getValue().length);
-        }
-      }, this);
-    },
-
-    __addSubtitle: function(subtitleText) {
-      if (subtitleText) {
-        this.getChildControl("subtitle").set({
-          value: subtitleText
-        });
-      }
     },
 
     __addButtons: function() {

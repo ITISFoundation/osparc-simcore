@@ -70,10 +70,9 @@ async function runTutorial() {
       }
 
       const outFiles = [
-        "TheNumber.txt",
-        "workspace.zip"
+        "TheNumber.txt"
       ];
-      await tutorial.checkNodeOutputs(j, outFiles, true, false);
+      await tutorial.checkNodeOutputs(j, outFiles, true);
     }
   }
   catch (err) {

@@ -19,7 +19,7 @@ aiofiles==0.8.0
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.8.1
+aiohttp==3.8.3
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -123,6 +123,7 @@ markupsafe==2.1.1
     # via
     #   jinja2
     #   mako
+    #   werkzeug
 multidict==6.0.2
     # via
     #   aiohttp
@@ -242,7 +243,7 @@ urllib3==1.26.9
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
-werkzeug==2.0.3
+werkzeug==2.2.2
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.14.1
     # via aiobotocore

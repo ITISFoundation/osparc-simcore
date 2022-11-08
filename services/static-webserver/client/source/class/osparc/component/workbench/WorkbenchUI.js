@@ -466,7 +466,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.addListener("nodeStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       nodeUI.addListener("tap", e => {
-        this.activeNodeChanged(nodeUI, e.isCtrlPressed());
+        this.__activeNodeChanged(nodeUI, e.isCtrlPressed());
         e.stopPropagation();
       }, this);
 
@@ -560,7 +560,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
+    nodeSelected: function(nodeId) {
+      const nodeUI = this.getNodeUI(nodeId);
+      if (nodeUI && nodeUI.classname.includes("NodeUI")) {
+        this.__activeNodeChanged(nodeUI);
+      }
+    },
+
+    __activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
       if (isControlPressed) {
         const index = this.getSelectedNodes().indexOf(activeNodeUI);
         if (index > -1) {
@@ -582,7 +589,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const nodeUI = new osparc.component.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
-      node.addListener("keyChanged", () => this.activeNodeChanged(nodeUI), this);
+      node.addListener("keyChanged", () => this.__activeNodeChanged(nodeUI), this);
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
@@ -723,25 +730,41 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y2 = pointList[1] ? pointList[1][1] : 0;
         const edgeRepresentation = this.__svgLayer.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
 
-        edge.addListener("changePortConnected", e => {
-          const portConnected = e.getData();
-          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
-        }, this);
-
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
+        const hint = edgeUI.getHint();
         const that = this;
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("click", e => {
-          // this is needed to get out of the context of svg
-          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-          e.stopPropagation();
-        }, this);
-        edgeUI.getRepresentation().node.addEventListener("click", e => {
-          // this is needed to get out of the context of svg
-          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-          e.stopPropagation();
-        }, this);
+        [
+          edgeRepresentation.widerCurve.node,
+          edgeRepresentation.node
+        ].forEach(svgEl => {
+          svgEl.addEventListener("click", e => {
+            // this is needed to get out of the context of svg
+            that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+            e.stopPropagation();
+          }, this);
+
+          const topOffset = 20;
+          [
+            "mouseover",
+            "mousemove"
+          ].forEach(ev => {
+            svgEl.addEventListener(ev, e => {
+              const leftOffset = -(parseInt(hint.getHintBounds().width/2));
+              const properties = {
+                top: e.clientY + topOffset,
+                left: e.clientX + leftOffset
+              };
+              hint.setLayoutProperties(properties);
+              if (hint.getText()) {
+                hint.show();
+              }
+            }, this);
+          });
+        });
+        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
+        this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
       }
     },
 

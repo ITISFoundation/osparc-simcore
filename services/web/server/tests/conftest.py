@@ -1,6 +1,7 @@
-# pylint: disable=unused-argument
-# pylint: disable=bare-except
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 import logging
@@ -192,6 +193,53 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
     Returns:
         Callable[..., Awaitable[ProjectDict]]: _description_
     """
+    # pylint: disable=too-many-statements
+
+    async def _setup(
+        client: TestClient,
+        *,
+        project: Optional[dict] = None,
+        from_study: Optional[dict] = None,
+        as_template: Optional[bool] = None,
+        copy_data: Optional[bool] = None,
+    ):
+
+        # Pre-defined fields imposed by required properties in schema
+        project_data = {}
+        expected_data = {}
+        if from_study:
+            # access rights are replaced
+            expected_data = deepcopy(from_study)
+            expected_data["accessRights"] = {}
+            if not as_template:
+                expected_data["name"] = f"{from_study['name']} (Copy)"
+
+        if not from_study or project:
+            project_data = _minimal_project()
+            if project:
+                project_data.update(project)
+
+            for key in project_data:
+                expected_data[key] = project_data[key]
+                if (
+                    key in OVERRIDABLE_DOCUMENT_KEYS
+                    and not project_data[key]
+                    and from_study
+                ):
+                    expected_data[key] = from_study[key]
+
+        # POST /v0/projects -> returns 202 or denied access
+        assert client.app
+        url: URL = client.app.router["create_projects"].url_for()
+
+        if from_study:
+            url = url.update_query(from_study=from_study["uuid"])
+        if as_template:
+            url = url.update_query(as_template=f"{as_template}")
+        if copy_data is not None:
+            url = url.update_query(copy_data=f"{copy_data}")
+
+        return url, project_data, expected_data
 
     async def _creator(
         client: TestClient,
@@ -205,37 +253,15 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         as_template: Optional[bool] = None,
         copy_data: Optional[bool] = None,
     ) -> ProjectDict:
-        # Pre-defined fields imposed by required properties in schema
-        project_data = {}
-        expected_data = {}
-        if from_study:
-            # access rights are replaced
-            expected_data = deepcopy(from_study)
-            expected_data["accessRights"] = {}
-            if not as_template:
-                expected_data["name"] = f"{from_study['name']} (Copy)"
-        if not from_study or project:
-            project_data = _minimal_project()
-            if project:
-                project_data.update(project)
-            for key in project_data:
-                expected_data[key] = project_data[key]
-                if (
-                    key in OVERRIDABLE_DOCUMENT_KEYS
-                    and not project_data[key]
-                    and from_study
-                ):
-                    expected_data[key] = from_study[key]
 
-        # POST /v0/projects -> returns 202 or denied access
-        assert client.app
-        url: URL = client.app.router["create_projects"].url_for()
-        if from_study:
-            url = url.update_query(from_study=from_study["uuid"])
-        if as_template:
-            url = url.update_query(as_template=f"{as_template}")
-        if copy_data is not None:
-            url = url.update_query(copy_data=f"{copy_data}")
+        url, project_data, expected_data = await _setup(
+            client,
+            project=project,
+            from_study=from_study,
+            as_template=as_template,
+            copy_data=copy_data,
+        )
+
         resp = await client.post(f"{url}", json=project_data)
         print(f"<-- created project response: {resp=}")
         data, error = await assert_status(resp, expected_accepted_response)

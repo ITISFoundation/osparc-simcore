@@ -4,11 +4,8 @@
 # pylint:disable=too-many-arguments
 
 import logging
-from pathlib import Path
-from typing import Dict
 
 import sqlalchemy as sa
-from models_library.projects_nodes_io import SimcoreS3FileID
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 
 log = logging.getLogger(__name__)
@@ -18,7 +15,7 @@ def update_configuration(
     postgres_engine: sa.engine.Engine,
     project_id: str,
     node_uuid: str,
-    new_configuration: Dict,
+    new_configuration: dict,
 ) -> None:
     log.debug(
         "Update configuration of pipeline %s, node %s",
@@ -40,10 +37,3 @@ def update_configuration(
             )
         )
     log.debug("Updated configuration")
-
-
-SIMCORE_STORE = 0
-
-
-def file_uuid(file_path: Path, project_id: str, node_uuid: str) -> SimcoreS3FileID:
-    return SimcoreS3FileID(f"{project_id}/{node_uuid}/{Path(file_path).name}")

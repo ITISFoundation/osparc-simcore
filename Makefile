@@ -25,32 +25,38 @@ IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
 
 # VARIABLES ----------------------------------------------
-# TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
-# or $(notdir $(subst /Dockerfile,,$(wildcard services/*/Dockerfile))) ...
-SERVICES_LIST := \
-	api-server \
-	autoscaling \
-	catalog \
-	dask-sidecar \
-	datcore-adapter \
-	director \
-	director-v2 \
-	dynamic-sidecar \
-	migration \
-	static-webserver \
-	storage \
-	webserver
+# NOTE: Name given to any of the services that must be build, regardless
+# whether they are part of the simcore stack or not. This list can be obtained from
+#
+# cat services/docker-compose-build.yml | yq ".services | keys | sort"
+#
+SERVICES_NAMES_TO_BUILD := \
+  agent \
+  api-server \
+  autoscaling \
+  catalog \
+  dask-sidecar \
+  datcore-adapter \
+  director \
+  director-v2 \
+  dynamic-sidecar \
+  migration \
+  service-integration \
+  static-webserver \
+  storage \
+  webserver
 
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/static-webserver/client/source-output
 
 # version control
 export VCS_URL          := $(shell git config --get remote.origin.url)
-export VCS_REF          := $(shell git rev-parse --short HEAD)
+export VCS_REF          := $(shell git rev-parse HEAD)
 export VCS_REF_CLIENT   := $(shell git log --pretty=tformat:"%h" -n1 services/static-webserver/client)
 export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','clean')
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
+export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
@@ -137,7 +143,7 @@ comma := ,
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production) &&\
 pushd services &&\
-$(foreach service, $(SERVICES_LIST),\
+$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 	$(if $(push),\
 		export $(subst -,_,$(shell echo $(service) | tr a-z A-Z))_VERSION=$(shell cat services/$(service)/VERSION);\
 	,) \
@@ -148,7 +154,7 @@ docker buildx bake \
 	)\
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
-			$(foreach service, $(SERVICES_LIST),\
+			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 				--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
@@ -156,7 +162,7 @@ docker buildx bake \
 	$(if $(push),--push,) \
 	$(if $(push),--file docker-bake.hcml,) --file docker-compose-build.yml $(if $(target),$(target),) \
 	$(if $(findstring -nc,$@),--no-cache,\
-		$(foreach service, $(SERVICES_LIST),\
+		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
 			--set $(service).cache-from=type=gha$(comma)scope=$(service)) \
 	) &&\
@@ -171,7 +177,7 @@ build build-nc: .env ## Builds production images and tags them as 'local/{servic
 
 load-images: guard-local-src ## loads images from local-src
 	# loading from images from $(local-src)...
-	@$(foreach service, $(SERVICES_LIST),\
+	@$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 		docker load --input $(local-src)/$(service).tar; \
 	)
 	# all images loaded
@@ -271,7 +277,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Docker Registry" "$${REGISTRY_URL}" $${REGISTRY_USER} $${REGISTRY_PW};\
-printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15762" admin adminadmin;\
+printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Storage S3 Filestash" "http://$(get_my_ip).nip.io:9002" 12345678 12345678;\
 printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
@@ -346,13 +352,13 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
 	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
-	@$(foreach service, $(SERVICES_LIST)\
+	@$(foreach service, $(SERVICES_NAMES_TO_BUILD)\
 		,docker tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
 	)
 
 tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	# Tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@$(foreach service, $(SERVICES_LIST)\
+	@$(foreach service, $(SERVICES_NAMES_TO_BUILD)\
 		,docker tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
 	)
 
@@ -451,14 +457,11 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*/client/*" \
 											-not -path "*egg*" \
 											-not -path "*migration*" \
-											-not -path "*datcore.py" \
 											-not -path "*sandbox*" \
 											-not -path "*-sdk/python*" \
 											-not -path "*generated_code*" \
 											-not -path "*build*" \
-											-not -path "*datcore.py" \
-											-not -path "*/director/*" \
-											-not -path "*web/server*"))"
+											-not -path "*/director/*"))"
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
 
@@ -601,7 +604,7 @@ endef
 
 info-images:  ## lists tags and labels of built images. To display one: 'make target=webserver info-images'
 ifeq ($(target),)
-	@$(foreach service,$(SERVICES_LIST),\
+	@$(foreach service,$(SERVICES_NAMES_TO_BUILD),\
 		echo "## $(service) images:";\
 			docker images */$(service):*;\
 			$(call show-meta,$(service))\
@@ -663,7 +666,7 @@ clean-more: ## cleans containers and unused volumes
 
 clean-images: ## removes all created images
 	# Cleaning all service images
-	-$(foreach service,$(SERVICES_LIST)\
+	-$(foreach service,$(SERVICES_NAMES_TO_BUILD)\
 		,docker image rm --force $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	-@$(MAKE_C) services/static-webserver/client clean-images

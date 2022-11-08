@@ -24,16 +24,17 @@ from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 log = logging.getLogger(__name__)
 
 
-SERVICES_TO_SKIP = [
-    "dask-sidecar",
+_SERVICES_TO_SKIP = {
+    "agent",  # global mode deploy (NO exposed ports, has http API)
+    "dask-sidecar",  # global mode deploy (NO exposed ports, **NO** http API)
     "migration",
     "postgres",
-    "redis",
     "rabbit",
+    "redis",
     "static-webserver",
-    "whoami",
     "traefik",
-]
+    "whoami",
+}
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
 SERVICE_PUBLISHED_PORT = {}
 DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT = "/v0/"
@@ -114,7 +115,7 @@ def services_endpoint(
 
         # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
         # TODO: get health-check cmd from Dockerfile or docker-compose (e.g. postgres?)
-        if service not in SERVICES_TO_SKIP:
+        if service not in _SERVICES_TO_SKIP:
             target_ports = [
                 AIOHTTP_BASED_SERVICE_PORT,
                 FASTAPI_BASED_SERVICE_PORT,

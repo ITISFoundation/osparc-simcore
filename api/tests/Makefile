@@ -17,7 +17,7 @@ reqs: requirements.txt ## alias to compile requirements.txt
 .PHONY: install
 install: _check_venv_active requirements.txt ## installs dependencies
 	# installing requirements
-	pip3 install -r requirements.txt
+	pip-sync requirements.txt
 
 
 .PHONY: test-dev

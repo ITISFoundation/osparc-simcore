@@ -1,9 +1,13 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+
 import datetime
 import random
-import string
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import openpyxl
 import pytest
@@ -54,7 +58,7 @@ def get_workbook(xls_path: Path) -> Workbook:
 
 
 def assert_expected_layout(
-    workbook: Workbook, expected_layout: Dict[str, Dict[str, Any]]
+    workbook: Workbook, expected_layout: dict[str, dict[str, Any]]
 ) -> bool:
     for sheet_name in expected_layout:
         sheet = workbook[sheet_name]
@@ -220,6 +224,7 @@ def test_dataset_description(temp_dir: Path):
 
 
 def test_code_description(temp_dir: Path):
+    # pylint: disable=too-many-statements
     rrid_entires = [
         RRIDEntry(
             rrid_term=random_text(f"rrid_term{i}"),

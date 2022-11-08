@@ -297,6 +297,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__prevNextButtons.setNode(node);
 
         if (view) {
+          if (this.__nodeView && this.__nodeView.getInstructionsWindow()) {
+            this.__nodeView.getInstructionsWindow().close();
+          }
           if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
             this.__mainView.remove(this.__nodeView);
           }
@@ -357,11 +360,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
         }
       }
-      const slideshowData = slideshow.getData();
       this.setPageContext(context);
       this.__slideshowToolbar.populateButtons(true);
       const currentNodeId = this.getStudy().getUi().getCurrentNodeId();
-      const isValid = Object.keys(slideshowData).indexOf(currentNodeId) !== -1;
+      const isValid = slideshow.getPosition(currentNodeId) !== -1;
       if (isValid && currentNodeId) {
         this.__moveToNode(currentNodeId);
       } else {

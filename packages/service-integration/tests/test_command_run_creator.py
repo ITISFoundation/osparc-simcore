@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 
 import os
@@ -33,7 +33,7 @@ def test_make_service_cli_run(run_program_with_args, metadata_file_path: Path):
         "--runscript",
         run_script_path,
     )
-    assert result.exit_code == os.EX_OK
+    assert result.exit_code == os.EX_OK, result.output
 
     generated_code = run_script_path.read_text()
     expected_snippet = set(

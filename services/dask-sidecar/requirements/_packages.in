@@ -1,9 +1,0 @@
-#
-# Adds intra-repo packages requirements
-#
---constraint ../../../requirements/constraints.txt
---constraint _base.txt
-
---requirement ../../../packages/dask-task-models-library/requirements/_base.in
---requirement ../../../packages/models-library/requirements/_base.in
---requirement ../../../packages/service-library/requirements/_base.in

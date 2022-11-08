@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from models_library.basic_regex import UUID_RE
 from models_library.basic_types import PortInt
@@ -143,13 +143,14 @@ class RunningServiceDetails(BaseModel):
             " * 'running' - The service is running"
             " * 'complete' - The service completed"
             " * 'failed' - The service failed to start"
+            " * 'stopping' - The service is stopping"
         ),
     )
     service_message: str = Field(..., description="the service message")
 
 
 class RunningServicesDetailsArray(BaseModel):
-    __root__: List[RunningServiceDetails]
+    __root__: list[RunningServiceDetails]
 
 
 class RunningServicesDetailsArrayEnveloped(BaseModel):
@@ -157,4 +158,4 @@ class RunningServicesDetailsArrayEnveloped(BaseModel):
 
 
 class ServicesArrayEnveloped(BaseModel):
-    data: List[ServiceDockerData]
+    data: list[ServiceDockerData]

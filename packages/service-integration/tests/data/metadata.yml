@@ -1,5 +1,5 @@
 name: oSparc Python Runner
-key: simcore/services/comp/osparc-python-runner
+key: simcore/services/dynamic/osparc-python-runner
 type: computational
 integration-version: 1.0.0
 version: 1.1.0

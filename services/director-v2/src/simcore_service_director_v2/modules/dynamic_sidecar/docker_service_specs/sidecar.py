@@ -88,7 +88,6 @@ def _get_environment_variables(
 def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
@@ -234,10 +233,7 @@ def get_dynamic_sidecar_spec(
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
         },
         "name": scheduler_data.service_name,
-        "networks": [
-            {"Target": swarm_network_id},
-            {"Target": dynamic_sidecar_network_id},
-        ],
+        "networks": [{"Target": swarm_network_id}],
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(

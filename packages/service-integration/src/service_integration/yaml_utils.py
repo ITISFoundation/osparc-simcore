@@ -58,7 +58,7 @@ class _LoaderWithInclude(yaml.SafeLoader):
 
     def include(self, node):
         fpath = os.path.join(self._basepath, f"{self.construct_scalar(node)}")
-        with open(fpath, "r") as f:
+        with open(fpath) as f:
             return yaml_safe_load(f)
 
 

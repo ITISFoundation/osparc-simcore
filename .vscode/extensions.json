@@ -3,5 +3,7 @@
     "eamodio.gitlens",
     "ms-python.python",
     "samuelcolvin.jinjahtml",
+    "timonwong.shellcheck",
+    "exiasr.hadolint"
   ]
 }

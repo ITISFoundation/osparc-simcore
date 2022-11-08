@@ -270,7 +270,7 @@ async def current_study(
 @pytest.fixture
 def workbench_dynamic_services(
     current_study: ProjectAtDB, sleeper_service: dict
-) -> dict[str, Node]:
+) -> dict[NodeIDStr, Node]:
     sleeper_key = sleeper_service["schema"]["key"]
     result = {k: v for k, v in current_study.workbench.items() if v.key != sleeper_key}
     assert len(result) == 2
@@ -811,7 +811,6 @@ async def _assert_retrieve_completed(
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
@@ -912,7 +911,6 @@ async def test_nodeports_integration(
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
-
     update_project_workbench_with_comp_tasks(str(current_study.uuid))
 
     # Trigger inputs pulling & outputs pushing on dynamic services

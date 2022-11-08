@@ -1,6 +1,8 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 
 from typing import Callable
 
@@ -107,4 +109,4 @@ def test_session_settings(session_key, mock_env_devel_environment: EnvVarsDict):
         # NOTE: we pass here a string!
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value()
     )
-    assert _should_not_raise._fernet is not None
+    assert _should_not_raise._fernet is not None  # pylint: disable=protected-access

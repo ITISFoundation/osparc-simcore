@@ -37,7 +37,7 @@ services:
   datcore-adapter:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - DATCORE_ADAPTER_LOG_LEVEL=DEBUG
+      - LOG_LEVEL=DEBUG
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
       - ../packages:/devel/packages
@@ -112,3 +112,11 @@ services:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
       - STORAGE_LOGLEVEL=DEBUG
+
+  agent:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - LOGLEVEL=DEBUG
+    volumes:
+      - ./agent:/devel/services/agent
+      - ../packages:/devel/packages

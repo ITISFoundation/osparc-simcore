@@ -4,6 +4,7 @@ Imports in standard methods (SEE projects_handlers_crud) and extends with
     - custom methods (https://google.aip.dev/121)
 
 """
+import contextlib
 import json
 import logging
 
@@ -19,7 +20,7 @@ from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import ProjectNotFoundError
+from .projects_exceptions import ProjectNotFoundError, ProjectStartsTooManyDynamicNodes
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
@@ -69,9 +70,13 @@ async def open_project(request: web.Request) -> web.Response:
         )
 
         # user id opened project uuid
-        await projects_api.run_project_dynamic_services(
-            request, project, req_ctx.user_id, req_ctx.product_name
-        )
+        with contextlib.suppress(ProjectStartsTooManyDynamicNodes):
+            # NOTE: this method raises that exception when the number of dynamic
+            # services in the project is highter than the maximum allowed per project
+            # the project shall still open though.
+            await projects_api.run_project_dynamic_services(
+                request, project, req_ctx.user_id, req_ctx.product_name
+            )
 
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(

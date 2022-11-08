@@ -5,7 +5,6 @@
 
 import asyncio
 import json
-from typing import Dict, List
 
 import pytest
 from aiopg.sa.engine import Engine, SAConnection
@@ -43,7 +42,7 @@ async def task(
     db_connection: SAConnection,
     db_notification_queue: asyncio.Queue,
     task_class: NodeClass,
-) -> Dict:
+) -> dict:
     result = await db_connection.execute(
         comp_tasks.insert()
         .values(outputs=json.dumps({}), node_class=task_class)
@@ -61,7 +60,7 @@ async def task(
 
 async def _assert_notification_queue_status(
     notification_queue: asyncio.Queue, num_exp_messages: int
-) -> List[Dict]:
+) -> list[dict]:
     if num_exp_messages > 0:
         assert not notification_queue.empty()
 
@@ -83,7 +82,7 @@ async def _assert_notification_queue_status(
     return tasks
 
 
-async def _update_comp_task_with(conn: SAConnection, task: Dict, **kwargs):
+async def _update_comp_task_with(conn: SAConnection, task: dict, **kwargs):
     await conn.execute(
         comp_tasks.update()
         .values(**kwargs)
@@ -98,7 +97,7 @@ async def _update_comp_task_with(conn: SAConnection, task: Dict, **kwargs):
 async def test_listen_query(
     db_notification_queue: asyncio.Queue,
     db_connection: SAConnection,
-    task: Dict,
+    task: dict,
 ):
     """this tests how the postgres LISTEN query and in particular the aiopg implementation of it works"""
     # let's test the trigger

@@ -325,7 +325,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _getMoreOptionsMenuButton: function(resourceData) {
-      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options"));
+      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options..."));
       osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
       moreOptsButton.addListener("execute", () => {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);

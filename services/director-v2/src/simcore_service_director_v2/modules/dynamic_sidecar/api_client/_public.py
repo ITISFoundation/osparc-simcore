@@ -244,8 +244,8 @@ class DynamicSidecarClient:
         self,
         task_id: TaskId,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        progress_callback: ProgressCallback,
         task_timeout: PositiveFloat,
+        progress_callback: Optional[ProgressCallback] = None,
     ) -> Optional[Any]:
         async with periodic_task_result(
             self._get_client(dynamic_sidecar_endpoint),
@@ -261,7 +261,7 @@ class DynamicSidecarClient:
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         compose_spec: str,
-        progress_callback: ProgressCallback,
+        progress_callback: Optional[ProgressCallback] = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
@@ -271,11 +271,15 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START,
+            progress_callback,
         )
 
-    async def stop_service(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+    async def stop_service(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        progress_callback: Optional[ProgressCallback] = None,
+    ) -> None:
         response = await self._thin_client.post_containers_tasks_down(
             dynamic_sidecar_endpoint
         )
@@ -284,8 +288,8 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP,
+            progress_callback,
         )
 
     async def restore_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
@@ -297,11 +301,15 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            _debug_progress_callback,
         )
 
-    async def save_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+    async def save_service_state(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        progress_callback: Optional[ProgressCallback] = None,
+    ) -> None:
         response = await self._thin_client.post_containers_tasks_state_save(
             dynamic_sidecar_endpoint
         )
@@ -310,8 +318,8 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            progress_callback,
         )
 
     async def pull_service_input_ports(
@@ -327,11 +335,10 @@ class DynamicSidecarClient:
         transferred_bytes = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            _debug_progress_callback,
         )
-        assert transferred_bytes  # nosec
-        return transferred_bytes
+        return transferred_bytes or 0
 
     async def pull_service_output_ports(
         self,
@@ -346,14 +353,15 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            _debug_progress_callback,
         )
 
     async def push_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: Optional[list[str]] = None,
+        progress_callback: Optional[ProgressCallback] = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_push(
             dynamic_sidecar_endpoint, port_keys
@@ -363,8 +371,8 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            progress_callback,
         )
 
     async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
@@ -376,8 +384,8 @@ class DynamicSidecarClient:
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            _debug_progress_callback,
             self._dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+            _debug_progress_callback,
         )
 
 

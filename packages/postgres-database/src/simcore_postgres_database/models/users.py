@@ -49,7 +49,7 @@ class UserRole(Enum):
     def privilege_level(self) -> int:
         return _USER_ROLE_TO_LEVEL[self.name]
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: "UserRole") -> bool:
         if self.__class__ is other.__class__:
             return self.privilege_level < other.privilege_level
         return NotImplemented

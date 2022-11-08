@@ -31,6 +31,9 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.directory_watcher import (
+    _core as directory_watcher_core,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -259,15 +262,11 @@ def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
 
 
 @pytest.fixture
-def mock_dir_watcher_on_any_event(
-    app: FastAPI, monkeypatch: MonkeyPatch
-) -> Iterator[Mock]:
+def mock_async_push_directory(app: FastAPI, monkeypatch: MonkeyPatch) -> Iterator[Mock]:
 
-    mock = Mock(return_value=None)
+    mock = AsyncMock(return_value=None)
 
-    monkeypatch.setattr(
-        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
-    )
+    monkeypatch.setattr(directory_watcher_core, "async_push_directory", mock)
     yield mock
 
 
@@ -410,7 +409,7 @@ async def test_container_docker_error(
 
 async def test_directory_watcher_disabling(
     test_client: TestClient,
-    mock_dir_watcher_on_any_event: AsyncMock,
+    mock_async_push_directory: AsyncMock,
 ):
     assert isinstance(test_client.application, FastAPI)
     mounted_volumes = AppState(test_client.application).mounted_volumes
@@ -431,31 +430,31 @@ async def test_directory_watcher_disabling(
 
     # by default directory-watcher it is disabled
     await _assert_enable_directory_watcher(test_client)
-    assert mock_dir_watcher_on_any_event.call_count == 0
+    assert mock_async_push_directory.call_count == 0
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 1
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
+    assert mock_async_push_directory.call_count == EVENTS_PER_DIR_CREATION
 
     # disable and wait for events should have the same count as before
     await _assert_disable_directory_watcher(test_client)
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 2
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
+    assert mock_async_push_directory.call_count == EVENTS_PER_DIR_CREATION
 
     # enable and wait for events
     await _assert_enable_directory_watcher(test_client)
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 3
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == 2 * EVENTS_PER_DIR_CREATION
+    assert mock_async_push_directory.call_count == 2 * EVENTS_PER_DIR_CREATION
 
 
 async def test_container_create_outputs_dirs(
     test_client: TestClient,
     mock_outputs_labels: dict[str, ServiceOutput],
-    mock_dir_watcher_on_any_event: AsyncMock,
+    mock_async_push_directory: AsyncMock,
 ):
     assert isinstance(test_client.application, FastAPI)
     mounted_volumes = AppState(test_client.application).mounted_volumes
@@ -463,7 +462,7 @@ async def test_container_create_outputs_dirs(
     # by default directory-watcher it is disabled
     await _assert_enable_directory_watcher(test_client)
 
-    assert mock_dir_watcher_on_any_event.call_count == 0
+    assert mock_async_push_directory.call_count == 0
 
     json_outputs_labels = {
         k: v.dict(by_alias=True) for k, v in mock_outputs_labels.items()
@@ -479,7 +478,7 @@ async def test_container_create_outputs_dirs(
         assert (mounted_volumes.disk_outputs_path / dir_name).is_dir()
 
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == 2 * len(mock_outputs_labels)
+    assert mock_async_push_directory.call_count == 2 * len(mock_outputs_labels)
 
 
 def _get_entrypoint_container_name(

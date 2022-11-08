@@ -19,6 +19,8 @@ class TutorialBase {
     this.__page = null;
     this.__responsesQueue = null;
 
+    this.__services = null;
+
     this.__interval = null;
 
     this.__failed = false;
@@ -169,6 +171,9 @@ class TutorialBase {
         const resp = await this.__responsesQueue.waitUntilResponse(resource.request);
         const respData = resp["data"];
         console.log(resource.name + " received:", respData.length);
+        if (resource.name === "Services") {
+          this.__services = respData;
+        }
         if (resource.listThem) {
           respData.forEach(item => {
             console.log(" - ", item.name);
@@ -180,6 +185,10 @@ class TutorialBase {
         throw (err);
       }
     }
+  }
+
+  getReceivedServices() {
+    return this.__services;
   }
 
   async checkFirstStudyId(studyId) {
@@ -224,6 +233,28 @@ class TutorialBase {
     }
     await this.waitFor(2000);
     await this.takeScreenshot("startNewPlan_after");
+    return resp;
+  }
+
+  async startSim4LifeLight() {
+    await this.takeScreenshot("startSim4LifeLight_before");
+    this.__responsesQueue.addResponseListener("projects?from_study=");
+    this.__responsesQueue.addResponseListener(":open");
+    let resp = null;
+    try {
+      await this.waitFor(2000);
+      await auto.dashboardStartSim4LifeLight(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
+      resp = await this.__responsesQueue.waitUntilResponse(":open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(`Sim4Life Light could not be started:\n`, err);
+      throw (err);
+    }
+    await this.waitFor(2000);
+    await this.takeScreenshot("startSim4LifeLight_after");
     return resp;
   }
 
@@ -415,8 +446,7 @@ class TutorialBase {
     return nodeIframe;
   }
 
-  async openNodeFiles(nodePosInTree = 0) {
-    const nodeId = await auto.openNode(this.__page, nodePosInTree);
+  async openNodeFiles(nodeId) {
     this.__responsesQueue.addResponseListener("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     await auto.openNodeFiles(this.__page);
     try {
@@ -448,59 +478,71 @@ class TutorialBase {
     await this.waitAndClick("nodeDataManagerCloseBtn");
   }
 
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles = true, checkFileNames = true) {
-    try {
-      await this.openNodeFiles(nodePos);
-      await this.takeScreenshot("checkNodeOutputs_before");
-      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.map(el => el.textContent.trim()));
-      if (checkNFiles) {
-        assert(files.length === fileNames.length, 'Number of files is incorrect')
-        console.log('Number of files is correct')
+  async __checkNItemsInFolder(fileNames, openOutputsFolder = false) {
+    await this.takeScreenshot("checkNodeOutputs_before");
+    console.log("N items in folder. Expected:", fileNames);
+    if (openOutputsFolder) {
+      const itemTexts = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent)
+      );
+      console.log("Service data items", itemTexts);
+      const items = await this.__page.$$('[osparc-test-id="FolderViewerItem"]');
+      let outputsFound = false;
+      for (let i=0; i<items.length; i++) {
+        const text = await items[i].evaluate(el => el.textContent);
+        if (text.includes("output")) {
+          console.log("Opening outputs folder");
+          // that's the way to double click........
+          await items[i].click();
+          await items[i].click({
+            clickCount: 2
+          });
+          outputsFound = true;
+        }
       }
-      if (checkFileNames) {
-        assert(
-          fileNames.every(fileName => files.some(file => file.includes(fileName))),
-          'File names are incorrect'
-        )
-        console.log('File names are correct')
+      if (outputsFound) {
+        await this.takeScreenshot("outputs_folder");
+      }
+      else {
+        throw("outputs folder not found");
       }
     }
-    catch (err) {
-      console.error("Results don't match", err);
-      throw (err)
-    }
-    finally {
+    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+      elements => elements.map(el => el.textContent)
+    );
+    console.log("N items in folder. Received:", files);
+    if (files.length === fileNames.length) {
+      console.log("Number of files is correct")
       await this.takeScreenshot("checkNodeOutputs_after");
       await this.closeNodeFiles();
+    }
+    else {
+      await this.takeScreenshot("checkNodeOutputs_after");
+      await this.closeNodeFiles();
+      throw("Number of files is incorrect");
     }
   }
 
-  async checkNodeOutputsAppMode(nodeId, fileNames, checkNFiles = true, checkFileNames = true) {
+  async checkNodeOutputs(nodePos, fileNames, openOutputsFolder = false) {
     try {
-      await this.openNodeFilesAppMode(nodeId);
-      await this.takeScreenshot("checkNodeOutputs_before");
-      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-        elements => elements.map(el => el.textContent.trim()));
-      if (checkNFiles) {
-        assert(files.length === fileNames.length, 'Number of files is incorrect')
-        console.log('Number of files is correct')
-      }
-      if (checkFileNames) {
-        assert(
-          fileNames.every(fileName => files.some(file => file.includes(fileName))),
-          'File names are incorrect'
-        )
-        console.log('File names are correct')
-      }
+      const nodeId = await auto.openNode(this.__page, nodePos);
+      await this.openNodeFiles(nodeId);
+      await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
       console.error("Results don't match", err);
       throw (err)
     }
-    finally {
-      await this.takeScreenshot("checkNodeOutputs_after");
-      await this.closeNodeFiles();
+  }
+
+  async checkNodeOutputsAppMode(nodeId, fileNames, openOutputsFolder = false) {
+    try {
+      await this.openNodeFilesAppMode(nodeId);
+      await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
+    }
+    catch (err) {
+      console.error("Results don't match", err);
+      throw (err)
     }
   }
 
@@ -551,7 +593,8 @@ class TutorialBase {
       }
       if (i === nTries) {
         console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
-        this.fetchRemoveStudy(studyId)
+        // do not call the API
+        // this.fetchRemoveStudy(studyId)
       }
     }
     catch (err) {

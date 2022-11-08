@@ -116,7 +116,7 @@ codeformat: ## runs all code formatters. Use AFTER make install-*
 
 .PHONY: pyupgrade
 pyupgrade: ## upgrades python syntax for newer versions of the language (SEE https://github.com/asottile/pyupgrade)
-	@pre-commit pyupgrade --files $(shell find $(CURDIR) -type f -name '*.py')
+	@pre-commit run pyupgrade --files $(shell find $(CURDIR) -type f -name '*.py')
 
 
 .PHONY: pylint

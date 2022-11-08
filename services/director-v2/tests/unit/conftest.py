@@ -15,6 +15,7 @@ from typing import (
     Mapping,
 )
 
+import aiodocker
 import pytest
 import respx
 import traitlets.config
@@ -30,6 +31,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKeyVersion
+from pydantic import parse_obj_as
 from pydantic.types import NonNegativeInt
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
@@ -47,6 +49,9 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
     ServiceState,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
+    DockerVersion,
 )
 from yarl import URL
 
@@ -412,7 +417,7 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         return_value=[],
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils.are_all_services_present",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils.are_sidecar_and_proxy_services_present",
         autospec=True,
         return_value=True,
     )
@@ -420,3 +425,19 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
+
+
+@pytest.fixture
+async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
+    version_request = (
+        await async_docker_client._query_json(  # pylint: disable=protected-access
+            "version", versioned_api=False
+        )
+    )
+    return parse_obj_as(DockerVersion, version_request["Version"])

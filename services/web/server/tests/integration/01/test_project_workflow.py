@@ -1,6 +1,9 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 
 """
     TODO: move to system testing: shall test different workflows on framework studies (=project)

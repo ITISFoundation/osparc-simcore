@@ -1,6 +1,9 @@
 import logging
+from contextlib import AsyncExitStack
 from tempfile import TemporaryDirectory
+from typing import Any, Callable, Coroutine, Optional
 
+from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
 from aiohttp.web_request import FileField
 from models_library.projects_state import ProjectStatus
@@ -15,7 +18,7 @@ from .exceptions import ExporterException
 from .export_import import study_duplicate, study_export, study_import
 from .formatters import FormatterV1
 from .settings import get_plugin_settings
-from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
+from .utils import CleanupFileResponse
 
 ONE_GB: int = 1024 * 1024 * 1024
 
@@ -38,11 +41,10 @@ async def export_project(request: web.Request):
     `/tmp/SOME_TMP_DIR/` si removed from the disk."""
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-
-    temp_dir: str = await get_empty_tmp_dir()
     assert project_uuid  # nosec
+    delete_tmp_dir: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
     try:
-        async with lock_project(
+        async with AsyncExitStack() as tmp_dir_stack, lock_project(
             request.app,
             project_uuid,
             ProjectStatus.EXPORTING,
@@ -52,9 +54,10 @@ async def export_project(request: web.Request):
             await retrieve_and_notify_project_locked_state(
                 user_id, project_uuid, request.app
             )
+            tmp_dir = await tmp_dir_stack.enter_async_context(AioTemporaryDirectory())
             file_to_download = await study_export(
                 app=request.app,
-                tmp_dir=temp_dir,
+                tmp_dir=f"{tmp_dir}",
                 project_id=project_uuid,
                 user_id=user_id,
                 product_name=request[RQ_PRODUCT_KEY],
@@ -66,10 +69,8 @@ async def export_project(request: web.Request):
                 raise ExporterException(
                     f"Must provide a file to download, not {str(file_to_download)}"
                 )
-    except Exception as e:
-        # make sure all errors are trapped and the directory where the file is sotred is removed
-        await remove_dir(temp_dir)
-        raise e
+            # this allows to transfer deletion of the tmp dir responsibility
+            delete_tmp_dir = tmp_dir_stack.pop_all().aclose
     finally:
         await retrieve_and_notify_project_locked_state(
             user_id, project_uuid, request.app
@@ -78,7 +79,7 @@ async def export_project(request: web.Request):
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
 
     return CleanupFileResponse(
-        temp_dir=temp_dir, path=file_to_download, headers=headers
+        remove_tmp_dir_cb=delete_tmp_dir, path=file_to_download, headers=headers
     )
 
 
@@ -105,16 +106,14 @@ async def import_project(request: web.Request):
     if not isinstance(file_name_field, FileField):
         raise ExporterException("Please select a file")
 
-    temp_dir: str = await get_empty_tmp_dir()
-
-    imported_project_uuid = await study_import(
-        app=request.app,
-        temp_dir=temp_dir,
-        file_field=file_name_field,
-        user_id=user_id,
-        product_name=product_name,
-    )
-    await remove_dir(directory=temp_dir)
+    async with AioTemporaryDirectory() as tmp_dir:
+        imported_project_uuid = await study_import(
+            app=request.app,
+            temp_dir=f"{tmp_dir}",
+            file_field=file_name_field,
+            user_id=user_id,
+            product_name=product_name,
+        )
 
     return dict(uuid=imported_project_uuid)
 

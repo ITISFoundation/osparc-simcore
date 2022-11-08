@@ -6,6 +6,7 @@
 import httpx
 import pytest
 import simcore_service_api_server.api.routes.solvers
+from pytest_mock import MockFixture
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.solvers import Solver
 from starlette import status
@@ -15,7 +16,7 @@ from starlette import status
 async def test_list_solvers(
     client: httpx.AsyncClient,
     mocked_catalog_service_api: MockRouter,
-    mocker,
+    mocker: MockFixture,
 ):
     warn = mocker.patch.object(
         simcore_service_api_server.api.routes.solvers.logger, "warning"
@@ -60,3 +61,29 @@ async def test_list_solvers(
         assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
 
         # assert Solver(**resp2.json()) == Solver(**resp3.json())
+
+
+async def test_list_solver_ports(
+    mocked_catalog_service_api: MockRouter,
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+):
+    resp = await client.get(
+        "/v0/solvers/simcore/services/comp/itis/sleeper/releases/2.1.4/ports",
+        auth=auth,
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    assert resp.json() == [
+        {
+            "key": "input_1",
+            "kind": "input",
+            "content_schema": {
+                "title": "Sleep interval",
+                "type": "integer",
+                "x_unit": "second",
+                "minimum": 0,
+                "maximum": 5,
+            },
+        }
+    ]

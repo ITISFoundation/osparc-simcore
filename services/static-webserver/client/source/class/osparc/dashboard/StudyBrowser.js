@@ -48,6 +48,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         decription: "New sim4life project",
         idToWidget: "startS4LButton"
       }
+    },
+    EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
+      "simcore/services/dynamic/sim4life-dy": {
+        title: "Start sim4life",
+        decription: "New sim4life project",
+        idToWidget: "startS4LButton"
+      }
     }
   },
 
@@ -142,9 +149,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyButtons: function(mode = "grid") {
       this.__addNewStudyButton(mode);
       if (osparc.utils.Utils.isProduct("tis")) {
-        this.__replaceNewStudyWithNewPlanButton(mode);
+        this.__removeNewStudyButtons();
+        this.__addNewPlanButton(mode);
       } else if (osparc.utils.Utils.isProduct("s4l")) {
-        this.__addNewStudyFromServiceButtons(mode);
+        this.__addNewS4LServiceButtons(mode);
+      } else if (osparc.utils.Utils.isProduct("s4llight")) {
+        this.__removeNewStudyButtons();
+        this.__addNewS4LLightServiceButtons(mode);
       }
     },
 
@@ -170,13 +181,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addAt(newStudyBtn, 0);
     },
 
-    __replaceNewStudyWithNewPlanButton: function(mode) {
+    __addNewPlanButton: function(mode) {
       osparc.data.Resources.get("templates")
         .then(templates => {
           // replace if a "TI Planning Tool" template exists
           const templateData = templates.find(t => t.name === this.self().EXPECTED_TI_TEMPLATE_TITLE);
           if (templateData) {
-            this.__removeNewStudyButtons();
             const title = this.tr("New Plan");
             const desc = this.tr("Start a new plan");
             const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
@@ -191,26 +201,43 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewStudyFromServiceButtons: function(mode) {
+    __addNewStudyFromServiceButtons: function(mode, services, serviceKey, newButtonInfo) {
+      // Make sure we have access to that service
+      const versions = osparc.utils.Services.getVersions(services, serviceKey);
+      if (versions.length && newButtonInfo) {
+        const title = newButtonInfo.title;
+        const desc = newButtonInfo.decription;
+        const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+        osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
+        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
+        if (this._resourcesContainer.getMode() === "list") {
+          const width = this._resourcesContainer.getBounds().width - 15;
+          newStudyFromServiceButton.setWidth(width);
+        }
+        this._resourcesContainer.addAt(newStudyFromServiceButton, 1);
+      }
+    },
+
+    __addNewS4LServiceButtons: function(mode) {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly(false)
         .then(services => {
           // add new plus buttons if key services exists
-          Object.keys(this.self().EXPECTED_S4L_SERVICE_KEYS).forEach(serviceKey => {
-            const versions = osparc.utils.Services.getVersions(services, serviceKey);
-            if (versions.length) {
-              const newButtonInfo = this.self().EXPECTED_S4L_SERVICE_KEYS[serviceKey];
-              const title = newButtonInfo.title;
-              const desc = newButtonInfo.decription;
-              const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-              osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-              newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
-              if (this._resourcesContainer.getMode() === "list") {
-                const width = this._resourcesContainer.getBounds().width - 15;
-                newStudyFromServiceButton.setWidth(width);
-              }
-              this._resourcesContainer.addAt(newStudyFromServiceButton, 1);
-            }
+          const newButtonsInfo = this.self().EXPECTED_S4L_SERVICE_KEYS;
+          Object.keys(newButtonsInfo).forEach(serviceKey => {
+            this.__addNewStudyFromServiceButtons(mode, services, serviceKey, newButtonsInfo[serviceKey]);
+          });
+        });
+    },
+
+    __addNewS4LLightServiceButtons: function(mode) {
+      const store = osparc.store.Store.getInstance();
+      store.getServicesOnly(false)
+        .then(services => {
+          // add new plus buttons if key services exists
+          const newButtonsInfo = this.self().EXPECTED_S4L_LIGHT_SERVICE_KEYS;
+          Object.keys(newButtonsInfo).forEach(serviceKey => {
+            this.__addNewStudyFromServiceButtons(mode, services, serviceKey, newButtonsInfo[serviceKey]);
           });
         });
     },
@@ -583,6 +610,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
+      const studyDataButton = this.__getStudyDataMenuButton(studyData);
+      menu.add(studyDataButton);
+
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
@@ -634,6 +664,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
           console.error(err);
         });
+    },
+
+    __getStudyDataMenuButton: function(studyData) {
+      const studyDataButton = new qx.ui.menu.Button(this.tr("Study data"));
+      studyDataButton.addListener("execute", () => {
+        const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
+        osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({
+          appearance: "service-window"
+        });
+      }, this);
+      return studyDataButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {
@@ -726,7 +767,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
 
       task.addListener("taskAborted", () => {
-        const msg = this.tr("Duplication aborted");
+        const msg = this.tr("Duplication cancelled");
         finished(msg, "INFO");
       });
       task.addListener("resultReceived", e => {

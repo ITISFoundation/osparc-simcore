@@ -322,6 +322,8 @@ async def get_job_output_logfile(
 
     NOTE: this is not a log stream but a predefined output that is only
     available after the job is done.
+
+    New in *version 0.4.0*
     """
 
     logs_urls: dict[NodeName, DownloadLink] = await director2_api.get_computation_logs(

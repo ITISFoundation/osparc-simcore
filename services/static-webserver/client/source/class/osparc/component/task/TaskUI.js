@@ -105,7 +105,20 @@ qx.Class.define("osparc.component.task.TaskUI", {
       task.bind("abortHref", stopButton, "visibility", {
         converter: abortHref => abortHref ? "visible" : "excluded"
       });
-      stopButton.addListener("tap", () => task.abortRequested(), this);
+      stopButton.addListener("tap", () => {
+        const msg = this.tr("Are you sure you want to cancel the task?");
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Cancel"),
+          confirmAction: "delete"
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            task.abortRequested();
+          }
+        }, this);
+      }, this);
     },
 
     start: function() {

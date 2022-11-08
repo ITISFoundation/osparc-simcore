@@ -2,10 +2,10 @@ import logging
 from typing import Callable
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 
 from ..meta import __version__, project_name
 from ..modules.remote_debug import setup_remote_debugging
-from .settings import BootModeEnum
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ ________             __                                               _____     
  |    |  \ \__  \  \   __\_/ ___\  /  _ \ \_  __ \_/ __ \   ______  /  /_\  \  / __ | \__  \  \____ \ \   __\_/ __ \ \_  __ \
  |    `   \ / __ \_ |  |  \  \___ (  <_> ) |  | \/\  ___/  /_____/ /    |    \/ /_/ |  / __ \_|  |_> > |  |  \  ___/  |  | \/
 /_______  /(____  / |__|   \___  > \____/  |__|    \___  >         \____|__  /\____ | (____  /|   __/  |__|   \___  > |__|
-        \/      \/             \/                      \/                  \/      \/      \/ |__|                \/              {0}
+        \/      \/             \/                      \/                  \/      \/      \/ |__|                \/              {}
 """.format(
     f"v{__version__}"
 )

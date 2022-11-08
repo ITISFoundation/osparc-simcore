@@ -1,4 +1,13 @@
 name: CI
+# NOTE: this CI workflow is running a number of unit/integration/system tests jobs
+# and also builds a set of "test" docker images (required for integration/system tests)
+# if all tests are passing, and the CI runs on the master branch, then it will also deploy
+# the "test" docker images to dockerhub registry
+#
+# in PRs: only the jobs that needs to run will be run by detecting file changes
+#
+# NOTE2: to keep the github branch protection simpler, the required jobs are the ones named:
+# unit-tests, integration-tests, and system-tests
 
 on:
   push:
@@ -7,17 +16,18 @@ on:
     tags-ignore:
       - "*"
     paths:
+      - "!.vscode/**"
       - "!*.md"
       - "!*.png"
       - "!*.svg"
       - "!docs/**"
-      - "!.vscode/**"
-      - "**.py"
+      - ".github/workflows/ci-testing-deploy.yml"
       - "**.js"
-      - "**/requirements/*.txt"
       - "**.json"
       - "**.Makefile"
-      - ".github/workflows/ci-testing-deploy.yml"
+      - "**.py"
+      - "**/requirements/*.txt"
+      - "**/services/docker-compose*"
       - "ci/**"
   pull_request:
     branches:
@@ -37,18 +47,125 @@ on:
       - ".github/workflows/ci-testing-deploy.yml"
       - "ci/**"
 env:
-  # secrets can be set in settings/secrets on github
-  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  CC_TEST_REPORTER_ID: 21a72eb30476c870140b1576258873a41be6692f71bd9aebe812174b7d8f4b4e
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    name: detect file changes since last push
+    runs-on: ubuntu-latest
+    # Set job outputs to values from filter step
+    outputs:
+      dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
+      models-library: ${{ steps.filter.outputs.models-library }}
+      postgres-database: ${{ steps.filter.outputs.postgres-database }}
+      service-integration: ${{ steps.filter.outputs.service-integration }}
+      service-library: ${{ steps.filter.outputs.service-library }}
+      settings-library: ${{ steps.filter.outputs.settings-library }}
+      simcore-sdk: ${{ steps.filter.outputs.simcore-sdk }}
+      agent: ${{ steps.filter.outputs.agent }}
+      api: ${{ steps.filter.outputs.api }}
+      api-server: ${{ steps.filter.outputs.api-server }}
+      autoscaling: ${{ steps.filter.outputs.autoscaling }}
+      catalog: ${{ steps.filter.outputs.catalog }}
+      dask-sidecar: ${{ steps.filter.outputs.dask-sidecar }}
+      datcore-adapter: ${{ steps.filter.outputs.datcore-adapter }}
+      director: ${{ steps.filter.outputs.director }}
+      director-v2: ${{ steps.filter.outputs.director-v2 }}
+      dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
+      migration: ${{ steps.filter.outputs.migration }}
+      static-webserver: ${{ steps.filter.outputs.static-webserver }}
+      storage: ${{ steps.filter.outputs.storage }}
+      webserver: ${{ steps.filter.outputs.webserver }}
+      anything: ${{ steps.filter.outputs.anything }}
+      anything-py: ${{ steps.filter.outputs.anything-py }}
+      anything-js: ${{ steps.filter.outputs.anything-js }}
+    steps:
+      - uses: actions/checkout@v3
+        if: ${{ github.event_name == 'push' }}
+      # For pull requests it's not necessary to checkout the code
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            dask-task-models-library:
+              - 'packages/dask-task-models-library/**'
+              - 'packages/pytest-simcore/**'
+            models-library:
+              - 'packages/models-library/**'
+              - 'packages/postgres-database/**'
+              - 'packages/pytest-simcore/**'
+            postgres-database:
+              - 'packages/postgres-database/**'
+              - 'packages/pytest-simcore/**'
+            service-integration:
+              - 'packages/models-library/**'
+              - 'packages/pytest-simcore/**'
+              - 'packages/service-integration/**'
+            service-library:
+              - 'packages/pytest-simcore/**'
+              - 'packages/service-library/**'
+            settings-library:
+              - 'packages/pytest-simcore/**'
+              - 'packages/settings-library/**'
+            simcore-sdk:
+              - 'packages/**'
+            agent:
+              - 'packages/**'
+              - 'services/agent/**'
+            api:
+              - 'api/**'
+            api-server:
+              - 'packages/**'
+              - 'services/api-server/**'
+            autoscaling:
+              - 'packages/**'
+              - 'services/autoscaling/**'
+            catalog:
+              - 'packages/**'
+              - 'services/catalog/**'
+            dask-sidecar:
+              - 'packages/**'
+              - 'services/dask-sidecar/**'
+            datcore-adapter:
+              - 'packages/**'
+              - 'services/datcore-adapter/**'
+            director:
+              - 'packages/**'
+              - 'services/director/**'
+            director-v2:
+              - 'packages/**'
+              - 'services/director-v2/**'
+            dynamic-sidecar:
+              - 'packages/**'
+              - 'services/dynamic-sidecar/**'
+            migration:
+              - 'packages/**'
+              - 'services/migration/**'
+            static-webserver:
+              - 'services/static-webserver/**'
+            storage:
+              - 'packages/**'
+              - 'services/storage/**'
+            webserver:
+              - 'packages/**'
+              - 'services/web/**'
+            anything:
+              - 'packages/**'
+              - 'services/**'
+            anything-py:
+              - '**/*.py'
+            anything-js:
+              - '**/*.js'
   build-test-images:
     # this step comes first, so that it is executed as first job in push calls
     # in PR calls this step is anyway skipped
+    needs: changes
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -78,15 +195,17 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner. temp }}/build
-          make build local-dest=/${{ runner. temp }}/build
+          mkdir --parents /${{ runner.temp }}/build
+          make build local-dest=/${{ runner.temp }}/build
       - name: upload build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
 
   unit-test-webserver-01:
+    needs: changes
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
@@ -127,18 +246,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
+    needs: changes
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
@@ -177,18 +288,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
+    needs: changes
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
@@ -227,18 +330,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
+    needs: changes
+    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] storage"
     runs-on: ${{ matrix.os }}
@@ -277,18 +372,57 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/storage/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
+
+  unit-test-agent:
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] agent"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
         with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/agent/requirements/ci.txt"
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/agent.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/agent.bash typecheck
+      - name: test
+        if: always()
+        run: ./ci/github/unit-testing/agent.bash test
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
 
   unit-test-api:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api"
     runs-on: ${{ matrix.os }}
@@ -326,6 +460,8 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
 
   unit-test-api-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
@@ -364,18 +500,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/api-server/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-autoscaling:
+    needs: changes
+    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
@@ -414,18 +542,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json services/autoscaling/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
+    needs: changes
+    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
@@ -470,18 +590,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/catalog/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-datcore-adapter:
+    needs: changes
+    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] datcore-adapter"
     runs-on: ${{ matrix.os }}
@@ -515,7 +627,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: failure()
@@ -526,18 +641,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/datcore-adapter/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
+    needs: changes
+    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
@@ -577,18 +684,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --output codeclimate.${{ github.job }}_coverage.json services/director/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
+    needs: changes
+    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] director-v2"
     runs-on: ${{ matrix.os }}
@@ -633,18 +732,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-task-models-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.dask-task-models-library == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-task-models-library"
     runs-on: ${{ matrix.os }}
@@ -678,25 +769,18 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
-      - name: codestyle
-        run: ./ci/github/unit-testing/dask-task-models-library.bash codestyle
+      - name: typecheck
+        run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/dask-task-models-library/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dask-sidecar:
+    needs: changes
+    if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dask-sidecar"
     runs-on: ${{ matrix.os }}
@@ -735,18 +819,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/dask-sidecar/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-dynamic-sidecar:
+    needs: changes
+    if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
@@ -780,25 +856,18 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
-      - name: codestyle
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
+      - name: typecheck
+        run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/dynamic-sidecar/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.static-webserver == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
@@ -822,7 +891,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - uses: actions/setup-node@v3.5.0
+      - uses: actions/setup-node@v3.5.1
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -838,12 +907,14 @@ jobs:
     #     flags: unittests #optional
 
   unit-test-python-linting:
+    needs: changes
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9", "3.10"]
+        python: ["3.9", "3.10", "3.11"]
         os: [ubuntu-20.04]
         docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
@@ -875,6 +946,8 @@ jobs:
         run: ./ci/github/unit-testing/python-linting.bash test
 
   unit-test-postgres-database:
+    needs: changes
+    if: ${{ needs.changes.outputs.postgres-database == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] postgres-database"
     runs-on: ${{ matrix.os }}
@@ -908,24 +981,18 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
-          ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/postgres-database/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.service-integration == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-integration"
     runs-on: ${{ matrix.os }}
@@ -964,18 +1031,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/service-integration/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
@@ -1014,18 +1073,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/service-library/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-settings-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.settings-library == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] settings-library"
     runs-on: ${{ matrix.os }}
@@ -1064,18 +1115,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/settings-library/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.models-library == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] models-library"
     runs-on: ${{ matrix.os }}
@@ -1114,18 +1157,10 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/models-library/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
+    needs: changes
+    if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] simcore-sdk"
     runs-on: ${{ matrix.os }}
@@ -1149,7 +1184,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4
@@ -1166,21 +1201,46 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/simcore-sdk/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-tests:
+    # NOTE: this is a github required status check!
+    if: always()
+    needs:
+      [
+        unit-test-agent,
+        unit-test-api,
+        unit-test-api-server,
+        unit-test-autoscaling,
+        unit-test-catalog,
+        unit-test-dask-sidecar,
+        unit-test-dask-task-models-library,
+        unit-test-datcore-adapter,
+        unit-test-director,
+        unit-test-director-v2,
+        unit-test-dynamic-sidecar,
+        unit-test-frontend,
+        unit-test-models-library,
+        unit-test-postgres-database,
+        unit-test-python-linting,
+        unit-test-service-integration,
+        unit-test-service-library,
+        unit-test-settings-library,
+        unit-test-simcore-sdk,
+        unit-test-storage,
+        unit-test-webserver-01,
+        unit-test-webserver-02,
+        unit-test-webserver-03,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: all unit tests were run or skipped
+        run: echo "all unit tests were run or skipped"
 
   integration-test-webserver-01:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1193,12 +1253,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1218,9 +1272,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1239,21 +1293,12 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-02:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1266,12 +1311,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1293,9 +1332,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1314,21 +1353,12 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/web/server/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-01:
-    timeout-minutes: 35 # FIXME: temporary up (PC). if this timeout gets too small, then split the tests
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push'}}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1341,12 +1371,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1368,9 +1392,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1389,21 +1413,12 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-02:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] director-v2 02"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1416,12 +1431,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1446,9 +1455,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1467,21 +1476,12 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests #optional
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json services/director-v2/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1494,12 +1494,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1509,7 +1503,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone in CI
+      - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v4
@@ -1517,15 +1511,13 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
       - name: download docker images
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1544,21 +1536,28 @@ jobs:
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: integrationtests
-      - name: prepare codeclimate coverage file
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage --input-type coverage.py --prefix=/ --output codeclimate.${{ github.job }}_coverage.json packages/simcore-sdk/coverage.xml
-      - name: store codeclimate coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeclimate-${{ github.job }}-coverage
-          path: codeclimate.${{ github.job }}_coverage.json
+
+  integration-tests:
+    # NOTE: this is a github required status check!
+    if: always()
+    needs:
+      [
+        integration-test-director-v2-01,
+        integration-test-director-v2-02,
+        integration-test-simcore-sdk,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: all unit tests were run or skipped
+        run: echo "all unit tests were run or skipped"
 
   system-test-public-api:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1571,12 +1570,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1598,9 +1591,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1618,9 +1611,10 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1633,12 +1627,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1660,9 +1648,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1680,9 +1668,10 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
-    needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1696,12 +1685,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1717,7 +1700,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v3.5.0
+      - uses: actions/setup-node@v3.5.1
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1728,9 +1711,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner. temp }}/build
+          path: /${{ runner.temp }}/build
       - name: load docker images
-        run: make load-images local-src=/${{ runner. temp }}/build
+        run: make load-images local-src=/${{ runner.temp }}/build
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -1778,12 +1761,6 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - name: set PR default variables
-        # only pushes have access to the docker credentials, use a default
-        if: github.event_name == 'pull_request'
-        run: |
-          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
-          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
@@ -1809,98 +1786,25 @@ jobs:
         if: always()
         run: ./ci/github/system-testing/environment-setup.bash clean_up
 
-  coverage:
+  system-tests:
+    # NOTE: this is a github required status check!
+    if: always()
     needs:
       [
-        unit-test-api-server,
-        unit-test-autoscaling,
-        unit-test-catalog,
-        unit-test-datcore-adapter,
-        unit-test-director,
-        unit-test-director-v2,
-        unit-test-dynamic-sidecar,
-        unit-test-dask-task-models-library,
-        unit-test-dask-sidecar,
-        unit-test-service-integration,
-        unit-test-service-library,
-        unit-test-settings-library,
-        unit-test-models-library,
-        unit-test-simcore-sdk,
-        unit-test-storage,
-        unit-test-webserver-01,
-        unit-test-webserver-02,
-        unit-test-webserver-03,
-        integration-test-webserver-01,
-        integration-test-webserver-02,
-        integration-test-director-v2-01,
-        integration-test-director-v2-02,
-        integration-test-simcore-sdk,
+        system-test-e2e,
+        system-test-environment-setup,
+        system-test-public-api,
+        system-test-swarm-deploy,
       ]
-    name: coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-        name: download all artifacts
-        with:
-          path: artifacts
-      - name: put all artefacts together
-        run: |
-          mkdir --parents all_coverages
-          cp artifacts/codeclimate*/*.json all_coverages
-          ls --all -l all_coverages/*.json
-      - name: install codeclimate test reporter
-        run: |
-          curl --location https://codeclimate.com/downloads/test-reporter/test-reporter-0.10.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-      - name: notify of pending code climate coverage
-        run: |
-          ./cc-test-reporter before-build
-      - name: sum all coverage
-        run: |
-          ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines) --debug --output summed_codeclimate.json
-      - name: show coverage
-        run: |
-          ./cc-test-reporter show-coverage summed_codeclimate.json
-      - name: upload coverages
-        run: |
-          ./cc-test-reporter upload-coverage --input summed_codeclimate.json
+      - name: all unit tests were run or skipped
+        run: echo "all unit tests were run or skipped"
 
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs:
-      [
-        unit-test-api-server,
-        unit-test-autoscaling,
-        unit-test-api,
-        unit-test-catalog,
-        unit-test-dask-sidecar,
-        unit-test-dask-task-models-library,
-        unit-test-datcore-adapter,
-        unit-test-director-v2,
-        unit-test-director,
-        unit-test-dynamic-sidecar,
-        unit-test-frontend,
-        unit-test-models-library,
-        unit-test-postgres-database,
-        unit-test-python-linting,
-        unit-test-service-integration,
-        unit-test-service-library,
-        unit-test-settings-library,
-        unit-test-simcore-sdk,
-        unit-test-storage,
-        unit-test-webserver-01,
-        unit-test-webserver-02,
-        unit-test-webserver-03,
-        integration-test-director-v2-01,
-        integration-test-director-v2-02,
-        integration-test-simcore-sdk,
-        integration-test-webserver-01,
-        integration-test-webserver-02,
-        system-test-public-api,
-        system-test-swarm-deploy,
-      ]
+    needs: [unit-tests, integration-tests, system-tests]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1912,6 +1816,11 @@ jobs:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
+    env:
+      # secrets can be set in settings/secrets on github
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
       - name: setup docker buildx
@@ -1922,20 +1831,28 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: |
+          make load-images local-src=/${{ runner.temp }}/build
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'
         name: deploy master image
         env:
           TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: contains(github.ref, 'refs/heads/hotfix_v')
         name: deploy release hotfix image
         env:
           TAG_PREFIX: hotfix-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n
       - if: contains(github.ref, 'refs/heads/hotfix_staging_')
         name: deploy staging hotfix image
         env:
           TAG_PREFIX: hotfix-staging-github
-        run: ./ci/deploy/dockerhub-deploy.bash
+        run: ./ci/deploy/dockerhub-deploy.bash -n

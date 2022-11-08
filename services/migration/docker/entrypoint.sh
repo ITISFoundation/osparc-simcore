@@ -16,8 +16,15 @@ echo "$INFO" "pip : $(command -v pip)"
 echo "$INFO ${SC_USER_NAME} rights    : $(id "$SC_USER_NAME")"
 echo "$INFO local dir : $(ls -al)"
 
+if [ -f ${SC_DONE_MARK_FILE} ];then
+    rm "${SC_DONE_MARK_FILE}"
+fi
+
 echo "$INFO Starting migration ..."
 sc-pg upgrade-and-close
 
+echo "DONE" > "${SC_DONE_MARK_FILE}"
+
 echo "$INFO Migration Done. Wait forever ..."
+# TODO: perhaps we should simply stop???
 exec tail -f /dev/null

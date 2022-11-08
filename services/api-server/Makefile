@@ -87,10 +87,11 @@ run-fake-devel: # starts a fake server in a dev-container
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json
 openapi.json: .env
-	# generating openapi specs file under $<
+	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
 	@set -o allexport; \
 	source .env; \
 	set +o allexport; \
+	export API_SERVER_DEV_FEATURES_ENABLED=0; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@

@@ -1,7 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import random
 from copy import deepcopy
@@ -174,6 +174,8 @@ async def test_list_groups(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_group_creation_workflow(client, logged_user, user_role, expected):
+    # pylint: disable=too-many-statements
+
     url = client.app.router["create_group"].url_for()
     assert str(url) == f"{PREFIX}"
 
@@ -278,6 +280,7 @@ async def test_add_remove_users_from_group(
     expected,
     create_user: Callable,
 ):
+    # pylint: disable=too-many-statements
 
     new_group = {
         "gid": "5",

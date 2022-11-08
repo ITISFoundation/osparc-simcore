@@ -134,6 +134,16 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}/nodes"
           },
+          startNode: {
+            useCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}:start"
+          },
+          stopNode: {
+            useCache: false,
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}:stop"
+          },
           getNode: {
             useCache: false,
             method: "GET",

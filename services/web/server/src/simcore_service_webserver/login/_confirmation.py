@@ -29,12 +29,11 @@ async def validate_confirmation_code(
         {"code": code}
     )
     if confirmation and is_confirmation_expired(cfg, confirmation):
-        log.info(
-            "Confirmation code '%s' %s. Deleting ...",
-            code,
-            "consumed" if confirmation else "expired",
-        )
         await db.delete_confirmation(confirmation)
+        log.warning(
+            "Used expired token [%s]. Deleted from confirmations table.",
+            confirmation,
+        )
         return None
     return confirmation
 
@@ -68,6 +67,10 @@ async def is_confirmation_allowed(
         return True
     if is_confirmation_expired(cfg, confirmation):
         await db.delete_confirmation(confirmation)
+        log.warning(
+            "Used expired token [%s]. Deleted from confirmations table.",
+            confirmation,
+        )
         return True
 
 

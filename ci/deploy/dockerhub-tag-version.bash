@@ -6,6 +6,7 @@ set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 my_dir="$(dirname "$0")"
+# shellcheck source=/dev/null
 source "$my_dir/../../scripts/helpers/logger.bash"
 
 # check script needed variables

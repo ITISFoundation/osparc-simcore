@@ -8,7 +8,6 @@
 
 # installs base + tests requirements
 --requirement _base.txt
---requirement _packages.txt
 --requirement _test.txt
 
 # installs this repo's packages

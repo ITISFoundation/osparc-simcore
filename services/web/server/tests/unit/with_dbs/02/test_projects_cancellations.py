@@ -271,8 +271,8 @@ async def test_copying_too_large_project_returns_422(
     large_project_total_size = (
         app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
     )
-    storage_subsystem_mock.get_project_total_size.return_value = parse_obj_as(
-        ByteSize, large_project_total_size
+    storage_subsystem_mock.get_project_total_size_simcore_s3.return_value = (
+        parse_obj_as(ByteSize, large_project_total_size)
     )
 
     # POST /v0/projects

@@ -244,11 +244,11 @@ async def get_file_access_rights(
         # 2. file is NOT registered in meta-data table e.g. it is about to be uploaded or it was deleted
         #    We rely on the assumption that file_id is formatted either as
         #
-        #       - project's data: {project_id}/{node_id}/{filename}
-        #       - API data:       api/{file_id}/{filename}
+        #       - project's data: {project_id}/{node_id}/{filename/with/possible/folders}
+        #       - API data:       api/{file_id}/{filename/with/possible/folders}
         #
         try:
-            parent, _, _ = file_id.split("/")
+            parent, _, _ = file_id.split("/", maxsplit=2)
 
             if parent == "api":
                 # FIXME: this is wrong, all api data must be registered and OWNED

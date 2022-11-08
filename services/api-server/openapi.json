@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public web API specifications",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
       "altText": "osparc-simcore logo"
@@ -1000,7 +1000,7 @@
           "solvers"
         ],
         "summary": "Get Job Output Logfile",
-        "description": "Special extra output with persistent logs file for the solver run.\n\nNOTE: this is not a log stream but a predefined output that is only\navailable after the job is done.",
+        "description": "Special extra output with persistent logs file for the solver run.\n\nNOTE: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
         "operationId": "get_job_output_logfile",
         "parameters": [
           {
@@ -1637,7 +1637,14 @@
             "title": "Location",
             "type": "array",
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
             }
           },
           "msg": {

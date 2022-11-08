@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 import time
 from random import randint
-from typing import Callable, Dict, List
+from typing import Callable
 from uuid import uuid4
 
 import pytest
@@ -29,7 +29,7 @@ from simcore_service_webserver.resource_manager.websocket_manager import (
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: Dict[str, str], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
 ):
     monkeypatch.setenv("RESOURCE_MANAGER_RESOURCE_TTL_S", "3")
 
@@ -68,8 +68,8 @@ def redis_registry(redis_enabled_app: web.Application) -> RedisResourceRegistry:
 
 @pytest.fixture
 def create_user_ids():
-    def _do(number: int) -> List[int]:
-        return [i for i in range(number)]
+    def _do(number: int) -> list[int]:
+        return list(range(number))
 
     return _do
 
@@ -240,7 +240,7 @@ async def test_websocket_manager(
                 }
                 # resource key shall be filled
                 assert await rt.find(res_key) == [res_value]
-                list_of_same_resource_users: List[
+                list_of_same_resource_users: list[
                     UserSessionID
                 ] = await rt.find_users_of_resource(res_key, res_value)
                 assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(

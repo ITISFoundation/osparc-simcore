@@ -6,26 +6,18 @@
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
 --constraint _base.txt
---constraint _packages.txt
 
-# testing
 coverage
+coveralls
+docker
+faker
+minio
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-icdiff
 pytest-instafail
+pytest-localftpserver
 pytest-mock
 pytest-sugar
-pytest-localftpserver
-
-# fixtures
-docker
 python-dotenv
-faker
-minio
-
-# tools for CI
-pylint
-coveralls
-ptvsd

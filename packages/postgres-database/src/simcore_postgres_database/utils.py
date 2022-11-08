@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import sqlalchemy as sa
 from sqlalchemy.engine import Engine
@@ -66,7 +66,7 @@ def hide_url_pass(url: Union[str, URL]) -> str:
     return _URL_PASS_RE.sub(":********@", str(url))
 
 
-def hide_dict_pass(data: Dict) -> Dict:
+def hide_dict_pass(data: dict) -> dict:
     data_clone = deepcopy(data)
     for key in data_clone:
         if "pass" in key:

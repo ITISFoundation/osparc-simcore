@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
 
 from ...models.domains.user import Profile
@@ -17,11 +18,14 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
     response_model=Profile,
 )
+@cancel_on_disconnect
 async def get_user_profile(
+    request: Request,
     x_datcore_api_key: str = Header(..., description="Datcore API Key"),
     x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
 ):
+    assert request  # nosec
     return await pennsieve_client.get_user_profile(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,

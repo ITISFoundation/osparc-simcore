@@ -1,17 +1,12 @@
 from datetime import datetime
 
+from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
 from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.types import constr
 
-from .basic_regex import SEMANTIC_VERSION_RE
-
-# TODO: create https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types for packaging.version.Version
-# We needdefine __modify_schema__ (see how is done with UUID in pydantic) and a validator that
-# allows parsing from string as well
-#
-VersionStr = constr(regex=SEMANTIC_VERSION_RE)
+SemanticVersionStr = constr(regex=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 
 
 def bump_version_string(current_version: str, bump: str) -> str:
@@ -50,7 +45,7 @@ class ExecutableVersionInfo(BaseModel):
     display_version: str
     description: str
     name: str
-    version: VersionStr
+    version: SemanticVersionStr
     released: datetime
 
     class Config:
@@ -67,8 +62,8 @@ class ExecutableVersionInfo(BaseModel):
 
 
 class ServiceVersionInfo(BaseModel):
-    version: VersionStr
-    integration_version: VersionStr = Field(
+    version: SemanticVersionStr
+    integration_version: SemanticVersionStr = Field(
         ..., description="osparc internal integration version"
     )
     released: datetime = Field(..., description="Publication/release date")

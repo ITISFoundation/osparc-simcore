@@ -295,7 +295,9 @@ def simcore_file_id(
     faker: Faker,
 ) -> SimcoreS3FileID:
     return create_simcore_file_id(
-        project_id, node_id, f"öä$äö2-34 name in to add complexity {faker.file_name()}"
+        project_id,
+        node_id,
+        f"some_folder/another/öä$äö2-34 name in to add complexity {faker.file_name()}",
     )
 
 

@@ -7,7 +7,7 @@ import re
 import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Iterator, Tuple
+from typing import Iterator
 
 import pytest
 import sqlalchemy as sa
@@ -108,20 +108,11 @@ FAKE_VIEWS_LIST = [
 ]
 
 
-@pytest.fixture()
-def patch_list_viewers_info_in_handlers_rest(mocker):
-    mocker.patch(
-        "simcore_service_webserver.studies_dispatcher.handlers_rest.list_viewers_info",
-        return_value=future_with_result(FAKE_VIEWS_LIST),
-    )
-
-
 @pytest.fixture
 def app_cfg(
     default_app_cfg,
     unused_tcp_port_factory,
     redis_service: URL,
-    # patch_list_viewers_info_in_handlers_rest,
     inject_tables,
 ):
     """App's configuration used for every test in this module
@@ -395,7 +386,7 @@ async def test_dispatch_viewer_anonymously(
     assert mock_client_director_v2_func.called
 
 
-def assert_error_in_fragment(resp: ClientResponse) -> Tuple[str, int]:
+def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/error\?(.+)", unquoted_fragment)

@@ -23,6 +23,7 @@ _EXPECTED_ORDER = [
     ServiceState.PULLING,
     ServiceState.STARTING,
     ServiceState.RUNNING,
+    ServiceState.STOPPING,
     ServiceState.COMPLETE,
 ]
 

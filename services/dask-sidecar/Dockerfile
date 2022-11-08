@@ -89,11 +89,9 @@ WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 COPY  --chown=scu:scu services/dask-sidecar/requirements/_base.txt .
-COPY  --chown=scu:scu services/dask-sidecar/requirements/_packages.txt .
 RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
   pip install \
-  --requirement _base.txt \
-  --requirement _packages.txt
+  --requirement _base.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)

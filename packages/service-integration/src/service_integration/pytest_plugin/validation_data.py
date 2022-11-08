@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import json
 from pathlib import Path
@@ -11,8 +11,8 @@ import yaml
 
 
 @pytest.fixture(params=["input", "output"])
-def port_type(request) -> str:
-    return request.param
+def port_type(request: pytest.FixtureRequest) -> str:
+    return request.param  # type: ignore
 
 
 @pytest.fixture
@@ -20,8 +20,11 @@ def label_cfg(metadata_file: Path, port_type: str) -> dict:
     ports_type = f"{port_type}s"
     with metadata_file.open() as fp:
         cfg = yaml.safe_load(fp)
+        assert isinstance(cfg, dict)
         assert ports_type in cfg
-        return cfg[ports_type]
+        labels = cfg[ports_type]
+        assert isinstance(labels, dict)
+        return labels
 
 
 @pytest.fixture
@@ -34,7 +37,9 @@ def validation_cfg(validation_dir: Path, port_type: str) -> Optional[dict]:
     validation_file = validation_dir / port_type / (f"{port_type}s.json")
     if validation_file.exists():
         with validation_file.open() as fp:
-            return json.load(fp)
+            cfg = json.load(fp)
+            assert isinstance(cfg, dict)  # nosec
+            return cfg
     # it may not exist if only files are required
     return None
 
@@ -96,8 +101,9 @@ def assert_validation_data_follows_definition(
             }
             if not "data:" in label_cfg[key]["type"]:
                 # check the type is correct
+                expected_type = label2types[label_cfg[key]["type"]]
                 assert isinstance(
-                    value, label2types[label_cfg[key]["type"]]
+                    value, expected_type
                 ), f"{value} has not the expected type {label2types[label_cfg[key]['type']]}"
 
     for path in validation_folder.glob("**/*"):

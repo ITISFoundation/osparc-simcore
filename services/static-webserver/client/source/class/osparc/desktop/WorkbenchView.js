@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   statics: {
-    TAB_BUTTON_HEIGHT: 50,
+    TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -63,6 +63,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
+    "changeSelectedNode": "qx.event.type.Data",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
@@ -103,6 +104,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __currentNodeId: null,
     __startAppButton: null,
     __editSlidesButton: null,
+    __startAppButtonTB: null,
     __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -215,6 +217,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return control || this.base(arguments, id);
     },
 
+    getNodesTree: function() {
+      return this.__nodesTree;
+    },
+
+    getWorkbenchUI: function() {
+      return this.__workbenchUI;
+    },
+
     __getSidePanelsNewWidth: function(collapsing, sidePanels, collapsibleView) {
       let sidePanelsNewWidth = null;
       const sidePanelsWidth = sidePanels.getBounds().width;
@@ -297,6 +307,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
         paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
       });
@@ -361,6 +372,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
         backgroundColor: "background-main-4",
         paddingLeft: osparc.component.widget.CollapsibleViewLight.CARET_WIDTH
       });
@@ -399,6 +411,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewMain);
 
       const topBar = tabViewMain.getChildControl("bar");
+      topBar.set({
+        height: this.self().TAB_BUTTON_HEIGHT,
+        backgroundColor: "background-main-4"
+      });
       this.__addTopBarSpacer(topBar);
 
 
@@ -419,6 +435,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
+      const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
+        label: this.tr("App Mode"),
+        toolTipText: this.tr("Start App Mode"),
+        icon: "@FontAwesome5Solid/play/14",
+        alignY: "middle",
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+      });
+      startAppButtonTB.addListener("execute", () => this.fireEvent("slidesAppStart"));
+      topBar.add(startAppButtonTB);
 
       const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
       [
@@ -467,14 +492,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const nodesTree = this.__nodesTree;
       const workbenchUI = this.__workbenchUI;
 
-      studyTreeItem.addListener("nodeSelected", () => {
+      studyTreeItem.addListener("changeSelectedNode", () => {
         nodesTree.resetSelection();
         this.__populateSecondPanel(this.getStudy());
         this.__evalIframe();
         this.__openWorkbenchTab();
         this.__loggerView.setCurrentNodeId(null);
       });
-      nodesTree.addListener("nodeSelected", e => {
+      nodesTree.addListener("changeSelectedNode", e => {
         studyTreeItem.resetSelection();
         const nodeId = e.getData();
         const workbench = this.getStudy().getWorkbench();
@@ -484,12 +509,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__openIframeTab(node);
         }
         this.__loggerView.setCurrentNodeId(nodeId);
-        const nodeUI = workbenchUI.getNodeUI(nodeId);
-        if (nodeUI) {
-          if (nodeUI.classname.includes("NodeUI")) {
-            workbenchUI.activeNodeChanged(nodeUI);
-          }
-        }
+        this.__workbenchUI.nodeSelected(nodeId);
+        this.fireDataEvent("changeSelectedNode", nodeId);
       });
 
       if (this.__workbenchUIConnected === null) {
@@ -504,6 +525,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__populateSecondPanel(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
+            this.fireDataEvent("changeSelectedNode", nodeId);
           } else {
             // empty selection
             this.__studyTreeItem.selectStudyItem();
@@ -537,12 +559,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             node.getIFrame().maximizeIFrame(true);
           }
           this.__loggerView.setCurrentNodeId(nodeId);
-          const nodeUI = workbenchUI.getNodeUI(nodeId);
-          if (nodeUI) {
-            if (nodeUI.classname.includes("NodeUI")) {
-              workbenchUI.activeNodeChanged(nodeUI);
-            }
-          }
+          this.__workbenchUI.nodeSelected(nodeId);
         }
       }, this);
       nodesTree.addListener("removeNode", e => {
@@ -675,10 +692,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
-    },
-
-    getSelectedNodes: function() {
-      return this.__workbenchUI.getSelectedNodes();
     },
 
     getSelectedNodeIDs: function() {
@@ -887,7 +900,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (study && this.__editSlidesButton) {
         const isOwner = osparc.data.model.Study.isOwner(study);
         this.__editSlidesButton.setEnabled(isOwner);
-        this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
+        const canStart = study.hasSlideshow() || study.getWorkbench().isPipelineLinear();
+        this.__startAppButton.setEnabled(canStart);
+        this.__startAppButtonTB.setVisibility(canStart ? "visible" : "hidden");
       }
     },
 
@@ -1053,11 +1068,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
-      if (node.hasOutputs() && node.isDynamic() && node.isDeprecated()) {
+      if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
 
-        const chip = osparc.utils.StatusUI.createServiceDeprecatedChip();
+        const chip = node.isDeprecated() ? osparc.utils.StatusUI.createServiceDeprecatedChip() : osparc.utils.StatusUI.createServiceRetiredChip();
         this.__outputsPage.add(chip);
+
+        if (node.isDeprecated()) {
+          const deprecateDateText = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
+            rich: true
+          });
+          this.__outputsPage.add(deprecateDateText);
+        }
 
         const deprecatedMsg = new qx.ui.basic.Label(osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS).set({
           rich: true
@@ -1080,19 +1102,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       }
       return null;
-    },
-
-    __editSlides: function() {
-      const uiData = this.getStudy().getUi();
-      const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
-      const title = this.tr("Edit Slideshow");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
-        modal: false,
-        clickAwayClose: false
-      });
-      nodesSlidesTree.addListener("finished", () => {
-        win.close();
-      });
     },
 
     __attachEventHandlers: function() {

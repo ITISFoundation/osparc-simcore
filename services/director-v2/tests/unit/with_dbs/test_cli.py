@@ -2,19 +2,27 @@
 # pylint: disable=unused-argument
 
 import os
+import re
 import traceback
-from typing import Any, Callable
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional
 
 import pytest
+import respx
 from click.testing import Result
 from faker import Faker
+from fastapi import status
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_RETRY_TIMES, main
+from servicelib.long_running_tasks._models import ProgressCallback
+from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
+from simcore_service_director_v2.cli._close_and_save_service import (
+    ThinDV2LocalhostClient,
+)
 from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceOut,
+    DynamicServiceGet,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
@@ -96,10 +104,63 @@ def node_id(faker: Faker) -> NodeID:
 def mock_get_node_state(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.cli._core._get_dy_service_state",
-        return_value=DynamicServiceOut.parse_obj(
+        return_value=DynamicServiceGet.parse_obj(
             RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         ),
     )
+
+
+@pytest.fixture
+def task_id(faker: Faker) -> str:
+    return f"tas_id.{faker.uuid4()}"
+
+
+@pytest.fixture
+async def mock_close_service_routes(
+    mocker: MockerFixture, task_id: str
+) -> AsyncIterable[None]:
+    regex_base = r"/v2/dynamic_scheduler/services/([\w-]+)"
+    with respx.mock(
+        base_url=ThinDV2LocalhostClient.BASE_ADDRESS,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.patch(
+            re.compile(f"{regex_base}/observation"), name="toggle_service_observation"
+        ).respond(status_code=status.HTTP_204_NO_CONTENT)
+        respx_mock.delete(
+            re.compile(f"{regex_base}/containers"), name="delete_service_containers"
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.post(
+            re.compile(f"{regex_base}/state:save"), name="save_service_state"
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.post(
+            re.compile(f"{regex_base}/outputs:push"), name="push_service_outputs"
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+        respx_mock.delete(
+            re.compile(f"{regex_base}/docker-resources"),
+            name="delete_service_docker_resources",
+        ).respond(status_code=status.HTTP_202_ACCEPTED, json=task_id)
+
+        @asynccontextmanager
+        async def _mocked_context_manger(
+            client: Any,
+            task_id: Any,
+            *,
+            task_timeout: Any,
+            progress_callback: Optional[ProgressCallback] = None,
+            status_poll_interval: Any = 5,
+        ) -> AsyncIterator[None]:
+            assert progress_callback
+            await progress_callback("test", 1.0, task_id)
+            yield
+
+        mocker.patch(
+            "simcore_service_director_v2.cli._close_and_save_service.periodic_task_result",
+            side_effect=_mocked_context_manger,
+        )
+
+        yield
 
 
 def _format_cli_error(result: Result) -> str:
@@ -137,40 +198,10 @@ def test_project_save_state_retry_3_times_and_fails(
     for node_uuid in project_at_db.workbench.keys():
         assert (
             result.stdout.count(f"Attempting to save {node_uuid}")
-            == DEFAULT_NODE_SAVE_RETRY_TIMES
+            == DEFAULT_NODE_SAVE_ATTEMPTS
         )
         assert result.stdout.count(f"- {node_uuid}") == 1
     assert result.stdout.endswith("Please try to save them individually!\n")
-
-
-def test_node_save_state_ok(
-    mock_requires_dynamic_sidecar: None,
-    mock_save_service_state: None,
-    project_at_db: ProjectAtDB,
-    cli_runner: CliRunner,
-    node_id: NodeID,
-):
-    result = cli_runner.invoke(main, ["node-save-state", f"{node_id}"])
-    print(result.stdout)
-    assert result.exit_code == os.EX_OK, _format_cli_error(result)
-    assert f"Node {node_id} save completed" in result.stdout
-
-
-def test_node_save_state_retry_3_times_and_fails(
-    mock_requires_dynamic_sidecar: None,
-    mock_save_service_state_as_failing: None,
-    project_at_db: ProjectAtDB,
-    cli_runner: CliRunner,
-    node_id: NodeID,
-):
-    result = cli_runner.invoke(main, ["node-save-state", f"{node_id}"])
-    print(result.stdout)
-    assert result.exit_code == 1, _format_cli_error(result)
-    assert f"Saving state for {node_id}" in result.stdout
-    assert (
-        result.stdout.count(f"Attempting to save {node_id}")
-        == DEFAULT_NODE_SAVE_RETRY_TIMES
-    )
 
 
 def test_project_state(
@@ -179,5 +210,13 @@ def test_project_state(
     result = cli_runner.invoke(
         main, ["project-state", f"{project_at_db.uuid}", "--no-blocking"]
     )
+    assert result.exit_code == os.EX_OK, _format_cli_error(result)
+    print(result.stdout)
+
+
+def test_close_and_save_service(
+    mock_close_service_routes: None, cli_runner: CliRunner, node_id: NodeID
+):
+    result = cli_runner.invoke(main, ["close-and-save-service", f"{node_id}"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     print(result.stdout)

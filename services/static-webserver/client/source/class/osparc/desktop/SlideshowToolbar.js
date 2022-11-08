@@ -51,13 +51,13 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            toolTipText: this.tr("Edit Slideshow"),
+            toolTipText: this.tr("Edit App Mode"),
             visibility: osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? "visible" : "excluded"
           });
           editBtn.editing = false;
           const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            toolTipText: this.tr("Save Slideshow")
+            toolTipText: this.tr("Save App Mode")
           });
           saveBtn.editing = true;
           editBtn.addListener("execute", () => {
@@ -131,7 +131,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         case "stop-slideshow":
           control = new qx.ui.form.Button().set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            label: this.tr("Stop App"),
+            label: this.tr("App Mode"),
+            toolTipText: this.tr("Stop App Mode"),
             icon: "@FontAwesome5Solid/stop/14",
             visibility: osparc.data.Permissions.getInstance().canDo("study.slides.stop") ? "visible" : "excluded"
           });

@@ -11,33 +11,23 @@
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
---constraint ../../../packages/dask-task-models-library/requirements/_base.in
---constraint ../../../packages/models-library/requirements/_base.in
---constraint ../../../packages/settings-library/requirements/_base.in
---constraint ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/dask-task-models-library/requirements/_base.in
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
 
 
 aiodocker
 aiofiles
 aiohttp
-requests
-dask[complete]
+blosc # compression
+cytoolz  # Cython implementation of Toolz: A set of utility functions for iterators, functions, and dictionaries.
 dask-gateway
+dask[complete]
+jupyter-server-proxy # to route to workers diagnostics web server
+lz4 # compression
+numpy # math
+pandas # math
 pydantic[email,dotenv]
-# s3 access
-s3fs
-# compression
-blosc
-lz4
-
-
-
-# Cython implementation of Toolz: A set of utility functions for iterators, functions, and dictionaries.
-cytoolz
-
-# math
-numpy
-pandas
-
-# to route to workers diagnostics web server
-jupyter-server-proxy
+requests
+s3fs # s3 access

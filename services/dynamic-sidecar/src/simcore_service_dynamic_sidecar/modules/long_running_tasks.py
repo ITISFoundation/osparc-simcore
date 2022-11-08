@@ -132,8 +132,6 @@ async def task_create_service_containers(
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
         await send_message(rabbitmq, "could not start service containers")
 
-    progress.update(message="done", percent=1)
-
     return shared_store.container_names
 
 
@@ -146,7 +144,7 @@ async def task_runs_docker_compose_down(
     if shared_store.compose_spec is None:
         raise RuntimeError("No compose-spec was found")
 
-    progress.update(message="running docker-compose-down", percent=0)
+    progress.update(message="running docker-compose-down", percent=0.1)
     result = await docker_compose_down(shared_store.compose_spec, settings)
     if not result.success:
         logger.warning(
@@ -164,7 +162,7 @@ async def task_runs_docker_compose_down(
 
     # removing compose-file spec
     await shared_store.clear()
-    progress.update(message="done", percent=1)
+    progress.update(message="done", percent=0.99)
 
 
 async def task_restore_state(
@@ -210,7 +208,7 @@ async def task_restore_state(
     )
 
     await send_message(rabbitmq, "Finished state downloading")
-    progress.update(message="state restored", percent=1)
+    progress.update(message="state restored", percent=0.99)
 
 
 async def task_save_state(
@@ -237,11 +235,11 @@ async def task_save_state(
             )
         )
 
-    progress.update(message="state save scheduled", percent=0.1)
+    progress.update(message="saving state", percent=0.1)
     await logged_gather(*awaitables, max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE)
 
     await send_message(rabbitmq, "Finished state saving")
-    progress.update(message="finished state save", percent=0.1)
+    progress.update(message="finished state saving", percent=0.99)
 
 
 async def task_ports_inputs_pull(
@@ -254,6 +252,7 @@ async def task_ports_inputs_pull(
     port_keys = [] if port_keys is None else port_keys
 
     await send_message(rabbitmq, f"Pulling inputs for {port_keys}")
+    progress.update(message="pulling inputs", percent=0.1)
     transferred_bytes = await nodeports.download_target_ports(
         nodeports.PortTypeName.INPUTS,
         mounted_volumes.disk_inputs_path,
@@ -261,7 +260,7 @@ async def task_ports_inputs_pull(
         io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling inputs")
-    progress.update(message="finished inputs pulling", percent=1.0)
+    progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
 
 
@@ -282,7 +281,7 @@ async def task_ports_outputs_pull(
         io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling outputs")
-    progress.update(message="finished outputs pulling", percent=1.0)
+    progress.update(message="finished outputs pulling", percent=0.99)
     return int(transferred_bytes)
 
 
@@ -302,7 +301,7 @@ async def task_ports_outputs_push(
         io_log_redirect_cb=functools.partial(send_message, rabbitmq),
     )
     await send_message(rabbitmq, "Finished pulling outputs")
-    progress.update(message="finished outputs pushing", percent=1.0)
+    progress.update(message="finished outputs pushing", percent=0.99)
 
 
 async def task_containers_restart(
@@ -338,4 +337,4 @@ async def task_containers_restart(
 
     await send_message(rabbitmq, "Service was restarted please reload the UI")
     await rabbitmq.send_event_reload_iframe()
-    progress.update(message="started log fetching", percent=1.0)
+    progress.update(message="started log fetching", percent=0.99)

@@ -5,7 +5,7 @@
 
 import hashlib
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from uuid import UUID, uuid3
 
 import pytest
@@ -48,7 +48,7 @@ class CommitsOrm(BaseOrm[int]):
             connection,
             readonly={"id", "created", "modified"},
             # pylint: disable=no-member
-            writeonce=set(c for c in projects_vc_commits.columns.keys()),
+            writeonce=set(projects_vc_commits.columns.keys()),
         )
 
 
@@ -92,7 +92,7 @@ class HeadsOrm(BaseOrm[int]):
 # -------------
 
 
-def eval_checksum(workbench: Dict[str, Any]):
+def eval_checksum(workbench: dict[str, Any]):
     # FIXME: prototype
     block_string = json.dumps(workbench, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha256(block_string)

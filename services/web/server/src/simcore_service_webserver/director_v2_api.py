@@ -27,7 +27,7 @@ from .director_v2_core_computations import (
 )
 from .director_v2_core_dynamic_services import (
     DirectorServiceError,
-    get_dynamic_service_state,
+    get_dynamic_service,
     get_dynamic_services,
     request_retrieve_dyn_service,
     restart_dynamic_service,
@@ -52,7 +52,7 @@ __all__: tuple[str, ...] = (
     "get_cluster_details",
     "get_cluster",
     "get_computation_task",
-    "get_dynamic_service_state",
+    "get_dynamic_service",
     "get_dynamic_services",
     "get_project_run_policy",
     "is_healthy",

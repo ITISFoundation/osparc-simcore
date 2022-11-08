@@ -42,7 +42,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       check: [null, "create", "delete"],
       init: null,
       nullable: true,
-      apply: "__applyConfirmAction"
+      apply: "__applyConfirmAppearance"
     },
 
     confirmed: {
@@ -62,7 +62,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       this.__confirmButton.setLabel(confirmText);
     },
 
-    __applyConfirmAction: function(confirmationAction) {
+    __applyConfirmAppearance: function(confirmationAction) {
       const confBtn = this.__confirmButton;
       switch (confirmationAction) {
         case "create":

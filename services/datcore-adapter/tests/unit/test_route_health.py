@@ -6,12 +6,9 @@
 from datetime import datetime
 
 import httpx
-import pytest
 import respx
 from models_library.app_diagnostics import AppStatusCheck
 from starlette import status
-
-pytestmark = pytest.mark.asyncio
 
 
 async def test_live_entrypoint(async_client: httpx.AsyncClient):

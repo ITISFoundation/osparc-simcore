@@ -52,7 +52,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   events: {
-    "nodeSelected": "qx.event.type.Data",
+    "changeSelectedNode": "qx.event.type.Data",
     "fullscreenNode": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data"
   },
@@ -194,7 +194,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __openItem: function(nodeId) {
       if (nodeId) {
-        this.fireDataEvent("nodeSelected", nodeId);
+        this.fireDataEvent("changeSelectedNode", nodeId);
       }
     },
 
