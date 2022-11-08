@@ -8,11 +8,13 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
+astroid==2.12.12
+    # via pylint
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-botocore-stubs==1.29.3
+botocore-stubs==1.27.89
     # via types-aiobotocore
 certifi==2022.9.14
     # via
@@ -34,11 +36,13 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
+dill==0.3.5.1
+    # via pylint
 docopt==0.6.2
     # via coveralls
-exceptiongroup==1.0.1
+exceptiongroup==1.0.0
     # via pytest
-faker==15.2.0
+faker==15.1.0
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -61,12 +65,22 @@ idna==3.4
     #   rfc3986
 iniconfig==1.1.1
     # via pytest
+isort==5.10.1
+    # via pylint
+lazy-object-proxy==1.7.1
+    # via astroid
+mccabe==0.7.0
+    # via pylint
 packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   pytest
+platformdirs==2.5.2
+    # via pylint
 pluggy==1.0.0
     # via pytest
+pylint==2.15.5
+    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -77,7 +91,7 @@ pytest==7.2.0
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.20.1
+pytest-asyncio==0.19.0
     # via -r requirements/_test.in
 pytest-cov==4.0.0
     # via -r requirements/_test.in
@@ -114,16 +128,21 @@ sniffio==1.3.0
 tomli==2.0.1
     # via
     #   coverage
+    #   pylint
     #   pytest
+tomlkit==0.11.5
+    # via pylint
 types-aiobotocore==2.4.0.post1
     # via -r requirements/_test.in
 types-aiobotocore-s3==2.4.0.post1
     # via types-aiobotocore
-types-awscrt==0.15.2
+types-awscrt==0.14.7
     # via botocore-stubs
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
     #   types-aiobotocore
     #   types-aiobotocore-s3
 urllib3==1.26.12
@@ -131,3 +150,5 @@ urllib3==1.26.12
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
+wrapt==1.14.1
+    # via astroid

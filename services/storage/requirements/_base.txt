@@ -123,7 +123,6 @@ markupsafe==2.1.1
     # via
     #   jinja2
     #   mako
-    #   werkzeug
 multidict==6.0.2
     # via
     #   aiohttp
@@ -243,7 +242,7 @@ urllib3==1.26.9
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
-werkzeug==2.2.2
+werkzeug==2.0.3
     # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.14.1
     # via aiobotocore

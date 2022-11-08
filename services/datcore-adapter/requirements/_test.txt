@@ -10,6 +10,8 @@ anyio==3.6.2
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
+astroid==2.12.12
+    # via pylint
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
@@ -32,13 +34,15 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
+dill==0.3.6
+    # via pylint
 docopt==0.6.2
     # via coveralls
-exceptiongroup==1.0.1
+exceptiongroup==1.0.0
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==15.2.0
+faker==15.1.1
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -63,14 +67,28 @@ idna==3.4
     #   rfc3986
 iniconfig==1.1.1
     # via pytest
+isort==5.10.1
+    # via pylint
+lazy-object-proxy==1.7.1
+    # via astroid
+mccabe==0.7.0
+    # via pylint
 packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
+platformdirs==2.5.2
+    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+py==1.11.0
+    # via
+    #   -r requirements/_test.in
+    #   pytest-forked
+pylint==2.15.5
+    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via packaging
 pytest==7.2.0
@@ -78,6 +96,7 @@ pytest==7.2.0
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-forked
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
@@ -87,6 +106,8 @@ pytest-asyncio==0.20.1
     # via -r requirements/_test.in
 pytest-cov==4.0.0
     # via -r requirements/_test.in
+pytest-forked==1.4.0
+    # via pytest-xdist
 pytest-icdiff==0.6
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
@@ -95,9 +116,9 @@ pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.5
     # via -r requirements/_test.in
-pytest-xdist==3.0.2
+pytest-xdist==2.5.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -129,9 +150,19 @@ termcolor==2.1.0
 tomli==2.0.1
     # via
     #   coverage
+    #   pylint
     #   pytest
+tomlkit==0.11.5
+    # via pylint
+typing-extensions==4.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
+wrapt==1.14.1
+    # via astroid

@@ -17,6 +17,8 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+astroid==2.12.12
+    # via pylint
 async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
@@ -51,7 +53,7 @@ certifi==2022.9.24
     #   simcore-service-storage-sdk
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.70.1
+cfn-lint==0.67.0
     # via moto
 charset-normalizer==2.0.12
     # via
@@ -72,13 +74,15 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==38.0.3
+cryptography==38.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==6.0.1
+dill==0.3.5.1
+    # via pylint
+docker==6.0.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -89,11 +93,11 @@ ecdsa==0.18.0
     #   moto
     #   python-jose
     #   sshpubkeys
-exceptiongroup==1.0.1
+exceptiongroup==1.0.0
     # via pytest
-faker==15.2.0
+faker==15.1.0
     # via -r requirements/_test.in
-flask==2.2.2
+flask==2.1.3
     # via
     #   flask-cors
     #   moto
@@ -118,6 +122,8 @@ importlib-metadata==5.0.0
     # via flask
 iniconfig==1.1.1
     # via pytest
+isort==5.10.1
+    # via pylint
 itsdangerous==2.1.2
     # via flask
 jinja2==3.1.2
@@ -150,20 +156,25 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
+lazy-object-proxy==1.7.1
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
 markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   jinja2
     #   moto
-    #   werkzeug
-moto==4.0.9
+mccabe==0.7.0
+    # via pylint
+moto==4.0.7
     # via -r requirements/_test.in
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-networkx==2.8.8
+networkx==2.8.7
     # via cfn-lint
 numpy==1.23.4
     # via pandas
@@ -180,22 +191,28 @@ packaging==21.3
     #   docker
     #   pytest
     #   pytest-sugar
-pandas==1.5.1
+pandas==1.5.0
     # via -r requirements/_test.in
-pbr==5.11.0
+pbr==5.10.0
     # via
     #   jschema-to-python
     #   sarif-om
+platformdirs==2.5.2
+    # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+py==1.11.0
+    # via -r requirements/_test.in
 pyasn1==0.4.8
     # via
     #   python-jose
     #   rsa
 pycparser==2.21
     # via cffi
+pylint==2.15.5
+    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   moto
@@ -216,7 +233,7 @@ pytest==7.2.0
     #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.20.1
+pytest-asyncio==0.19.0
     # via pytest-aiohttp
 pytest-cov==4.0.0
     # via -r requirements/_test.in
@@ -228,7 +245,7 @@ pytest-mock==3.10.0
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
-pytest-sugar==0.9.6
+pytest-sugar==0.9.5
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -242,7 +259,7 @@ python-dotenv==0.21.0
     # via -r requirements/_test.in
 python-jose==3.3.0
     # via moto
-pytz==2022.6
+pytz==2022.4
     # via
     #   moto
     #   pandas
@@ -292,9 +309,17 @@ toml==0.10.2
 tomli==2.0.1
     # via
     #   coverage
+    #   pylint
     #   pytest
+tomlkit==0.11.5
+    # via pylint
 types-toml==0.10.8
     # via responses
+typing-extensions==4.3.0
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
+    #   pylint
 urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -304,9 +329,9 @@ urllib3==1.26.9
     #   requests
     #   responses
     #   simcore-service-storage-sdk
-websocket-client==1.4.2
+websocket-client==1.4.1
     # via docker
-werkzeug==2.2.2
+werkzeug==2.0.3
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -314,6 +339,7 @@ werkzeug==2.2.2
 wrapt==1.14.1
     # via
     #   -c requirements/_base.txt
+    #   astroid
     #   aws-xray-sdk
 xmltodict==0.13.0
     # via moto
@@ -321,7 +347,7 @@ yarl==1.7.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.10.0
+zipp==3.9.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

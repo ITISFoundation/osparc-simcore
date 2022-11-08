@@ -6,4 +6,5 @@
 
 black
 isort
+pylint
 watchdog[watchmedo]

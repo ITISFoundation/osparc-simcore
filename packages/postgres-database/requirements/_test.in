@@ -9,14 +9,20 @@
 --constraint _base.txt
 --constraint _migration.txt
 
+# fixtures
+pyyaml
 aiopg[sa]
-coverage
-coveralls
 faker
+
+# testing
+coverage
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
-pytest-docker
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-instafail
 pytest-runner
-pyyaml
+pytest-docker
+
+# CI
+pylint
+coveralls

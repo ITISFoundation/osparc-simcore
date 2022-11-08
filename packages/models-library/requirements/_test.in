@@ -13,6 +13,7 @@ coverage
 coveralls
 faker
 pint
+pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
@@ -20,5 +21,8 @@ pytest-icdiff
 pytest-instafail
 pytest-mock
 pytest-runner
-pytest-sugar
 pyyaml
+
+
+pytest-sugar ## broken w/ pytest==7.2.0. SEE https://github.com/Teemu/pytest-sugar/issues/243
+py>=1.11.0 ## NOTE: tmp enforced until pytest-sugar adds it. SEE https://github.com/Teemu/pytest-sugar/issues/243#issuecomment-1298658807

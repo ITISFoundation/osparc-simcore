@@ -24,6 +24,3 @@ pip-tools
 
 # version manager
 bump2version
-
-# SEE `make pylint`
-pylint
