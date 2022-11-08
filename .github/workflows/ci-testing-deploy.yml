@@ -1192,7 +1192,6 @@ jobs:
 
   unit-tests:
     # NOTE: this is a github required status check!
-    if: always()
     needs:
       [
         unit-test-agent,
