@@ -130,7 +130,7 @@ def set_project_inputs(
     return modified
 
 
-class _PortLink(PortLink):
+class _NonStrictPortLink(PortLink):
     class Config(PortLink.Config):
         allow_population_by_field_name = True
 
@@ -142,7 +142,7 @@ def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
         if port.node.inputs:
             try:
                 # is link?
-                port_link = _PortLink.parse_obj(port.node.inputs["in_1"])
+                port_link = _NonStrictPortLink.parse_obj(port.node.inputs["in_1"])
                 # resolve
                 node = workbench[port_link.node_uuid]
                 # might still not have results
