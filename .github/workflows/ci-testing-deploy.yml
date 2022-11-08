@@ -291,6 +291,20 @@ jobs:
           #   package-path: services/web/server
           #   ci-bash-file: webserver
           #   test-cmd: test_with_db 03
+    uses: ./.github/workflows/ci-testing-unit-test-job.yml
+    with:
+      name: ${{ matrix.name }}
+      python: ${{ matrix.python }}
+      os: ${{ matrix.os }}
+      docker-buildx: ${{ matrix.docker_buildx }}
+      docker-compose: ${{matrix.docker_compose }}
+      docker-compose-sha: ${{ matrix.docker_compose_sha }}
+      run-typecheck: ${{ matrix.run-typecheck }}
+      package-path: ${{ matrix.package-path }}
+      ci-bash-file: ${{ matrix.ci-bash-file }}
+      test-cmd: ${{ matrix.test-cmd }}
+      install-rclone: ${{ matrix.install-rclone }}
+      install-rclone-volume-plugin: ${{ matrix.install-rclone-volume-plugin }}
 
 
 
