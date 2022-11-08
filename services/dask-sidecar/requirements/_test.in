@@ -12,8 +12,6 @@ coveralls
 docker
 faker
 minio
-ptvsd
-pylint
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
@@ -21,8 +19,5 @@ pytest-icdiff
 pytest-instafail
 pytest-localftpserver
 pytest-mock
+pytest-sugar
 python-dotenv
-
-
-pytest-sugar ## broken w/ pytest==7.2.0. SEE https://github.com/Teemu/pytest-sugar/issues/243
-py>=1.11.0 ## NOTE: tmp enforced until pytest-sugar adds it. SEE https://github.com/Teemu/pytest-sugar/issues/243#issuecomment-1298658807

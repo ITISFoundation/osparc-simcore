@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   postgres:
-    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
+    image: "postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     init: true
@@ -30,7 +30,7 @@ services:
         "-c",
         "tcp_keepalives_interval=600",
         "-c",
-        "tcp_keepalives_count=5",
+        "tcp_keepalives_count=5"
       ]
   adminer:
     image: adminer:4.8.0

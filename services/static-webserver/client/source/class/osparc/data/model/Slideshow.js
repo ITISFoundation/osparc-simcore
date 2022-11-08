@@ -48,10 +48,12 @@ qx.Class.define("osparc.data.model.Slideshow", {
       const nodes = [];
       for (let nodeId in slideshow) {
         const node = slideshow[nodeId];
-        nodes.push({
-          ...node,
-          nodeId
-        });
+        if (node["position"] !== -1) {
+          nodes.push({
+            ...node,
+            nodeId
+          });
+        }
       }
       nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
       return nodes;
@@ -69,7 +71,7 @@ qx.Class.define("osparc.data.model.Slideshow", {
 
   members: {
     isEmpty: function() {
-      return !Object.keys(this.getData()).length;
+      return Object.values(this.getData()).every(node => node.position === -1);
     },
 
     getSortedNodes: function() {
