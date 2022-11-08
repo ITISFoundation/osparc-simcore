@@ -19,6 +19,19 @@ on:
     branches:
       - "*"
 
+  workflow_dispatch:
+    # inputs:
+    #   tests:
+    #     description: tests to run
+    #     required: true
+    #     default: 'all'
+    #     type: choice
+    #     options:
+    #       - unit-tests
+    #       - integration-tests
+    #       - system-tests
+    #       - all
+
 env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
@@ -138,7 +151,7 @@ jobs:
     # this step comes first, so that it is executed as first job in push calls
     # in PR calls this step is anyway skipped
     needs: changes
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything || github.event_name == 'push' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
