@@ -58,7 +58,7 @@ _DEFAULT_HASH = _compute_hash("secret")
 
 def random_user(**overrides) -> dict[str, Any]:
     data = dict(
-        name=FAKE.name(),
+        name=FAKE.user_name(),
         email=FAKE.email(),
         password_hash=_DEFAULT_HASH,
         status=UserStatus.ACTIVE,
