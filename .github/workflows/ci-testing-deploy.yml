@@ -236,7 +236,7 @@ jobs:
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
