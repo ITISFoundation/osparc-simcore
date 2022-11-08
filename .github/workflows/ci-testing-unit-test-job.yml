@@ -76,6 +76,8 @@ jobs:
             ${{ inputs.package-path }}/**/requirements.txt
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
+      - name: show installed cached packages
+        run: pip list --verbose
       - name: install package
         run: ./ci/github/unit-testing/${{ inputs.ci-bash-file || inputs.name }}.bash install
       - name: typecheck
