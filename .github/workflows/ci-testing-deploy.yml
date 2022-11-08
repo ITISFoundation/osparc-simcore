@@ -194,38 +194,43 @@ jobs:
     needs: changes
     strategy:
       matrix:
-        name: [agent, api, api-server]
-        # autoscaling,
-        # catalog,
-        # dask-sidecar,
-        # dask-task-models-library,
-        # datcore-adapter,
-        # director,
-        # director-v2,
-        # dynamic-sidecar,
-        # models-library,
-        # postgres-database,
-        # pylint,
-        # service-integration,
-        # service-library,
-        # settings-library,
-        # simcore-sdk,
-        # storage,
-        # webserver-isolated,
-        # webserver-01,
-        # webserver-02,
-        # webserver-03,
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
+        name:
+          - agent
+          - api
+          - api-server
+          - autoscaling
+          - catalog
+          - dask-sidecar
+          - dask-task-models-library
+          - datcore-adapter
+          - director
+          - director-v2
+          - dynamic-sidecar
+          - models-library
+          - postgres-database
+          - pylint
+          - service-integration
+          - service-library
+          - settings-library
+          - simcore-sdk
+          - storage
+          - webserver-isolated
+          - webserver-01
+          - webserver-02
+          - webserver-0
         include:
+          # defaults
+          - python: "3.9"
+          - os: ubuntu-20.04
+          - docker_buildx: v0.8.2
+          - docker_compose: 1.29.1
           - test-cmd: test
           - run-typecheck: false
           - install-rclone: false
           - install-rclone-volume-plugin: false
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+          # unit-tests definitions
           - name: agent
             install-rclone: true
             package-path: services/agent
