@@ -230,7 +230,7 @@ jobs:
             run-typecheck: true
           - name: director
             package-path: services/director
-            python: "3.6"
+            python: 3.6
           - name: director-v2
             package-path: services/director-v2
             install-rclone-volume-plugin: true
