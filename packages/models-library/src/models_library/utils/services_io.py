@@ -15,7 +15,7 @@ _PROPERTY_TYPE_TO_SCHEMAS = {
 
 
 def get_service_io_json_schema(
-    io: Union[ServiceInput, ServiceOutput]
+    port: Union[ServiceInput, ServiceOutput]
 ) -> Optional[dict[str, Any]]:
     """Get json-schema for a i/o service
 
@@ -24,24 +24,24 @@ def get_service_io_json_schema(
     NOTE: For the moment, this is a free function. It migh become in the future a member
     of BaseServiceIO once we proceed to a full deprecation of legacy fields like units, etc
     """
-    if io.content_schema:
-        return deepcopy(io.content_schema)
+    if port.content_schema:
+        return deepcopy(port.content_schema)
 
     # converts legacy
-    if schema := _PROPERTY_TYPE_TO_SCHEMAS.get(io.property_type):
+    if schema := _PROPERTY_TYPE_TO_SCHEMAS.get(port.property_type):
         schema = deepcopy(schema)
 
         # updates schema-doc, i.e description and title
-        schema["title"] = io.label
-        if io.label != io.description:
-            schema["description"] = io.description
+        schema["title"] = port.label
+        if port.label != port.description:
+            schema["description"] = port.description
 
         # new x_unit custom field in json-schema
-        if io.unit:
-            schema["x_unit"] = io.unit
+        if port.unit:
+            schema["x_unit"] = port.unit
 
         # updates default
-        default = getattr(io, "default_value", None)
+        default = getattr(port, "default_value", None)
         if default is not None:
             schema["default"] = default
         return schema
