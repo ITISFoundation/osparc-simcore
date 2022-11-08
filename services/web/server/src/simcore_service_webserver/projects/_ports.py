@@ -59,7 +59,6 @@ def _iter_project_ports(
             and node.key.startswith("simcore/services/frontend/parameter/")
             and node.outputs
         ):
-            # invariants
             assert not node.inputs  # nosec
             assert list(node.outputs.keys()) == ["out_1"]  # nosec
 
@@ -76,7 +75,6 @@ def _iter_project_ports(
             )
             and node.inputs
         ):
-            # invariants
             assert not node.outputs  # nosec
             assert list(node.inputs.keys()) == ["in_1"]  # nosec
 
@@ -141,11 +139,11 @@ def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     for port in _iter_project_ports(workbench, "output"):
         if port.node.inputs:
             try:
-                # is link?
+                # Is link?
                 port_link = _NonStrictPortLink.parse_obj(port.node.inputs["in_1"])
                 # resolve
                 node = workbench[port_link.node_uuid]
-                # might still not have results
+                # If the node has not results (e.g. did not run or failed), then node.outputs is set to None
                 value = node.outputs[port_link.output] if node.outputs else None
             except ValidationError:
                 # not a link

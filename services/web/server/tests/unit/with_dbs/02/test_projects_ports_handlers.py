@@ -199,7 +199,7 @@ async def test_io_workflow(
     mock_catalog_service_api_responses: None,
     expected: type[web.HTTPException],
 ):
-    """This tests implements a minimal workflow to support the MVP
+    """This tests implements a minimal workflow
 
     It later stage, this test might be split into smaller unit-tests
     """
