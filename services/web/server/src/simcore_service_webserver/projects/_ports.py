@@ -50,12 +50,12 @@ def _iter_project_ports(
     """
 
     for node_id, node in workbench.items():
-        is_inputs = filter_kind is None or filter_kind == "input"
-        is_outputs = filter_kind is None or filter_kind == "output"
+        is_input = filter_kind is None or filter_kind == "input"
+        is_output = filter_kind is None or filter_kind == "output"
 
         # node representing INPUT ports: can write this node's output
         if (
-            is_inputs
+            is_input
             and node.key.startswith("simcore/services/frontend/parameter/")
             and node.outputs
         ):
@@ -69,7 +69,7 @@ def _iter_project_ports(
 
         # nodes representing OUTPUT ports: can read this node's input
         elif (
-            is_outputs
+            is_output
             and node.key.startswith(
                 "simcore/services/frontend/iterator-consumer/probe/"
             )
