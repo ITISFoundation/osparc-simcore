@@ -24,7 +24,7 @@ on:
       tests:
         description: tests to run
         required: true
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - unit-tests
@@ -236,7 +236,7 @@ jobs:
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1228,7 +1228,6 @@ jobs:
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
         run: echo "::notice All good!"
 
-
   integration-test-webserver-01:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
@@ -1551,7 +1550,6 @@ jobs:
       - name: all the previous integration-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
         run: echo "::notice All good!"
-
 
   system-test-public-api:
     needs: [changes, build-test-images]
