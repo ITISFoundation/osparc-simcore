@@ -51,7 +51,7 @@ async def test_raise_for_status(test_client: TestClient):
 @pytest.fixture(
     params=[
         web.Response(
-            status=web.HTTPBadRequest.status_code,
+            status=400,
             body=(
                 '<?xml version="1.0" encoding="UTF-8"?><Error><Code>RequestTimeout</Code>'
                 "<Message>Your socket connection to the server was not read from or written to within "
@@ -62,8 +62,8 @@ async def test_raise_for_status(test_client: TestClient):
                 "</HostId></Error>"
             ),
         ),
-        web.Response(status=web.HTTPInternalServerError.status_code),
-        web.Response(status=web.HTTPServiceUnavailable.status_code),
+        web.Response(status=500),
+        web.Response(status=503),
     ]
 )
 def test_client_2(
@@ -74,9 +74,32 @@ def test_client_2(
     )
 
 
-async def test_retry_on_aws_errors(test_client_2: TestClient):
+async def test__check_for_aws_http_errors_true(test_client_2: TestClient):
     resp = await test_client_2.get("/")
     try:
         await _raise_for_status(resp)
     except ExtendedClientResponseError as exception:
         assert _check_for_aws_http_errors(exception) is True
+
+
+@pytest.fixture(
+    params=[
+        web.Response(status=400),
+        web.Response(status=200),
+        web.Response(status=399),
+    ]
+)
+def test_client_3(
+    request: FixtureRequest, loop: BaseEventLoop, aiohttp_client
+) -> TestClient:
+    return _get_test_client(
+        mocked_response=request.param, loop=loop, aiohttp_client=aiohttp_client
+    )
+
+
+async def test__check_for_aws_http_errors_false(test_client_3: TestClient):
+    resp = await test_client_3.get("/")
+    try:
+        await _raise_for_status(resp)
+    except ExtendedClientResponseError as exception:
+        assert _check_for_aws_http_errors(exception) is False
