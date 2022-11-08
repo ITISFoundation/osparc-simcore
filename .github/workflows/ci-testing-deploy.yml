@@ -189,667 +189,110 @@ jobs:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
           path: /${{ runner.temp }}/build
 
-  unit-test-webserver-01:
+  unit-tests:
+    name: "[unit]"
     needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 01"
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        name: [agent, api, api-server]
+        # autoscaling,
+        # catalog,
+        # dask-sidecar,
+        # dask-task-models-library,
+        # datcore-adapter,
+        # director,
+        # director-v2,
+        # dynamic-sidecar,
+        # models-library,
+        # postgres-database,
+        # pylint,
+        # service-integration,
+        # service-library,
+        # settings-library,
+        # simcore-sdk,
+        # storage,
+        # webserver-isolated,
+        # webserver-01,
+        # webserver-02,
+        # webserver-03,
         python: ["3.9"]
         os: [ubuntu-20.04]
         docker_buildx: [v0.8.2]
         docker_compose: [1.29.1]
         include:
+          - test-cmd: test
+          - run-typecheck: false
+          - install-rclone: false
+          - install-rclone-volume-plugin: false
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test isolated
-        run: ./ci/github/unit-testing/webserver.bash test_isolated
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
+          - name: agent
+            install-rclone: true
+            package-path: services/agent
+            typecheck: true
+          - name: api
+            package-path: api/tests
+          - name: api-server
+            package-path: services/api-server
+          # - name: autoscaling
+          #   package-path: services/autoscaling
+          # - name: catalog
+          #   package-path: services/catalog
+          # - name: dask-sidecar
+          #   package-path: services/dask-sidecar
+          #   run-typecheck: true
+          # - name: dask-task-models-library
+          #   package-path: packages/dask-task-models-library
+          #   run-typecheck: true
+          # - name: datcore-adapter
+          #   package-path: services/datcore-adapter
+          #   run-typecheck: true
+          # - name: director
+          #   package-path: services/director
+          #   python: "3.6"
+          # - name: director-v2
+          #   package-path: services/director-v2
+          #   install-rclone-volume-plugin: true
+          # - name: dynamic-sidecar
+          #   package-path: services/dynamic-sidecar
+          #   run-typecheck: true
+          # - name: models-library
+          #   package-path: packages/models-library
+          # - name: postgres-database
+          #   package-path: packages/postgres-database
+          #   run-typecheck: true
+          # - name: pylint
+          #   package-path: packages/service-library
+          #   python: ["3.9", "3.10", "3.11"]
+          # - name: service-integration
+          #   package-path: packages/service-integration
+          # - name: service-library
+          #   package-path: packages/service-library
+          # - name: settings-library
+          #   package-path: packages/settings-library
+          # - name: simcore-sdk
+          #   package-path: packages/simcore-sdk
+          #   install-rclone: true
+          # - name: storage
+          #   package-path: services/storage
+          # - name: webserver-isolated
+          #   package-path: services/web/server
+          #   ci-bash-file: webserver
+          #   test-cmd: test_isolated
+          # - name: webserver-01
+          #   package-path: services/web/server
+          #   ci-bash-file: webserver
+          #   test-cmd: test_with_db 01
+          # - name: webserver-02
+          #   package-path: services/web/server
+          #   ci-bash-file: webserver
+          #   test-cmd: test_with_db 02
+          # - name: webserver-03
+          #   package-path: services/web/server
+          #   ci-bash-file: webserver
+          #   test-cmd: test_with_db 03
 
-  unit-test-webserver-02:
-    needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 02"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
 
-  unit-test-webserver-03:
-    needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 03"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-storage:
-    needs: changes
-    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] storage"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/storage/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/storage.bash install
-      - name: test
-        run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-agent:
-    needs: changes
-    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] agent"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/agent/requirements/ci.txt"
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/agent.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/agent.bash typecheck
-      - name: test
-        if: always()
-        run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-api:
-    needs: changes
-    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] api"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "api/tests/requirements.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install api
-        run: ./ci/github/unit-testing/api.bash install
-      - name: test
-        run: ./ci/github/unit-testing/api.bash test
-
-  unit-test-api-server:
-    needs: changes
-    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] api-server"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/api-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/api-server.bash install
-      - name: test
-        run: ./ci/github/unit-testing/api-server.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-autoscaling:
-    needs: changes
-    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] autoscaling"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/autoscaling/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/autoscaling.bash install
-      - name: test
-        run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-catalog:
-    needs: changes
-    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] catalog"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/catalog/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/catalog.bash install
-      - name: test
-        run: ./ci/github/unit-testing/catalog.bash test
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-datcore-adapter:
-    needs: changes
-    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] datcore-adapter"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/datcore-adapter/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/datcore-adapter.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
-      - name: test
-        if: always()
-        run: ./ci/github/unit-testing/datcore-adapter.bash test
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-director:
-    needs: changes
-    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] director"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # KEEP 3.6 Development of this service is frozen
-        python: [3.6]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/director/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/director.bash install
-      - name: test
-        run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-director-v2:
-    needs: changes
-    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] director-v2"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/director-v2/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/director-v2.bash install
-      - name: test
-        run: ./ci/github/unit-testing/director-v2.bash test
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-dask-task-models-library:
-    needs: changes
-    if: ${{ needs.changes.outputs.dask-task-models-library == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] dask-task-models-library"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/dask-task-models-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/dask-task-models-library.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
-      - name: test
-        if: always()
-        run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-dask-sidecar:
-    needs: changes
-    if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] dask-sidecar"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/dask-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/dask-sidecar.bash install
-      - name: test
-        run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-dynamic-sidecar:
-    needs: changes
-    if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] dynamic-sidecar"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
-      - name: test
-        if: always()
-        run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
 
   unit-test-frontend:
     needs: changes
@@ -892,973 +335,677 @@ jobs:
     #   with:
     #     flags: unittests #optional
 
-  unit-test-python-linting:
-    needs: changes
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] python-linting"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9", "3.10", "3.11"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/service-library/requirements/_test.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/python-linting.bash install
-      - name: test
-        run: ./ci/github/unit-testing/python-linting.bash test
-
-  unit-test-postgres-database:
-    needs: changes
-    if: ${{ needs.changes.outputs.postgres-database == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] postgres-database"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/postgres-database/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/postgres-database.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/postgres-database.bash typecheck
-      - name: test
-        if: always()
-        run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-service-integration:
-    needs: changes
-    if: ${{ needs.changes.outputs.service-integration == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] service-integration"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/service-integration/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/service-integration.bash install
-      - name: test
-        run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-service-library:
-    needs: changes
-    if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] service-library"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/service-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/service-library.bash install_all
-      - name: test
-        run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-settings-library:
-    needs: changes
-    if: ${{ needs.changes.outputs.settings-library == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] settings-library"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/settings-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/settings-library.bash install
-      - name: test
-        run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-models-library:
-    needs: changes
-    if: ${{ needs.changes.outputs.models-library == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] models-library"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/models-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/models-library.bash install
-      - name: test
-        run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-test-simcore-sdk:
-    needs: changes
-    if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] simcore-sdk"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/simcore-sdk.bash install
-      - name: test
-        run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
-
-  unit-tests:
-    # NOTE: this is a github required status check!
-    if: ${{ always() }}
-    needs:
-      [
-        unit-test-agent,
-        unit-test-api,
-        unit-test-api-server,
-        unit-test-autoscaling,
-        unit-test-catalog,
-        unit-test-dask-sidecar,
-        unit-test-dask-task-models-library,
-        unit-test-datcore-adapter,
-        unit-test-director,
-        unit-test-director-v2,
-        unit-test-dynamic-sidecar,
-        unit-test-frontend,
-        unit-test-models-library,
-        unit-test-postgres-database,
-        unit-test-python-linting,
-        unit-test-service-integration,
-        unit-test-service-library,
-        unit-test-settings-library,
-        unit-test-simcore-sdk,
-        unit-test-storage,
-        unit-test-webserver-01,
-        unit-test-webserver-02,
-        unit-test-webserver-03,
-      ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: a previous unit-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-        run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
-          exit 1
-      - name: all the previous unit-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-        run: echo "::notice All good!"
+  # unit-test-python-linting:
+  #   needs: changes
+  #   if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 18 # if this timeout gets too small, then split the tests
+  #   name: "[unit] python-linting"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9", "3.10", "3.11"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "packages/service-library/requirements/_test.txt"
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/unit-testing/python-linting.bash install
+  #     - name: test
+  #       run: ./ci/github/unit-testing/python-linting.bash test
 
 
-  integration-test-webserver-01:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] webserver 01"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/web/server/requirements/ci.txt"
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/integration-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/integration-testing/webserver.bash test 01
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/web/server/test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: integrationtests #optional
 
-  integration-test-webserver-02:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] webserver 02"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/web/server/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/integration-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/integration-testing/webserver.bash test 02
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/web/server/test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: integrationtests #optional
+  # integration-test-webserver-01:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[int] webserver 01"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "services/web/server/requirements/ci.txt"
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/integration-testing/webserver.bash install
+  #     - name: test
+  #       run: ./ci/github/integration-testing/webserver.bash test 01
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./services/web/server/test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/integration-testing/webserver.bash clean_up
+  #     - uses: codecov/codecov-action@v3.1.1
+  #       with:
+  #         flags: integrationtests #optional
 
-  integration-test-director-v2-01:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push'}}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] director-v2 01"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/director-v2/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/integration-testing/director-v2.bash install
-      - name: test
-        run: ./ci/github/integration-testing/director-v2.bash test 01
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: integrationtests #optional
+  # integration-test-webserver-02:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[int] webserver 02"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "services/web/server/requirements/ci.txt"
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/integration-testing/webserver.bash install
+  #     - name: test
+  #       run: ./ci/github/integration-testing/webserver.bash test 02
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./services/web/server/test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/integration-testing/webserver.bash clean_up
+  #     - uses: codecov/codecov-action@v3.1.1
+  #       with:
+  #         flags: integrationtests #optional
 
-  integration-test-director-v2-02:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] director-v2 02"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
+  # integration-test-director-v2-01:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push'}}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[int] director-v2 01"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "services/director-v2/requirements/ci.txt"
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/integration-testing/director-v2.bash install
+  #     - name: test
+  #       run: ./ci/github/integration-testing/director-v2.bash test 01
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./services/director-v2/test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/integration-testing/director-v2.bash clean_up
+  #     - uses: codecov/codecov-action@v3.1.1
+  #       with:
+  #         flags: integrationtests #optional
 
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup rclone docker volume plugin
-        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/director-v2/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/integration-testing/director-v2.bash install
-      - name: test
-        run: ./ci/github/integration-testing/director-v2.bash test 02
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: integrationtests #optional
+  # integration-test-director-v2-02:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[int] director-v2 02"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
 
-  integration-test-simcore-sdk:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] simcore-sdk"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/integration-testing/simcore-sdk.bash install
-      - name: test
-        run: ./ci/github/integration-testing/simcore-sdk.bash test
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./packages/simcore-sdk/test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: integrationtests
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup rclone docker volume plugin
+  #       run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "services/director-v2/requirements/ci.txt"
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/integration-testing/director-v2.bash install
+  #     - name: test
+  #       run: ./ci/github/integration-testing/director-v2.bash test 02
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./services/director-v2/test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/integration-testing/director-v2.bash clean_up
+  #     - uses: codecov/codecov-action@v3.1.1
+  #       with:
+  #         flags: integrationtests #optional
 
-  integration-tests:
-    # NOTE: this is a github required status check!
-    if: always()
-    needs:
-      [
-        integration-test-director-v2-01,
-        integration-test-director-v2-02,
-        integration-test-simcore-sdk,
-        integration-test-webserver-01,
-        integration-test-webserver-02,
-      ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: a previous integration-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-        run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
-          exit 1
-      - name: all the previous integration-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-        run: echo "::notice All good!"
+  # integration-test-simcore-sdk:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[int] simcore-sdk"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: install rclone
+  #       run: sudo ./ci/github/helpers/install_rclone.bash
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/integration-testing/simcore-sdk.bash install
+  #     - name: test
+  #       run: ./ci/github/integration-testing/simcore-sdk.bash test
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./packages/simcore-sdk/test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
+  #     - uses: codecov/codecov-action@v3.1.1
+  #       with:
+  #         flags: integrationtests
+
+  # integration-tests:
+  #   # NOTE: this is a github required status check!
+  #   if: always()
+  #   needs:
+  #     [
+  #       integration-test-director-v2-01,
+  #       integration-test-director-v2-02,
+  #       integration-test-simcore-sdk,
+  #       integration-test-webserver-01,
+  #       integration-test-webserver-02,
+  #     ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: a previous integration-test job failed
+  #       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+  #       run: |
+  #         echo "::error title=ERROR::one of the unit-tests failed!"
+  #         exit 1
+  #     - name: all the previous integration-tests were run successfully or skipped
+  #       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+  #       run: echo "::notice All good!"
 
 
-  system-test-public-api:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[sys] public api"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "tests/public-api/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/system-testing/public-api.bash install
-      - name: test
-        run: ./ci/github/system-testing/public-api.bash test
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/system-testing/public-api.bash clean_up
+  # system-test-public-api:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 25 # if this timeout gets too small, then split the tests
+  #   name: "[sys] public api"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "tests/public-api/requirements/ci.txt"
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/system-testing/public-api.bash install
+  #     - name: test
+  #       run: ./ci/github/system-testing/public-api.bash test
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/system-testing/public-api.bash clean_up
 
-  system-test-swarm-deploy:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] deploy simcore"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/system-testing/swarm-deploy.bash install
-      - name: test
-        run: ./ci/github/system-testing/swarm-deploy.bash test
-      - name: upload failed tests logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./test_failures
-      - name: cleanup
-        if: always()
-        run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+  # system-test-swarm-deploy:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[sys] deploy simcore"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/system-testing/swarm-deploy.bash install
+  #     - name: test
+  #       run: ./ci/github/system-testing/swarm-deploy.bash test
+  #     - name: upload failed tests logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./test_failures
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
-  system-test-e2e:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] e2e"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        node: [14]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v3.5.1
-        with:
-          node-version: ${{ matrix.node }}
-          cache: "npm"
-          cache-dependency-path: "tests/e2e/package-lock.json"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: setup
-        run: ./ci/github/system-testing/e2e.bash install
-      - name: test
-        run: ./ci/github/system-testing/e2e.bash test
-      - name: dump docker logs
-        id: docker_logs_dump
-        if: failure()
-        run: ./ci/github/system-testing/e2e.bash dump_docker_logs
-      - name: upload docker logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./tests/e2e/test_failures
-      - name: upload screenshots
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_screenshots
-          path: tests/e2e/screenshots
-      - name: upload e2e logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.job }}_logs
-          path: tests/e2e/logs
-      - name: cleanup
-        if: always()
-        run: ./ci/github/system-testing/e2e.bash clean_up
+  # system-test-e2e:
+  #   needs: [changes, build-test-images]
+  #   if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[sys] e2e"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       node: [14]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "tests/e2e/requirements/requirements.txt"
+  #     - uses: actions/setup-node@v3.5.1
+  #       with:
+  #         node-version: ${{ matrix.node }}
+  #         cache: "npm"
+  #         cache-dependency-path: "tests/e2e/package-lock.json"
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: make load-images local-src=/${{ runner.temp }}/build
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: setup
+  #       run: ./ci/github/system-testing/e2e.bash install
+  #     - name: test
+  #       run: ./ci/github/system-testing/e2e.bash test
+  #     - name: dump docker logs
+  #       id: docker_logs_dump
+  #       if: failure()
+  #       run: ./ci/github/system-testing/e2e.bash dump_docker_logs
+  #     - name: upload docker logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_docker_logs
+  #         path: ./tests/e2e/test_failures
+  #     - name: upload screenshots
+  #       if: always()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_screenshots
+  #         path: tests/e2e/screenshots
+  #     - name: upload e2e logs
+  #       if: failure()
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ github.job }}_logs
+  #         path: tests/e2e/logs
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/system-testing/e2e.bash clean_up
 
-  system-test-environment-setup:
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] environment setup"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "tests/environment-setup/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/system-testing/environment-setup.bash install
-      - name: test
-        run: ./ci/github/system-testing/environment-setup.bash test
-      - name: cleanup
-        if: always()
-        run: ./ci/github/system-testing/environment-setup.bash clean_up
+  # system-test-environment-setup:
+  #   timeout-minutes: 30 # if this timeout gets too small, then split the tests
+  #   name: "[sys] environment setup"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "tests/environment-setup/requirements/ci.txt"
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install
+  #       run: ./ci/github/system-testing/environment-setup.bash install
+  #     - name: test
+  #       run: ./ci/github/system-testing/environment-setup.bash test
+  #     - name: cleanup
+  #       if: always()
+  #       run: ./ci/github/system-testing/environment-setup.bash clean_up
 
-  system-tests:
-    # NOTE: this is a github required status check!
-    if: always()
-    needs:
-      [
-        system-test-e2e,
-        system-test-environment-setup,
-        system-test-public-api,
-        system-test-swarm-deploy,
-      ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: a previous system-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-        run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
-          exit 1
-      - name: all the previous system-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-        run: echo "::notice All good!"
+  # system-tests:
+  #   # NOTE: this is a github required status check!
+  #   if: always()
+  #   needs:
+  #     [
+  #       system-test-e2e,
+  #       system-test-environment-setup,
+  #       system-test-public-api,
+  #       system-test-swarm-deploy,
+  #     ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: a previous system-test job failed
+  #       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+  #       run: |
+  #         echo "::error title=ERROR::one of the unit-tests failed!"
+  #         exit 1
+  #     - name: all the previous system-tests were run successfully or skipped
+  #       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+  #       run: echo "::notice All good!"
 
-  deploy:
-    name: deploy to dockerhub
-    if: github.event_name == 'push'
-    needs: [unit-tests, integration-tests, system-tests]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    env:
-      # secrets can be set in settings/secrets on github
-      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: download docker images
-        uses: actions/download-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: |
-          make load-images local-src=/${{ runner.temp }}/build
-      - name: set owner variable
-        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - if: github.ref == 'refs/heads/master'
-        name: deploy master image
-        env:
-          TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
-      - if: contains(github.ref, 'refs/heads/hotfix_v')
-        name: deploy release hotfix image
-        env:
-          TAG_PREFIX: hotfix-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
-      - if: contains(github.ref, 'refs/heads/hotfix_staging_')
-        name: deploy staging hotfix image
-        env:
-          TAG_PREFIX: hotfix-staging-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
+  # deploy:
+  #   name: deploy to dockerhub
+  #   if: github.event_name == 'push'
+  #   needs: [unit-tests, integration-tests, system-tests]
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   env:
+  #     # secrets can be set in settings/secrets on github
+  #     DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+  #     DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  #     DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: download docker images
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
+  #     - name: load docker images
+  #       run: |
+  #         make load-images local-src=/${{ runner.temp }}/build
+  #     - name: set owner variable
+  #       run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
+  #     - if: github.ref == 'refs/heads/master'
+  #       name: deploy master image
+  #       env:
+  #         TAG_PREFIX: master-github
+  #       run: ./ci/deploy/dockerhub-deploy.bash -n
+  #     - if: contains(github.ref, 'refs/heads/hotfix_v')
+  #       name: deploy release hotfix image
+  #       env:
+  #         TAG_PREFIX: hotfix-github
+  #       run: ./ci/deploy/dockerhub-deploy.bash -n
+  #     - if: contains(github.ref, 'refs/heads/hotfix_staging_')
+  #       name: deploy staging hotfix image
+  #       env:
+  #         TAG_PREFIX: hotfix-staging-github
+  #       run: ./ci/deploy/dockerhub-deploy.bash -n
