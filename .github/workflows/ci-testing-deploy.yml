@@ -15,37 +15,10 @@ on:
       - "*"
     tags-ignore:
       - "*"
-    paths:
-      - "!.vscode/**"
-      - "!*.md"
-      - "!*.png"
-      - "!*.svg"
-      - "!docs/**"
-      - ".github/workflows/ci-testing-deploy.yml"
-      - "**.js"
-      - "**.json"
-      - "**.Makefile"
-      - "**.py"
-      - "**/requirements/*.txt"
-      - "**/services/docker-compose*"
-      - "ci/**"
   pull_request:
     branches:
       - "*"
-    paths:
-      - "!*.md"
-      - "!*.png"
-      - "!*.svg"
-      - "!docs/**"
-      - "!.vscode/**"
-      - "!.vscode-template/**"
-      - "**.py"
-      - "**.js"
-      - "**/requirements/*.txt"
-      - "**.json"
-      - "**.Makefile"
-      - ".github/workflows/ci-testing-deploy.yml"
-      - "ci/**"
+
 env:
   DEFAULT_MAX_NANO_CPUS: 10000000
   DEFAULT_MAX_MEMORY: 268435456
