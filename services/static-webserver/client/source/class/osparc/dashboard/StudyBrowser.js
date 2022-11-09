@@ -153,7 +153,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__addNewPlanButton(mode);
       } else if (osparc.utils.Utils.isProduct("s4l")) {
         this.__addNewS4LServiceButtons(mode);
-      } else if (osparc.utils.Utils.isProduct("s4llight")) {
+      } else if (osparc.utils.Utils.isProduct("s4llite")) {
         this.__removeNewStudyButtons();
         this.__addNewS4LLightServiceButtons(mode);
       }

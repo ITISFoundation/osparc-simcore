@@ -328,7 +328,7 @@ qx.Class.define("osparc.Application", {
       let view = null;
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
-        case "s4llight":
+        case "s4llite":
           view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;

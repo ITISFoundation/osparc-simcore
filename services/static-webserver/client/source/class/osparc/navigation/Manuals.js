@@ -9,7 +9,7 @@ qx.Class.define("osparc.navigation.Manuals", {
       switch (productName) {
         case "osparc":
         case "s4l":
-        case "s4llight":
+        case "s4llite":
           licenseLink = "http://docs.osparc.io/#/docs/support/license";
           break;
         case "tis":
@@ -27,7 +27,7 @@ qx.Class.define("osparc.navigation.Manuals", {
       switch (productName) {
         case "osparc":
         case "s4l":
-        case "s4llight":
+        case "s4llite":
           manuals.push({
             label: qx.locale.Manager.tr("User Manual"),
             icon: "@FontAwesome5Solid/book/22",
