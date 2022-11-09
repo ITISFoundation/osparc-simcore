@@ -154,6 +154,26 @@ async def close_project(request: web.Request) -> web.Response:
 
 
 #
+# clone project: custom methods https://google.aip.dev/136
+#
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:clone", name="clone_project")
+@login_required
+@permission_required("project.open")
+async def clone_project(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    #
+    # TODO:
+    #  - reuse create_projects, from_study=Projectid, as_template=?, copy_data=?, hidden=? generic clone with these options. new UUID should be returned inmediatly?
+    #  - this is hit by some optimizer. Long running task is an option? Perhaps we need a macro operation to iterate instead, i.e. clone+change inputs then a new to run
+    #  -
+    raise NotImplementedError()
+
+
+#
 # project's state sub-resource
 #
 
