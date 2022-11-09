@@ -101,3 +101,18 @@ erd-Node.svg: _erdantic
 erd-ServiceInput.svg: _erdantic
 	erdantic models_library.services.ServiceInput \
 		--out $@
+
+
+#
+# Test artifacts
+#
+
+TEST_DATA_ARTIFACTS = "$(CURDIR)/tests/data/ignore.keep"
+
+PHONY: pull_test_data
+pull_test_data: $(DOT_ENV_FILE) ## downloads tests data from registry
+	echo $(DOT_ENV_FILE)
+	@set -o allexport; \
+	source $<; \
+	set +o allexport; \
+	python3 "$(PACKAGES_DIR)/pytest-simcore/src/pytest_simcore/helpers/utils_docker_registry.py" $(TEST_DATA_ARTIFACTS)
