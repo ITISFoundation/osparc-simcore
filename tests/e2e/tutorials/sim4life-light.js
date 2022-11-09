@@ -30,8 +30,8 @@ async function runTutorial() {
       throw "Check exposed services";
     }
 
-    // start Sim4Life Light
-    const studyData = await tutorial.startSim4LifeLight();
+    // start Sim4Life Lite
+    const studyData = await tutorial.startSim4LifeLite();
     studyId = studyData["data"]["uuid"];
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);

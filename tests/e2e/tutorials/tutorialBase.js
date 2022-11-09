@@ -236,25 +236,25 @@ class TutorialBase {
     return resp;
   }
 
-  async startSim4LifeLight() {
-    await this.takeScreenshot("startSim4LifeLight_before");
+  async startSim4LifeLite() {
+    await this.takeScreenshot("startSim4LifeLite_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
-      await auto.dashboardStartSim4LifeLight(this.__page);
+      await auto.dashboardStartSim4LifeLite(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`Sim4Life Light could not be started:\n`, err);
+      console.error(`Sim4Life Lite could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
-    await this.takeScreenshot("startSim4LifeLight_after");
+    await this.takeScreenshot("startSim4LifeLite_after");
     return resp;
   }
 
