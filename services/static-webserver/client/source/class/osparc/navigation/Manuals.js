@@ -112,7 +112,7 @@ qx.Class.define("osparc.navigation.Manuals", {
       }
 
       const productName = osparc.utils.Utils.getProductName();
-      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Information", null,
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null,
         qx.locale.Manager.tr("Send us an email to:")
       );
       const color = qx.theme.manager.Color.getInstance().resolve("text");
