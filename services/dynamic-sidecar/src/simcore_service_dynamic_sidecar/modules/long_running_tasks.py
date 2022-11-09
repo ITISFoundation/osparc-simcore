@@ -1,6 +1,5 @@
 import functools
 import logging
-from asyncio import Task
 from collections import deque
 from typing import Any, Awaitable, Final, Optional
 
@@ -299,13 +298,9 @@ async def task_ports_outputs_push(
 
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
 
-    upload_tasks: deque[Task] = deque()
-    for port_key in port_keys:
-        ongoing_upload_task = await outputs_manager.upload_port(port_key)
-        if ongoing_upload_task is not None:
-            upload_tasks.append(ongoing_upload_task)
-
-    await logged_gather(*upload_tasks)
+    await logged_gather(
+        *[outputs_manager.upload_port(port_key) for port_key in port_keys]
+    )
 
     await send_message(rabbitmq, "Finished pulling outputs")
     progress.update(message="finished outputs pushing", percent=0.99)
