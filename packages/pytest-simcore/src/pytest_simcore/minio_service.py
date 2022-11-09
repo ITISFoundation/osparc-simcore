@@ -6,11 +6,11 @@ import logging
 from typing import Any, Iterator
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from minio import Minio
 from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
 from pydantic import parse_obj_as
+from pytest import MonkeyPatch
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt

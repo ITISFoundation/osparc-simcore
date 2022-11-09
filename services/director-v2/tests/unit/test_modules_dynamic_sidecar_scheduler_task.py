@@ -10,9 +10,8 @@ from typing import Final, Iterator
 import httpx
 import pytest
 import respx
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
-from pytest import FixtureRequest
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict

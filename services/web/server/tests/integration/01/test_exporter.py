@@ -25,12 +25,12 @@ import aiopg
 import aiopg.sa
 import pytest
 import redis.asyncio as aioredis
-from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_storage import LinkType
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application

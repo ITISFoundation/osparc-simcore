@@ -23,7 +23,6 @@ from _helpers import (
     manually_run_comp_scheduler,
     set_comp_task_state,
 )
-from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import TaskOutputData
@@ -31,6 +30,7 @@ from fastapi.applications import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_state import RunningState
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.comp_pipeline import StateType

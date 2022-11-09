@@ -9,7 +9,6 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from _dask_helpers import DaskGatewayServer
-from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
@@ -17,6 +16,7 @@ from faker import Faker
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
 from pydantic import SecretStr
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsGet
 from starlette import status

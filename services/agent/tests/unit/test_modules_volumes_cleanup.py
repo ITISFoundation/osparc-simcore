@@ -5,8 +5,8 @@
 from pathlib import Path
 
 import pytest
-from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
+from pytest import LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup import backup_and_remove_volumes

@@ -20,9 +20,8 @@ from typing import Any, Iterator
 
 import pytest
 import yaml
-from _pytest.config import ExitCode
-from _pytest.monkeypatch import MonkeyPatch
 from dotenv import dotenv_values, set_key
+from pytest import ExitCode, MonkeyPatch
 
 from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
