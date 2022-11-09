@@ -198,9 +198,22 @@ qx.Class.define("osparc.auth.LoginPage", {
           versionLink.setValue(text);
         });
 
-      const organizationLink = new osparc.ui.basic.LinkLabel(`© ${new Date().getFullYear()} IT'IS Foundation`, "https://itis.swiss").set({
+      const organizationLink = new osparc.ui.basic.LinkLabel().set({
+        label: `© ${new Date().getFullYear()} IT'IS Foundation`,
+        link: "https://itis.swiss",
         textColor: "text-darker"
       });
+      if (osparc.utils.Utils.isProduct("s4l") || osparc.utils.Utils.isProduct("s4llite")) {
+        organizationLink.set({
+          label: `© ${new Date().getFullYear()} Zurich MedTech`,
+          link: "https://zmt.swiss"
+        });
+      } else {
+        organizationLink.set({
+          label: `© ${new Date().getFullYear()} IT'IS Foundation`,
+          link: "https://itis.swiss"
+        });
+      }
       versionLinkLayout.add(organizationLink);
 
       if (osparc.utils.Utils.isProduct("tis")) {
