@@ -254,7 +254,7 @@ class TasksManager:
                 error = TaskExceptionError(
                     task_id=task_id, exception=exception, traceback=formatted_traceback
                 )
-                logger.warning("%s", f"{error}")
+                logger.warning("Task %s finished with error: %s", task_id, f"{error}")
                 return TaskResult(result=None, error=f"{error}")
         except asyncio.CancelledError:
             error = TaskCancelledError(task_id=task_id)
