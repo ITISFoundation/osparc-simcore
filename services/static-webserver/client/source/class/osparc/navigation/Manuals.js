@@ -116,8 +116,9 @@ qx.Class.define("osparc.navigation.Manuals", {
         qx.locale.Manager.tr("Send us an email to:")
       );
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `<a href=mailto:${email}?subject=${productName} feedback" style='color: ${color}' target='_blank'>${email}</a>`;
+      const textLink = `&nbsp<a href=mailto:${email}?subject=${productName} feedback" style='color: ${color}' target='_blank'>${email}</a>&nbsp`;
       const mailto = new qx.ui.basic.Label(textLink).set({
+        selectable: true,
         rich : true
       });
       giveEmailFeedbackWindow.addWidget(mailto);
