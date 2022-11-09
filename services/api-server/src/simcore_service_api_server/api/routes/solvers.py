@@ -178,7 +178,7 @@ async def list_solver_ports(
 ):
     """Lists inputs and outputs of a given solver
 
-    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    New in *version 0.5* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
     try:
 
