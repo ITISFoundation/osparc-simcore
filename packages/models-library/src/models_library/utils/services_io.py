@@ -1,3 +1,4 @@
+import mimetypes
 from copy import deepcopy
 from typing import Any, Literal, Optional, Union
 
@@ -14,6 +15,35 @@ _PROPERTY_TYPE_TO_SCHEMAS = {
 }
 
 
+def guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
+    # SEE https://docs.python.org/3/library/mimetypes.html
+    # SEE https://www.iana.org/assignments/media-types/media-types.xhtml
+    media_type = io.property_type.removeprefix("data:")
+    if media_type == "*/*" and io.file_to_key_map:
+        filename = list(io.file_to_key_map.keys())[0]
+        media_type, _ = mimetypes.guess_type(filename)
+        if media_type is None:
+            media_type = "*/*"
+    return media_type
+
+
+# TODO: use this in services/catalog/src/simcore_service_catalog/models/schemas/services_ports.py
+# TODO: https://github.com/ITISFoundation/osparc-simcore/issues/3517
+
+#
+# 1. unify
+# 2. test against all i/o ports in registry.osparc-master.speag.com
+#
+#
+
+
+def update_schema_doc(schema: dict[str, Any], port: Union[ServiceInput, ServiceOutput]):
+    schema["title"] = port.label
+    if port.label != port.description:
+        schema["description"] = port.description
+    return schema
+
+
 def get_service_io_json_schema(
     port: Union[ServiceInput, ServiceOutput]
 ) -> Optional[dict[str, Any]]:
@@ -25,6 +55,7 @@ def get_service_io_json_schema(
     of BaseServiceIO once we proceed to a full deprecation of legacy fields like units, etc
     """
     if port.content_schema:
+        # NOTE this schema was already validated in BaseServiceIOModel
         return deepcopy(port.content_schema)
 
     # converts legacy
@@ -32,9 +63,7 @@ def get_service_io_json_schema(
         schema = deepcopy(schema)
 
         # updates schema-doc, i.e description and title
-        schema["title"] = port.label
-        if port.label != port.description:
-            schema["description"] = port.description
+        update_schema_doc(schema=schema, port=port)
 
         # new x_unit custom field in json-schema
         if port.unit:
