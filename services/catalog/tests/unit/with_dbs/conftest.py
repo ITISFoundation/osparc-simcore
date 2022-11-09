@@ -13,11 +13,11 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, 
 import pytest
 import respx
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users

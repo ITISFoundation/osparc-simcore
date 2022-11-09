@@ -26,10 +26,10 @@ import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
 from _helpers import MockedStorageSubsystem
-from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser

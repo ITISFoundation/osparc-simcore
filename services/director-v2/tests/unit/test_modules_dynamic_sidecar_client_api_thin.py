@@ -5,10 +5,10 @@ import json
 from typing import Any, Callable, Optional
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI, status
 from httpx import Response
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes

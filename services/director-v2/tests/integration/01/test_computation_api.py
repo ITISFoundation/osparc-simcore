@@ -15,7 +15,6 @@ from typing import Any, Callable
 import httpx
 import pytest
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
@@ -23,6 +22,7 @@ from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from pytest import MonkeyPatch
 from settings_library.rabbit import RabbitSettings
 from shared_comp_utils import (
     COMPUTATION_URL,

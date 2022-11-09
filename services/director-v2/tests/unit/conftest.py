@@ -20,7 +20,6 @@ import pytest
 import respx
 import traitlets.config
 from _dask_helpers import DaskGatewayServer
-from _pytest.logging import LogCaptureFixture
 from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
@@ -33,7 +32,7 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKeyVersion
 from pydantic import parse_obj_as
 from pydantic.types import NonNegativeInt
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
