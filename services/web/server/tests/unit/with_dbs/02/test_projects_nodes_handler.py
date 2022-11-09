@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import choice
@@ -21,42 +20,9 @@ from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from settings_library.catalog import CatalogSettings
 from simcore_postgres_database.models.projects import projects as projects_db_model
-from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
-
-
-@pytest.fixture
-def mock_catalog_service_api_responses(client, aioresponses_mocker):
-    settings: CatalogSettings = get_plugin_settings(client.app)
-    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
-
-    aioresponses_mocker.get(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.post(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.put(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.patch(
-        url_pattern,
-        payload={"data": {}},
-        repeat=True,
-    )
-    aioresponses_mocker.delete(
-        url_pattern,
-        repeat=True,
-    )
 
 
 @pytest.mark.parametrize(

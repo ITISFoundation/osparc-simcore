@@ -163,6 +163,10 @@ def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
     )
 
 
+# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
+# pylint: disable=too-many-public-methods
+
+
 class ProjectDBAPI:
     def __init__(self, app: web.Application):
         # TODO: shall be a weak pointer since it is also contained by app??
@@ -174,6 +178,17 @@ class ProjectDBAPI:
         self._engine = self._app.get(APP_DB_ENGINE_KEY)
         if self._engine is None:
             raise ValueError("Database subsystem was not initialized")
+
+    @classmethod
+    def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
+        return app[APP_PROJECT_DBAPI]
+
+    @classmethod
+    def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
+        if app.get(APP_PROJECT_DBAPI) is None:
+            db = ProjectDBAPI(app)
+            app[APP_PROJECT_DBAPI] = db
+        return app[APP_PROJECT_DBAPI]
 
     @property
     def engine(self) -> Engine:
@@ -565,6 +580,9 @@ class ProjectDBAPI:
         - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
         - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
         - Example: to remove a node ```{node_id: None}```
+
+        raises NodeNotFoundError, ProjectInvalidRightsError
+
         """
         with log_context(
             log,
@@ -681,6 +699,8 @@ class ProjectDBAPI:
         """replaces a project from a user
         this method completely replaces a user project with new_project_data only keeping
         the old entries from the project workbench if they exists in the new project workbench.
+
+        :raises ProjectInvalidRightsError
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
@@ -946,7 +966,4 @@ class ProjectDBAPI:
 
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
-    if app.get(APP_PROJECT_DBAPI) is None:
-        db = ProjectDBAPI(app)
-        app[APP_PROJECT_DBAPI] = db
-    return app[APP_PROJECT_DBAPI]
+    return ProjectDBAPI.set_once_in_app_context(app)
