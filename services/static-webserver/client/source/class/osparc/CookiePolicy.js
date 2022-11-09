@@ -136,7 +136,7 @@ qx.Class.define("osparc.CookiePolicy", {
       const acceptCookie = this.getChildControl("accept-cookie");
       checkButtons.push(acceptCookie);
 
-      if (osparc.utils.Utils.isProduct("tis")) {
+      if (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) {
         this.getChildControl("license-text");
         const acceptLicense = this.getChildControl("accept-license");
         checkButtons.push(acceptLicense);
