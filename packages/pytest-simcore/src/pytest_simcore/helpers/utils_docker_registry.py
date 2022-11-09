@@ -1,5 +1,7 @@
 """ Helper to request data from docker-registry
 
+
+NOTE: this could be used as draft for https://github.com/ITISFoundation/osparc-simcore/issues/2165
 """
 
 import json
@@ -27,11 +29,14 @@ class Registry:
     # SEE  https://github.com/moby/moby/issues/9015
 
     def __init__(self, **data):
-        data.setdefault("url", os.environ.get("REGISTRY_URL"))
+        data.setdefault("url", f'https://{os.environ.get("REGISTRY_URL")}')
         data.setdefault(
             "auth", (os.environ.get("REGISTRY_USER"), os.environ.get("REGISTRY_PW"))
         )
         self.data = RegistryConfig(**data)
+
+    def __str__(self) -> str:
+        return f"<Docker Registry f{self.data.url}>"
 
     def api_version_check(self):
         # https://docs.docker.com/registry/spec/api/#api-version-check
@@ -64,10 +69,10 @@ class Registry:
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
-        if r.status_code == 200:
-            digest = r.headers["Docker-Content-Digest"]
-            return digest
         r.raise_for_status()
+        assert r.status_code == 200
+        digest = r.headers["Docker-Content-Digest"]
+        return digest
 
     def check_manifest(self, repo_name: RepoName, repo_reference: str) -> bool:
         r = httpx.head(
@@ -76,7 +81,7 @@ class Registry:
         )
         if r.status_code == 400:
             return False
-
+        # some other error?
         r.raise_for_status()
         return True
 
@@ -97,15 +102,17 @@ class Registry:
         )
         r.raise_for_status()
 
-        #
         # manifest formats and their content types: https://docs.docker.com/registry/spec/manifest-v2-1/,
         # see format https://github.com/moby/moby/issues/8093
         manifest = r.json()
         return manifest
 
 
-def get_meta(image_v1: str) -> dict[str, Any]:
-    # image_v1: accepts v1 compatible string encoded json for each layer
+def get_metadata(image_v1: str) -> dict[str, Any]:
+    """Extracts metadata object from 'io.simcore.*' labels
+
+    image_v1: v1 compatible string encoded json for each layer
+    """
     labels = json.loads(image_v1).get("config", {}).get("Labels", [])
     meta = {}
     for key in labels:
@@ -117,6 +124,9 @@ def get_meta(image_v1: str) -> dict[str, Any]:
 def download_all_registry_metadata(dest_dir: Path):
     registry = Registry()
 
+    print("Starting", registry)
+
+    count = 0
     for repo in registry.iter_repositories(limit=500):
         folder = dest_dir / Path(repo)
         folder.mkdir(parents=True, exist_ok=True)
@@ -126,13 +136,20 @@ def download_all_registry_metadata(dest_dir: Path):
                 try:
                     manifest = registry.get_manifest(repo_name=repo, repo_reference=tag)
 
-                    meta = get_meta(image_v1=manifest["history"][0]["v1Compatibility"])
+                    meta = get_metadata(
+                        image_v1=manifest["history"][0]["v1Compatibility"]
+                    )
                     with path.open("wt") as fh:
                         json.dump(meta, fh, indent=1)
                     print("downloaded", path)
+                    count += 1
                 except Exception as err:  # pylint: disable=broad-except
                     print("Failed", path, err)
                     path.unlink(missing_ok=True)
+            else:
+                print("found", path, "[skip download]")
+                count += 1
+    print("\nDownloaded", count, "metadata files")
 
 
 if __name__ == "__main__":

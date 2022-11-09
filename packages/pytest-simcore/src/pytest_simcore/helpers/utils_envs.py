@@ -1,8 +1,9 @@
-import os
+"""
+.env (dotenv) files (or envfile)
+"""
 
-#
-# .env (dotenv) files (or envfile)
-#
+import os
+from copy import deepcopy
 from io import StringIO
 from pathlib import Path
 from typing import Union
@@ -20,7 +21,7 @@ def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
     for key, value in envs.items():
         assert value is not None  # None keys cannot be is defined w/o value
         monkeypatch.setenv(key, str(value))
-    return envs
+    return deepcopy(envs)
 
 
 def load_dotenv(envfile_content_or_path: Union[Path, str], **options) -> EnvVarsDict:
