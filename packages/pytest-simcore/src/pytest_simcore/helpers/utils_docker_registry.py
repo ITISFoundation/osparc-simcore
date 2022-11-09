@@ -1,16 +1,19 @@
+""" Helper to request data from docker-registry
+
+"""
+
 import json
+import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 import httpx
 
-# TODO: use this for registry!
-#  https://github.com/moby/moby/issues/9015
-
 
 @dataclass
-class RegistryData:
+class RegistryConfig:
     url: str
     auth: tuple[str, str]
 
@@ -20,27 +23,41 @@ RepoTag = str
 
 
 class Registry:
+    # SEE https://docs.docker.com/registry/spec/api
+    # SEE  https://github.com/moby/moby/issues/9015
+
     def __init__(self, **data):
-        self.data = RegistryData(**data)
+        data.setdefault("url", os.environ.get("REGISTRY_URL"))
+        data.setdefault(
+            "auth", (os.environ.get("REGISTRY_USER"), os.environ.get("REGISTRY_PW"))
+        )
+        self.data = RegistryConfig(**data)
 
     def api_version_check(self):
         # https://docs.docker.com/registry/spec/api/#api-version-check
 
         r = httpx.get(f"{self.data.url}/v2/", auth=self.data.auth)
-        # print(r.text)
         r.raise_for_status()
 
     def iter_repositories(self, limit: int = 100) -> Iterator[RepoName]:
+        def _req(**kwargs):
+            r = httpx.get(auth=self.data.auth, **kwargs)
+            r.raise_for_status()
+
+            yield from r.json()["repositories"]
+
+            if link := r.headers.get("Link"):
+                #  until the Link header is no longer set in the response
+                # SEE https://docs.docker.com/registry/spec/api/#pagination-1
+                # ex=.g. '</v2/_catalog?last=simcore%2Fservices%2Fcomp%2Fcontrolcore-mmpc&n=5>; rel="next"'
+                if m := re.match(r'<([^><]+)>;\s+rel=([\w"]+)', link):
+                    next_page = m.group(1)
+                    yield from _req(url=next_page)
+
         assert limit > 0
         query = {"n": limit}
 
-        r = httpx.get(f"{self.data.url}/v2/_catalog", auth=self.data.auth, params=query)
-        r.raise_for_status()
-        yield from r.json()["repositories"]
-
-        print(r.headers["Link"])
-
-        # r.headers["Link"]
+        yield from _req(url=f"{self.data.url}/v2/_catalog", params=query)
 
     def get_digest(self, repo_name: str, repo_reference: str) -> str:
         r = httpx.head(
@@ -79,59 +96,29 @@ class Registry:
             auth=self.data.auth,
         )
         r.raise_for_status()
-        # print(r.text)
 
         #
         # manifest formats and their content types: https://docs.docker.com/registry/spec/manifest-v2-1/,
-        #
         # see format https://github.com/moby/moby/issues/8093
         manifest = r.json()
         return manifest
 
 
-def get_meta(image_v1: str):
+def get_meta(image_v1: str) -> dict[str, Any]:
     # image_v1: accepts v1 compatible string encoded json for each layer
     labels = json.loads(image_v1).get("config", {}).get("Labels", [])
     meta = {}
     for key in labels:
-        # TODO: simcore.service.settings
         if key.startswith("io.simcore."):
             meta.update(**json.loads(labels[key]))
     return meta
 
 
-def demo1():
-    for n, h in enumerate(manifest["history"]):
-        # pprint(json.loads(image_v1))
-        meta = get_meta(image_v1=h["v1Compatibility"])
-        print(n, json.dumps(meta, indent=1))
+def download_all_registry_metadata(dest_dir: Path):
+    registry = Registry()
 
-
-def demo2():
-    registry = Registry(
-        url="https://registry.osparc-master.speag.com", auth=("admin", "adminadmin")
-    )
-
-    # All versions of an image are stored in a repository
-    repo_name = (
-        "simcore/services/comp/ascent-runner"  # = image name prefix (w/o tag after ':')
-    )
-    repo_reference = "1.0.0"  #  = The reference may include a tag or digest!
-
-    manifest = registry.get_manifest(repo_name=repo_name, repo_reference=repo_reference)
-
-    meta = get_meta(image_v1=manifest["history"][0]["v1Compatibility"])
-    with open("metadata.json", "wt") as fh:
-        json.dump(meta, fh, indent=1)
-
-
-if __name__ == "__main__":
-    registry = Registry(
-        url="https://registry.osparc-master.speag.com", auth=("admin", "adminadmin")
-    )
-
-    for repo in registry.iter_repositories():
-        folder = Path(repo)
+    for repo in registry.iter_repositories(limit=500):
+        folder = dest_dir / Path(repo)
         folder.mkdir(parents=True, exist_ok=True)
         for tag in registry.get_tags(repo_name=repo):
             path = folder / f"metadata-{tag}.json"
@@ -142,6 +129,15 @@ if __name__ == "__main__":
                     meta = get_meta(image_v1=manifest["history"][0]["v1Compatibility"])
                     with path.open("wt") as fh:
                         json.dump(meta, fh, indent=1)
-                except Exception as err:
-                    print(f"Failed {path}", err)
+                    print("downloaded", path)
+                except Exception as err:  # pylint: disable=broad-except
+                    print("Failed", path, err)
                     path.unlink(missing_ok=True)
+
+
+if __name__ == "__main__":
+    import sys
+
+    dest = Path(sys.argv[1])
+    assert dest.exists()
+    download_all_registry_metadata(dest_dir=dest)
