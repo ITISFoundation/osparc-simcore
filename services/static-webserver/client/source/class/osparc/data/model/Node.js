@@ -999,7 +999,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initLoadingPage: function() {
-      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llight");
+      const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
       this.getStatus().addListener("changeInteractive", () => {
@@ -1026,7 +1026,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.component.widget.PersistentIframe();
-      if (osparc.utils.Utils.isProduct("s4llight")) {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
         iframe.setShowZoomButton(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);

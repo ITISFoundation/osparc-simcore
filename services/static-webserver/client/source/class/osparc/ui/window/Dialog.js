@@ -45,6 +45,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
 
   members: {
     __messageLabel: null,
+    __extraWidgetsLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -75,6 +76,12 @@ qx.Class.define("osparc.ui.window.Dialog", {
       this.add(this.__messageLabel, {
         flex: 1
       });
+      this.__extraWidgetsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+        padding: 10
+      });
+      this.add(this.__extraWidgetsLayout, {
+        flex: 1
+      });
       this.getChildControl("buttons-layout");
     },
 
@@ -82,9 +89,13 @@ qx.Class.define("osparc.ui.window.Dialog", {
       this.__messageLabel.setValue(message);
     },
 
+    addWidget: function(widget) {
+      this.__extraWidgetsLayout.add(widget);
+    },
+
     /**
      * Adds a button to the dialog.
-     * @param {qx.ui.toolbar.Button} button Button that will be added to the bottom bar of the dialog.
+     * @param {qx.ui.form.Button} button Button that will be added to the bottom bar of the dialog.
      */
     addButton: function(button) {
       const btnToolbar = this.getChildControl("buttons-layout");
@@ -97,6 +108,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
     addCancelButton: function() {
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.close(), this);
+      return cancelButton;
     }
   }
 });
