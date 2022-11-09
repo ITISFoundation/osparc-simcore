@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.9.0
+  version: 0.10.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -2305,7 +2305,7 @@ paths:
                               type: string
                               description: Instructions about what to do in this step
                               example:
-                                - 'This is a **sleeper**'
+                                - This is a **sleeper**
                                 - 'Please, select the config file defined [in this link](asdf)'
                       additionalProperties: true
                     currentNodeId:
@@ -2477,12 +2477,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: '$response.body#/data/task_id'
+                task_id: $response.body#/data/task_id
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:
@@ -2763,7 +2763,7 @@ paths:
             schema:
               type: object
               properties:
-                service_uuid:
+                service_id:
                   type: string
                   description: the uuid to assign to the service
                 service_key:
@@ -3101,6 +3101,119 @@ paths:
                 $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_id}/inputs':
+    get:
+      tags:
+        - project
+      summary: Get Project Inputs
+      description: New in version *0.10*
+      operationId: get_project_inputs
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: object
+                    additionalProperties:
+                      title: ProjectPortGet
+                      required:
+                        - key
+                        - value
+                        - label
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        value:
+                          title: Value
+                          description: Value assigned to this i/o port
+                        label:
+                          title: Label
+                          type: string
+                  error:
+                    title: Error
+    patch:
+      tags:
+        - project
+      summary: Update Project Inputs
+      description: New in version *0.10*
+      operationId: update_project_inputs
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Updates
+              type: array
+              items:
+                title: ProjectPort
+                required:
+                  - key
+                  - value
+                type: object
+                properties:
+                  key:
+                    title: Key
+                    type: string
+                    description: Project port's unique identifer. Same as the UUID of the associated port node
+                    format: uuid
+                  value:
+                    title: Value
+                    description: Value assigned to this i/o port
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
+  '/projects/{project_id}/outputs':
+    get:
+      tags:
+        - project
+      summary: Get Project Outputs
+      description: New in version *0.10*
+      operationId: get_project_outputs
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
     get:
       tags:

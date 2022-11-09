@@ -1558,7 +1558,7 @@ components:
                       type: string
                       description: Instructions about what to do in this step
                       example:
-                        - 'This is a **sleeper**'
+                        - This is a **sleeper**
                         - 'Please, select the config file defined [in this link](asdf)'
               additionalProperties: true
             currentNodeId:

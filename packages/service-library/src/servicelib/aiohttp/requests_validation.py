@@ -3,16 +3,18 @@
 These functions are analogous to `pydantic.tools.parse_obj_as(model_class, obj)` for aiohttp's requests
 """
 
+import json.decoder
 from contextlib import contextmanager
-from typing import Iterator, TypeVar
+from typing import Iterator, TypeVar, Union
 
 from aiohttp import web
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
+ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
 
 
 @contextmanager
@@ -71,7 +73,7 @@ def handle_validation_as_http_error(
                 }
             )
 
-        raise web.HTTPUnprocessableEntity(
+        raise web.HTTPUnprocessableEntity(  # 422
             reason=reason_msg,
             text=error_str,
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -94,7 +96,7 @@ def parse_request_path_parameters_as(
 ) -> ModelType:
     """Parses path parameters from 'request' and validates against 'parameters_schema'
 
-    :raises HTTPBadRequest if validation of parameters  fail
+    :raises HTTPUnprocessableEntity (422) if validation of parameters  fail
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid parameter/s '{failed}' in request path",
@@ -113,7 +115,7 @@ def parse_request_query_parameters_as(
 ) -> ModelType:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
 
-    :raises HTTPBadRequest if validation of queries fail
+    :raises HTTPUnprocessableEntity (422) if validation of queries fail
     """
 
     with handle_validation_as_http_error(
@@ -126,19 +128,30 @@ def parse_request_query_parameters_as(
 
 
 async def parse_request_body_as(
-    model_schema: type[ModelType],
+    model_schema: type[ModelOrListType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
-) -> ModelType:
+) -> ModelOrListType:
     """Parses and validates request body against schema
 
-    :raises HTTPBadRequest
+    :raises HTTPUnprocessableEntity (422), HTTPBadRequest(400)
     """
     with handle_validation_as_http_error(
         error_msg_template="Invalid field/s '{failed}' in request body",
         resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
-        body = await request.json()
-        return model_schema.parse_obj(body)
+        try:
+            body = await request.json()
+        except json.decoder.JSONDecodeError as err:
+            raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}")
+
+        if hasattr(model_schema, "parse_obj"):
+            # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
+            # with issubclass(model_schema, BaseModel)
+            assert issubclass(model_schema, BaseModel)  # nosec
+            return model_schema.parse_obj(body)
+
+        # used for model_schema like 'list[T]' or 'dict[T]'
+        return parse_obj_as(model_schema, body)

@@ -18,6 +18,7 @@ from . import (
     projects_handlers,
     projects_handlers_crud,
     projects_nodes_handlers,
+    projects_ports_handlers,
     projects_tags_handlers,
 )
 from .project_models import setup_projects_model_schema
@@ -69,6 +70,7 @@ def setup_projects(app: web.Application) -> bool:
 
     app.router.add_routes(projects_handlers.routes)
     app.router.add_routes(projects_handlers_crud.routes)
+    app.router.add_routes(projects_ports_handlers.routes)
 
     app.router.add_routes(
         _create_routes(
