@@ -12,10 +12,10 @@ from unittest import mock
 
 import fsspec
 import pytest
-from _pytest.fixtures import FixtureRequest
 from faker import Faker
 from minio import Minio
 from pydantic import AnyUrl, parse_obj_as
+from pytest import FixtureRequest
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings

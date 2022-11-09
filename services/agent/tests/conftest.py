@@ -9,12 +9,11 @@ from uuid import uuid4
 import aiodocker
 import pytest
 import simcore_service_agent
-from _pytest.logging import LogCaptureFixture
 from aiodocker.volumes import DockerVolume
 from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
