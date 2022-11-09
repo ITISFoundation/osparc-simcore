@@ -2,16 +2,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Dict, Optional
+from typing import Optional
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 from simcore_service_dask_sidecar.settings import Settings
 
 
 @pytest.fixture
 def mock_service_envs(
-    mock_env_devel_environment: Dict[str, Optional[str]], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, Optional[str]], monkeypatch: MonkeyPatch
 ) -> None:
 
     # Variables directly define inside Dockerfile

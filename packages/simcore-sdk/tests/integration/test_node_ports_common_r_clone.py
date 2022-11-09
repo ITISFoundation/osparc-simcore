@@ -12,10 +12,10 @@ from uuid import uuid4
 
 import aioboto3
 import pytest
-from _pytest.fixtures import FixtureRequest
 from faker import Faker
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest import FixtureRequest
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import r_clone
 

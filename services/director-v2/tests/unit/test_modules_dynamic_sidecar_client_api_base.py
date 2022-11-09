@@ -1,7 +1,6 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from _pytest.logging import LogCaptureFixture
 from httpx import (
     ConnectError,
     HTTPError,
@@ -12,6 +11,7 @@ from httpx import (
     codes,
 )
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest import LogCaptureFixture
 from respx import MockRouter
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._base import (
     BaseThinClient,

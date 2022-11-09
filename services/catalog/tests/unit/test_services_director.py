@@ -5,13 +5,13 @@
 # pylint:disable=not-context-manager
 
 
-from typing import Dict, Iterator
+from typing import Iterator
 
 import pytest
 import respx
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
@@ -20,7 +20,7 @@ from simcore_service_catalog.services.director import DirectorApi
 
 @pytest.fixture
 def minimal_app(
-    monkeypatch: MonkeyPatch, testing_environ_vars: Dict[str, str]
+    monkeypatch: MonkeyPatch, testing_environ_vars: dict[str, str]
 ) -> Iterator[FastAPI]:
     # disable a couple of subsystems
     monkeypatch.setenv("CATALOG_POSTGRES", "null")

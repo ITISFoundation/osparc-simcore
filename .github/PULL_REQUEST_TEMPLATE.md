@@ -7,14 +7,13 @@ PREFIX:
   ♻️     Refactor code.
   🚑️    Critical hotfix.
   ⚗️     Perform experiments.
-  ⬆️    Upgrade dependencies.
+  ⬆️     Upgrade dependencies.
   📝    Add or update documentation.
-  🗑️    Deprecate code that needs to be cleaned up.
-  ⚰️     Remove dead code.
-  🔥    Remove code or files.
   🔨    Add or update development scripts.
+  🔒️    Fix security issues.
 
-or from https://gitmoji.dev/ and https://github.com/carloscuesta/gitmoji/blob/master/src/data/gitmojis.json
+
+or from https://gitmoji.dev/
 
 SUFFIX:
  (⚠️ devops)  changes in devops configuration required before deploying

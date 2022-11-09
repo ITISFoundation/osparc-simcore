@@ -12,7 +12,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import AsyncIterator, Callable
+from typing import AsyncGenerator, AsyncIterator, Callable
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
@@ -231,7 +231,9 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker: MockerFixture):
         autospec=True,
     )
 
-    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+    async def _mock_copy_data_from_project(
+        app, src_prj, dst_prj, nodes_map, user_id
+    ) -> AsyncGenerator[LRTask, None]:
         print(
             f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"

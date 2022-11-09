@@ -12,9 +12,9 @@ import httpx
 import pytest
 import respx
 import simcore_service_datcore_adapter
-from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
+from pytest import MonkeyPatch
 from pytest_mock import MockFixture
 from simcore_service_datcore_adapter.modules.pennsieve import (
     PennsieveAuthorizationHeaders,

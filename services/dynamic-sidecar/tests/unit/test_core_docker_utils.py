@@ -5,10 +5,10 @@ from typing import AsyncIterable, AsyncIterator
 
 import aiodocker
 import pytest
-from _pytest.fixtures import FixtureRequest
 from faker import Faker
 from models_library.services import RunID
 from pydantic import PositiveInt
+from pytest import FixtureRequest
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     get_running_containers_count_from_names,
     get_volume_by_label,
