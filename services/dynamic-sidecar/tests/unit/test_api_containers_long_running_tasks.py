@@ -20,7 +20,6 @@ from typing import (
 import aiodocker
 import faker
 import pytest
-from _pytest.fixtures import FixtureRequest
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
@@ -28,6 +27,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import (
     Client,

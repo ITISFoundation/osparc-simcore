@@ -9,7 +9,6 @@ from unittest import mock
 
 import pytest
 from _dask_helpers import DaskGatewayServer
-from _pytest.monkeypatch import MonkeyPatch
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import (
@@ -22,6 +21,7 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import SecretStr
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_cli import create_json_encoder_wo_secrets
