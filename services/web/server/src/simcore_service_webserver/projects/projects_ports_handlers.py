@@ -36,6 +36,9 @@ from .projects_handlers_crud import ProjectPathParams, RequestContext
 log = logging.getLogger(__name__)
 
 
+# TODO: reuse these (separate PR)
+
+
 def _web_json_response_enveloped(data: Any):
     return web.json_response(
         {
@@ -169,6 +172,10 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     # build workbench patch
     partial_workbench_data = {}
     for input_update in inputs_updates:
+
+        # TODO: validate using pydantic direclty (no need for schemas)
+        # TODO: Use pydantic to do parsing and coercing
+
         node_id = input_update.key
         if node_id not in current_inputs.keys():
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")

@@ -172,6 +172,13 @@ async def clone_project(request: web.Request) -> web.Response:
     #  -
     raise NotImplementedError()
 
+    #
+    # .
+    # /computations/{project_id}:start
+    # /computations/{project_id}:stop
+    # progres ??
+    #
+
 
 #
 # project's state sub-resource
