@@ -8,8 +8,6 @@ Issue 709
 - Deployed databases have already some data that fulfills current schema but not new one
 - We need to update these databases to the new schema while keeping its data
 - This shall be done with minimal or no downtime of the running databases
-
-
 - https://sqlalchemy-migrate.readthedocs.io/en/latest/
   - Migration environment templates: ``alembic list_templates``
     - multidb??
