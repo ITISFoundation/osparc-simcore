@@ -9,8 +9,8 @@ from dataclasses import dataclass
 
 import aiohttp
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.client import ClientTimeout
+from pytest import MonkeyPatch
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay

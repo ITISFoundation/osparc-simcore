@@ -4,19 +4,19 @@
 
 
 import asyncio
-from typing import Dict, List, Optional
+from typing import Optional
 from unittest import mock
 
 import aiodocker
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.utils import num_available_gpus
 
 
 @pytest.fixture
 def mock_service_envs(
-    mock_env_devel_environment: Dict[str, Optional[str]], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, Optional[str]], monkeypatch: MonkeyPatch
 ) -> None:
     monkeypatch.setenv(
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
@@ -99,7 +99,7 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
 def test_num_available_gpus(
     event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
-    container_logs: List[str],
+    container_logs: list[str],
     expected_num_gpus: int,
     mock_aiodocker: mock.MagicMock,
 ):

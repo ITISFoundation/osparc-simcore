@@ -18,7 +18,6 @@ import aiopg.sa
 import httpx
 import pytest
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
@@ -34,7 +33,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from py._path.local import LocalPath
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
@@ -390,11 +389,6 @@ async def cleanup_services_and_networks(
         # remove pending volumes for service
         for node_uuid in workbench_dynamic_services:
             await ensure_volume_cleanup(docker_client, node_uuid)
-
-
-@pytest.fixture
-def temp_dir(tmpdir: LocalPath) -> Path:
-    return Path(tmpdir)
 
 
 @pytest.fixture
@@ -826,7 +820,7 @@ async def test_nodeports_integration(
     services_node_uuids: ServicesNodeUUIDs,
     fake_dy_success: dict[str, Any],
     fake_dy_published: dict[str, Any],
-    temp_dir: Path,
+    tmp_path: Path,
     mocker: MockerFixture,
     osparc_product_name: str,
 ) -> None:
@@ -959,20 +953,20 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
         else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
         )
     )
     dy_compose_spec_path_volume_before = (
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
@@ -980,7 +974,7 @@ async def test_nodeports_integration(
         else await _fetch_data_from_container(
             dir_tag="dy_compose_spec",
             service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 
@@ -1009,7 +1003,7 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
@@ -1019,7 +1013,7 @@ async def test_nodeports_integration(
             user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 
@@ -1027,7 +1021,7 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
@@ -1037,7 +1031,7 @@ async def test_nodeports_integration(
             user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 
@@ -1055,20 +1049,20 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
         else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
         )
     )
     dy_compose_spec_path_volume_after = (
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
@@ -1076,7 +1070,7 @@ async def test_nodeports_integration(
         else await _fetch_data_from_container(
             dir_tag="dy_compose_spec",
             service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 

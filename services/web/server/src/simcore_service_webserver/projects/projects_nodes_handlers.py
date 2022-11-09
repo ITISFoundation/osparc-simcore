@@ -10,10 +10,6 @@ from aiohttp import web
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.utils.fastapi_encoders import jsonable_encoder
-
-#
-# projects/*/nodes COLLECTION -------------------------
-#
 from pydantic import BaseModel
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
@@ -41,6 +37,10 @@ from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
+
+#
+# projects/*/nodes COLLECTION -------------------------
+#
 
 routes = web.RouteTableDef()
 

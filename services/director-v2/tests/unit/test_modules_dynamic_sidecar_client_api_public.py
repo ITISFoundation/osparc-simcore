@@ -6,11 +6,10 @@ from typing import Any, AsyncIterable, Callable, Iterator, Optional
 from unittest.mock import AsyncMock
 
 import pytest
-from _pytest.logging import LogCaptureFixture
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings

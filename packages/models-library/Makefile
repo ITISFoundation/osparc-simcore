@@ -71,3 +71,33 @@ docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
 	@mv $@ src/models_library/generated_models/$@
 	@touch src/models_library/generated_models/__init__.py
 	# done
+
+
+
+#
+# erdantic's recipes
+#     Entity Relationship Diagrams (ERD) for pydantic models
+#
+#  - NOTE: these tools require graphviz!
+#  - SEE https://erdantic.drivendata.org/stable/
+#
+
+_erdantic: _check_venv_active
+	# ensures erdantic installed
+	@python3 -c "import erdantic" 2>/dev/null || pip install erdantic
+
+erd-Project.svg: _erdantic
+	erdantic models_library.projects.Project \
+		--out $@
+
+erd-ProjectAtDB.svg: _erdantic
+	erdantic models_library.projects.ProjectAtDB \
+		--out $@
+
+erd-Node.svg: _erdantic
+	erdantic models_library.projects_nodes.Node \
+		--out $@
+
+erd-ServiceInput.svg: _erdantic
+	erdantic models_library.services.ServiceInput \
+		--out $@

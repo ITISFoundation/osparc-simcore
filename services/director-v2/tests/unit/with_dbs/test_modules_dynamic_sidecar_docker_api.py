@@ -11,7 +11,6 @@ from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from faker import Faker
@@ -19,7 +18,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pytest import FixtureRequest
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (

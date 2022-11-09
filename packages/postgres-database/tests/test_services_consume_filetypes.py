@@ -6,7 +6,6 @@
 
 import pytest
 import sqlalchemy as sa
-from _pytest.fixtures import fixture
 from aiopg.sa.engine import Engine
 from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
@@ -57,7 +56,7 @@ def make_table():
     return _make
 
 
-@fixture
+@pytest.fixture
 async def conn(pg_engine: Engine, make_table):
     async with pg_engine.acquire() as conn:
         await make_table(conn)

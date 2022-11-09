@@ -12,7 +12,7 @@ pydantic==1.10.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pyinstrument==4.3.0
+pyinstrument==4.4.0
     # via -r requirements/_base.in
 pyyaml==5.4.1
     # via

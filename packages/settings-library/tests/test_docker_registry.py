@@ -4,7 +4,7 @@
 from copy import deepcopy
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 
 MOCKED_BASE_REGISTRY_ENV_VARS: dict[str, str] = {

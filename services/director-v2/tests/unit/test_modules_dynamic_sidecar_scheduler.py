@@ -13,9 +13,9 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import respx
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter

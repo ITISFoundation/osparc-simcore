@@ -1,0 +1,154 @@
+paths:
+  /projects/{project_id}/inputs:
+    get:
+      tags:
+      - project
+      summary: Get Project Inputs
+      description: New in version *0.10*
+      operationId: get_project_inputs
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
+    patch:
+      tags:
+      - project
+      summary: Update Project Inputs
+      description: New in version *0.10*
+      operationId: update_project_inputs
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Updates
+              type: array
+              items:
+                $ref: '#/components/schemas/ProjectPort'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
+  /projects/{project_id}/outputs:
+    get:
+      tags:
+      - project
+      summary: Get Project Outputs
+      description: New in version *0.10*
+      operationId: get_project_outputs
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
+components:
+  schemas:
+    Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__:
+      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ProjectPortGet'
+        error:
+          title: Error
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ProjectPort:
+      title: ProjectPort
+      required:
+      - key
+      - value
+      type: object
+      properties:
+        key:
+          title: Key
+          type: string
+          description: Project port's unique identifer. Same as the UUID of the associated
+            port node
+          format: uuid
+        value:
+          title: Value
+          description: Value assigned to this i/o port
+    ProjectPortGet:
+      title: ProjectPortGet
+      required:
+      - key
+      - value
+      - label
+      type: object
+      properties:
+        key:
+          title: Key
+          type: string
+          description: Project port's unique identifer. Same as the UUID of the associated
+            port node
+          format: uuid
+        value:
+          title: Value
+          description: Value assigned to this i/o port
+        label:
+          title: Label
+          type: string
+    ValidationError:
+      title: ValidationError
+      required:
+      - loc
+      - msg
+      - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
