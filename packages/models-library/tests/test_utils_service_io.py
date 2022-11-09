@@ -15,8 +15,6 @@ from models_library.services import ServiceInput, ServiceOutput, ServicePortKey
 from models_library.utils.json_schema import jsonschema_validate_schema
 from models_library.utils.services_io import get_service_io_json_schema
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_docker_registry import download_all_registry_metadata
 
 example_inputs_labels = [
     e for e in ServiceInput.Config.schema_extra["examples"] if e["label"]
@@ -57,34 +55,20 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 TEST_DATA_FOLDER = CURRENT_DIR / "data"
 
 
-@pytest.fixture(scope="module")
-def metadata_test_data_dir(
-    project_tests_dir: Path, mock_env_devel_environment: EnvVarsDict
-):
-    """
-    Downloads all metadata from services to registry defined in env vars
-    in
-    """
-    assert project_tests_dir == CURRENT_DIR
-    test_data_dir = TEST_DATA_FOLDER / ".metadata-cache.keep.ignore"
-    download_all_registry_metadata(dest_dir=test_data_dir)
-    return test_data_dir
-
-
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
-    "meta_path",
+    "metadata_path",
     TEST_DATA_FOLDER.rglob("metadata*.json"),
     ids=lambda p: f"{p.parent.name}/{p.name}",
 )
-def test_against_service_metadata_configs(
-    metadata_test_data_dir: Path, meta_path: Path
-):
+def test_against_service_metadata_configs(metadata_path: Path):
     """
     This tests can be used as well to validate all metadata in a given registry
-    """
-    assert metadata_test_data_dir in meta_path.parents
 
-    meta = json.loads(meta_path.read_text())
+    SEE make pull_test_data to pull data from the registry specified in .env
+    """
+
+    meta = json.loads(metadata_path.read_text())
 
     inputs = parse_obj_as(dict[ServicePortKey, ServiceInput], meta["inputs"])
     outputs = parse_obj_as(dict[ServicePortKey, ServiceOutput], meta["outputs"])

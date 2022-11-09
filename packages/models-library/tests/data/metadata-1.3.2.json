@@ -1,0 +1,139 @@
+{
+ "authors": [
+  {
+   "name": "Katie Zhuang",
+   "email": "zhuang@itis.swiss",
+   "affiliation": "IT'IS Foundation"
+  }
+ ],
+ "contact": "zhuang@itis.swiss",
+ "description": "ASCENT is an open source platform for simulating peripheral nerve stimulation. To download the software, visit the [ASCENT GitHub repository](https://github.com/wmglab-duke/ascent). This implementation uses a limited set of user-defined parameters to run the pipeline and will output the results of the NEURON simulations * Musselman ED, Cariello JE, Grill WM, Pelot NA. ASCENT (Automated Simulations to Characterize Electrical Nerve Thresholds): A Pipeline for Sample-Specific Computational Modeling of Electrical Stimulation of Peripheral Nerves. PLoS Comput Biol [Internet]. 2021; Available from: https://doi.org/10.1371/journal.pcbi.1009285 * Musselman ED, Cariello JE, Grill WM, Pelot NA. ASCENT (Automated Simulations to Characterize Electrical Nerve Thresholds): A Pipeline for Sample-Specific Computational Modeling of Electrical Stimulation of Peripheral Nerves. PLoS Comput Biol [Internet]. 2021, DOI: 10.5281/zenodo.5500260\n",
+ "inputs": {
+  "input_1": {
+   "displayOrder": 1,
+   "label": "Nerve Morphology",
+   "description": "Choice of Vagus nerve morphology - either Rat VN or Human VN",
+   "type": "ref_contentSchema",
+   "contentSchema": {
+    "title": "Nerve Morphology",
+    "default": "Rat",
+    "enum": [
+     "Rat",
+     "Human"
+    ]
+   }
+  },
+  "input_2": {
+   "displayOrder": 2,
+   "label": "Cuff geometry",
+   "description": "45\u00b0 contact wrap monopolar cuff or 360\u00b0 contact wrap monopolar cuff or 45\u00b0 contact wrap, bipolar cuff or 360\u00b0 contact wrap, bipolar cuff \n",
+   "type": "ref_contentSchema",
+   "contentSchema": {
+    "title": "Cuff Geometry",
+    "default": "45\u00b0 monopolar",
+    "enum": [
+     "45\u00b0 monopolar",
+     "360\u00b0 monopolar",
+     "45\u00b0 bipolar",
+     "360\u00b0 bipolar"
+    ]
+   }
+  },
+  "input_3": {
+   "displayOrder": 3,
+   "label": "Fiber Locations",
+   "description": "centroid: one fiber location at the centroid of each fascicle wheel: 6 spokes with 2 fibers per spoke, plus the centroid; 13 fiber locations per fascicle\n",
+   "type": "ref_contentSchema",
+   "contentSchema": {
+    "title": "Fiber Locations",
+    "default": "wheel",
+    "enum": [
+     "centroid",
+     "wheel"
+    ]
+   }
+  },
+  "fibers": {
+   "displayOrder": 4,
+   "label": "List of Fiber Diameters",
+   "description": "Comma-separated list of fiber diameters (between 2 and 10), defaults units are \u03bcm. At least one value must be provided, maximum 5 values",
+   "type": "ref_contentSchema",
+   "contentSchema": {
+    "title": "Fiber Diameters",
+    "type": "array",
+    "minItems": 1,
+    "maxItems": 5,
+    "default": [
+     10
+    ],
+    "x_unit": "micro-meter",
+    "items": {
+     "minimum": 2,
+     "maximum": 10,
+     "type": "number"
+    }
+   }
+  },
+  "input_4": {
+   "displayOrder": 5,
+   "label": "Waveform",
+   "description": "monophasic: pulse (cathodic for  monopolar  cuff;  cathodic phase  first  on  contact  closest to  recording  site  for bipolar cuff) biphasic: symmetric biphasic pulse\n",
+   "type": "ref_contentSchema",
+   "contentSchema": {
+    "title": "Waveform",
+    "default": "biphasic",
+    "enum": [
+     "monophasic",
+     "biphasic"
+    ]
+   }
+  },
+  "durations": {
+   "displayOrder": 6,
+   "label": "List of Waveform Durations",
+   "description": "Comma-separated list of pulse widths (between 0.05 and 2), default units are ms. At least one value must be provided, maximum 5 values.",
+   "type": "ref_contentSchema",
+   "contentSchema": {
+    "title": "Waveform Durations",
+    "type": "array",
+    "minItems": 1,
+    "maxItems": 5,
+    "default": [
+     0.5
+    ],
+    "x_unit": "milli-second",
+    "items": {
+     "minimum": 0.05,
+     "maximum": 2.0,
+     "type": "number"
+    }
+   }
+  }
+ },
+ "integration-version": "1.0.0",
+ "key": "simcore/services/comp/ascent-runner",
+ "name": "ascent-runner",
+ "outputs": {
+  "output_1": {
+   "displayOrder": 1,
+   "label": "Simulation Outputs",
+   "description": "Resulting thresholds from simulations.",
+   "type": "data:*/*",
+   "fileToKeyMap": {
+    "ascent_results.zip": "output_1"
+   }
+  },
+  "output_2": {
+   "displayOrder": 1,
+   "label": "Environment Variables",
+   "description": "Sample number, model number and simulation number for postprocessing.",
+   "type": "data:*/*",
+   "fileToKeyMap": {
+    "envs": "output_2"
+   }
+  }
+ },
+ "thumbnail": "https://wmglab-duke-ascent.readthedocs.io/en/latest/_images/ascent_media_release_v2.png",
+ "type": "computational",
+ "version": "1.3.2"
+}

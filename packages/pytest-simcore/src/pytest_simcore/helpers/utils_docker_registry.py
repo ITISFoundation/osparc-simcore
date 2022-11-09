@@ -156,5 +156,4 @@ if __name__ == "__main__":
     import sys
 
     dest = Path(sys.argv[1])
-    assert dest.exists()
     download_all_registry_metadata(dest_dir=dest)
