@@ -139,10 +139,16 @@ qx.Class.define("osparc.navigation.Manuals", {
         menu.add(newFogbugzIssueBtn);
       }
 
-      if ((statics.s4lSupportEmail || statics.s4lliteSupportEmail) && (osparc.utils.Utils.isProduct("s4l") || osparc.utils.Utils.isProduct("s4llite"))) {
-        const giveFeedbackBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Give us Feedback"));
-        giveFeedbackBtn.addListener("execute", () => this.__openSendEmailFeedbackDialog(statics), this);
-        menu.add(giveFeedbackBtn);
+      if (osparc.utils.Utils.isProduct("s4l") || osparc.utils.Utils.isProduct("s4llite")) {
+        const forumBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("S4L Forum"));
+        forumBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"), this);
+        menu.add(forumBtn);
+
+        if (statics.s4lSupportEmail || statics.s4lliteSupportEmail) {
+          const giveFeedbackBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Give us Feedback"));
+          giveFeedbackBtn.addListener("execute", () => this.__openSendEmailFeedbackDialog(statics), this);
+          menu.add(giveFeedbackBtn);
+        }
       }
 
       const feedbackAnonBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Anonymous feedback")).set({
