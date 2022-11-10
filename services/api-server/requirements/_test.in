@@ -20,7 +20,6 @@ faker
 types-boto3
 moto[server] # mock out tests based on AWS-S3
 passlib[bcrypt]
-pylint
 pytest
 pytest-asyncio
 pytest-cov

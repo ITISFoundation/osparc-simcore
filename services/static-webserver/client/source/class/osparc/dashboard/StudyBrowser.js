@@ -153,9 +153,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__addNewPlanButton(mode);
       } else if (osparc.utils.Utils.isProduct("s4l")) {
         this.__addNewS4LServiceButtons(mode);
-      } else if (osparc.utils.Utils.isProduct("s4llight")) {
+      } else if (osparc.utils.Utils.isProduct("s4llite")) {
         this.__removeNewStudyButtons();
-        this.__addNewS4LLightServiceButtons(mode);
+        this.__addNewS4LLiteServiceButtons(mode);
       }
     },
 
@@ -230,7 +230,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __addNewS4LLightServiceButtons: function(mode) {
+    __addNewS4LLiteServiceButtons: function(mode) {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly(false)
         .then(services => {

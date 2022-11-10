@@ -44,7 +44,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
 
       this.setBackgroundColor("#025887");
       this.getContentElement().setStyles({
-        "background-image": osparc.utils.Utils.isProduct("s4llight") ? "url(resource/osparc/s4l-light_splitimage.png)" : "url(resource/osparc/s4l_splitimage.jpeg)",
+        "background-image": osparc.utils.Utils.isProduct("s4llite") ? "url(resource/osparc/s4llite_splitimage.png)" : "url(resource/osparc/s4l_splitimage.jpeg)",
         "background-repeat": "no-repeat",
         "background-size": "auto 100%"
       });

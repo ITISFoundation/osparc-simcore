@@ -16,7 +16,6 @@ import distributed
 import pytest
 import respx
 from _dask_helpers import DaskGatewayServer
-from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -42,6 +41,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
