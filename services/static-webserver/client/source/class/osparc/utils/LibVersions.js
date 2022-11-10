@@ -43,7 +43,7 @@ qx.Class.define("osparc.utils.LibVersions", {
 
       return {
         name: name,
-        version: commitId,
+        version: commitId.substring(0, 7),
         url: url
       };
     },

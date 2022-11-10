@@ -280,7 +280,8 @@ qx.Class.define("osparc.Application", {
             if (!osparc.CookiePolicy.areCookiesAccepted()) {
               const cookiePolicy = new osparc.CookiePolicy();
               const title = this.tr("Cookie Policy");
-              const height = osparc.utils.Utils.isProduct("tis") ? 180 : 145;
+              // "tis" and "s4llite" include the license agreement
+              const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
               const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
                 clickAwayClose: false,
                 resizable: false,
@@ -328,7 +329,7 @@ qx.Class.define("osparc.Application", {
       let view = null;
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
-        case "s4llight":
+        case "s4llite":
           view = new osparc.auth.LoginPageS4L();
           this.__loadView(view);
           break;
