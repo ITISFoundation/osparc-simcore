@@ -4,16 +4,16 @@ type: computational
 integration-version: 1.0.0
 version: 2.0.2
 description: A service which awaits for time to pass.
-contact: neagu@itis.swiss
+contact: neagu@test.it
 authors:
   - name: "Manuel Guidon"
-    email: guidon@itis.swiss
+    email: guidon@test.it
     affiliation: "IT'IS Foundation"
   - name: "Odei Maiz"
-    email: maiz@itis.swiss
+    email: maiz@test.it
     affiliation: "IT'IS Foundation"
   - name: "Andrei Neagu"
-    email: neagu@itis.swiss
+    email: neagu@test.it
     affiliation: "IT'IS Foundation"
 inputs:
   input_1:
