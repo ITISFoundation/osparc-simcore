@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import socket
@@ -11,13 +12,42 @@ from settings_library.rabbit import RabbitSettings
 log = logging.getLogger(__name__)
 
 
+def _connection_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+    if exc:
+        if isinstance(exc, asyncio.CancelledError):
+            log.info("Rabbit connection was cancelled")
+        else:
+            log.error(
+                "Rabbit connection closed with exception from %s:%s",
+                sender,
+                exc,
+            )
+
+
+def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
+    if exc:
+        if isinstance(exc, asyncio.CancelledError):
+            log.info("Rabbit channel was cancelled")
+        else:
+            log.error(
+                "Rabbit channel closed with exception from %s:%s",
+                sender,
+                exc,
+            )
+
+
 async def _get_connection(
     rabbit_broker: str, connection_name: str
 ) -> aio_pika.abc.AbstractRobustConnection:
+    # NOTE: to show the connection name in the rabbitMQ UI see there
+    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+    #
     url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
-    return await aio_pika.connect_robust(
+    connection = await aio_pika.connect_robust(
         url, client_properties={"connection_name": connection_name}
     )
+    connection.close_callbacks.add(_connection_close_callback)
+    return connection
 
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
@@ -38,20 +68,23 @@ class RabbitMQClient:
         self._channel_pool = aio_pika.pool.Pool(self.get_channel, max_size=10)
 
     async def close(self) -> None:
-        assert self._channel_pool  # nosec
-        await self._channel_pool.close()
-        assert self._connection_pool  # nosec
-        await self._connection_pool.close()
+        with log_context(log, logging.INFO, msg="Closing connection to RabbitMQ"):
+            assert self._channel_pool  # nosec
+            await self._channel_pool.close()
+            assert self._connection_pool  # nosec
+            await self._connection_pool.close()
 
     async def get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection
-            return await connection.channel()
+            channel = await connection.channel()
+            channel.close_callbacks.add(_channel_close_callback)
+            return channel
 
     async def consume(
         self, exchange_name: str, message_handler: MessageHandler
-    ) -> None:
+    ) -> aio_pika.abc.ConsumerTag:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
@@ -74,10 +107,11 @@ class RabbitMQClient:
                     with log_context(
                         log, logging.DEBUG, msg=f"Message received {message}"
                     ):
-                        if not await message_handler(message.body.decode()):
+                        if not await message_handler(message.body):
                             await message.nack()
 
-            await queue.consume(_on_message)
+            tag = await queue.consume(_on_message)
+        return tag
 
     async def publish(self, exchange_name: str, message: Message) -> None:
         assert self._channel_pool  # nosec
