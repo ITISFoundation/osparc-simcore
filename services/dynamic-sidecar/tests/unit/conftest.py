@@ -47,11 +47,6 @@ def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
 def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
     """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ member functions"""
     return {
-        "connect": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.connect",
-            return_value=None,
-            autospec=True,
-        ),
         "send_event_reload_iframe": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.send_event_reload_iframe",
             return_value=None,
