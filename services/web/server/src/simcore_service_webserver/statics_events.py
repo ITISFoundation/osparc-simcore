@@ -46,7 +46,7 @@ _STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY = dict(
 
 async def create_cached_indexes(app: web.Application) -> None:
     """
-    Currently the static resources are contain 4 folders: osparc, s4l, s4llight, tis
+    Currently the static resources are contain 4 folders: osparc, s4l, s4llite, tis
     each of them contain and index.html to be served to as the root of the site
     for each type of frontend.
 
