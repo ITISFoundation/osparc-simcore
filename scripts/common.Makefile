@@ -44,6 +44,9 @@ SERVICES_DIR := $(abspath $(REPO_BASE_DIR)/services)
 EXPECTED_PYTHON_VERSION := $(shell cat $(REPO_BASE_DIR)/requirements/PYTHON_VERSION)
 VENV_DIR      := $(abspath $(REPO_BASE_DIR)/.venv)
 
+# environment variables files
+DOT_ENV_FILE = $(abspath $(REPO_BASE_DIR)/.env)
+
 #
 # SHORTCUTS
 #

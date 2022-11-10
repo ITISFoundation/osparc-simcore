@@ -81,7 +81,7 @@ docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
 #  - NOTE: these tools require graphviz!
 #  - SEE https://erdantic.drivendata.org/stable/
 #
-
+.PHONY: _erdantic
 _erdantic: _check_venv_active
 	# ensures erdantic installed
 	@python3 -c "import erdantic" 2>/dev/null || pip install erdantic
@@ -101,3 +101,23 @@ erd-Node.svg: _erdantic
 erd-ServiceInput.svg: _erdantic
 	erdantic models_library.services.ServiceInput \
 		--out $@
+
+
+#
+# Test data
+#
+
+DOWNLOADED_TEST_DATA_DIR = "$(CURDIR)/tests/data/.downloaded-ignore"
+
+.PHONY: _httpx
+_httpx: _check_venv_active
+	# ensures requirements installed
+	@python3 -c "import httpx" 2>/dev/null || pip install httpx
+
+PHONY: pull_test_data
+pull_test_data: $(DOT_ENV_FILE) _httpx ## downloads tests data from registry (this can take some time!)
+	# downloading all metadata files
+	@set -o allexport; \
+	source $<; \
+	set +o allexport; \
+	python3 "$(PACKAGES_DIR)/pytest-simcore/src/pytest_simcore/helpers/utils_docker_registry.py" $(DOWNLOADED_TEST_DATA_DIR)
