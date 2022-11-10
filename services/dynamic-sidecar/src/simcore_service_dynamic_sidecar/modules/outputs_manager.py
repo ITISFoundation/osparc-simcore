@@ -160,7 +160,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
             elif len(self._pending_port_uploads) > 0:
                 # reschedule next if available
-                random_key = random.choice(tuple(self._pending_port_uploads.keys()))
+                random_key = random.choice(  # NOSONAR
+                    tuple(self._pending_port_uploads.keys())
+                )
                 self._current_port_upload = self._pending_port_uploads.pop(
                     random_key, None
                 )
