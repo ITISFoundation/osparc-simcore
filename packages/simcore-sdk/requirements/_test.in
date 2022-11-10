@@ -17,6 +17,7 @@ docker
 faker
 flaky
 minio
+moto
 pytest
 pytest-aiohttp
 pytest-cov

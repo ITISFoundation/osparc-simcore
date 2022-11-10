@@ -37,16 +37,21 @@ attrs==21.4.0
     #   aiohttp
     #   pytest
 boto3==1.24.59
-    # via aiobotocore
+    # via
+    #   aiobotocore
+    #   moto
 botocore==1.27.59
     # via
     #   aiobotocore
     #   boto3
+    #   moto
     #   s3transfer
 certifi==2022.9.24
     # via
     #   minio
     #   requests
+cffi==1.15.1
+    # via cryptography
 charset-normalizer==2.1.1
     # via
     #   -c requirements/_base.txt
@@ -63,6 +68,10 @@ coverage==6.5.0
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
+cryptography==38.0.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   moto
 docker==6.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
@@ -93,6 +102,10 @@ idna==3.4
     #   yarl
 iniconfig==1.1.1
     # via pytest
+jinja2==3.1.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   moto
 jmespath==1.0.1
     # via
     #   boto3
@@ -105,11 +118,16 @@ mako==1.2.3
 markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
+    #   jinja2
     #   mako
+    #   moto
+    #   werkzeug
 minio==7.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+moto==4.0.9
+    # via -r requirements/_test.in
 multidict==6.0.2
     # via
     #   -c requirements/_base.txt
@@ -129,6 +147,8 @@ psycopg2-binary==2.9.5
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
+pycparser==2.21
+    # via cffi
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
@@ -169,13 +189,20 @@ python-dateutil==2.8.2
     # via
     #   botocore
     #   faker
+    #   moto
 python-dotenv==0.21.0
     # via -r requirements/_test.in
+pytz==2022.6
+    # via moto
 requests==2.28.1
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   docker
+    #   moto
+    #   responses
+responses==0.22.0
+    # via moto
 s3transfer==0.6.0
     # via boto3
 six==1.16.0
@@ -189,10 +216,14 @@ sqlalchemy==1.4.43
     #   alembic
 termcolor==2.1.0
     # via pytest-sugar
+toml==0.10.2
+    # via responses
 tomli==2.0.1
     # via
     #   coverage
     #   pytest
+types-toml==0.10.8
+    # via responses
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
@@ -204,10 +235,15 @@ urllib3==1.26.12
     #   docker
     #   minio
     #   requests
+    #   responses
 websocket-client==1.4.2
     # via docker
+werkzeug==2.2.2
+    # via moto
 wrapt==1.14.1
     # via aiobotocore
+xmltodict==0.13.0
+    # via moto
 yarl==1.8.1
     # via
     #   -c requirements/_base.txt
