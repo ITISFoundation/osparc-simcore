@@ -18,7 +18,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
-from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
+from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -68,11 +68,10 @@ async def test_rabbitmq(
 
     # make sure the first 2 messages are
     # sent in the same chunk
-    await asyncio.sleep(SLEEP_BETWEEN_SENDS * 1.1)
     await rabbit.post_log_message(log_more_messages)
     # wait for all the messages to be delivered,
     # need to make sure all messages are delivered
-    await asyncio.sleep(SLEEP_BETWEEN_SENDS * 1.1)
+    await asyncio.sleep(1.1)
 
     # if this fails the above sleep did not work
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
