@@ -16,9 +16,6 @@ from ..core.settings import ApplicationSettings
 
 log = logging.getLogger(__file__)
 
-# limit logs displayed
-# logging.getLogger("aio_pika").setLevel(logging.WARNING)
-
 
 async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
     log.debug(msg)
