@@ -56,9 +56,6 @@ async def test_rabbitmq(
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
-    assert rabbit._connection
-    assert rabbit._connection.ready
-
     log_msg: str = "I am logging"
     log_messages: list[str] = ["I", "am a logger", "man..."]
     log_more_messages: list[str] = [f"msg{1}" for i in range(10)]
