@@ -49,18 +49,23 @@ class RabbitMQClient:
             connection: aio_pika.RobustConnection
             return await connection.channel()
 
-    async def consume(self, queue_name: str, message_handler: MessageHandler) -> None:
+    async def consume(
+        self, exchange_name: str, message_handler: MessageHandler
+    ) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             await channel.set_qos(10)
 
+            exchange = await channel.declare_exchange(
+                exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
+            )
+
             # NOTE: durable=True makes the queue persistent between RabbitMQ restarts/crashes
             # consumer/publisher must set the same configuration for same queue
-            queue = await channel.declare_queue(
-                queue_name,
-                durable=False,
-            )
+            # exclusive means that the queue is only available for THIS very client
+            queue = await channel.declare_queue(durable=True, exclusive=True)
+            await queue.bind(exchange)
 
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
@@ -74,31 +79,15 @@ class RabbitMQClient:
 
             await queue.consume(_on_message)
 
-    async def publish(self, queue_name: str, message: Message) -> None:
-        assert self._channel_pool  # nosec
-        async with self._channel_pool.acquire() as channel:
-            channel: aio_pika.RobustChannel
-
-            queue = await channel.declare_queue(
-                queue_name,
-                durable=False,
-            )
-
-            await channel.default_exchange.publish(
-                aio_pika.Message(message.encode()),
-                routing_key=queue.name,
-            )
-
-    async def broadcast(self, exchange_name: str, message: Message) -> None:
+    async def publish(self, exchange_name: str, message: Message) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
 
             exchange = await channel.declare_exchange(
-                exchange_name, aio_pika.ExchangeType.FANOUT
+                exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
 
-            # NOTE: publishing to an exchange with no queue will not keep the messages
             await exchange.publish(
                 aio_pika.Message(message.encode()),
                 routing_key="info",

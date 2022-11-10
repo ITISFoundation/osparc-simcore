@@ -6,6 +6,7 @@
 
 import asyncio
 from typing import AsyncIterator, Callable
+from unittest import mock
 
 import pytest
 from faker import Faker
@@ -71,31 +72,15 @@ async def rabbitmq_client(
 
 
 @pytest.fixture
-def random_queue_name(faker: Faker) -> str:
-    return f"pytest_fake_queue_{faker.pystr()}"
-
-
-@pytest.fixture
 def random_exchange_name(faker: Faker) -> str:
     return f"pytest_fake_exchange_{faker.pystr()}"
 
 
-async def test_rabbit_client_pub_sub(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_queue_name: str,
-    mocker: MockerFixture,
-    faker: Faker,
-):
-
-    publisher = rabbitmq_client("publisher")
-    consumer = rabbitmq_client("consumer")
-
-    message = faker.text()
-    await publisher.publish(random_queue_name, message)
-
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
-    await consumer.consume(random_queue_name, mocked_message_parser)
-
+async def _assert_message_received(
+    mocked_message_parser: mock.AsyncMock,
+    expected_call_count: int,
+    expected_message: str,
+) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(5),
@@ -105,12 +90,52 @@ async def test_rabbit_client_pub_sub(
         with attempt:
             # NOTE: this sleep is here to ensure that there are not multiple messages coming in
             await asyncio.sleep(1)
-            mocked_message_parser.assert_called_once_with(message)
+            assert mocked_message_parser.call_count == expected_call_count
+            if expected_call_count == 1:
+                mocked_message_parser.assert_called_once_with(expected_message)
+            elif expected_call_count == 0:
+                mocked_message_parser.assert_not_called()
+            else:
+                mocked_message_parser.assert_called_with(expected_message)
+
+
+async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: str,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    message = faker.text()
+
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
+    await publisher.publish(random_exchange_name, message)
+    await consumer.consume(random_exchange_name, mocked_message_parser)
+    await _assert_message_received(mocked_message_parser, 0, "")
+
+
+async def test_rabbit_client_pub_sub(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: str,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    message = faker.text()
+
+    mocked_message_parser = mocker.AsyncMock(return_value=True)
+    await consumer.consume(random_exchange_name, mocked_message_parser)
+    await publisher.publish(random_exchange_name, message)
+    await _assert_message_received(mocked_message_parser, 1, message)
 
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_queue_name: str,
+    random_exchange_name: str,
     mocker: MockerFixture,
     faker: Faker,
 ):
@@ -118,7 +143,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     consumer = rabbitmq_client("consumer")
 
     message = faker.text()
-    await publisher.publish(random_queue_name, message)
 
     def _raise_once_then_true(*args, **kwargs):
         _raise_once_then_true.calls += 1
@@ -131,42 +155,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
     _raise_once_then_true.calls = 0
     mocked_message_parser = mocker.AsyncMock(side_effect=_raise_once_then_true)
-    await consumer.consume(random_queue_name, mocked_message_parser)
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(15),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            assert mocked_message_parser.call_count == 3
-            mocked_message_parser.assert_called_with(message)
-
-
-async def test_rabbit_client_broadcast(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: str,
-    mocker: MockerFixture,
-    faker: Faker,
-):
-
-    publisher = rabbitmq_client("broadcaster")
-    consumer = rabbitmq_client("consumer")
-
-    message = faker.text()
-    await publisher.broadcast(random_exchange_name, message)
-
-    mocked_message_parser = mocker.AsyncMock(return_value=True)
     await consumer.consume(random_exchange_name, mocked_message_parser)
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            # NOTE: this sleep is here to ensure that there are not multiple messages coming in
-            await asyncio.sleep(1)
-            mocked_message_parser.assert_called_once_with(message)
+    await publisher.publish(random_exchange_name, message)
+    await _assert_message_received(mocked_message_parser, 3, message)
