@@ -1,190 +1,23 @@
 from __future__ import annotations
 
-import asyncio
 import logging
-import os
-import socket
-from asyncio import CancelledError, Queue, Task
-from contextlib import suppress
-from typing import Any
+from dataclasses import dataclass
 
-import aio_pika
 from fastapi import FastAPI
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
     RabbitEventMessageType,
 )
-from models_library.users import UserID
-from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
-from settings_library.rabbit import RabbitSettings
-from tenacity._asyncio import AsyncRetrying
+from servicelib.logging_utils import log_context
+from servicelib.rabbitmq import RabbitMQClient as BaseRabbitMQClient
 
 from ..core.settings import ApplicationSettings
 
 log = logging.getLogger(__file__)
 
 # limit logs displayed
-logging.getLogger("aio_pika").setLevel(logging.WARNING)
-
-
-SLEEP_BETWEEN_SENDS: float = 1.0
-
-
-def _close_callback(sender: Any, exc: BaseException | None) -> None:
-    if exc:
-        if isinstance(exc, CancelledError):
-            log.info("Rabbit connection was cancelled", exc_info=True)
-        else:
-            log.error(
-                "Rabbit connection closed with exception from %s:",
-                sender,
-                exc_info=True,
-            )
-
-
-def _channel_close_callback(sender: Any, exc: BaseException | None) -> None:
-    if exc:
-        log.error(
-            "Rabbit channel closed with exception from %s:", sender, exc_info=True
-        )
-
-
-async def _wait_till_rabbit_responsive(url: str) -> None:
-    async for attempt in AsyncRetrying(
-        **RabbitMQRetryPolicyUponInitialization().kwargs
-    ):
-        with attempt:
-            connection = await aio_pika.connect(url, timeout=1.0)
-            await connection.close()
-
-
-class RabbitMQ:  # pylint: disable = too-many-instance-attributes
-    CHANNEL_LOG = "logger"
-
-    def __init__(self, app: FastAPI, max_messages_to_send: int = 100) -> None:
-        settings: ApplicationSettings = app.state.settings
-
-        assert settings.RABBIT_SETTINGS  # nosec
-        self._rabbit_settings: RabbitSettings = settings.RABBIT_SETTINGS
-        self._user_id: UserID = settings.DY_SIDECAR_USER_ID
-        self._project_id: ProjectID = settings.DY_SIDECAR_PROJECT_ID
-        self._node_id: NodeID = settings.DY_SIDECAR_NODE_ID
-
-        self._connection: aio_pika.abc.AbstractConnection | None = None
-        self._channel: aio_pika.abc.AbstractChannel | None = None
-        self._logs_exchange: aio_pika.abc.AbstractExchange | None = None
-        self._events_exchange: aio_pika.abc.AbstractExchange | None = None
-
-        self.max_messages_to_send: int = max_messages_to_send
-        # pylint: disable=unsubscriptable-object
-        self._channel_queues: dict[str, Queue[str]] = {}
-        self._keep_running: bool = True
-        self._queues_worker: Task[Any] | None = None
-
-    async def connect(self) -> None:
-        url = self._rabbit_settings.dsn
-        log.debug("Connecting to %s", url)
-        await _wait_till_rabbit_responsive(url)
-
-        # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
-        hostname = socket.gethostname()
-        self._connection = await aio_pika.connect(
-            url + f"?name={__name__}_{id(hostname)}_{os.getpid()}",
-            client_properties={
-                "connection_name": f"dynamic-sidecar_{self._node_id} {hostname}"
-            },
-        )
-        self._connection.close_callbacks.add(_close_callback)
-
-        log.debug("Creating channel")
-        self._channel = await self._connection.channel(publisher_confirms=False)
-        self._channel.close_callbacks.add(_channel_close_callback)
-
-        log.debug("Declaring %s exchange", self._rabbit_settings.RABBIT_CHANNELS["log"])
-        self._logs_exchange = await self._channel.declare_exchange(
-            self._rabbit_settings.RABBIT_CHANNELS["log"], aio_pika.ExchangeType.FANOUT
-        )
-        self._channel_queues[self.CHANNEL_LOG] = Queue()
-
-        log.debug(
-            "Declaring %s exchange", self._rabbit_settings.RABBIT_CHANNELS["events"]
-        )
-        self._events_exchange = await self._channel.declare_exchange(
-            self._rabbit_settings.RABBIT_CHANNELS["events"],
-            aio_pika.ExchangeType.FANOUT,
-        )
-
-        # start background worker to dispatch messages
-        self._keep_running = True
-        self._queues_worker = asyncio.create_task(self._dispatch_messages_worker())
-
-    async def _dispatch_messages_worker(self) -> None:
-        while self._keep_running:
-            for queue in self._channel_queues.values():
-                # in order to avoid blocking when dispatching messages
-                # it is important to fetch them an at most the existing
-                # messages in the queue
-                messages_to_fetch = min(self.max_messages_to_send, queue.qsize())
-                messages = [await queue.get() for _ in range(messages_to_fetch)]
-
-                # currently there are no messages do not broardcast
-                # an empty payload
-                if not messages:
-                    continue
-                await self._publish_messages(messages)
-
-            await asyncio.sleep(SLEEP_BETWEEN_SENDS)
-
-    async def _publish_messages(self, messages: list[str]) -> None:
-        data = LoggerRabbitMessage(
-            node_id=self._node_id,
-            user_id=self._user_id,
-            project_id=self._project_id,
-            messages=messages,
-        )
-
-        assert self._logs_exchange  # nosec
-        await self._logs_exchange.publish(
-            aio_pika.Message(body=data.json().encode()), routing_key=""
-        )
-
-    async def _publish_event(self, action: RabbitEventMessageType) -> None:
-        data = EventRabbitMessage(
-            node_id=self._node_id,
-            user_id=self._user_id,
-            project_id=self._project_id,
-            action=action,
-        )
-        assert self._events_exchange  # nosec
-        await self._events_exchange.publish(
-            aio_pika.Message(body=data.json().encode()), routing_key=""
-        )
-
-    async def send_event_reload_iframe(self) -> None:
-        await self._publish_event(action=RabbitEventMessageType.RELOAD_IFRAME)
-
-    async def post_log_message(self, log_msg: str | list[str]) -> None:
-        if isinstance(log_msg, str):
-            log_msg = [log_msg]
-
-        for message in log_msg:
-            await self._channel_queues[self.CHANNEL_LOG].put(message)
-
-    async def close(self) -> None:
-        # wait for queues to be empty before sending the last messages
-        self._keep_running = False
-        if self._queues_worker is not None:
-            self._queues_worker.cancel()
-            with suppress(asyncio.CancelledError):
-                await self._queues_worker
-
-        if self._channel is not None:
-            await self._channel.close()
-        if self._connection is not None:
-            await self._connection.close()
+# logging.getLogger("aio_pika").setLevel(logging.WARNING)
 
 
 async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
@@ -194,19 +27,44 @@ async def send_message(rabbitmq: RabbitMQ, msg: str) -> None:
 
 def setup_rabbitmq(app: FastAPI) -> None:
     async def on_startup() -> None:
-        app.state.rabbitmq = RabbitMQ(app)
-
-        log.info("Connecting to rabbitmq")
-        await app.state.rabbitmq.connect()
-        log.info("Connected to rabbitmq")
+        settings: ApplicationSettings = app.state.settings
+        assert settings.RABBIT_SETTINGS  # nosec
+        with log_context(log, logging.INFO, msg="Connect to RabbitMQ"):
+            app.state.rabbitmq = RabbitMQ(
+                app_settings=settings,
+                client_name=f"dynamic-sidecar_{settings.DY_SIDECAR_NODE_ID}",
+                settings=settings.RABBIT_SETTINGS,
+            )
 
     async def on_shutdown() -> None:
-        if app.state.background_log_fetcher is None:
-            log.warning("No rabbitmq to close")
-            return
-
         await app.state.rabbitmq.close()
-        log.info("stopped rabbitmq")
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+@dataclass
+class RabbitMQ(BaseRabbitMQClient):
+    app_settings: ApplicationSettings
+
+    async def post_log_message(self, log_msg: str | list[str]) -> None:
+        if isinstance(log_msg, str):
+            log_msg = [log_msg]
+
+        data = LoggerRabbitMessage(
+            node_id=self.app_settings.DY_SIDECAR_NODE_ID,
+            user_id=self.app_settings.DY_SIDECAR_USER_ID,
+            project_id=self.app_settings.DY_SIDECAR_PROJECT_ID,
+            messages=log_msg,
+        )
+
+        await self.publish(self.settings.RABBIT_CHANNELS["log"], data.json())
+
+    async def send_event_reload_iframe(self) -> None:
+        data = EventRabbitMessage(
+            node_id=self.app_settings.DY_SIDECAR_NODE_ID,
+            user_id=self.app_settings.DY_SIDECAR_USER_ID,
+            project_id=self.app_settings.DY_SIDECAR_PROJECT_ID,
+            action=RabbitEventMessageType.RELOAD_IFRAME,
+        )
+        await self.publish(self.settings.RABBIT_CHANNELS["events"], data.json())

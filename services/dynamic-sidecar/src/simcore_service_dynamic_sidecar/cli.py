@@ -42,8 +42,14 @@ async def _setup_app_for_task_execution() -> FastAPI:
     setup_mounted_fs(app)
 
     # setup RabbitMQ
-    app.state.rabbitmq = RabbitMQ(app)
-    await app.state.rabbitmq.connect()
+    # TODO: ANE why do we need the rabbitMQ client here??
+    settings: ApplicationSettings = app.state.settings
+    assert settings.RABBIT_SETTINGS  # nosec
+    app.state.rabbitmq = RabbitMQ(
+        app_settings=settings,
+        client_name=f"dynamic-sidecar_{settings.DY_SIDECAR_NODE_ID}",
+        settings=settings.RABBIT_SETTINGS,
+    )
 
     return app
 
