@@ -155,7 +155,7 @@ async def ensure_external_volumes(
         # CLEAN:
         #    docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
 
-        yield volumes
+        yield tuple(volumes)
 
         @retry(
             wait=wait_fixed(1),
