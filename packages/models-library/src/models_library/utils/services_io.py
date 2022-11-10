@@ -27,16 +27,6 @@ def guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
     return media_type
 
 
-# TODO: use this in services/catalog/src/simcore_service_catalog/models/schemas/services_ports.py
-# TODO: https://github.com/ITISFoundation/osparc-simcore/issues/3517
-
-#
-# 1. unify
-# 2. test against all i/o ports in registry.osparc-master.speag.com
-#
-#
-
-
 def update_schema_doc(schema: dict[str, Any], port: Union[ServiceInput, ServiceOutput]):
     schema["title"] = port.label
     if port.label != port.description:
