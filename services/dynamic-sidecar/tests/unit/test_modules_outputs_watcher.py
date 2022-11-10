@@ -79,9 +79,12 @@ async def outputs_manager(
     mounted_volumes: MountedVolumes, port_keys: list[str], nodeports: Nodeports
 ) -> AsyncIterable[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_path=mounted_volumes.disk_outputs_path, nodeports=nodeports
+        outputs_path=mounted_volumes.disk_outputs_path,
+        nodeports=nodeports,
+        task_monitor_interval_s=TICK_INTERVAL,
     )
     outputs_manager.outputs_port_keys.update(port_keys)
+    await outputs_manager.start()
     yield outputs_manager
     await outputs_manager.shutdown()
 
@@ -340,7 +343,6 @@ async def test_port_key_sequential_event_generation(
     port_keys: list[str],
     nodeports: Nodeports,
 ):
-    # await _wait_for_events_to_trigger()
     # writing ports sequentially
     wait_interval_for_port: deque[float] = deque()
     for port_key in port_keys:

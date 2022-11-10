@@ -417,6 +417,7 @@ async def test_outputs_watcher_disabling(
     assert isinstance(test_client.application, FastAPI)
     outputs_manager: OutputsManager = AppState(test_client.application).outputs_manager
     mounted_volumes: MountedVolumes = AppState(test_client.application).mounted_volumes
+    outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER
 
     def _create_file_in_random_dir_in_inputs() -> int:
         random_subdir = f"{uuid4()}"
