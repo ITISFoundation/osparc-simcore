@@ -6,6 +6,7 @@
 """
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
@@ -41,6 +42,14 @@ products = sa.Table(
         sa.String,
         nullable=False,
         doc="Regular expression that matches product hostname from an url string",
+    ),
+    sa.Column(
+        "vendor_info",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Read-only brand information about the vendor."
+        "E.g. company name, address, copyright, etc.",
     ),
     sa.Column(
         "support_email",
