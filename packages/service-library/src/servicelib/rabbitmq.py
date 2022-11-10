@@ -98,6 +98,7 @@ class RabbitMQClient:
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             queue = await channel.declare_queue(durable=True, exclusive=True)
+            # TODO: do we need this? arguments={"x-message-ttl": 60000},
             await queue.bind(exchange)
 
             async def _on_message(

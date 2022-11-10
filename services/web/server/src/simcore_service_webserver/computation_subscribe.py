@@ -122,103 +122,38 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     ):
         await wait_till_rabbitmq_responsive(f"{settings.dsn}")
 
-    rabbit_client = RabbitMQClient("webserver", settings)
+    with log_context(
+        log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
+    ):
+        rabbit_client = RabbitMQClient("webserver", settings)
 
-    EXCHANGE_TO_PARSER_CONFIG = (
-        (
-            settings.RABBIT_CHANNELS["log"],
-            log_message_parser,
-            {"no_ack": True},
-        ),
-        (
-            settings.RABBIT_CHANNELS["progress"],
-            progress_message_parser,
-            {"no_ack": True},
-        ),
-        (
-            settings.RABBIT_CHANNELS["instrumentation"],
-            instrumentation_message_parser,
-            {"no_ack": False},
-        ),
-        (
-            settings.RABBIT_CHANNELS["events"],
-            events_message_parser,
-            {"no_ack": False},
-        ),
-    )
+        EXCHANGE_TO_PARSER_CONFIG = (
+            (
+                settings.RABBIT_CHANNELS["log"],
+                log_message_parser,
+                {"no_ack": True},
+            ),
+            (
+                settings.RABBIT_CHANNELS["progress"],
+                progress_message_parser,
+                {"no_ack": True},
+            ),
+            (
+                settings.RABBIT_CHANNELS["instrumentation"],
+                instrumentation_message_parser,
+                {"no_ack": False},
+            ),
+            (
+                settings.RABBIT_CHANNELS["events"],
+                events_message_parser,
+                {"no_ack": False},
+            ),
+        )
 
-    for exchange_name, parser_fct, _exchange_kwargs in EXCHANGE_TO_PARSER_CONFIG:
-        await rabbit_client.consume(exchange_name, functools.partial(parser_fct, app))
-
-    # async def _exchange_consumer(
-    #     exchange_name: str,
-    #     parse_handler: Callable[[web.Application, bytes], Awaitable[None]],
-    #     consumer_kwargs: dict[str, Any],
-    # ):
-    #     while consumer_running:
-    #         try:
-    #             async with channel_pool.acquire() as channel:
-    #                 exchange = await channel.declare_exchange(
-    #                     exchange_name, aio_pika.ExchangeType.FANOUT
-    #                 )
-    #                 # Declaring queue
-    #                 queue = await channel.declare_queue(
-    #                     f"webserver_{exchange_name}_{socket.gethostname()}_{os.getpid()}",
-    #                     arguments={"x-message-ttl": 60000},
-    #                 )
-    #                 # Binding the queue to the exchange
-    #                 await queue.bind(exchange)
-    #                 # process
-    #                 async with queue.iterator(**consumer_kwargs) as queue_iter:
-    #                     async for message in queue_iter:
-    #                         log.debug(
-    #                             "Received message from exchange %s", exchange_name
-    #                         )
-
-    #                         await parse_handler(app, message.body)
-    #                         log.debug("message parsed")
-    #         except asyncio.CancelledError:
-    #             log.info("stopping rabbitMQ consumer for %s", exchange_name)
-    #             raise
-    #         except Exception:  # pylint: disable=broad-except
-    #             log.warning(
-    #                 "unexpected error in consumer for %s, %s",
-    #                 exchange_name,
-    #                 "restarting..." if consumer_running else "stopping",
-    #                 exc_info=True,
-    #             )
-    #             if consumer_running:
-    #                 await asyncio.sleep(_RABBITMQ_INTERVAL_BEFORE_RESTARTING_CONSUMER_S)
-
-    # consumer_tasks = []
-    # for exchange_name, message_parser, consumer_kwargs in [
-    #     (
-    #         settings.RABBIT_CHANNELS["log"],
-    #         log_message_parser,
-    #         {"no_ack": True},
-    #     ),
-    #     (
-    #         settings.RABBIT_CHANNELS["progress"],
-    #         progress_message_parser,
-    #         {"no_ack": True},
-    #     ),
-    #     (
-    #         settings.RABBIT_CHANNELS["instrumentation"],
-    #         instrumentation_message_parser,
-    #         {"no_ack": False},
-    #     ),
-    #     (
-    #         settings.RABBIT_CHANNELS["events"],
-    #         events_message_parser,
-    #         {"no_ack": False},
-    #     ),
-    # ]:
-    #     task = asyncio.create_task(
-    #         _exchange_consumer(exchange_name, message_parser, consumer_kwargs)
-    #     )
-    #     consumer_tasks.append(task)
-
-    log.info("Connected to rabbitMQ exchanges")
+        for exchange_name, parser_fct, _exchange_kwargs in EXCHANGE_TO_PARSER_CONFIG:
+            await rabbit_client.consume(
+                exchange_name, functools.partial(parser_fct, app)
+            )
 
     yield
 
