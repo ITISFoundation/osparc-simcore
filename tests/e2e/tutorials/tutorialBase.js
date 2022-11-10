@@ -238,13 +238,11 @@ class TutorialBase {
 
   async startSim4LifeLite() {
     await this.takeScreenshot("startSim4LifeLite_before");
-    this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
       await auto.dashboardStartSim4LifeLite(this.__page);
-      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);

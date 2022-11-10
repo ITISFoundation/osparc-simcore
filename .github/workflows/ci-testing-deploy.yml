@@ -143,6 +143,7 @@ jobs:
             anything:
               - 'packages/**'
               - 'services/**'
+              - 'tests/**'
             anything-py:
               - '**/*.py'
             anything-js:
