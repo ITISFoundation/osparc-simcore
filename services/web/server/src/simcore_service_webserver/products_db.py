@@ -1,3 +1,4 @@
+import json
 import logging
 import string
 from typing import Any, AsyncIterator, Optional, Pattern
@@ -11,7 +12,7 @@ from models_library.basic_regex import (
 )
 from models_library.basic_types import HttpSecureUrl
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, Json, validator
 from simcore_postgres_database.models.products import jinja2_templates
 
 from .db_base_repository import BaseRepository
@@ -39,6 +40,12 @@ class Product(BaseModel):
         None, regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE, min_length=2, max_length=11
     )
     host_regex: Pattern
+
+    vendor_info: Json = Field(
+        None,
+        description="Read-only information about the vendor"
+        "E.g. company name, address, copyright, etc",
+    )
 
     # EMAILS/PHONE
     support_email: EmailStr
@@ -91,6 +98,26 @@ class Product(BaseModel):
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
                 },
+                {
+                    # fake mandatory
+                    "name": "s4llite",
+                    "host_regex": r"([\.-]{0,1}acme[\.-])",
+                    "twilio_messaging_sid": "1" * 34,
+                    "registration_email_template": "osparc_registration_email",
+                    "display_name": "FOOO",
+                    "support_email": "foo@foo.com",
+                    "manual_url": "https://themanula.com",
+                    # optionals
+                    "vendor_info": json.dumps(
+                        {
+                            "name": "ACME",
+                            "address": "sesame street",
+                            "copyright": "© ACME correcaminos",
+                            "url": "https://acme.com",
+                            "forum_url": "https://forum.acme.com",
+                        }
+                    ),
+                },
             ]
         }
 
@@ -137,6 +164,7 @@ class Product(BaseModel):
                 "issues_new_url",
                 "issues_login_url",
                 "feedback_form_url",
+                "vendor_info",
             },
             exclude_none=True,
         )
