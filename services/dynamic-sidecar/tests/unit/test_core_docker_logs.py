@@ -18,7 +18,10 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
 
 
 @pytest.fixture
-def mock_environment(monkeypatch: MonkeyPatch, mock_environment: None) -> None:
+def mock_environment(
+    monkeypatch: MonkeyPatch,
+    mock_environment: None,
+) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")
 
 
@@ -41,6 +44,7 @@ async def container_name() -> AsyncIterable[str]:
 
 async def test_background_log_fetcher(
     mock_core_rabbitmq: dict[str, AsyncMock],
+    mock_node_ports_v2_ports: None,
     test_client: TestClient,
     container_name: str,
     app: FastAPI,

@@ -71,6 +71,14 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 
 @pytest.fixture
+def mock_node_ports_v2_ports(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs_manager.node_ports_v2.ports",
+        spec=True,
+    )
+
+
+@pytest.fixture
 def app(
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,

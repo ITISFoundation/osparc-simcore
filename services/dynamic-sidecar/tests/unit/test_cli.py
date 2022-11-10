@@ -13,14 +13,6 @@ from typer.testing import CliRunner
 
 
 @pytest.fixture
-def mock_node_ports_v2_ports(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs_manager.node_ports_v2.ports",
-        spec=True,
-    )
-
-
-@pytest.fixture
 def cli_runner(
     mock_environment: EnvVarsDict, mock_node_ports_v2_ports: None
 ) -> CliRunner:

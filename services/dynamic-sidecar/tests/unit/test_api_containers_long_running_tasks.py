@@ -151,7 +151,7 @@ def backend_url() -> AnyHttpUrl:
 
 
 @pytest.fixture
-async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
+async def app(mock_node_ports_v2_ports: None, app: FastAPI) -> AsyncIterable[FastAPI]:
     # add the client setup to the same application
     # this is only required for testing, in reality
     # this will be in a different process

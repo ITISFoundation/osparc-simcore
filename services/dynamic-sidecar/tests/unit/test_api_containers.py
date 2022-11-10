@@ -55,6 +55,7 @@ async def _assert_enable_outputs_watcher(test_client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
+    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
 
 
 async def _assert_disable_outputs_watcher(test_client: TestClient) -> None:
@@ -63,6 +64,7 @@ async def _assert_disable_outputs_watcher(test_client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
+    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
 
 
 async def _start_containers(test_client: TestClient, compose_spec: str) -> list[str]:
@@ -137,6 +139,7 @@ def test_client(
     ensure_shared_store_dir: Path,
     ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
+    mock_node_ports_v2_ports: None,
     cleanup_containers,
     test_client: TestClient,
 ) -> TestClient:
@@ -420,7 +423,7 @@ async def test_outputs_watcher_disabling(
 
         outputs_manager.outputs_port_keys.add(random_subdir)
         dir_name = mounted_volumes.disk_outputs_path / random_subdir
-        dir_name.mkdir(parents=True)
+        dir_name.mkdir()
 
         file_in_dir = dir_name / f"file_{uuid4()}"
         file_in_dir.touch()
@@ -434,29 +437,30 @@ async def test_outputs_watcher_disabling(
         )
         return dir_count
 
-    EVENTS_PER_FILE_TOUCH_IN_SUBDIR = 3
+    CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
     # by default outputs-watcher it is disabled
     await _assert_enable_outputs_watcher(test_client)
     assert mock_event_filter_enqueue.call_count == 0
-    dir_count = _create_file_in_random_dir_in_inputs()
-    assert dir_count == 1
+    files_in_dir = _create_file_in_random_dir_in_inputs()
+    assert files_in_dir == 1
     await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
-    assert mock_event_filter_enqueue.call_count == EVENTS_PER_FILE_TOUCH_IN_SUBDIR
+    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
     # disable and wait for events should have the same count as before
     await _assert_disable_outputs_watcher(test_client)
-    dir_count = _create_file_in_random_dir_in_inputs()
-    assert dir_count == 2
+    files_in_dir = _create_file_in_random_dir_in_inputs()
+    assert files_in_dir == 2
     await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
-    assert mock_event_filter_enqueue.call_count == EVENTS_PER_FILE_TOUCH_IN_SUBDIR
+    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
     # enable and wait for events
     await _assert_enable_outputs_watcher(test_client)
-    dir_count = _create_file_in_random_dir_in_inputs()
-    assert dir_count == 3
+
+    files_in_dir = _create_file_in_random_dir_in_inputs()
+    assert files_in_dir == 3
     await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
-    assert mock_event_filter_enqueue.call_count == 2 * EVENTS_PER_FILE_TOUCH_IN_SUBDIR
+    assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
 
 
 async def test_container_create_outputs_dirs(

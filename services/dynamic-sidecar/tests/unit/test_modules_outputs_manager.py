@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
+from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock, call
@@ -15,6 +16,12 @@ from simcore_sdk.node_ports_v2 import Nodeports
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 
 
+@dataclass
+class _MockError:
+    error_class: type[BaseException]
+    message: str
+
+
 @pytest.fixture(params=[0.01])
 def upload_duration(request: FixtureRequest) -> PositiveFloat:
     return request.param
@@ -22,7 +29,7 @@ def upload_duration(request: FixtureRequest) -> PositiveFloat:
 
 @pytest.fixture
 def wait_upload_finished(upload_duration: PositiveFloat) -> PositiveFloat:
-    return upload_duration * 10
+    return upload_duration * 100
 
 
 @pytest.fixture
@@ -33,6 +40,29 @@ def mock_upload_outputs(
         await asyncio.sleep(upload_duration)
 
     yield mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
+        side_effect=_mock_upload_outputs,
+    )
+
+
+@pytest.fixture(
+    params=[
+        _MockError(RuntimeError, "emulate_nodeports_raised_error"),
+        _MockError(asyncio.CancelledError, ""),
+    ]
+)
+def mock_error(request: FixtureRequest) -> _MockError:
+    return request.param
+
+
+@pytest.fixture
+def mock_upload_outputs_raises_error(
+    mocker: MockerFixture, mock_error: _MockError
+) -> None:
+    async def _mock_upload_outputs(*args, **kwargs) -> None:
+        raise mock_error.error_class(mock_error.message)
+
+    mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
         side_effect=_mock_upload_outputs,
     )
@@ -61,6 +91,7 @@ async def outputs_manager(
         outputs_path=outputs_path, nodeports=nodeports, task_monitor_interval_s=0.1
     )
     outputs_manager.outputs_port_keys.update(port_keys)
+    await outputs_manager.start()
     yield outputs_manager
     await outputs_manager.shutdown()
 
@@ -79,7 +110,7 @@ async def test_upload_port_wait_parallel(
     # wait for tasks to finish uploading
     await asyncio.gather(*upload_tasks)
 
-    assert len(outputs_manager._scheduled_port_key_uploads) == 0
+    assert len(outputs_manager._pending_port_uploads) == 0
     assert mock_upload_outputs.call_count == len(port_keys)
 
     mock_upload_outputs.assert_has_calls(
@@ -108,7 +139,7 @@ async def test_upload_after_port_change_parallel(
     # wait for tasks to finish uploading
     await asyncio.sleep(wait_upload_finished * len(port_keys))
 
-    assert len(outputs_manager._scheduled_port_key_uploads) == 0
+    assert len(outputs_manager._pending_port_uploads) == 0
     assert mock_upload_outputs.call_count == len(port_keys)
 
     mock_upload_outputs.assert_has_calls(
@@ -134,17 +165,11 @@ async def test_request_port_upload_case_6(
     for port_key in port_keys:
         call_count = mock_upload_outputs.call_count
         await outputs_manager.upload_after_port_change(port_key)
-        assert mock_upload_outputs.call_count == call_count + 1
-        mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
-        )
+        assert mock_upload_outputs.call_count == call_count
 
         # check nothing was scheduled
         task = asyncio.create_task(outputs_manager.upload_port(port_key))
-        assert mock_upload_outputs.call_count == call_count + 1
-        mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
-        )
+        assert mock_upload_outputs.call_count == call_count
 
         # wait for the upload_port task to finish nothing was scheduled
         await task
@@ -167,22 +192,49 @@ async def test_request_port_upload_case_8(
     # | 8 | true                | true                 | true          | cancel & schedule |
     for port_key in port_keys:
         call_count = mock_upload_outputs.call_count
+
         await outputs_manager.upload_after_port_change(port_key)
+        assert mock_upload_outputs.call_count == call_count
+
+        # new upload is scheduled (old one was cancelled)
+        await outputs_manager.upload_after_port_change(port_key)
+        assert mock_upload_outputs.call_count == call_count
+
+        # wait for upload to finish
+        await asyncio.sleep(wait_upload_finished)
         assert mock_upload_outputs.call_count == call_count + 1
         mock_upload_outputs.assert_called_with(
             outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
         )
 
-        # new upload is scheduled (old one was cancelled)
-        await outputs_manager.upload_after_port_change(port_key)
-        assert mock_upload_outputs.call_count == call_count + 2
-        mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
-        )
 
-        # wait for upload to finish
-        await asyncio.sleep(wait_upload_finished)
-        assert mock_upload_outputs.call_count == call_count + 2
-        mock_upload_outputs.assert_called_with(
-            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
-        )
+async def test_upload_outputs_ok(
+    mock_upload_outputs: None,
+    outputs_manager: OutputsManager,
+    port_keys: list[str],
+):
+    port_key = port_keys[0]
+    result = await outputs_manager.upload_port(port_key)
+    assert result is None
+
+
+async def test_re_raises_error_from_nodeports(
+    mock_upload_outputs_raises_error: None,
+    outputs_manager: OutputsManager,
+    port_keys: list[str],
+    mock_error: _MockError,
+):
+    port_key = port_keys[0]
+    with pytest.raises(mock_error.error_class) as exec_info:
+        await outputs_manager.upload_port(port_key)
+    assert isinstance(exec_info.value, mock_error.error_class)
+    assert f"{exec_info.value}" == mock_error.message
+
+
+# TODO: Important test:
+# - start long_running task (mock upload)
+# - run another subscriber
+# - wait for task to finish and verify result delivery:
+#   - verify in case of error
+#   - verify in case of cancellation
+#   - verify in case of correct result
