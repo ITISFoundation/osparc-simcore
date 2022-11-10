@@ -39,6 +39,7 @@ async def test_rabbitmq(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    mock_node_ports_v2_ports: None,
     test_client: TestClient,
 ):
     app = test_client.application
