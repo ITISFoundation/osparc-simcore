@@ -131,6 +131,8 @@ pytest-xdist==3.0.2
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
+python-dotenv==0.21.0
+    # via -r requirements/_test.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt

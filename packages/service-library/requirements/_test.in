@@ -27,3 +27,4 @@ pytest-mock
 pytest-runner
 pytest-sugar
 pytest-xdist
+python-dotenv
