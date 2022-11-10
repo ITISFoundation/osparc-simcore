@@ -96,14 +96,11 @@ class _PortUploadManager:
 
     async def wait_for_result(self) -> Future:
         """Blocks and waits for the task to finish and provide a result"""
-        logger.debug("subscribing to observer")
         result_queue: Queue[Optional[Future]] = Queue()
         self._observer_queue.append(result_queue)
 
-        logger.debug("wait for result")
         # wait for a result to become available
         future = await result_queue.get()
-        logger.debug("signal result received")
         await result_queue.put(None)  # done with this
 
         assert isinstance(future, Future)  # nosec
@@ -155,7 +152,6 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
     async def _upload_worker(self) -> None:
         while True:
-            logger.debug("checking %s", self._current_port_upload)
             if self._current_port_upload is not None:
                 await self._current_port_upload.run_upload_task(
                     self.outputs_path, self.nodeports, self.cancellation_timeout_s
@@ -292,7 +288,6 @@ def setup_outputs_manager(app: FastAPI) -> None:
             outputs_path=mounted_volumes.disk_outputs_path, nodeports=nodeports
         )
         await outputs_manager.start()
-        logger.info("outputs manger started")
 
     async def on_shutdown() -> None:
         outputs_manager: Optional[OutputsManager] = app.state.outputs_manager
