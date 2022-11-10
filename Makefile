@@ -219,8 +219,8 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 # https://github.com/docker/compose/issues/7771#issuecomment-765243575
 # below sed operation fixes above issue
 # `sed -E "s/cpus: ([0-9\\.]+)/cpus: '\\1'/"`
-# remove when this isssue is fixed, this will most likely occur
-# when upgrading the version of docker-compse
+# remove when this issues is fixed, this will most likely occur
+# when upgrading the version of docker-compose
 
 .stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
