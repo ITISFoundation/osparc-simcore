@@ -48,8 +48,9 @@ products = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Read-only brand information about the vendor."
+        doc="Read-only and free content brand information about the vendor."
         "E.g. company name, address, copyright, etc.",
+        # SEE https://www.cybertec-postgresql.com/en/json-postgresql-how-to-use-it-right/
     ),
     sa.Column(
         "support_email",

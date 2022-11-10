@@ -31,6 +31,8 @@ class Product(BaseModel):
     """
     Pydantic model associated to db_models.Products table
 
+    Most of this info in this model is static and read-only, i.e.
+
     SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
     """
 
