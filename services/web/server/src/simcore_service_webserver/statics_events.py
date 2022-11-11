@@ -99,16 +99,16 @@ async def create_statics_json(app: web.Application) -> None:
     app_settings = app[APP_SETTINGS_KEY]
     info: dict = app_settings.to_client_statics()
 
-    # Adds products defined in db
-    products: dict[str, Product] = app[APP_PRODUCTS_KEY]
-    assert products  # nosec
-    for product in products.value():
-        log.debug("Product %s", product.name)
-        info.update({product.name: product.to_statics()})
-
     # Adds specifics to front-end app
     frontend_settings: FrontEndAppSettings = app_settings.WEBSERVER_FRONTEND
     info.update(frontend_settings.to_statics())
+
+    # Adds products defined in db
+    products: dict[str, Product] = app[APP_PRODUCTS_KEY]
+    assert products  # nosec
+    for product in products.values():
+        log.debug("Product %s", product.name)
+        info.update({product.name: product.to_statics()})
 
     log.debug("Front-end statics.json:\n%s", json_dumps(info, indent=1))
 
