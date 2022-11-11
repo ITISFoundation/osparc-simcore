@@ -86,16 +86,8 @@ services:
       - "3011:3000"
 
   agent:
-    volumes:
-      - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
       - LOGLEVEL=${LOG_LEVEL:-INFO}
-      - AGENT_VOLUMES_CLEANUP_S3_SECURE=${S3_SECURE}
-      - AGENT_VOLUMES_CLEANUP_S3_ENDPOINT=${S3_ENDPOINT}
-      - AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY=${S3_SECRET_KEY}
-      - AGENT_VOLUMES_CLEANUP_S3_BUCKET=${S3_BUCKET_NAME}-volume-backups
-      - AGENT_VOLUMES_CLEANUP_S3_PROVIDER=MINIO
 
   dask-sidecar:
     environment:

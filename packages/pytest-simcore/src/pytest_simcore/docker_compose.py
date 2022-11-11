@@ -11,6 +11,7 @@
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -338,6 +339,19 @@ def _minio_fix(service_environs: dict) -> dict:
     return service_environs
 
 
+def _escape_cpus(serialized_yaml: str) -> str:
+    # NOTE: fore details on below SEE
+    # https://github.com/docker/compose/issues/7771#issuecomment-765243575
+    # below is equivalent to the following sed operation fixes above issue
+    # `sed -E "s/cpus: ([0-9\\.]+)/cpus: '\\1'/"`
+    # remove when this issues is fixed, this will most likely occur
+    # when upgrading the version of docker-compose
+
+    return re.sub(
+        pattern=r"cpus: (\d+\.\d+|\d+)", repl="cpus: '\\1'", string=serialized_yaml
+    )
+
+
 def _filter_services_and_dump(
     include: list, services_compose: dict, docker_compose_path: Path
 ):
@@ -368,3 +382,5 @@ def _filter_services_and_dump(
             # locally we have access to file
             print(f"Saving config to '{docker_compose_path}'")
         yaml.dump(content, fh, default_flow_style=False)
+
+    docker_compose_path.write_text(_escape_cpus(docker_compose_path.read_text()))
