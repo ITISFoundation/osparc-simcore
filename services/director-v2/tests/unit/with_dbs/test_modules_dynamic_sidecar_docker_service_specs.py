@@ -440,9 +440,8 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     # ensure some entries are sorted the same to prevent flakyness
     for sorted_dict in [dynamic_sidecar_spec_dict, expected_dynamic_sidecar_spec_dict]:
         for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
-            sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key] = sorted(
-                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key]
-            )
+            assert isinstance(sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"], list)
+            sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key].sort()
     assert (
         dynamic_sidecar_spec.dict()
         == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
