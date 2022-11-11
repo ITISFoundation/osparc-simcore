@@ -62,7 +62,6 @@ def _get_environment_variables(
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "R_CLONE_ENABLED": f"{r_clone_settings.R_CLONE_ENABLED}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
-        "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",

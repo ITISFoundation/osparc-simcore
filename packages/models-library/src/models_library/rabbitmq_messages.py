@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -19,6 +19,11 @@ class RabbitMessageBase(BaseModel):
     node_id: NodeID
     user_id: UserID
     project_id: ProjectID
+
+    @classmethod
+    def get_channel_name(cls) -> str:
+        # NOTE: this returns the channel type name
+        return cls.__fields__["channel_name"].default
 
 
 class LoggerRabbitMessage(RabbitMessageBase):
@@ -46,8 +51,3 @@ class InstrumentationRabbitMessage(RabbitMessageBase):
     service_key: str
     service_tag: str
     result: Optional[RunningState] = None
-
-
-RabbitMessageTypes = Union[
-    LoggerRabbitMessage, ProgressRabbitMessage, InstrumentationRabbitMessage
-]

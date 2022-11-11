@@ -67,7 +67,7 @@ class RabbitMQClient:
         self._connection_pool = aio_pika.pool.Pool(
             _get_connection, self.settings.dsn, self.client_name, max_size=2
         )
-        self._channel_pool = aio_pika.pool.Pool(self.get_channel, max_size=10)
+        self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
     async def close(self) -> None:
         with log_context(log, logging.INFO, msg="Closing connection to RabbitMQ"):
@@ -76,7 +76,7 @@ class RabbitMQClient:
             assert self._connection_pool  # nosec
             await self._connection_pool.close()
 
-    async def get_channel(self) -> aio_pika.abc.AbstractChannel:
+    async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection

@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 import logging
 import os
 import socket
@@ -13,6 +12,12 @@ from typing import Any, AsyncIterator, Optional
 import aio_pika
 import pytest
 import tenacity
+from models_library.rabbitmq_messages import (
+    EventRabbitMessage,
+    InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+)
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -50,7 +55,6 @@ async def rabbit_settings(
         RABBIT_PASSWORD=testing_environ_vars["RABBIT_PASSWORD"],
         RABBIT_HOST=get_localhost_ip(),
         RABBIT_PORT=int(port),
-        RABBIT_CHANNELS=json.loads(testing_environ_vars["RABBIT_CHANNELS"]),
     )
 
     await wait_till_rabbit_responsive(settings.dsn)
@@ -72,7 +76,6 @@ async def rabbit_service(
     monkeypatch.setenv(
         "RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value()
     )
-    monkeypatch.setenv("RABBIT_CHANNELS", json.dumps(rabbit_settings.RABBIT_CHANNELS))
 
     return rabbit_settings
 
@@ -129,6 +132,7 @@ class RabbitExchanges:
     logs: aio_pika.abc.AbstractExchange
     progress: aio_pika.abc.AbstractExchange
     instrumentation: aio_pika.abc.AbstractExchange
+    events: aio_pika.abc.AbstractExchange
 
 
 @pytest.fixture(scope="function")
@@ -138,29 +142,40 @@ async def rabbit_exchanges(
 ) -> RabbitExchanges:
 
     # declare log exchange
-    LOG_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS["log"]
     logs_exchange = await rabbit_channel.declare_exchange(
-        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, durable=True
+        LoggerRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
     )
     assert logs_exchange
 
     # declare progress exchange
-    PROGRESS_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS["progress"]
     progress_exchange = await rabbit_channel.declare_exchange(
-        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, durable=True
+        ProgressRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
     )
     assert progress_exchange
 
     # declare instrumentation exchange
-    INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS[
-        "instrumentation"
-    ]
     instrumentation_exchange = await rabbit_channel.declare_exchange(
-        INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, durable=True
+        InstrumentationRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
     )
     assert instrumentation_exchange
 
-    return RabbitExchanges(logs_exchange, progress_exchange, instrumentation_exchange)
+    # declare instrumentation exchange
+    events_exchange = await rabbit_channel.declare_exchange(
+        EventRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
+    )
+    assert instrumentation_exchange
+
+    return RabbitExchanges(
+        logs_exchange, progress_exchange, instrumentation_exchange, events_exchange
+    )
 
 
 @pytest.fixture(scope="function")
