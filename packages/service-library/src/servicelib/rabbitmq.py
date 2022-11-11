@@ -84,7 +84,7 @@ class RabbitMQClient:
             channel.close_callbacks.add(_channel_close_callback)
             return channel
 
-    async def consume(
+    async def subscribe(
         self, exchange_name: str, message_handler: MessageHandler
     ) -> None:
         assert self._channel_pool  # nosec

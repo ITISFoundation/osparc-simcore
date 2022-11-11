@@ -112,7 +112,7 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 
     mocked_message_parser = mocker.AsyncMock(return_value=True)
     await publisher.publish(random_exchange_name, message)
-    await consumer.consume(random_exchange_name, mocked_message_parser)
+    await consumer.subscribe(random_exchange_name, mocked_message_parser)
     await _assert_message_received(mocked_message_parser, 0, "")
 
 
@@ -128,7 +128,7 @@ async def test_rabbit_client_pub_sub(
     message = faker.text()
 
     mocked_message_parser = mocker.AsyncMock(return_value=True)
-    await consumer.consume(random_exchange_name, mocked_message_parser)
+    await consumer.subscribe(random_exchange_name, mocked_message_parser)
     await publisher.publish(random_exchange_name, message)
     await _assert_message_received(mocked_message_parser, 1, message)
 
@@ -151,7 +151,7 @@ async def test_rabbit_client_pub_many_subs(
 
     await asyncio.gather(
         *(
-            consumer.consume(random_exchange_name, parser)
+            consumer.subscribe(random_exchange_name, parser)
             for consumer, parser in zip(consumers, mocked_message_parsers)
         )
     )
@@ -187,6 +187,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
     _raise_once_then_true.calls = 0
     mocked_message_parser = mocker.AsyncMock(side_effect=_raise_once_then_true)
-    await consumer.consume(random_exchange_name, mocked_message_parser)
+    await consumer.subscribe(random_exchange_name, mocked_message_parser)
     await publisher.publish(random_exchange_name, message)
     await _assert_message_received(mocked_message_parser, 3, message)

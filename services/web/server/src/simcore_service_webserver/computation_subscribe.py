@@ -151,7 +151,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         )
 
         for exchange_name, parser_fct, _exchange_kwargs in EXCHANGE_TO_PARSER_CONFIG:
-            await rabbit_client.consume(
+            await rabbit_client.subscribe(
                 exchange_name, functools.partial(parser_fct, app)
             )
 
