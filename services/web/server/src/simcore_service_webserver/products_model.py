@@ -61,7 +61,7 @@ class Product(BaseModel):
 
     vendor: Optional[Vendor] = Field(
         None,
-        description="Vendor information" "E.g. company name, address, copyright, etc",
+        description="Vendor information such as company name, address, copyright, ...",
     )
 
     issues: list[IssueTracker] = Field(default_factory=list)
@@ -193,7 +193,7 @@ class Product(BaseModel):
             exclude_none=True,
             exclude_unset=True,
         )
-        # keys will be named as e.g. DisplayName, SupportEmail, ...
+        # keys will be named as e.g. displayName, supportEmail, ...
         return {snake_to_camel(key): value for key, value in public_selection.items()}
 
     def get_template_name_for(self, filename: str) -> Optional[str]:
