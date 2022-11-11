@@ -75,7 +75,9 @@ class Product(BaseModel):
     )
 
     class Config:
+        allow_population_by_field_name = True
         orm_mode = True
+        alias_generator = snake_to_camel  # to export
         frozen = True  # read-only
         schema_extra = {
             "examples": [
@@ -187,7 +189,8 @@ class Product(BaseModel):
         """
 
         # SECURITY WARNING: do not expose sensitive information here
-        public_selection = self.dict(
+        # keys will be named as e.g. displayName, supportEmail, ...
+        return self.dict(
             include={
                 "display_name",
                 "support_email",
@@ -198,9 +201,8 @@ class Product(BaseModel):
             },
             exclude_none=True,
             exclude_unset=True,
+            by_alias=True,
         )
-        # keys will be named as e.g. displayName, supportEmail, ...
-        return {snake_to_camel(key): value for key, value in public_selection.items()}
 
     def get_template_name_for(self, filename: str) -> Optional[str]:
         """Checks for field marked with 'x_template_name' that fits the argument"""
