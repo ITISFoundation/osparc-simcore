@@ -47,7 +47,6 @@ async def test_background_log_fetcher(
 ):
     assert _get_background_log_fetcher(app=app) is not None
     await start_log_fetching(app=app, container_name=container_name)
-    assert app.state.rabbitmq is not None
     # wait for background log fetcher
     await asyncio.sleep(1)
     assert mock_core_rabbitmq["post_log_message"].call_count == 1

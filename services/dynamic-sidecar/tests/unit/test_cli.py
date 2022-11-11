@@ -17,7 +17,7 @@ def cli_runner(mock_environment: EnvVarsDict) -> CliRunner:
 
 @pytest.fixture
 def mock_rabbitmq(mocker: MockerFixture) -> None:
-    mocker.patch("simcore_service_dynamic_sidecar.cli.RabbitMQ", spec=True)
+    mocker.patch("simcore_service_dynamic_sidecar.cli.RabbitMQClient", spec=True)
 
 
 @pytest.fixture

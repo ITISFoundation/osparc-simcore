@@ -13,8 +13,8 @@ from typing import Any, Callable, Coroutine, Optional, cast
 
 from fastapi import FastAPI
 
+from ..core.rabbitmq import post_log_message
 from .docker_utils import docker_client
-from .rabbitmq import RabbitMQ
 
 logger = logging.getLogger(__name__)
 
@@ -40,21 +40,14 @@ async def _logs_fetcher_worker(
 
 class BackgroundLogFetcher:
     def __init__(self, app: FastAPI) -> None:
-        # requires rabbitmq to be in place
-        assert app.state.rabbitmq  # nosec
-
         self._app: FastAPI = app
 
         self._log_processor_tasks: dict[str, Task[None]] = {}
 
-    @property
-    def rabbitmq(self) -> RabbitMQ:
-        return self._app.state.rabbitmq  # type: ignore
-
     async def _dispatch_logs(self, image_name: str, message: str) -> None:
         # sending the logs to the UI to facilitate the
         # user debugging process
-        await self.rabbitmq.post_log_message(f"[{image_name}] {message}")
+        await post_log_message(self._app, f"[{image_name}] {message}")
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(

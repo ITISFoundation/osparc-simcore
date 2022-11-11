@@ -17,7 +17,11 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
-from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
+from simcore_service_dynamic_sidecar.core.rabbitmq import (
+    RabbitMQClient,
+    get_rabbitmq_client,
+    post_log_message,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -43,8 +47,8 @@ async def test_rabbitmq(
     app = test_client.application
     assert isinstance(app, FastAPI)
 
-    rabbit = app.state.rabbitmq
-    assert isinstance(rabbit, RabbitMQ)
+    rabbit = get_rabbitmq_client(app)
+    assert isinstance(rabbit, RabbitMQClient)
 
     incoming_data: list[LoggerRabbitMessage] = []
 
@@ -53,14 +57,14 @@ async def test_rabbitmq(
     ) -> None:
         incoming_data.append(LoggerRabbitMessage.parse_raw(message.body))
 
-    await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
+    await rabbit_queue.consume(rabbit_message_handler, exclusive=True)
 
     log_msg_in_a_str: str = "I am logging"
     log_messages_in_array: list[str] = ["I", "am a logger", "man..."]
 
-    await rabbit.post_log_message(log_msg_in_a_str)
-    await rabbit.post_log_message(log_messages_in_array)
-    await asyncio.sleep(1.1)
+    await post_log_message(app, log_msg_in_a_str)
+    await post_log_message(app, log_messages_in_array)
+    await asyncio.sleep(3.1)
     # we have now 2 messages in the queue
     assert len(incoming_data) == 2
     assert incoming_data[0] == LoggerRabbitMessage(

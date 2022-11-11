@@ -16,7 +16,7 @@ from simcore_service_dynamic_sidecar.modules import nodeports
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.api import BaseObserver
 
-from ...core.rabbitmq import send_message
+from ...core.rabbitmq import post_sidecar_log_message
 from ..mounted_fs import MountedVolumes
 from ._watchdog_extentions import ExtendedInotifyObserver
 
@@ -226,7 +226,7 @@ def setup_directory_watcher(app: FastAPI) -> None:
         mounted_volumes = app.state.mounted_volumes  # nosec
         io_log_redirect_cb = None
         if app.state.settings.RABBIT_SETTINGS:
-            io_log_redirect_cb = functools.partial(send_message, app.state.rabbitmq)
+            io_log_redirect_cb = functools.partial(post_sidecar_log_message, app)
         logger.debug(
             "setting up directory watcher %s",
             "with redirection of logs..." if io_log_redirect_cb else "...",

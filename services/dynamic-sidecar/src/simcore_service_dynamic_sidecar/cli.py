@@ -7,7 +7,6 @@ from fastapi import FastAPI
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from settings_library.utils_cli import create_settings_command
 from simcore_service_dynamic_sidecar.core.application import create_base_app
-from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
     task_ports_outputs_push,
@@ -41,16 +40,6 @@ async def _setup_app_for_task_execution() -> FastAPI:
     # setup MountedVolumes
     setup_mounted_fs(app)
 
-    # setup RabbitMQ
-    # TODO: ANE why do we need the rabbitMQ client here??
-    settings: ApplicationSettings = app.state.settings
-    assert settings.RABBIT_SETTINGS  # nosec
-    app.state.rabbitmq = RabbitMQ(
-        app_settings=settings,
-        client_name=f"dynamic-sidecar_{settings.DY_SIDECAR_NODE_ID}",
-        settings=settings.RABBIT_SETTINGS,
-    )
-
     return app
 
 
@@ -83,11 +72,8 @@ def state_save():
 
         settings: ApplicationSettings = app.state.settings
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        rabbitmq: RabbitMQ = app.state.rabbitmq
 
-        await task_save_state(
-            TaskProgress.create(), settings, mounted_volumes, rabbitmq
-        )
+        await task_save_state(TaskProgress.create(), settings, mounted_volumes, app)
 
     asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
@@ -101,11 +87,8 @@ def outputs_push():
         app = await _setup_app_for_task_execution()
 
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        rabbitmq: RabbitMQ = app.state.rabbitmq
 
-        await task_ports_outputs_push(
-            TaskProgress.create(), None, mounted_volumes, rabbitmq
-        )
+        await task_ports_outputs_push(TaskProgress.create(), None, mounted_volumes, app)
 
     asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")
