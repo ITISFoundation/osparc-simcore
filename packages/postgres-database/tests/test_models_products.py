@@ -13,11 +13,19 @@ from aiopg.sa.engine import Engine
 from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
+from simcore_postgres_database.models.products import (
+    EmailFeedback,
+    Forum,
+    Manual,
+    Vendor,
+    WebFeedback,
+    products,
+)
 from simcore_postgres_database.webserver_models import products
 
 
 @pytest.fixture
-def product_sample() -> dict:
+def products_regex() -> dict:
     return {
         "osparc": r"^osparc.",
         "s4l": r"(^s4l[\.-])|(^sim4life\.)",
@@ -27,10 +35,10 @@ def product_sample() -> dict:
 
 @pytest.fixture
 def make_products_table(
-    product_sample: dict,
+    products_regex: dict,
 ) -> Callable:
     async def _make(conn) -> None:
-        for name, regex in product_sample.items():
+        for name, regex in products_regex.items():
             result = await conn.execute(
                 products.insert().values(name=name, host_regex=regex)
             )
@@ -44,7 +52,7 @@ def make_products_table(
 
 
 async def test_load_products(
-    pg_engine: Engine, make_products_table: Callable, product_sample: dict
+    pg_engine: Engine, make_products_table: Callable, products_regex: dict
 ):
     exclude = {
         products.c.created,
@@ -63,7 +71,7 @@ async def test_load_products(
 
         assert {
             row[products.c.name]: row[products.c.host_regex] for row in rows
-        } == product_sample
+        } == products_regex
 
 
 async def test_jinja2_templates_table(
@@ -144,3 +152,52 @@ async def test_jinja2_templates_table(
             )
             is None
         )
+
+
+@pytest.mark.skip(reason="DEV")
+async def test_it(
+    pg_engine: Engine,
+):
+    # fills table
+    osparc_product = {
+        "name": "osparc",
+        "display_name": "o²S²PARC",
+        "short_name": "osparc",
+        "host_regex": r"([\.-]{0,1}osparc[\.-])",
+        "support_email": "foo@osparc.io",
+        "twilio_messaging_sid": None,
+        "vendor": Vendor(
+            name="ACME",
+            copyright="© ACME correcaminos",
+            url="https://acme.com",
+        ),
+        "manuals": [
+            Manual(label="main", url="doc.acme.com"),
+            Manual(label="z43", url="yet-another-manual.acme.com"),
+        ],
+        "support": [
+            Forum(label="forum", kind="forum", url="forum.acme.com"),
+            EmailFeedback(label="email", kind="email", email="support@acme.com"),
+            WebFeedback(label="web-form", kind="web", url="support.acme.com"),
+        ],
+    }
+
+    async with pg_engine.acquire() as conn:
+        # writes
+        stmt = products.insert().values(**osparc_product).returning(products.c.name)
+        name = await conn.scalar(stmt)
+
+        # reads
+        stmt = sa.select(products).where(products.c.name == name)
+        row = await (await conn.execute(stmt)).fetchone()
+        print(row)
+        assert row
+
+        assert row.manuals
+        assert row.manuals == osparc_product["manuals"]
+
+        assert row.vendor == {
+            "url": "https://acme.com",
+            "name": "ACME",
+            "copyright": "© ACME correcaminos",
+        }
