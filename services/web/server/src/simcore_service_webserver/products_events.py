@@ -8,7 +8,8 @@ from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 
 from ._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
-from .products_db import Product, iter_products
+from .products_db import iter_products
+from .products_model import Product
 from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)

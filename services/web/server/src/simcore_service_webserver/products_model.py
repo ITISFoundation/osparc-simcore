@@ -37,33 +37,41 @@ class Product(BaseModel):
     """
 
     name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
-    display_name: str
-    short_name: Optional[str] = Field(
-        None, regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE, min_length=2, max_length=11
-    )
-    host_regex: Pattern
 
-    # EMAILS/PHONE
-    support_email: EmailStr
+    display_name: str = Field(..., description="Long display name")
+    short_name: Optional[str] = Field(
+        None,
+        regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE,
+        min_length=2,
+        max_length=11,
+        description="Short display name for SMS",
+    )
+
+    host_regex: Pattern = Field(..., description="Host regex")
+
+    support_email: EmailStr = Field(
+        ...,
+        description="Main support email."
+        " Other support emails can be defined under 'support' field",
+    )
+
     twilio_messaging_sid: Optional[str] = Field(
-        default=None,
-        min_length=34,
-        max_length=34,
+        default=None, min_length=34, max_length=34, description="Identifier for SMS"
     )
 
     vendor: Optional[Vendor] = Field(
         None,
-        description="Read-only information about the vendor"
-        "E.g. company name, address, copyright, etc",
+        description="Vendor information" "E.g. company name, address, copyright, etc",
     )
 
-    issues: list[IssueTracker]
+    issues: list[IssueTracker] = Field(default_factory=list)
 
-    manuals: list[Manual]
+    manuals: list[Manual] = Field(default_factory=list)
 
-    support: list[Union[Forum, EmailFeedback, WebFeedback]]
+    support: list[Union[Forum, EmailFeedback, WebFeedback]] = Field(
+        default_factory=list
+    )
 
-    # TEMPLATES
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
     )
@@ -98,23 +106,51 @@ class Product(BaseModel):
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
                 },
+                # full example
                 {
-                    # fake mandatory
-                    "name": "s4llite",
-                    "host_regex": r"([\.-]{0,1}acme[\.-])",
-                    "twilio_messaging_sid": "1" * 34,
-                    "registration_email_template": "osparc_registration_email",
-                    "display_name": "FOOO",
-                    "support_email": "foo@foo.com",
-                    "manual_url": "https://themanula.com",
-                    # optionals
+                    "name": "osparc",
+                    "display_name": "o²S²PARC FOO",
+                    "short_name": "osparcf",
+                    "host_regex": "([\\.-]{0,1}osparcf[\\.-])",
+                    "support_email": "foo@osparcf.io",
                     "vendor": {
-                        "name": "ACME",
-                        "address": "sesame street",
-                        "copyright": "© ACME correcaminos",
                         "url": "https://acme.com",
-                        "forum_url": "https://forum.acme.com",
+                        "name": "ACME",
+                        "copyright": "© ACME correcaminos",
                     },
+                    "issues": [
+                        {
+                            "label": "github",
+                            "login_url": "https://github.com/ITISFoundation/osparc-simcore",
+                            "new_url": "https://github.com/ITISFoundation/osparc-simcore/issues/new/choose",
+                        },
+                        {
+                            "label": "fogbugz",
+                            "login_url": "https://fogbugz.com/login",
+                            "new_url": "https://fogbugz.com/new?project=123",
+                        },
+                    ],
+                    "manuals": [
+                        {"url": "doc.acme.com", "label": "main"},
+                        {"url": "yet-another-manual.acme.com", "label": "z43"},
+                    ],
+                    "support": [
+                        {
+                            "url": "forum.acme.com",
+                            "kind": "forum",
+                            "label": "forum",
+                        },
+                        {
+                            "kind": "email",
+                            "email": "more-support@acme.com",
+                            "label": "email",
+                        },
+                        {
+                            "url": "support.acme.com",
+                            "kind": "web",
+                            "label": "web-form",
+                        },
+                    ],
                 },
             ]
         }
@@ -143,6 +179,8 @@ class Product(BaseModel):
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
+    #  ----
+
     def to_statics(self) -> dict[str, Any]:
         """
         Selects **public** fields from product's info
@@ -153,6 +191,7 @@ class Product(BaseModel):
         public_selection = self.dict(
             include={"display_name", "support_email", "issues", "manuals", "support"},
             exclude_none=True,
+            exclude_unset=True,
         )
         # keys will be named as e.g. DisplayName, SupportEmail, ...
         return {snake_to_camel(key): value for key, value in public_selection.items()}
