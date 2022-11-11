@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 
 
+import json
 from pathlib import Path
 from pprint import pprint
 from typing import Callable
@@ -21,7 +22,6 @@ from simcore_postgres_database.models.products import (
     Manual,
     Vendor,
     WebFeedback,
-    products,
 )
 from simcore_postgres_database.webserver_models import products
 
@@ -133,8 +133,8 @@ async def test_jinja2_templates_table(
         result: ResultProxy = await conn.execute(stmt)
         assert result.rowcount == 2
         assert await result.fetchall() == [
-            ("s4l", "registration_email.jinja2", "s4l web"),
             ("osparc", "registration_email.jinja2", "osparc"),
+            ("s4l", "registration_email.jinja2", "s4l web"),
         ]
 
         assert (
@@ -156,11 +156,10 @@ async def test_jinja2_templates_table(
         )
 
 
-# @pytest.mark.skip(reason="DEV")
+@pytest.mark.skip(reason="DEV")
 async def test_it(
     pg_engine: Engine,
 ):
-    # fills table
     osparc_product = {
         "name": "osparc",
         "display_name": "o²S²PARC",
@@ -195,6 +194,8 @@ async def test_it(
             WebFeedback(label="web-form", kind="web", url="support.acme.com"),
         ],
     }
+
+    print(json.dumps(osparc_product))
 
     async with pg_engine.acquire() as conn:
         # writes
