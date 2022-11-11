@@ -5,6 +5,7 @@
 
 
 from pathlib import Path
+from pprint import pprint
 from typing import Callable
 
 import pytest
@@ -16,6 +17,7 @@ from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
+    IssueTracker,
     Manual,
     Vendor,
     WebFeedback,
@@ -154,7 +156,7 @@ async def test_jinja2_templates_table(
         )
 
 
-@pytest.mark.skip(reason="DEV")
+# @pytest.mark.skip(reason="DEV")
 async def test_it(
     pg_engine: Engine,
 ):
@@ -171,6 +173,18 @@ async def test_it(
             copyright="© ACME correcaminos",
             url="https://acme.com",
         ),
+        "issues": [
+            IssueTracker(
+                label="github",
+                login_url="https://github.com/ITISFoundation/osparc-simcore",
+                new_url="https://github.com/ITISFoundation/osparc-simcore/issues/new/choose",
+            ),
+            IssueTracker(
+                label="fogbugz",
+                login_url="https://fogbugz.com/login",
+                new_url="https://fogbugz.com/new?project=123",
+            ),
+        ],
         "manuals": [
             Manual(label="main", url="doc.acme.com"),
             Manual(label="z43", url="yet-another-manual.acme.com"),
@@ -192,6 +206,8 @@ async def test_it(
         row = await (await conn.execute(stmt)).fetchone()
         print(row)
         assert row
+
+        pprint(dict(**row))
 
         assert row.manuals
         assert row.manuals == osparc_product["manuals"]
