@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Final, Optional
 
 import aio_pika
 from servicelib.logging_utils import log_context
@@ -53,6 +53,8 @@ async def _get_connection(
 MessageHandler = Callable[[Any], Awaitable[bool]]
 Message = str
 
+_RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 60000
+
 
 @dataclass
 class RabbitMQClient:
@@ -84,7 +86,7 @@ class RabbitMQClient:
 
     async def consume(
         self, exchange_name: str, message_handler: MessageHandler
-    ) -> aio_pika.abc.ConsumerTag:
+    ) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
@@ -97,8 +99,12 @@ class RabbitMQClient:
             # NOTE: durable=True makes the queue persistent between RabbitMQ restarts/crashes
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
-            queue = await channel.declare_queue(durable=True, exclusive=True)
-            # TODO: do we need this? arguments={"x-message-ttl": 60000},
+            # and will be deleted when the client disconnects
+            queue = await channel.declare_queue(
+                durable=True,
+                exclusive=True,
+                arguments={"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
+            )
             await queue.bind(exchange)
 
             async def _on_message(
@@ -111,19 +117,16 @@ class RabbitMQClient:
                         if not await message_handler(message.body):
                             await message.nack()
 
-            tag = await queue.consume(_on_message)
-        return tag
+            await queue.consume(_on_message)
 
     async def publish(self, exchange_name: str, message: Message) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
-
             exchange = await channel.declare_exchange(
                 exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
-
             await exchange.publish(
                 aio_pika.Message(message.encode()),
-                routing_key="info",
+                routing_key="",
             )
