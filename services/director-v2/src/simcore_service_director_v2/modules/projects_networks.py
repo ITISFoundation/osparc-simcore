@@ -20,7 +20,7 @@ from models_library.users import UserID
 from pydantic import ValidationError, parse_obj_as
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.core.errors import ProjectNotFoundError
-from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient, publish_message
+from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 
 from ..api.dependencies.director_v0 import DirectorV0Client
 from ..modules.db.repositories.projects import ProjectsRepository
@@ -216,7 +216,7 @@ async def _get_networks_with_aliases_for_default_network(
                     )
                 ],
             )
-            await publish_message(rabbitmq_client, message)
+            await rabbitmq_client.publish(message.channel_name, message.json())
             continue
 
         new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias

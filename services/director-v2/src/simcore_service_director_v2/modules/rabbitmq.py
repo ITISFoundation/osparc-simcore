@@ -2,7 +2,6 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
@@ -34,10 +33,3 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
             "RabbitMQ client is not available. Please check the configuration."
         )
     return cast(RabbitMQClient, app.state.rabbitmq_client)
-
-
-async def publish_message(
-    rabbit_client: RabbitMQClient,
-    message: RabbitMessageBase,
-) -> None:
-    await rabbit_client.publish(message.channel_name, message.json())

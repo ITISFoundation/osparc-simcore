@@ -36,7 +36,7 @@ from ...utils.dask import (
 )
 from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ..rabbitmq import RabbitMQClient, publish_message
+from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)
@@ -199,7 +199,7 @@ class DaskScheduler(BaseCompScheduler):
                 service_tag=service_version,
                 result=task_final_state,
             )
-            await publish_message(self.rabbitmq_client, message)
+            await self.rabbitmq_client.publish(message.channel_name, message.json())
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             task.project_id, [task.node_id], task_final_state, errors=errors
@@ -226,7 +226,7 @@ class DaskScheduler(BaseCompScheduler):
                 service_key=service_key,
                 service_tag=service_version,
             )
-            await publish_message(self.rabbitmq_client, message)
+            await self.rabbitmq_client.publish(message.channel_name, message.json())
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], task_state_event.state
@@ -242,7 +242,7 @@ class DaskScheduler(BaseCompScheduler):
             node_id=node_id,
             progress=task_progress_event.progress,
         )
-        await publish_message(self.rabbitmq_client, message)
+        await self.rabbitmq_client.publish(message.channel_name, message.json())
 
     async def _task_log_change_handler(self, event: str) -> None:
         task_log_event = TaskLogEvent.parse_raw(event)
@@ -255,4 +255,4 @@ class DaskScheduler(BaseCompScheduler):
             messages=[task_log_event.log],
         )
 
-        await publish_message(self.rabbitmq_client, message)
+        await self.rabbitmq_client.publish(message.channel_name, message.json())
