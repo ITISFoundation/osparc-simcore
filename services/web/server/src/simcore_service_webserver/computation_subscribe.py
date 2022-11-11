@@ -115,6 +115,30 @@ async def events_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
+EXCHANGE_TO_PARSER_CONFIG = (
+    (
+        LoggerRabbitMessage.get_channel_name(),
+        log_message_parser,
+        {"no_ack": True},
+    ),
+    (
+        ProgressRabbitMessage.get_channel_name(),
+        progress_message_parser,
+        {"no_ack": True},
+    ),
+    (
+        InstrumentationRabbitMessage.get_channel_name(),
+        instrumentation_message_parser,
+        {"no_ack": False},
+    ),
+    (
+        EventRabbitMessage.get_channel_name(),
+        events_message_parser,
+        {"no_ack": False},
+    ),
+)
+
+
 async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     settings: RabbitSettings = get_plugin_settings(app)
     with log_context(
@@ -126,29 +150,6 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         log, logging.INFO, msg=f"Connect RabbitMQ client to {settings.dsn}"
     ):
         rabbit_client = RabbitMQClient("webserver", settings)
-
-        EXCHANGE_TO_PARSER_CONFIG = (
-            (
-                settings.RABBIT_CHANNELS["log"],
-                log_message_parser,
-                {"no_ack": True},
-            ),
-            (
-                settings.RABBIT_CHANNELS["progress"],
-                progress_message_parser,
-                {"no_ack": True},
-            ),
-            (
-                settings.RABBIT_CHANNELS["instrumentation"],
-                instrumentation_message_parser,
-                {"no_ack": False},
-            ),
-            (
-                settings.RABBIT_CHANNELS["events"],
-                events_message_parser,
-                {"no_ack": False},
-            ),
-        )
 
         for exchange_name, parser_fct, _exchange_kwargs in EXCHANGE_TO_PARSER_CONFIG:
             await rabbit_client.subscribe(
