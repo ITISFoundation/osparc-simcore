@@ -133,6 +133,38 @@ async def test_rabbit_client_pub_sub(
     await _assert_message_received(mocked_message_parser, 1, message)
 
 
+@pytest.mark.parametrize("num_subs", [10])
+async def test_rabbit_client_pub_many_subs(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: str,
+    mocker: MockerFixture,
+    faker: Faker,
+    num_subs: int,
+):
+    consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
+    mocked_message_parsers = (
+        mocker.AsyncMock(return_value=True) for _ in range(num_subs)
+    )
+
+    publisher = rabbitmq_client("publisher")
+    message = faker.text()
+
+    await asyncio.gather(
+        *(
+            consumer.consume(random_exchange_name, parser)
+            for consumer, parser in zip(consumers, mocked_message_parsers)
+        )
+    )
+
+    await publisher.publish(random_exchange_name, message)
+    await asyncio.gather(
+        *(
+            _assert_message_received(parser, 1, message)
+            for parser in mocked_message_parsers
+        )
+    )
+
+
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: str,
