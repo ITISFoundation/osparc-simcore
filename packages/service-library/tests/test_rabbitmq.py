@@ -92,11 +92,11 @@ async def _assert_message_received(
             await asyncio.sleep(1)
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
-                mocked_message_parser.assert_called_once_with(expected_message)
+                mocked_message_parser.assert_called_once_with(expected_message.encode())
             elif expected_call_count == 0:
                 mocked_message_parser.assert_not_called()
             else:
-                mocked_message_parser.assert_called_with(expected_message)
+                mocked_message_parser.assert_called_with(expected_message.encode())
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
