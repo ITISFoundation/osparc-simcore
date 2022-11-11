@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import pytest
+from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 from simcore_postgres_database.webserver_models import products
 from simcore_service_webserver._constants import (
     APP_PRODUCTS_KEY,
@@ -12,7 +13,6 @@ from simcore_service_webserver._constants import (
 )
 from simcore_service_webserver.products import Product
 from simcore_service_webserver.products_middlewares import discover_product_middleware
-from simcore_service_webserver.statics_constants import FRONTEND_APP_DEFAULT
 from yarl import URL
 
 

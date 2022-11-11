@@ -8,6 +8,7 @@ from models_library.basic_regex import (
 )
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, EmailStr, Field, validator
+from servicelib.statics_constants import FRONTEND_APPS_AVAILABLE
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -18,7 +19,6 @@ from simcore_postgres_database.models.products import (
 )
 
 from .db_models import products
-from .statics_constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 

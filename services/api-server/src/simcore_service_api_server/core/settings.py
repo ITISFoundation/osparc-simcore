@@ -4,6 +4,7 @@ from typing import Optional
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, SecretStr
 from pydantic.class_validators import validator
+from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.postgres import PostgresSettings
@@ -112,7 +113,7 @@ class ApplicationSettings(BasicSettings):
         auto_default_from_env=True
     )
     API_SERVER_DEFAULT_PRODUCT_NAME: str = Field(
-        default="osparc", description="The API-server default product name"
+        default=FRONTEND_APP_DEFAULT, description="The API-server default product name"
     )
 
     # DIAGNOSTICS

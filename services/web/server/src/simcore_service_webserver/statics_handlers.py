@@ -1,15 +1,15 @@
 import logging
 
 from aiohttp import web
-
-from ._constants import RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
-from .products import get_product_name
-from .statics_constants import (
+from servicelib.statics_constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
+
+from ._constants import RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
+from .products import get_product_name
 
 log = logging.getLogger(__name__)
 

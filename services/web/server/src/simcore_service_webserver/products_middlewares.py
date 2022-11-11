@@ -3,6 +3,7 @@ from typing import Optional
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 
 from ._constants import (
     APP_PRODUCTS_KEY,
@@ -11,7 +12,6 @@ from ._constants import (
     X_PRODUCT_NAME_HEADER,
 )
 from ._meta import API_VTAG
-from .statics_constants import FRONTEND_APP_DEFAULT
 
 log = logging.getLogger(__name__)
 
