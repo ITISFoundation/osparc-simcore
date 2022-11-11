@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 
 from aiohttp import web
 from aiohttp.client import ClientSession
@@ -97,20 +98,24 @@ async def create_statics_json(app: web.Application) -> None:
 
     # Adds general server settings
     app_settings = app[APP_SETTINGS_KEY]
-    info: dict = app_settings.to_client_statics()
+    common: dict = app_settings.to_client_statics()
 
     # Adds specifics to front-end app
     frontend_settings: FrontEndAppSettings = app_settings.WEBSERVER_FRONTEND
-    info.update(frontend_settings.to_statics())
+    common.update(frontend_settings.to_statics())
 
     # Adds products defined in db
     products: dict[str, Product] = app[APP_PRODUCTS_KEY]
     assert products  # nosec
+
     for product in products.values():
+        data = deepcopy(common)
+
         log.debug("Product %s", product.name)
-        info.update({product.name: product.to_statics()})
+        data.update(product.to_statics())
 
-    log.debug("Front-end statics.json:\n%s", json_dumps(info, indent=1))
+        data_json = json_dumps(data)
+        log.debug("Front-end statics.json: %s", data_json)
 
-    # cache computed statics.json
-    app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = json_dumps(info)
+        # cache computed statics.json
+        app[APP_FRONTEND_CACHED_STATICS_JSON_KEY][product.name] = data_json
