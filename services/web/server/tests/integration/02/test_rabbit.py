@@ -370,7 +370,7 @@ async def test_publish_to_user(
         value = mock_call[0]
         deserialized_value = json.loads(value[0])
         assert deserialized_value == json.loads(
-            expected_message.json(include={"node_id", "project_id", "messages"})
+            expected_message.json(exclude={"user_id"})
         )
     mock_node_update_handler.assert_not_called()
 
@@ -407,7 +407,7 @@ async def test_publish_about_users_project(
         value = mock_call[0]
         deserialized_value = json.loads(value[0])
         assert deserialized_value == json.loads(
-            expected_message.json(include={"node_id", "project_id", "messages"})
+            expected_message.json(exclude={"user_id"})
         )
     mock_node_update_handler.assert_not_called()
 
@@ -445,7 +445,7 @@ async def test_publish_about_users_projects_node(
         value = mock_call[0]
         deserialized_value = json.loads(value[0])
         assert deserialized_value == json.loads(
-            expected_message.json(include={"node_id", "project_id", "messages"})
+            expected_message.json(exclude={"user_id"})
         )
 
     # mock_log_handler.assert_has_calls(log_calls, any_order=True)
