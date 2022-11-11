@@ -122,6 +122,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __workbenchView: null,
     __slideshowView: null,
     __autoSaveTimer: null,
+    __idleTimer: null,
     __lastSavedStudy: null,
     __updatingStudy: null,
     __updateThrottled: null,
@@ -539,10 +540,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startTimers: function() {
       this.__startAutoSaveTimer();
+      this.__startIdleTimer();
     },
 
     __stopTimers: function() {
       this.__stopAutoSaveTimer();
+      this.__stopIdleTimer();
     },
 
     __startAutoSaveTimer: function() {
@@ -562,6 +565,38 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    __startIdleTimer: function() {
+      const warningAfter = 5000;
+      const outAfter = 5000;
+      window.onload = resetTimer;
+      window.onmousemove = resetTimer;
+      window.onkeydown = resetTimer;
+
+      const sendBackToDashboard = () => {
+        clearTimeout(this.__idleTimer);
+        this.fireEvent("forceBackToDashboard");
+      };
+
+      const showWarning = () => {
+        let msg = this.tr("Are you there?");
+        msg += "<br>";
+        msg += `You will be kicked out in ${outAfter/1000} seconds`;
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        this.__idleTimer = setTimeout(sendBackToDashboard, outAfter);
+      };
+
+      function resetTimer() {
+        clearTimeout(this.__idleTimer);
+        this.__idleTimer = setTimeout(showWarning, warningAfter);
+      }
+    },
+
+    __stopIdleTimer: function() {
+      if (this.__idleTimer) {
+        clearTimeout(this.__idleTimer);
       }
     },
 
@@ -634,11 +669,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
+    __closeStudy: function() {
+      const params = {
+        url: {
+          "studyId": this.getStudy().getUuid()
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      osparc.data.Resources.fetch("studies", "close", params);
+    },
+
     closeEditor: function() {
       this.__stopTimers();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
+      this.__closeStudy();
       const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);

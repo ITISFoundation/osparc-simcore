@@ -117,10 +117,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
-      this.__dashboard.getStudyBrowser().reloadStudy(studyId)
-        .then(() => {
-          this.__closeStudy(studyId);
-        });
+      this.__dashboard.getStudyBrowser().reloadStudy(studyId);
       dashboardBtn.setFetching(false);
     },
 
@@ -286,7 +283,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.tr("Closing previous snapshot...")
       ]);
       this.__studyEditor.closeEditor();
-      this.__closeStudy(studyId);
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -338,7 +334,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.tr("Closing...")
       ]);
       this.__studyEditor.closeEditor();
-      this.__closeStudy(studyId);
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -403,16 +398,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __closeStudy: function(studyId) {
-      const params = {
-        url: {
-          "studyId": studyId
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params);
-    },
-
     __syncStudyEditor: function(pageContext = "workbench") {
       const studyEditor = this.__studyEditor;
       const study = studyEditor.getStudy();
@@ -437,7 +422,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       studyEditor.addListener("expandNavBar", () => this.__navBar.show());
       studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
       studyEditor.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
-      studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
+      studyEditor.addListener("forceBackToDashboard", () => this.__backToDashboard(), this);
       studyEditor.addListener("slidesEdit", () => {
         studyEditor.editSlides();
       }, this);
