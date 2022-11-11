@@ -185,7 +185,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               orgs.forEach(org => orgIDs.push(org["gid"]));
 
               if (osparc.component.permissions.Study.canGroupsWrite(study.getAccessRights(), orgIDs)) {
-                this.__startAutoSaveTimer();
+                this.__startTimers();
               } else {
                 const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
                 osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
@@ -537,6 +537,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
+    __startTimers: function() {
+      this.__startAutoSaveTimer();
+    },
+
+    __stopTimers: function() {
+      this.__stopAutoSaveTimer();
+    },
+
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
       const interval = 3000;
@@ -548,6 +556,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__checkStudyChanges();
       }, this);
       timer.start();
+    },
+
+    __stopAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.stop();
+        this.__autoSaveTimer.setEnabled(false);
+      }
     },
 
     didStudyChange: function() {
@@ -580,13 +595,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else {
           this.updateStudyDocument(false);
         }
-      }
-    },
-
-    __stopAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.stop();
-        this.__autoSaveTimer.setEnabled(false);
       }
     },
 
@@ -627,7 +635,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     closeEditor: function() {
-      this.__stopAutoSaveTimer();
+      this.__stopTimers();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
@@ -643,7 +651,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
      */
     destruct: function() {
       osparc.store.Store.getInstance().setCurrentStudy(null);
-      this.__stopAutoSaveTimer();
+      this.__stopTimers();
     }
   }
 });
