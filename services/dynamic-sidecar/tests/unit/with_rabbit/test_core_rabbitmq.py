@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from pprint import pformat
 
 import aio_pika
 import pytest
@@ -56,35 +55,24 @@ async def test_rabbitmq(
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
-    log_msg: str = "I am logging"
-    log_messages: list[str] = ["I", "am a logger", "man..."]
-    log_more_messages: list[str] = [f"msg{1}" for i in range(10)]
+    log_msg_in_a_str: str = "I am logging"
+    log_messages_in_array: list[str] = ["I", "am a logger", "man..."]
 
-    await rabbit.post_log_message(log_msg)
-    await rabbit.post_log_message(log_messages)
-
-    # make sure the first 2 messages are
-    # sent in the same chunk
-    await rabbit.post_log_message(log_more_messages)
-    # wait for all the messages to be delivered,
-    # need to make sure all messages are delivered
+    await rabbit.post_log_message(log_msg_in_a_str)
+    await rabbit.post_log_message(log_messages_in_array)
     await asyncio.sleep(1.1)
-
-    # if this fails the above sleep did not work
-    assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
+    # we have now 2 messages in the queue
+    assert len(incoming_data) == 2
     assert incoming_data[0] == LoggerRabbitMessage(
-        messages=[log_msg] + log_messages,
+        messages=[log_msg_in_a_str],
         node_id=node_id,
         project_id=project_id,
         user_id=user_id,
     )
 
     assert incoming_data[1] == LoggerRabbitMessage(
-        messages=log_more_messages,
+        messages=log_messages_in_array,
         node_id=node_id,
         project_id=project_id,
         user_id=user_id,
     )
-
-    # ensure closes correctly
-    await rabbit.close()

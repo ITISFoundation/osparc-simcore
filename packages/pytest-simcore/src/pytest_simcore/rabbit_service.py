@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import os
@@ -83,6 +84,11 @@ async def rabbit_connection(
     def _reconnect_callback():
         pytest.fail("rabbit reconnected")
 
+    def _connection_close_callback(sender: Any, exc: Optional[BaseException] = None):
+        if exc and not isinstance(exc, asyncio.CancelledError):
+            pytest.fail(f"rabbit connection closed with exception {exc} from {sender}!")
+        print("<-- connection closed")
+
     # create connection
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
@@ -93,6 +99,7 @@ async def rabbit_connection(
     assert connection
     assert not connection.is_closed
     connection.reconnect_callbacks.add(_reconnect_callback)
+    connection.close_callbacks.add(_connection_close_callback)
 
     yield connection
     # close connection
@@ -105,13 +112,13 @@ async def rabbit_channel(
     rabbit_connection: aio_pika.abc.AbstractConnection,
 ) -> AsyncIterator[aio_pika.abc.AbstractChannel]:
     def _channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
-        if exc:
-            pytest.fail("rabbit channel closed!")
-        else:
-            print("sender was '{sender}'")
+        if exc and not isinstance(exc, asyncio.CancelledError):
+            pytest.fail(f"rabbit channel closed with exception {exc} from {sender}!")
+        print("<-- rabbit channel closed")
 
     # create channel
-    async with rabbit_connection.channel(publisher_confirms=False) as channel:
+    async with rabbit_connection.channel() as channel:
+        print("--> rabbit channel created")
         channel.close_callbacks.add(_channel_close_callback)
         yield channel
     assert channel.is_closed
@@ -129,21 +136,18 @@ async def rabbit_exchanges(
     rabbit_settings: RabbitSettings,
     rabbit_channel: aio_pika.Channel,
 ) -> RabbitExchanges:
-    """
-    Declares and returns 'log' and 'instrumentation' exchange channels with rabbit
-    """
 
     # declare log exchange
     LOG_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS["log"]
     logs_exchange = await rabbit_channel.declare_exchange(
-        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
+        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, durable=True
     )
     assert logs_exchange
 
     # declare progress exchange
     PROGRESS_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS["progress"]
     progress_exchange = await rabbit_channel.declare_exchange(
-        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
+        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, durable=True
     )
     assert progress_exchange
 
@@ -152,7 +156,7 @@ async def rabbit_exchanges(
         "instrumentation"
     ]
     instrumentation_exchange = await rabbit_channel.declare_exchange(
-        INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
+        INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT, durable=True
     )
     assert instrumentation_exchange
 
@@ -172,3 +176,7 @@ async def rabbit_queue(
     await queue.bind(rabbit_exchanges.progress)
     await queue.bind(rabbit_exchanges.instrumentation)
     yield queue
+    # unbind
+    await queue.unbind(rabbit_exchanges.logs)
+    await queue.unbind(rabbit_exchanges.progress)
+    await queue.unbind(rabbit_exchanges.instrumentation)
