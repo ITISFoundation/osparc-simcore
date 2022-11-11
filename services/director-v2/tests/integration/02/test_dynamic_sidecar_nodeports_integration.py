@@ -9,7 +9,7 @@ import os
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable, Iterable, Iterator, cast
+from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Iterator, cast
 from uuid import uuid4
 
 import aioboto3
@@ -41,7 +41,6 @@ from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
-    create_pipeline,
 )
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -249,6 +248,7 @@ async def current_study(
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
 
     project_at_db = project(current_user, workbench=fake_dy_workbench)
@@ -260,7 +260,6 @@ async def current_study(
         user_id=current_user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
 
     return project_at_db
@@ -823,6 +822,7 @@ async def test_nodeports_integration(
     tmp_path: Path,
     mocker: MockerFixture,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -863,15 +863,13 @@ async def test_nodeports_integration(
     )
 
     # STEP 2
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=current_study,
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(

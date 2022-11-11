@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 
 
+import json
 from typing import Any, cast
 
 import pytest
@@ -414,7 +415,6 @@ def test_get_dynamic_proxy_spec(
     # TODO: finish test when working on https://github.com/ITISFoundation/osparc-simcore/issues/2454
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     mocked_catalog_service_api: respx.MockRouter,
     minimal_app: FastAPI,
@@ -434,9 +434,27 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         app_settings=minimal_app.state.settings,
     )
     assert dynamic_sidecar_spec
+    dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
+    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.parse_obj(
+        expected_dynamic_sidecar_spec
+    ).dict()
+    # ensure some entries are sorted the same to prevent flakyness
+    for sorted_dict in [dynamic_sidecar_spec_dict, expected_dynamic_sidecar_spec_dict]:
+        for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
+            # this is a json of a list
+            assert isinstance(
+                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key], str
+            )
+            unsorted_list = json.loads(
+                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key]
+            )
+            assert isinstance(unsorted_list, list)
+            sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key] = json.dumps(
+                unsorted_list.sort()
+            )
     assert (
-        dynamic_sidecar_spec.dict()
-        == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
+        dynamic_sidecar_spec_dict
+        == expected_dynamic_sidecar_spec_dict
     )
 
     catalog_client = CatalogClient.instance(minimal_app)
