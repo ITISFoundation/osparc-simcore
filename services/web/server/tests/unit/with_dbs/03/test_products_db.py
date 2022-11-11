@@ -22,6 +22,7 @@ from simcore_postgres_database.models.products import (
 )
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.products_db import ProductRepository
+from simcore_service_webserver.products_model import Product
 
 
 @pytest.fixture
@@ -94,8 +95,8 @@ async def product_repository(
                 ),
             ],
             "manuals": [
-                Manual(label="main", manual_url="doc.acme.com"),
-                Manual(label="z43", manual_url="yet-another-manual.acme.com"),
+                Manual(label="main", url="doc.acme.com"),
+                Manual(label="z43", url="yet-another-manual.acme.com"),
             ],
             "support": [
                 Forum(label="forum", kind="forum", url="forum.acme.com"),
@@ -105,7 +106,7 @@ async def product_repository(
         },
         # Minimal
         {
-            "name": "dummy",
+            "name": "s4llite",
             "display_name": "2. MINIMAL example",
             "short_name": "dummy",
             "host_regex": "([\\.-]{0,1}osparc[\\.-])",
@@ -114,7 +115,7 @@ async def product_repository(
     ],
     ids=lambda d: d["display_name"],
 )
-async def test_it(
+async def test_product_repository_get_product(
     product_repository: ProductRepository,
     product_data: dict[str, Any],
     product_row: RowProxy,
@@ -128,4 +129,10 @@ async def test_it(
         k: product_row[k] for k in common_keys
     }
 
+    # check RowProxy -> pydantic's Product
+    product = Product.from_orm(product_row)
+
+    # product repo
     assert product_repository.engine
+
+    assert await product_repository.get_product(product.name) == product

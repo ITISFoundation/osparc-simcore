@@ -31,7 +31,7 @@ async def iter_products(engine: Engine) -> AsyncIterator[RowProxy]:
 class ProductRepository(BaseRepository):
     async def get_product(self, product_name: str) -> Optional[Product]:
         async with self.engine.acquire() as conn:
-            result: ResultProxy = conn.execute(
+            result: ResultProxy = await conn.execute(
                 sa.select(_COLS_IN_MODEL).where(products.c.name == product_name)
             )
             row: Optional[RowProxy] = await result.first()
