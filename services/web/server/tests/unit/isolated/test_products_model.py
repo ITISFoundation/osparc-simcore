@@ -43,6 +43,11 @@ def test_product_to_static():
     assert product.to_statics() == {
         "displayName": "o²S²PARC FOO",
         "supportEmail": "foo@osparcf.io",
+        "vendor": {
+            "copyright": "© ACME correcaminos",
+            "name": "ACME",
+            "url": "https://acme.com",
+        },
         "issues": [
             {
                 "label": "github",

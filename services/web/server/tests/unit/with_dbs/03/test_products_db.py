@@ -42,12 +42,14 @@ async def product_row(app: web.Application, product_data: dict[str, Any]) -> Row
 
     async with engine.acquire() as conn:
         # writes
-        stmt = products.insert().values(**product_data).returning(products.c.name)
-        name = await conn.scalar(stmt)
+        insert_stmt = (
+            products.insert().values(**product_data).returning(products.c.name)
+        )
+        name = await conn.scalar(insert_stmt)
 
         # reads
-        stmt = sa.select(products).where(products.c.name == name)
-        row = await (await conn.execute(stmt)).fetchone()
+        select_stmt = sa.select(products).where(products.c.name == name)
+        row = await (await conn.execute(select_stmt)).fetchone()
         assert row
 
         return row
@@ -72,7 +74,7 @@ async def product_repository(
         # DATA introduced by operator e.g. in adminer
         {
             "name": "tis",
-            "display_name": "1. COMPLETE example",
+            "display_name": "COMPLETE example",
             "short_name": "dummy",
             "host_regex": r"([\.-]{0,1}dummy[\.-])",
             "support_email": "foo@osparc.io",
@@ -107,7 +109,7 @@ async def product_repository(
         # Minimal
         {
             "name": "s4llite",
-            "display_name": "2. MINIMAL example",
+            "display_name": "MINIMAL example",
             "short_name": "dummy",
             "host_regex": "([\\.-]{0,1}osparc[\\.-])",
             "support_email": "support@osparc.io",
