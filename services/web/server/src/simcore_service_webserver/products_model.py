@@ -64,13 +64,11 @@ class Product(BaseModel):
         description="Vendor information such as company name, address, copyright, ...",
     )
 
-    issues: list[IssueTracker] = Field(default_factory=list)
+    issues: Optional[list[IssueTracker]] = None
 
-    manuals: list[Manual] = Field(default_factory=list)
+    manuals: Optional[list[Manual]] = None
 
-    support: list[Union[Forum, EmailFeedback, WebFeedback]] = Field(
-        default_factory=list
-    )
+    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = None
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
@@ -187,9 +185,17 @@ class Product(BaseModel):
         and prefixes it with its name to produce
         items for statics.json (reachable by front-end)
         """
+
         # SECURITY WARNING: do not expose sensitive information here
         public_selection = self.dict(
-            include={"display_name", "support_email", "issues", "manuals", "support"},
+            include={
+                "display_name",
+                "support_email",
+                "vendor",
+                "issues",
+                "manuals",
+                "support",
+            },
             exclude_none=True,
             exclude_unset=True,
         )
