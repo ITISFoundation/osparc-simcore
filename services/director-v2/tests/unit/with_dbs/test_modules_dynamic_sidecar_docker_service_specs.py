@@ -453,8 +453,8 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
                 unsorted_list.sort()
             )
     assert (
-        dynamic_sidecar_spec.dict()
-        == AioDockerServiceSpec.parse_obj(expected_dynamic_sidecar_spec).dict()
+        dynamic_sidecar_spec_dict
+        == expected_dynamic_sidecar_spec_dict
     )
 
     catalog_client = CatalogClient.instance(minimal_app)
