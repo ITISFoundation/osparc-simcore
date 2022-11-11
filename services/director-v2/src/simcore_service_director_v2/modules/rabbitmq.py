@@ -1,14 +1,9 @@
 import logging
-from dataclasses import dataclass
+from typing import cast
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import (
-    InstrumentationRabbitMessage,
-    LoggerRabbitMessage,
-    ProgressRabbitMessage,
-    RabbitMessageTypes,
-)
-from servicelib.rabbitmq import RabbitMQClient as BaseRabbitMQClient
+from models_library.rabbitmq_messages import RabbitMessageBase
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
@@ -19,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        app.state.rabbitmq_client = await RabbitMQClient.create(app)
+        settings: RabbitSettings = app.state.settings.DIRECTOR_V2_RABBITMQ
+        await wait_till_rabbitmq_responsive(settings.dsn)
+        app.state.rabbitmq_client = RabbitMQClient(
+            client_name="director-v2", settings=settings
+        )
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
@@ -29,42 +28,16 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-_MESSAGE_TO_EXCHANGE_MAP = [
-    (LoggerRabbitMessage, "log"),
-    (ProgressRabbitMessage, "progress"),
-    (InstrumentationRabbitMessage, "instrumentation"),
-]
+def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
+    if not hasattr(app.state, "rabbitmq_client"):
+        raise ConfigurationError(
+            "RabbitMQ client is not available. Please check the configuration."
+        )
+    return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-@dataclass
-class RabbitMQClient(BaseRabbitMQClient):
-    app: FastAPI
-
-    @classmethod
-    async def create(cls, app: FastAPI) -> "RabbitMQClient":
-        settings: RabbitSettings = app.state.settings.DIRECTOR_V2_RABBITMQ
-        await wait_till_rabbitmq_responsive(settings.dsn)
-
-        return cls(app=app, client_name="director-v2", settings=settings)
-
-    @classmethod
-    def instance(cls, app: FastAPI) -> "RabbitMQClient":
-        if not hasattr(app.state, "rabbitmq_client"):
-            raise ConfigurationError(
-                "RabbitMQ client is not available. Please check the configuration."
-            )
-        return app.state.rabbitmq_client
-
-    async def publish_message(
-        self,
-        message: RabbitMessageTypes,
-    ) -> None:
-        def _get_exchange(message) -> str:
-            for message_type, exchange_name in _MESSAGE_TO_EXCHANGE_MAP:
-                if isinstance(message, message_type):
-                    return exchange_name
-
-            raise ValueError(f"message '{message}' type is of incorrect type")
-
-        exchange = _get_exchange(message)
-        await self.publish(self.settings.RABBIT_CHANNELS[exchange], message.json())
+async def publish_message(
+    rabbit_client: RabbitMQClient,
+    message: RabbitMessageBase,
+) -> None:
+    await rabbit_client.publish(message.channel_name, message.json())
