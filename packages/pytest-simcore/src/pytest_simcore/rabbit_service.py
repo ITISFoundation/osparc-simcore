@@ -6,18 +6,11 @@ import asyncio
 import logging
 import os
 import socket
-from dataclasses import dataclass
 from typing import Any, AsyncIterator, Optional
 
 import aio_pika
 import pytest
 import tenacity
-from models_library.rabbitmq_messages import (
-    EventRabbitMessage,
-    InstrumentationRabbitMessage,
-    LoggerRabbitMessage,
-    ProgressRabbitMessage,
-)
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -125,73 +118,3 @@ async def rabbit_channel(
         channel.close_callbacks.add(_channel_close_callback)
         yield channel
     assert channel.is_closed
-
-
-@dataclass
-class RabbitExchanges:
-    logs: aio_pika.abc.AbstractExchange
-    progress: aio_pika.abc.AbstractExchange
-    instrumentation: aio_pika.abc.AbstractExchange
-    events: aio_pika.abc.AbstractExchange
-
-
-@pytest.fixture(scope="function")
-async def rabbit_exchanges(
-    rabbit_settings: RabbitSettings,
-    rabbit_channel: aio_pika.Channel,
-) -> RabbitExchanges:
-
-    # declare log exchange
-    logs_exchange = await rabbit_channel.declare_exchange(
-        LoggerRabbitMessage.get_channel_name(),
-        aio_pika.ExchangeType.FANOUT,
-        durable=True,
-    )
-    assert logs_exchange
-
-    # declare progress exchange
-    progress_exchange = await rabbit_channel.declare_exchange(
-        ProgressRabbitMessage.get_channel_name(),
-        aio_pika.ExchangeType.FANOUT,
-        durable=True,
-    )
-    assert progress_exchange
-
-    # declare instrumentation exchange
-    instrumentation_exchange = await rabbit_channel.declare_exchange(
-        InstrumentationRabbitMessage.get_channel_name(),
-        aio_pika.ExchangeType.FANOUT,
-        durable=True,
-    )
-    assert instrumentation_exchange
-
-    # declare instrumentation exchange
-    events_exchange = await rabbit_channel.declare_exchange(
-        EventRabbitMessage.get_channel_name(),
-        aio_pika.ExchangeType.FANOUT,
-        durable=True,
-    )
-    assert instrumentation_exchange
-
-    return RabbitExchanges(
-        logs_exchange, progress_exchange, instrumentation_exchange, events_exchange
-    )
-
-
-@pytest.fixture(scope="function")
-async def rabbit_queue(
-    rabbit_channel: aio_pika.Channel,
-    rabbit_exchanges: RabbitExchanges,
-) -> AsyncIterator[aio_pika.abc.AbstractQueue]:
-    queue = await rabbit_channel.declare_queue(exclusive=True)
-    assert queue
-
-    # Binding queue to exchange
-    await queue.bind(rabbit_exchanges.logs)
-    await queue.bind(rabbit_exchanges.progress)
-    await queue.bind(rabbit_exchanges.instrumentation)
-    yield queue
-    # unbind
-    await queue.unbind(rabbit_exchanges.logs)
-    await queue.unbind(rabbit_exchanges.progress)
-    await queue.unbind(rabbit_exchanges.instrumentation)

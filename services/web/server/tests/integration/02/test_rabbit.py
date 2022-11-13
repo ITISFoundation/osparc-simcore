@@ -311,6 +311,57 @@ def user_role() -> UserRole:
     return UserRole.USER
 
 
+@dataclass
+class RabbitExchanges:
+    logs: aio_pika.abc.AbstractExchange
+    progress: aio_pika.abc.AbstractExchange
+    instrumentation: aio_pika.abc.AbstractExchange
+    events: aio_pika.abc.AbstractExchange
+
+
+@pytest.fixture(scope="function")
+async def rabbit_exchanges(
+    rabbit_settings: RabbitSettings,
+    rabbit_channel: aio_pika.Channel,
+) -> RabbitExchanges:
+
+    # declare log exchange
+    logs_exchange = await rabbit_channel.declare_exchange(
+        LoggerRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
+    )
+    assert logs_exchange
+
+    # declare progress exchange
+    progress_exchange = await rabbit_channel.declare_exchange(
+        ProgressRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
+    )
+    assert progress_exchange
+
+    # declare instrumentation exchange
+    instrumentation_exchange = await rabbit_channel.declare_exchange(
+        InstrumentationRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
+    )
+    assert instrumentation_exchange
+
+    # declare instrumentation exchange
+    events_exchange = await rabbit_channel.declare_exchange(
+        EventRabbitMessage.get_channel_name(),
+        aio_pika.ExchangeType.FANOUT,
+        durable=True,
+    )
+    assert instrumentation_exchange
+
+    return RabbitExchanges(
+        logs_exchange, progress_exchange, instrumentation_exchange, events_exchange
+    )
+
+
 #
 #   publisher ---> (rabbitMQ)  ---> webserver --- (socketio) ---> front-end pages
 #
