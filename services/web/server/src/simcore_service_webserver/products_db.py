@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 _COLS_IN_MODEL = [products.columns[f] for f in Product.__fields__]
 
 
-async def iter_products(engine: Engine) -> AsyncIterator[RowProxy]:
+async def iter_products(engine: Engine) -> AsyncIterator[ResultProxy]:
     async with engine.acquire() as conn:
         async for row in conn.execute(sa.select(_COLS_IN_MODEL)):
             assert row  # nosec
@@ -40,7 +40,7 @@ class ProductRepository(BaseRepository):
     async def get_template_content(
         self,
         template_name: str,
-    ) -> str:
+    ) -> Optional[str]:
         async with self.engine.acquire() as conn:
             return await conn.scalar(
                 sa.select([jinja2_templates.c.content]).where(
@@ -52,7 +52,7 @@ class ProductRepository(BaseRepository):
         self,
         product_name: str,
         product_template: sa.Column = products.c.registration_email_template,
-    ) -> str:
+    ) -> Optional[str]:
         async with self.engine.acquire() as conn:
             oj = sa.join(
                 products,
@@ -60,8 +60,9 @@ class ProductRepository(BaseRepository):
                 product_template == jinja2_templates.c.name,
                 isouter=True,
             )
-            return await conn.scalar(
+            content = await conn.scalar(
                 sa.select([jinja2_templates.c.content])
                 .select_from(oj)
                 .where(products.c.name == product_name)
             )
+            return f"{content}" if content else None
