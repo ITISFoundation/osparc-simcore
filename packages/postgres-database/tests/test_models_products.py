@@ -156,8 +156,7 @@ async def test_jinja2_templates_table(
         )
 
 
-@pytest.mark.skip(reason="DEV")
-async def test_it(
+async def test_insert_select_product(
     pg_engine: Engine,
 ):
     osparc_product = {
