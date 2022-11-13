@@ -148,13 +148,10 @@ async def create_upload_links(
     faker: Faker,
     bucket: str,
     file_id: str,
-) -> AsyncIterator[Callable[[Path, int, ByteSize], Awaitable[FileUploadSchema]]]:
+) -> AsyncIterator[Callable[[int, ByteSize], Awaitable[FileUploadSchema]]]:
     file_id = "fake2"
 
-    async def _creator(
-        local_file: Path, num_upload_links: int, chunk_size: ByteSize
-    ) -> FileUploadSchema:
-        local_file.stat().st_size / num_upload_links
+    async def _creator(num_upload_links: int, chunk_size: ByteSize) -> FileUploadSchema:
         response = await aiobotocore_s3_client.create_multipart_upload(
             Bucket=bucket, Key=file_id
         )
@@ -198,7 +195,7 @@ async def create_upload_links(
 )
 async def test_upload_file_to_presigned_links(
     client_session: ClientSession,
-    create_upload_links: Callable[[Path, int, ByteSize], Awaitable[FileUploadSchema]],
+    create_upload_links: Callable[[int, ByteSize], Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize], Path],
     file_size: ByteSize,
     used_chunk_size: ByteSize,
@@ -218,7 +215,7 @@ async def test_upload_file_to_presigned_links(
     num_links = 900
     effective_chunk_size = parse_obj_as(ByteSize, local_file.stat().st_size / num_links)
     assert effective_chunk_size <= used_chunk_size
-    upload_links = await create_upload_links(local_file, num_links, used_chunk_size)
+    upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
     uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
         session=client_session,
