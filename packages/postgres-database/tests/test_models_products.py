@@ -23,14 +23,15 @@ from simcore_postgres_database.models.products import (
     Vendor,
     WebFeedback,
 )
+from simcore_postgres_database.utils_products import get_default_product_name
 from simcore_postgres_database.webserver_models import products
 
 
 @pytest.fixture
 def products_regex() -> dict:
     return {
-        "osparc": r"^osparc.",
         "s4l": r"(^s4l[\.-])|(^sim4life\.)",
+        "osparc": r"^osparc.",
         "tis": r"(^ti.[\.-])|(^ti-solution\.)",
     }
 
@@ -51,6 +52,13 @@ def make_products_table(
                 await result.scalar()
 
     return _make
+
+
+async def test_default_product(pg_engine: Engine, make_products_table):
+    async with pg_engine.acquire() as conn:
+        await make_products_table(conn)
+        default_product = await get_default_product_name(conn)
+        assert default_product == "s4l"
 
 
 async def test_load_products(
