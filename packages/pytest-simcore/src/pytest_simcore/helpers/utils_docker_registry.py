@@ -85,7 +85,7 @@ class Registry:
         r.raise_for_status()
         return True
 
-    def get_tags(self, repo_name: RepoName) -> list[RepoTag]:
+    def list_tags(self, repo_name: RepoName) -> list[RepoTag]:
         r = httpx.get(
             f"{self.data.url}/v2/{repo_name}/tags/list",
             auth=self.data.auth,
@@ -121,6 +121,9 @@ def get_metadata(image_v1: str) -> dict[str, Any]:
     return meta
 
 
+SKIP, SUCCESS, FAILURE = "[skip]", "[ok]", "[failed]"
+
+
 def download_all_registry_metadata(dest_dir: Path):
     registry = Registry()
 
@@ -128,9 +131,18 @@ def download_all_registry_metadata(dest_dir: Path):
 
     count = 0
     for repo in registry.iter_repositories(limit=500):
+
+        # list tags
+        try:
+            tags = registry.list_tags(repo_name=repo)
+        except httpx.HTTPStatusError as err:
+            print(f"Failed to get tags from {repo=}", err, FAILURE)
+            continue
+
+        # get manifest
         folder = dest_dir / Path(repo)
         folder.mkdir(parents=True, exist_ok=True)
-        for tag in registry.get_tags(repo_name=repo):
+        for tag in tags:
             path = folder / f"metadata-{tag}.json"
             if not path.exists():
                 try:
@@ -141,15 +153,15 @@ def download_all_registry_metadata(dest_dir: Path):
                     )
                     with path.open("wt") as fh:
                         json.dump(meta, fh, indent=1)
-                    print("downloaded", path)
+                    print("downloaded", path, SUCCESS)
                     count += 1
                 except Exception as err:  # pylint: disable=broad-except
-                    print("Failed", path, err)
+                    print("Failed", path, err, FAILURE)
                     path.unlink(missing_ok=True)
             else:
-                print("found", path, "[skip download]")
+                print("found", path, SKIP)
                 count += 1
-    print("\nDownloaded", count, "metadata files")
+    print("\nDownloaded", count, "metadata files from", registry.data.url)
 
 
 if __name__ == "__main__":
