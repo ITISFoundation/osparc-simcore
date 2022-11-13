@@ -19,8 +19,9 @@ from aiohttp import web
 from aiohttp_session import get_session
 from servicelib.error_codes import create_error_code
 
-from .._constants import INDEX_RESOURCE_NAME, RQ_PRODUCT_FRONTEND_KEY
+from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
+from ..products import get_product_name
 from ..projects.projects_db import ProjectDBAPI
 from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
@@ -187,7 +188,7 @@ async def copy_study_to_account(
         await db.add_project(
             project,
             user["id"],
-            product_name=request[RQ_PRODUCT_FRONTEND_KEY],
+            product_name=get_product_name(request),
             force_project_uuid=True,
         )
         async for lr_task in copy_data_folders_from_project(

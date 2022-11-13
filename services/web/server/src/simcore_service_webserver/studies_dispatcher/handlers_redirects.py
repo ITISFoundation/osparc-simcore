@@ -13,7 +13,8 @@ from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
-from .._constants import INDEX_RESOURCE_NAME, RQ_PRODUCT_FRONTEND_KEY
+from .._constants import INDEX_RESOURCE_NAME
+from ..products import get_product_name
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
@@ -159,7 +160,7 @@ async def get_redirection_to_viewer(request: web.Request):
             user,
             viewer,
             params.download_link,
-            product_name=request[RQ_PRODUCT_FRONTEND_KEY],
+            product_name=get_product_name(request),
         )
         log.debug("Project acquired '%s'", project_id)
 
