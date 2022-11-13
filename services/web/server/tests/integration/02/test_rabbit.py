@@ -29,7 +29,6 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -75,6 +74,21 @@ LogMessages = list[LoggerRabbitMessage]
 InstrumMessages = list[InstrumentationRabbitMessage]
 ProgressMessages = list[ProgressRabbitMessage]
 EventMessages = list[EventRabbitMessage]
+
+
+@dataclass(frozen=True)
+class RabbitExchanges:
+    logs: aio_pika.abc.AbstractExchange
+    progress: aio_pika.abc.AbstractExchange
+    instrumentation: aio_pika.abc.AbstractExchange
+    events: aio_pika.abc.AbstractExchange
+
+
+@dataclass(frozen=True)
+class SocketIoHandlers:
+    mock_log: mock.Mock
+    mock_node_updated: mock.Mock
+    mock_event: mock.Mock
 
 
 async def _publish_in_rabbit(
@@ -241,13 +255,6 @@ def not_in_project_node_uuid(faker: Faker, user_project: dict[str, Any]) -> Node
     return not_in_project_node_uuid
 
 
-@dataclass(frozen=True)
-class SocketIoHandlers:
-    mock_log: mock.Mock
-    mock_node_updated: mock.Mock
-    mock_event: mock.Mock
-
-
 @pytest.fixture
 async def socketio_subscriber_handlers(
     socketio_client_factory: Callable,
@@ -309,14 +316,6 @@ def publish_some_messages_in_rabbit(
 def user_role() -> UserRole:
     """provides a default when not override by paramtrization"""
     return UserRole.USER
-
-
-@dataclass
-class RabbitExchanges:
-    logs: aio_pika.abc.AbstractExchange
-    progress: aio_pika.abc.AbstractExchange
-    instrumentation: aio_pika.abc.AbstractExchange
-    events: aio_pika.abc.AbstractExchange
 
 
 @pytest.fixture(scope="function")
