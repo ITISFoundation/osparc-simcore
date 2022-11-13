@@ -121,7 +121,7 @@ def get_metadata(image_v1: str) -> dict[str, Any]:
     return meta
 
 
-SKIP, SUCCESS, FAILURE = "[skip]", "[ok]", "[failed]"
+SKIP, SUCCESS, FAILED = "[skip]", "[ok]", "[failed]"
 
 
 def download_all_registry_metadata(dest_dir: Path):
@@ -136,7 +136,7 @@ def download_all_registry_metadata(dest_dir: Path):
         try:
             tags = registry.list_tags(repo_name=repo)
         except httpx.HTTPStatusError as err:
-            print(f"Failed to get tags from {repo=}", err, FAILURE)
+            print(f"Failed to get tags from {repo=}", err, FAILED)
             continue
 
         # get manifest
@@ -156,7 +156,7 @@ def download_all_registry_metadata(dest_dir: Path):
                     print("downloaded", path, SUCCESS)
                     count += 1
                 except Exception as err:  # pylint: disable=broad-except
-                    print("Failed", path, err, FAILURE)
+                    print("Failed", path, err, FAILED)
                     path.unlink(missing_ok=True)
             else:
                 print("found", path, SKIP)
