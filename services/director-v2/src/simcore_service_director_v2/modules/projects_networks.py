@@ -211,7 +211,7 @@ async def _get_networks_with_aliases_for_default_network(
                         "identified on service network due to invalid name. "
                         "To communicate over the network, please rename the "
                         "service alphanumeric characters <64 characters, "
-                        r"e.g. re.sub(r'\W+', '', SERVICE_NAME). "
+                        "e.g. re.sub(r'\W+', '', SERVICE_NAME). "
                         f"Network name is {default_network}"
                     )
                 ],
