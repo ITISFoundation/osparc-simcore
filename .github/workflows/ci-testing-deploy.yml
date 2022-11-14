@@ -1244,6 +1244,7 @@ jobs:
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         run: |
           echo "::error title=ERROR::one of the unit-tests failed!"
+          echo "${{ join(needs.*.result, ',') }}"
           exit 1
       - name: all the previous unit-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
