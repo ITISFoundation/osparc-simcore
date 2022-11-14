@@ -69,9 +69,12 @@ pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   pre-commit
 toml==0.10.2
-    # via pre-commit
+    # via
+    #   -c requirements/_test.txt
+    #   pre-commit
 tomli==2.0.1
     # via
     #   -c requirements/_test.txt
