@@ -1,4 +1,5 @@
 import logging
+from functools import lru_cache
 from typing import Union, cast
 
 from fastapi import FastAPI
@@ -21,7 +22,7 @@ async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None
     # NOTE: this check is necessary when the dy-sidecar is used on the CLI
     # where the rabbit is not initialized, it's not optimal but it allows
     # to run the CLI without rabbit...
-    if hasattr(app.state, "rabbitmq_client"):
+    if _is_rabbitmq_initialized(app):
         await get_rabbitmq_client(app).publish(message.channel_name, message.json())
 
 
@@ -75,8 +76,13 @@ def setup_rabbitmq(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+@lru_cache(maxsize=1)
+def _is_rabbitmq_initialized(app: FastAPI) -> bool:
+    return hasattr(app.state, "rabbitmq_client")
+
+
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    if not hasattr(app.state, "rabbitmq_client"):
+    if not _is_rabbitmq_initialized(app):
         raise RuntimeError(
             "RabbitMQ client is not available. Please check the configuration."
         )
