@@ -24,11 +24,7 @@ qx.Class.define("osparc.store.VendorInfo", {
       return new Promise(resolve => {
         osparc.store.StaticInfo.getInstance().getValue(key)
           .then(issuesData => {
-            if (issuesData) {
-              resolve(issuesData);
-            } else {
-              resolve(defaultValue);
-            }
+            issuesData ? resolve(issuesData) : resolve(defaultValue);
           })
           .catch(() => resolve(defaultValue));
       });
