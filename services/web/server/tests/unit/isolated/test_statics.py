@@ -11,10 +11,7 @@ import json
 from pathlib import Path
 
 import pytest
-from simcore_service_webserver.statics_constants import (
-    FRONTEND_APP_DEFAULT,
-    FRONTEND_APPS_AVAILABLE,
-)
+from servicelib.statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 
 @pytest.fixture(scope="module")
