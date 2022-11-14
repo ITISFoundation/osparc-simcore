@@ -81,65 +81,85 @@ jobs:
             dask-task-models-library:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
             postgres-database:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
             service-integration:
               - 'packages/models-library/**'
               - 'packages/pytest-simcore/**'
               - 'packages/service-integration/**'
+              - 'services/docker-compose*'
             service-library:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
+              - 'services/docker-compose*'
             settings-library:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
+              - 'services/docker-compose*'
             simcore-sdk:
               - 'packages/**'
+              - 'services/docker-compose*'
             agent:
               - 'packages/**'
               - 'services/agent/**'
+              - 'services/docker-compose*'
             api:
               - 'api/**'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
+              - 'services/docker-compose*'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
+              - 'services/docker-compose*'
             catalog:
               - 'packages/**'
               - 'services/catalog/**'
+              - 'services/docker-compose*'
             dask-sidecar:
               - 'packages/**'
               - 'services/dask-sidecar/**'
+              - 'services/docker-compose*'
             datcore-adapter:
               - 'packages/**'
               - 'services/datcore-adapter/**'
+              - 'services/docker-compose*'
             director:
               - 'packages/**'
               - 'services/director/**'
+              - 'services/docker-compose*'
             director-v2:
               - 'packages/**'
               - 'services/director-v2/**'
+              - 'services/docker-compose*'
             dynamic-sidecar:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
+              - 'services/docker-compose*'
             migration:
               - 'packages/**'
               - 'services/migration/**'
+              - 'services/docker-compose*'
             static-webserver:
               - 'services/static-webserver/**'
+              - 'services/docker-compose*'
             storage:
               - 'packages/**'
               - 'services/storage/**'
+              - 'services/docker-compose*'
             webserver:
               - 'packages/**'
               - 'services/web/**'
+              - 'services/docker-compose*'
             anything:
               - 'packages/**'
               - 'services/**'
