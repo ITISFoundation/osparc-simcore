@@ -86,6 +86,9 @@ services:
       - "3011:3000"
 
   agent:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
       - LOGLEVEL=${LOG_LEVEL:-INFO}
 
