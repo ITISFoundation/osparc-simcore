@@ -74,6 +74,27 @@ class Product(BaseModel):
         None, x_template_name="registration_email"
     )
 
+    @validator("name", pre=True, always=True)
+    @classmethod
+    def validate_name(cls, v):
+        if v not in FRONTEND_APPS_AVAILABLE:
+            raise ValueError(
+                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
+            )
+        return v
+
+    @validator("*", pre=True)
+    @classmethod
+    def parse_empty_string_as_null(cls, v):
+        """Safe measure: database entries are sometimes left blank instead of null"""
+        if isinstance(v, str) and len(v.strip()) == 0:
+            return None
+        return v
+
+    @property
+    def twilio_alpha_numeric_sender_id(self) -> str:
+        return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
+
     class Config:
         allow_population_by_field_name = True
         orm_mode = True
@@ -155,31 +176,7 @@ class Product(BaseModel):
             ]
         }
 
-    @validator("name", pre=True, always=True)
-    @classmethod
-    def validate_name(cls, v):
-        if v not in FRONTEND_APPS_AVAILABLE:
-            raise ValueError(
-                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
-            )
-        return v
-
-    @validator(
-        "*",
-        pre=True,
-    )
-    @classmethod
-    def parse_empty_string_as_null(cls, v):
-        """Safe measure: database entries are sometimes left blank instead of null"""
-        if isinstance(v, str) and len(v.strip()) == 0:
-            return None
-        return v
-
-    @property
-    def twilio_alpha_numeric_sender_id(self) -> str:
-        return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
-
-    #  ----
+    #  helpers ----
 
     def to_statics(self) -> dict[str, Any]:
         """
