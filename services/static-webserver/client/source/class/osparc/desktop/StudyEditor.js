@@ -569,9 +569,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __startIdleTimer: function() {
-      const warningAfter = 5000;
+      const warningAfter = 2000;
       const outAfter = 5000;
-      window.onload = resetTimer;
       window.onmousemove = resetTimer;
       window.onkeydown = resetTimer;
 
@@ -592,6 +591,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         clearTimeout(this.__idleTimer);
         this.__idleTimer = setTimeout(showWarning, warningAfter);
       }
+      resetTimer();
     },
 
     __stopIdleTimer: function() {
@@ -680,11 +680,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     closeEditor: function() {
-      this.__stopTimers();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
       this.__closeStudy();
+      this.__stopTimers();
       const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);
