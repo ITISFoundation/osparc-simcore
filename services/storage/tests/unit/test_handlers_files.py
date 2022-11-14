@@ -290,6 +290,16 @@ class MultiPartParam:
         ),
         pytest.param(
             MultiPartParam(
+                link_type=LinkType.PRESIGNED,
+                file_size=parse_obj_as(ByteSize, "9431773844"),
+                expected_response=web.HTTPOk,
+                expected_num_links=900,
+                expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
+            ),
+            id="9431773844B (8.8Gib) file,presigned",
+        ),
+        pytest.param(
+            MultiPartParam(
                 link_type=LinkType.S3,
                 file_size=parse_obj_as(ByteSize, "255GiB"),
                 expected_response=web.HTTPOk,
@@ -316,7 +326,9 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
         file_size=f"{test_param.file_size}",
     )
     # number of links
-    assert len(received_file_upload.urls) == test_param.expected_num_links
+    assert (
+        len(received_file_upload.urls) == test_param.expected_num_links
+    ), f"{len(received_file_upload.urls)} vs {test_param.expected_num_links=}"
     # all links are unique
     assert len(set(received_file_upload.urls)) == len(received_file_upload.urls)
     assert received_file_upload.chunk_size == test_param.expected_chunk_size
