@@ -7,7 +7,7 @@ import json
 import logging
 from asyncio import sleep
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 
 import aio_pika
@@ -32,7 +32,6 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
@@ -197,7 +196,6 @@ def client(
     app = create_safe_application(app_config)
 
     assert setup_settings(app)
-    assert app[APP_SETTINGS_KEY].WEBSERVER_COMPUTATION
 
     setup_db(app)
     setup_session(app)
@@ -321,9 +319,8 @@ def user_role() -> UserRole:
 async def rabbit_exchanges(
     rabbit_settings: RabbitSettings,
     rabbit_channel: aio_pika.Channel,
-) -> RabbitExchanges:
+) -> AsyncIterator[RabbitExchanges]:
 
-    # declare log exchange
     logs_exchange = await rabbit_channel.declare_exchange(
         LoggerRabbitMessage.get_channel_name(),
         aio_pika.ExchangeType.FANOUT,
@@ -331,7 +328,6 @@ async def rabbit_exchanges(
     )
     assert logs_exchange
 
-    # declare progress exchange
     progress_exchange = await rabbit_channel.declare_exchange(
         ProgressRabbitMessage.get_channel_name(),
         aio_pika.ExchangeType.FANOUT,
@@ -339,7 +335,6 @@ async def rabbit_exchanges(
     )
     assert progress_exchange
 
-    # declare instrumentation exchange
     instrumentation_exchange = await rabbit_channel.declare_exchange(
         InstrumentationRabbitMessage.get_channel_name(),
         aio_pika.ExchangeType.FANOUT,
@@ -347,7 +342,6 @@ async def rabbit_exchanges(
     )
     assert instrumentation_exchange
 
-    # declare instrumentation exchange
     events_exchange = await rabbit_channel.declare_exchange(
         EventRabbitMessage.get_channel_name(),
         aio_pika.ExchangeType.FANOUT,
@@ -355,9 +349,18 @@ async def rabbit_exchanges(
     )
     assert instrumentation_exchange
 
-    return RabbitExchanges(
+    exchanges = RabbitExchanges(
         logs_exchange, progress_exchange, instrumentation_exchange, events_exchange
     )
+    yield exchanges
+
+    for exchange in [
+        LoggerRabbitMessage,
+        ProgressRabbitMessage,
+        InstrumentationRabbitMessage,
+        EventRabbitMessage,
+    ]:
+        await rabbit_channel.exchange_delete(exchange.get_channel_name())
 
 
 #
