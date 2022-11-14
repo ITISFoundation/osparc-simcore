@@ -570,4 +570,8 @@ networks:
       config:
         - subnet: "172.8.0.0/16"
   computational_services_subnet:
+    driver: overlay
     attachable: true
+    internal: false
+    labels:
+      com.simcore.description: "computational services network"
