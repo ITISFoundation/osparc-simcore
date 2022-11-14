@@ -53,7 +53,8 @@ async def _get_connection(
 MessageHandler = Callable[[Any], Awaitable[bool]]
 Message = str
 
-_RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 60000
+_MINUTE: Final[int] = 60
+_RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
 
 
 @dataclass
@@ -64,9 +65,11 @@ class RabbitMQClient:
     _channel_pool: Optional[aio_pika.pool.Pool] = field(init=False, default=None)
 
     def __post_init__(self):
+        # recommendations are 1 connection per process
         self._connection_pool = aio_pika.pool.Pool(
-            _get_connection, self.settings.dsn, self.client_name, max_size=2
+            _get_connection, self.settings.dsn, self.client_name, max_size=1
         )
+        # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
     async def close(self) -> None:
@@ -90,7 +93,8 @@ class RabbitMQClient:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
-            await channel.set_qos(10)
+            _DEFAULT_PREFETCH_VALUE = 10  # this value is set to the default for now
+            await channel.set_qos(_DEFAULT_PREFETCH_VALUE)
 
             exchange = await channel.declare_exchange(
                 exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
