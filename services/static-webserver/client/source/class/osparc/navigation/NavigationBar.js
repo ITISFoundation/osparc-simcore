@@ -270,32 +270,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createManualMenuBtn: function() {
-      const manuals = osparc.navigation.Manuals.getManuals(this.__serverStatics);
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
 
-      let control = new qx.ui.core.Widget();
-      if (manuals.length === 1) {
-        const manual = manuals[0];
-        control = new osparc.ui.form.LinkButton(null, manual.icon, manual.url).set({
-          toolTipText: manual.label
-        });
-      } else if (manuals.length > 1) {
-        const menu = new qx.ui.menu.Menu().set({
-          font: "text-14"
-        });
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
+        toolTipText: this.tr("Manuals")
+      });
 
-        manuals.forEach(manual => {
-          const manualBtn = new qx.ui.menu.Button(manual.label);
-          manualBtn.addListener("execute", () => {
-            window.open(manual.url);
-          }, this);
-          menu.add(manualBtn);
-        });
+      const manuals = osparc.navigation.Manuals.getManuals();
+      manuals.forEach(manual => {
+        const manualBtn = new qx.ui.menu.Button(manual.label);
+        manualBtn.addListener("execute", () => {
+          window.open(manual.url);
+        }, this);
+        menu.add(manualBtn);
+      });
 
-        control = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
-          toolTipText: this.tr("Manuals")
-        });
-      }
-      return control;
+      return menuButton;
     },
 
     __createFeedbackMenuBtn: function() {
