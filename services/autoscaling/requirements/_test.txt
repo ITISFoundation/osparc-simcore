@@ -81,13 +81,10 @@ pytest==7.2.0
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
-    #   pytest-helpers-namespace
     #   pytest-mock
 pytest-asyncio==0.20.1
     # via -r requirements/_test.in
 pytest-cov==4.0.0
-    # via -r requirements/_test.in
-pytest-helpers-namespace==2021.12.29
     # via -r requirements/_test.in
 pytest-mock==3.10.0
     # via -r requirements/_test.in
