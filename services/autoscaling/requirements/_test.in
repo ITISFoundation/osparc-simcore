@@ -10,6 +10,7 @@
 #
 --constraint _base.txt
 
+asgi-lifespan
 codecov
 coverage
 coveralls

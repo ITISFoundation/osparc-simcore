@@ -8,6 +8,8 @@ anyio==3.6.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
+asgi-lifespan==2.0.0
+    # via -r requirements/_test.in
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
@@ -109,6 +111,7 @@ sniffio==1.3.0
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   asgi-lifespan
     #   httpcore
     #   httpx
 tomli==2.0.1
