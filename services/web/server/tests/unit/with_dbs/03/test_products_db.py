@@ -125,6 +125,7 @@ async def test_product_repository_get_product(
     product_data: dict[str, Any],
     product_row: RowProxy,
     app: web.Application,
+    mocker: MockerFixture,
 ):
 
     # check differences between the original product_data and the product_row in database
@@ -146,6 +147,8 @@ async def test_product_repository_get_product(
     assert await product_repository.get_product(product.name) == product
 
     # tests definitions of default from utle_products and web-server.products are in sync
+    mock_request = mocker.MagicMock()
+    mock_request.app = app
     async with product_repository.engine.acquire() as conn:
         default_product = await utils_products.get_default_product_name(conn)
-        assert default_product == _get_app_default_product_name(app)
+        assert default_product == _get_app_default_product_name(mock_request)
