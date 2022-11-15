@@ -14,6 +14,10 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         logger.debug("the swarm has enough computing resources at the moment")
         return
 
+    current_cluster_resources = await utils_docker.eval_cluster_resources(
+        app_settings.AUTOSCALING_MONITORED_NODES_LABELS
+    )
+
     # NOTE: user_data is a script that gets launched when a new node is created
     assert app_settings.AUTOSCALING_AWS  # nosec
     user_data = utils_aws.compose_user_data(app_settings.AUTOSCALING_AWS)

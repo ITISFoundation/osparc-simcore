@@ -73,6 +73,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
+    AUTOSCALING_MONITORED_NODES_LABELS: list[str] = Field(
+        default=["sidecar"],
+        description="docker node labels on the nodes to be monitored",
+    )
+
     @cached_property
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL

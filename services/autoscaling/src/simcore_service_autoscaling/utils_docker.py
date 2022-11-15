@@ -2,10 +2,11 @@
 
 """
 
-from typing import Any, TypedDict
+import collections
+from typing import Any, Final, TypedDict
 
 import aiodocker
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, ByteSize, PositiveInt
 
 from .utils import bytesto
 
@@ -36,45 +37,37 @@ async def pending_services_with_insufficient_resources() -> bool:
 
 class ClusterResources(BaseModel):
     total_cpus: int
-    total_ram: int
-    nodes_ids: list[str]
+    total_ram: ByteSize
+    node_ids: list[str]
 
 
-async def eval_cluster_resources() -> ClusterResources:
+_NANO_CPU: Final[float] = 10**9
+
+
+async def eval_cluster_resources(node_labels: list[str]) -> ClusterResources:
     """
     We compile RAM and CPU capabilities of each node who have the label sidecar
     Total resources of the cluster
     """
 
     async with aiodocker.Docker() as docker:
-        nodes = await docker.nodes.list(filters={"label": "sidecar"})
-        nodes_sidecar_data = []
+        nodes = await docker.nodes.list(
+            filters={"label": label for label in node_labels}
+        )
+        cluster_resources_counter = collections.Counter()
+        node_ids = []
         for node in nodes:
-            nodes_sidecar_data.append(
+            cluster_resources_counter.update(
                 {
-                    "ID": node["ID"],
-                    "RAM": bytesto(
-                        node["Description"]["Resources"]["MemoryBytes"],
-                        "g",
-                        bsize=1024,
-                    ),
-                    "CPU": int(node["Description"]["Resources"]["NanoCPUs"])
-                    / 1000000000,
+                    "total_ram": node["Description"]["Resources"]["MemoryBytes"],
+                    "total_cpus": node["Description"]["Resources"]["NanoCPUs"]
+                    / _NANO_CPU,
                 }
             )
+            node_ids.append(node["ID"])
 
-        total_nodes_cpus = 0
-        total_nodes_ram = 0
-        nodes_ids = []
-        for node in nodes_sidecar_data:
-            total_nodes_cpus += node["CPU"]
-            total_nodes_ram += node["RAM"]
-            nodes_ids.append(node["ID"])
-
-        return ClusterResources(
-            total_cpus=total_nodes_cpus,
-            total_ram=total_nodes_ram,
-            nodes_ids=nodes_ids,
+        return ClusterResources.parse_obj(
+            dict(cluster_resources_counter) | {"node_ids": node_ids}
         )
 
 

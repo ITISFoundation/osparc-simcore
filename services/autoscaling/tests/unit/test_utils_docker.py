@@ -5,24 +5,11 @@
 from typing import Any, Awaitable, Callable, Mapping
 
 import aiodocker
-import pytest
-from fastapi import status
+import psutil
 from simcore_service_autoscaling.utils_docker import (
     eval_cluster_resources,
     pending_services_with_insufficient_resources,
 )
-
-
-async def test_eval_cluster_resource_without_swarm():
-    with pytest.raises(aiodocker.DockerError) as exc_info:
-        await pending_services_with_insufficient_resources()
-
-    assert exc_info.value.status == status.HTTP_503_SERVICE_UNAVAILABLE
-
-    with pytest.raises(aiodocker.DockerError) as exc_info:
-        await eval_cluster_resources()
-
-    assert exc_info.value.status == status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 async def test_pending_services_with_insufficient_resources_with_no_service(
@@ -56,3 +43,11 @@ async def test_pending_services_with_insufficient_resources_with_service_lacking
         ["pending"],
     )
     assert await pending_services_with_insufficient_resources() == True
+
+
+async def test_get_swarm_resources(docker_swarm: None):
+    cluster_resources = await eval_cluster_resources(node_labels=[])
+    assert cluster_resources.total_cpus == psutil.cpu_count()
+    assert cluster_resources.total_ram == psutil.virtual_memory().total
+    assert cluster_resources.node_ids
+    assert len(cluster_resources.node_ids) == 1
