@@ -16,6 +16,7 @@ coverage
 coveralls
 docker
 faker
+psutil
 pytest
 pytest-asyncio
 pytest-cov

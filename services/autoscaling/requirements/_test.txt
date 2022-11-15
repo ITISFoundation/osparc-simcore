@@ -72,6 +72,8 @@ packaging==21.3
     #   pytest
 pluggy==1.0.0
     # via pytest
+psutil==5.9.4
+    # via -r requirements/_test.in
 pyparsing==3.0.9
     # via
     #   -c requirements/_base.txt
