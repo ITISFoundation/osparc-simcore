@@ -124,6 +124,7 @@ async def test_product_repository_get_product(
     product_repository: ProductRepository,
     product_data: dict[str, Any],
     product_row: RowProxy,
+    app: web.Application,
 ):
 
     # check differences between the original product_data and the product_row in database
@@ -147,4 +148,4 @@ async def test_product_repository_get_product(
     # tests definitions of default from utle_products and web-server.products are in sync
     async with product_repository.engine.acquire() as conn:
         default_product = await utils_products.get_default_product_name(conn)
-        assert default_product == _get_app_default_product_name(product_repository.app)
+        assert default_product == _get_app_default_product_name(app)
