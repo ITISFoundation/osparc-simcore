@@ -19,9 +19,12 @@ qx.Class.define("osparc.navigation.Manuals", {
       });
     },
 
-    addManualButtonsToMenu: function(menu) {
+    addManualButtonsToMenu: function(menu, menuButton) {
       osparc.navigation.Manuals.getManuals()
         .then(manuals => {
+          if (menuButton) {
+            menuButton.setVisibility(manuals.length ? "visible" : "excluded");
+          }
           manuals.forEach(manual => {
             const manualBtn = new qx.ui.menu.Button(manual.label);
             manualBtn.addListener("execute", () => window.open(manual.url), this);
@@ -30,7 +33,7 @@ qx.Class.define("osparc.navigation.Manuals", {
         });
     },
 
-    addSupportButtonsToMenu: function(menu) {
+    addSupportButtonsToMenu: function(menu, menuButton) {
       Promise.all([
         osparc.store.VendorInfo.getInstance().getIssues(),
         osparc.store.VendorInfo.getInstance().getSupports()
@@ -38,6 +41,9 @@ qx.Class.define("osparc.navigation.Manuals", {
         .then(values => {
           const issues = values[0];
           const supports = values[1];
+          if (menuButton) {
+            menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
+          }
           issues.forEach(issueInfo => {
             const label = issueInfo["label"];
             const issueButton = new qx.ui.menu.Button(label);

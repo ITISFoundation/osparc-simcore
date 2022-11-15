@@ -276,7 +276,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
         toolTipText: this.tr("Manuals")
       });
-      osparc.navigation.Manuals.addManualButtonsToMenu(menu);
+      osparc.navigation.Manuals.addManualButtonsToMenu(menu, menuButton);
       return menuButton;
     },
 
@@ -287,7 +287,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
         toolTipText: this.tr("Support")
       });
-      osparc.navigation.Manuals.addSupportButtonsToMenu(menu);
+      osparc.navigation.Manuals.addSupportButtonsToMenu(menu, menuButton);
       return menuButton;
     },
 
