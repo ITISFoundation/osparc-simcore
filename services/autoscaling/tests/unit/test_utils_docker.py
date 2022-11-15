@@ -37,19 +37,22 @@ async def test_pending_services_with_insufficient_resources_with_service_lacking
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
     create_task_resources: Callable[[int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
 ):
     service_with_no_resources = await create_service(task_template)
-    await pytest.helpers.assert_for_service_state(
-        async_docker_client, service_with_no_resources, expected_states=["running"]
+    await assert_for_service_state(
+        async_docker_client, service_with_no_resources, ["running"]
     )
     assert await pending_services_with_insufficient_resources() == False
     task_template_with_too_many_resource = task_template | create_task_resources(1000)
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource
     )
-    await pytest.helpers.assert_for_service_state(
+    await assert_for_service_state(
         async_docker_client,
         service_with_too_many_resources,
-        expected_states=["pending"],
+        ["pending"],
     )
     assert await pending_services_with_insufficient_resources() == True

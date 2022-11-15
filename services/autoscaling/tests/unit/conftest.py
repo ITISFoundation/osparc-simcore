@@ -138,46 +138,51 @@ async def create_service(
     )
 
 
-@pytest.helpers.register
-async def assert_for_service_state(
-    async_docker_client: aiodocker.Docker,
-    created_service: Mapping[str, Any],
-    expected_states: list[str],
-) -> None:
-    SUCCESS_STABLE_TIME_S: Final[float] = 3
-    WAIT_TIME: Final[float] = 0.5
-    number_of_success = 0
-    async for attempt in AsyncRetrying(
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-        wait=wait_fixed(WAIT_TIME),
-        stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
-    ):
-        with attempt:
-            print(
-                f"--> waiting for service {created_service['ID']} to become {expected_states}..."
-            )
-            services = await async_docker_client.services.list(
-                filters={"id": created_service["ID"]}
-            )
-            assert services, f"no service with {created_service['ID']}!"
-            assert len(services) == 1
-            found_service = services[0]
+@pytest.fixture
+def assert_for_service_state() -> Callable[
+    [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+]:
+    async def _runner(
+        async_docker_client: aiodocker.Docker,
+        created_service: Mapping[str, Any],
+        expected_states: list[str],
+    ) -> None:
+        SUCCESS_STABLE_TIME_S: Final[float] = 3
+        WAIT_TIME: Final[float] = 0.5
+        number_of_success = 0
+        async for attempt in AsyncRetrying(
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+            wait=wait_fixed(WAIT_TIME),
+            stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
+        ):
+            with attempt:
+                print(
+                    f"--> waiting for service {created_service['ID']} to become {expected_states}..."
+                )
+                services = await async_docker_client.services.list(
+                    filters={"id": created_service["ID"]}
+                )
+                assert services, f"no service with {created_service['ID']}!"
+                assert len(services) == 1
+                found_service = services[0]
 
-            tasks = await async_docker_client.tasks.list(
-                filters={"service": found_service["Spec"]["Name"]}
-            )
-            assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
-            assert len(tasks) == 1
-            service_task = tasks[0]
-            assert (
-                service_task["Status"]["State"] in expected_states
-            ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
-            print(
-                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success}"
-            )
-            number_of_success += 1
-            assert (number_of_success * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
-            print(
-                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds"
-            )
+                tasks = await async_docker_client.tasks.list(
+                    filters={"service": found_service["Spec"]["Name"]}
+                )
+                assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
+                assert len(tasks) == 1
+                service_task = tasks[0]
+                assert (
+                    service_task["Status"]["State"] in expected_states
+                ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
+                print(
+                    f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success}"
+                )
+                number_of_success += 1
+                assert (number_of_success * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
+                print(
+                    f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds"
+                )
+
+    return _runner
