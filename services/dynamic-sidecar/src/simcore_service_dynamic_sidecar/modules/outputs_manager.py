@@ -1,15 +1,12 @@
 import asyncio
 import logging
-import random
-from asyncio import CancelledError, Future, Queue, Task
+from asyncio import CancelledError, Future, Lock, Task
 from asyncio import TimeoutError as AsyncioTimeoutError
 from asyncio import create_task, wait_for
 from contextlib import suppress
-from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional
-from uuid import uuid4
+from typing import Optional
 
 from fastapi import FastAPI
 from models_library.projects import ProjectIDStr
@@ -27,240 +24,213 @@ from .nodeports import upload_outputs
 logger = logging.getLogger(__name__)
 
 
-def _get_upload_task(port_key: str, outputs_path: Path, nodeports: Nodeports) -> Task:
-    return create_task(
-        upload_outputs(
-            outputs_path=outputs_path, port_keys=[port_key], nodeports=nodeports
-        ),
-        name=f"upload_task__{port_key}",
-    )
-
-
-async def _cancel_task(task: Task, cancellation_timeout_s: PositiveFloat) -> None:
+async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -> None:
     task.cancel()
     with suppress(CancelledError):
         try:
 
             async def __await_task(task: Task) -> None:
-                await task
+                try:
+                    await task
+                except Exception:  # pylint:disable=broad-except
+                    pass
 
-            await wait_for(__await_task(task), timeout=cancellation_timeout_s)
+            await wait_for(__await_task(task), timeout=task_cancellation_timeout_s)
         except AsyncioTimeoutError:
             logger.warning("Timed out while cancelling '%s'", task.get_name())
 
 
-@dataclass
-class _PortUploadManager:
-    port_key: str
-    _observer_queue: list[Queue[Optional[Future]]] = field(default_factory=list)
-    _cancel_and_reschedule: bool = False
-    _cancel_task: bool = False
+class UploadPortsFailed(BaseException):
+    def __init__(self, port_keys: set[str], exceptions: list[Exception]) -> None:
+        self.port_keys: set[str] = port_keys
+        self.exceptions: list[Exception] = exceptions
+        super().__init__()
 
-    def cancel_and_reschedule(self) -> None:
-        self._cancel_and_reschedule = True
-
-    def cancel(self) -> None:
-        self._cancel_task = True
-
-    async def run_upload_task(
-        self,
-        outputs_path: Path,
-        nodeports: Nodeports,
-        cancellation_timeout_s: PositiveFloat,
-        task_polling_interval_s: PositiveFloat = 0.1,
-    ) -> None:
-        upload_task = _get_upload_task(self.port_key, outputs_path, nodeports)
-
-        # wait for task to finish
-        while not upload_task.done():
-            if self._cancel_and_reschedule:
-                self._cancel_and_reschedule = False
-
-                # cancel current task and recreate upload_task
-                await _cancel_task(upload_task, cancellation_timeout_s)
-                upload_task = _get_upload_task(self.port_key, outputs_path, nodeports)
-
-            if self._cancel_task:
-                # cancel current upload return the result as canceled
-                upload_task.cancel()
-                break
-
-            await asyncio.sleep(task_polling_interval_s)
-
-        # send results to observers
-        for queue in self._observer_queue:
-            queue.put_nowait(upload_task)
-
-        # wait for observers to pick up result
-        await asyncio.gather(*[queue.get() for queue in self._observer_queue])
-
-    async def wait_for_result(self) -> Future:
-        """Blocks and waits for the task to finish and provide a result"""
-        result_queue: Queue[Optional[Future]] = Queue()
-        self._observer_queue.append(result_queue)
-
-        # wait for a result to become available
-        future = await result_queue.get()
-        await result_queue.put(None)  # done with this
-
-        assert isinstance(future, Future)  # nosec
-        return future
+    def __repr__(self) -> str:
+        return f"<{UploadPortsFailed.__name__}: port_keys={self.port_keys}, exceptions={self.exceptions}>"
 
 
-class OutputsManager:  # pylint: disable=too-many-instance-attributes
+class PortKeyTracker:
+    def __init__(self) -> None:
+        self._lock = Lock()
+
+        self._pending_port_keys: set[str] = set()
+        self._uploading_port_keys: set[str] = set()
+
+    def __repr__(self) -> str:
+        return (
+            f"pending={self._pending_port_keys} uploading={self._uploading_port_keys}"
+        )
+
+    async def add_pending(self, port_key: str) -> None:
+        async with self._lock:
+            self._pending_port_keys.add(port_key)
+
+    async def are_pending_ports_uploading(self) -> bool:
+        async with self._lock:
+            return len(self._pending_port_keys & self._uploading_port_keys) > 0
+
+    async def can_schedule_ports_to_upload(self) -> bool:
+        async with self._lock:
+            return (
+                len(self._uploading_port_keys) == 0 and len(self._pending_port_keys) > 0
+            )
+
+    async def no_tracked_ports(self) -> bool:
+        async with self._lock:
+            return (
+                len(self._pending_port_keys) == 0
+                and len(self._uploading_port_keys) == 0
+            )
+
+    async def move_port_to_uploading(self) -> None:
+        async with self._lock:
+            port_key = self._pending_port_keys.pop()
+            self._uploading_port_keys.add(port_key)
+
+    async def move_all_ports_to_uploading(self) -> None:
+        async with self._lock:
+            self._uploading_port_keys.update(self._pending_port_keys)
+            self._pending_port_keys.clear()
+
+    async def get_uploading(self) -> list[str]:
+        async with self._lock:
+            return list(self._uploading_port_keys)
+
+    async def move_all_uploading_to_pending(self) -> None:
+        async with self._lock:
+            self._pending_port_keys.update(self._uploading_port_keys)
+            self._uploading_port_keys.clear()
+
+    async def remove_all_uploading(self) -> None:
+        async with self._lock:
+            self._uploading_port_keys.clear()
+
+
+class OutputsManager:
     def __init__(
         self,
         outputs_path: Path,
         nodeports: Nodeports,
         *,
+        bulk_scheduling: bool = True,
         upload_upon_api_request: bool = True,
-        cancellation_timeout_s: PositiveFloat = 10,
+        task_cancellation_timeout_s: PositiveFloat = 5,
         task_monitor_interval_s: PositiveFloat = 1.0,
     ):
         self.outputs_path = outputs_path
         self.nodeports = nodeports
+        self.bulk_scheduling = bulk_scheduling
         self.upload_upon_api_request = upload_upon_api_request
-        self.cancellation_timeout_s = cancellation_timeout_s
+        self.task_cancellation_timeout_s = task_cancellation_timeout_s
         self.task_monitor_interval_s = task_monitor_interval_s
 
         self.outputs_port_keys: set[str] = set()
 
-        # new scheduler
-        self._pending_port_uploads: dict[str, _PortUploadManager] = {}
-        self._current_port_upload: Optional[_PortUploadManager] = None
-        self._upload_worker_task: Optional[Task] = None
-        self._tracked_port_upload_tasks: dict[str, Task] = {}
+        self._port_key_tracker = PortKeyTracker()
+        self._keep_running = True
+        self._task_uploading: Optional[Task] = None
+        self._task_scheduler_worker: Optional[Task] = None
 
-    def _check_port_key(self, port_key: str) -> None:
-        if port_key not in self.outputs_port_keys:
-            raise RuntimeError(
-                f"Provided {port_key=} was not detected in {self.outputs_port_keys=}"
-            )
+        # keep track if a port was uploaded and there was an error, remove said error if
+        self._last_upload_error_tracker: dict[str, Optional[Exception]] = {}
 
-    async def _wait_for_upload_task(self, port_key: str) -> Future:
-        upload_task = self._pending_port_uploads[port_key]
-        return await upload_task.wait_for_result()
+    async def _uploading_task_start(self) -> None:
+        port_keys = await self._port_key_tracker.get_uploading()
+        assert len(port_keys) > 0  # nosec
 
-    async def _schedule_upload_task(self, port_key: str) -> None:
-        port_pending_upload = port_key in self._pending_port_uploads
-        port_is_currently_uploading = (
-            self._current_port_upload is not None
-            and self._current_port_upload.port_key == port_key
+        logger.debug("Will upload %s", port_keys)
+        task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
+        self._task_uploading = create_task(
+            upload_outputs(
+                outputs_path=self.outputs_path,
+                port_keys=port_keys,
+                nodeports=self.nodeports,
+            ),
+            name=task_name,
         )
-        if not port_pending_upload and not port_is_currently_uploading:
-            self._pending_port_uploads[port_key] = _PortUploadManager(port_key=port_key)
 
-    async def _upload_worker(self) -> None:
-        while True:
-            if self._current_port_upload is not None:
-                await self._current_port_upload.run_upload_task(
-                    self.outputs_path, self.nodeports, self.cancellation_timeout_s
+        def _remove_downloads(future: Future) -> None:
+            # pylint: disable=protected-access
+            if future._exception is not None:
+                logger.warning(
+                    "%s ended with exception: %s",
+                    task_name,
+                    future._exception
+                    # traceback.format_tb(future._exception),
                 )
-                self._current_port_upload = None
 
-            elif len(self._pending_port_uploads) > 0:
-                # reschedule next if available
-                random_key = random.choice(  # NOSONAR
-                    tuple(self._pending_port_uploads.keys())
-                )
-                self._current_port_upload = self._pending_port_uploads.pop(
-                    random_key, None
-                )
+            # keep track of the last result for each port
+            for port_key in port_keys:
+                try:
+                    future.result()
+                    self._last_upload_error_tracker[port_key] = None
+                except Exception as e:
+                    self._last_upload_error_tracker[port_key] = e
+
+            logger.debug("Removing ports %s", port_keys)
+            # NOTE: can this be better?
+            create_task(self._port_key_tracker.remove_all_uploading())
+            logger.debug("Port tracker %s", self._port_key_tracker)
+
+        self._task_uploading.add_done_callback(_remove_downloads)
+
+    async def _uploading_task_cancel(self) -> None:
+        if self._task_uploading is not None:
+            await _cancel_task(self._task_uploading, self.task_cancellation_timeout_s)
+            await self._port_key_tracker.move_all_uploading_to_pending()
+
+    async def _scheduler_worker(self) -> None:
+        while self._keep_running:
+            if await self._port_key_tracker.are_pending_ports_uploading():
+                await self._uploading_task_cancel()
+                await self._port_key_tracker.move_all_uploading_to_pending()
+
+            if await self._port_key_tracker.can_schedule_ports_to_upload():
+                if self.bulk_scheduling:
+                    await self._port_key_tracker.move_all_ports_to_uploading()
+                else:
+                    await self._port_key_tracker.move_port_to_uploading()
+
+                await self._uploading_task_start()
 
             await asyncio.sleep(self.task_monitor_interval_s)
 
-    async def _request_port_upload(
-        self, port_content_changed: bool, port_key: str
-    ) -> Future:
-        """
-        Decides to cancel, keep or schedule a new upload task.
-        returns a Task which waits for the upload to finish (can be optionally awaited)
-        """
-        # | # | same_port_as_upload | port_content_changed | upload_exists | action            |
-        # |---|---------------------|----------------------|---------------|-------------------|
-        # | 1 | false               | false                | false         | schedule          |
-        # | 2 | false               | false                | true          | schedule          |
-        # | 3 | false               | true                 | false         | schedule          |
-        # | 4 | false               | true                 | true          | schedule          |
-        # | 5 | true                | false                | false         | schedule          |
-        # | 6 | true                | false                | true          | N/A               |
-        # | 7 | true                | true                 | false         | schedule          |
-        # | 8 | true                | true                 | true          | cancel & schedule |
-
-        upload_exists = self._current_port_upload is not None
-        same_port_as_upload = (
-            self._current_port_upload is not None
-            and port_key == self._current_port_upload.port_key
-        )
-
-        # 6: return tas already running just wait for it to finish
-        if same_port_as_upload and not port_content_changed and upload_exists:
-            return await self._wait_for_upload_task(port_key)
-
-        # 8: cancel current task
-        if same_port_as_upload and port_content_changed and upload_exists:
-            assert isinstance(self._current_port_upload, _PortUploadManager)  # nosec
-            self._current_port_upload.cancel_and_reschedule()
-            return await self._wait_for_upload_task(port_key)
-
-        await self._schedule_upload_task(port_key)
-        return await self._wait_for_upload_task(port_key)
-
-    async def upload_after_port_change(self, port_key: str) -> None:
-        """
-        Request to upload after a change in the port's directory
-        was observed.
-
-        Used by the DirectoryWatcher.
-        """
-        self._check_port_key(port_key)
-
-        task_name = f"port_upload_{port_key}_{uuid4()}"
-        upload_task = create_task(
-            self._request_port_upload(port_content_changed=True, port_key=port_key),
-            name=task_name,
-        )
-        upload_task.add_done_callback(
-            partial(
-                lambda s, _: self._tracked_port_upload_tasks.pop(s, None),
-                task_name,
-            )
-        )
-        self._tracked_port_upload_tasks[task_name] = upload_task
-
-    async def upload_port(self, port_key: str) -> Any:
-        """
-        Request a port upload, and waits for the upload to finish.
-
-        Used by the API endpoint.
-        """
-        self._check_port_key(port_key)
-        future = await self._request_port_upload(
-            port_content_changed=False, port_key=port_key
-        )
-        # NOTE: below will raise an error or return a result
-        # allows for error propagation from nodeports
-        return future.result()
-
     async def start(self) -> None:
-        self._upload_worker_task = create_task(
-            self._upload_worker(), name="upload_worker_task"
+        self._task_scheduler_worker = create_task(
+            self._scheduler_worker(), name="outputs_manager_scheduler_worker"
         )
-        logger.info("outputs manger started")
 
     async def shutdown(self) -> None:
-        if self._current_port_upload is not None:
-            self._current_port_upload.cancel()
+        await self._uploading_task_cancel()
+        if self._task_scheduler_worker is not None:
+            await _cancel_task(
+                self._task_scheduler_worker, self.task_cancellation_timeout_s
+            )
 
-        if self._upload_worker_task is not None:
-            await _cancel_task(self._upload_worker_task, self.cancellation_timeout_s)
+    async def port_key_content_changed(self, port_key: str) -> None:
+        await self._port_key_tracker.add_pending(port_key)
 
-        for key in set(self._tracked_port_upload_tasks.keys()):
-            task = self._tracked_port_upload_tasks.pop(key, None)
-            if task is not None:
-                await _cancel_task(task, self.cancellation_timeout_s)
+    async def wait_for_all_uploads_to_finish(self) -> None:
+        """
+        if there are no pending port uploads return immediately
+        otherwise wait for all of them to finish
+        """
+        while not await self._port_key_tracker.no_tracked_ports():
+            await asyncio.sleep(self.task_monitor_interval_s)
 
-        logger.info("outputs manger shut down")
+        # if any port failed to upload, raise an error,
+        # to allow for data to be manually recovered
+
+        last_port_uploads_with_errors = {
+            k for k, v in self._last_upload_error_tracker.items() if v is not None
+        }
+
+        if len(last_port_uploads_with_errors) > 0:
+            raise UploadPortsFailed(
+                last_port_uploads_with_errors,
+                list(self._last_upload_error_tracker.values()),
+            )
 
 
 def setup_outputs_manager(app: FastAPI) -> None:

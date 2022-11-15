@@ -161,7 +161,7 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
             if port_key is None:
                 break
 
-            await self.outputs_manager.upload_after_port_change(port_key)
+            await self.outputs_manager.port_key_content_changed(port_key)
 
     def enqueue(self, port_key: str, event: FileSystemEvent) -> None:
         self._events_queue.put_nowait((port_key, event))

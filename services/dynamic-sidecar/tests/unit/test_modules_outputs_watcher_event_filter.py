@@ -53,14 +53,14 @@ async def outputs_manager(
 
 
 @pytest.fixture
-def mocked_upload_after_port_change(
+def mocked_port_key_content_changed(
     mocker: MockerFixture, outputs_manager: OutputsManager
 ) -> Iterator[AsyncMock]:
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         pass
 
     yield mocker.patch.object(
-        outputs_manager, "upload_after_port_change", side_effect=_mock_upload_outputs
+        outputs_manager, "port_key_content_changed", side_effect=_mock_upload_outputs
     )
 
 
@@ -118,31 +118,31 @@ async def test_event_triggers_once(
     event_filter: EventFilter,
     port_key_1: str,
     file_system_event: FileSystemEvent,
-    mocked_upload_after_port_change: AsyncMock,
+    mocked_port_key_content_changed: AsyncMock,
 ):
     # event triggers once
     event_filter.enqueue(port_key_1, file_system_event)
     await _wait_for_event_to_trigger(event_filter)
-    assert mocked_upload_after_port_change.call_count == 1
+    assert mocked_port_key_content_changed.call_count == 1
 
     await _wait_for_event_to_trigger(event_filter)
 
     # event triggers a second time
     event_filter.enqueue(port_key_1, file_system_event)
     await _wait_for_event_to_trigger(event_filter)
-    assert mocked_upload_after_port_change.call_count == 2
+    assert mocked_port_key_content_changed.call_count == 2
 
 
 async def test_trigger_once_after_event_chain(
     event_filter: EventFilter,
     port_key_1: str,
     file_system_event: FileSystemEvent,
-    mocked_upload_after_port_change: AsyncMock,
+    mocked_port_key_content_changed: AsyncMock,
 ):
     for _ in range(100):
         event_filter.enqueue(port_key_1, file_system_event)
     await _wait_for_event_to_trigger(event_filter)
-    assert mocked_upload_after_port_change.call_count == 1
+    assert mocked_port_key_content_changed.call_count == 1
 
 
 async def test_always_trigger_after_delay(
@@ -150,21 +150,21 @@ async def test_always_trigger_after_delay(
     event_filter: EventFilter,
     port_key_1: str,
     file_system_event: FileSystemEvent,
-    mocked_upload_after_port_change: AsyncMock,
+    mocked_port_key_content_changed: AsyncMock,
 ):
     # event triggers once
     event_filter.enqueue(port_key_1, file_system_event)
     await _wait_for_event_to_trigger(event_filter)
-    assert mocked_upload_after_port_change.call_count == 0
+    assert mocked_port_key_content_changed.call_count == 0
 
     # ensure event is drained
     await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mocked_upload_after_port_change.call_count == 1
+    assert mocked_port_key_content_changed.call_count == 1
 
     # trigger once more and see if it triggers after expected interval
     event_filter.enqueue(port_key_1, file_system_event)
     await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mocked_upload_after_port_change.call_count == 2
+    assert mocked_port_key_content_changed.call_count == 2
 
 
 async def test_minimum_amount_of_get_dir_size_calls(
@@ -172,19 +172,19 @@ async def test_minimum_amount_of_get_dir_size_calls(
     event_filter: EventFilter,
     port_key_1: str,
     file_system_event: FileSystemEvent,
-    mocked_upload_after_port_change: AsyncMock,
+    mocked_port_key_content_changed: AsyncMock,
 ):
     event_filter.enqueue(port_key_1, file_system_event)
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
     assert mock_get_dir_size.call_count == 1
-    assert mocked_upload_after_port_change.call_count == 0
+    assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
     await _wait_for_event_to_trigger_big_directory(event_filter)
     assert mock_get_dir_size.call_count == 2
-    assert mocked_upload_after_port_change.call_count == 1
+    assert mocked_port_key_content_changed.call_count == 1
 
 
 async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
@@ -192,14 +192,14 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
     event_filter: EventFilter,
     port_key_1: str,
     file_system_event: FileSystemEvent,
-    mocked_upload_after_port_change: AsyncMock,
+    mocked_port_key_content_changed: AsyncMock,
 ):
     event_filter.enqueue(port_key_1, file_system_event)
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
     assert mock_get_dir_size.call_count == 1
-    assert mocked_upload_after_port_change.call_count == 0
+    assert mocked_port_key_content_changed.call_count == 0
 
     # while changes keep piling up, keep extending the duration
     # no event will trigger
@@ -209,12 +209,12 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
         event_filter.enqueue(port_key_1, file_system_event)
         await _wait_for_event_to_trigger(event_filter)
         assert mock_get_dir_size.call_count == 1
-        assert mocked_upload_after_port_change.call_count == 0
+        assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
     await _wait_for_event_to_trigger_big_directory(event_filter)
     assert mock_get_dir_size.call_count == 2
-    assert mocked_upload_after_port_change.call_count == 1
+    assert mocked_port_key_content_changed.call_count == 1
 
 
 def test_default_delay_policy():

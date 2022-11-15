@@ -9,7 +9,7 @@ from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
 from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator, Optional
-from unittest.mock import AsyncMock, call
+from unittest.mock import AsyncMock
 
 import aiofiles
 import pytest
@@ -120,7 +120,7 @@ def mock_event_filter_upload_trigger(
 
     mocker.patch.object(
         outputs_watcher._event_filter.outputs_manager,
-        "upload_after_port_change",
+        "port_key_content_changed",
         mock_enqueue,
     )
 
@@ -360,25 +360,15 @@ async def test_port_key_sequential_event_generation(
             )
         )
 
-    # Depending on the size of the files inside the directory it is required to wait more or less
-    # for the events to be triggered
+    # The wait interval changes with the size of the content of the directory
     MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
     sleep_for = max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER
     print(f"Waiting {sleep_for} seconds for events to be processed")
     await asyncio.sleep(sleep_for)
 
-    # expect exactly `len(port_keys)` calls in total
-    assert mock_long_running_upload_outputs.call_count == len(
-        port_keys
-    ), "\n" + "\n".join(map(str, mock_long_running_upload_outputs.call_args_list))
-    mock_long_running_upload_outputs.assert_has_calls(
-        [
-            call(
-                outputs_path=mounted_volumes.disk_outputs_path,
-                port_keys=[port_key],
-                nodeports=nodeports,
-            )
-            for port_key in port_keys
-        ],
-        any_order=True,
-    )
+    assert mock_long_running_upload_outputs.call_count > 0
+    uploaded_port_keys: set[str] = set()
+    for call_args in mock_long_running_upload_outputs.call_args_list:
+        uploaded_port_keys.update(call_args.kwargs["port_keys"])
+
+    assert uploaded_port_keys == set(port_keys)
