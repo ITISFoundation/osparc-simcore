@@ -3,6 +3,7 @@ from typing import Callable
 
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import setup_tracing
+from simcore_postgres_database.utils_products import get_default_product_name
 
 from ..db.events import close_db_connection, connect_to_db
 from ..meta import PROJECT_NAME, __version__
@@ -22,7 +23,7 @@ WELCOME_MSG = r"""
  / /    / _` || __| / _` || | / _ \  / _` |
 / /___ | (_| || |_ | (_| || || (_) || (_| |
 \____/  \__,_| \__| \__,_||_| \___/  \__, |
-                                     |___/     {0}
+                                     |___/     {}
 """.format(
     f"v{__version__}"
 )
@@ -37,6 +38,11 @@ def on_shutdown() -> None:
     print(f"{msg:=^100}", flush=True)
 
 
+async def setup_default_product(app: FastAPI):
+    async with app.state.engine.acquire() as conn:
+        app.state.default_product_name = await get_default_product_name(conn)
+
+
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def start_app() -> None:
         logger.info("Application started")
@@ -49,6 +55,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         # setup connection to pg db
         if app.state.settings.CATALOG_POSTGRES:
             await connect_to_db(app)
+            await setup_default_product(app)
 
         if app.state.settings.CATALOG_DIRECTOR:
             # setup connection to director

@@ -5,7 +5,6 @@ from typing import Final, Optional
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ResourcesDict
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
-from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -69,7 +68,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
-    CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME: str = FRONTEND_APP_DEFAULT
 
     CATALOG_TRACING: Optional[TracingSettings] = None
 

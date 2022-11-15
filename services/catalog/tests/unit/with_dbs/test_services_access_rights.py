@@ -154,7 +154,7 @@ async def test_auto_upgrade_policy(
     app = FastAPI()
     app.state.engine = sqlalchemy_async_engine
     app.state.settings = mocker.Mock()
-    app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME = target_product
+    app.state.default_product_name = target_product
 
     services_repo = ServicesRepository(app.state.engine)
 
