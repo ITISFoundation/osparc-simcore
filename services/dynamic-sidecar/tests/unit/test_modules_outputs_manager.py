@@ -28,6 +28,14 @@ class _MockError:
     message: str
 
 
+@dataclass
+class ToggleErrorRaising:
+    _raise_errors: bool = True
+
+    def stop_raising_errors(self) -> None:
+        self._raise_errors = False
+
+
 # FIXTURES
 
 
@@ -66,15 +74,22 @@ def mock_error(request: FixtureRequest) -> _MockError:
 
 @pytest.fixture
 def mock_upload_outputs_raises_error(
-    mocker: MockerFixture, mock_error: _MockError
-) -> None:
+    mocker: MockerFixture, mock_error: _MockError, upload_duration: PositiveFloat
+) -> Iterator[ToggleErrorRaising]:
+    error_toggle = ToggleErrorRaising()
+
     async def _mock_upload_outputs(*args, **kwargs) -> None:
-        raise mock_error.error_class(mock_error.message)
+        if error_toggle._raise_errors:
+            raise mock_error.error_class(mock_error.message)
+
+        await asyncio.sleep(upload_duration)
 
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
         side_effect=_mock_upload_outputs,
     )
+
+    yield error_toggle
 
 
 @pytest.fixture(params=[1, 4, 10])
@@ -162,14 +177,16 @@ async def test_upload_port_wait_parallel_parallel(
     _assert_ports_uploaded(mock_upload_outputs, port_keys)
 
 
-async def test_re_raises_error_from_nodeports(
-    mock_upload_outputs_raises_error: None,
+async def test_recovers_after_raising_error(
+    mock_upload_outputs_raises_error: ToggleErrorRaising,
     outputs_manager: OutputsManager,
     port_keys: list[str],
     mock_error: _MockError,
 ):
+    # expect to raise error the first time uploading
     for port_key in port_keys:
         await outputs_manager.port_key_content_changed(port_key)
+        assert await outputs_manager._port_key_tracker.no_tracked_ports() is False
         await asyncio.sleep(outputs_manager.task_monitor_interval_s * 10)
 
     with pytest.raises(UploadPortsFailed) as exec_info:
@@ -188,6 +205,15 @@ async def test_re_raises_error_from_nodeports(
         exec_info.value.failures.values(),
         [mock_error.error_class(mock_error.message)] * len(exec_info.value.failures),
     )
+
+    # the second time uploading there is no error to be raised
+    mock_upload_outputs_raises_error.stop_raising_errors()
+    for port_key in port_keys:
+        await outputs_manager.port_key_content_changed(port_key)
+        assert await outputs_manager._port_key_tracker.no_tracked_ports() is False
+        await asyncio.sleep(outputs_manager.task_monitor_interval_s * 10)
+
+    await outputs_manager.wait_for_all_uploads_to_finish()
 
 
 async def test_port_key_tracker_add_pending(

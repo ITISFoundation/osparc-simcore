@@ -213,7 +213,10 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
         # NOTE: checking if there were any errors during the last port upload,
         # for each port. If such errors are present an error will be raised
-        if len(self._last_upload_error_tracker) > 0:
+        any_failed_upload = any(
+            True for v in self._last_upload_error_tracker.values() if v is not None
+        )
+        if any_failed_upload:
             raise UploadPortsFailed(failures=self._last_upload_error_tracker)
 
 
