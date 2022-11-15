@@ -103,7 +103,7 @@ def _get_reserved_resources(reservations: dict[str, Any]) -> ReservedResources:
     return {"RAM": ram, "CPU": cpu}
 
 
-async def check_current_used_resources(nodes_ids: list[str]) -> TasksResources:
+async def compute_cluster_used_resources(nodes_ids: list[str]) -> TasksResources:
     total_tasks_cpus = 0
     total_tasks_ram = 0
     tasks_resources = []

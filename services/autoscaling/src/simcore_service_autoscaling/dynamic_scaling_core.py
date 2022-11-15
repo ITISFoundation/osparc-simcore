@@ -17,7 +17,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     cluster_total_resources = await utils_docker.compute_cluster_total_resources(
         app_settings.AUTOSCALING_MONITORED_NODES_LABELS
     )
-    cluster_used_resources = await utils_docker.check_current_used_resources(
+    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
         cluster_total_resources.node_ids
     )
 

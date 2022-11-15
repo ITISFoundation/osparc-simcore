@@ -126,3 +126,7 @@ async def test_compute_cluster_total_resources_with_correct_label_return_host_re
     assert cluster_resources.total_ram == psutil.virtual_memory().total
     assert cluster_resources.node_ids
     assert len(cluster_resources.node_ids) == 1
+
+
+async def test_compute_cluster_used_resources():
+    ...
