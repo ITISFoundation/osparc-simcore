@@ -1,3 +1,4 @@
+import datetime
 from functools import cached_property
 from typing import Optional
 
@@ -65,11 +66,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
+    AUTOSCALING_AWS: Optional[AwsSettings] = Field(auto_default_from_env=True)
+
+    AUTOSCALING_POLL_INTERVAL: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=10),
+        description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
     @cached_property
     def LOG_LEVEL(self):
         return self.AUTOSCALING_LOGLEVEL
-
-    AUTOSCALING_AWS: Optional[AwsSettings] = Field(auto_default_from_env=True)
 
     @validator("AUTOSCALING_LOGLEVEL")
     @classmethod

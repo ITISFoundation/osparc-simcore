@@ -65,6 +65,12 @@ async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI
         yield app
 
 
+@pytest.fixture
+def app_settings(initialized_app: FastAPI) -> ApplicationSettings:
+    assert initialized_app.state.settings
+    return initialized_app.state.settings
+
+
 @pytest.fixture(scope="function")
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
