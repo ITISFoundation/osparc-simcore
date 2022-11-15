@@ -10,6 +10,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from pydantic import PositiveFloat
+from pydantic.errors import PydanticErrorMixin
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
@@ -36,14 +37,9 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
             logger.warning("Timed out while cancelling '%s'", task.get_name())
 
 
-class UploadPortsFailed(Exception):
-    def __init__(self, port_keys: set[str], exceptions: list[Exception]) -> None:
-        self.port_keys: set[str] = port_keys
-        self.exceptions: list[Exception] = exceptions
-        super().__init__()
-
-    def __str__(self) -> str:
-        return f"<{UploadPortsFailed.__name__}: port_keys={self.port_keys}, exceptions={self.exceptions}>"
+class UploadPortsFailed(PydanticErrorMixin, Exception):
+    code: str = "dynamic_sidecar.outputs_watcher.failed_while_uploading"
+    msg_template: str = "Failed while uploading: failures={failures}"
 
 
 class PortKeyTracker:
@@ -215,18 +211,10 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         while not await self._port_key_tracker.no_tracked_ports():
             await asyncio.sleep(self.task_monitor_interval_s)
 
-        # if any port failed to upload, raise an error,
-        # to allow for data to be manually recovered
-
-        last_port_uploads_with_errors = {
-            k for k, v in self._last_upload_error_tracker.items() if v is not None
-        }
-
-        if len(last_port_uploads_with_errors) > 0:
-            raise UploadPortsFailed(
-                last_port_uploads_with_errors,
-                list(self._last_upload_error_tracker.values()),
-            )
+        # NOTE: checking if there were any errors during the last port upload,
+        # for each port. If such errors are present an error will be raised
+        if len(self._last_upload_error_tracker) > 0:
+            raise UploadPortsFailed(failures=self._last_upload_error_tracker)
 
 
 def setup_outputs_manager(app: FastAPI) -> None:

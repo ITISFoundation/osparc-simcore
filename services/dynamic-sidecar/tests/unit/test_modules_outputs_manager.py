@@ -19,11 +19,16 @@ from simcore_service_dynamic_sidecar.modules.outputs_manager import (
     UploadPortsFailed,
 )
 
+# UTILS
+
 
 @dataclass
 class _MockError:
     error_class: type[BaseException]
     message: str
+
+
+# FIXTURES
 
 
 @pytest.fixture(params=[0.01])
@@ -94,6 +99,23 @@ def _assert_ports_uploaded(
 
 
 @pytest.fixture
+def port_key_tracker() -> PortKeyTracker:
+    return PortKeyTracker()
+
+
+@pytest.fixture
+async def port_key_tracker_with_ports(
+    port_key_tracker: PortKeyTracker, port_keys: list[str]
+) -> PortKeyTracker:
+    for port_key in port_keys:
+        await port_key_tracker.add_pending(port_key)
+    return port_key_tracker
+
+
+# TESTS
+
+
+@pytest.fixture
 async def outputs_manager(
     outputs_path: Path, port_keys: list[str]
 ) -> AsyncIterator[OutputsManager]:
@@ -153,7 +175,7 @@ async def test_re_raises_error_from_nodeports(
     with pytest.raises(UploadPortsFailed) as exec_info:
         await outputs_manager.wait_for_all_uploads_to_finish()
 
-    assert exec_info.value.port_keys == set(port_keys)
+    assert set(exec_info.value.failures.keys()) == set(port_keys)
 
     def _assert_same_exceptions(
         first: list[Exception], second: list[Exception]
@@ -163,26 +185,9 @@ async def test_re_raises_error_from_nodeports(
         }
 
     _assert_same_exceptions(
-        exec_info.value.exceptions,
-        [mock_error.error_class(mock_error.message)] * len(exec_info.value.port_keys),
+        exec_info.value.failures.values(),
+        [mock_error.error_class(mock_error.message)] * len(exec_info.value.failures),
     )
-
-
-# TESTS PortKeyTracker
-
-
-@pytest.fixture
-def port_key_tracker() -> PortKeyTracker:
-    return PortKeyTracker()
-
-
-@pytest.fixture
-async def port_key_tracker_with_ports(
-    port_key_tracker: PortKeyTracker, port_keys: list[str]
-) -> PortKeyTracker:
-    for port_key in port_keys:
-        await port_key_tracker.add_pending(port_key)
-    return port_key_tracker
 
 
 async def test_port_key_tracker_add_pending(
