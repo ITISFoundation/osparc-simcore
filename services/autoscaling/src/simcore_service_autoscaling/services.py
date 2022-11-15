@@ -6,7 +6,7 @@ from .core.settings import AwsSettings
 from .utils_aws import AWS_EC2, start_instance_aws
 from .utils_docker import (
     check_tasks_resources,
-    eval_cluster_resources,
+    get_labelized_nodes_resources,
     pending_services_with_insufficient_resources,
 )
 
@@ -30,7 +30,7 @@ async def check_dynamic(settings: AwsSettings, ami_id: str):
     # We compile RAM and CPU capabilities of each node who have the label sidecar
     # Total resources of the cluster
     if resources_are_scarce:
-        total_nodes = await eval_cluster_resources()
+        total_nodes = await get_labelized_nodes_resources()
         total_tasks = await check_tasks_resources(total_nodes.nodes_ids)
         available_cpus = total_nodes.total_cpus - total_tasks.total_cpus_running_tasks
         available_ram = total_nodes.total_ram - total_tasks.total_ram_running_tasks

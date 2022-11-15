@@ -44,7 +44,7 @@ class ClusterResources(BaseModel):
 _NANO_CPU: Final[float] = 10**9
 
 
-async def eval_cluster_resources(node_labels: list[str]) -> ClusterResources:
+async def get_labelized_nodes_resources(node_labels: list[str]) -> ClusterResources:
     """
     We compile RAM and CPU capabilities of each node who have the label sidecar
     Total resources of the cluster

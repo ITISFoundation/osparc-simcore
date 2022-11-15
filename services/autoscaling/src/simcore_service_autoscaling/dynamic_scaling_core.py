@@ -14,7 +14,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         logger.debug("the swarm has enough computing resources at the moment")
         return
 
-    current_cluster_resources = await utils_docker.eval_cluster_resources(
+    current_cluster_resources = await utils_docker.get_labelized_nodes_resources(
         app_settings.AUTOSCALING_MONITORED_NODES_LABELS
     )
 

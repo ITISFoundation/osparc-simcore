@@ -7,7 +7,7 @@ from typing import Any, Awaitable, Callable, Mapping
 import aiodocker
 import psutil
 from simcore_service_autoscaling.utils_docker import (
-    eval_cluster_resources,
+    get_labelized_nodes_resources,
     pending_services_with_insufficient_resources,
 )
 
@@ -46,7 +46,7 @@ async def test_pending_services_with_insufficient_resources_with_service_lacking
 
 
 async def test_get_swarm_resources(docker_swarm: None):
-    cluster_resources = await eval_cluster_resources(node_labels=[])
+    cluster_resources = await get_labelized_nodes_resources(node_labels=[])
     assert cluster_resources.total_cpus == psutil.cpu_count()
     assert cluster_resources.total_ram == psutil.virtual_memory().total
     assert cluster_resources.node_ids
