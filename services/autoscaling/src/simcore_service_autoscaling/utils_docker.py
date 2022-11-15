@@ -116,7 +116,9 @@ async def compute_cluster_used_resources(nodes_ids: list[str]) -> TasksResources
 
         services = await docker.services.list()
         for service in services:
-            tasks = service.tasks()
+            tasks = await docker.tasks.list(
+                filters={"service": service["Spec"]["Name"]}
+            )
             for task in tasks:
                 if (
                     task["Status"]["State"] == "running"
