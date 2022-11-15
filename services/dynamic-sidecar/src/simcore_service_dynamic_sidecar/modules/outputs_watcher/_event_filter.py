@@ -100,7 +100,7 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
             else:
                 self._port_key_tracked_event[port_key].last_detection = time.time()
 
-    def _blocking_worker_check_events(self) -> None:
+    def _blocking_worker_check_events(self) -> None:  # NOSONAR
         repeat_interval = self.delay_policy.get_min_interval() * 0.49
         while self._keep_running:
 

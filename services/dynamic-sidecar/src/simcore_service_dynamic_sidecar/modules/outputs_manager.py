@@ -40,7 +40,7 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
             logger.warning("Timed out while cancelling '%s'", task.get_name())
 
 
-class UploadPortsFailed(BaseException):
+class UploadPortsFailed(Exception):
     def __init__(self, port_keys: set[str], exceptions: list[Exception]) -> None:
         self.port_keys: set[str] = port_keys
         self.exceptions: list[Exception] = exceptions
