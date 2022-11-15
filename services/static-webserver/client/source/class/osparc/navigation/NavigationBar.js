@@ -278,7 +278,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         toolTipText: this.tr("Manuals")
       });
 
-      osparc.store.VendorInfo.getInstance().getManuals()
+      osparc.navigation.Manuals.getManuals()
         .then(manuals => {
           manuals.forEach(manual => {
             const manualBtn = new qx.ui.menu.Button(manual.label);

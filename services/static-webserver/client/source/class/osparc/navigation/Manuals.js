@@ -19,6 +19,13 @@ qx.Class.define("osparc.navigation.Manuals", {
       return licenseLink;
     },
 
+    getManuals: function() {
+      return new Promise(resolve => {
+        osparc.store.VendorInfo.getInstance().getManuals()
+          .then(manuals => resolve(manuals));
+      });
+    },
+
     __openGithubIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")

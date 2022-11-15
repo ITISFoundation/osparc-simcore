@@ -156,7 +156,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     __addManualsToMenu: function() {
       const menu = this.getMenu();
-      osparc.store.VendorInfo.getInstance().getManuals()
+      osparc.navigation.Manuals.getManuals()
         .then(manuals => {
           manuals.forEach(manual => {
             const manualBtn = new qx.ui.menu.Button(manual.label);
