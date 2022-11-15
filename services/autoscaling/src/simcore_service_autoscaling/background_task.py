@@ -1,12 +1,14 @@
 import asyncio
 import contextlib
+import datetime
 import logging
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Optional
 
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 
 from .core.settings import ApplicationSettings
+from .dynamic_scaling import check_dynamic_resources
 
 logger = logging.getLogger(__name__)
 
@@ -14,26 +16,38 @@ logger = logging.getLogger(__name__)
 _TASK_NAME = "Autoscaler background task"
 
 
-async def auto_scaler_task(app: FastAPI):
-    app_settings: ApplicationSettings = app.state.settings
-    while await asyncio.sleep(
-        app_settings.AUTOSCALING_POLL_INTERVAL.total_seconds(), result=True
-    ):
+async def _repeated_scheduled_task(
+    task: Callable[..., Awaitable[None]],
+    *,
+    interval: datetime.timedelta,
+    task_name: Optional[str] = None,
+    **kwargs,
+):
+    if not task_name:
+        task_name = task.__name__
+    while await asyncio.sleep(interval.total_seconds(), result=True):
         try:
-            with log_context(logger, logging.DEBUG, msg=f"Run {_TASK_NAME}"):
-                ...
+            with log_context(logger, logging.DEBUG, msg=f"Run {task_name}"):
+                await task(**kwargs)
         except asyncio.CancelledError:
-            logger.info("%s cancelled", _TASK_NAME)
+            logger.info("%s cancelled", task_name)
             raise
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error in %s, restarting...", _TASK_NAME)
+            logger.exception("Unexpected error in %s, restarting...", task_name)
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def start_auto_scaler_task() -> None:
+        app_settings: ApplicationSettings = app.state.settings
         with log_context(logger, logging.INFO, msg=f"create {_TASK_NAME}"):
-            app.state.auto_scaler_task = asyncio.create_task(
-                auto_scaler_task(app), name=f"{_TASK_NAME}"
+            app.state.autoscaler_task = asyncio.create_task(
+                _repeated_scheduled_task(
+                    check_dynamic_resources,
+                    interval=app_settings.AUTOSCALING_POLL_INTERVAL,
+                    task_name=_TASK_NAME,
+                    app=app,
+                ),
+                name=f"{_TASK_NAME}",
             )
 
     return start_auto_scaler_task
@@ -42,7 +56,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def stop_auto_scaler_task() -> None:
         with log_context(logger, logging.INFO, msg=f"remove {_TASK_NAME}"):
-            task: asyncio.Task = app.state.auto_scaler_task
+            task: asyncio.Task = app.state.autoscaler_task
             with contextlib.suppress(asyncio.CancelledError):
                 task.cancel()
                 await task

@@ -7,4 +7,4 @@ async def test_background_task_created(
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_POLL_INTERVAL
-    assert hasattr(initialized_app.state, "auto_scaler_task")
+    assert hasattr(initialized_app.state, "autoscaler_task")
