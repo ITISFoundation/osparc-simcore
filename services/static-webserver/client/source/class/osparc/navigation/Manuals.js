@@ -19,40 +19,6 @@ qx.Class.define("osparc.navigation.Manuals", {
       return licenseLink;
     },
 
-    getManuals: function(statics) {
-      const productName = osparc.utils.Utils.getProductName();
-      const manualUrlKey = productName + "ManualUrl";
-      const manualExtraUrlKey = productName + "ManualExtraUrl";
-      const manuals = [];
-      switch (productName) {
-        case "osparc":
-        case "s4l":
-        case "s4llite":
-          manuals.push({
-            label: qx.locale.Manager.tr("User Manual"),
-            icon: "@FontAwesome5Solid/book/22",
-            url: statics[manualUrlKey]
-          });
-          if (osparc.utils.Utils.isInZ43() && statics && manualExtraUrlKey in statics) {
-            manuals.push({
-              label: qx.locale.Manager.tr("Z43 Manual"),
-              icon: "@FontAwesome5Solid/book-medical/22",
-              url: statics[manualExtraUrlKey]
-            });
-          }
-          break;
-        case "tis":
-          manuals.push({
-            label: qx.locale.Manager.tr("TI Planning Tool Manual"),
-            icon: "@FontAwesome5Solid/book/22",
-            url: statics[manualUrlKey]
-          });
-          break;
-      }
-
-      return manuals;
-    },
-
     __openGithubIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
