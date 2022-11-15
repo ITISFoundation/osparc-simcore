@@ -43,7 +43,8 @@ qx.Class.define("osparc.store.VendorInfo", {
       {
         "name": "ACME",
         "copyright": "\u00a9 ACME correcaminos",
-        "url": "https://acme.com"
+        "url": "https://acme.com",
+        "license_url": "http://docs.osparc.io/#/docs/support/license"
       }
       */
       return this.__getFromStaticInfo("vendor", null);

@@ -82,7 +82,7 @@ qx.Class.define("osparc.CookiePolicy", {
           });
           break;
         case "license-text": {
-          const licenseLink = osparc.navigation.Manuals.getLicenseLink();
+          const licenseLink = osparc.navigation.Manuals.getLicenseURL();
           const color = qx.theme.manager.Color.getInstance().resolve("text");
           const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
           const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ") + textLink;
