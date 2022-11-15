@@ -47,6 +47,7 @@ def test_product_to_static():
             "copyright": "© ACME correcaminos",
             "name": "ACME",
             "url": "https://acme.com",
+            "license_url": "https://acme.com/license",
         },
         "issues": [
             {
