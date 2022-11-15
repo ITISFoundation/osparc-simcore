@@ -215,22 +215,45 @@ SWARM_HOSTS            = $(shell docker node ls --format="{{.Hostname}}" 2>$(if 
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
 CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
+# NOTE: fore details on below SEE
+# https://github.com/docker/compose/issues/7771#issuecomment-765243575
+# below sed operation fixes above issue
+# `sed -E "s/cpus: ([0-9\\.]+)/cpus: '\\1'/"`
+# remove when this issues is fixed, this will most likely occur
+# when upgrading the version of docker-compose
+
 .stack-simcore-development.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:development' to $@
 	@export DOCKER_REGISTRY=local \
 	export DOCKER_IMAGE_TAG=development; \
 	export DEV_PC_CPU_COUNT=${CPU_COUNT}; \
-	docker-compose --env-file .env --file services/docker-compose.yml --file services/docker-compose.local.yml --file services/docker-compose.devel.yml --log-level=ERROR config > $@
+	docker-compose \
+		--env-file .env \
+		--file services/docker-compose.yml \
+		--file services/docker-compose.local.yml \
+		--file services/docker-compose.devel.yml \
+		--log-level=ERROR \
+		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:production' to $@
 	@export DOCKER_REGISTRY=local;       \
 	export DOCKER_IMAGE_TAG=production; \
-	docker-compose --env-file .env --file services/docker-compose.yml --file services/docker-compose.local.yml --log-level=ERROR config > $@
+	docker-compose \
+		--env-file .env \
+		--file services/docker-compose.yml \
+		--file services/docker-compose.local.yml \
+		--log-level=ERROR \
+		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
 
 .stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
-	@docker-compose --env-file .env --file services/docker-compose.yml --file services/docker-compose.local.yml --log-level=ERROR config > $@
+	@docker-compose \
+		--env-file .env \
+		--file services/docker-compose.yml \
+		--file services/docker-compose.local.yml \
+		--log-level=ERROR \
+		config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Compiling config file for filestash
@@ -242,7 +265,11 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 	@$(shell \
 		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
-		docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=DEBUG config > $@ \
+		docker-compose \
+			--env-file .env \
+			--file services/docker-compose-ops.yml \
+			--log-level=DEBUG \
+			config | sed --regexp-extended "s/cpus: ([0-9\\.]+)/cpus: '\\1'/" > $@ \
 	)
 
 

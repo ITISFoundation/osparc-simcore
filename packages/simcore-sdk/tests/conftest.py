@@ -17,6 +17,7 @@ sys.path.append(str(current_dir / "helpers"))
 
 
 pytest_plugins = [
+    "pytest_simcore.aws_services",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.file_extra",

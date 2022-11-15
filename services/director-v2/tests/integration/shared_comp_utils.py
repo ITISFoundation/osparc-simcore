@@ -19,34 +19,6 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-COMPUTATION_URL: str = "v2/computations"
-
-
-async def create_pipeline(
-    client: httpx.AsyncClient,
-    *,
-    project: ProjectAtDB,
-    user_id: UserID,
-    product_name: str,
-    start_pipeline: bool,
-    expected_response_status_code: int,
-    **kwargs,
-) -> httpx.Response:
-    response = await client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(project.uuid),
-            "start_pipeline": start_pipeline,
-            "product_name": product_name,
-            **kwargs,
-        },
-    )
-    assert (
-        response.status_code == expected_response_status_code
-    ), f"response code is {response.status_code}, error: {response.text}"
-    return response
-
 
 async def assert_computation_task_out_obj(
     task_out: ComputationGet,

@@ -7,7 +7,7 @@
 import asyncio
 import logging
 import time
-from typing import Coroutine, Dict
+from typing import Coroutine
 
 import pytest
 import simcore_service_webserver
@@ -73,7 +73,7 @@ SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 
 
 @pytest.fixture
-def mock_environment(mock_env_devel_environment: Dict[str, str], monkeypatch):
+def mock_environment(mock_env_devel_environment: dict[str, str], monkeypatch):
     monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
     monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
     monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
@@ -202,11 +202,7 @@ async def test_diagnose_on_response_delays(client):
 
     tmax = settings.DIAGNOSTICS_MAX_AVG_LATENCY
     coros = [client.get(f"/delay/{1.1*tmax}") for _ in range(10)]
-
-    tic = time.time()
     resps = await asyncio.gather(*coros)
-    toc = time.time() - tic  # should take approx 1.1*tmax
-    assert toc < 1.2 * tmax
 
     for resp in resps:
         await assert_status(resp, web.HTTPOk)
