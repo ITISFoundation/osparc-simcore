@@ -6,11 +6,6 @@ from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.json_serialization import json_dumps
-from servicelib.statics_constants import (
-    APP_FRONTEND_CACHED_INDEXES_KEY,
-    APP_FRONTEND_CACHED_STATICS_JSON_KEY,
-    FRONTEND_APPS_AVAILABLE,
-)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.retry import retry_if_exception_type
@@ -20,6 +15,11 @@ from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
 from .products import APP_PRODUCTS_KEY, Product
+from .statics_constants import (
+    APP_FRONTEND_CACHED_INDEXES_KEY,
+    APP_FRONTEND_CACHED_STATICS_JSON_KEY,
+    FRONTEND_APPS_AVAILABLE,
+)
 from .statics_settings import (
     FrontEndAppSettings,
     StaticWebserverModuleSettings,
