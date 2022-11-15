@@ -214,7 +214,7 @@ async def test_service_disable_outputs_watcher(
     ) as client:
         assert (
             await client.service_disable_outputs_watcher(dynamic_sidecar_endpoint)
-            == None
+            is None
         )
 
 
@@ -228,7 +228,7 @@ async def test_service_enable_outputs_watcher(
     ) as client:
         assert (
             await client.service_enable_outputs_watcher(dynamic_sidecar_endpoint)
-            == None
+            is None
         )
 
 
@@ -246,7 +246,7 @@ async def test_service_outputs_create_dirs(
             await client.service_outputs_create_dirs(
                 dynamic_sidecar_endpoint, outputs_labels
             )
-            == None
+            is None
         )
 
 
@@ -305,7 +305,7 @@ async def test_attach_container_to_network(
                 network_id="network_id",
                 network_aliases=network_aliases,
             )
-            == None
+            is None
         )
 
 
@@ -324,5 +324,5 @@ async def test_detach_container_from_network(
                 container_id="container_id",
                 network_id="network_id",
             )
-            == None
+            is None
         )
