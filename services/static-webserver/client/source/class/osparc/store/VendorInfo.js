@@ -50,6 +50,16 @@ qx.Class.define("osparc.store.VendorInfo", {
       return this.__getFromStaticInfo("vendor", null);
     },
 
+    getManuals: function() {
+      /*
+      [{
+        "label": "main",
+        "url": "doc.acme.com"
+      }]
+      */
+      return this.__getFromStaticInfo("manuals", []);
+    },
+
     getIssues: function() {
       /*
       [{
@@ -61,20 +71,10 @@ qx.Class.define("osparc.store.VendorInfo", {
       return this.__getFromStaticInfo("issues", []);
     },
 
-    getManuals: function() {
-      /*
-      [{
-        "label": "main",
-        "url": "doc.acme.com"
-      }]
-      */
-      return this.__getFromStaticInfo("manuals", []);
-    },
-
     getSupports: function() {
       /*
       [{
-        "kind": "forum",
+        "kind": "forum", // "web", "email", "forum"
         "label": "forum",
         "url": "forum.acme.com"
       }]
