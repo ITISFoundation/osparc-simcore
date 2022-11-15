@@ -28,6 +28,7 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[N
 
 
 async def test_check_dynamic_resources(
+    docker_swarm: None,
     disable_dynamic_service_background_task: None,
     initialized_app: FastAPI,
 ):

@@ -17,6 +17,7 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 
 pytest_plugins = [
+    "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
 ]
