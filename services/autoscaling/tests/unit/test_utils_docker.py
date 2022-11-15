@@ -2,10 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, Awaitable, Callable, Mapping
+from copy import deepcopy
+from typing import Any, AsyncIterator, Awaitable, Callable, Mapping
 
 import aiodocker
 import psutil
+import pytest
+from faker import Faker
 from simcore_service_autoscaling.utils_docker import (
     get_labelized_nodes_resources,
     pending_services_with_insufficient_resources,
@@ -45,8 +48,80 @@ async def test_pending_services_with_insufficient_resources_with_service_lacking
     assert await pending_services_with_insufficient_resources() == True
 
 
-async def test_get_swarm_resources(docker_swarm: None):
+async def test_get_labelized_nodes_resources_with_no_label_return_host_resources(
+    docker_swarm: None,
+):
     cluster_resources = await get_labelized_nodes_resources(node_labels=[])
+    assert cluster_resources.total_cpus == psutil.cpu_count()
+    assert cluster_resources.total_ram == psutil.virtual_memory().total
+    assert cluster_resources.node_ids
+    assert len(cluster_resources.node_ids) == 1
+
+
+async def test_get_labelized_nodes_resources_with_label_returns_no_resources(
+    docker_swarm: None, faker: Faker
+):
+    cluster_resources = await get_labelized_nodes_resources(
+        node_labels=faker.pylist(allowed_types=(str,))
+    )
+    assert cluster_resources.total_cpus == 0
+    assert cluster_resources.total_ram == 0
+    assert not cluster_resources.node_ids
+
+
+@pytest.fixture
+async def host_node(
+    docker_swarm: None, async_docker_client: aiodocker.Docker
+) -> Mapping[str, Any]:
+    nodes = await async_docker_client.nodes.list()
+    assert len(nodes) == 1
+    return nodes[0]
+
+
+@pytest.fixture
+async def create_node_labels(
+    host_node: Mapping[str, Any], async_docker_client: aiodocker.Docker
+) -> AsyncIterator[Callable[[list[str]], Awaitable[None]]]:
+    old_labels = deepcopy(host_node["Spec"]["Labels"])
+
+    async def _creator(labels: list[str]) -> None:
+        await async_docker_client.nodes.update(
+            node_id=host_node["ID"],
+            version=host_node["Version"]["Index"],
+            spec={
+                "Name": "foo",
+                "Availability": host_node["Spec"]["Availability"],
+                "Role": host_node["Spec"]["Role"],
+                "Labels": {f"{label}": "true" for label in labels},
+            },
+        )
+        return
+
+    yield _creator
+    # revert labels
+    nodes = await async_docker_client.nodes.list()
+    assert nodes
+    assert len(nodes) == 1
+    current_node = nodes[0]
+    await async_docker_client.nodes.update(
+        node_id=current_node["ID"],
+        version=current_node["Version"]["Index"],
+        spec={
+            "Availability": current_node["Spec"]["Availability"],
+            "Role": current_node["Spec"]["Role"],
+            "Labels": old_labels,
+        },
+    )
+
+
+async def test_get_labelized_nodes_resources_with_correct_label_return_host_resources(
+    docker_swarm: None,
+    faker: Faker,
+    create_node_labels: Callable[[list[str]], Awaitable[None]],
+):
+    labels = faker.pylist(allowed_types=(str,))
+    await create_node_labels(labels)
+    cluster_resources = await get_labelized_nodes_resources(node_labels=labels)
     assert cluster_resources.total_cpus == psutil.cpu_count()
     assert cluster_resources.total_ram == psutil.virtual_memory().total
     assert cluster_resources.node_ids

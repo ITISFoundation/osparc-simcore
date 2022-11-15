@@ -52,9 +52,12 @@ async def get_labelized_nodes_resources(node_labels: list[str]) -> ClusterResour
 
     async with aiodocker.Docker() as docker:
         nodes = await docker.nodes.list(
-            filters={"label": label for label in node_labels}
+            filters={"node.label": [f"{label}=true" for label in node_labels]}
         )
-        cluster_resources_counter = collections.Counter()
+
+        cluster_resources_counter = collections.Counter(
+            {"total_ram": 0, "total_cpus": 0}
+        )
         node_ids = []
         for node in nodes:
             cluster_resources_counter.update(
