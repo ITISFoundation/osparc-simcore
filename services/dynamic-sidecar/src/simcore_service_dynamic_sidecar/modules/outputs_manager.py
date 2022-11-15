@@ -227,8 +227,6 @@ class OutputsManager:
         }
 
         if len(last_port_uploads_with_errors) > 0:
-            # raise list(self._last_upload_error_tracker.values())[0]
-            # import pdb; pdb.set_trace()
             raise UploadPortsFailed(
                 last_port_uploads_with_errors,
                 list(self._last_upload_error_tracker.values()),
