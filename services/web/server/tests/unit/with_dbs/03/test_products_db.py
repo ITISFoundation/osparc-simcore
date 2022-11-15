@@ -11,6 +11,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.result import RowProxy
 from pytest_mock import MockerFixture
+from simcore_postgres_database import utils_products
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -22,6 +23,7 @@ from simcore_postgres_database.models.products import (
 )
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.products_db import ProductRepository
+from simcore_service_webserver.products_events import _get_app_default_product_name
 from simcore_service_webserver.products_model import Product
 
 
@@ -140,3 +142,8 @@ async def test_product_repository_get_product(
     assert product_repository.engine
 
     assert await product_repository.get_product(product.name) == product
+
+    # tests definitions of default from utle_products and web-server.products are in sync
+    async with product_repository.engine.acquire() as conn:
+        default_product = await utils_products.get_default_product_name(conn)
+        assert default_product == _get_app_default_product_name(product_repository.app)

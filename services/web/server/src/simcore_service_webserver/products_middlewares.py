@@ -26,8 +26,7 @@ def discover_product_by_request_header(request: web.Request) -> Optional[str]:
     return None
 
 
-def get_default_product_name(request: web.Request) -> str:
-    # default is the first product
+def _get_app_default_product_name(request: web.Request) -> str:
     return request.app[f"{APP_PRODUCTS_KEY}_default"]
 
 
@@ -48,7 +47,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         product_name = (
             discover_product_by_request_header(request)
             or discover_product_by_hostname(request)
-            or get_default_product_name(request)
+            or _get_app_default_product_name(request)
         )
         request[RQ_PRODUCT_KEY] = product_name
 
@@ -61,7 +60,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
     ):
         product_name = discover_product_by_hostname(
             request
-        ) or get_default_product_name(request)
+        ) or _get_app_default_product_name(request)
 
         request[RQ_PRODUCT_KEY] = product_name
 

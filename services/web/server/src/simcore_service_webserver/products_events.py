@@ -34,6 +34,7 @@ async def setup_product_templates(app: web.Application):
 
 def _set_app_state(app: web.Application, app_products: dict[str, Product]):
     app[APP_PRODUCTS_KEY] = app_products
+    # default is the first of a sorted priority-based list
     app[f"{APP_PRODUCTS_KEY}_default"] = next(iter(app_products.values())).name
 
 
@@ -49,16 +50,14 @@ async def load_products_on_startup(app: web.Application):
             name = row.name  # type:ignore
             app_products[name] = Product.from_orm(row)
 
-            if name not in FRONTEND_APPS_AVAILABLE:
-                log.warning("There is not front-end registered for this product")
+            assert name in FRONTEND_APPS_AVAILABLE  # nosec
 
         except ValidationError as err:
             raise InvalidConfig(
                 f"Invalid product configuration in db '{row}':\n {err}"
             ) from err
 
-    if FRONTEND_APP_DEFAULT not in app_products.keys():
-        log.warning("Default front-end app is not in the products table")
+    assert FRONTEND_APP_DEFAULT in app_products.keys()  # nosec
 
     _set_app_state(app, app_products)
 
