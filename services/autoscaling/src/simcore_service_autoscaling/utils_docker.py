@@ -3,12 +3,26 @@
 """
 
 import collections
-from typing import Any, Final, TypedDict
+from typing import Final
 
 import aiodocker
-from pydantic import BaseModel, ByteSize, NonNegativeInt
+from pydantic import BaseModel, ByteSize
 
-from .utils import bytesto
+_NANO_CPU: Final[float] = 10**9
+
+_TASK_STATUS_WITH_ASSIGNED_RESOURCES = [
+    "assigned",
+    "accepted",
+    "preparing",
+    "starting",
+    "running",
+]
+
+
+class ClusterResources(BaseModel):
+    total_cpus: int
+    total_ram: ByteSize
+    node_ids: list[str]
 
 
 # TODO: we need to check only services on the monitored nodes, maybe with some specific labels/names
@@ -34,15 +48,6 @@ async def pending_services_with_insufficient_resources() -> bool:
                 ):
                     return True
         return False
-
-
-class ClusterResources(BaseModel):
-    total_cpus: int
-    total_ram: ByteSize
-    node_ids: list[str]
-
-
-_NANO_CPU: Final[float] = 10**9
 
 
 async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterResources:
@@ -75,92 +80,23 @@ async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterReso
         )
 
 
-class TasksResources(BaseModel):
-    total_cpus_running_tasks: NonNegativeInt
-    total_ram_running_tasks: NonNegativeInt
-    total_cpus_pending_tasks: NonNegativeInt
-    total_ram_pending_tasks: NonNegativeInt
-    count_tasks_pending: NonNegativeInt
-
-
-class ReservedResources(TypedDict):
-    RAM: float
-    CPU: int
-    # NOTE: future add VRAM, AIRAM
-    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987821694
-
-
-def _get_reserved_resources(reservations: dict[str, Any]) -> ReservedResources:
-    ram: float = 0.0
-    cpu: int = 0
-    if "MemoryBytes" in reservations:
-        ram = bytesto(
-            reservations["MemoryBytes"],
-            "g",
-            bsize=1024,
-        )
-    if "NanoCPUs" in reservations:
-        cpu = int(reservations["NanoCPUs"]) / 1_000_000_000
-    return {"RAM": ram, "CPU": cpu}
-
-
-async def compute_cluster_used_resources(nodes_ids: list[str]) -> TasksResources:
-    total_tasks_cpus = 0
-    total_tasks_ram = 0
-    tasks_resources = []
-    total_pending_tasks_cpus = 0
-    total_pending_tasks_ram = 0
-    tasks_pending_resources = []
-
+async def compute_cluster_used_resources(node_ids: list[str]) -> ClusterResources:
+    cluster_resources_counter = collections.Counter({"total_ram": 0, "total_cpus": 0})
     async with aiodocker.Docker() as docker:
-
-        services = await docker.services.list()
-        for service in services:
-            tasks = await docker.tasks.list(
-                filters={"service": service["Spec"]["Name"]}
-            )
-            for task in tasks:
-                if (
-                    task["Status"]["State"] == "running"
-                    and task["NodeID"] in nodes_ids
-                    and (
-                        reservations := task["Spec"]
-                        .get("Resources", {})
-                        .get("Reservations")
+        for node_id in node_ids:
+            all_tasks_on_node = await docker.tasks.list(filters={"node": node_id})
+            for task in all_tasks_on_node:
+                if task["Status"]["State"] in _TASK_STATUS_WITH_ASSIGNED_RESOURCES:
+                    task_reservations = (
+                        task["Spec"].get("Resources", {}).get("Reservations", {})
                     )
-                ):
-                    tasks_resources.append(
-                        {"ID": task["ID"], **_get_reserved_resources(reservations)}
+                    cluster_resources_counter.update(
+                        {
+                            "total_ram": task_reservations.get("MemoryBytes", 0),
+                            "total_cpus": task_reservations.get("NanoCPUs", 0)
+                            / _NANO_CPU,
+                        }
                     )
-
-                elif (
-                    task["Status"]["State"] == "pending"
-                    and task["Status"]["Message"] == "pending task scheduling"
-                    and "insufficient resources on" in task["Status"]["Err"]
-                    and (
-                        reservations := task["Spec"]
-                        .get("Resources", {})
-                        .get("Reservations")
-                    )
-                ):
-                    tasks_pending_resources.append(
-                        {"ID": task["ID"], **_get_reserved_resources(reservations)}
-                    )
-
-        total_tasks_cpus = 0
-        total_tasks_ram = 0
-        for task in tasks_resources:
-            total_tasks_cpus += task["CPU"]
-            total_tasks_ram += task["RAM"]
-
-        for task in tasks_pending_resources:
-            total_pending_tasks_cpus += task["CPU"]
-            total_pending_tasks_ram += task["RAM"]
-
-        return TasksResources(
-            total_cpus_running_tasks=total_tasks_cpus,
-            total_ram_running_tasks=total_tasks_ram,
-            total_cpus_pending_tasks=total_pending_tasks_cpus,
-            total_ram_pending_tasks=total_pending_tasks_ram,
-            count_tasks_pending=len(tasks_pending_resources),
-        )
+    return ClusterResources.parse_obj(
+        dict(cluster_resources_counter) | {"node_ids": node_ids}
+    )

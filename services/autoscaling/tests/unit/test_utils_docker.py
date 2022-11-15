@@ -9,8 +9,9 @@ import aiodocker
 import psutil
 import pytest
 from faker import Faker
+from pydantic import ByteSize
 from simcore_service_autoscaling.utils_docker import (
-    TasksResources,
+    ClusterResources,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     pending_services_with_insufficient_resources,
@@ -133,11 +134,55 @@ async def test_compute_cluster_total_resources_with_correct_label_return_host_re
 async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
     host_node: Mapping[str, Any]
 ):
-    used_resources = await compute_cluster_used_resources([host_node["ID"]])
-    assert used_resources == TasksResources(
-        total_cpus_running_tasks=0,
-        total_ram_running_tasks=0,
-        total_cpus_pending_tasks=0,
-        total_ram_pending_tasks=0,
-        count_tasks_pending=0,
+    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    assert cluster_used_resources == ClusterResources(
+        total_cpus=0, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
+    )
+
+
+async def test_compute_cluster_used_resources_with_services_running(
+    async_docker_client: aiodocker.Docker,
+    host_node: Mapping[str, Any],
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+):
+    # 1. if we have services with no defined reservations, then we cannot know what they use...
+    service_with_no_resources = await create_service(task_template)
+    await assert_for_service_state(
+        async_docker_client, service_with_no_resources, ["running"]
+    )
+    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    assert cluster_used_resources == ClusterResources(
+        total_cpus=0, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
+    )
+
+    # 2. if we have some services with defined resources, they should be visible
+    task_template_with_manageable_resources = task_template | create_task_resources(1)
+    service_with_mangeable_resources = await create_service(
+        task_template_with_manageable_resources
+    )
+    await assert_for_service_state(
+        async_docker_client, service_with_mangeable_resources, ["pending", "running"]
+    )
+    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    assert cluster_used_resources == ClusterResources(
+        total_cpus=1, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
+    )
+
+    # 3. if we have services that need more resources than available,
+    # they should not change what is currently used
+    task_template_with_too_many_resource = task_template | create_task_resources(1000)
+    service_with_too_many_resources = await create_service(
+        task_template_with_too_many_resource
+    )
+    await assert_for_service_state(
+        async_docker_client, service_with_too_many_resources, ["pending"]
+    )
+    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    assert cluster_used_resources == ClusterResources(
+        total_cpus=1, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
     )
