@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
 from typing import Any
@@ -23,7 +24,7 @@ from simcore_postgres_database.models.products import (
 )
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY
 from simcore_service_webserver.products_db import ProductRepository
-from simcore_service_webserver.products_events import _get_app_default_product_name
+from simcore_service_webserver.products_middlewares import _get_app_default_product_name
 from simcore_service_webserver.products_model import Product
 
 
