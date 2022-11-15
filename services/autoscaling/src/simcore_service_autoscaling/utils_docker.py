@@ -55,15 +55,12 @@ async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterReso
     We compile RAM and CPU capabilities of each node who have the label sidecar
     Total resources of the cluster
     """
-
+    cluster_resources_counter = collections.Counter({"total_ram": 0, "total_cpus": 0})
     async with aiodocker.Docker() as docker:
         nodes = await docker.nodes.list(
             filters={"node.label": [f"{label}=true" for label in node_labels]}
         )
 
-        cluster_resources_counter = collections.Counter(
-            {"total_ram": 0, "total_cpus": 0}
-        )
         node_ids = []
         for node in nodes:
             cluster_resources_counter.update(
@@ -75,9 +72,9 @@ async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterReso
             )
             node_ids.append(node["ID"])
 
-        return ClusterResources.parse_obj(
-            dict(cluster_resources_counter) | {"node_ids": node_ids}
-        )
+    return ClusterResources.parse_obj(
+        dict(cluster_resources_counter) | {"node_ids": node_ids}
+    )
 
 
 async def compute_cluster_used_resources(node_ids: list[str]) -> ClusterResources:
@@ -100,3 +97,32 @@ async def compute_cluster_used_resources(node_ids: list[str]) -> ClusterResource
     return ClusterResources.parse_obj(
         dict(cluster_resources_counter) | {"node_ids": node_ids}
     )
+
+
+# async def compute_cluster_pending_resources(node_ids: list[str]) -> ClusterResources:
+#     cluster_resources_counter = collections.Counter({"total_ram": 0, "total_cpus": 0})
+#     async with aiodocker.Docker() as docker:
+#         for node_id in node_ids:
+#             all_tasks_on_node = await docker.tasks.list(filters={"node": node_id})
+#             for task in all_tasks_on_node:
+#                 if task["Status"]["State"] in ["pending"]:
+#                     task_reservations = (
+#                         task["Spec"].get("Resources", {}).get("Reservations", {})
+#                     )
+#                     cluster_resources_counter.update(
+#                         {
+#                             "total_ram": task_reservations.get("MemoryBytes", 0),
+#                             "total_cpus": task_reservations.get("NanoCPUs", 0)
+#                             / _NANO_CPU,
+#                         }
+#                     )
+#             for task in tasks:
+#                 if (
+#                     task["Status"]["State"] == "pending"
+#                     and task["Status"]["Message"] == "pending task scheduling"
+#                     and "insufficient resources on"
+#                     in task["Status"].get("Err", "no error")
+#                 ):
+#     return ClusterResources.parse_obj(
+#         dict(cluster_resources_counter) | {"node_ids": node_ids}
+#     )
