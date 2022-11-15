@@ -1,15 +1,15 @@
 import logging
-from typing import Dict
 
 from aiohttp import web
-
-from ._constants import RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
-from .statics_constants import (
+from servicelib.statics_constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
+
+from ._constants import RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
+from .products import get_product_name
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ async def get_cached_frontend_index(request: web.Request):
     # SEE services/web/server/tests/unit/isolated/test_redirections.py
     #
 
-    cached_indexes: Dict[str, str] = request.app[APP_FRONTEND_CACHED_INDEXES_KEY]
+    cached_indexes: dict[str, str] = request.app[APP_FRONTEND_CACHED_INDEXES_KEY]
     if target_frontend not in cached_indexes:
         raise web.HTTPNotFound()
 
@@ -48,6 +48,10 @@ async def get_cached_frontend_index(request: web.Request):
     return web.Response(body=body, content_type="text/html")
 
 
-async def get_statics_json(request: web.Request):  # pylint: disable=unused-argument
-    statics_json = request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY]
+async def get_statics_json(request: web.Request):
+    product_name = get_product_name(request)
+
+    statics_json = request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].get(
+        product_name, {}
+    )
     return web.Response(body=statics_json, content_type="application/json")

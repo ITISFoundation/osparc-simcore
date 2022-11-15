@@ -19,13 +19,14 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
 from ._resources import resources
-from .products_db import Product, ProductRepository
+from .products_db import ProductRepository
 from .products_events import (
     APP_PRODUCTS_TEMPLATES_DIR_KEY,
     load_products_on_startup,
     setup_product_templates,
 )
 from .products_middlewares import discover_product_middleware
+from .products_model import Product
 
 log = logging.getLogger(__name__)
 

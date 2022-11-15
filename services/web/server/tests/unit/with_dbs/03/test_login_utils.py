@@ -14,6 +14,7 @@ from aiohttp_jinja2 import render_string
 from faker import Faker
 from json2html import json2html
 from pytest_mock import MockerFixture
+from servicelib.statics_constants import FRONTEND_APPS_AVAILABLE
 from simcore_service_webserver._constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email import setup_email
 from simcore_service_webserver.login.utils import (
@@ -21,7 +22,6 @@ from simcore_service_webserver.login.utils import (
     render_and_send_mail,
     themed,
 )
-from simcore_service_webserver.statics_constants import FRONTEND_APPS_AVAILABLE
 
 
 @pytest.fixture
