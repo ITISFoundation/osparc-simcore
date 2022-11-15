@@ -19,64 +19,18 @@ qx.Class.define("osparc.navigation.Manuals", {
       });
     },
 
-    __openGithubIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
-      );
-      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        window.open(osparc.utils.issue.Github.getNewIssueUrl());
-        issueConfirmationWindow.close();
-      }, this);
-      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
+    addManualButtonsToMenu: function(menu) {
+      osparc.navigation.Manuals.getManuals()
+        .then(manuals => {
+          manuals.forEach(manual => {
+            const manualBtn = new qx.ui.menu.Button(manual.label);
+            manualBtn.addListener("execute", () => window.open(manual.url), this);
+            menu.add(manualBtn);
+          });
+        });
     },
 
-    __openFogbugzIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        qx.locale.Manager.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
-      );
-      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-            if (fbNewIssueUrl) {
-              window.open(fbNewIssueUrl);
-              issueConfirmationWindow.close();
-            }
-          });
-      }, this);
-      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            if (statics && statics.osparcIssuesLoginUrl) {
-              window.open(statics.osparcIssuesLoginUrl);
-            }
-          });
-      }, this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
-    __openSendEmailFeedbackDialog: function(statics) {
-      let email = null;
-      if (osparc.utils.Utils.isProduct("s4l") && statics.s4lSupportEmail) {
-        email = statics.s4lSupportEmail;
-      } else if (osparc.utils.Utils.isProduct("s4llite") || statics.s4lliteSupportEmail) {
-        email = statics.s4lliteSupportEmail;
-      }
-      if (email === null) {
-        return;
-      }
-
+    __openSendEmailFeedbackDialog: function(email) {
       const productName = osparc.utils.Utils.getProductName();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null,
         qx.locale.Manager.tr("Send us an email to:")
@@ -94,38 +48,63 @@ qx.Class.define("osparc.navigation.Manuals", {
       giveEmailFeedbackWindow.open();
     },
 
-    addFeedbackButtonsToMenu: function(menu, statics) {
-      const newGHIssueBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", () => this.__openGithubIssueInfoDialog(), this);
-      menu.add(newGHIssueBtn);
+    addSupportButtonsToMenu: function(menu) {
+      Promise.all([
+        osparc.store.VendorInfo.getInstance().getIssues(),
+        osparc.store.VendorInfo.getInstance().getSupports()
+      ])
+        .then(values => {
+          const issues = values[0];
+          const supports = values[1];
+          issues.forEach(issueInfo => {
+            const label = issueInfo["label"];
+            const issueButton = new qx.ui.menu.Button(label);
+            issueButton.addListener("execute", () => {
+              const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
+                qx.locale.Manager.tr(`To create an issue in ${label}, you must have an account in ${label} and be already logged-in.`)
+              );
+              const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+              contBtn.addListener("execute", () => {
+                window.open(issueInfo["new_url"]);
+                issueConfirmationWindow.close();
+              }, this);
+              const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/12");
+              loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
+              issueConfirmationWindow.addButton(contBtn);
+              issueConfirmationWindow.addButton(loginBtn);
+              issueConfirmationWindow.addCancelButton();
+              issueConfirmationWindow.open();
+            }, this);
+            menu.add(issueButton);
+          });
 
-      if (osparc.utils.Utils.isInZ43()) {
-        const newFogbugzIssueBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", () => this.__openFogbugzIssueInfoDialog(), this);
-        menu.add(newFogbugzIssueBtn);
-      }
+          if (issues.length && supports.length) {
+            menu.addSeparator();
+          }
 
-      if (osparc.utils.Utils.isProduct("s4l") || osparc.utils.Utils.isProduct("s4llite")) {
-        const forumBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("S4L Forum"));
-        forumBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"), this);
-        menu.add(forumBtn);
-
-        if (statics.s4lSupportEmail || statics.s4lliteSupportEmail) {
-          const giveFeedbackBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Give us Feedback"));
-          giveFeedbackBtn.addListener("execute", () => this.__openSendEmailFeedbackDialog(statics), this);
-          menu.add(giveFeedbackBtn);
-        }
-      }
-
-      const feedbackAnonBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Anonymous feedback")).set({
-        visibility: statics.osparcFeedbackFormUrl ? "visible" : "excluded"
-      });
-      feedbackAnonBtn.addListener("execute", () => {
-        if (statics.osparcFeedbackFormUrl) {
-          window.open(statics.osparcFeedbackFormUrl);
-        }
-      });
-      menu.add(feedbackAnonBtn);
+          supports.forEach(suportInfo => {
+            const forumBtn = new qx.ui.menu.Button(suportInfo["label"]);
+            let icon = null;
+            let cb = null;
+            switch (suportInfo["kind"]) {
+              case "web":
+                icon = "@FontAwesome5Solid/link/12";
+                cb = () => window.open(suportInfo["url"]);
+                break;
+              case "forum":
+                icon = "@FontAwesome5Solid/users-class/12";
+                cb = () => window.open(suportInfo["url"]);
+                break;
+              case "email":
+                icon = "@FontAwesome5Solid/envelope/12";
+                cb = () => this.__openSendEmailFeedbackDialog(suportInfo["email"]);
+                break;
+            }
+            forumBtn.setIcon(icon);
+            forumBtn.addListener("execute", cb, this);
+            menu.add(forumBtn);
+          });
+        });
     }
   }
 });

@@ -156,19 +156,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     __addManualsToMenu: function() {
       const menu = this.getMenu();
-      osparc.navigation.Manuals.getManuals()
-        .then(manuals => {
-          manuals.forEach(manual => {
-            const manualBtn = new qx.ui.menu.Button(manual.label);
-            manualBtn.addListener("execute", () => window.open(manual.url), this);
-            menu.add(manualBtn);
-          });
-        });
+      osparc.navigation.Manuals.addManualButtonsToMenu(menu);
     },
 
     __addFeedbacksToMenu: function() {
       const menu = this.getMenu();
-      osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
+      osparc.navigation.Manuals.addSupportButtonsToMenu(menu);
     }
   }
 });

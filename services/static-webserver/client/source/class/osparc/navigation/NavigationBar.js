@@ -273,20 +273,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-
       const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
         toolTipText: this.tr("Manuals")
       });
-
-      osparc.navigation.Manuals.getManuals()
-        .then(manuals => {
-          manuals.forEach(manual => {
-            const manualBtn = new qx.ui.menu.Button(manual.label);
-            manualBtn.addListener("execute", () => window.open(manual.url), this);
-            menu.add(manualBtn);
-          });
-        });
-
+      osparc.navigation.Manuals.addManualButtonsToMenu(menu);
       return menuButton;
     },
 
@@ -294,14 +284,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-
-      osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
-
-      const feedbackBtn = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
-        toolTipText: this.tr("Give us feedback"),
-        visibility: osparc.utils.Utils.isProduct("tis") ? "excluded" : "visible"
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
+        toolTipText: this.tr("Support")
       });
-      return feedbackBtn;
+      osparc.navigation.Manuals.addSupportButtonsToMenu(menu);
+      return menuButton;
     },
 
     addDashboardTabButtons: function(tabButtons) {
