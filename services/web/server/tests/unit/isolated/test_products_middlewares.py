@@ -1,8 +1,10 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import pytest
+from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 from simcore_postgres_database.webserver_models import products
 from simcore_service_webserver._constants import (
     APP_PRODUCTS_KEY,
@@ -11,7 +13,6 @@ from simcore_service_webserver._constants import (
 )
 from simcore_service_webserver.products import Product
 from simcore_service_webserver.products_middlewares import discover_product_middleware
-from simcore_service_webserver.statics_constants import FRONTEND_APP_DEFAULT
 from yarl import URL
 
 
@@ -19,7 +20,7 @@ from yarl import URL
 def mock_postgres_product_table():
     # NOTE: try here your product's host_regex before adding them in the database!
     column_defaults = {
-        c.name: c.server_default.arg for c in products.columns if c.server_default
+        c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default
     }
 
     return [
@@ -27,10 +28,19 @@ def mock_postgres_product_table():
         dict(
             name="s4l",
             host_regex=r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)",
-            **column_defaults
+            **column_defaults,
         ),
         dict(
-            name="tis", host_regex=r"(^tis[\.-])|(^ti-solutions\.)", **column_defaults
+            name="tis",
+            host_regex=r"(^tis[\.-])|(^ti-solutions\.)",
+            vendor={
+                "name": "ACME",
+                "address": "sesame street",
+                "copyright": "© ACME correcaminos",
+                "url": "https://acme.com",
+                "forum_url": "https://forum.acme.com",
+            },
+            **column_defaults,
         ),
     ]
 
