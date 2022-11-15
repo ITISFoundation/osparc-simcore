@@ -56,7 +56,6 @@ services:
     networks:
       - simcore_default
       - interactive_services_subnet
-      - computational_services_subnet
     healthcheck:
       test:
         [
@@ -103,7 +102,4 @@ networks:
     external: true
   interactive_services_subnet:
     name: ${SWARM_STACK_NAME:-simcore}_interactive_services_subnet
-    external: true
-  computational_services_subnet:
-    name: ${SWARM_STACK_NAME:-simcore}_computational_services_subnet
     external: true
