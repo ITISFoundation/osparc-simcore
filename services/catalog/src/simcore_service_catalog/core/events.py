@@ -3,9 +3,8 @@ from typing import Callable
 
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import setup_tracing
-from simcore_postgres_database.utils_products import get_default_product_name
 
-from ..db.events import close_db_connection, connect_to_db
+from ..db.events import close_db_connection, connect_to_db, setup_default_product
 from ..meta import PROJECT_NAME, __version__
 from ..services.director import close_director, setup_director
 from ..services.remote_debug import setup_remote_debugging
@@ -36,11 +35,6 @@ def on_startup() -> None:
 def on_shutdown() -> None:
     msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
     print(f"{msg:=^100}", flush=True)
-
-
-async def setup_default_product(app: FastAPI):
-    async with app.state.engine.acquire() as conn:
-        app.state.default_product_name = await get_default_product_name(conn)
 
 
 def create_start_app_handler(app: FastAPI) -> Callable:
