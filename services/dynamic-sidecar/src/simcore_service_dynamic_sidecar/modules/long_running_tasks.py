@@ -294,7 +294,7 @@ async def task_ports_outputs_push(
     progress.update(message="starting outputs pushing", percent=0.0)
 
     port_keys = list(outputs_manager.outputs_port_keys)
-    await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
+    await send_message(rabbitmq, f"Waiting for outputs {port_keys} to be pushed")
 
     await outputs_manager.wait_for_all_uploads_to_finish()
 
