@@ -107,7 +107,7 @@ class PortKeyTracker:
             self._uploading_port_keys.clear()
 
 
-class OutputsManager:
+class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_path: Path,
@@ -165,7 +165,7 @@ class OutputsManager:
                 try:
                     future.result()
                     self._last_upload_error_tracker[port_key] = None
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     self._last_upload_error_tracker[port_key] = e
 
             logger.debug("Removing ports %s", port_keys)
