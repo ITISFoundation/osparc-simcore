@@ -10,7 +10,7 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
-from ..background_task import setup as setup_background_task
+from ..dynamic_scaling import setup as setup_background_task
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
