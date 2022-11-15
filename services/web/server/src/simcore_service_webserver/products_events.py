@@ -32,6 +32,11 @@ async def setup_product_templates(app: web.Application):
         # cleanup
 
 
+def _set_app_state(app: web.Application, app_products: dict[str, Product]):
+    app[APP_PRODUCTS_KEY] = app_products
+    app[f"{APP_PRODUCTS_KEY}_default"] = next(iter(app_products.values())).name
+
+
 async def load_products_on_startup(app: web.Application):
     """
     Loads info on products stored in the database into app's storage (i.e. memory)
@@ -55,6 +60,6 @@ async def load_products_on_startup(app: web.Application):
     if FRONTEND_APP_DEFAULT not in app_products.keys():
         log.warning("Default front-end app is not in the products table")
 
-    app[APP_PRODUCTS_KEY] = app_products
-    app[f"{APP_PRODUCTS_KEY}_default"] = next(iter(app_products.values()))
+    _set_app_state(app, app_products)
+
     log.debug("Product loaded: %s", [p.name for p in app_products.values()])

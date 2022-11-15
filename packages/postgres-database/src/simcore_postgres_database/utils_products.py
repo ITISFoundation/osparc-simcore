@@ -17,4 +17,5 @@ async def get_default_product_name(conn: SAConnection) -> str:
     if not product_name:
         raise ValueError("No product defined in database")
 
+    assert isinstance(product_name, str)  # nosec
     return product_name
