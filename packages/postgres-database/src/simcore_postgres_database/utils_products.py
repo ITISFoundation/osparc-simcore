@@ -2,13 +2,22 @@
 
 """
 
+from typing import Protocol
+
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
 
 from .models.products import products
 
 
-async def get_default_product_name(conn: SAConnection) -> str:
+class _DBConnection(Protocol):
+    # Prototype to account for aiopg and asyncio connection classes, i.e.
+    #   from aiopg.sa.connection import SAConnection
+    #   from sqlalchemy.ext.asyncio import AsyncConnection
+    async def scalar(self, *args, **kwargs):
+        ...
+
+
+async def get_default_product_name(conn: _DBConnection) -> str:
     """The first row in the table is considered as the default product
 
     :: raises ValueError if undefined
