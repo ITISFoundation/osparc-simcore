@@ -79,7 +79,7 @@ qx.Class.define("osparc.navigation.Manuals", {
           }
 
           supports.forEach(suportInfo => {
-            const forumBtn = new qx.ui.menu.Button(suportInfo["label"]);
+            const supportBtn = new qx.ui.menu.Button(suportInfo["label"]);
             let icon = null;
             let cb = null;
             switch (suportInfo["kind"]) {
@@ -88,7 +88,7 @@ qx.Class.define("osparc.navigation.Manuals", {
                 cb = () => window.open(suportInfo["url"]);
                 break;
               case "forum":
-                icon = "@FontAwesome5Solid/users-class/12";
+                icon = "@FontAwesome5Solid/comments/12";
                 cb = () => window.open(suportInfo["url"]);
                 break;
               case "email":
@@ -96,9 +96,9 @@ qx.Class.define("osparc.navigation.Manuals", {
                 cb = () => this.__openSendEmailFeedbackDialog(suportInfo["email"]);
                 break;
             }
-            forumBtn.setIcon(icon);
-            forumBtn.addListener("execute", cb, this);
-            menu.add(forumBtn);
+            supportBtn.setIcon(icon);
+            supportBtn.addListener("execute", () => cb(), this);
+            menu.add(supportBtn);
           });
         });
     },
