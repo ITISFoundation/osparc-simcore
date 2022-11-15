@@ -6,11 +6,12 @@ import collections
 from typing import Any, Final, TypedDict
 
 import aiodocker
-from pydantic import BaseModel, ByteSize, PositiveInt
+from pydantic import BaseModel, ByteSize, NonNegativeInt
 
 from .utils import bytesto
 
 
+# TODO: we need to check only services on the monitored nodes, maybe with some specific labels/names
 async def pending_services_with_insufficient_resources() -> bool:
     """
     We need the data of each task and the data of each node to know if we need to scale up or not
@@ -75,11 +76,11 @@ async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterReso
 
 
 class TasksResources(BaseModel):
-    total_cpus_running_tasks: PositiveInt
-    total_ram_running_tasks: PositiveInt
-    total_cpus_pending_tasks: PositiveInt
-    total_ram_pending_tasks: PositiveInt
-    count_tasks_pending: PositiveInt
+    total_cpus_running_tasks: NonNegativeInt
+    total_ram_running_tasks: NonNegativeInt
+    total_cpus_pending_tasks: NonNegativeInt
+    total_ram_pending_tasks: NonNegativeInt
+    count_tasks_pending: NonNegativeInt
 
 
 class ReservedResources(TypedDict):

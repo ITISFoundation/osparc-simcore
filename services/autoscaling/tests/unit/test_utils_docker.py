@@ -10,7 +10,9 @@ import psutil
 import pytest
 from faker import Faker
 from simcore_service_autoscaling.utils_docker import (
+    TasksResources,
     compute_cluster_total_resources,
+    compute_cluster_used_resources,
     pending_services_with_insufficient_resources,
 )
 
@@ -128,5 +130,14 @@ async def test_compute_cluster_total_resources_with_correct_label_return_host_re
     assert len(cluster_resources.node_ids) == 1
 
 
-async def test_compute_cluster_used_resources():
-    ...
+async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
+    host_node: Mapping[str, Any]
+):
+    used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    assert used_resources == TasksResources(
+        total_cpus_running_tasks=0,
+        total_ram_running_tasks=0,
+        total_cpus_pending_tasks=0,
+        total_ram_pending_tasks=0,
+        count_tasks_pending=0,
+    )
