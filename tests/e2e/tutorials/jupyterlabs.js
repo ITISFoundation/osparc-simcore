@@ -81,7 +81,7 @@ async function runTutorial() {
   }
   finally {
     await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId, 20000);
+    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
     await tutorial.close();
   }
