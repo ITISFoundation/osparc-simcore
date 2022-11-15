@@ -46,7 +46,7 @@ def port_keys(outputs_path: Path, port_key_1: str) -> list[str]:
 async def outputs_manager(
     outputs_path: Path, port_keys: list[str]
 ) -> AsyncIterator[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=outputs_path, nodeports=AsyncMock())
+    outputs_manager = OutputsManager(outputs_path=outputs_path, io_log_redirect_cb=None)
     outputs_manager.outputs_port_keys.update(port_keys)
     yield outputs_manager
     await outputs_manager.shutdown()

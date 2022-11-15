@@ -13,7 +13,6 @@ from pydantic import PositiveFloat
 from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
-from simcore_sdk.node_ports_v2 import Nodeports
 from simcore_service_dynamic_sidecar.modules.outputs_manager import (
     OutputsManager,
     PortKeyTracker,
@@ -83,11 +82,6 @@ def outputs_path(tmp_path: Path) -> Path:
     return tmp_path
 
 
-@pytest.fixture
-def nodeports() -> Nodeports:
-    return AsyncMock()
-
-
 def _assert_ports_uploaded(
     mock_upload_outputs: AsyncMock, port_keys: list[str]
 ) -> None:
@@ -101,10 +95,10 @@ def _assert_ports_uploaded(
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_path: Path, port_keys: list[str], nodeports: Nodeports
+    outputs_path: Path, port_keys: list[str]
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_path=outputs_path, nodeports=nodeports, task_monitor_interval_s=0.01
+        outputs_path=outputs_path, io_log_redirect_cb=None, task_monitor_interval_s=0.01
     )
     outputs_manager.outputs_port_keys.update(port_keys)
     await outputs_manager.start()
@@ -117,7 +111,6 @@ async def test_upload_port_wait_parallel(
     outputs_manager: OutputsManager,
     port_keys: list[str],
     outputs_path: Path,
-    nodeports: Nodeports,
 ):
     for port_key in port_keys:
         await outputs_manager.port_key_content_changed(port_key=port_key)
@@ -134,7 +127,6 @@ async def test_upload_port_wait_parallel_parallel(
     outputs_manager: OutputsManager,
     port_keys: list[str],
     outputs_path: Path,
-    nodeports: Nodeports,
     wait_upload_finished: PositiveFloat,
 ):
     upload_tasks = [

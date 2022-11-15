@@ -9,12 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
-from models_library.projects import ProjectIDStr
-from models_library.projects_nodes_io import NodeIDStr
 from pydantic import PositiveFloat
-from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
-from simcore_sdk.node_ports_v2 import Nodeports
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 from ..core.rabbitmq import send_message
@@ -111,7 +107,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_path: Path,
-        nodeports: Nodeports,
+        io_log_redirect_cb: Optional[LogRedirectCB],
         *,
         bulk_scheduling: bool = True,
         upload_upon_api_request: bool = True,
@@ -119,7 +115,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         task_monitor_interval_s: PositiveFloat = 1.0,
     ):
         self.outputs_path = outputs_path
-        self.nodeports = nodeports
+        self.io_log_redirect_cb = io_log_redirect_cb
         self.bulk_scheduling = bulk_scheduling
         self.upload_upon_api_request = upload_upon_api_request
         self.task_cancellation_timeout_s = task_cancellation_timeout_s
@@ -145,7 +141,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             upload_outputs(
                 outputs_path=self.outputs_path,
                 port_keys=port_keys,
-                nodeports=self.nodeports,
+                io_log_redirect_cb=self.io_log_redirect_cb,
             ),
             name=task_name,
         )
@@ -248,16 +244,9 @@ def setup_outputs_manager(app: FastAPI) -> None:
             "with redirection of logs..." if io_log_redirect_cb else "...",
         )
 
-        nodeports: Nodeports = await node_ports_v2.ports(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
-            node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
-            r_clone_settings=settings.rclone_settings_for_nodeports,
-            io_log_redirect_cb=io_log_redirect_cb,
-        )
-
         outputs_manager = app.state.outputs_manager = OutputsManager(
-            outputs_path=mounted_volumes.disk_outputs_path, nodeports=nodeports
+            outputs_path=mounted_volumes.disk_outputs_path,
+            io_log_redirect_cb=io_log_redirect_cb,
         )
         await outputs_manager.start()
 

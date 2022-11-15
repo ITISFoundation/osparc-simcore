@@ -139,7 +139,6 @@ def test_client(
     ensure_shared_store_dir: Path,
     ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
-    mock_node_ports_v2_ports: None,
     cleanup_containers,
     test_client: TestClient,
 ) -> TestClient:

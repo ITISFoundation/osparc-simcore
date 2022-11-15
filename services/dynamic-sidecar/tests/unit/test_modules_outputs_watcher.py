@@ -25,7 +25,6 @@ from pydantic import (
 )
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
-from simcore_sdk.node_ports_v2 import Nodeports
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs_watcher import (
@@ -70,17 +69,12 @@ def port_keys() -> list[str]:
 
 
 @pytest.fixture
-def nodeports() -> Nodeports:
-    return AsyncMock()
-
-
-@pytest.fixture
 async def outputs_manager(
-    mounted_volumes: MountedVolumes, port_keys: list[str], nodeports: Nodeports
+    mounted_volumes: MountedVolumes, port_keys: list[str]
 ) -> AsyncIterable[OutputsManager]:
     outputs_manager = OutputsManager(
         outputs_path=mounted_volumes.disk_outputs_path,
-        nodeports=nodeports,
+        io_log_redirect_cb=None,
         task_monitor_interval_s=TICK_INTERVAL,
     )
     outputs_manager.outputs_port_keys.update(port_keys)
@@ -341,7 +335,6 @@ async def test_port_key_sequential_event_generation(
     files_per_port_key: NonNegativeInt,
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
-    nodeports: Nodeports,
 ):
     # writing ports sequentially
     wait_interval_for_port: deque[float] = deque()

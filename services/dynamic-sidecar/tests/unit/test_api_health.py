@@ -10,7 +10,7 @@ from simcore_service_dynamic_sidecar.models.schemas.application_health import (
 
 
 @pytest.fixture
-def test_client(mock_node_ports_v2_ports: None, test_client: TestClient) -> TestClient:
+def test_client(test_client: TestClient) -> TestClient:
     return test_client
 
 

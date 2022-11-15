@@ -13,9 +13,7 @@ from typer.testing import CliRunner
 
 
 @pytest.fixture
-def cli_runner(
-    mock_environment: EnvVarsDict, mock_node_ports_v2_ports: None
-) -> CliRunner:
+def cli_runner(mock_environment: EnvVarsDict) -> CliRunner:
     return CliRunner()
 
 

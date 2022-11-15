@@ -69,11 +69,22 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
 # NOTE: outputs_manager guarantees that no parallel calls
 # to this function occur
 async def upload_outputs(
-    outputs_path: Path, port_keys: list[str], nodeports: Nodeports
+    outputs_path: Path,
+    port_keys: list[str],
+    io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> None:
     # pylint: disable=too-many-branches
     logger.debug("uploading data to simcore...")
     start_time = time.perf_counter()
+
+    settings: ApplicationSettings = get_settings()
+    PORTS: Nodeports = await node_ports_v2.ports(
+        user_id=settings.DY_SIDECAR_USER_ID,
+        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
+        r_clone_settings=settings.rclone_settings_for_nodeports,
+        io_log_redirect_cb=io_log_redirect_cb,
+    )
 
     # let's gather the tasks
     ports_values: dict[
@@ -81,10 +92,8 @@ async def upload_outputs(
     ] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
 
-    # TODO: maybe try to split this per port
-
     async with AsyncExitStack() as stack:
-        for port in (await nodeports.outputs).values():
+        for port in (await PORTS.outputs).values():
             logger.debug("Checking port %s", port.key)
             if port_keys and port.key not in port_keys:
                 continue
@@ -152,7 +161,7 @@ async def upload_outputs(
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
 
-        await nodeports.set_multiple(ports_values)
+        await PORTS.set_multiple(ports_values)
 
         elapsed_time = time.perf_counter() - start_time
         total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())

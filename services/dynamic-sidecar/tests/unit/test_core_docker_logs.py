@@ -44,7 +44,6 @@ async def container_name() -> AsyncIterable[str]:
 
 async def test_background_log_fetcher(
     mock_core_rabbitmq: dict[str, AsyncMock],
-    mock_node_ports_v2_ports: None,
     test_client: TestClient,
     container_name: str,
     app: FastAPI,

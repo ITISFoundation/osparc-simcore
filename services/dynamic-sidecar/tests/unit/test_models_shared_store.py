@@ -22,7 +22,6 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
 def trigger_setup_shutdown_events(
     shared_store_dir: Path,
     app: FastAPI,
-    mock_node_ports_v2_ports: None,
     test_client: TestClient,
 ) -> None:
     assert app.state.shared_store is not None
