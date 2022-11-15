@@ -2,15 +2,18 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from pathlib import Path
-from typing import AsyncIterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Mapping
 
+import aiodocker
 import httpx
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from pydantic import PositiveInt
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
@@ -81,3 +84,53 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
+
+
+@pytest.fixture
+def task_template() -> dict[str, Any]:
+    return {
+        "ContainerSpec": {
+            "Image": "redis",
+        },
+    }
+
+
+_GIGA_NANO_CPU = 10**9
+
+
+NUM_CPUS = PositiveInt
+
+
+@pytest.fixture
+def create_task_resources() -> Callable[[NUM_CPUS], dict[str, Any]]:
+    def _creator(num_cpus: NUM_CPUS) -> dict[str, Any]:
+        return {"Resources": {"Reservations": {"NanoCPUs": num_cpus * _GIGA_NANO_CPU}}}
+
+    return _creator
+
+
+@pytest.fixture
+async def create_service(
+    async_docker_client: aiodocker.Docker, faker: Faker
+) -> AsyncIterator[Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]]]:
+    created_services = []
+
+    async def _creator(task_template: dict[str, Any]) -> Mapping[str, Any]:
+        service = await async_docker_client.services.create(
+            task_template=task_template, name=f"pytest_{faker.pystr()}"
+        )
+        assert service
+        print(f"--> created docker service f{service}")
+        created_services.append(service)
+        return service
+
+    yield _creator
+    await asyncio.gather(
+        *(async_docker_client.services.delete(s["ID"]) for s in created_services)
+    )

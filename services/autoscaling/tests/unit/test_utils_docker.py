@@ -2,14 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
-from typing import Any, AsyncIterator, Awaitable, Callable, Final, Mapping
+from typing import Any, Awaitable, Callable, Final, Mapping
 
 import aiodocker
 import pytest
-from faker import Faker
 from fastapi import status
-from pydantic import PositiveInt
 from simcore_service_autoscaling.utils_docker import (
     eval_cluster_resources,
     pending_services_with_insufficient_resources,
@@ -30,56 +27,6 @@ async def test_eval_cluster_resource_without_swarm():
         await eval_cluster_resources()
 
     assert exc_info.value.status == status.HTTP_503_SERVICE_UNAVAILABLE
-
-
-@pytest.fixture
-async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
-
-
-@pytest.fixture
-def task_template() -> dict[str, Any]:
-    return {
-        "ContainerSpec": {
-            "Image": "redis",
-        },
-    }
-
-
-_GIGA_NANO_CPU = 10**9
-
-
-NUM_CPUS = PositiveInt
-
-
-@pytest.fixture
-def create_task_resources() -> Callable[[NUM_CPUS], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS) -> dict[str, Any]:
-        return {"Resources": {"Reservations": {"NanoCPUs": num_cpus * _GIGA_NANO_CPU}}}
-
-    return _creator
-
-
-@pytest.fixture
-async def create_service(
-    async_docker_client: aiodocker.Docker, faker: Faker
-) -> AsyncIterator[Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]]]:
-    created_services = []
-
-    async def _creator(task_template: dict[str, Any]) -> Mapping[str, Any]:
-        service = await async_docker_client.services.create(
-            task_template=task_template, name=f"pytest_{faker.pystr()}"
-        )
-        assert service
-        print(f"--> created docker service f{service}")
-        created_services.append(service)
-        return service
-
-    yield _creator
-    await asyncio.gather(
-        *(async_docker_client.services.delete(s["ID"]) for s in created_services)
-    )
 
 
 async def test_pending_services_with_insufficient_resources_with_no_service(
@@ -137,7 +84,7 @@ async def test_pending_services_with_insufficient_resources_with_service_lacking
     async_docker_client: aiodocker.Docker,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
-    create_task_resources: Callable[[NUM_CPUS], dict[str, Any]],
+    create_task_resources: Callable[[int], dict[str, Any]],
 ):
     service_with_no_resources = await create_service(task_template)
     await _assert_for_service_state(
