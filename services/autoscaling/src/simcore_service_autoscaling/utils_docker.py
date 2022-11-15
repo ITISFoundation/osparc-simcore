@@ -20,12 +20,15 @@ async def pending_services_with_insufficient_resources() -> bool:
     async with aiodocker.Docker() as docker:
         services = await docker.services.list()
         for service in services:
-            tasks = service.tasks()
+            tasks = await docker.tasks.list(
+                filters={"service": service["Spec"]["Name"]}
+            )
             for task in tasks:
                 if (
                     task["Status"]["State"] == "pending"
                     and task["Status"]["Message"] == "pending task scheduling"
-                    and "insufficient resources on" in task["Status"]["Err"]
+                    and "insufficient resources on"
+                    in task["Status"].get("Err", "no error")
                 ):
                     return True
         return False
