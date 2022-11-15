@@ -4,7 +4,11 @@ from datetime import datetime
 
 from .core.settings import AwsSettings
 from .utils_aws import AWS_EC2, start_instance_aws
-from .utils_docker import check_tasks_resources, eval_cluster_resources, need_resources
+from .utils_docker import (
+    check_tasks_resources,
+    eval_cluster_resources,
+    pending_services_with_insufficient_resources,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +25,7 @@ async def check_dynamic(settings: AwsSettings, ami_id: str):
 
     # We need the data of each task and the data of each node to know if we need to scale up or not
     # Test if some tasks are in a pending mode because of a lack of resources
-    resources_are_scarce = await need_resources()
+    resources_are_scarce = await pending_services_with_insufficient_resources()
 
     # We compile RAM and CPU capabilities of each node who have the label sidecar
     # Total resources of the cluster

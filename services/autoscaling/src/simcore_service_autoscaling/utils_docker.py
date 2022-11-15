@@ -10,7 +10,7 @@ from pydantic import BaseModel, PositiveInt
 from .utils import bytesto
 
 
-async def need_resources() -> bool:
+async def pending_services_with_insufficient_resources() -> bool:
     """
     We need the data of each task and the data of each node to know if we need to scale up or not
     Test if some tasks are in a pending mode because of a lack of resources
