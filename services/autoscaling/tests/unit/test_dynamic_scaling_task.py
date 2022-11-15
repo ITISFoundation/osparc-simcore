@@ -35,7 +35,7 @@ def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     return mocked_task
 
 
-async def test_background_task_created_and_deleted(
+async def test_dynamic_scaling_task_created_and_deleted(
     app_environment: EnvVarsDict,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
@@ -47,7 +47,7 @@ async def test_background_task_created_and_deleted(
     mock_background_task.assert_called()
 
 
-async def test_background_task_raises_restarts(
+async def test_dynamic_scaling_task_raises_restarts(
     app_environment: EnvVarsDict,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
@@ -58,7 +58,7 @@ async def test_background_task_raises_restarts(
     assert mock_background_task.call_count > 1
 
 
-async def test_background_task_correctly_cancels(
+async def test_dynamic_scaling_task_correctly_cancels(
     app_environment: EnvVarsDict,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
