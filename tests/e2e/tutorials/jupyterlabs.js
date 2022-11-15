@@ -63,10 +63,10 @@ async function runTutorial() {
       await tutorial.takeScreenshot("after_run_all_menu");
 
       if (j === 2) {
-        await tutorial.waitFor(30000); // we are solving an em problem
+        await tutorial.waitFor(40000); // we are solving an em problem
       }
       else {
-        await tutorial.waitFor(5000); // we are NOT solving an em problem
+        await tutorial.waitFor(10000); // we are NOT solving an em problem
       }
 
       const outFiles = [
