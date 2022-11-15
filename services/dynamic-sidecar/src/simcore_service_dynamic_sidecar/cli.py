@@ -94,7 +94,7 @@ def outputs_push():
             rabbitmq: RabbitMQ = app.state.rabbitmq
 
             await task_ports_outputs_push(
-                TaskProgress.create(), None, outputs_manager, rabbitmq
+                TaskProgress.create(), outputs_manager, rabbitmq
             )
 
     asyncio.run(_async_outputs_push())

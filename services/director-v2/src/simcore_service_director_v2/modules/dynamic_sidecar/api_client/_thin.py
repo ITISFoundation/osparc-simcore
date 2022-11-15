@@ -200,13 +200,10 @@ class ThinDynamicSidecarClient(BaseThinClient):
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_push(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        port_keys = [] if port_keys is None else port_keys
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:push")
-        return await self.client.post(url, json=port_keys)
+        return await self.client.post(url)
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)

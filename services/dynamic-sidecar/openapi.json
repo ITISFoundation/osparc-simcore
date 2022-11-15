@@ -640,19 +640,6 @@
         ],
         "summary": "Push output ports data",
         "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Port Keys",
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -667,16 +654,6 @@
           },
           "409": {
             "description": "Task already running, cannot start a new one"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       }

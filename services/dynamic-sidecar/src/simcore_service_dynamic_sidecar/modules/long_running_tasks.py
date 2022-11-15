@@ -288,14 +288,12 @@ async def task_ports_outputs_pull(
 
 async def task_ports_outputs_push(
     progress: TaskProgress,
-    port_keys: Optional[list[str]],
     outputs_manager: OutputsManager,
     rabbitmq: RabbitMQ,
 ) -> None:
     progress.update(message="starting outputs pushing", percent=0.0)
 
-    port_keys = list(outputs_manager.outputs_port_keys) if not port_keys else port_keys
-
+    port_keys = list(outputs_manager.outputs_port_keys)
     await send_message(rabbitmq, f"Pushing outputs for {port_keys}")
 
     await outputs_manager.wait_for_all_uploads_to_finish()

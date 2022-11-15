@@ -360,11 +360,10 @@ class DynamicSidecarClient:
     async def push_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_push(
-            dynamic_sidecar_endpoint, port_keys
+            dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
 

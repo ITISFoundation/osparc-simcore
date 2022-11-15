@@ -285,7 +285,6 @@ async def ports_outputs_pull_task(
 @cancel_on_disconnect
 async def ports_outputs_push_task(
     request: Request,
-    port_keys: Optional[list[str]] = None,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     outputs_manager: OutputsManager = Depends(get_outputs_manager),
@@ -297,7 +296,6 @@ async def ports_outputs_push_task(
             tasks_manager,
             task=task_ports_outputs_push,
             unique=True,
-            port_keys=port_keys,
             outputs_manager=outputs_manager,
             rabbitmq=rabbitmq,
         )

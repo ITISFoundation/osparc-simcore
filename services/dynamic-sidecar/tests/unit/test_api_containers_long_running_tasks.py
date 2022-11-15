@@ -238,6 +238,11 @@ def mock_port_keys(request: FixtureRequest, client: Client) -> Optional[list[str
 
 
 @pytest.fixture
+def outputs_manager(client: Client) -> OutputsManager:
+    return AppState(client.app).outputs_manager
+
+
+@pytest.fixture
 def missing_node_uuid(faker: faker.Faker) -> str:
     return faker.uuid4()
 
@@ -314,10 +319,10 @@ async def _get_task_id_task_ports_outputs_pull(
 
 
 async def _get_task_id_task_ports_outputs_push(
-    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
+    httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:push", json=port_keys
+        f"/{API_VTAG}/containers/ports/outputs:push"
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -334,6 +339,10 @@ async def _get_task_id_task_containers_restart(
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
+
+
+async def _debug_progress(message: str, percent: float, task_id: TaskId) -> None:
+    print(f"{task_id} {percent} {message}")
 
 
 async def test_create_containers_task(
@@ -374,6 +383,7 @@ async def test_create_containers_task_invalid_yaml_spec(
             ),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
+            progress_callback=_debug_progress,
         ):
             pass
     assert "raise InvalidComposeSpec" in f"{exec_info.value}"
@@ -437,6 +447,7 @@ async def test_containers_down_after_starting(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert shared_store.container_names == result
 
@@ -446,6 +457,7 @@ async def test_containers_down_after_starting(
         task_id=await _get_task_id_docker_compose_down(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -459,6 +471,7 @@ async def test_containers_down_missing_spec(
             task_id=await _get_task_id_docker_compose_down(httpx_async_client),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
+            progress_callback=_debug_progress,
         ) as result:
             assert result is None
     assert 'RuntimeError("No compose-spec was found")' in f"{exec_info.value}"
@@ -472,6 +485,7 @@ async def test_container_restore_state(
         task_id=await _get_task_id_state_restore(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -484,6 +498,7 @@ async def test_container_save_state(
         task_id=await _get_task_id_state_save(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -501,6 +516,7 @@ async def test_container_pull_input_ports(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result == 42
 
@@ -518,6 +534,7 @@ async def test_container_pull_output_ports(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result == 42
 
@@ -535,6 +552,7 @@ async def test_container_push_output_ports(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -545,7 +563,12 @@ async def test_container_push_output_ports_missing_node(
     mock_port_keys: Optional[list[str]],
     missing_node_uuid: str,
     mock_node_missing: None,
+    outputs_manager: OutputsManager,
 ):
+
+    for port_key in mock_port_keys if mock_port_keys else []:
+        await outputs_manager.port_key_content_changed(port_key)
+
     async def _test_code() -> None:
         async with periodic_task_result(
             client=client,
@@ -554,6 +577,7 @@ async def test_container_push_output_ports_missing_node(
             ),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
+            progress_callback=_debug_progress,
         ):
             pass
 
@@ -578,6 +602,7 @@ async def test_containers_restart(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as container_names:
         assert shared_store.container_names == container_names
 
@@ -592,6 +617,7 @@ async def test_containers_restart(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 

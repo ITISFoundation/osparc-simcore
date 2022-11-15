@@ -46,7 +46,7 @@ class UploadPortsFailed(Exception):
         self.exceptions: list[Exception] = exceptions
         super().__init__()
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"<{UploadPortsFailed.__name__}: port_keys={self.port_keys}, exceptions={self.exceptions}>"
 
 
@@ -57,7 +57,7 @@ class PortKeyTracker:
         self._pending_port_keys: set[str] = set()
         self._uploading_port_keys: set[str] = set()
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
             f"pending={self._pending_port_keys} uploading={self._uploading_port_keys}"
         )
@@ -227,6 +227,8 @@ class OutputsManager:
         }
 
         if len(last_port_uploads_with_errors) > 0:
+            # raise list(self._last_upload_error_tracker.values())[0]
+            # import pdb; pdb.set_trace()
             raise UploadPortsFailed(
                 last_port_uploads_with_errors,
                 list(self._last_upload_error_tracker.values()),
