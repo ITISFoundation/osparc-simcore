@@ -3,114 +3,107 @@ qx.Class.define("osparc.navigation.Manuals", {
   type: "static",
 
   statics: {
-    getLicenseLink: function() {
-      let licenseLink = null;
-      const productName = osparc.utils.Utils.getProductName();
-      switch (productName) {
-        case "osparc":
-        case "s4l":
-        case "s4llite":
-          licenseLink = "http://docs.osparc.io/#/docs/support/license";
-          break;
-        case "tis":
-          licenseLink = "https://itisfoundation.github.io/ti-planning-tool-manual/#/docs/support/license";
-          break;
-      }
-      return licenseLink;
+    getLicenseURL: function() {
+      return new Promise(resolve => {
+        osparc.store.VendorInfo.getInstance().getVendor()
+          .then(vendor => {
+            if (vendor) {
+              if ("license_url" in vendor) {
+                resolve(vendor["license_url"]);
+              } else if ("url" in vendor) {
+                resolve(vendor["url"]);
+              } else {
+                resolve("");
+              }
+            }
+          });
+      });
     },
 
-    getManuals: function(statics) {
-      const productName = osparc.utils.Utils.getProductName();
-      const manualUrlKey = productName + "ManualUrl";
-      const manualExtraUrlKey = productName + "ManualExtraUrl";
-      const manuals = [];
-      switch (productName) {
-        case "osparc":
-        case "s4l":
-        case "s4llite":
-          manuals.push({
-            label: qx.locale.Manager.tr("User Manual"),
-            icon: "@FontAwesome5Solid/book/22",
-            url: statics[manualUrlKey]
-          });
-          if (osparc.utils.Utils.isInZ43() && statics && manualExtraUrlKey in statics) {
-            manuals.push({
-              label: qx.locale.Manager.tr("Z43 Manual"),
-              icon: "@FontAwesome5Solid/book-medical/22",
-              url: statics[manualExtraUrlKey]
-            });
+    getManuals: function() {
+      return new Promise(resolve => {
+        osparc.store.VendorInfo.getInstance().getManuals()
+          .then(manuals => resolve(manuals));
+      });
+    },
+
+    addManualButtonsToMenu: function(menu, menuButton) {
+      osparc.navigation.Manuals.getManuals()
+        .then(manuals => {
+          if (menuButton) {
+            menuButton.setVisibility(manuals.length ? "visible" : "excluded");
           }
-          break;
-        case "tis":
-          manuals.push({
-            label: qx.locale.Manager.tr("TI Planning Tool Manual"),
-            icon: "@FontAwesome5Solid/book/22",
-            url: statics[manualUrlKey]
+          manuals.forEach(manual => {
+            const manualBtn = new qx.ui.menu.Button(manual.label);
+            manualBtn.addListener("execute", () => window.open(manual.url), this);
+            menu.add(manualBtn);
           });
-          break;
-      }
-
-      return manuals;
+        });
     },
 
-    __openGithubIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
-      );
-      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        window.open(osparc.utils.issue.Github.getNewIssueUrl());
-        issueConfirmationWindow.close();
-      }, this);
-      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
+    addSupportButtonsToMenu: function(menu, menuButton) {
+      Promise.all([
+        osparc.store.VendorInfo.getInstance().getIssues(),
+        osparc.store.VendorInfo.getInstance().getSupports()
+      ])
+        .then(values => {
+          const issues = values[0];
+          const supports = values[1];
+          if (menuButton) {
+            menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
+          }
+          issues.forEach(issueInfo => {
+            const label = issueInfo["label"];
+            const issueButton = new qx.ui.menu.Button(label);
+            issueButton.addListener("execute", () => {
+              const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
+                qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
+              );
+              const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
+              contBtn.addListener("execute", () => {
+                window.open(issueInfo["new_url"]);
+                issueConfirmationWindow.close();
+              }, this);
+              const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/12");
+              loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
+              issueConfirmationWindow.addButton(contBtn);
+              issueConfirmationWindow.addButton(loginBtn);
+              issueConfirmationWindow.addCancelButton();
+              issueConfirmationWindow.open();
+            }, this);
+            menu.add(issueButton);
+          });
 
-    __openFogbugzIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        qx.locale.Manager.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
-      );
-      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-            if (fbNewIssueUrl) {
-              window.open(fbNewIssueUrl);
-              issueConfirmationWindow.close();
+          if (issues.length && supports.length) {
+            menu.addSeparator();
+          }
+
+          supports.forEach(suportInfo => {
+            const supportBtn = new qx.ui.menu.Button(suportInfo["label"]);
+            let icon = null;
+            let cb = null;
+            switch (suportInfo["kind"]) {
+              case "web":
+                icon = "@FontAwesome5Solid/link/12";
+                cb = () => window.open(suportInfo["url"]);
+                break;
+              case "forum":
+                icon = "@FontAwesome5Solid/comments/12";
+                cb = () => window.open(suportInfo["url"]);
+                break;
+              case "email":
+                icon = "@FontAwesome5Solid/envelope/12";
+                cb = () => this.__openSendEmailFeedbackDialog(suportInfo["email"]);
+                break;
             }
+            supportBtn.setIcon(icon);
+            supportBtn.addListener("execute", () => cb(), this);
+            menu.add(supportBtn);
           });
-      }, this);
-      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            if (statics && statics.osparcIssuesLoginUrl) {
-              window.open(statics.osparcIssuesLoginUrl);
-            }
-          });
-      }, this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
+        });
     },
 
-    __openSendEmailFeedbackDialog: function(statics) {
-      let email = null;
-      if (osparc.utils.Utils.isProduct("s4l") && statics.s4lSupportEmail) {
-        email = statics.s4lSupportEmail;
-      } else if (osparc.utils.Utils.isProduct("s4llite") || statics.s4lliteSupportEmail) {
-        email = statics.s4lliteSupportEmail;
-      }
-      if (email === null) {
-        return;
-      }
-
+    __openSendEmailFeedbackDialog: function(email) {
       const productName = osparc.utils.Utils.getProductName();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null,
         qx.locale.Manager.tr("Send us an email to:")
@@ -126,40 +119,6 @@ qx.Class.define("osparc.navigation.Manuals", {
         label: qx.locale.Manager.tr("Close")
       });
       giveEmailFeedbackWindow.open();
-    },
-
-    addFeedbackButtonsToMenu: function(menu, statics) {
-      const newGHIssueBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", () => this.__openGithubIssueInfoDialog(), this);
-      menu.add(newGHIssueBtn);
-
-      if (osparc.utils.Utils.isInZ43()) {
-        const newFogbugzIssueBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", () => this.__openFogbugzIssueInfoDialog(), this);
-        menu.add(newFogbugzIssueBtn);
-      }
-
-      if (osparc.utils.Utils.isProduct("s4l") || osparc.utils.Utils.isProduct("s4llite")) {
-        const forumBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("S4L Forum"));
-        forumBtn.addListener("execute", () => window.open("https://forum.zmt.swiss/"), this);
-        menu.add(forumBtn);
-
-        if (statics.s4lSupportEmail || statics.s4lliteSupportEmail) {
-          const giveFeedbackBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Give us Feedback"));
-          giveFeedbackBtn.addListener("execute", () => this.__openSendEmailFeedbackDialog(statics), this);
-          menu.add(giveFeedbackBtn);
-        }
-      }
-
-      const feedbackAnonBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Anonymous feedback")).set({
-        visibility: statics.osparcFeedbackFormUrl ? "visible" : "excluded"
-      });
-      feedbackAnonBtn.addListener("execute", () => {
-        if (statics.osparcFeedbackFormUrl) {
-          window.open(statics.osparcFeedbackFormUrl);
-        }
-      });
-      menu.add(feedbackAnonBtn);
     }
   }
 });

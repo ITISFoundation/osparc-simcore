@@ -381,18 +381,6 @@ class TutorialBase {
     throw new Error("Pipeline timed out");
   }
 
-  async waitForStudyUnlocked(studyId, timeout = 10000) {
-    const start = new Date().getTime();
-    while ((new Date().getTime()) - start < timeout) {
-      await this.waitFor(timeout / 10);
-      if (await utils.isStudyUnlocked(this.__page, studyId)) {
-        return;
-      }
-    }
-    console.log("Timeout reached waiting for study unlock", ((new Date().getTime()) - start) / 1000);
-    return;
-  }
-
   async restoreIFrame() {
     await auto.restoreIFrame(this.__page);
   }
@@ -574,25 +562,21 @@ class TutorialBase {
     await this.takeScreenshot("closeStudy_after");
   }
 
-  async removeStudy(studyId, timeout = 5000) {
-    await this.waitFor(timeout, 'Wait to be unlocked');
+  async removeStudy(studyId, waitFor = 5000) {
+    await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
+    const intervalWait = 3000;
     try {
-      // await this.waitForStudyUnlocked(studyId);
-      const nTries = 10;
+      const nTries = 20;
       let i
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
+          console.log("Study Card unlocked in " + (waitFor + intervalWait*i) + "s");
           break;
         }
         console.log(studyId, "study card still locked");
-        await this.waitFor(3000, 'Waiting in case the study was locked');
-      }
-      if (i === nTries) {
-        console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
-        // do not call the API
-        // this.fetchRemoveStudy(studyId)
+        await this.waitFor(intervalWait, 'Waiting in case the study was locked');
       }
     }
     catch (err) {
@@ -600,17 +584,6 @@ class TutorialBase {
       throw (err);
     }
     await this.takeScreenshot("deleteFirstStudy_after");
-  }
-
-  async fetchRemoveStudy(studyId) {
-    console.log(`Removing study ${studyId}`)
-    await this.__page.evaluate(async function (studyId) {
-      return await osparc.data.Resources.fetch('studies', 'delete', {
-        url: {
-          "studyId": studyId
-        }
-      }, studyId);
-    }, studyId);
   }
 
   async logOut() {
