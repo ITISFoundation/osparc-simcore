@@ -7,7 +7,15 @@ qx.Class.define("osparc.navigation.Manuals", {
       return new Promise(resolve => {
         osparc.store.VendorInfo.getInstance().getVendor()
           .then(vendor => {
-            (vendor && ("license_url" in vendor)) ? resolve(vendor["license_url"]) : resolve("");
+            if (vendor) {
+              if ("license_url" in vendor) {
+                resolve(vendor["license_url"]);
+              } else if ("url" in vendor) {
+                resolve(vendor["url"]);
+              } else {
+                resolve("");
+              }
+            }
           });
       });
     },

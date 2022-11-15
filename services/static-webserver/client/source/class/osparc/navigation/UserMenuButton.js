@@ -100,7 +100,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
-          control.addListener("execute", () => window.open(osparc.navigation.Manuals.getLicenseURL()));
+          osparc.navigation.Manuals.getLicenseURL()
+            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
           this.getMenu().add(control);
           break;
         case "about":
