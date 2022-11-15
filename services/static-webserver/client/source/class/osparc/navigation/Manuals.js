@@ -42,8 +42,8 @@ qx.Class.define("osparc.navigation.Manuals", {
             const label = issueInfo["label"];
             const issueButton = new qx.ui.menu.Button(label);
             issueButton.addListener("execute", () => {
-              const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-                qx.locale.Manager.tr(`To create an issue in ${label}, you must have an account in ${label} and be already logged-in.`)
+              const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
+                qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
               );
               const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
               contBtn.addListener("execute", () => {
