@@ -13,7 +13,9 @@ async def get_default_product_name(conn: SAConnection) -> str:
 
     :: raises ValueError if undefined
     """
-    product_name = await conn.scalar(sa.select([products.c.name]))
+    product_name = await conn.scalar(
+        sa.select([products.c.name]).order_by(products.c.priority)
+    )
     if not product_name:
         raise ValueError("No product defined in database")
 

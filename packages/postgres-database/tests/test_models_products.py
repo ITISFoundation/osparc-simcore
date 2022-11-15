@@ -41,9 +41,9 @@ def make_products_table(
     products_regex: dict,
 ) -> Callable:
     async def _make(conn) -> None:
-        for name, regex in products_regex.items():
+        for n, (name, regex) in enumerate(products_regex.items()):
             result = await conn.execute(
-                products.insert().values(name=name, host_regex=regex)
+                products.insert().values(name=name, host_regex=regex, priority=n)
             )
 
             assert result.closed
@@ -52,13 +52,6 @@ def make_products_table(
                 await result.scalar()
 
     return _make
-
-
-async def test_default_product(pg_engine: Engine, make_products_table):
-    async with pg_engine.acquire() as conn:
-        await make_products_table(conn)
-        default_product = await get_default_product_name(conn)
-        assert default_product == "s4l"
 
 
 async def test_load_products(
@@ -225,3 +218,10 @@ async def test_insert_select_product(
             "name": "ACME",
             "copyright": "© ACME correcaminos",
         }
+
+
+async def test_default_product(pg_engine: Engine, make_products_table):
+    async with pg_engine.acquire() as conn:
+        await make_products_table(conn)
+        default_product = await get_default_product_name(conn)
+        assert default_product == "s4l"
