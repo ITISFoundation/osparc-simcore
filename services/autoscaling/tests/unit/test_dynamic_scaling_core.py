@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import Iterator
+from typing import Any, Awaitable, Callable, Iterator, Mapping
 
 import pytest
 from fastapi import FastAPI
@@ -27,9 +27,25 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[N
     yield
 
 
-async def test_check_dynamic_resources(
+async def test_check_dynamic_resources_with_no_services_does_nothing(
     docker_swarm: None,
     disable_dynamic_service_background_task: None,
     initialized_app: FastAPI,
 ):
+    await check_dynamic_resources(initialized_app)
+    # TODO: assert nothing is actually done!
+
+
+async def test_check_dynamic_resources_with_service_with_lack_of_resources(
+    docker_swarm: None,
+    disable_dynamic_service_background_task: None,
+    initialized_app: FastAPI,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int], dict[str, Any]],
+):
+    task_template_with_too_many_resource = task_template | create_task_resources(1000)
+    service_with_too_many_resources = await create_service(
+        task_template_with_too_many_resource
+    )
     await check_dynamic_resources(initialized_app)

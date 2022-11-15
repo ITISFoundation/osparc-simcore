@@ -4,7 +4,7 @@
 
 import asyncio
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Mapping
+from typing import Any, AsyncIterator, Awaitable, Callable, Final, Mapping
 
 import aiodocker
 import httpx
@@ -18,6 +18,10 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_plugins = [
     "pytest_simcore.docker_swarm",
@@ -102,8 +106,6 @@ def task_template() -> dict[str, Any]:
 
 
 _GIGA_NANO_CPU = 10**9
-
-
 NUM_CPUS = PositiveInt
 
 
@@ -134,3 +136,48 @@ async def create_service(
     await asyncio.gather(
         *(async_docker_client.services.delete(s["ID"]) for s in created_services)
     )
+
+
+@pytest.helpers.register
+async def assert_for_service_state(
+    async_docker_client: aiodocker.Docker,
+    created_service: Mapping[str, Any],
+    expected_states: list[str],
+) -> None:
+    SUCCESS_STABLE_TIME_S: Final[float] = 3
+    WAIT_TIME: Final[float] = 0.5
+    number_of_success = 0
+    async for attempt in AsyncRetrying(
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+        wait=wait_fixed(WAIT_TIME),
+        stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
+    ):
+        with attempt:
+            print(
+                f"--> waiting for service {created_service['ID']} to become {expected_states}..."
+            )
+            services = await async_docker_client.services.list(
+                filters={"id": created_service["ID"]}
+            )
+            assert services, f"no service with {created_service['ID']}!"
+            assert len(services) == 1
+            found_service = services[0]
+
+            tasks = await async_docker_client.tasks.list(
+                filters={"service": found_service["Spec"]["Name"]}
+            )
+            assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
+            assert len(tasks) == 1
+            service_task = tasks[0]
+            assert (
+                service_task["Status"]["State"] in expected_states
+            ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
+            print(
+                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success}"
+            )
+            number_of_success += 1
+            assert (number_of_success * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
+            print(
+                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds"
+            )
