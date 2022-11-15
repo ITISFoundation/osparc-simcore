@@ -1,6 +1,6 @@
 import logging
 import urllib.parse
-from typing import NamedTuple, Set
+from typing import NamedTuple
 from uuid import UUID
 
 from models_library.projects import ProjectAtDB, ProjectID, Workbench
@@ -85,7 +85,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
     """
 
     # REMOVING
-    to_remove_items: Set[_ToRemove] = set()
+    to_remove_items: set[_ToRemove] = set()
 
     # if network no longer exist remove it from all nodes
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
@@ -139,7 +139,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
     )
 
     # ADDING
-    to_add_items: Set[_ToAdd] = set()
+    to_add_items: set[_ToAdd] = set()
     # all aliases which are different or missing should be added
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
@@ -216,7 +216,7 @@ async def _get_networks_with_aliases_for_default_network(
                     )
                 ],
             )
-            await rabbitmq_client.publish_message(message)
+            await rabbitmq_client.publish(message.channel_name, message.json())
             continue
 
         new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias

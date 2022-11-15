@@ -5,7 +5,6 @@
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
 
-from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
@@ -32,10 +31,6 @@ def get_settings(app_state: State = Depends(get_app_state)) -> ApplicationSettin
 
 def get_shared_store(app_state: State = Depends(get_app_state)) -> SharedStore:
     return app_state.shared_store  # type: ignore
-
-
-def get_rabbitmq(app_state: State = Depends(get_app_state)) -> RabbitMQ:
-    return app_state.rabbitmq  # type: ignore
 
 
 def get_mounted_volumes(app_state: State = Depends(get_app_state)) -> MountedVolumes:

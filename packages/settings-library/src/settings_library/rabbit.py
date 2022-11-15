@@ -28,14 +28,6 @@ class RabbitSettings(BaseCustomSettings):
     RABBIT_USER: str = "simcore"
     RABBIT_PASSWORD: SecretStr = SecretStr("simcore")
 
-    # channels
-    RABBIT_CHANNELS: Channels = {
-        "log": "simcore.services.logs",
-        "progress": "simcore.services.progress",
-        "instrumentation": "simcore.services.instrumentation",
-        "events": "simcore.services.events",
-    }
-
     @cached_property
     def dsn(self) -> str:
         return RabbitDsn.build(

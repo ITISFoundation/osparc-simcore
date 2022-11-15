@@ -12,7 +12,6 @@ from servicelib.fastapi.long_running_tasks.server import (
 )
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
-from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
@@ -32,7 +31,6 @@ from ._dependencies import (
     get_application,
     get_application_health,
     get_mounted_volumes,
-    get_rabbitmq,
     get_settings,
     get_shared_store,
 )
@@ -71,7 +69,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
     application_health: ApplicationHealth = Depends(get_application_health),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
     assert request  # nosec
@@ -87,7 +84,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             mounted_volumes=mounted_volumes,
             app=app,
             application_health=application_health,
-            rabbitmq=rabbitmq,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -146,7 +142,7 @@ async def state_restore_task(
     tasks_manager: TasksManager = Depends(get_tasks_manager),
     settings: ApplicationSettings = Depends(get_settings),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    app: FastAPI = Depends(get_application),
 ) -> TaskId:
     assert request  # nosec
 
@@ -157,7 +153,7 @@ async def state_restore_task(
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
-            rabbitmq=rabbitmq,
+            app=app,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -179,7 +175,7 @@ async def state_restore_task(
 async def state_save_task(
     request: Request,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    app: FastAPI = Depends(get_application),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
     settings: ApplicationSettings = Depends(get_settings),
 ) -> TaskId:
@@ -192,7 +188,7 @@ async def state_save_task(
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
-            rabbitmq=rabbitmq,
+            app=app,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -215,7 +211,7 @@ async def ports_inputs_pull_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    app: FastAPI = Depends(get_application),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
     assert request  # nosec
@@ -227,7 +223,7 @@ async def ports_inputs_pull_task(
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
-            rabbitmq=rabbitmq,
+            app=app,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -250,7 +246,7 @@ async def ports_outputs_pull_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    app: FastAPI = Depends(get_application),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
     assert request  # nosec
@@ -262,7 +258,7 @@ async def ports_outputs_pull_task(
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
-            rabbitmq=rabbitmq,
+            app=app,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -285,7 +281,7 @@ async def ports_outputs_push_task(
     request: Request,
     port_keys: Optional[list[str]] = None,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+    app: FastAPI = Depends(get_application),
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
     assert request  # nosec
@@ -297,7 +293,7 @@ async def ports_outputs_push_task(
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
-            rabbitmq=rabbitmq,
+            app=app,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -322,7 +318,6 @@ async def containers_restart_task(
     app: FastAPI = Depends(get_application),
     settings: ApplicationSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
-    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> TaskId:
     assert request  # nosec
 
@@ -334,7 +329,6 @@ async def containers_restart_task(
             app=app,
             settings=settings,
             shared_store=shared_store,
-            rabbitmq=rabbitmq,
         )
         return task_id
     except TaskAlreadyRunningError as e:

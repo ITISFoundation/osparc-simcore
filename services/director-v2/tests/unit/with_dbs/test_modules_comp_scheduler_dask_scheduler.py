@@ -33,6 +33,7 @@ from models_library.projects_state import RunningState
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -56,20 +57,10 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 from simcore_service_director_v2.utils.scheduler import COMPLETED_STATES
 from starlette.testclient import TestClient
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture()
-def mocked_rabbit_mq_client(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_director_v2.core.application.rabbitmq.RabbitMQClient",
-        autospec=True,
-    )
 
 
 @pytest.fixture
@@ -77,7 +68,7 @@ def minimal_dask_scheduler_config(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
-    mocked_rabbit_mq_client: None,
+    rabbit_service: RabbitSettings,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")

@@ -385,10 +385,10 @@ services:
     healthcheck:
       # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
       test: rabbitmq-diagnostics -q status
-      interval: 30s
+      interval: 5s
       timeout: 30s
       retries: 5
-      start_period: 15s
+      start_period: 5s
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
@@ -431,7 +431,7 @@ services:
           "--dbname",
           "${POSTGRES_DB}"
         ]
-      interval: 15s
+      interval: 5s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
