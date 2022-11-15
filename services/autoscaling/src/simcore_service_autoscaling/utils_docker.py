@@ -44,7 +44,7 @@ class ClusterResources(BaseModel):
 _NANO_CPU: Final[float] = 10**9
 
 
-async def get_labelized_nodes_resources(node_labels: list[str]) -> ClusterResources:
+async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterResources:
     """
     We compile RAM and CPU capabilities of each node who have the label sidecar
     Total resources of the cluster
@@ -103,7 +103,7 @@ def _get_reserved_resources(reservations: dict[str, Any]) -> ReservedResources:
     return {"RAM": ram, "CPU": cpu}
 
 
-async def check_tasks_resources(nodes_ids: list[str]) -> TasksResources:
+async def check_current_used_resources(nodes_ids: list[str]) -> TasksResources:
     total_tasks_cpus = 0
     total_tasks_ram = 0
     tasks_resources = []

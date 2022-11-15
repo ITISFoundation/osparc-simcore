@@ -10,7 +10,7 @@ import psutil
 import pytest
 from faker import Faker
 from simcore_service_autoscaling.utils_docker import (
-    get_labelized_nodes_resources,
+    compute_cluster_total_resources,
     pending_services_with_insufficient_resources,
 )
 
@@ -48,20 +48,20 @@ async def test_pending_services_with_insufficient_resources_with_service_lacking
     assert await pending_services_with_insufficient_resources() == True
 
 
-async def test_get_labelized_nodes_resources_with_no_label_return_host_resources(
+async def test_compute_cluster_total_resources_with_no_label_return_host_resources(
     docker_swarm: None,
 ):
-    cluster_resources = await get_labelized_nodes_resources(node_labels=[])
+    cluster_resources = await compute_cluster_total_resources(node_labels=[])
     assert cluster_resources.total_cpus == psutil.cpu_count()
     assert cluster_resources.total_ram == psutil.virtual_memory().total
     assert cluster_resources.node_ids
     assert len(cluster_resources.node_ids) == 1
 
 
-async def test_get_labelized_nodes_resources_with_label_returns_no_resources(
+async def test_compute_cluster_total_resources_with_label_returns_no_resources(
     docker_swarm: None, faker: Faker
 ):
-    cluster_resources = await get_labelized_nodes_resources(
+    cluster_resources = await compute_cluster_total_resources(
         node_labels=faker.pylist(allowed_types=(str,))
     )
     assert cluster_resources.total_cpus == 0
@@ -114,14 +114,14 @@ async def create_node_labels(
     )
 
 
-async def test_get_labelized_nodes_resources_with_correct_label_return_host_resources(
+async def test_compute_cluster_total_resources_with_correct_label_return_host_resources(
     docker_swarm: None,
     faker: Faker,
     create_node_labels: Callable[[list[str]], Awaitable[None]],
 ):
     labels = faker.pylist(allowed_types=(str,))
     await create_node_labels(labels)
-    cluster_resources = await get_labelized_nodes_resources(node_labels=labels)
+    cluster_resources = await compute_cluster_total_resources(node_labels=labels)
     assert cluster_resources.total_cpus == psutil.cpu_count()
     assert cluster_resources.total_ram == psutil.virtual_memory().total
     assert cluster_resources.node_ids
