@@ -44,6 +44,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
+# rclone installation
+COPY  --chown=scu:scu scripts/install_rclone.bash .
+RUN ./install_rclone.bash
+
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
 #
@@ -76,10 +80,6 @@ WORKDIR /build
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY  --chown=scu:scu services/agent/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
-
-# rclone installation
-COPY  --chown=scu:scu scripts/install_rclone.bash .
-RUN ./install_rclone.bash
 
 
 # --------------------------Prod-depends-only stage -------------------
