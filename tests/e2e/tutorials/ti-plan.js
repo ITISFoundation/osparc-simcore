@@ -142,7 +142,7 @@ async function runTutorial() {
     throw "Tutorial Failed";
   }
   finally {
-    tutorial.leave(studyId);
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

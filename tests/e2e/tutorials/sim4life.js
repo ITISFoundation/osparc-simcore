@@ -42,7 +42,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    tutorial.leave(studyId);
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {
