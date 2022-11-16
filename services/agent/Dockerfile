@@ -13,7 +13,9 @@ LABEL maintainer=GitHK
 
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends gosu; \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  curl; \
   rm -rf /var/lib/apt/lists/*; \
   # verify that the binary works
   gosu nobody true
@@ -45,8 +47,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # rclone installation
-COPY  --chown=scu:scu scripts/install_rclone.bash .
-RUN ./install_rclone.bash
+COPY --chown=scu:scu scripts/install_rclone.bash /tmp/install_rclone.bash
+RUN ./tmp/install_rclone.bash && rm /tmp/install_rclone.bash
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -60,7 +62,6 @@ ENV SC_BUILD_TARGET=build
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
-  curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -78,7 +79,7 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY  --chown=scu:scu services/agent/requirements/_base.txt .
+COPY --chown=scu:scu services/agent/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 
