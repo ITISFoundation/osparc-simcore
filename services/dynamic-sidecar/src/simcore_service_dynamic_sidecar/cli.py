@@ -11,7 +11,6 @@ from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME
 from .core.application import create_base_app
-from .core.rabbitmq import RabbitMQ
 from .core.settings import ApplicationSettings
 from .modules.long_running_tasks import task_ports_outputs_push, task_save_state
 from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
@@ -38,10 +37,6 @@ async def _initialized_app() -> AsyncIterator[FastAPI]:
     # setup MountedVolumes
     setup_mounted_fs(app)
     setup_outputs_manager(app)
-
-    # setup RabbitMQ
-    app.state.rabbitmq = RabbitMQ(app)
-    await app.state.rabbitmq.connect()
 
     await app.router.startup()
     yield app
@@ -74,11 +69,8 @@ def state_save():
         async with _initialized_app() as app:
             settings: ApplicationSettings = app.state.settings
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
-            rabbitmq: RabbitMQ = app.state.rabbitmq
 
-            await task_save_state(
-                TaskProgress.create(), settings, mounted_volumes, rabbitmq
-            )
+            await task_save_state(TaskProgress.create(), settings, mounted_volumes, app)
 
     asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
@@ -91,11 +83,7 @@ def outputs_push():
     async def _async_outputs_push() -> None:
         async with _initialized_app() as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
-            rabbitmq: RabbitMQ = app.state.rabbitmq
-
-            await task_ports_outputs_push(
-                TaskProgress.create(), outputs_manager, rabbitmq
-            )
+            await task_ports_outputs_push(TaskProgress.create(), outputs_manager, app)
 
     asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")

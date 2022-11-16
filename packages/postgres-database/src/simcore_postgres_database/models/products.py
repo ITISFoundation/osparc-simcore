@@ -18,7 +18,7 @@ from .jinja2_templates import jinja2_templates
 #
 # Layout of the data in the JSONB columns
 #
-class Vendor(TypedDict, total=True):
+class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
     E.g. company name, address, copyright, etc.
@@ -27,6 +27,7 @@ class Vendor(TypedDict, total=True):
     name: str
     copyright: str
     url: str
+    license_url: str
 
 
 class IssueTracker(TypedDict, total=True):

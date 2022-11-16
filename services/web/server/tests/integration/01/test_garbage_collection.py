@@ -293,6 +293,7 @@ async def disconnect_user_from_socketio(client, sio_connection_data):
     socket_registry = get_registry(client.server.app)
     await sio.disconnect()
     assert not sio.sid
+    await asyncio.sleep(0)  # just to ensure there is a context switch
     assert not await socket_registry.find_keys(("socket_id", sio.sid))
     assert not sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert not await socket_registry.find_resources(resource_key, "socket_id")

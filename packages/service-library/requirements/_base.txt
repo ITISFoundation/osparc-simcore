@@ -4,10 +4,20 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
+aio-pika==8.2.4
+    # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
 aiofiles==22.1.0
     # via -r requirements/_base.in
+aiormq==6.4.2
+    # via aio-pika
+idna==3.4
+    # via yarl
+multidict==6.0.2
+    # via yarl
+pamqp==3.2.1
+    # via aiormq
 pydantic==1.10.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -27,3 +37,7 @@ typing-extensions==4.4.0
     # via
     #   aiodebug
     #   pydantic
+yarl==1.8.1
+    # via
+    #   aio-pika
+    #   aiormq

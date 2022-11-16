@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator, Dict, List, Tuple, Union
+from typing import AsyncIterator, Union
 
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
@@ -76,12 +76,12 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        scheduled_tasks: Dict[NodeID, Image],
+        scheduled_tasks: dict[NodeID, Image],
     ):
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(user_id, cluster_id, self) as client:
-            task_job_ids: List[
-                Tuple[NodeID, str]
+            task_job_ids: list[
+                tuple[NodeID, str]
             ] = await client.send_computation_tasks(
                 user_id=user_id,
                 project_id=project_id,
@@ -106,13 +106,13 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _get_tasks_status(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
-    ) -> List[RunningState]:
+        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+    ) -> list[RunningState]:
         async with _cluster_dask_client(user_id, cluster_id, self) as client:
             return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
 
     async def _stop_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
     ) -> None:
         async with _cluster_dask_client(user_id, cluster_id, self) as client:
             await asyncio.gather(
@@ -120,7 +120,7 @@ class DaskScheduler(BaseCompScheduler):
             )
 
     async def _process_completed_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
     ) -> None:
         try:
             async with _cluster_dask_client(user_id, cluster_id, self) as client:
@@ -199,7 +199,7 @@ class DaskScheduler(BaseCompScheduler):
                 service_tag=service_version,
                 result=task_final_state,
             )
-            await self.rabbitmq_client.publish_message(message)
+            await self.rabbitmq_client.publish(message.channel_name, message.json())
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             task.project_id, [task.node_id], task_final_state, errors=errors
@@ -226,7 +226,7 @@ class DaskScheduler(BaseCompScheduler):
                 service_key=service_key,
                 service_tag=service_version,
             )
-            await self.rabbitmq_client.publish_message(message)
+            await self.rabbitmq_client.publish(message.channel_name, message.json())
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], task_state_event.state
@@ -242,7 +242,7 @@ class DaskScheduler(BaseCompScheduler):
             node_id=node_id,
             progress=task_progress_event.progress,
         )
-        await self.rabbitmq_client.publish_message(message)
+        await self.rabbitmq_client.publish(message.channel_name, message.json())
 
     async def _task_log_change_handler(self, event: str) -> None:
         task_log_event = TaskLogEvent.parse_raw(event)
@@ -255,4 +255,4 @@ class DaskScheduler(BaseCompScheduler):
             messages=[task_log_event.log],
         )
 
-        await self.rabbitmq_client.publish_message(message)
+        await self.rabbitmq_client.publish(message.channel_name, message.json())

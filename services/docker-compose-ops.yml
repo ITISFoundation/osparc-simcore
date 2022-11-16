@@ -64,9 +64,9 @@ services:
           "--fail",
           "http://localhost:9000/minio/health/live"
         ]
-      interval: 30s
+      interval: 5s
       timeout: 20s
-      retries: 3
+      retries: 5
 
   filestash:
     image: machines/filestash:3a01b70

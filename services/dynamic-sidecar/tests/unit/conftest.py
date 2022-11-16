@@ -45,25 +45,20 @@ def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
-    """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ member functions"""
+    """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient member functions"""
     return {
-        "connect": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.connect",
-            return_value=None,
-            autospec=True,
-        ),
-        "send_event_reload_iframe": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.send_event_reload_iframe",
+        "wait_till_rabbitmq_responsive": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.wait_till_rabbitmq_responsive",
             return_value=None,
             autospec=True,
         ),
         "post_log_message": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.post_log_message",
+            "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
             return_value=None,
             autospec=True,
         ),
         "close": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQ.close",
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient.close",
             return_value=None,
             autospec=True,
         ),
@@ -155,7 +150,7 @@ async def ensure_external_volumes(
         # CLEAN:
         #    docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
 
-        yield volumes
+        yield tuple(volumes)
 
         @retry(
             wait=wait_fixed(1),

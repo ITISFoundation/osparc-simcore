@@ -49,7 +49,7 @@ services:
       - DY_SIDECAR_PATH_OUTPUTS=/work/outputs
       - DY_SIDECAR_STATE_PATHS=["/work/workspace"]
     working_dir: /work
-    image: busybox
+    image: busybox:latest
     command: sh -c "echo 'setup'; sleep {sleep}; echo 'teardown'"
     """
     )

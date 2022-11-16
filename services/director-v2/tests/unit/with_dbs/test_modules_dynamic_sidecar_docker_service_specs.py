@@ -188,14 +188,6 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     "POSTGRES_USER": "test",
                     "POSTGRES_PASSWORD": "test",
                     "POSTGRES_ENDPOINT": "localhost:5432",
-                    "RABBIT_CHANNELS": '{"log": '
-                    '"simcore.services.logs", '
-                    '"progress": '
-                    '"simcore.services.progress", '
-                    '"instrumentation": '
-                    '"simcore.services.instrumentation", '
-                    '"events": '
-                    '"simcore.services.events"}',
                     "RABBIT_HOST": "rabbit",
                     "RABBIT_PASSWORD": "adminadmin",
                     "RABBIT_PORT": "5672",
@@ -452,10 +444,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
             sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key] = json.dumps(
                 unsorted_list.sort()
             )
-    assert (
-        dynamic_sidecar_spec_dict
-        == expected_dynamic_sidecar_spec_dict
-    )
+    assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
 
     catalog_client = CatalogClient.instance(minimal_app)
     user_service_specs: dict[

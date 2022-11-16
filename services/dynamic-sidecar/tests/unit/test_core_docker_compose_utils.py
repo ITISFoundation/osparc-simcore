@@ -32,7 +32,7 @@ COMPOSE_SPEC_SAMPLE = {
                 'DY_SIDECAR_STATE_PATHS=["/work/workspace"]',
             ],
             "working_dir": "/work",
-            "image": "busybox",
+            "image": "busybox:latest",
             "command": f"sh -c \"echo 'setup {__name__}'; sleep {SLEEP_TIME_S}; echo 'teardown {__name__}'\"",
         }
     },

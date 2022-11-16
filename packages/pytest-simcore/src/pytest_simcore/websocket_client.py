@@ -85,9 +85,10 @@ async def socketio_client_factory(
             # WARNING: engineio fails with empty cookies. Expects "key=value"
             headers.update({"Cookie": cookie})
 
-        logger.debug("Connecting socketio client to %s ...", url)
+        print(f"--> Connecting socketio client to {url} ...")
         await sio.connect(url, headers=headers)
         assert sio.sid
+        print("... connection done")
         clients.append(sio)
         return sio
 
@@ -96,8 +97,9 @@ async def socketio_client_factory(
     # cleans up clients produce by _connect(*) calls
     for sio in clients:
         if sio.connected:
-            logger.debug("Disconnecting socketio client %s", sio)
+            print(f"<--Disconnecting socketio client {sio}")
             await sio.disconnect()
             await sio.wait()
+            print(f"... disconnection from {sio} done.")
 
         assert not sio.sid

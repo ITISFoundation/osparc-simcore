@@ -136,6 +136,7 @@ class Product(BaseModel):
                     "support_email": "foo@osparcf.io",
                     "vendor": {
                         "url": "https://acme.com",
+                        "license_url": "https://acme.com/license",
                         "name": "ACME",
                         "copyright": "© ACME correcaminos",
                     },

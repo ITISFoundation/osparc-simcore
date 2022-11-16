@@ -100,7 +100,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
-          control.addListener("execute", () => window.open(osparc.navigation.Manuals.getLicenseLink()));
+          osparc.navigation.Manuals.getLicenseURL()
+            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
           this.getMenu().add(control);
           break;
         case "about":
@@ -156,18 +157,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     __addManualsToMenu: function() {
       const menu = this.getMenu();
-      const manuals = osparc.navigation.Manuals.getManuals(this.__serverStatics);
-
-      manuals.forEach(manual => {
-        const manualBtn = new qx.ui.menu.Button(manual.label);
-        manualBtn.addListener("execute", () => window.open(manual.url), this);
-        menu.add(manualBtn);
-      });
+      osparc.navigation.Manuals.addManualButtonsToMenu(menu);
     },
 
     __addFeedbacksToMenu: function() {
       const menu = this.getMenu();
-      osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
+      osparc.navigation.Manuals.addSupportButtonsToMenu(menu);
     }
   }
 });

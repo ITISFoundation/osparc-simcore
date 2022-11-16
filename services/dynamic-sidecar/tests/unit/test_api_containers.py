@@ -158,12 +158,12 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
             "version": "3",
             "services": {
                 "first-box": {
-                    "image": "busybox",
+                    "image": "busybox:latest",
                     "networks": [
                         dynamic_sidecar_network_name,
                     ],
                 },
-                "second-box": {"image": "busybox"},
+                "second-box": {"image": "busybox:latest"},
             },
             "networks": {dynamic_sidecar_network_name: {}},
         }
@@ -176,7 +176,7 @@ def compose_spec_single_service() -> str:
         {
             "version": "3",
             "services": {
-                "solo-box": {"image": "busybox"},
+                "solo-box": {"image": "busybox:latest"},
             },
         }
     )

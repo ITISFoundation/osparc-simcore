@@ -2,11 +2,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
+import asyncio
 import logging
 import os
 import socket
-from dataclasses import dataclass
 from typing import Any, AsyncIterator, Optional
 
 import aio_pika
@@ -49,7 +48,6 @@ async def rabbit_settings(
         RABBIT_PASSWORD=testing_environ_vars["RABBIT_PASSWORD"],
         RABBIT_HOST=get_localhost_ip(),
         RABBIT_PORT=int(port),
-        RABBIT_CHANNELS=json.loads(testing_environ_vars["RABBIT_CHANNELS"]),
     )
 
     await wait_till_rabbit_responsive(settings.dsn)
@@ -59,7 +57,7 @@ async def rabbit_settings(
 
 @pytest.fixture(scope="function")
 async def rabbit_service(
-    rabbit_settings: RabbitSettings, monkeypatch
+    rabbit_settings: RabbitSettings, monkeypatch: pytest.MonkeyPatch
 ) -> RabbitSettings:
     """Sets env vars for a rabbit service is up and responsive and returns its settings as well
 
@@ -71,7 +69,6 @@ async def rabbit_service(
     monkeypatch.setenv(
         "RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value()
     )
-    monkeypatch.setenv("RABBIT_CHANNELS", json.dumps(rabbit_settings.RABBIT_CHANNELS))
 
     return rabbit_settings
 
@@ -83,6 +80,11 @@ async def rabbit_connection(
     def _reconnect_callback():
         pytest.fail("rabbit reconnected")
 
+    def _connection_close_callback(sender: Any, exc: Optional[BaseException] = None):
+        if exc and not isinstance(exc, asyncio.CancelledError):
+            pytest.fail(f"rabbit connection closed with exception {exc} from {sender}!")
+        print("<-- connection closed")
+
     # create connection
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
@@ -93,6 +95,7 @@ async def rabbit_connection(
     assert connection
     assert not connection.is_closed
     connection.reconnect_callbacks.add(_reconnect_callback)
+    connection.close_callbacks.add(_connection_close_callback)
 
     yield connection
     # close connection
@@ -105,68 +108,13 @@ async def rabbit_channel(
     rabbit_connection: aio_pika.abc.AbstractConnection,
 ) -> AsyncIterator[aio_pika.abc.AbstractChannel]:
     def _channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
-        if exc:
-            pytest.fail("rabbit channel closed!")
-        else:
-            print("sender was '{sender}'")
+        if exc and not isinstance(exc, asyncio.CancelledError):
+            pytest.fail(f"rabbit channel closed with exception {exc} from {sender}!")
+        print("<-- rabbit channel closed")
 
     # create channel
-    async with rabbit_connection.channel(publisher_confirms=False) as channel:
+    async with rabbit_connection.channel() as channel:
+        print("--> rabbit channel created")
+        channel.close_callbacks.add(_channel_close_callback)
         yield channel
-
-
-@dataclass
-class RabbitExchanges:
-    logs: aio_pika.abc.AbstractExchange
-    progress: aio_pika.abc.AbstractExchange
-    instrumentation: aio_pika.abc.AbstractExchange
-
-
-@pytest.fixture(scope="function")
-async def rabbit_exchanges(
-    rabbit_settings: RabbitSettings,
-    rabbit_channel: aio_pika.Channel,
-) -> RabbitExchanges:
-    """
-    Declares and returns 'log' and 'instrumentation' exchange channels with rabbit
-    """
-
-    # declare log exchange
-    LOG_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS["log"]
-    logs_exchange = await rabbit_channel.declare_exchange(
-        LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
-    )
-    assert logs_exchange
-
-    # declare progress exchange
-    PROGRESS_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS["progress"]
-    progress_exchange = await rabbit_channel.declare_exchange(
-        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
-    )
-    assert progress_exchange
-
-    # declare instrumentation exchange
-    INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_settings.RABBIT_CHANNELS[
-        "instrumentation"
-    ]
-    instrumentation_exchange = await rabbit_channel.declare_exchange(
-        INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
-    )
-    assert instrumentation_exchange
-
-    return RabbitExchanges(logs_exchange, progress_exchange, instrumentation_exchange)
-
-
-@pytest.fixture(scope="function")
-async def rabbit_queue(
-    rabbit_channel: aio_pika.Channel,
-    rabbit_exchanges: RabbitExchanges,
-) -> AsyncIterator[aio_pika.abc.AbstractQueue]:
-    queue = await rabbit_channel.declare_queue(exclusive=True)
-    assert queue
-
-    # Binding queue to exchange
-    await queue.bind(rabbit_exchanges.logs)
-    await queue.bind(rabbit_exchanges.progress)
-    await queue.bind(rabbit_exchanges.instrumentation)
-    yield queue
+    assert channel.is_closed
