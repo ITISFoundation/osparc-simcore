@@ -607,6 +607,24 @@ class TutorialBase {
     await this.takeScreenshot('waitFor_finished')
   }
 
+  async testS4L(s4lNodeId) {
+    await this.waitFor(20000, 'Wait for the spash screen to disappear');
+
+    // do some basic interaction
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    const modelTree = await s4lIframe.$('.model-tree');
+    const modelItems = await modelTree.$$('.MuiTreeItem-label');
+    const nLabels = modelItems.length;
+    if (nLabels > 1) {
+      modelItems[0].click();
+      await this.waitFor(2000, 'Model clicked');
+      await this.takeScreenshot('ModelClicked');
+      modelItems[1].click();
+      await this.waitFor(2000, 'Grid clicked');
+      await this.takeScreenshot('GridlClicked');
+    }
+  }
+
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
