@@ -7,8 +7,7 @@ from models_library.basic_regex import (
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, EmailStr, Field, validator
-from servicelib.statics_constants import FRONTEND_APPS_AVAILABLE
+from pydantic import BaseModel, EmailStr, Extra, Field, validator
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -19,6 +18,7 @@ from simcore_postgres_database.models.products import (
 )
 
 from .db_models import products
+from .statics_constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
@@ -96,10 +96,11 @@ class Product(BaseModel):
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
     class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
         alias_generator = snake_to_camel  # to export
+        allow_population_by_field_name = True
         frozen = True  # read-only
+        orm_mode = True
+        extra = Extra.ignore
         schema_extra = {
             "examples": [
                 {

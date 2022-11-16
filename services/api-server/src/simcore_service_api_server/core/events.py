@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 WELCOME_MSG = r"""
       __        __   ___  __        ___  __
  /\  |__) | __ /__` |__  |__) \  / |__  |__)
-/~~\ |    |    .__/ |___ |  \  \/  |___ |  \  {0}
+/~~\ |    |    .__/ |___ |  \  \/  |___ |  \  {}
 
 """.format(
     f"v{__version__}"
@@ -23,8 +23,11 @@ WELCOME_MSG = r"""
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def on_startup() -> None:
+        logger.info("Application starting")
         if app.state.settings.API_SERVER_POSTGRES:
+            # database
             await connect_to_db(app)
+            assert app.state.engine  # nosec
 
         print(WELCOME_MSG, flush=True)
 

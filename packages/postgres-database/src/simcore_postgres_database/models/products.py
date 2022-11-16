@@ -164,5 +164,11 @@ products = sa.Table(
         onupdate=func.now(),
         doc="Automaticaly updates on modification of the row",
     ),
+    sa.Column(
+        "priority",
+        sa.Integer(),
+        server_default=sa.text("0"),
+        doc="Index used to sort the products. E.g. determine default",
+    ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

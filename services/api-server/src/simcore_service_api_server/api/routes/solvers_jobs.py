@@ -12,7 +12,6 @@ from fastapi.responses import RedirectResponse
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
-from ...core.settings import ApplicationSettings
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
@@ -31,7 +30,7 @@ from ...utils.solver_job_models_converters import (
     create_new_project_for_job,
 )
 from ...utils.solver_job_outputs import get_solver_output_results
-from ..dependencies.application import get_reverse_url_mapper, get_settings
+from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
@@ -67,15 +66,15 @@ async def list_jobs(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     webserver_api: AuthSession = Depends(get_webserver_session),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
     """List of all jobs in a specific released solver"""
 
     solver = await catalog_client.get_solver(
-        user_id,
-        solver_key,
-        version,
-        product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
     )
     logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
@@ -104,7 +103,7 @@ async def create_job(
     webserver_api: AuthSession = Depends(get_webserver_session),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
     """Creates a job in a specific release with given inputs.
 
@@ -113,10 +112,10 @@ async def create_job(
 
     # ensures user has access to solver
     solver = await catalog_client.get_solver(
-        user_id,
-        solver_key,
-        version,
-        product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
     )
 
     # creates NEW job as prototype
@@ -186,14 +185,16 @@ async def start_job(
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
 
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Start Job '%s'", job_name)
 
     task = await director2_api.start_computation(
-        job_id, user_id, app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
+        project_id=job_id,
+        user_id=user_id,
+        product_name=product_name,
     )
     job_status: JobStatus = create_jobstatus_from_task(task)
     return job_status

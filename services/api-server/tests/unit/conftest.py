@@ -101,7 +101,7 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     # mock engine if db was not init
     if app.state.settings.API_SERVER_POSTGRES is None:
 
-        engine = mocker.Mock()
+        engine = mocker.MagicMock()
         engine.minsize = 1
         engine.size = 10
         engine.freesize = 3
@@ -114,16 +114,27 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
     # NOTE: here, instead of using the database, we patch repositories interface
     mocker.patch(
         "simcore_service_api_server.db.repositories.api_keys.ApiKeysRepository.get_user_id",
+        autospec=True,
         return_value=faker_user_id,
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_user_id",
+        autospec=True,
         return_value=faker_user_id,
     )
     mocker.patch(
         "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
+        autospec=True,
         return_value=faker.email(),
     )
+
+    # patches simcore_postgres_database.utils_products.get_default_product_name
+    mocker.patch(
+        "simcore_service_api_server.api.dependencies.application.get_default_product_name",
+        autospec=True,
+        return_value="osparc",
+    )
+
     return HTTPBasicAuth(faker.word(), faker.password())
 
 

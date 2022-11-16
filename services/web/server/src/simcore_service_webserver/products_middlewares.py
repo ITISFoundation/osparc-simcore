@@ -3,14 +3,8 @@ from typing import Optional
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 
-from ._constants import (
-    APP_PRODUCTS_KEY,
-    RQ_PRODUCT_FRONTEND_KEY,
-    RQ_PRODUCT_KEY,
-    X_PRODUCT_NAME_HEADER,
-)
+from ._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from ._meta import API_VTAG
 
 log = logging.getLogger(__name__)
@@ -32,6 +26,10 @@ def discover_product_by_request_header(request: web.Request) -> Optional[str]:
     return None
 
 
+def _get_app_default_product_name(request: web.Request) -> str:
+    return request.app[f"{APP_PRODUCTS_KEY}_default"]
+
+
 @web.middleware
 async def discover_product_middleware(request: web.Request, handler: Handler):
     """
@@ -49,7 +47,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         product_name = (
             discover_product_by_request_header(request)
             or discover_product_by_hostname(request)
-            or FRONTEND_APP_DEFAULT
+            or _get_app_default_product_name(request)
         )
         request[RQ_PRODUCT_KEY] = product_name
 
@@ -60,8 +58,11 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         or request.path.startswith("/view")
         or request.path == "/"
     ):
-        product_name = discover_product_by_hostname(request) or FRONTEND_APP_DEFAULT
-        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
+        product_name = discover_product_by_hostname(
+            request
+        ) or _get_app_default_product_name(request)
+
+        request[RQ_PRODUCT_KEY] = product_name
 
     response = await handler(request)
 

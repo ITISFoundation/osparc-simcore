@@ -1,4 +1,5 @@
 # pylint:disable=unused-import
+# nopycln: file
 
 from typing import Final
 
@@ -16,7 +17,6 @@ APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.products"
 
 # Request storage keys
 RQ_PRODUCT_KEY: Final[str] = f"{__name__}.product"
-RQ_PRODUCT_FRONTEND_KEY: Final[str] = f"{__name__}.product_frontend"
 
 # Headers keys
 X_PRODUCT_NAME_HEADER: Final[str] = "X-Simcore-Products-Name"
