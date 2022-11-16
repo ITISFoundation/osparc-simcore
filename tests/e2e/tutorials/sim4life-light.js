@@ -1,4 +1,4 @@
-// node ti-plan.js [url] [user] [password] [timeout] [--demo]
+// node sim4life-light.js [url] [user] [password] [timeout] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
@@ -44,21 +44,7 @@ async function runTutorial() {
       false
     );
 
-    await tutorial.waitFor(15000, 'Wait for some time');
-
-    // do some basic interaction
-    const s4lIframe = await tutorial.getIframe(s4lNodeId);
-    const modelTree = await s4lIframe.$('.model-tree');
-    const modelItems = await modelTree.$$('.MuiTreeItem-label');
-    const nLabels = modelItems.length;
-    if (nLabels > 1) {
-      modelItems[0].click();
-      await tutorial.waitFor(2000, 'Model clicked');
-      await tutorial.takeScreenshot('ModelClicked');
-      modelItems[1].click();
-      await tutorial.waitFor(2000, 'Grid clicked');
-      await tutorial.takeScreenshot('GridlClicked');
-    }
+    await tutorial.testS4L(s4lNodeId);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);
@@ -66,12 +52,7 @@ async function runTutorial() {
     throw "Tutorial Failed";
   }
   finally {
-    if (studyId) {
-      await tutorial.toDashboard()
-      await tutorial.removeStudy(studyId);
-    }
-    await tutorial.logOut();
-    await tutorial.close();
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {
