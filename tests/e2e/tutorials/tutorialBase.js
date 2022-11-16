@@ -608,7 +608,7 @@ class TutorialBase {
   }
 
   async testS4L(s4lNodeId) {
-    await this.waitFor(20000, 'Wait for the spash screen to disappear');
+    await this.waitFor(20000, 'Wait for the splash screen to disappear');
 
     // do some basic interaction
     const s4lIframe = await this.getIframe(s4lNodeId);
