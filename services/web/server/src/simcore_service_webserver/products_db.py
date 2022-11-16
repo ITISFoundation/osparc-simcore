@@ -2,7 +2,7 @@ import logging
 from typing import AsyncIterator, Optional
 
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
+from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.products import jinja2_templates
 
@@ -21,14 +21,13 @@ log = logging.getLogger(__name__)
 _COLUMNS_IN_MODEL = [products.columns[f] for f in Product.__fields__]
 
 
-async def iter_products(engine: Engine) -> AsyncIterator[ResultProxy]:
+async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     """Iterates on products sorted by priority i.e. the first is considered the default"""
-    async with engine.acquire() as conn:
-        async for row in conn.execute(
-            sa.select(_COLUMNS_IN_MODEL).order_by(products.c.priority)
-        ):
-            assert row  # nosec
-            yield row
+    async for row in conn.execute(
+        sa.select(_COLUMNS_IN_MODEL).order_by(products.c.priority)
+    ):
+        assert row  # nosec
+        yield row
 
 
 class ProductRepository(BaseRepository):

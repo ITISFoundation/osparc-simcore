@@ -57,7 +57,8 @@ def mock_app(mock_postgres_product_table: dict[str, Any]):
     app_products: dict[str, Product] = {
         entry["name"]: Product(**entry) for entry in mock_postgres_product_table
     }
-    _set_app_state(mock_app, app_products)
+    default_product_name = next(iter(app_products.keys()))
+    _set_app_state(mock_app, app_products, default_product_name)
 
     return mock_app
 
