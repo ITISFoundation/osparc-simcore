@@ -15,13 +15,14 @@ const {
 
 const serviceName = "sim4life-dy";
 
-
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, enableDemoMode);
   let studyId
 
   try {
     await tutorial.start();
+
+    // start sim4life-dy service
     const studyData = await tutorial.openService(1000);
     studyId = studyData["data"]["uuid"];
 
