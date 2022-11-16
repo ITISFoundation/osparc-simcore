@@ -9,10 +9,8 @@ from pathlib import Path
 from pprint import pprint
 from typing import Callable
 
-import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import (
@@ -23,35 +21,7 @@ from simcore_postgres_database.models.products import (
     Vendor,
     WebFeedback,
 )
-from simcore_postgres_database.utils_products import get_default_product_name
 from simcore_postgres_database.webserver_models import products
-
-
-@pytest.fixture
-def products_regex() -> dict:
-    return {
-        "s4l": r"(^s4l[\.-])|(^sim4life\.)",
-        "osparc": r"^osparc.",
-        "tis": r"(^ti.[\.-])|(^ti-solution\.)",
-    }
-
-
-@pytest.fixture
-def make_products_table(
-    products_regex: dict,
-) -> Callable:
-    async def _make(conn) -> None:
-        for n, (name, regex) in enumerate(products_regex.items()):
-            result = await conn.execute(
-                products.insert().values(name=name, host_regex=regex, priority=n)
-            )
-
-            assert result.closed
-            assert not result.returns_rows
-            with pytest.raises(ResourceClosedError):
-                await result.scalar()
-
-    return _make
 
 
 async def test_load_products(
@@ -218,10 +188,3 @@ async def test_insert_select_product(
             "name": "ACME",
             "copyright": "© ACME correcaminos",
         }
-
-
-async def test_default_product(pg_engine: Engine, make_products_table):
-    async with pg_engine.acquire() as conn:
-        await make_products_table(conn)
-        default_product = await get_default_product_name(conn)
-        assert default_product == "s4l"
