@@ -572,7 +572,7 @@ class TutorialBase {
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
-          console.log("Study Card unlocked in " + (waitFor + intervalWait*i) + "s");
+          console.log("Study Card unlocked in " + ((waitFor + intervalWait*i)/1000) + "s");
           break;
         }
         console.log(studyId, "study card still locked");
