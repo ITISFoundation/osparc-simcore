@@ -17,8 +17,7 @@ const serviceName = "sim4life-dy";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, enableDemoMode);
-  let studyId
-
+  let studyId;
   try {
     await tutorial.start();
 
@@ -43,10 +42,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId);
-    await tutorial.logOut();
-    await tutorial.close();
+    tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

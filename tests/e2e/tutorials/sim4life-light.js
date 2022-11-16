@@ -52,12 +52,7 @@ async function runTutorial() {
     throw "Tutorial Failed";
   }
   finally {
-    if (studyId) {
-      await tutorial.toDashboard()
-      await tutorial.removeStudy(studyId);
-    }
-    await tutorial.logOut();
-    await tutorial.close();
+    tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

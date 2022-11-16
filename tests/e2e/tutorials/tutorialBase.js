@@ -532,6 +532,15 @@ class TutorialBase {
     }
   }
 
+  async leave(studyId) {
+    if (studyId) {
+      await this.toDashboard()
+      await this.removeStudy(studyId);
+    }
+    await this.logOut();
+    await this.close();
+  }
+
   async toDashboard() {
     await this.takeScreenshot("toDashboard_before");
     this.__responsesQueue.addResponseListener("projects");
@@ -546,20 +555,6 @@ class TutorialBase {
       throw (err);
     }
     await this.takeScreenshot("toDashboard_after");
-  }
-
-  async closeStudy() {
-    await this.takeScreenshot("closeStudy_before");
-    this.__responsesQueue.addResponseListener(":close");
-    try {
-      await auto.toDashboard(this.__page);
-      await this.__responsesQueue.waitUntilResponse(":close");
-    }
-    catch (err) {
-      console.error("Failed closing study", err);
-      throw (err);
-    }
-    await this.takeScreenshot("closeStudy_after");
   }
 
   async removeStudy(studyId, waitFor = 5000) {
