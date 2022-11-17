@@ -6,7 +6,6 @@ from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import UserRole
 
 from ..groups_api import auto_add_user_to_groups
@@ -64,13 +63,13 @@ def _validate_user_status(user: dict, cfg, support_email: str):
     if user_status == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_USER_BANNED.format(support_email=support_email),
-            content_type=MIMETYPE_APPLICATION_JSON
+            content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == EXPIRED:
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_USER_EXPIRED.format(support_email=support_email),
-            content_type=MIMETYPE_APPLICATION_JSON
+            content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == CONFIRMATION_PENDING:
@@ -243,57 +242,6 @@ async def register_phone(request: web.Request):
             reason=f"Currently our system cannot register phone numbers ({error_code})",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from e
-
-
-@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
-async def phone_confirmation(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
-    settings: LoginSettings = get_plugin_settings(request.app)
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
-
-    email = body.email
-    phone = body.phone
-    code = body.code
-
-    if not settings.LOGIN_2FA_REQUIRED:
-        raise web.HTTPServiceUnavailable(
-            reason="Phone registration is not available",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    if (expected := await get_2fa_code(request.app, email)) and code == expected:
-        await delete_2fa_code(request.app, email)
-
-        # db
-        try:
-            user = await db.get_user({"email": email})
-            await db.update_user(user, {"phone": phone})
-
-        except UniqueViolation as err:
-            raise web.HTTPUnauthorized(
-                reason="Invalid phone number",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            ) from err
-
-        # login
-        with log_context(
-            log,
-            logging.INFO,
-            "login after phone_confirmation of user_id=%s with %s",
-            f"{user.get('id')}",
-            f"{email=}",
-        ):
-            identity = user["email"]
-            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-            await remember(request, response, identity)
-            return response
-
-    # unauthorized
-    raise web.HTTPUnauthorized(
-        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
-    )
 
 
 async def login(request: web.Request):
