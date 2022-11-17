@@ -44,3 +44,7 @@ def get_r_clone_config(r_clone_settings: RCloneSettings) -> str:
         aws_region=r_clone_settings.R_CLONE_S3.S3_REGION,
     )
     return r_clone_config
+
+
+def resolve_provider(s3_provider: S3Provider) -> str:
+    return _PROVIDER_ENTRIES[s3_provider]["provider"]
