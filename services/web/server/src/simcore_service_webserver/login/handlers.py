@@ -126,6 +126,7 @@ async def login(request: web.Request):
                     "reason": cfg.MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
+                    "next_url": request.app.router["auth_validate_2fa_login"].url_for(),
                 },
                 status=web.HTTPAccepted.status_code,
             )
@@ -148,7 +149,7 @@ async def login(request: web.Request):
 
 
 async def login_2fa(request: web.Request):
-    """2FA login"""
+    """2FA login (from-end requests after login -> SMS_CODE_REQUIRED )"""
     _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -159,12 +160,19 @@ async def login_2fa(request: web.Request):
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed
-    if code == await get_2fa_code(request.app, email):
-        await delete_2fa_code(request.app, email)
+    if code != await get_2fa_code(request.app, email):
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
+        )
 
-        user = await db.get_user({"email": email})
-        rsp = await _authorize_login(request, user, cfg)
-        return rsp
+    # FIXME: ask to register if user not found!!
+    user = await db.get_user({"email": email})
+
+    # dispose since used
+    await delete_2fa_code(request.app, email)
+
+    rsp = await _authorize_login(request, user, cfg)
+    return rsp
 
 
 @login_required
