@@ -28,9 +28,8 @@ from .utils import (
     USER,
     flash_response,
     get_client_ip,
-    get_template_path,
-    render_and_send_mail,
 )
+from .utils_email import get_template_path, render_and_send_mail
 
 log = logging.getLogger(__name__)
 

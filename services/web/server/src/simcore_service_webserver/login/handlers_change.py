@@ -17,10 +17,9 @@ from .utils import (
     CHANGE_EMAIL,
     RESET_PASSWORD,
     flash_response,
-    get_template_path,
-    render_and_send_mail,
     validate_user_status,
 )
+from .utils_email import get_template_path, render_and_send_mail
 
 log = logging.getLogger(__name__)
 

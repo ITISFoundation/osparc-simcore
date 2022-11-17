@@ -10,7 +10,7 @@ from .email_settings import SMTPSettings
 from .email_settings import get_plugin_settings as get_email_settings
 from .login.decorators import login_required
 from .login.storage import AsyncpgStorage, get_plugin_storage
-from .login.utils import themed
+from .login.utils_email import themed
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def service_submission(request: web.Request):
     try:
         # NOTE: temporarily internal import to avoid render_and_send_mail to be interpreted as handler
         # TODO: Move outside when get_handlers_from_namespace is fixed
-        from .login.utils import render_and_send_mail
+        from .login.utils_email import render_and_send_mail
 
         attachments = [("metadata.json", json.dumps(data, indent=4))]
         if filedata:
