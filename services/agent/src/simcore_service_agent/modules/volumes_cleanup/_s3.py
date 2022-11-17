@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from asyncio.streams import StreamReader
 from pathlib import Path
 from typing import Final
 
@@ -60,9 +61,13 @@ def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Pa
     return Path(f"/{joint_key}")
 
 
-async def _read_stream(stream):
+async def _read_stream(stream: StreamReader) -> str:
+    output = ""
     while line := await stream.readline():
-        logger.info(line.decode().strip("\n"))
+        message = line.decode()
+        output += message
+        logger.debug(message.strip("\n"))
+    return output
 
 
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
@@ -105,7 +110,7 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         "sync",
         f"{source_dir}",
         f"dst:{s3_path}",
-        "-P",
+        "--verbose",
     ]
 
     # add files to be ignored
@@ -122,8 +127,9 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stderr=asyncio.subprocess.STDOUT,
     )
 
-    await _read_stream(process.stdout)
+    output = await _read_stream(process.stdout)
     await process.wait()
+    logger.info(output)
 
     if process.returncode != 0:
         raise RuntimeError(
