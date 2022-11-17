@@ -20,7 +20,6 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     PositiveFloat,
-    PositiveInt,
     parse_obj_as,
 )
 from pytest import FixtureRequest
@@ -37,11 +36,10 @@ from simcore_service_dynamic_sidecar.modules.outputs_watcher._directory_utils im
 from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
     BaseDelayPolicy,
 )
-from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
 TICK_INTERVAL: Final[PositiveFloat] = 0.001
 WAIT_INTERVAL: Final[PositiveFloat] = TICK_INTERVAL * 10
-SLEEP_FOREVER: Final[PositiveInt] = 1000000
+UPLOAD_DURATION: Final[PositiveFloat] = TICK_INTERVAL * 10
 
 
 # FIXTURES
@@ -90,8 +88,10 @@ async def outputs_watcher(
     outputs_manager: OutputsManager,
 ) -> OutputsWatcher:
     mocker.patch.object(outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", TICK_INTERVAL)
-    outputs_watcher = OutputsWatcher(outputs_manager=outputs_manager)
-    outputs_watcher.observe_outputs_directory(mounted_volumes.disk_outputs_path)
+    outputs_watcher = OutputsWatcher(
+        outputs_manager=outputs_manager,
+        path_to_observe=mounted_volumes.disk_outputs_path,
+    )
 
     return outputs_watcher
 
@@ -133,7 +133,7 @@ def mock_event_filter_upload_trigger(
 @pytest.fixture
 def mock_long_running_upload_outputs(mocker: MockerFixture) -> Iterator[AsyncMock]:
     async def mock_upload_outputs(*args, **kwargs) -> None:
-        await asyncio.sleep(SLEEP_FOREVER)
+        await asyncio.sleep(UPLOAD_DURATION)
 
     yield mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
@@ -265,7 +265,7 @@ async def _generate_event_burst(
 
 
 async def _wait_for_events_to_trigger() -> None:
-    await asyncio.sleep(DEFAULT_OBSERVER_TIMEOUT + WAIT_INTERVAL * 2)
+    await asyncio.sleep(WAIT_INTERVAL * 10)
 
 
 async def test_run_observer(
@@ -275,32 +275,19 @@ async def test_run_observer(
     port_keys: list[str],
 ) -> None:
 
-    assert outputs_watcher._outputs_event_handler
-    assert (  # pylint:disable=protected-access
-        outputs_watcher._outputs_event_handler._is_enabled is True
-    )
-
     await outputs_watcher.start()
-    await outputs_watcher.start()
-
-    await _wait_for_events_to_trigger()
 
     # generates the first event chain
     await _generate_event_burst(mounted_volumes.disk_outputs_path, port_keys[0])
-
     await _wait_for_events_to_trigger()
+    assert mock_event_filter_upload_trigger.call_count == 1
 
     # generates the second event chain
     await _generate_event_burst(mounted_volumes.disk_outputs_path, port_keys[1])
-
-    await outputs_watcher.shutdown()
-    await outputs_watcher.shutdown()
-
-    # pylint: disable=protected-access
-    assert outputs_watcher._keep_running is False
-    assert outputs_watcher._blocking_task is None
-
+    await _wait_for_events_to_trigger()
     assert mock_event_filter_upload_trigger.call_count == 2
+
+    await outputs_watcher.shutdown()
 
 
 async def test_does_not_trigger_on_attribute_change(
@@ -353,7 +340,7 @@ async def test_port_key_sequential_event_generation(
             )
         )
 
-    # The wait interval changes with the size of the content of the directory
+    # Waiting for events o finish propagation and changes to be uploaded
     MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
     sleep_for = max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER
     print(f"Waiting {sleep_for} seconds for events to be processed")

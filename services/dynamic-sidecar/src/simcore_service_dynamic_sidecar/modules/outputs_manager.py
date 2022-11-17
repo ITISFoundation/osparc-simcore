@@ -11,10 +11,11 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
+from servicelib.logging_utils import log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
-from ..core.rabbitmq import send_message
+from ..core.rabbitmq import post_log_message
 from .mounted_fs import MountedVolumes
 from .nodeports import upload_outputs
 
@@ -123,6 +124,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._keep_running = True
         self._task_uploading: Optional[Task] = None
         self._task_scheduler_worker: Optional[Task] = None
+        self._schedule_all_ports_for_upload: bool = False
 
         # keep track if a port was uploaded and there was an error, remove said error if
         self._last_upload_error_tracker: dict[str, Optional[Exception]] = {}
@@ -188,17 +190,21 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
             await asyncio.sleep(self.task_monitor_interval_s)
 
+    def set_all_ports_for_upload(self) -> None:
+        self._schedule_all_ports_for_upload = True
+
     async def start(self) -> None:
         self._task_scheduler_worker = create_task(
             self._scheduler_worker(), name="outputs_manager_scheduler_worker"
         )
 
     async def shutdown(self) -> None:
-        await self._uploading_task_cancel()
-        if self._task_scheduler_worker is not None:
-            await _cancel_task(
-                self._task_scheduler_worker, self.task_cancellation_timeout_s
-            )
+        with log_context(logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
+            await self._uploading_task_cancel()
+            if self._task_scheduler_worker is not None:
+                await _cancel_task(
+                    self._task_scheduler_worker, self.task_cancellation_timeout_s
+                )
 
     async def port_key_content_changed(self, port_key: str) -> None:
         await self._port_key_tracker.add_pending(port_key)
@@ -208,6 +214,21 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         if there are no pending port uploads return immediately
         otherwise wait for all of them to finish
         """
+        # NOTE: the file system watchdog was found unhealthy and to make
+        # sure we are not uploading a partially updated state we mark all
+        # ports changed.
+        # This will cancel and reupload all the data, ensuring no data
+        # is missed.
+        if self._schedule_all_ports_for_upload:
+            self._schedule_all_ports_for_upload = False
+            logger.warning(
+                "Scheduled %s for upload. The watchdog was rebooted. "
+                "This is a safety measure to make sure no data is lost. ",
+                self.outputs_port_keys,
+            )
+            for port_key in self.outputs_port_keys:
+                await self.port_key_content_changed(port_key)
+
         while not await self._port_key_tracker.no_tracked_ports():
             await asyncio.sleep(self.task_monitor_interval_s)
 
@@ -229,7 +250,7 @@ def setup_outputs_manager(app: FastAPI) -> None:
 
         io_log_redirect_cb: Optional[LogRedirectCB] = None
         if settings.RABBIT_SETTINGS:
-            io_log_redirect_cb = partial(send_message, app.state.rabbitmq)
+            io_log_redirect_cb = partial(post_log_message, app)
         logger.debug(
             "setting up outputs manager %s",
             "with redirection of logs..." if io_log_redirect_cb else "...",

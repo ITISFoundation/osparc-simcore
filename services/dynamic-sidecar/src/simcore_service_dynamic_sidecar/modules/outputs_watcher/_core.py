@@ -1,151 +1,119 @@
-import asyncio
 import logging
-from collections import deque
+from asyncio import CancelledError
+from asyncio import Queue as AsyncQueue
+from asyncio import Task, create_task, get_event_loop
+from asyncio import sleep as async_sleep
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
+from multiprocessing import Queue
 from pathlib import Path
-from typing import Any, Deque, Generator, Optional
+from queue import Empty
+from time import sleep as blocking_sleep
+from typing import Generator, Optional
 
 from fastapi import FastAPI
-from watchdog.events import FileSystemEvent, FileSystemEventHandler
-from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT, BaseObserver
+from servicelib.logging_utils import log_context
+from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
 from ..mounted_fs import MountedVolumes
 from ..outputs_manager import OutputsManager
 from ._event_filter import EventFilter
-from ._watchdog_extentions import ExtendedInotifyObserver
+from ._observer import ObserverMonitor
 
 logger = logging.getLogger(__name__)
 
 
-class OutputsEventHandler(FileSystemEventHandler):
+class OutputsWatcher:  # pylint:disable = too-many-instance-attributes
     def __init__(
-        self,
-        path_to_observe: Path,
-        outputs_manager: OutputsManager,
-        event_filter: EventFilter,
-    ):
-        super().__init__()
-
-        self.path_to_observe: Path = path_to_observe
-        self.outputs_manager: OutputsManager = outputs_manager
-        self.event_filter: EventFilter = event_filter
-        self._is_enabled: bool = True
-        self._background_tasks: set[asyncio.Task[Any]] = set()
-
-    def toggle(self, *, is_enabled: bool) -> None:
-        self._is_enabled = is_enabled
-
-    def _emit_port_change_event(self, port_key: str, event: FileSystemEvent) -> None:
-        if not self._is_enabled:
-            return
-
-        self.event_filter.enqueue(port_key, event)
-
-    def on_any_event(self, event: FileSystemEvent) -> None:
-        super().on_any_event(event)
-
-        # NOTE: filtering out all events which are not relative to modifying
-        # the contents of the `port_key` folders from the outputs directory
-
-        path_relative_to_outputs = Path(event.src_path).relative_to(
-            self.path_to_observe
-        )
-
-        # discard event if not part of a subfolder
-        relative_path_parents = path_relative_to_outputs.parents
-        event_in_subdirs = len(relative_path_parents) > 0
-        if not event_in_subdirs:
-            return
-
-        # only accept events generated inside `port_key` subfolder
-        possible_port_key = f"{relative_path_parents[0]}"
-        if possible_port_key in self.outputs_manager.outputs_port_keys:
-            self._emit_port_change_event(possible_port_key, event)
-
-
-class OutputsWatcher:
-    """Used to keep tack of observer threads"""
-
-    def __init__(
-        self,
-        *,
-        outputs_manager: OutputsManager,
+        self, *, outputs_manager: OutputsManager, path_to_observe: Path
     ) -> None:
+        self.path_to_observe = path_to_observe
         self.outputs_manager = outputs_manager
 
-        self._observers: Deque[BaseObserver] = deque()
+        self._allow_event_propagation: bool = True
+        self._task_events_worker: Optional[Task] = None
+        self._task_health_worker: Optional[Task] = None
 
-        self._keep_running: bool = True
-        self._blocking_task: Optional[asyncio.Task] = None
-        self._outputs_event_handler: Optional[OutputsEventHandler] = None
-
+        self._events_queue: Optional[Queue] = Queue()
         self._event_filter = EventFilter(outputs_manager=outputs_manager)
-
-    def observe_outputs_directory(
-        self,
-        path_to_observe: Path,
-        recursive: bool = True,
-    ) -> None:
-        directory_path = path_to_observe
-        path = directory_path.absolute()
-        logger.debug("observing %s, %s", f"{path}", f"{recursive=}")
-
-        self._outputs_event_handler = OutputsEventHandler(
+        self._health_queue: AsyncQueue = AsyncQueue()
+        self._observer_monitor: ObserverMonitor = ObserverMonitor(
             path_to_observe=path_to_observe,
-            outputs_manager=self.outputs_manager,
-            event_filter=self._event_filter,
+            outputs_port_keys=outputs_manager.outputs_port_keys,
+            health_queue=self._health_queue,
+            events_queue=self._events_queue,
+            heart_beat_interval_s=DEFAULT_OBSERVER_TIMEOUT,
         )
-        observer = ExtendedInotifyObserver()
-        observer.schedule(self._outputs_event_handler, f"{path}", recursive=recursive)
-        self._observers.append(observer)
+        self._keep_running: bool = False
+
+    def _blocking_worker_events(self) -> None:
+        self._keep_running = True
+        while self._keep_running:
+            blocking_sleep(DEFAULT_OBSERVER_TIMEOUT)
+            if self._events_queue.qsize() == 0:
+                continue
+            try:
+                event: Optional[str] = self._events_queue.get_nowait()
+            except Empty:
+                continue
+
+            if event is None:
+                continue
+
+            if self._allow_event_propagation:
+                self._event_filter.enqueue(event)
+
+    async def _worker_events(self) -> None:
+        with ThreadPoolExecutor(max_workers=1) as executror:
+            await get_event_loop().run_in_executor(
+                executror, self._blocking_worker_events
+            )
+
+    async def _health_check_worker(self) -> None:
+        while True:
+            event = await self._health_queue.get()
+            if event is None:
+                break
+
+            self.outputs_manager.set_all_ports_for_upload()
 
     def enable_event_propagation(self) -> None:
-        if self._outputs_event_handler is not None:
-            self._outputs_event_handler.toggle(is_enabled=True)
+        self._allow_event_propagation = True
 
     def disable_event_propagation(self) -> None:
-        if self._outputs_event_handler is not None:
-            self._outputs_event_handler.toggle(is_enabled=False)
-
-    async def _runner(self) -> None:
-        try:
-            for observer in self._observers:
-                observer.start()
-
-            while self._keep_running:
-                # watchdog internally uses 1 sec interval to detect events
-                # sleeping for less is useless.
-                # If this value is bigger then the DEFAULT_OBSERVER_TIMEOUT
-                # the result will not be as expected. Keep sleep to 1 second
-                await asyncio.sleep(DEFAULT_OBSERVER_TIMEOUT)
-
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Watchers failed upon initialization")
-        finally:
-            for observer in self._observers:
-                observer.stop()
-                observer.join()
+        self._allow_event_propagation = False
 
     async def start(self) -> None:
-        if self._blocking_task is None:
-            self._blocking_task = asyncio.create_task(
-                self._runner(), name="blocking task"
-            )
-            await self._event_filter.start()
-        else:
-            logger.warning("Already started, will not start again")
+        self._task_events_worker = create_task(
+            self._worker_events(), name="outputs_watcher_events_worker"
+        )
+        self._task_health_worker = create_task(
+            self._health_check_worker(), name="outputs_watcher_health_check_worker"
+        )
+
+        await self._event_filter.start()
+        await self._observer_monitor.start()
+
+        logger.info("started outputs watcher")
+        await async_sleep(0.01)
 
     async def shutdown(self) -> None:
         """cleans up spawned tasks which might be pending"""
+        with log_context(logger, logging.INFO, f"{OutputsWatcher.__name__} shutdown"):
+            await self._event_filter.shutdown()
+            await self._observer_monitor.stop()
 
-        self._keep_running = False
-        if self._blocking_task is not None:
-            self._blocking_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await self._blocking_task
-            self._blocking_task = None
+            if self._task_events_worker is not None:
+                # waiting for queue workers to close
+                self._keep_running = False
+                if self._task_events_worker is not None:
+                    self._task_events_worker.cancel()
+                    with suppress(CancelledError):
+                        await self._task_events_worker
 
-        await self._event_filter.shutdown()
+            if self._task_health_worker is not None:
+                await self._health_queue.put(None)
+                await self._task_health_worker
 
 
 def setup_outputs_watcher(app: FastAPI) -> None:
@@ -155,9 +123,9 @@ def setup_outputs_watcher(app: FastAPI) -> None:
         outputs_manager: OutputsManager
         outputs_manager = app.state.outputs_manager  # nosec
 
-        app.state.outputs_watcher = OutputsWatcher(outputs_manager=outputs_manager)
-        app.state.outputs_watcher.observe_outputs_directory(
-            mounted_volumes.disk_outputs_path
+        app.state.outputs_watcher = OutputsWatcher(
+            path_to_observe=mounted_volumes.disk_outputs_path,
+            outputs_manager=outputs_manager,
         )
         app.state.outputs_watcher.disable_event_propagation()
         await app.state.outputs_watcher.start()
