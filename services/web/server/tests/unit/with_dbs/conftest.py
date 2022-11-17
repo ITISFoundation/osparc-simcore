@@ -302,7 +302,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     #
     for func_name in (
         "get_dynamic_service",
-        "get_dynamic_services",
+        "list_dynamic_services",
         "run_dynamic_service",
         "stop_dynamic_service",
     ):
@@ -352,10 +352,10 @@ def create_dynamic_service_mock(
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_v2_api[
-            "director_v2_api.get_dynamic_services"
+            "director_v2_api.list_dynamic_services"
         ].return_value = services
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.get_dynamic_services"
+            "director_v2_core_dynamic_services.list_dynamic_services"
         ].return_value = services
         return running_service_dict
 
