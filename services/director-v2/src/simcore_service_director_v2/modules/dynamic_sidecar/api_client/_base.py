@@ -10,7 +10,7 @@ from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from ._errors import ClientHttpError, UnexpectedStatusError, _WrongReturnType
@@ -30,9 +30,7 @@ def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
     )
 
 
-def _after_log(
-    log: logging.Logger, max_retries: int
-) -> Callable[[RetryCallState], None]:
+def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
         # pylint: disable=protected-access
 
@@ -40,11 +38,10 @@ def _after_log(
         e = retry_state.outcome.exception()
         assert isinstance(e, HTTPError)  # nosec
         log.error(
-            "Unexpected error with '%s': %s, (attempt [%s/%s])",
+            "Unexpected error with '%s': %s, (attempt %s)",
             f"{e.request=}",
             f"{e=}",
             retry_state.attempt_number,
-            max_retries,
         )
 
     return log_it
@@ -68,11 +65,11 @@ def retry_on_errors(
         # pylint: disable=protected-access
         try:
             async for attempt in AsyncRetrying(
-                stop=stop_after_attempt(zelf._request_max_retries),
+                stop=stop_after_delay(zelf._request_max_network_issues_tolerance_s),
                 wait=wait_exponential(min=1),
                 retry=retry_if_exception_type(RETRY_ERRORS),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
-                after=_after_log(logger, zelf._request_max_retries),
+                after=_after_log(logger),
                 reraise=True,
             ):
                 with attempt:
@@ -121,11 +118,13 @@ class BaseThinClient:
     def __init__(
         self,
         *,
-        request_max_retries: int,
+        request_max_network_issues_tolerance_s: int,
         base_url: Optional[URLTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
     ) -> None:
-        self._request_max_retries: int = request_max_retries
+        self._request_max_network_issues_tolerance_s: int = (
+            request_max_network_issues_tolerance_s
+        )
 
         client_args: dict[str, Any] = {}
         if base_url:

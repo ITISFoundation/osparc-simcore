@@ -19,7 +19,7 @@ class ThinDV2LocalhostClient(BaseThinClient):
         self.client = AsyncClient(timeout=Timeout(5))
         self._request_max_retries: int = 3
 
-        super().__init__(request_max_retries=self._request_max_retries)
+        super().__init__(request_max_network_issues_tolerance_s=10)
 
     def _get_url(self, postfix: str) -> str:
         return f"{self.BASE_ADDRESS}/v2/dynamic_scheduler{postfix}"
