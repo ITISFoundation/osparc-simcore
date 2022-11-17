@@ -19,6 +19,7 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings
+from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -136,10 +137,14 @@ async def create_service(
             labels=labels or {},  # type: ignore
         )
         assert service
-        print(f"--> created docker service f{service}")
+        service = await async_docker_client.services.inspect(service["ID"])
+        print(
+            f"--> created docker service {service['ID']} with {service['Spec']['Name']}"
+        )
+
         created_services.append(service)
         # get more info on that service
-        service = await async_docker_client.services.inspect(service["ID"])
+
         assert service["Spec"]["Name"] == service_name
         diff = DeepDiff(
             task_template,
@@ -159,6 +164,28 @@ async def create_service(
     await asyncio.gather(
         *(async_docker_client.services.delete(s["ID"]) for s in created_services)
     )
+    # wait until all tasks are gone
+    @retry(
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+        wait=wait_fixed(0.5),
+        stop=stop_after_delay(10),
+    )
+    async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
+        print(
+            f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
+        )
+        assert not await async_docker_client.containers.list(
+            filters={
+                "is-task": ["true"],
+                "label": [f"com.docker.swarm.service.id={service['ID']}"],
+            }
+        )
+        print(
+            f"<-- checking if service {service['ID']}:{service['Spec']['Name']} is gone."
+        )
+
+    await asyncio.gather(*(_check_service_task_gone(s) for s in created_services))
 
 
 @pytest.fixture
