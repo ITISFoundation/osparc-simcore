@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from enum import Enum
 
 from aiohttp import web
 from servicelib.aiohttp.rest_utils import extract_and_validate
@@ -244,6 +245,15 @@ async def register_phone(request: web.Request):
         ) from e
 
 
+class LoginCode(Enum):
+    """this string is used by the frontend to determine
+    what page to display to the user for next step
+    """
+
+    PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
+    SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
+
+
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -276,10 +286,10 @@ async def login(request: web.Request):
         if not user["phone"]:
             rsp = envelope_response(
                 {
-                    "code": "PHONE_NUMBER_REQUIRED",  # this string is used by the frontend
-                    "reason": "PHONE_NUMBER_REQUIRED",
+                    "code": LoginCode.PHONE_NUMBER_REQUIRED,  # this string is used by the frontend to show phone registration page
+                    "reason": "To login, register first a phone number",
                 },
-                status=web.HTTPAccepted.status_code,
+                status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
             )
             return rsp
 
