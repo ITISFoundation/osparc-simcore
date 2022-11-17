@@ -10,68 +10,13 @@
 from enum import Enum
 from typing import Any, Optional, Union
 
+from _common import Error, Log
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, EmailStr, Field, SecretStr, confloat
+from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
 
-#
-# MODELS -------------------------------------------------------
-#
 # TODO: move to simcore_service_webserver.login._models
-
-
-class Level(Enum):
-    """
-    log level
-    """
-
-    debug = "DEBUG"
-    warning = "WARNING"
-    info = "INFO"
-    error = "ERROR"
-
-
-class Log(BaseModel):
-    level: Optional[Level] = Field("INFO", description="log level")
-    message: str = Field(
-        ...,
-        description="log message. If logger is USER, then it MUST be human readable",
-    )
-    logger: Optional[str] = Field(
-        None, description="name of the logger receiving this message"
-    )
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "message": "Hi there, Mr user",
-                "level": "INFO",
-                "logger": "user-logger",
-            }
-        }
-
-
-class ErrorItem(BaseModel):
-    code: str = Field(
-        ...,
-        description="Typically the name of the exception that produced it otherwise some known error code",
-    )
-    message: str = Field(..., description="Error message specific to this item")
-    resource: Optional[str] = Field(
-        None, description="API resource affected by this error"
-    )
-    field: Optional[str] = Field(None, description="Specific field within the resource")
-
-
-class Error(BaseModel):
-    logs: Optional[list[Log]] = Field(None, description="log messages")
-    errors: Optional[list[ErrorItem]] = Field(None, description="errors metadata")
-    status: Optional[int] = Field(None, description="HTTP error code")
-
-
-#
-# ROUTES -------------------------------------------------------
-#
 # TODO: how to ensure this is in sync with projects_ports_handlers.routes ??
 # this is the source of truth.
 
@@ -306,6 +251,75 @@ async def change_password(data: ChangePasswordForm):
 )
 async def email_confirmation(code: str):
     """email link sent to user to confirm an action"""
+
+
+@app.get(
+    "/auth/api-keys",
+    tags=TAGS,
+    operation_id="list_api_keys",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "returns the display names of API keys",
+            "model": list[str],
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "key name requested is invalid",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "requires login to  list keys",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "not enough permissions to list keys",
+        },
+    },
+)
+async def list_api_keys(code: str):
+    """lists display names of API keys by this user"""
+
+
+@app.post(
+    "/auth/api-keys",
+    tags=TAGS,
+    operation_id="create_api_key",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Authorization granted returning API key",
+            "model": ApiKeyGet,
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "key name requested is invalid",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "requires login to  list keys",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "not enough permissions to list keys",
+        },
+    },
+)
+async def create_api_key(data: ApiKeyCreate):
+    """creates API keys to access public API"""
+
+
+@app.delete(
+    "/auth/api-keys",
+    tags=TAGS,
+    operation_id="delete_api_key",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_204_NO_CONTENT: {
+            "description": "api key successfully deleted",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "requires login to  delete a key",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "not enough permissions to delete a key",
+        },
+    },
+)
+async def delete_api_key(data: ApiKeyCreate):
+    """deletes API key by name"""
 
 
 if __name__ == "__main__":
