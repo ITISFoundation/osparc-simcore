@@ -1,4 +1,4 @@
-// node sim4life.js [url] [user] [password] [--demo]
+// node sim4life.js [url] [user] [password] [timeout] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
@@ -15,13 +15,13 @@ const {
 
 const serviceName = "sim4life-dy";
 
-
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, enableDemoMode);
-  let studyId
-
+  let studyId;
   try {
     await tutorial.start();
+
+    // start sim4life-dy service
     const studyData = await tutorial.openService(1000);
     studyId = studyData["data"]["uuid"];
 
@@ -35,31 +35,14 @@ async function runTutorial() {
       false
     );
 
-    await tutorial.waitFor(15000, 'Wait for some time');
-
-    // do some basic interaction
-    const s4lIframe = await tutorial.getIframe(s4lNodeId);
-    const modelTree = await s4lIframe.$('.model-tree');
-    const modelItems = await modelTree.$$('.MuiTreeItem-label');
-    const nLabels = modelItems.length;
-    if (nLabels > 1) {
-      modelItems[0].click();
-      await tutorial.waitFor(2000, 'Model clicked');
-      await tutorial.takeScreenshot('ModelClicked');
-      modelItems[1].click();
-      await tutorial.waitFor(2000, 'Grid clicked');
-      await tutorial.takeScreenshot('GridlClicked');
-    }
+    await tutorial.testS4L(s4lNodeId);
   }
   catch (err) {
     await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId);
-    await tutorial.logOut();
-    await tutorial.close();
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

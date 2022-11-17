@@ -532,6 +532,15 @@ class TutorialBase {
     }
   }
 
+  async leave(studyId) {
+    if (studyId) {
+      await this.toDashboard()
+      await this.removeStudy(studyId);
+    }
+    await this.logOut();
+    await this.close();
+  }
+
   async toDashboard() {
     await this.takeScreenshot("toDashboard_before");
     this.__responsesQueue.addResponseListener("projects");
@@ -548,20 +557,6 @@ class TutorialBase {
     await this.takeScreenshot("toDashboard_after");
   }
 
-  async closeStudy() {
-    await this.takeScreenshot("closeStudy_before");
-    this.__responsesQueue.addResponseListener(":close");
-    try {
-      await auto.toDashboard(this.__page);
-      await this.__responsesQueue.waitUntilResponse(":close");
-    }
-    catch (err) {
-      console.error("Failed closing study", err);
-      throw (err);
-    }
-    await this.takeScreenshot("closeStudy_after");
-  }
-
   async removeStudy(studyId, waitFor = 5000) {
     await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
@@ -572,7 +567,7 @@ class TutorialBase {
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
-          console.log("Study Card unlocked in " + (waitFor + intervalWait*i) + "s");
+          console.log("Study Card unlocked in " + ((waitFor + intervalWait*i)/1000) + "s");
           break;
         }
         console.log(studyId, "study card still locked");
@@ -605,6 +600,24 @@ class TutorialBase {
     }
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
+  }
+
+  async testS4L(s4lNodeId) {
+    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+
+    // do some basic interaction
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    const modelTree = await s4lIframe.$('.model-tree');
+    const modelItems = await modelTree.$$('.MuiTreeItem-label');
+    const nLabels = modelItems.length;
+    if (nLabels > 1) {
+      modelItems[0].click();
+      await this.waitFor(2000, 'Model clicked');
+      await this.takeScreenshot('ModelClicked');
+      modelItems[1].click();
+      await this.waitFor(2000, 'Grid clicked');
+      await this.takeScreenshot('GridlClicked');
+    }
   }
 
   async takeScreenshot(screenshotTitle) {

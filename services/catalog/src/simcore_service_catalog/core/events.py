@@ -4,7 +4,7 @@ from typing import Callable
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import setup_tracing
 
-from ..db.events import close_db_connection, connect_to_db
+from ..db.events import close_db_connection, connect_to_db, setup_default_product
 from ..meta import PROJECT_NAME, __version__
 from ..services.director import close_director, setup_director
 from ..services.remote_debug import setup_remote_debugging
@@ -22,7 +22,7 @@ WELCOME_MSG = r"""
  / /    / _` || __| / _` || | / _ \  / _` |
 / /___ | (_| || |_ | (_| || || (_) || (_| |
 \____/  \__,_| \__| \__,_||_| \___/  \__, |
-                                     |___/     {0}
+                                     |___/     {}
 """.format(
     f"v{__version__}"
 )
@@ -49,6 +49,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         # setup connection to pg db
         if app.state.settings.CATALOG_POSTGRES:
             await connect_to_db(app)
+            await setup_default_product(app)
 
         if app.state.settings.CATALOG_DIRECTOR:
             # setup connection to director

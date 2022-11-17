@@ -4,7 +4,7 @@
 import logging
 import operator
 from datetime import datetime
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI
@@ -45,7 +45,7 @@ async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
 
 async def evaluate_default_policy(
     app: FastAPI, service: ServiceDockerData
-) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
+) -> tuple[Optional[PositiveInt], list[ServiceAccessRightsAtDB]]:
     """Given a service, it returns the owner's group-id (gid) and a list of access rights following
     default access-rights policies
 
@@ -58,7 +58,7 @@ async def evaluate_default_policy(
 
     groups_repo = GroupsRepository(db_engine)
     owner_gid = None
-    group_ids: List[PositiveInt] = []
+    group_ids: list[PositiveInt] = []
 
     if _is_frontend_service(service) or await _is_old_service(app, service):
         everyone_gid = (await groups_repo.get_everyone_group()).gid
@@ -89,7 +89,7 @@ async def evaluate_default_policy(
             gid=gid,
             execute_access=True,
             write_access=(gid == owner_gid),
-            product_name=app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME,
+            product_name=app.state.default_product_name,
         )
         for gid in set(group_ids)
     ]
@@ -99,7 +99,7 @@ async def evaluate_default_policy(
 
 async def evaluate_auto_upgrade_policy(
     service_metadata: ServiceDockerData, services_repo: ServicesRepository
-) -> List[ServiceAccessRightsAtDB]:
+) -> list[ServiceAccessRightsAtDB]:
     # AUTO-UPGRADE PATCH policy:
     #
     #  - Any new patch released, inherits the access rights from previous compatible version
@@ -145,9 +145,9 @@ async def evaluate_auto_upgrade_policy(
 
 
 def reduce_access_rights(
-    access_rights: List[ServiceAccessRightsAtDB],
+    access_rights: list[ServiceAccessRightsAtDB],
     reduce_operation: Callable = operator.ior,
-) -> List[ServiceAccessRightsAtDB]:
+) -> list[ServiceAccessRightsAtDB]:
     """
     Reduces a list of access-rights per target
     By default, the reduction is OR (i.e. preserves True flags)
@@ -155,11 +155,11 @@ def reduce_access_rights(
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
 
-    def get_target(access: ServiceAccessRightsAtDB) -> Tuple[Union[str, int], ...]:
+    def get_target(access: ServiceAccessRightsAtDB) -> tuple[Union[str, int], ...]:
         """Hashable identifier of the resource the access rights apply to"""
         return tuple([access.key, access.version, access.gid, access.product_name])
 
-    def get_flags(access: ServiceAccessRightsAtDB) -> Dict[str, bool]:
+    def get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
         """Extracts only"""
         return access.dict(include={"execute_access", "write_access"})
 

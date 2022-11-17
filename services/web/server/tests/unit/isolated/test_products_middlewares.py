@@ -3,16 +3,16 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from typing import Any
+
 import pytest
-from servicelib.statics_constants import FRONTEND_APP_DEFAULT
 from simcore_postgres_database.webserver_models import products
-from simcore_service_webserver._constants import (
-    APP_PRODUCTS_KEY,
-    RQ_PRODUCT_KEY,
-    X_PRODUCT_NAME_HEADER,
-)
-from simcore_service_webserver.products import Product
+from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
+from simcore_service_webserver.products import get_product_name
+from simcore_service_webserver.products_events import _set_app_state
 from simcore_service_webserver.products_middlewares import discover_product_middleware
+from simcore_service_webserver.products_model import Product
+from simcore_service_webserver.statics_constants import FRONTEND_APP_DEFAULT
 from yarl import URL
 
 
@@ -46,16 +46,19 @@ def mock_postgres_product_table():
 
 
 @pytest.fixture
-def mock_app(mock_postgres_product_table):
+def mock_app(mock_postgres_product_table: dict[str, Any]):
     class MockApp(dict):
         def __init__(self):
             super().__init__()
             self.middlewares = []
 
     mock_app = MockApp()
-    mock_app[APP_PRODUCTS_KEY] = {
+
+    app_products: dict[str, Product] = {
         entry["name"]: Product(**entry) for entry in mock_postgres_product_table
     }
+    default_product_name = next(iter(app_products.keys()))
+    _set_app_state(mock_app, app_products, default_product_name)
 
     return mock_app
 
@@ -76,7 +79,7 @@ def mock_app(mock_postgres_product_table):
     ],
 )
 async def test_middleware_product_discovery(
-    request_url, product_from_client, expected_product, mock_app
+    request_url, product_from_client, expected_product: str, mock_app
 ):
     """
     A client's request reaches the middleware with
@@ -116,4 +119,4 @@ async def test_middleware_product_discovery(
     response = await discover_product_middleware(mock_request, mock_handler)
 
     # checks
-    assert mock_request[RQ_PRODUCT_KEY] == expected_product
+    assert get_product_name(mock_request) == expected_product

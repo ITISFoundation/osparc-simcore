@@ -9,10 +9,8 @@ from pathlib import Path
 from pprint import pprint
 from typing import Callable
 
-import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import (
@@ -24,33 +22,6 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
 )
 from simcore_postgres_database.webserver_models import products
-
-
-@pytest.fixture
-def products_regex() -> dict:
-    return {
-        "osparc": r"^osparc.",
-        "s4l": r"(^s4l[\.-])|(^sim4life\.)",
-        "tis": r"(^ti.[\.-])|(^ti-solution\.)",
-    }
-
-
-@pytest.fixture
-def make_products_table(
-    products_regex: dict,
-) -> Callable:
-    async def _make(conn) -> None:
-        for name, regex in products_regex.items():
-            result = await conn.execute(
-                products.insert().values(name=name, host_regex=regex)
-            )
-
-            assert result.closed
-            assert not result.returns_rows
-            with pytest.raises(ResourceClosedError):
-                await result.scalar()
-
-    return _make
 
 
 async def test_load_products(
