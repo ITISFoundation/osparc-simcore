@@ -4,6 +4,10 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
+aio-pika==8.2.5
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -22,6 +26,8 @@ aiohttp==3.8.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
+aiormq==6.4.2
+    # via aio-pika
 aiosignal==1.2.0
     # via aiohttp
 anyio==3.6.1
@@ -108,6 +114,8 @@ opentracing==2.4.0
     #   jaeger-client
 packaging==21.3
     # via -r requirements/_base.in
+pamqp==3.2.1
+    # via aiormq
 pydantic==1.10.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -192,7 +200,10 @@ urllib3==1.26.12
 uvicorn==0.18.3
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 yarl==1.8.1
-    # via aiohttp
+    # via
+    #   aio-pika
+    #   aiohttp
+    #   aiormq
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
