@@ -132,7 +132,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 1. submit
     url = client.app.router["auth_register"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "password": PASSWORD,
@@ -164,7 +164,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "phone": PHONE,
@@ -186,7 +186,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 2. confirmation
     url = client.app.router["auth_validate_2fa_register"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "phone": PHONE,
@@ -204,7 +204,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 1. check email/password then send SMS
     url = client.app.router["auth_login"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "password": PASSWORD,
@@ -223,7 +223,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 2. check SMS code
     url = client.app.router["auth_validate_2fa_login"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "code": received_code,
@@ -245,6 +245,7 @@ async def test_register_phone_fails_with_used_number(
     """
     Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
     """
+    assert client.app
 
     # some user ALREADY registered with the same phone
     await utils_login.create_fake_user(db, data={"phone": PHONE})
@@ -253,7 +254,7 @@ async def test_register_phone_fails_with_used_number(
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "phone": PHONE,
