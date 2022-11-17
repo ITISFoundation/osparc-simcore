@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Final
 
 from settings_library.r_clone import S3Provider
+from settings_library.utils_r_clone import resolve_provider
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ def get_config_file_path(
     s3_provider: S3Provider,
 ) -> Path:
     config_content = R_CLONE_CONFIG.format(
-        destination_provider=s3_provider,
+        destination_provider=resolve_provider(s3_provider),
         destination_access_key=s3_access_key,
         destination_secret_key=s3_secret_key,
         destination_endpoint=s3_endpoint,

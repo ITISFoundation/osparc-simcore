@@ -1,8 +1,7 @@
 from functools import cached_property
 
-
-from settings_library.basic_types import PortInt, VersionTag
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
     DEFAULT_FASTAPI_PORT,
     MixinServiceSettings,
