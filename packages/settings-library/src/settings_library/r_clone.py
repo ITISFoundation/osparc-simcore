@@ -9,7 +9,7 @@ from .s3 import S3Settings
 class S3Provider(str, Enum):
     AWS = "AWS"
     CEPH = "Ceph"
-    MINIO = "MINIO"
+    MINIO = "Minio"
 
 
 class RCloneSettings(BaseCustomSettings):
