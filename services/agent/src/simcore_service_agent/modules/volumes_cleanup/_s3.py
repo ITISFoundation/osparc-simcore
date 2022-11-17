@@ -129,7 +129,7 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
 
     output = await _read_stream(process.stdout)
     await process.wait()
-    logger.info(output)
+    logger.info(f"Command stdout\n%s", output)
 
     if process.returncode != 0:
         raise RuntimeError(
