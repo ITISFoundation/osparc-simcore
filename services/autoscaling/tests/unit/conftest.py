@@ -4,13 +4,14 @@
 
 import asyncio
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Final, Mapping
+from typing import Any, AsyncIterator, Awaitable, Callable, Final, Mapping, Optional
 
 import aiodocker
 import httpx
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
+from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveInt
@@ -120,16 +121,38 @@ def create_task_resources() -> Callable[[NUM_CPUS], dict[str, Any]]:
 @pytest.fixture
 async def create_service(
     async_docker_client: aiodocker.Docker, faker: Faker
-) -> AsyncIterator[Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]]]:
+) -> AsyncIterator[
+    Callable[[dict[str, Any], Optional[dict[str, str]]], Awaitable[Mapping[str, Any]]]
+]:
     created_services = []
 
-    async def _creator(task_template: dict[str, Any]) -> Mapping[str, Any]:
+    async def _creator(
+        task_template: dict[str, Any], labels: Optional[dict[str, str]] = None
+    ) -> Mapping[str, Any]:
+        service_name = f"pytest_{faker.pystr()}"
         service = await async_docker_client.services.create(
-            task_template=task_template, name=f"pytest_{faker.pystr()}"
+            task_template=task_template,
+            name=service_name,
+            labels=labels or {},  # type: ignore
         )
         assert service
         print(f"--> created docker service f{service}")
         created_services.append(service)
+        # get more info on that service
+        service = await async_docker_client.services.inspect(service["ID"])
+        assert service["Spec"]["Name"] == service_name
+        diff = DeepDiff(
+            task_template,
+            service["Spec"]["TaskTemplate"],
+            exclude_paths={
+                "ForceUpdate",
+                "Runtime",
+                "root['ContainerSpec']['Isolation']",
+            },
+        )
+        assert not diff, f"{diff}"
+        assert service["Spec"]["Labels"] == (labels or {})
+
         return service
 
     yield _creator
