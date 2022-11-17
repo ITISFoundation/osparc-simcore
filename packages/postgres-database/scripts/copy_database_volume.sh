@@ -53,13 +53,13 @@ IFS=$(printf '\n\t')
 
 
 if [ ! -z $folder ]; then
-  #folder mode
+  #from folder to target volume
   ssh $host \
     "tar -cf - $folder " \
     | \
     docker run --rm -i -v "$target":/to alpine ash -c "cd /to ; tar -xpvf - "
 else
-  #docker mode
+  #from docker volume to target volume
   ssh $host \
     "docker run --rm -v $volume:/from alpine ash -c 'cd /from ; tar -cf - . '" \
     | \
