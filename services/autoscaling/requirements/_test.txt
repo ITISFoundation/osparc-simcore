@@ -161,6 +161,8 @@ moto==4.0.1
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/_test.in
+mypy-boto3-ec2==1.26.12
+    # via boto3-stubs
 networkx==2.8.8
     # via cfn-lint
 openapi-schema-validator==0.2.3
@@ -294,6 +296,7 @@ typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
     #   boto3-stubs
+    #   mypy-boto3-ec2
     #   types-aiobotocore
     #   types-aiobotocore-s3
 urllib3==1.26.12

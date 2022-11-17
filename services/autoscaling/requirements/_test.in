@@ -11,7 +11,7 @@
 --constraint _base.txt
 
 asgi-lifespan
-boto3-stubs
+boto3-stubs[ec2]
 codecov
 coverage
 coveralls
