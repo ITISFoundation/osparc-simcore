@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import itertools
 from copy import deepcopy
 from typing import Any, AsyncIterator, Awaitable, Callable, Mapping, Optional
@@ -302,22 +303,27 @@ async def test_compute_node_used_resources_with_service(
     assert node_used_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
 
     # 2. if we have some services with defined resources, they should be visible
-    for cpu in range(psutil.cpu_count()):
-        task_template_with_manageable_resources = task_template | create_task_resources(
-            1
+    task_template_with_manageable_resources = task_template | create_task_resources(1)
+    services_with_manageable_resources = await asyncio.gather(
+        *(
+            create_service(task_template_with_manageable_resources)
+            for cpu in range(psutil.cpu_count())
         )
-        service_with_mangeable_resources = await create_service(
-            task_template_with_manageable_resources
+    )
+    await asyncio.gather(
+        *(
+            assert_for_service_state(
+                async_docker_client,
+                s,
+                ["pending", "running"],
+            )
+            for s in services_with_manageable_resources
         )
-        await assert_for_service_state(
-            async_docker_client,
-            service_with_mangeable_resources,
-            ["pending", "running"],
-        )
-        node_used_resources = await compute_node_used_resources(host_node)
-        assert node_used_resources == ClusterResources(
-            total_cpus=cpu + 1, total_ram=ByteSize(0)
-        )
+    )
+    node_used_resources = await compute_node_used_resources(host_node)
+    assert node_used_resources == ClusterResources(
+        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
+    )
 
     # 3. if we have services that need more resources than available,
     # they should not change what is currently used as they will not run
@@ -374,22 +380,27 @@ async def test_compute_cluster_used_resources_with_services_running(
     )
 
     # 2. if we have some services with defined resources, they should be visible
-    for cpu in range(psutil.cpu_count()):
-        task_template_with_manageable_resources = task_template | create_task_resources(
-            1
+    task_template_with_manageable_resources = task_template | create_task_resources(1)
+    services_with_manageable_resources = await asyncio.gather(
+        *(
+            create_service(task_template_with_manageable_resources)
+            for cpu in range(psutil.cpu_count())
         )
-        service_with_mangeable_resources = await create_service(
-            task_template_with_manageable_resources
+    )
+    await asyncio.gather(
+        *(
+            assert_for_service_state(
+                async_docker_client,
+                s,
+                ["pending", "running"],
+            )
+            for s in services_with_manageable_resources
         )
-        await assert_for_service_state(
-            async_docker_client,
-            service_with_mangeable_resources,
-            ["pending", "running"],
-        )
-        cluster_used_resources = await compute_cluster_used_resources([host_node])
-        assert cluster_used_resources == ClusterResources(
-            total_cpus=cpu + 1, total_ram=ByteSize(0)
-        )
+    )
+    cluster_used_resources = await compute_cluster_used_resources([host_node])
+    assert cluster_used_resources == ClusterResources(
+        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
+    )
 
     # 3. if we have services that need more resources than available,
     # they should not change what is currently used
