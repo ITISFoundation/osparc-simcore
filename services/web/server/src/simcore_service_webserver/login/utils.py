@@ -20,7 +20,9 @@ from passlib import pwd
 from servicelib import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from settings_library.email import EmailProtocol
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.products import get_product_template_path
 
 from .._resources import resources
@@ -50,6 +52,30 @@ ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTE
 REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
     ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
 )
+
+
+def validate_user_status(user: dict, cfg, support_email: str):
+    user_status: str = user["status"]
+
+    if user_status == BANNED or user["role"] == ANONYMOUS:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_USER_BANNED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )  # 401
+
+    if user_status == EXPIRED:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_USER_EXPIRED.format(support_email=support_email),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )  # 401
+
+    if user_status == CONFIRMATION_PENDING:
+        raise web.HTTPUnauthorized(
+            reason=cfg.MSG_ACTIVATION_REQUIRED,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )  # 401
+
+    assert user_status == ACTIVE  # nosec
 
 
 async def notify_user_logout(
