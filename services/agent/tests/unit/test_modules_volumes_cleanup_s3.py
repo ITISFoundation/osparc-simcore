@@ -171,17 +171,15 @@ async def test_store_to_s3(
     assert hashes_on_disk == hashes_in_s3
 
 
-async def test_regression_test_ceph_is_wrong(
+@pytest.mark.parametrize("provider", [S3Provider.CEPH, S3Provider.MINIO])
+async def test_regression_non_aws_providers(
     unused_volume: DockerVolume,
     mocked_s3_server_url: HttpUrl,
     unused_volume_path: Path,
-    save_to: Path,
-    study_id: str,
-    node_uuid: str,
-    run_id: str,
     bucket: str,
     settings: ApplicationSettings,
     caplog_info_debug: LogCaptureFixture,
+    provider: S3Provider,
 ):
     _create_data(unused_volume_path)
     dyv_volume = await unused_volume.show()
@@ -198,10 +196,10 @@ async def test_regression_test_ceph_is_wrong(
         s3_bucket=bucket,
         s3_endpoint=mocked_s3_server_url,
         s3_region="us-east-1",
-        s3_provider=S3Provider.CEPH,
+        s3_provider=provider,
         s3_parallelism=3,
         s3_retries=1,
         exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
     )
 
-    assert 'provider "CEPH" not known' not in caplog_info_debug.text
+    assert f'provider "{provider}" not known' not in caplog_info_debug.text
