@@ -1,5 +1,6 @@
 import logging
 from enum import Enum
+from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.rest_utils import extract_and_validate
@@ -45,6 +46,26 @@ class LoginCode(Enum):
     SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 
 
+async def _authorize_login(
+    request: web.Request, user: dict[str, Any], cfg: LoginOptions
+):
+    email = user["email"]
+    with log_context(
+        log,
+        logging.INFO,
+        "login of user_id=%s with %s",
+        f"{user.get('id')}",
+        f"{email=}",
+    ):
+        rsp = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        await remember(
+            request=request,
+            response=rsp,
+            identity=email,
+        )
+        return rsp
+
+
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -78,7 +99,7 @@ async def login(request: web.Request):
             rsp = envelope_response(
                 {
                     "code": LoginCode.PHONE_NUMBER_REQUIRED,  # this string is used by the frontend to show phone registration page
-                    "reason": "To login, register first a phone number",
+                    "reason": "To login, please register first a phone number",
                 },
                 status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
             )
@@ -122,27 +143,12 @@ async def login(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from e
 
-    # LOGIN -----------
-    with log_context(
-        log,
-        logging.INFO,
-        "login of user_id=%s with %s",
-        f"{user.get('id')}",
-        f"{email=}",
-    ):
-        identity = user["email"]
-        rsp = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-        await remember(request, rsp, identity)
-        return rsp
+    rsp = await _authorize_login(request, user, cfg)
+    return rsp
 
 
 async def login_2fa(request: web.Request):
-    """2FA login
-
-    NOTE that validation code is not generated
-    until the email/password of the standard login (handler above) is not
-    completed
-    """
+    """2FA login"""
     _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -151,21 +157,14 @@ async def login_2fa(request: web.Request):
     email = body.email
     code = body.code
 
+    # NOTE that the 2fa code is not generated until the email/password of
+    # the standard login (handler above) is not completed
     if code == await get_2fa_code(request.app, email):
         await delete_2fa_code(request.app, email)
 
         user = await db.get_user({"email": email})
-        with log_context(
-            log,
-            logging.INFO,
-            "login_2fa of user_id=%s with %s",
-            f"{user.get('id')}",
-            f"{email=}",
-        ):
-            identity = user["email"]
-            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-            await remember(request, response, identity)
-            return response
+        rsp = await _authorize_login(request, user, cfg)
+        return rsp
 
 
 @login_required
