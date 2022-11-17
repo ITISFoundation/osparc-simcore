@@ -22,7 +22,6 @@
  * - Study Browser
  * - Template Browser
  * - Service Browser
- * - Data Browser
  */
 
 qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
