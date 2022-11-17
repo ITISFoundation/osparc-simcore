@@ -17,6 +17,7 @@ from simcore_service_autoscaling.utils_docker import (
     Node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
+    compute_node_used_resources,
     get_monitored_nodes,
     pending_service_tasks_with_insufficient_resources,
 )
@@ -258,47 +259,97 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     assert not diff, f"{diff}"
 
 
-async def test_compute_cluster_total_resources_with_no_label_return_host_resources(
+async def test_compute_cluster_total_resources_with_no_nodes_returns_0(
     docker_swarm: None,
 ):
-    cluster_resources = await compute_cluster_total_resources(node_labels=[])
-    assert cluster_resources.total_cpus == psutil.cpu_count()
-    assert cluster_resources.total_ram == psutil.virtual_memory().total
-    assert cluster_resources.node_ids
-    assert len(cluster_resources.node_ids) == 1
+    cluster_resources = await compute_cluster_total_resources([])
+    assert cluster_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
 
 
-async def test_compute_cluster_total_resources_with_label_returns_no_resources(
-    docker_swarm: None, faker: Faker
+async def test_compute_cluster_total_resources_returns_host_resources(
+    docker_swarm: None, host_node: Node
 ):
-    cluster_resources = await compute_cluster_total_resources(
-        node_labels=faker.pylist(allowed_types=(str,))
+    cluster_resources = await compute_cluster_total_resources([host_node])
+    assert cluster_resources == ClusterResources(
+        total_cpus=psutil.cpu_count(), total_ram=ByteSize(psutil.virtual_memory().total)
     )
-    assert cluster_resources.total_cpus == 0
-    assert cluster_resources.total_ram == 0
-    assert not cluster_resources.node_ids
 
 
-async def test_compute_cluster_total_resources_with_correct_label_return_host_resources(
-    docker_swarm: None,
-    faker: Faker,
-    create_node_labels: Callable[[list[str]], Awaitable[None]],
+async def test_compute_node_used_resources_with_no_service(
+    docker_swarm: None, host_node: Node
 ):
-    labels = faker.pylist(allowed_types=(str,))
-    await create_node_labels(labels)
-    cluster_resources = await compute_cluster_total_resources(node_labels=labels)
-    assert cluster_resources.total_cpus == psutil.cpu_count()
-    assert cluster_resources.total_ram == psutil.virtual_memory().total
-    assert cluster_resources.node_ids
-    assert len(cluster_resources.node_ids) == 1
+    cluster_resources = await compute_node_used_resources(host_node)
+    assert cluster_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
+
+
+async def test_compute_node_used_resources_with_service(
+    async_docker_client: aiodocker.Docker,
+    docker_swarm: None,
+    host_node: Node,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+):
+    # 1. if we have services with no defined reservations, then we cannot know what they use...
+    service_with_no_resources = await create_service(task_template)
+    await assert_for_service_state(
+        async_docker_client, service_with_no_resources, ["running"]
+    )
+    node_used_resources = await compute_node_used_resources(host_node)
+    assert node_used_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
+
+    # 2. if we have some services with defined resources, they should be visible
+    for cpu in range(psutil.cpu_count()):
+        task_template_with_manageable_resources = task_template | create_task_resources(
+            1
+        )
+        service_with_mangeable_resources = await create_service(
+            task_template_with_manageable_resources
+        )
+        await assert_for_service_state(
+            async_docker_client,
+            service_with_mangeable_resources,
+            ["pending", "running"],
+        )
+        node_used_resources = await compute_node_used_resources(host_node)
+        assert node_used_resources == ClusterResources(
+            total_cpus=cpu + 1, total_ram=ByteSize(0)
+        )
+
+    # 3. if we have services that need more resources than available,
+    # they should not change what is currently used as they will not run
+    task_template_with_too_many_resource = task_template | create_task_resources(1000)
+    service_with_too_many_resources = await create_service(
+        task_template_with_too_many_resource
+    )
+    await assert_for_service_state(
+        async_docker_client, service_with_too_many_resources, ["pending"]
+    )
+    node_used_resources = await compute_node_used_resources(host_node)
+    assert node_used_resources == ClusterResources(
+        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
+    )
+
+
+async def test_compute_cluster_used_resources_with_no_nodes_returns_0(
+    docker_swarm: None,
+):
+    cluster_used_resources = await compute_cluster_used_resources([])
+    assert cluster_used_resources == ClusterResources(
+        total_cpus=0, total_ram=ByteSize(0)
+    )
 
 
 async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
+    docker_swarm: None,
     host_node: Node,
 ):
-    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    cluster_used_resources = await compute_cluster_used_resources([host_node])
     assert cluster_used_resources == ClusterResources(
-        total_cpus=0, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
+        total_cpus=0, total_ram=ByteSize(0)
     )
 
 
@@ -317,23 +368,28 @@ async def test_compute_cluster_used_resources_with_services_running(
     await assert_for_service_state(
         async_docker_client, service_with_no_resources, ["running"]
     )
-    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    cluster_used_resources = await compute_cluster_used_resources([host_node])
     assert cluster_used_resources == ClusterResources(
-        total_cpus=0, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
+        total_cpus=0, total_ram=ByteSize(0)
     )
 
     # 2. if we have some services with defined resources, they should be visible
-    task_template_with_manageable_resources = task_template | create_task_resources(1)
-    service_with_mangeable_resources = await create_service(
-        task_template_with_manageable_resources
-    )
-    await assert_for_service_state(
-        async_docker_client, service_with_mangeable_resources, ["pending", "running"]
-    )
-    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
-    assert cluster_used_resources == ClusterResources(
-        total_cpus=1, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
-    )
+    for cpu in range(psutil.cpu_count()):
+        task_template_with_manageable_resources = task_template | create_task_resources(
+            1
+        )
+        service_with_mangeable_resources = await create_service(
+            task_template_with_manageable_resources
+        )
+        await assert_for_service_state(
+            async_docker_client,
+            service_with_mangeable_resources,
+            ["pending", "running"],
+        )
+        cluster_used_resources = await compute_cluster_used_resources([host_node])
+        assert cluster_used_resources == ClusterResources(
+            total_cpus=cpu + 1, total_ram=ByteSize(0)
+        )
 
     # 3. if we have services that need more resources than available,
     # they should not change what is currently used
@@ -344,7 +400,7 @@ async def test_compute_cluster_used_resources_with_services_running(
     await assert_for_service_state(
         async_docker_client, service_with_too_many_resources, ["pending"]
     )
-    cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
+    cluster_used_resources = await compute_cluster_used_resources([host_node])
     assert cluster_used_resources == ClusterResources(
-        total_cpus=1, total_ram=ByteSize(0), node_ids=[host_node["ID"]]
+        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
     )
