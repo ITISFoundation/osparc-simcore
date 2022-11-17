@@ -2,8 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import itertools
 from copy import deepcopy
-from typing import Any, AsyncIterator, Awaitable, Callable, Mapping
+from typing import Any, AsyncIterator, Awaitable, Callable, Mapping, Optional
 
 import aiodocker
 import psutil
@@ -118,7 +119,9 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
     docker_swarm: None,
     host_node: Node,
 ):
-    assert await pending_service_tasks_with_insufficient_resources() == []
+    assert (
+        await pending_service_tasks_with_insufficient_resources(service_labels=[]) == []
+    )
 
 
 async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
@@ -132,34 +135,119 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
 ):
+    # a service with no reservation is not "using" resource for docker, therefore we should not find it
     service_with_no_resources = await create_service(task_template)
     await assert_for_service_state(
         async_docker_client, service_with_no_resources, ["running"]
     )
-    assert await pending_service_tasks_with_insufficient_resources() == []
+    assert (
+        await pending_service_tasks_with_insufficient_resources(service_labels=[]) == []
+    )
+    # a service that requires a huge amount of resources will not run, and we should find it
     task_template_with_too_many_resource = task_template | create_task_resources(1000)
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource
     )
-    service_with_too_many_resources = await async_docker_client.services.inspect(
-        service_with_too_many_resources["ID"]
-    )
-    tasks = await async_docker_client.tasks.list(
-        filters={"service": service_with_too_many_resources["Spec"]["Name"]}
-    )
-    assert tasks
-    assert len(tasks) == 1
+    # a service will complain only once its task reaches the pending state, so let's wait a bit
     await assert_for_service_state(
         async_docker_client,
         service_with_too_many_resources,
         ["pending"],
     )
-    pending_tasks = await pending_service_tasks_with_insufficient_resources()
+    service_tasks = await async_docker_client.tasks.list(
+        filters={"service": service_with_too_many_resources["Spec"]["Name"]}
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+
+    # now we should find that service
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(
+        service_labels=[]
+    )
     assert pending_tasks
     assert len(pending_tasks) == 1
     diff = DeepDiff(
         pending_tasks[0],
-        tasks[0],
+        service_tasks[0],
+        exclude_paths={
+            "UpdatedAt",
+            "Version",
+            "root['Status']['Err']",
+            "root['Status']['Timestamp']",
+        },
+    )
+    assert not diff, f"{diff}"
+
+
+async def test_pending_service_task_with_insufficient_resources_with_labelled_services(
+    docker_swarm: None,
+    host_node: Node,
+    async_docker_client: aiodocker.Docker,
+    create_service: Callable[
+        [dict[str, Any], Optional[dict[str, str]]], Awaitable[Mapping[str, Any]]
+    ],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+    faker: Faker,
+):
+    service_labels: dict[str, str] = faker.pydict(allowed_types=(str,))
+    task_template_with_too_many_resource = task_template | create_task_resources(1000)
+
+    # start a service without labels, we should not find it
+    service_with_no_labels = await create_service(
+        task_template_with_too_many_resource, None
+    )
+    # wait for it to be unhappy about resources
+    await assert_for_service_state(
+        async_docker_client, service_with_no_labels, ["pending"]
+    )
+    assert (
+        await pending_service_tasks_with_insufficient_resources(
+            service_labels=list(service_labels)
+        )
+        == []
+    )
+
+    # start a service with a part of the labels, we should not find it
+    partial_service_labels = dict(itertools.islice(service_labels.items(), 2))
+    service_with_partial_labels = await create_service(
+        task_template_with_too_many_resource, partial_service_labels
+    )
+    # wait for it to be unhappy about resources
+    await assert_for_service_state(
+        async_docker_client, service_with_partial_labels, ["pending"]
+    )
+    assert (
+        await pending_service_tasks_with_insufficient_resources(
+            service_labels=list(service_labels)
+        )
+        == []
+    )
+
+    service_with_labels = await create_service(
+        task_template_with_too_many_resource, service_labels
+    )
+    await assert_for_service_state(
+        async_docker_client, service_with_labels, ["pending"]
+    )
+
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(
+        service_labels=list(service_labels)
+    )
+
+    service_tasks = await async_docker_client.tasks.list(
+        filters={"service": service_with_labels["Spec"]["Name"]}
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+    assert pending_tasks
+    assert len(pending_tasks) == 1
+    diff = DeepDiff(
+        pending_tasks[0],
+        service_tasks[0],
         exclude_paths={
             "UpdatedAt",
             "Version",

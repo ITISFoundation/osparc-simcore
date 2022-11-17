@@ -40,7 +40,9 @@ async def get_monitored_nodes(node_labels: list[Label]) -> list[Node]:
 
 
 # TODO: we need to check only services on the monitored nodes, maybe with some specific labels/names
-async def pending_service_tasks_with_insufficient_resources() -> list[Task]:
+async def pending_service_tasks_with_insufficient_resources(
+    service_labels: list[Label],
+) -> list[Task]:
     """
     Tasks pending with insufficient resources are
     - pending
@@ -50,7 +52,12 @@ async def pending_service_tasks_with_insufficient_resources() -> list[Task]:
     # SEE  https://github.com/aio-libs/aiodocker
     pending_tasks = []
     async with aiodocker.Docker() as docker:
-        tasks = await docker.tasks.list(filters={"desired-state": "running"})
+        tasks = await docker.tasks.list(
+            filters={
+                "desired-state": "running",
+                "label": service_labels,
+            }
+        )
 
         for task in tasks:
             if (
