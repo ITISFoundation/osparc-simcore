@@ -3,7 +3,7 @@
 """
 
 import collections
-from typing import Final
+from typing import Any, Final, Mapping
 
 import aiodocker
 from pydantic import BaseModel, ByteSize
@@ -25,29 +25,41 @@ class ClusterResources(BaseModel):
     node_ids: list[str]
 
 
+Label = str
+NodeID = str
+Node = Mapping[str, Any]
+Task = Mapping[str, Any]
+
+
+async def get_monitored_nodes(node_labels: list[Label]) -> list[Node]:
+    async with aiodocker.Docker() as docker:
+        nodes = await docker.nodes.list(
+            filters={"node.label": [f"{label}=true" for label in node_labels]}
+        )
+    return nodes
+
+
 # TODO: we need to check only services on the monitored nodes, maybe with some specific labels/names
-async def pending_services_with_insufficient_resources() -> bool:
+async def pending_service_tasks_with_insufficient_resources() -> list[Task]:
     """
-    We need the data of each task and the data of each node to know if we need to scale up or not
-    Test if some tasks are in a pending mode because of a lack of resources
+    Tasks pending with insufficient resources are
+    - pending
+    - have an error message with "insufficient resources"
+    - are not scheduled on any node
     """
     # SEE  https://github.com/aio-libs/aiodocker
-
+    pending_tasks = []
     async with aiodocker.Docker() as docker:
-        services = await docker.services.list()
-        for service in services:
-            tasks = await docker.tasks.list(
-                filters={"service": service["Spec"]["Name"]}
-            )
-            for task in tasks:
-                if (
-                    task["Status"]["State"] == "pending"
-                    and task["Status"]["Message"] == "pending task scheduling"
-                    and "insufficient resources on"
-                    in task["Status"].get("Err", "no error")
-                ):
-                    return True
-        return False
+        tasks = await docker.tasks.list(filters={"desired-state": "running"})
+
+        for task in tasks:
+            if (
+                task["Status"]["State"] == "pending"
+                and task["Status"]["Message"] == "pending task scheduling"
+                and "insufficient resources on" in task["Status"].get("Err", "no error")
+            ):
+                pending_tasks.append(task)
+    return pending_tasks
 
 
 async def compute_cluster_total_resources(node_labels: list[str]) -> ClusterResources:

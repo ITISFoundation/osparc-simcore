@@ -8,74 +8,24 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Mapping
 import aiodocker
 import psutil
 import pytest
+from deepdiff import DeepDiff
 from faker import Faker
 from pydantic import ByteSize
 from simcore_service_autoscaling.utils_docker import (
     ClusterResources,
+    Node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
-    pending_services_with_insufficient_resources,
+    get_monitored_nodes,
+    pending_service_tasks_with_insufficient_resources,
 )
-
-
-async def test_pending_services_with_insufficient_resources_with_no_service(
-    docker_swarm: None,
-):
-    assert await pending_services_with_insufficient_resources() == False
-
-
-async def test_pending_services_with_insufficient_resources_with_service_lacking_resource(
-    docker_swarm: None,
-    async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
-    task_template: dict[str, Any],
-    create_task_resources: Callable[[int], dict[str, Any]],
-    assert_for_service_state: Callable[
-        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
-    ],
-):
-    service_with_no_resources = await create_service(task_template)
-    await assert_for_service_state(
-        async_docker_client, service_with_no_resources, ["running"]
-    )
-    assert await pending_services_with_insufficient_resources() == False
-    task_template_with_too_many_resource = task_template | create_task_resources(1000)
-    service_with_too_many_resources = await create_service(
-        task_template_with_too_many_resource
-    )
-    await assert_for_service_state(
-        async_docker_client,
-        service_with_too_many_resources,
-        ["pending"],
-    )
-    assert await pending_services_with_insufficient_resources() == True
-
-
-async def test_compute_cluster_total_resources_with_no_label_return_host_resources(
-    docker_swarm: None,
-):
-    cluster_resources = await compute_cluster_total_resources(node_labels=[])
-    assert cluster_resources.total_cpus == psutil.cpu_count()
-    assert cluster_resources.total_ram == psutil.virtual_memory().total
-    assert cluster_resources.node_ids
-    assert len(cluster_resources.node_ids) == 1
-
-
-async def test_compute_cluster_total_resources_with_label_returns_no_resources(
-    docker_swarm: None, faker: Faker
-):
-    cluster_resources = await compute_cluster_total_resources(
-        node_labels=faker.pylist(allowed_types=(str,))
-    )
-    assert cluster_resources.total_cpus == 0
-    assert cluster_resources.total_ram == 0
-    assert not cluster_resources.node_ids
 
 
 @pytest.fixture
 async def host_node(
-    docker_swarm: None, async_docker_client: aiodocker.Docker
-) -> Mapping[str, Any]:
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+) -> Node:
     nodes = await async_docker_client.nodes.list()
     assert len(nodes) == 1
     return nodes[0]
@@ -83,7 +33,8 @@ async def host_node(
 
 @pytest.fixture
 async def create_node_labels(
-    host_node: Mapping[str, Any], async_docker_client: aiodocker.Docker
+    host_node: Node,
+    async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[Callable[[list[str]], Awaitable[None]]]:
     old_labels = deepcopy(host_node["Spec"]["Labels"])
 
@@ -117,6 +68,129 @@ async def create_node_labels(
     )
 
 
+async def test_get_monitored_nodes(
+    docker_swarm: None,
+    host_node: Node,
+):
+    monitored_nodes = await get_monitored_nodes(node_labels=[])
+    assert len(monitored_nodes) == 1
+    assert monitored_nodes[0] == host_node
+
+
+async def test_get_monitored_nodes_with_invalid_label(
+    docker_swarm: None,
+    host_node: Node,
+    faker: Faker,
+):
+    monitored_nodes = await get_monitored_nodes(
+        node_labels=faker.pylist(allowed_types=(str,))
+    )
+    assert len(monitored_nodes) == 0
+
+
+async def test_get_monitored_nodes_with_valid_label(
+    docker_swarm: None,
+    host_node: Node,
+    faker: Faker,
+    create_node_labels: Callable[[list[str]], Awaitable[None]],
+):
+    labels = faker.pylist(allowed_types=(str,))
+    await create_node_labels(labels)
+    monitored_nodes = await get_monitored_nodes(node_labels=labels)
+    assert len(monitored_nodes) == 1
+
+    # this is the host node with some keys slightly changed
+    diff = DeepDiff(
+        monitored_nodes[0],
+        host_node,
+        exclude_paths={
+            "Index",
+            "UpdatedAt",
+            "Version",
+            "root['Spec']['Name']",
+            "root['Spec']['Labels']",
+        },
+    )
+    assert not diff, f"{diff}"
+
+
+async def test_pending_service_task_with_insufficient_resources_with_no_service(
+    docker_swarm: None,
+    host_node: Node,
+):
+    assert await pending_service_tasks_with_insufficient_resources() == []
+
+
+async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
+    docker_swarm: None,
+    host_node: Node,
+    async_docker_client: aiodocker.Docker,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+):
+    service_with_no_resources = await create_service(task_template)
+    await assert_for_service_state(
+        async_docker_client, service_with_no_resources, ["running"]
+    )
+    assert await pending_service_tasks_with_insufficient_resources() == []
+    task_template_with_too_many_resource = task_template | create_task_resources(1000)
+    service_with_too_many_resources = await create_service(
+        task_template_with_too_many_resource
+    )
+    service_with_too_many_resources = await async_docker_client.services.inspect(
+        service_with_too_many_resources["ID"]
+    )
+    tasks = await async_docker_client.tasks.list(
+        filters={"service": service_with_too_many_resources["Spec"]["Name"]}
+    )
+    assert tasks
+    assert len(tasks) == 1
+    await assert_for_service_state(
+        async_docker_client,
+        service_with_too_many_resources,
+        ["pending"],
+    )
+    pending_tasks = await pending_service_tasks_with_insufficient_resources()
+    assert pending_tasks
+    assert len(pending_tasks) == 1
+    diff = DeepDiff(
+        pending_tasks[0],
+        tasks[0],
+        exclude_paths={
+            "UpdatedAt",
+            "Version",
+            "root['Status']['Err']",
+            "root['Status']['Timestamp']",
+        },
+    )
+    assert not diff, f"{diff}"
+
+
+async def test_compute_cluster_total_resources_with_no_label_return_host_resources(
+    docker_swarm: None,
+):
+    cluster_resources = await compute_cluster_total_resources(node_labels=[])
+    assert cluster_resources.total_cpus == psutil.cpu_count()
+    assert cluster_resources.total_ram == psutil.virtual_memory().total
+    assert cluster_resources.node_ids
+    assert len(cluster_resources.node_ids) == 1
+
+
+async def test_compute_cluster_total_resources_with_label_returns_no_resources(
+    docker_swarm: None, faker: Faker
+):
+    cluster_resources = await compute_cluster_total_resources(
+        node_labels=faker.pylist(allowed_types=(str,))
+    )
+    assert cluster_resources.total_cpus == 0
+    assert cluster_resources.total_ram == 0
+    assert not cluster_resources.node_ids
+
+
 async def test_compute_cluster_total_resources_with_correct_label_return_host_resources(
     docker_swarm: None,
     faker: Faker,
@@ -132,7 +206,7 @@ async def test_compute_cluster_total_resources_with_correct_label_return_host_re
 
 
 async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
-    host_node: Mapping[str, Any]
+    host_node: Node,
 ):
     cluster_used_resources = await compute_cluster_used_resources([host_node["ID"]])
     assert cluster_used_resources == ClusterResources(
@@ -142,7 +216,7 @@ async def test_compute_cluster_used_resources_with_no_services_running_returns_0
 
 async def test_compute_cluster_used_resources_with_services_running(
     async_docker_client: aiodocker.Docker,
-    host_node: Mapping[str, Any],
+    host_node: Node,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
     create_task_resources: Callable[[int], dict[str, Any]],

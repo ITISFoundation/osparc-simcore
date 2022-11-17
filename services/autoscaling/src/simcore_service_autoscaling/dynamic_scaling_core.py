@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 async def check_dynamic_resources(app: FastAPI) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    if not await utils_docker.pending_services_with_insufficient_resources():
+    if not await utils_docker.pending_service_tasks_with_insufficient_resources():
         logger.debug("the swarm has enough computing resources at the moment")
         return
 
