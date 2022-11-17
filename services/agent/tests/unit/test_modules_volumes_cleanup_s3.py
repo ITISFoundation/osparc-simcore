@@ -10,6 +10,7 @@ import aioboto3
 import pytest
 from aiodocker.volumes import DockerVolume
 from pydantic import HttpUrl
+from pytest import LogCaptureFixture
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._s3 import (
     S3Provider,
@@ -168,3 +169,37 @@ async def test_store_to_s3(
     assert len(hashes_on_disk) > 0
     assert len(hashes_in_s3) > 0
     assert hashes_on_disk == hashes_in_s3
+
+
+@pytest.mark.parametrize("provider", [S3Provider.CEPH, S3Provider.MINIO])
+async def test_regression_non_aws_providers(
+    unused_volume: DockerVolume,
+    mocked_s3_server_url: HttpUrl,
+    unused_volume_path: Path,
+    bucket: str,
+    settings: ApplicationSettings,
+    caplog_info_debug: LogCaptureFixture,
+    provider: S3Provider,
+):
+    _create_data(unused_volume_path)
+    dyv_volume = await unused_volume.show()
+
+    # overwrite to test locally not against volume
+    # root permissions are required to access this
+    dyv_volume["Mountpoint"] = unused_volume_path
+
+    await store_to_s3(
+        volume_name=unused_volume.name,
+        dyv_volume=dyv_volume,
+        s3_access_key="xxx",
+        s3_secret_key="xxx",
+        s3_bucket=bucket,
+        s3_endpoint=mocked_s3_server_url,
+        s3_region="us-east-1",
+        s3_provider=provider,
+        s3_parallelism=3,
+        s3_retries=1,
+        exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
+    )
+
+    assert f'provider "{provider}" not known' not in caplog_info_debug.text
