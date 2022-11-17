@@ -26,10 +26,7 @@ class AwsSettings(BaseCustomSettings):
     # EC2 instance paramaters
     AWS_SECURITY_GROUP_IDS: list[str]
     AWS_SUBNET_ID: str
-
-    AWS_MAX_CPUs_CLUSTER: PositiveInt = 20
-    AWS_MAX_RAM_CLUSTER: PositiveInt = 50
-    AWS_INTERVAL_CHECK: PositiveInt = 5
+    AWS_AMI_ID: str = "ami-097895f2d7d86f07e"
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -74,8 +71,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     AUTOSCALING_MONITORED_NODES_LABELS: list[str] = Field(
-        default=["sidecar"],
-        description="docker node labels on the nodes to be monitored",
+        default_factory=list,
+        description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored)",
+    )
+
+    AUTOSCALING_MONITORED_SERVICES_LABELS: list[str] = Field(
+        default_factory=list,
+        description="autoscaling will only monitor services with the given labels (if empty all services will be monitored)",
+    )
+
+    AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES: list[str] = Field(
+        default_factory=list,
+        description="autoscaling will only monitor services with the given image names (if empty all services will be monitored)",
     )
 
     @cached_property
