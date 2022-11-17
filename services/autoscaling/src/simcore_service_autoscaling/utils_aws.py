@@ -95,7 +95,9 @@ def start_instance_aws(
     tags: list[str],
 ):
     with log_context(
-        logger, logging.DEBUG, msg=f"launching AWS instance {instance_type} with {tag=}"
+        logger,
+        logging.DEBUG,
+        msg=f"launching AWS instance {instance_type} with {tags=}",
     ):
         user_data = compose_user_data(settings)
 
