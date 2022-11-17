@@ -9,7 +9,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/registration.yaml#/RegistrationType"
+              $ref: "#/components/schemas/RegistrationType"
         required: true
       responses:
         "200":
@@ -31,7 +31,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/Verify2FAPhone"
+              $ref: "#/components/schemas/Verify2FAPhone"
       responses:
         "202":
           description: Accepted, SMS sent
@@ -52,7 +52,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/Validate2FAPhone"
+              $ref: "#/components/schemas/Validate2FAPhone"
       responses:
         "200":
           description: Succesfully validated
@@ -73,7 +73,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/LoginForm"
+              $ref: "#/components/schemas/LoginForm"
       responses:
         "200":
           description: Succesfully logged in
@@ -100,7 +100,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/Login2FAForm"
+              $ref: "#/components/schemas/Login2FAForm"
       responses:
         "200":
           description: Succesfully logged in
@@ -141,7 +141,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/ResetPasswordRequest"
+              $ref: "#/components/schemas/ResetPasswordRequest"
       responses:
         "200":
           description: confirmation email sent to user
@@ -168,12 +168,11 @@ paths:
           required: true
           schema:
             type: string
-            #format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/ResetPasswordForm"
+              $ref: "#/components/schemas/ResetPasswordForm"
       responses:
         "200":
           description: password was successfully changed
@@ -200,7 +199,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/ChangeEmailForm"
+              $ref: "#/components/schemas/ChangeEmailForm"
       responses:
         "200":
           description: confirmation sent to new email to complete operation
@@ -233,7 +232,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./components/schemas/auth.yaml#/ChangePasswordForm"
+              $ref: "#/components/schemas/ChangePasswordForm"
       responses:
         "200":
           description: password was successfully changed
@@ -274,7 +273,6 @@ paths:
           required: true
           schema:
             type: string
-            #format: uuid
       responses:
         "3XX":
           description: redirection to specific ui application page
@@ -373,3 +371,202 @@ components:
           type: string
         api_secret:
           type: string
+
+    RegistrationType:
+      type: object
+      properties:
+        email:
+          type: string
+          #FIXME:  'error': {'logs': [], 'errors': [{'code': 'OpenAPISchemaError', 'message': 'Unsupported email format unmarshalling', 'resource': None, 'field': None}], 'status': 400}}
+          #format: email
+        password:
+          type: string
+          # TODO:   File "/home/crespo/devp/osparc-simcore/.venv/lib/python3.6/site-packages/openapi_core/schema/schemas/models.py", line 182, in _unmarshal_string
+          # formatter = self.STRING_FORMAT_CAST_CALLABLE_GETTER[schema_format]
+          # KeyError: <SchemaFormat.PASSWORD: 'password'>
+          #format: password
+        confirm:
+          type: string
+          #format: password
+        invitation:
+          type: string
+          description: "Invitation code"
+      required:
+        - email
+        - password
+
+      example:
+        email: foo@mymail.com
+        password: "my secret"
+        confirm: "my secret"
+        invitation: 33c451d4-17b7-4e65-9880-694559b8ffc2
+
+    LoginEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/LoginFormType"
+        error:
+          nullable: true
+          default: null
+
+    LoginForm:
+      type: object
+      properties:
+        email:
+          type: string
+          #FIXME: format: email
+        password:
+          type: string
+      example:
+        email: foo@mymail.com
+        password: "my secret"
+
+    Verify2FAPhone:
+      type: object
+      required:
+        - email
+        - phone
+      properties:
+        email:
+          type: string
+          #FIXME: format: email
+        phone:
+          type: string
+          description: "Phone number E.164, needed on the deployments with 2FA"
+          #FIXME: format: phone number https://en.wikipedia.org/wiki/E.164
+      example:
+        email: foo@mymail.com
+        phone: "+41123456789"
+
+    Validate2FAPhone:
+      type: object
+      required:
+        - email
+        - phone
+        - code
+      properties:
+        email:
+          type: string
+          #FIXME: format: email
+        phone:
+          type: string
+          description: "Phone number E.164, needed on the deployments with 2FA"
+          #FIXME: format: phone number https://en.wikipedia.org/wiki/E.164
+        code:
+          type: string
+      example:
+        email: foo@mymail.com
+        phone: "+41123456789"
+        code: "1234"
+
+    Login2FAForm:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+          #FIXME: format: email
+        code:
+          type: string
+      example:
+        email: foo@mymail.com
+        code: "1234"
+
+    ChangeEmailForm:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          # FIXME: format: email
+      example:
+        email: foo@mymail.com
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          #FIXME: format: email
+      example:
+        email: foo@mymail.com
+
+    ResetPasswordForm:
+      type: object
+      required:
+        - password
+        - confirm
+      properties:
+        password:
+          type: string
+          #FIXME: format: password
+        confirm:
+          type: string
+          #FIXME: format: password
+      example:
+        password: "my secret"
+        confirm: "my secret"
+
+    ChangePasswordForm:
+      type: object
+      required:
+        - current
+        - new
+        - confirm
+      properties:
+        current:
+          type: string
+          #FIXME: format: password
+        new:
+          type: string
+          #FIXME: format: password
+        confirm:
+          type: string
+          #FIXME: format: password
+      example:
+        current: "my secret"
+        new: "my new secret"
+        confirm: "my new secret"
+
+    PasswordCheckEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/PasswordCheckSchema"
+        error:
+          nullable: true
+          default: null
+
+    PasswordCheckSchema:
+      type: object
+      required:
+        - strength
+      properties:
+        strength:
+          description: The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+        rating:
+          description: Human readable rating from infinitely weak to very strong
+          type: string
+        improvements:
+          additionalProperties:
+            type: string
+      example:
+        strength: 0.202
+        rating: Extremely weak
+        improvements:
+          mixin: Use a good mix of numbers, letters and symbols
+          duplications: Minimize character duplicates and repetitions
