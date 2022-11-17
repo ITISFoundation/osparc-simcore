@@ -17,6 +17,7 @@ coveralls
 deepdiff
 docker
 faker
+moto[server]
 psutil
 pytest
 pytest-asyncio
