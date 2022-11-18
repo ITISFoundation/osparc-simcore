@@ -6,7 +6,7 @@
  */
 
 /**
- * Container for GridButtonItems and ListButtonItems, with some convenient methods.
+ * Container for GridButtonItems and ListButtonItems (ToggleButtons), with some convenient methods.
  */
 qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
