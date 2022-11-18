@@ -13,7 +13,7 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_autoscaling.core.errors import Ec2InstanceNotFoundError
 from simcore_service_autoscaling.core.settings import AwsSettings
-from simcore_service_autoscaling.models import ClusterResources
+from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_aws import (
     compose_user_data,
     ec2_client,
@@ -101,7 +101,7 @@ def test_find_needed_ec2_instance(
     with pytest.raises(Ec2InstanceNotFoundError):
         find_needed_ec2_instance(
             available_ec2_instances=[],
-            resources=ClusterResources(total_cpus=0, total_ram=ByteSize(0)),
+            resources=Resources(cpus=0, ram=ByteSize(0)),
         )
     available_instance_types = get_ec2_instance_capabilities(settings)
 

@@ -16,7 +16,7 @@ from servicelib.logging_utils import log_context
 
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import AwsSettings
-from .models import ClusterResources
+from .models import Resources
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +71,10 @@ def get_ec2_instance_capabilities(settings: AwsSettings) -> list[EC2Instance]:
 
 def find_needed_ec2_instance(
     available_ec2_instances: list[EC2Instance],
-    resources: ClusterResources,
+    resources: Resources,
 ) -> EC2Instance:
     def _default_policy(ec2_instance: EC2Instance) -> bool:
-        return (
-            ec2_instance.cpus >= resources.total_cpus
-            and ec2_instance.ram >= resources.total_ram
-        )
+        return ec2_instance.cpus >= resources.cpus and ec2_instance.ram >= resources.ram
 
     ec2_candidates = [
         instance for instance in available_ec2_instances if _default_policy(instance)

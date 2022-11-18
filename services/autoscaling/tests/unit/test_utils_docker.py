@@ -13,7 +13,7 @@ import pytest
 from deepdiff import DeepDiff
 from faker import Faker
 from pydantic import ByteSize
-from simcore_service_autoscaling.models import ClusterResources
+from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_docker import (
     Node,
     compute_cluster_total_resources,
@@ -264,15 +264,15 @@ async def test_compute_cluster_total_resources_with_no_nodes_returns_0(
     docker_swarm: None,
 ):
     cluster_resources = await compute_cluster_total_resources([])
-    assert cluster_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
+    assert cluster_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_compute_cluster_total_resources_returns_host_resources(
     docker_swarm: None, host_node: Node
 ):
     cluster_resources = await compute_cluster_total_resources([host_node])
-    assert cluster_resources == ClusterResources(
-        total_cpus=psutil.cpu_count(), total_ram=ByteSize(psutil.virtual_memory().total)
+    assert cluster_resources == Resources(
+        cpus=psutil.cpu_count(), ram=ByteSize(psutil.virtual_memory().total)
     )
 
 
@@ -280,7 +280,7 @@ async def test_compute_node_used_resources_with_no_service(
     docker_swarm: None, host_node: Node
 ):
     cluster_resources = await compute_node_used_resources(host_node)
-    assert cluster_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
+    assert cluster_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_compute_node_used_resources_with_service(
@@ -300,7 +300,7 @@ async def test_compute_node_used_resources_with_service(
         async_docker_client, service_with_no_resources, ["running"]
     )
     node_used_resources = await compute_node_used_resources(host_node)
-    assert node_used_resources == ClusterResources(total_cpus=0, total_ram=ByteSize(0))
+    assert node_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
     # 2. if we have some services with defined resources, they should be visible
     task_template_with_manageable_resources = task_template | create_task_resources(1)
@@ -321,9 +321,7 @@ async def test_compute_node_used_resources_with_service(
         )
     )
     node_used_resources = await compute_node_used_resources(host_node)
-    assert node_used_resources == ClusterResources(
-        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
-    )
+    assert node_used_resources == Resources(cpus=psutil.cpu_count(), ram=ByteSize(0))
 
     # 3. if we have services that need more resources than available,
     # they should not change what is currently used as they will not run
@@ -335,18 +333,14 @@ async def test_compute_node_used_resources_with_service(
         async_docker_client, service_with_too_many_resources, ["pending"]
     )
     node_used_resources = await compute_node_used_resources(host_node)
-    assert node_used_resources == ClusterResources(
-        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
-    )
+    assert node_used_resources == Resources(cpus=psutil.cpu_count(), ram=ByteSize(0))
 
 
 async def test_compute_cluster_used_resources_with_no_nodes_returns_0(
     docker_swarm: None,
 ):
     cluster_used_resources = await compute_cluster_used_resources([])
-    assert cluster_used_resources == ClusterResources(
-        total_cpus=0, total_ram=ByteSize(0)
-    )
+    assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
@@ -354,9 +348,7 @@ async def test_compute_cluster_used_resources_with_no_services_running_returns_0
     host_node: Node,
 ):
     cluster_used_resources = await compute_cluster_used_resources([host_node])
-    assert cluster_used_resources == ClusterResources(
-        total_cpus=0, total_ram=ByteSize(0)
-    )
+    assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_compute_cluster_used_resources_with_services_running(
@@ -375,9 +367,7 @@ async def test_compute_cluster_used_resources_with_services_running(
         async_docker_client, service_with_no_resources, ["running"]
     )
     cluster_used_resources = await compute_cluster_used_resources([host_node])
-    assert cluster_used_resources == ClusterResources(
-        total_cpus=0, total_ram=ByteSize(0)
-    )
+    assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
     # 2. if we have some services with defined resources, they should be visible
     task_template_with_manageable_resources = task_template | create_task_resources(1)
@@ -398,9 +388,7 @@ async def test_compute_cluster_used_resources_with_services_running(
         )
     )
     cluster_used_resources = await compute_cluster_used_resources([host_node])
-    assert cluster_used_resources == ClusterResources(
-        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
-    )
+    assert cluster_used_resources == Resources(cpus=psutil.cpu_count(), ram=ByteSize(0))
 
     # 3. if we have services that need more resources than available,
     # they should not change what is currently used
@@ -412,6 +400,4 @@ async def test_compute_cluster_used_resources_with_services_running(
         async_docker_client, service_with_too_many_resources, ["pending"]
     )
     cluster_used_resources = await compute_cluster_used_resources([host_node])
-    assert cluster_used_resources == ClusterResources(
-        total_cpus=psutil.cpu_count(), total_ram=ByteSize(0)
-    )
+    assert cluster_used_resources == Resources(cpus=psutil.cpu_count(), ram=ByteSize(0))

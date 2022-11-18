@@ -8,7 +8,7 @@ from typing import Any, Final, Mapping
 import aiodocker
 from servicelib.utils import logged_gather
 
-from .models import ClusterResources
+from .models import Resources
 
 _NANO_CPU: Final[float] = 10**9
 
@@ -66,7 +66,7 @@ async def pending_service_tasks_with_insufficient_resources(
     return pending_tasks
 
 
-async def compute_cluster_total_resources(nodes: list[Node]) -> ClusterResources:
+async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
     """
     Returns the nodes total resources.
     """
@@ -79,10 +79,10 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> ClusterResources
             }
         )
 
-    return ClusterResources.parse_obj(dict(cluster_resources_counter))
+    return Resources.parse_obj(dict(cluster_resources_counter))
 
 
-async def compute_node_used_resources(node: Node) -> ClusterResources:
+async def compute_node_used_resources(node: Node) -> Resources:
     cluster_resources_counter = collections.Counter({"total_ram": 0, "total_cpus": 0})
     async with aiodocker.Docker() as docker:
         all_tasks_on_node = await docker.tasks.list(filters={"node": node["ID"]})
@@ -97,16 +97,16 @@ async def compute_node_used_resources(node: Node) -> ClusterResources:
                         "total_cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
                     }
                 )
-    return ClusterResources.parse_obj(dict(cluster_resources_counter))
+    return Resources.parse_obj(dict(cluster_resources_counter))
 
 
-async def compute_cluster_used_resources(nodes: list[Node]) -> ClusterResources:
+async def compute_cluster_used_resources(nodes: list[Node]) -> Resources:
     """Returns the total amount of resources (reservations) used on each of the given nodes"""
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in ClusterResources.__fields__.keys()})
+    counter = collections.Counter({k: 0 for k in Resources.__fields__.keys()})
     for result in list_of_used_resources:
         counter.update(result.dict())
 
-    return ClusterResources.parse_obj(dict(counter))
+    return Resources.parse_obj(dict(counter))
