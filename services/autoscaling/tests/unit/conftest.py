@@ -287,6 +287,7 @@ def mocked_aws_server_envs(
 @pytest.fixture
 def aws_vpc_id(
     mocked_aws_server_envs: None,
+    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[str]:
     settings = AwsSettings.create_from_envs()
@@ -307,6 +308,7 @@ def aws_vpc_id(
 @pytest.fixture
 def aws_subnet_id(
     mocked_aws_server_envs: None,
+    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     aws_vpc_id: str,
 ) -> Iterator[str]:
@@ -326,6 +328,7 @@ def aws_subnet_id(
 @pytest.fixture
 def aws_security_group_id(
     mocked_aws_server_envs: None,
+    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     aws_vpc_id: str,

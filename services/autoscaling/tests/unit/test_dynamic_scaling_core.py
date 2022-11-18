@@ -41,6 +41,7 @@ async def test_check_dynamic_resources_with_service_with_lack_of_resources(
     async_docker_client: aiodocker.Docker,
     docker_swarm: None,
     disable_dynamic_service_background_task: None,
+    aws_security_group_id: None,
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
