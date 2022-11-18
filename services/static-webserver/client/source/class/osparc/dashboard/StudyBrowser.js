@@ -214,7 +214,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const width = this._resourcesContainer.getBounds().width - 15;
           newStudyFromServiceButton.setWidth(width);
         }
-        this._resourcesContainer.addAt(newStudyFromServiceButton, 1);
+        this._resourcesContainer.addAt(newStudyFromServiceButton, 0);
       }
     },
 
