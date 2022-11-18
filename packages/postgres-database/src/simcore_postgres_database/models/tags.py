@@ -73,7 +73,7 @@ tags_to_groups = sa.Table(
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.true(),
-        doc="If true, group can see the tag listed and can assign it to a project."
+        doc="If true, group can *read* a tag."
         "This column can be used to set the tag invisible",
     ),
     sa.Column(
@@ -81,14 +81,14 @@ tags_to_groups = sa.Table(
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.false(),
-        doc="If true, group can modify the tag attributes, e.g. name, color etc",
+        doc="If true, group can *create* and *update* a tag",
     ),
     sa.Column(
         "delete",
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.false(),
-        doc="If true, group can delete the tag",
+        doc="If true, group can *delete* the tag",
     ),
     # TIME STAMPS ----
     sa.Column(
