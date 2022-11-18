@@ -18,11 +18,11 @@ from simcore_postgres_database.models.users import users
 #
 
 
-class NotFoundError(RuntimeError):
+class TagNotFoundError(Exception):
     pass
 
 
-class NotAllowedError(RuntimeError):  # maps to AccessForbidden
+class TagOperationNotAllowedError(Exception):  # maps to AccessForbidden
     pass
 
 
@@ -96,7 +96,7 @@ class TagsRepo:
         result = await conn.execute(select_stmt)
         row = await result.first()
         if not row:
-            raise NotFoundError
+            raise TagNotFoundError
         return TagDict(row.items())
 
     async def update(
@@ -129,13 +129,13 @@ class TagsRepo:
             .distinct()
         )
         if not can_update:
-            raise NotAllowedError()
+            raise TagOperationNotAllowedError()
 
         result = await conn.execute(update_stmt)
         if row_proxy := await result.first():
             return TagDict(row_proxy.items())
 
-        raise NotFoundError
+        raise TagNotFoundError
 
     async def create(self, conn: SAConnection, tag_create: TagDict) -> int:
 
@@ -188,7 +188,7 @@ class TagsRepo:
         )
 
         if not can_delete:
-            raise NotAllowedError()
+            raise TagOperationNotAllowedError()
 
         assert can_delete  # nosec
         await conn.execute(tags.delete().where(tags.c.id == tag_id))

@@ -10,7 +10,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.users import UserRole, UserStatus
-from simcore_postgres_database.utils_tags import NotFoundError, TagsRepo
+from simcore_postgres_database.utils_tags import TagNotFoundError, TagsRepo
 
 
 @pytest.fixture
@@ -70,5 +70,5 @@ async def test_tags_repo(pg_engine: Engine, user: RowProxy, group: RowProxy):
 
         await repo.delete(conn, tag1["id"])
 
-        with pytest.raises(NotFoundError):
+        with pytest.raises(TagNotFoundError):
             await repo.get(conn, tag1["id"])
