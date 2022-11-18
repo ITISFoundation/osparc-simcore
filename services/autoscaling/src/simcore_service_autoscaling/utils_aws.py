@@ -5,13 +5,13 @@
 import contextlib
 import logging
 import time
-from dataclasses import dataclass
+from collections import OrderedDict
 from textwrap import dedent
 from typing import Iterator
 
 import boto3
 from mypy_boto3_ec2.client import EC2Client
-from pydantic import ByteSize, parse_obj_as
+from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
 
 from .core.errors import Ec2InstanceNotFoundError
@@ -24,11 +24,10 @@ logger = logging.getLogger(__name__)
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987819879
 
 
-@dataclass(frozen=True)
-class EC2Instance:
+class EC2Instance(BaseModel):
     name: str
-    cpus: int
-    ram: float
+    cpus: PositiveInt
+    ram: ByteSize
 
 
 @contextlib.contextmanager
@@ -59,7 +58,7 @@ def get_ec2_instance_capabilities(settings: AwsSettings) -> list[EC2Instance]:
         with contextlib.suppress(KeyError):
             list_instances.append(
                 EC2Instance(
-                    instance["InstanceType"],
+                    name=instance["InstanceType"],
                     cpus=instance["VCpuInfo"]["DefaultVCpus"],
                     ram=parse_obj_as(
                         ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
@@ -69,19 +68,41 @@ def get_ec2_instance_capabilities(settings: AwsSettings) -> list[EC2Instance]:
     return list_instances
 
 
-def find_needed_ec2_instance(
+def closest_instance_policy(
+    ec2_instance: EC2Instance,
+    resources: Resources,
+) -> float:
+    if ec2_instance.cpus < resources.cpus or ec2_instance.ram < resources.ram:
+        return 0
+    # compute a score for all the instances that are above expectations
+    # best is the exact ec2 instance
+    cpu_ratio = float(ec2_instance.cpus - resources.cpus) / float(ec2_instance.cpus)
+    ram_ratio = float(ec2_instance.ram - resources.ram) / float(ec2_instance.ram)
+    return 100 * (1.0 - cpu_ratio) * (1.0 - ram_ratio)
+
+
+def find_best_fitting_ec2_instance(
     available_ec2_instances: list[EC2Instance],
     resources: Resources,
+    score_type=closest_instance_policy,
 ) -> EC2Instance:
-    def _default_policy(ec2_instance: EC2Instance) -> bool:
-        return ec2_instance.cpus >= resources.cpus and ec2_instance.ram >= resources.ram
-
-    ec2_candidates = [
-        instance for instance in available_ec2_instances if _default_policy(instance)
-    ]
-    if not ec2_candidates:
+    score_to_ec2_candidate: dict[float, EC2Instance] = OrderedDict(
+        sorted(
+            {
+                score_type(instance, resources): instance
+                for instance in available_ec2_instances
+            }.items(),
+            reverse=True,
+        )
+    )
+    if not score_to_ec2_candidate:
         raise Ec2InstanceNotFoundError(needed_resources=resources)
-    return ec2_candidates[0]
+    score, instance = next(iter(score_to_ec2_candidate.items()))
+    if score == 0:
+        raise Ec2InstanceNotFoundError(
+            needed_resources=resources, msg="no adequate EC2 instance found!"
+        )
+    return instance
 
 
 def compose_user_data(settings: AwsSettings) -> str:
@@ -100,16 +121,6 @@ def compose_user_data(settings: AwsSettings) -> str:
     ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add sidecar=true $label"
     ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add standardworker=true $label"
     """
-    )
-
-
-def create_ec2_client(settings: AwsSettings):
-    return boto3.client(
-        "ec2",
-        endpoint_url=settings.AWS_ENDPOINT,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION_NAME,
     )
 
 

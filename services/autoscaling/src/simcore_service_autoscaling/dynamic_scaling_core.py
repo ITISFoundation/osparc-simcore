@@ -38,7 +38,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     )
     logger.debug("%s", f"{cluster_used_resources=}")
 
-    ec2_instance_needed = utils_aws.find_needed_ec2_instance(4, 4)
+    ec2_instance_needed = utils_aws.find_best_fitting_ec2_instance(4, 4)
     logger.debug("%s", f"{ec2_instance_needed=}")
 
     assert app_settings.AUTOSCALING_AWS  # nosec
