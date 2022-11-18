@@ -3,6 +3,10 @@
 # pylint:disable=redefined-outer-name
 
 
+import json
+from pathlib import Path
+from typing import Any
+
 import pytest
 from aiohttp import web
 from models_library.projects_state import (
@@ -18,9 +22,20 @@ from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from simcore_service_webserver.db_models import UserRole
 
 
+@pytest.fixture
+def test_tags_data(fake_data_dir: Path) -> dict[str, Any]:
+    with (fake_data_dir / "test_tags_data.json").open() as fp:
+        return json.load(fp).get("added_tags")
+
+
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_tags_to_studies(
-    client, logged_user, user_project, expected, test_tags_data, catalog_subsystem_mock
+    client,
+    logged_user,
+    user_project,
+    expected,
+    test_tags_data: dict[str, Any],
+    catalog_subsystem_mock,
 ):
     catalog_subsystem_mock([user_project])
     # Add test tags
