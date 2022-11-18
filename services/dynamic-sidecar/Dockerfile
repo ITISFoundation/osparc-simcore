@@ -138,6 +138,13 @@ RUN chmod +x services/dynamic-sidecar/docker/*.sh
 # in oder to have similar performance a more aggressive healethcek
 # would be required.
 # removing the healthchek would not cause any issues at this point
+# NOTE: once this is in palce:
+# - remove UpdateHealth
+# - remove WaitForSidecarAPI
+# - after `get_dynamic_sidecar_placement` inside CreateSidecars returns
+#   it the sidecar's API will be up and running since the healthchck will get a reply
+#   directly from the API of the sidecar. after that set
+#    `scheduler_data.dynamic_sidecar.is_available to True`
 HEALTHCHECK NONE
 
 EXPOSE 8000

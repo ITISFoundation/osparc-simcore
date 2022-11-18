@@ -178,7 +178,7 @@ async def get_dynamic_sidecar_placement(
     @retry(
         wait=wait_random_exponential(multiplier=2, min=1, max=20),
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PLACEMENT_AND_START_TIMEOUT_S
         ),
     )
     async def _get_task_data_when_service_running(service_id: str) -> Mapping[str, Any]:
@@ -307,11 +307,11 @@ async def list_dynamic_sidecar_services(
         return await client.services.list(filters=service_filters)
 
 
-async def is_dynamic_service_running(
+async def is_sidecar_running(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     async with docker_client() as client:
-        dynamic_sidecar_services = await client.services.list(
+        sidecar_service_list = await client.services.list(
             filters={
                 "label": [
                     f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
@@ -320,8 +320,16 @@ async def is_dynamic_service_running(
                 ]
             }
         )
+        if len(sidecar_service_list) != 1:
+            return False
 
-        return len(dynamic_sidecar_services) == 1
+        # check if the any of the tasks for the service is in running state
+        service_id = sidecar_service_list[0]["ID"]
+        service_tasks = await client.tasks.list(filters={"service": f"{service_id}"})
+        for task in service_tasks:
+            if task["Status"]["State"] == "running":
+                return True
+        return False
 
 
 async def get_or_create_networks_ids(
