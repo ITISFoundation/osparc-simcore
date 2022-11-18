@@ -21,10 +21,10 @@ def _handle_tags_exceptions(handler: Handler):
             return await handler(request)
 
         except TagNotFoundError as exc:
-            raise web.HTTPNotFound(reason="Tag not found") from exc
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except TagOperationNotAllowedError as exc:
-            raise web.HTTPUnauthorized from exc
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -46,7 +46,7 @@ async def list_tags(request: web.Request):
 async def update_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = request.match_info.get("tag_id")
+    tag_id = request.match_info["tag_id"]
     tag_data = await request.json()
 
     repo = TagsRepo(user_id=uid)
@@ -73,10 +73,10 @@ async def create_tag(request: web.Request):
 async def delete_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = request.match_info.get("tag_id")
+    tag_id = request.match_info["tag_id"]
 
     repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        repo.delete(conn, tag_id=tag_id)
+        await repo.delete(conn, tag_id=tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

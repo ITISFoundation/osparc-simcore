@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -31,7 +31,7 @@ class TagOperationNotAllowedError(Exception):  # maps to AccessForbidden
 #
 
 
-class TagDict(TypedDict):
+class TagDict(TypedDict, total=False):
     id: int
     name: int
     description: str
@@ -43,8 +43,8 @@ class TagsRepo:
     user_id: int
 
     @classmethod
-    def _get_values(cls, data: dict[str, Any], required: set[str], optional: set[str]):
-        values = {k: data[k] for k in required}
+    def _get_values(cls, *, data: TagDict, required: set[str], optional: set[str]):
+        values = {k: data[k] for k in required}  # type: ignore
         for k in optional:
             if value := data.get(k):
                 values[k] = value
@@ -78,11 +78,10 @@ class TagsRepo:
         )
 
         # pylint: disable=not-an-iterable
-        result = []
+        items = []
         async for row in conn.execute(select_stmt):
-            row_dict = TagDict(row.items())
-            result.append(row_dict)
-        return result
+            items.append(TagDict(row.items()))  # type: ignore
+        return items
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
         j_user_read_tags = self._join_user_read_tags()
@@ -96,8 +95,8 @@ class TagsRepo:
         result = await conn.execute(select_stmt)
         row = await result.first()
         if not row:
-            raise TagNotFoundError
-        return TagDict(row.items())
+            raise TagNotFoundError(f"{tag_id=} not found")
+        return TagDict(row.items())  # type: ignore
 
     async def update(
         self, conn: SAConnection, tag_id: int, tag_update: TagDict
@@ -113,7 +112,7 @@ class TagsRepo:
         )
 
         values = self._get_values(
-            tag_update, required={}, optional={"description", "name", "color"}
+            data=tag_update, required=set(), optional={"description", "name", "color"}
         )
 
         update_stmt = (
@@ -129,18 +128,20 @@ class TagsRepo:
             .distinct()
         )
         if not can_update:
-            raise TagOperationNotAllowedError()
+            raise TagOperationNotAllowedError(
+                f"Insufficent access rights to update {tag_id=}"
+            )
 
         result = await conn.execute(update_stmt)
-        if row_proxy := await result.first():
-            return TagDict(row_proxy.items())
+        if row := await result.first():
+            return TagDict(row.items())  # type: ignore
 
-        raise TagNotFoundError
+        raise TagNotFoundError(f"{tag_id=} not found")
 
-    async def create(self, conn: SAConnection, tag_create: TagDict) -> int:
+    async def create(self, conn: SAConnection, tag_create: TagDict) -> TagDict:
 
         values = self._get_values(
-            tag_create, required={"name", "color"}, optional={"description"}
+            data=tag_create, required={"name", "color"}, optional={"description"}
         )
         insert_tag_stmt = (
             tags.insert()
@@ -149,25 +150,27 @@ class TagsRepo:
         )
 
         async with conn.begin():
-            # get primary gid
-            primary_gid = await conn.scalar(
-                sa.select([users.c.primary_gid]).where(users.c.id == self.user_id)
-            )
 
             # insert new tag
             result = await conn.execute(insert_tag_stmt)
-            if tag := await result.first():
-                # take tag ownership
-                await conn.execute(
-                    tags_to_groups.insert().values(
-                        tag_id=tag.id,
-                        group_id=primary_gid,
-                        read=True,
-                        write=True,
-                        delete=True,
-                    )
+            row = await result.first()
+            assert row  # nosec
+
+            # take tag ownership
+
+            primary_gid = await conn.scalar(
+                sa.select([users.c.primary_gid]).where(users.c.id == self.user_id)
+            )
+            await conn.execute(
+                tags_to_groups.insert().values(
+                    tag_id=row.id,
+                    group_id=primary_gid,
+                    read=True,
+                    write=True,
+                    delete=True,
                 )
-                return TagDict(tag.items())
+            )
+            return TagDict(row.items())  # type: ignore
 
     async def delete(self, conn: SAConnection, tag_id: int) -> None:
         # select delete tags in user's groups
@@ -188,7 +191,7 @@ class TagsRepo:
         )
 
         if not can_delete:
-            raise TagOperationNotAllowedError()
+            raise f"Insufficent access rights to delete {tag_id=}"
 
         assert can_delete  # nosec
         await conn.execute(tags.delete().where(tags.c.id == tag_id))

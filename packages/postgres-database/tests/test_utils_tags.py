@@ -55,9 +55,12 @@ async def test_tags_repo(pg_engine: Engine, user: RowProxy, group: RowProxy):
 
         # create & own
         tag1 = await repo.create(conn, {"name": "t1", "color": "blue"})
-        tag2 = await repo.create(conn, {"name": "t2", "color": "red"})
+        tag2a = await repo.create(conn, {"name": "t2", "color": "red"})
+        tag2b = await repo.create(conn, {"name": "t2", "color": "red"})
 
-        assert await repo.list_(conn) == [tag1, tag2]
+        assert tag2a != tag2b  #  different ids!
+
+        assert await repo.list_(conn) == [tag1, tag2a, tag2b]
 
         tag1_updated = {**tag1, **{"name": "new t1"}}
 
