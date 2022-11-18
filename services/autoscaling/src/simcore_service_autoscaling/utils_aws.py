@@ -4,7 +4,6 @@
 
 import contextlib
 import logging
-import time
 from collections import OrderedDict
 from textwrap import dedent
 from typing import Iterator
@@ -105,7 +104,7 @@ def find_best_fitting_ec2_instance(
     return instance
 
 
-def compose_user_data(settings: AwsSettings) -> str:
+def _compose_user_data(settings: AwsSettings) -> str:
     # NOTE: docker swarm commands might be done with aioboto?
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987820674
     return dedent(
@@ -133,18 +132,16 @@ def start_instance_aws(
         logger,
         logging.DEBUG,
         msg=f"launching AWS instance {instance_type} with {tags=}",
-    ):
-        user_data = compose_user_data(settings)
+    ), ec2_client(settings) as client:
+        user_data = _compose_user_data(settings)
 
-        ec2 = boto3.resource("ec2", region_name="us-east-1")
-        instance = ec2.create_instances(
+        instances = client.run_instances(
             ImageId=settings.AWS_AMI_ID,
-            KeyName=settings.AWS_KEY_NAME,
-            InstanceType=instance_type,
-            SecurityGroupIds=settings.AWS_SECURITY_GROUP_IDS,
             MinCount=1,
             MaxCount=1,
+            InstanceType=instance_type,
             InstanceInitiatedShutdownBehavior="terminate",
+            KeyName=settings.AWS_KEY_NAME,
             SubnetId=settings.AWS_SUBNET_ID,
             TagSpecifications=[
                 {
@@ -153,16 +150,13 @@ def start_instance_aws(
                 }
             ],
             UserData=user_data,
-        )[0]
+            SecurityGroupIds=settings.AWS_SECURITY_GROUP_IDS,
+        )
+        instance_id = instances["Instances"][0]["InstanceId"]
 
-    logger.debug(
-        "New instance launched. Estimated time to launch and join the cluster : 2mns",
-    )
-    logger.debug("Pausing for 10mns before next check")
-
-    time.sleep(600)
-    logger.debug("Instance state: %s", instance.state)
-    logger.debug("Public dns: %s", instance.public_dns_name)
-    logger.debug("Instance id: %s", instance.id)
-
-    return instance
+        logger.info(
+            "New instance launched: %s, waiting for it to start now...", instance_id
+        )
+        waiter = client.get_waiter("instance_running")
+        waiter.wait(InstanceIds=[instance_id])
+        logger.info("instance %s is now running, happy computing...", instance_id)

@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 import random
 from typing import Iterator
 
@@ -18,11 +19,12 @@ from simcore_service_autoscaling.core.settings import AwsSettings
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_aws import (
     EC2Instance,
+    _compose_user_data,
     closest_instance_policy,
-    compose_user_data,
     ec2_client,
     find_best_fitting_ec2_instance,
     get_ec2_instance_capabilities,
+    start_instance_aws,
 )
 
 
@@ -55,6 +57,66 @@ def mocked_aws_server_envs(
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "xxx")
 
     yield
+
+
+@pytest.fixture
+def aws_vpc_id(
+    mocked_aws_server_envs: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[str]:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        vpc = client.create_vpc(
+            CidrBlock="10.0.0.0/16",
+        )
+    vpc_id = vpc["Vpc"]["VpcId"]
+    print(f"--> Created Vpc in AWS with {vpc_id=}")
+    monkeypatch.setenv("AWS_VPC_ID", vpc_id)
+    yield vpc_id
+
+    with ec2_client(settings) as client:
+        client.delete_vpc(VpcId=vpc_id)
+        print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
+
+
+@pytest.fixture
+def aws_subnet_id(
+    mocked_aws_server_envs: None,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_vpc_id: str,
+) -> Iterator[str]:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        subnet = client.create_subnet(CidrBlock="10.0.1.0/24", VpcId=aws_vpc_id)
+        subnet_id = subnet["Subnet"]["SubnetId"]
+        print(f"--> Created Subnet in AWS with {subnet_id=}")
+
+    monkeypatch.setenv("AWS_SUBNET_ID", subnet_id)
+    yield subnet_id
+    with ec2_client(settings) as client:
+        client.delete_subnet(SubnetId=subnet_id)
+        print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
+
+
+@pytest.fixture
+def aws_security_group_id(
+    mocked_aws_server_envs: None,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    aws_vpc_id: str,
+) -> Iterator[str]:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        security_group = client.create_security_group(
+            Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
+        )
+        security_group_id = security_group["GroupId"]
+        print(f"--> Created Security Group in AWS with {security_group_id=}")
+    monkeypatch.setenv("AWS_SECURITY_GROUP_IDS", json.dumps([security_group_id]))
+    yield security_group_id
+    with ec2_client(settings) as client:
+        client.delete_security_group(GroupId=security_group_id)
+        print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
 
 
 def test_ec2_client(
@@ -157,12 +219,22 @@ def test_find_best_fitting_ec2_instance_closest_instance_policy(
 
 
 def test_compose_user_data(app_environment: EnvVarsDict):
-
     settings = AwsSettings.create_from_envs()
 
-    user_data = compose_user_data(settings)
+    user_data = _compose_user_data(settings)
     print(user_data)
 
     for line in user_data.split("\n"):
         if "ssh" in line:
             assert f"ubuntu@{settings.AWS_DNS}" in line
+
+
+def test_start_instance_aws(
+    app_environment: EnvVarsDict,
+    mocked_aws_server_envs: None,
+    aws_subnet_id: None,
+    aws_security_group_id: None,
+    faker: Faker,
+):
+    settings = AwsSettings.create_from_envs()
+    start_instance_aws(settings, faker.pystr(), tags=faker.pylist(allowed_types=(str,)))

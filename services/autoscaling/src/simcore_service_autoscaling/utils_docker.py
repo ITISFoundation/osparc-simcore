@@ -70,12 +70,12 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
     """
     Returns the nodes total resources.
     """
-    cluster_resources_counter = collections.Counter({"total_ram": 0, "total_cpus": 0})
+    cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
     for node in nodes:
         cluster_resources_counter.update(
             {
-                "total_ram": node["Description"]["Resources"]["MemoryBytes"],
-                "total_cpus": node["Description"]["Resources"]["NanoCPUs"] / _NANO_CPU,
+                "ram": node["Description"]["Resources"]["MemoryBytes"],
+                "cpus": node["Description"]["Resources"]["NanoCPUs"] / _NANO_CPU,
             }
         )
 
@@ -83,7 +83,7 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
 
 
 async def compute_node_used_resources(node: Node) -> Resources:
-    cluster_resources_counter = collections.Counter({"total_ram": 0, "total_cpus": 0})
+    cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
     async with aiodocker.Docker() as docker:
         all_tasks_on_node = await docker.tasks.list(filters={"node": node["ID"]})
         for task in all_tasks_on_node:
@@ -93,8 +93,8 @@ async def compute_node_used_resources(node: Node) -> Resources:
                 )
                 cluster_resources_counter.update(
                     {
-                        "total_ram": task_reservations.get("MemoryBytes", 0),
-                        "total_cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
+                        "ram": task_reservations.get("MemoryBytes", 0),
+                        "cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
                     }
                 )
     return Resources.parse_obj(dict(cluster_resources_counter))
