@@ -1,7 +1,7 @@
 # pylint: disable=no-value-for-parameter
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional, Union
 
@@ -14,7 +14,6 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
-from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
