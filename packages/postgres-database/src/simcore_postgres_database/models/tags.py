@@ -16,13 +16,6 @@ tags = sa.Table(
         primary_key=True,
     ),
     sa.Column(
-        "user_id",
-        sa.BigInteger(),
-        sa.ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
-        doc="DEPRECATED: should be replaced by assigning a tag_to_group instead",
-    ),
-    sa.Column(
         "name",
         sa.String(),
         nullable=False,
@@ -44,14 +37,15 @@ tags = sa.Table(
 
 
 #
-# tag_to_group: Defines the level of access of a group (group_id) to a given tag (tag_id)
+# tags_to_groups: Maps tags with groups to define the level of access
+#                 of a group (group_id) for the corresponding tag (tag_id)
 #
-tag_to_group = sa.Table(
-    "tag_to_group",
+tags_to_groups = sa.Table(
+    "tags_to_groups",
     metadata,
     sa.Column(
         "tag_id",
-        sa.String(),
+        sa.BigInteger(),
         sa.ForeignKey(
             tags.c.id,
             onupdate="CASCADE",
@@ -63,7 +57,7 @@ tag_to_group = sa.Table(
     ),
     sa.Column(
         "group_id",
-        sa.String(),
+        sa.BigInteger,
         sa.ForeignKey(
             "groups.gid",
             onupdate="CASCADE",
