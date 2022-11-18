@@ -3,22 +3,36 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import json
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Final, Mapping, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Final,
+    Iterator,
+    Mapping,
+    Optional,
+)
 
 import aiodocker
 import httpx
 import pytest
 import simcore_service_autoscaling
+from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
 from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
+from moto.server import ThreadedMotoServer
 from pydantic import PositiveInt
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
-from simcore_service_autoscaling.core.settings import ApplicationSettings
+from simcore_service_autoscaling.core.settings import ApplicationSettings, AwsSettings
+from simcore_service_autoscaling.utils_aws import ec2_client
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -237,3 +251,94 @@ def assert_for_service_state() -> Callable[
                 )
 
     return _runner
+
+
+@pytest.fixture(scope="module")
+def mocked_aws_server() -> Iterator[ThreadedMotoServer]:
+    """creates a moto-server that emulates AWS services in place
+    NOTE: Never use a bucket with underscores it fails!!
+    """
+    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=unused_port())
+    # pylint: disable=protected-access
+    print(f"--> started mock AWS server on {server._ip_address}:{server._port}")
+    print(
+        f"--> Dashboard available on [http://{server._ip_address}:{server._port}/moto-api/]"
+    )
+    server.start()
+    yield server
+    server.stop()
+    print(f"<-- stopped mock AWS server on {server._ip_address}:{server._port}")
+
+
+@pytest.fixture
+def mocked_aws_server_envs(
+    mocked_aws_server: ThreadedMotoServer, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[None]:
+    monkeypatch.setenv(
+        "AWS_ENDPOINT",
+        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
+    )
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "xxx")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "xxx")
+
+    yield
+
+
+@pytest.fixture
+def aws_vpc_id(
+    mocked_aws_server_envs: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[str]:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        vpc = client.create_vpc(
+            CidrBlock="10.0.0.0/16",
+        )
+    vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
+    print(f"--> Created Vpc in AWS with {vpc_id=}")
+    monkeypatch.setenv("AWS_VPC_ID", vpc_id)
+    yield vpc_id
+
+    with ec2_client(settings) as client:
+        client.delete_vpc(VpcId=vpc_id)
+        print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
+
+
+@pytest.fixture
+def aws_subnet_id(
+    mocked_aws_server_envs: None,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_vpc_id: str,
+) -> Iterator[str]:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        subnet = client.create_subnet(CidrBlock="10.0.1.0/24", VpcId=aws_vpc_id)
+        subnet_id = subnet["Subnet"]["SubnetId"]
+        print(f"--> Created Subnet in AWS with {subnet_id=}")
+
+    monkeypatch.setenv("AWS_SUBNET_ID", subnet_id)
+    yield subnet_id
+    with ec2_client(settings) as client:
+        client.delete_subnet(SubnetId=subnet_id)
+        print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
+
+
+@pytest.fixture
+def aws_security_group_id(
+    mocked_aws_server_envs: None,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    aws_vpc_id: str,
+) -> Iterator[str]:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        security_group = client.create_security_group(
+            Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
+        )
+        security_group_id = security_group["GroupId"]
+        print(f"--> Created Security Group in AWS with {security_group_id=}")
+    monkeypatch.setenv("AWS_SECURITY_GROUP_IDS", json.dumps([security_group_id]))
+    yield security_group_id
+    with ec2_client(settings) as client:
+        client.delete_security_group(GroupId=security_group_id)
+        print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
