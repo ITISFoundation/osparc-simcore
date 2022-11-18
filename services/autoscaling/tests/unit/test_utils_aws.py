@@ -94,18 +94,19 @@ def test_get_ec2_instance_capabilities(
         assert any(i.name == instance_type_name for i in instance_types)
 
 
-def test_find_needed_ec2_instance(
-    app_environment: EnvVarsDict,
-    mocked_aws_server_envs: None,
-    faker: Faker,
-):
-    settings = AwsSettings.create_from_envs()
+def test_find_needed_ec2_instance_with_no_instances_raises():
     # this shall raise as there are no available instances
     with pytest.raises(Ec2InstanceNotFoundError):
         find_needed_ec2_instance(
             available_ec2_instances=[],
             resources=Resources(cpus=0, ram=ByteSize(0)),
         )
+
+
+# @pytest.mark.parametrize()
+def test_find_needed_ec2_instance(
+    faker: Faker,
+):
     fake_available_instances = [
         EC2Instance(
             name=faker.pystr(),
