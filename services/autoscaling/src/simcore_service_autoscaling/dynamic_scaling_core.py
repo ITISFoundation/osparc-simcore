@@ -47,6 +47,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     ec2_instance_needed = utils_aws.find_best_fitting_ec2_instance(
         list_of_ec2_instances,
         models.Resources(cpus=4, ram=parse_obj_as(ByteSize, "2Gib")),
+        score_type=utils_aws.closest_instance_policy,
     )
     logger.debug("%s", f"{ec2_instance_needed=}")
 
