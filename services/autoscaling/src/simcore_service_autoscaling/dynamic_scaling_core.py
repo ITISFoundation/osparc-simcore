@@ -20,7 +20,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         logger.debug("no pending tasks with insufficient resources at the moment")
         return
 
-    logger.debug(
+    logger.info(
         "%s service task(s) with %s label(s) are pending due to insufficient resources",
         f"{len(pending_tasks)}",
         f"{app_settings.AUTOSCALING_MONITORED_SERVICES_LABELS}",
@@ -33,11 +33,11 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     cluster_total_resources = await utils_docker.compute_cluster_total_resources(
         monitored_nodes
     )
-    logger.debug("%s", f"{cluster_total_resources=}")
+    logger.info("current %s", f"{cluster_total_resources=}")
     cluster_used_resources = await utils_docker.compute_cluster_used_resources(
         monitored_nodes
     )
-    logger.debug("%s", f"{cluster_used_resources=}")
+    logger.info("current %s", f"{cluster_used_resources=}")
 
     assert app_settings.AUTOSCALING_AWS  # nosec
     list_of_ec2_instances = utils_aws.get_ec2_instance_capabilities(
