@@ -53,7 +53,9 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
 
 
 @pytest.fixture
-def make_engine(postgres_service: str) -> Callable:
+def make_engine(
+    postgres_service: str,
+) -> Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]:
     dsn = postgres_service
 
     def maker(*, is_async=True) -> Union[Awaitable[Engine], sa.engine.base.Engine]:
@@ -131,7 +133,9 @@ def create_fake_group() -> Callable:
 
 
 @pytest.fixture
-def create_fake_user(make_engine: Callable) -> Iterator[Callable]:
+def create_fake_user(
+    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+) -> Iterator[Callable]:
     """factory to create a user w/ or w/o a standard group"""
 
     created_ids = []
