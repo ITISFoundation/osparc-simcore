@@ -48,7 +48,22 @@ async def user(
     return user_
 
 
-async def test_tags_repo(pg_engine: Engine, user: RowProxy, group: RowProxy):
+@pytest.fixture
+async def other_user(
+    create_fake_user: Callable[[SAConnection, RowProxy, Any], RowProxy],
+    connection: SAConnection,
+) -> RowProxy:
+    user_ = await create_fake_user(
+        connection,
+        status=UserStatus.ACTIVE,
+        role=UserRole.USER,
+    )
+    return user_
+
+
+async def test_tags_repo_workflow(
+    pg_engine: Engine, user: RowProxy, group: RowProxy, other_user: RowProxy
+):
 
     async with pg_engine.acquire() as conn:
         repo = TagsRepo(user_id=user.id)
@@ -75,3 +90,15 @@ async def test_tags_repo(pg_engine: Engine, user: RowProxy, group: RowProxy):
 
         with pytest.raises(TagNotFoundError):
             await repo.get(conn, tag1["id"])
+
+        # new user
+        other_repo = TagsRepo(user_id=other_user.id)
+
+        # create & own tags
+        tag3 = await other_repo.create(conn, {"name": "t3", "color": "brown"})
+        assert await other_repo.get(conn, tag3["id"]) == tag3
+
+        # but cannot access to other's tags
+        assert await repo.get(conn, tag2a["id"]) == tag2a
+        with pytest.raises(TagNotFoundError):
+            await other_repo.get(conn, tag2a["id"])
