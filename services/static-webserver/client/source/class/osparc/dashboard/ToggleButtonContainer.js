@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     groupBy: {
-      check: [null, "tag"],
+      check: [null, "tags"],
       init: null,
       nullable: true,
       apply: "__applyGroupBy"
@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
 
     __addHeaders: function(child) {
       let headerInfo = null;
-      if (this.getGroupBy() === "tag") {
+      if (this.getGroupBy() === "tags") {
         let tags = [];
         if (child.isPropertyInitialized("tags")) {
           tags = child.getTags();
