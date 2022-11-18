@@ -26,8 +26,6 @@ boto3==1.26.12
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.26.12
-    # via -r requirements/_test.in
 botocore==1.29.12
     # via
     #   -c requirements/_base.txt
@@ -37,7 +35,7 @@ botocore==1.29.12
     #   s3transfer
 botocore-stubs==1.29.12
     # via
-    #   boto3-stubs
+    #   -c requirements/_base.txt
     #   types-aiobotocore
 certifi==2022.9.24
     # via
@@ -98,15 +96,15 @@ flask-cors==3.0.10
     # via moto
 graphql-core==3.2.3
     # via moto
-h11==0.12.0
+h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.15.0
+httpcore==0.16.1
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.23.0
+httpx==0.23.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -161,8 +159,6 @@ moto==4.0.1
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/_test.in
-mypy-boto3-ec2==1.26.12
-    # via boto3-stubs
 networkx==2.8.8
     # via cfn-lint
 openapi-schema-validator==0.2.3
@@ -288,17 +284,13 @@ types-aiobotocore-s3==2.4.0.post1
     # via types-aiobotocore
 types-awscrt==0.15.3
     # via
+    #   -c requirements/_base.txt
     #   botocore-stubs
-    #   types-s3transfer
-types-s3transfer==0.6.0.post5
-    # via boto3-stubs
 types-toml==0.10.8.1
     # via responses
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
-    #   boto3-stubs
-    #   mypy-boto3-ec2
     #   types-aiobotocore
     #   types-aiobotocore-s3
 urllib3==1.26.12

@@ -44,10 +44,14 @@ attrs==21.4.0
     #   jsonschema
 boto3==1.26.12
     # via -r requirements/_base.in
+boto3-stubs==1.26.12
+    # via -r requirements/_base.in
 botocore==1.29.12
     # via
     #   boto3
     #   s3transfer
+botocore-stubs==1.29.12
+    # via boto3-stubs
 certifi==2022.9.24
     # via
     #   httpcore
@@ -73,13 +77,13 @@ frozenlist==1.3.3
     # via
     #   aiohttp
     #   aiosignal
-h11==0.12.0
+h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.15.0
+httpcore==0.16.1
     # via httpx
-httpx==0.23.0
+httpx==0.23.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
@@ -108,6 +112,8 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
+mypy-boto3-ec2==1.26.12
+    # via boto3-stubs
 opentracing==2.4.0
     # via
     #   fastapi-contrib
@@ -183,10 +189,18 @@ tqdm==4.64.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.7.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
+types-awscrt==0.15.3
+    # via
+    #   botocore-stubs
+    #   types-s3transfer
+types-s3transfer==0.6.0.post5
+    # via boto3-stubs
 typing-extensions==4.4.0
     # via
     #   aiodebug
     #   aiodocker
+    #   boto3-stubs
+    #   mypy-boto3-ec2
     #   pydantic
     #   starlette
 urllib3==1.26.12
