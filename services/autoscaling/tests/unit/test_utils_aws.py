@@ -7,6 +7,7 @@ from typing import Iterator
 import botocore.exceptions
 import pytest
 from aiohttp.test_utils import unused_port
+from faker import Faker
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -15,6 +16,7 @@ from simcore_service_autoscaling.core.errors import Ec2InstanceNotFoundError
 from simcore_service_autoscaling.core.settings import AwsSettings
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_aws import (
+    EC2Instance,
     compose_user_data,
     ec2_client,
     find_needed_ec2_instance,
@@ -95,6 +97,7 @@ def test_get_ec2_instance_capabilities(
 def test_find_needed_ec2_instance(
     app_environment: EnvVarsDict,
     mocked_aws_server_envs: None,
+    faker: Faker,
 ):
     settings = AwsSettings.create_from_envs()
     # this shall raise as there are no available instances
@@ -103,7 +106,18 @@ def test_find_needed_ec2_instance(
             available_ec2_instances=[],
             resources=Resources(cpus=0, ram=ByteSize(0)),
         )
-    available_instance_types = get_ec2_instance_capabilities(settings)
+    fake_available_instances = [
+        EC2Instance(
+            name=faker.pystr(),
+            cpus=faker.pyint(min_value=1),
+            ram=ByteSize(faker.pyint(min_value=1)),
+        )
+    ]
+    found_instance = find_needed_ec2_instance(
+        available_ec2_instances=fake_available_instances,
+        resources=Resources(cpus=0, ram=ByteSize(0)),
+    )
+    assert found_instance == fake_available_instances[0]
 
 
 def test_compose_user_data(app_environment: EnvVarsDict):
