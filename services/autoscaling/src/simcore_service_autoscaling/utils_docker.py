@@ -35,7 +35,6 @@ async def get_monitored_nodes(node_labels: list[Label]) -> list[Node]:
     return nodes
 
 
-# TODO: we need to check only services on the monitored nodes, maybe with some specific labels/names
 async def pending_service_tasks_with_insufficient_resources(
     service_labels: list[Label],
 ) -> list[Task]:
