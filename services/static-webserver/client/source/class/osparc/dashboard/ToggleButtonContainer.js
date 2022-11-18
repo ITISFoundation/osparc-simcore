@@ -81,38 +81,58 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
           child.setWidth(width);
         }
         if (this.getGroupBy()) {
-          this.__addHeaders(child);
+          const headerInfo = this.__addHeaders(child);
+          const headerIdx = this.getChildren().findIndex(button => button === headerInfo.header);
+          const childIdx = headerInfo["children"].findIndex(button => button === child);
+          this.addAt(child, headerIdx+1+childIdx);
+        } else {
+          this.base(arguments, child, options);
         }
-        this.base(arguments, child, options);
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
     },
 
     __addHeaders: function(child) {
-      if (this.getGroupBy() === "tag" && child.isPropertyInitialized("tags")) {
-        child.getTags().forEach(tag => {
-          let headerInfo = null;
+      let headerInfo = null;
+      if (this.getGroupBy() === "tag") {
+        let tags = [];
+        if (child.isPropertyInitialized("tags")) {
+          tags = child.getTags();
+        }
+        if (tags.length === 0) {
+          tags = [{
+            id: "no-group",
+            name: this.tr("No Group"),
+            color: "transparent"
+          }];
+        }
+        tags.forEach(tag => {
           if (tag.id in this.__groupHeaders) {
             headerInfo = this.__groupHeaders[tag.id];
-            headerInfo["children"].push(child);
           } else {
-            const header = new osparc.dashboard.GroupHeader();
-            header.set({
-              width: this.getBounds().width - 15
-            });
-            header.buildLayout(tag.name);
-            header.getChildControl("icon").setBackgroundColor(tag.color);
-            this.add(header);
+            const header = this.__createHeader(tag.name, tag.color);
             headerInfo = {
               header,
-              "children": [child]
+              "children": []
             };
             this.__groupHeaders[tag.id] = headerInfo;
+            this.add(header);
           }
-          headerInfo["header"].getChildControl("description").setValue(`(${headerInfo["children"].length})`);
+          headerInfo["children"].push(child);
         });
       }
+      return headerInfo;
+    },
+
+    __createHeader: function(label, color) {
+      const header = new osparc.dashboard.GroupHeader();
+      header.set({
+        width: this.getBounds().width - 15
+      });
+      header.buildLayout(label);
+      header.getChildControl("icon").setBackgroundColor(color);
+      return header;
     },
 
     /**
