@@ -71,16 +71,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     /**
-     * Sets the given button's value to true (checks it) and unchecks all other buttons. If the given button is not present,
-     * every button in the container will get a false value (unchecked).
-     * @param {qx.ui.form.ToggleButton} child Button that will be checked
-     */
-    selectOne: function(child) {
-      this.getChildren().map(button => button.setValue(button === child));
-      this.setLastSelectedIndex(this.getIndex(child));
-    },
-
-    /**
      * Gets the index in the container of the given button.
      * @param {qx.ui.form.ToggleButton} child Button that will be checked
      */
@@ -96,10 +86,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       if (idx >= 0 && idx < this.getChildren().length) {
         this.__lastSelectedIdx = idx;
       }
-    },
-
-    setLastSelectedItem: function(item) {
-      this.setLastSelectedIndex(this.getIndex(item));
     }
   }
 });
