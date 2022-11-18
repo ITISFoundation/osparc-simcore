@@ -141,7 +141,7 @@ async def delete_tag(request: web.Request):
     async with engine.acquire() as conn:
         # pylint: disable=no-value-for-parameter
         if can_delete := await conn.scalar(
-            sa.select([tags_to_groups.delete])
+            sa.select([tags_to_groups.c.delete])
             .select_from(j_user_delete_tags)
             .distinct()
         ):
