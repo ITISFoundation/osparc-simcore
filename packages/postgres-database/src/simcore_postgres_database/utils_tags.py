@@ -191,7 +191,9 @@ class TagsRepo:
         )
 
         if not can_delete:
-            raise f"Insufficent access rights to delete {tag_id=}"
+            raise TagOperationNotAllowedError(
+                f"Insufficent access rights to delete {tag_id=}"
+            )
 
         assert can_delete  # nosec
         await conn.execute(tags.delete().where(tags.c.id == tag_id))
