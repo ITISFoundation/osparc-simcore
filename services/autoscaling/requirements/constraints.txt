@@ -9,5 +9,4 @@ moto<4.0.2
 # specifically when we want to have nullable objects
 # It does not follow standard 3.0 correctly
 # SEE how to specify nullable object in https://stackoverflow.com/questions/40920441/how-to-specify-a-property-can-be-null-or-a-reference-with-swagger
-
 openapi-spec-validator<0.5.0
