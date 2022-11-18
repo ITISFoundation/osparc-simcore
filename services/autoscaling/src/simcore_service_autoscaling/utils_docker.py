@@ -6,8 +6,9 @@ import collections
 from typing import Any, Final, Mapping
 
 import aiodocker
-from pydantic import BaseModel, ByteSize
 from servicelib.utils import logged_gather
+
+from .models import ClusterResources
 
 _NANO_CPU: Final[float] = 10**9
 
@@ -18,11 +19,6 @@ _TASK_STATUS_WITH_ASSIGNED_RESOURCES = [
     "starting",
     "running",
 ]
-
-
-class ClusterResources(BaseModel):
-    total_cpus: int
-    total_ram: ByteSize
 
 
 Label = str

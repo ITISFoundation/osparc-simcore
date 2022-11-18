@@ -13,8 +13,8 @@ import pytest
 from deepdiff import DeepDiff
 from faker import Faker
 from pydantic import ByteSize
+from simcore_service_autoscaling.models import ClusterResources
 from simcore_service_autoscaling.utils_docker import (
-    ClusterResources,
     Node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
