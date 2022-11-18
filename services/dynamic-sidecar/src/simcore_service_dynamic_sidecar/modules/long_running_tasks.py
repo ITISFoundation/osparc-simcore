@@ -141,7 +141,9 @@ async def task_runs_docker_compose_down(
     settings: ApplicationSettings,
 ) -> None:
     if shared_store.compose_spec is None:
-        raise RuntimeError("No compose-spec was found")
+        logger.warning("No compose-spec was found")
+        progress.update(message="done", percent=0.99)
+        return
 
     progress.update(message="running docker-compose-down", percent=0.1)
     result = await docker_compose_down(shared_store.compose_spec, settings)
