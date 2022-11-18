@@ -38,10 +38,10 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
         e = retry_state.outcome.exception()
         assert isinstance(e, HTTPError)  # nosec
         log.error(
-            "Unexpected error with '%s': %s, (attempt %s)",
+            "Request timed-out after %s attempts with an unexpected error: '%s':%s",
+            retry_state.attempt_number,
             f"{e.request=}",
             f"{e=}",
-            retry_state.attempt_number,
         )
 
     return log_it
@@ -65,7 +65,7 @@ def retry_on_errors(
         # pylint: disable=protected-access
         try:
             async for attempt in AsyncRetrying(
-                stop=stop_after_delay(zelf._request_max_network_issues_tolerance_s),
+                stop=stop_after_delay(zelf.request_timeout),
                 wait=wait_exponential(min=1),
                 retry=retry_if_exception_type(RETRY_ERRORS),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
@@ -118,13 +118,11 @@ class BaseThinClient:
     def __init__(
         self,
         *,
-        request_max_network_issues_tolerance_s: int,
+        request_timeout: int,
         base_url: Optional[URLTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
     ) -> None:
-        self._request_max_network_issues_tolerance_s: int = (
-            request_max_network_issues_tolerance_s
-        )
+        self.request_timeout: int = request_timeout
 
         client_args: dict[str, Any] = {}
         if base_url:

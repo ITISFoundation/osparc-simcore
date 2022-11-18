@@ -44,22 +44,19 @@ def _assert_messages(messages: list[str]) -> None:
         if log_message.startswith("Retrying"):
             assert "as it raised" in log_message
             continue
-        assert log_message.startswith("Unexpected error")
-        assert log_message.endswith(f"(attempt {unexpected_counter})")
+        assert log_message.startswith(f"Request timed-out after {unexpected_counter}")
         unexpected_counter += 1
 
 
 @pytest.fixture
-def request_max_network_issues_tolerance_s() -> int:
+def request_timeout() -> int:
     # below refer to exponential wait step duration
     return 1 + 2
 
 
 @pytest.fixture
-def thick_client(request_max_network_issues_tolerance_s: int) -> FakeThickClient:
-    return FakeThickClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    )
+def thick_client(request_timeout: int) -> FakeThickClient:
+    return FakeThickClient(request_timeout=request_timeout)
 
 
 @pytest.fixture
@@ -68,11 +65,9 @@ def test_url() -> AnyHttpUrl:
 
 
 async def test_base_with_async_context_manager(
-    test_url: AnyHttpUrl, request_max_network_issues_tolerance_s: int
+    test_url: AnyHttpUrl, request_timeout: int
 ) -> None:
-    async with FakeThickClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    ) as client:
+    async with FakeThickClient(request_timeout=request_timeout) as client:
         with pytest.raises(ClientHttpError):
             await client.get_provided_url(test_url)
 
@@ -88,13 +83,11 @@ async def test_connection_error(
 
 
 async def test_retry_on_errors(
-    request_max_network_issues_tolerance_s: int,
+    request_timeout: int,
     test_url: AnyHttpUrl,
     caplog_info_level: LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    )
+    client = FakeThickClient(request_timeout=request_timeout)
 
     with pytest.raises(ClientHttpError):
         await client.get_provided_url(test_url)
@@ -106,7 +99,7 @@ async def test_retry_on_errors(
 async def test_retry_on_errors_by_error_type(
     error_class: type[RequestError],
     caplog_info_level: LogCaptureFixture,
-    request_max_network_issues_tolerance_s: int,
+    request_timeout: int,
     test_url: AnyHttpUrl,
 ) -> None:
     class ATestClient(BaseThinClient):
@@ -118,9 +111,7 @@ async def test_retry_on_errors_by_error_type(
                 request=Request(method="GET", url=test_url),
             )
 
-    client = ATestClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    )
+    client = ATestClient(request_timeout=request_timeout)
 
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
@@ -134,7 +125,7 @@ async def test_retry_on_errors_by_error_type(
 
 
 async def test_retry_on_errors_raises_client_http_error(
-    request_max_network_issues_tolerance_s: int,
+    request_timeout: int,
 ) -> None:
     class ATestClient(BaseThinClient):
         # pylint: disable=no-self-use
@@ -142,49 +133,41 @@ async def test_retry_on_errors_raises_client_http_error(
         async def raises_http_error(self) -> Response:
             raise HTTPError("mock_http_error")
 
-    client = ATestClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    )
+    client = ATestClient(request_timeout=request_timeout)
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
 
 
 async def test_methods_do_not_return_response(
-    request_max_network_issues_tolerance_s: int,
+    request_timeout: int,
 ) -> None:
     class OKTestClient(BaseThinClient):
         async def public_method_ok(self) -> Response:  # type: ignore
             """this method will be ok even if no code is used"""
 
     # OK
-    OKTestClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    )
+    OKTestClient(request_timeout=request_timeout)
 
     class FailWrongAnnotationTestClient(BaseThinClient):
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
     with pytest.raises(_WrongReturnType):
-        FailWrongAnnotationTestClient(
-            request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-        )
+        FailWrongAnnotationTestClient(request_timeout=request_timeout)
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
     with pytest.raises(_WrongReturnType):
-        FailNoAnnotationTestClient(
-            request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-        )
+        FailNoAnnotationTestClient(request_timeout=request_timeout)
 
 
 async def test_expect_state_decorator(
     test_url: AnyHttpUrl,
     respx_mock: MockRouter,
-    request_max_network_issues_tolerance_s: int,
+    request_timeout: int,
 ) -> None:
 
     url_get_200_ok = f"{test_url}/ok"
@@ -203,9 +186,7 @@ async def test_expect_state_decorator(
     respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
-    test_client = ATestClient(
-        request_max_network_issues_tolerance_s=request_max_network_issues_tolerance_s
-    )
+    test_client = ATestClient(request_timeout=request_timeout)
 
     # OK
     response = await test_client.get_200_ok()

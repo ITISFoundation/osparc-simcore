@@ -44,7 +44,7 @@ def mock_env(
             "POSTGRES_USER": "",
             "POSTGRES_PASSWORD": "",
             "POSTGRES_DB": "",
-            "DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S": f"{NETWORK_TOLERANCE_S}",
+            "DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S": f"{NETWORK_TOLERANCE_S}",
         },
     )
 

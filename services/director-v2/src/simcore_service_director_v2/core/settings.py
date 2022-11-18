@@ -275,7 +275,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
         1 * MINS,
         description=(
             "Connectivity between director-v2 and a dy-sidecar can be "

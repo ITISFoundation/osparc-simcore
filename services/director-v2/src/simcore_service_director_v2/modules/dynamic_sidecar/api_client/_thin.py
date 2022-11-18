@@ -32,9 +32,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
                 connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             )
         )
-        self._request_max_network_issues_tolerance_s: int = (
-            settings.DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S
-        )
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
@@ -52,7 +49,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
         )
 
         super().__init__(
-            request_max_network_issues_tolerance_s=self._request_max_network_issues_tolerance_s
+            request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
         )
 
     def _get_url(

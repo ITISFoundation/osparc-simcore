@@ -233,7 +233,7 @@ class GetStatus(DynamicSchedulerEvent):
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         scheduler_data.dynamic_sidecar.inspect_error_handler.delay_for = (
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
         )
 
         try:
