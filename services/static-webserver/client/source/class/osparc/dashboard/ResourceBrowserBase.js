@@ -121,7 +121,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._add(secondaryBar);
 
       const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      const resourcesContainer = this._resourcesContainer = new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
       this._add(resourcesContainer);
     },
 

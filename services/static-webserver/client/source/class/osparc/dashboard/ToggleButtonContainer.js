@@ -6,9 +6,9 @@
  */
 
 /**
- * Container for GridButtonItems or any other ToggleButtons, with some convenient methods.
+ * Container for GridButtonItems and ListButtonItems, with some convenient methods.
  */
-qx.Class.define("osparc.component.form.ToggleButtonContainer", {
+qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function(layout) {
