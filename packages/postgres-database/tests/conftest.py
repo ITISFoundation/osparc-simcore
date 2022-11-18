@@ -3,13 +3,25 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import AsyncIterator, Awaitable, Callable, Union
+from typing import AsyncIterator, Awaitable, Callable, Iterator, Optional, Union
 
 import aiopg.sa
+import aiopg.sa.exc
 import pytest
 import sqlalchemy as sa
 import yaml
+from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
+from aiopg.sa.result import ResultProxy, RowProxy
+from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
+from simcore_postgres_database.models.base import metadata
+from simcore_postgres_database.webserver_models import (
+    GroupType,
+    groups,
+    user_to_groups,
+    users,
+)
+from sqlalchemy import literal_column
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -71,7 +83,7 @@ def db_metadata():
 
 
 @pytest.fixture
-async def pg_engine(make_engine, db_metadata) -> AsyncIterator[Engine]:
+async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]:
     async_engine = await make_engine(is_async=True)
 
     # NOTE: Using migration to upgrade/downgrade is not
@@ -95,3 +107,59 @@ async def pg_engine(make_engine, db_metadata) -> AsyncIterator[Engine]:
     # NOTE: ALL is deleted after
     db_metadata.drop_all(sync_engine)
     sync_engine.dispose()
+
+
+#
+# FIXTURES for users
+#
+
+
+@pytest.fixture
+def create_fake_group() -> Callable:
+    """factory to create standard group"""
+
+    async def _create_group(conn: SAConnection, **overrides) -> RowProxy:
+        result: ResultProxy = await conn.execute(
+            groups.insert()
+            .values(**random_group(type=GroupType.STANDARD, **overrides))
+            .returning(literal_column("*"))
+        )
+        row = await result.fetchone()
+        assert row
+        return row
+
+    return _create_group
+
+
+@pytest.fixture
+def create_fake_user(make_engine: Callable) -> Iterator[Callable]:
+    """factory to create a user w/ or w/o a standard group"""
+
+    created_ids = []
+
+    async def _create_user(
+        conn, group: Optional[RowProxy] = None, **overrides
+    ) -> RowProxy:
+        result: ResultProxy = await conn.execute(
+            users.insert()
+            .values(**random_user(**overrides))
+            .returning(literal_column("*"))
+        )
+        assert result
+        user = await result.fetchone()
+        assert user
+
+        created_ids.append(user.id)
+
+        if group:
+            assert group.type == GroupType.STANDARD.name
+            result = await conn.execute(
+                user_to_groups.insert().values(uid=user.id, gid=group.gid)
+            )
+            assert result
+        return user
+
+    yield _create_user
+
+    sync_engine = make_engine(is_async=False)
+    sync_engine.execute(users.delete().where(users.c.id.in_(created_ids)))
