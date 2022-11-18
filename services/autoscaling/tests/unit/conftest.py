@@ -62,6 +62,7 @@ def app_environment(
             "AWS_SECRET_ACCESS_KEY": "str",
             "AWS_SECURITY_GROUP_IDS": '["a", "b"]',
             "AWS_SUBNET_ID": "str",
+            # "AWS_ENDPOINT": "null",
         },
     )
     return mock_env_devel_environment | envs

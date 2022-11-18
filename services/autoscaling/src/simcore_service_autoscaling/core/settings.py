@@ -18,6 +18,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 class AwsSettings(BaseCustomSettings):
     AWS_KEY_NAME: str
     AWS_DNS: str
+    AWS_ENDPOINT: Optional[str] = None
 
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
@@ -27,6 +28,12 @@ class AwsSettings(BaseCustomSettings):
     AWS_SECURITY_GROUP_IDS: list[str]
     AWS_SUBNET_ID: str
     AWS_AMI_ID: str = "ami-097895f2d7d86f07e"
+    AWS_EC2_TYPE_NAMES: tuple[str, ...] = (
+        "t2.xlarge",
+        "t2.2xlarge",
+        "r5n.4xlarge",
+        "r5n.8xlarge",
+    )
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):

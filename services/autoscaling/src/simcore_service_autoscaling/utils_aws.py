@@ -2,17 +2,21 @@
 
 """
 
+import contextlib
 import logging
 import time
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Final
+from typing import Iterator
 
 import boto3
+from mypy_boto3_ec2.client import EC2Client
+from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import AwsSettings
+from .models import ClusterResources
 
 logger = logging.getLogger(__name__)
 
@@ -27,37 +31,59 @@ class EC2Instance:
     ram: float
 
 
-AWS_EC2: Final = [
-    EC2Instance("t2.xlarge", 4, 16),
-    EC2Instance("t2.2xlarge", 8, 32),
-    EC2Instance("r5n.4xlarge", 16, 128),
-    EC2Instance("r5n.8xlarge", 32, 256),
-]
-
-ALL_AWS_EC2: Final = (
-    [
-        EC2Instance("t2.nano", 1, 0.5),
-        EC2Instance("t2.micro", 1, 1),
-        EC2Instance("t2.small", 1, 2),
-        EC2Instance("t2.medium", 2, 4),
-        EC2Instance("t2.large", 2, 8),
-    ]
-    + AWS_EC2
-    + [
-        EC2Instance("r5n.12xlarge", 48, 384),
-        EC2Instance("r5n.16xlarge", 64, 512),
-        EC2Instance("r5n.24xlarge", 96, 768),
-    ]
-)
+@contextlib.contextmanager
+def ec2_client(settings: AwsSettings) -> Iterator[EC2Client]:
+    client = None
+    try:
+        client = boto3.client(
+            "ec2",
+            endpoint_url=settings.AWS_ENDPOINT,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION_NAME,
+        )
+        yield client
+    finally:
+        if client:
+            client.close()
 
 
-def find_needed_ec2_instance(needed_cpus: int, needed_ram: float) -> EC2Instance:
+def get_ec2_instance_capabilities(settings: AwsSettings) -> list[EC2Instance]:
+    with ec2_client(settings) as ec2:
+        instance_types = ec2.describe_instance_types(
+            InstanceTypes=settings.AWS_EC2_TYPE_NAMES
+        )
+
+    list_instances: list[EC2Instance] = []
+    for instance in instance_types.get("InstanceTypes", []):
+        with contextlib.suppress(KeyError):
+            list_instances.append(
+                EC2Instance(
+                    instance["InstanceType"],
+                    cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                    ram=parse_obj_as(
+                        ByteSize, f"{instance['MemoryInfo']['SizeInMiB']}MiB"
+                    ),
+                )
+            )
+    return list_instances
+
+
+def find_needed_ec2_instance(
+    available_ec2_instances: list[EC2Instance],
+    resources: ClusterResources,
+) -> EC2Instance:
     def _default_policy(ec2_instance: EC2Instance) -> bool:
-        return ec2_instance.cpus >= needed_cpus and ec2_instance.ram >= needed_ram
+        return (
+            ec2_instance.cpus >= resources.total_cpus
+            and ec2_instance.ram >= resources.total_ram
+        )
 
-    ec2_candidates = [instance for instance in AWS_EC2 if _default_policy(instance)]
+    ec2_candidates = [
+        instance for instance in available_ec2_instances if _default_policy(instance)
+    ]
     if not ec2_candidates:
-        raise Ec2InstanceNotFoundError(needed_cpus=needed_cpus, needed_ram=needed_ram)
+        raise Ec2InstanceNotFoundError(needed_resources=resources)
     return ec2_candidates[0]
 
 
@@ -83,6 +109,7 @@ def compose_user_data(settings: AwsSettings) -> str:
 def create_ec2_client(settings: AwsSettings):
     return boto3.client(
         "ec2",
+        endpoint_url=settings.AWS_ENDPOINT,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_REGION_NAME,
