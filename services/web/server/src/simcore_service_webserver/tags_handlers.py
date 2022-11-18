@@ -6,7 +6,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
-    TagOperationNotAllowedError,
+    TagOperationNotAllowed,
     TagsRepo,
 )
 
@@ -23,7 +23,7 @@ def _handle_tags_exceptions(handler: Handler):
         except TagNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except TagOperationNotAllowedError as exc:
+        except TagOperationNotAllowed as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return wrapper

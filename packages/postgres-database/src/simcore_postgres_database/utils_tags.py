@@ -22,7 +22,7 @@ class TagNotFoundError(Exception):
     pass
 
 
-class TagOperationNotAllowedError(Exception):  # maps to AccessForbidden
+class TagOperationNotAllowed(Exception):  # maps to AccessForbidden
     pass
 
 
@@ -128,15 +128,16 @@ class TagsRepo:
             .distinct()
         )
         if not can_update:
-            raise TagOperationNotAllowedError(
+            raise TagOperationNotAllowed(
                 f"Insufficent access rights to update {tag_id=}"
             )
 
         result = await conn.execute(update_stmt)
-        if row := await result.first():
-            return TagDict(row.items())  # type: ignore
+        row = await result.first()
+        if not row:
+            raise TagNotFoundError(f"{tag_id=} not found")
 
-        raise TagNotFoundError(f"{tag_id=} not found")
+        return TagDict(row.items())  # type: ignore
 
     async def create(self, conn: SAConnection, tag_create: TagDict) -> TagDict:
 
@@ -191,7 +192,7 @@ class TagsRepo:
         )
 
         if not can_delete:
-            raise TagOperationNotAllowedError(
+            raise TagOperationNotAllowed(
                 f"Insufficent access rights to delete {tag_id=}"
             )
 
