@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ByteSize, PositiveInt
+from pydantic import BaseModel, ByteSize, NonNegativeInt
 
 
 class Resources(BaseModel):
-    cpus: PositiveInt
+    cpus: NonNegativeInt
     ram: ByteSize
