@@ -154,8 +154,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       topBar.add(containterModeBtns);
 
-      viewGridBtn.addListener("execute", () => this.__setResourcesContainerMode("grid"));
-      viewListBtn.addListener("execute", () => this.__setResourcesContainerMode("list"));
+      viewGridBtn.addListener("execute", () => this._resourcesContainer.setMode("grid"));
+      viewListBtn.addListener("execute", () => this._resourcesContainer.setMode("list"));
 
       return topBar;
     },
@@ -182,15 +182,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.component.message.FlashMessenger.getInstance().logAs(msg);
       }
       return isLogged;
-    },
-
-    __setResourcesContainerMode: function(mode = "grid") {
-      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      this._resourcesContainer.getLayout().set({
-        spacingX: spacing,
-        spacingY: spacing
-      });
-      this._resourcesContainer.setMode(mode);
     },
 
     _createLoadMoreButton: function(widgetId = "studiesLoading", mode = "grid") {
