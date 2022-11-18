@@ -52,6 +52,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._createResourcesLayout("template");
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "templatesList");
 
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      const groupByButton = this.__createGroupByButton();
+      this._secondaryBar.add(groupByButton);
+
       const loadingTemplatesBtn = this._createLoadMoreButton("templatesLoading");
       this._resourcesContainer.add(loadingTemplatesBtn);
 
@@ -59,6 +65,29 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
 
       return this._resourcesContainer;
+    },
+
+    __createGroupByButton: function() {
+      const groupByMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group by"), null, groupByMenu);
+
+      const dontGroup = new qx.ui.menu.RadioButton(this.tr("Don't"));
+      dontGroup.addListener("execute", () => this._resourcesContainer.setGroupBy(null));
+      const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tag"));
+      tagByGroup.addListener("execute", () => this._resourcesContainer.setGroupBy("tag"));
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+      [
+        dontGroup,
+        tagByGroup
+      ].forEach(btn => {
+        groupByMenu.add(btn);
+        groupOptions.add(btn);
+      });
+
+      return groupByButton;
     },
 
     __startStudy: function(studyId, templateData) {

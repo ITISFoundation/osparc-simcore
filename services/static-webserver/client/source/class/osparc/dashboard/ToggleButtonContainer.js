@@ -13,6 +13,8 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
 
   construct: function(layout) {
     this.base(arguments, layout);
+
+    this.__groupMap = [];
   },
 
   properties: {
@@ -39,6 +41,14 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
 
   members: {
     __lastSelectedIdx: null,
+    __groupMap: null,
+
+    __reloadCards: function() {
+      const cards = this.__getCards();
+      this.removeAll();
+      this.__groupMap = [];
+      cards.forEach(card => this.add(card));
+    },
 
     __applyMode: function(mode) {
       const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
@@ -46,19 +56,27 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         spacingX: spacing,
         spacingY: spacing
       });
+      this.__reloadCards();
     },
 
-    __applyGroupBy: function(groupBy) {
-      console.log(groupBy);
+    __applyGroupBy: function() {
+      this.__reloadCards();
     },
 
     __getCards: function() {
-      return this.getChildren().filter(child => !("GroupItem" in child));
+      return this.getChildren().filter(child => !("GroupHeader" in child));
     },
 
     // overridden
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
+        if ("GroupHeader" in child) {
+          this.base(arguments, child, options);
+          return;
+        }
+        if (this.getGroupBy()) {
+          this.__addHeaders(child);
+        }
         this.base(arguments, child, options);
         child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.getVisibles()), this);
@@ -68,6 +86,23 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+      }
+    },
+
+    __addHeaders: function(child) {
+      if (this.getGroupBy() === "tag" && child.isPropertyInitialized("tags")) {
+        child.getTags().forEach(tag => {
+          if (!(this.__groupMap.includes(tag.id))) {
+            const header = new osparc.dashboard.GroupHeader();
+            header.set({
+              width: this.getBounds().width - 15
+            });
+            header.buildLayout(tag.name);
+            header.getChildControl("icon").setBackgroundColor(tag.color);
+            this.__groupMap.push(tag.id);
+            this.add(header);
+          }
+        });
       }
     },
 
