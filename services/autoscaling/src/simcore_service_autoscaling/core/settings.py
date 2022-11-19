@@ -28,7 +28,7 @@ class AwsSettings(BaseCustomSettings):
     AWS_SECURITY_GROUP_IDS: list[str]
     AWS_SUBNET_ID: str
     AWS_AMI_ID: str = "ami-097895f2d7d86f07e"
-    AWS_EC2_TYPE_NAMES: tuple[str, ...] = (
+    AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES: tuple[str, ...] = (
         "t2.xlarge",
         "t2.2xlarge",
         "r5n.4xlarge",

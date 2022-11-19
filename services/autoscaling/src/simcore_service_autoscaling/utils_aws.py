@@ -49,7 +49,7 @@ def ec2_client(settings: AwsSettings) -> Iterator[EC2Client]:
 def get_ec2_instance_capabilities(settings: AwsSettings) -> list[EC2Instance]:
     with ec2_client(settings) as ec2:
         instance_types = ec2.describe_instance_types(
-            InstanceTypes=settings.AWS_EC2_TYPE_NAMES
+            InstanceTypes=settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES
         )
 
     list_instances: list[EC2Instance] = []

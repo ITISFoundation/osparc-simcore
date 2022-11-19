@@ -55,11 +55,13 @@ def test_get_ec2_instance_capabilities(
     settings = AwsSettings.create_from_envs()
     instance_types = get_ec2_instance_capabilities(settings)
     assert instance_types
-    assert len(instance_types) == len(settings.AWS_EC2_TYPE_NAMES)
+    assert len(instance_types) == len(settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES)
 
     # all the instance names are found and valid
-    assert all(i.name in settings.AWS_EC2_TYPE_NAMES for i in instance_types)
-    for instance_type_name in settings.AWS_EC2_TYPE_NAMES:
+    assert all(
+        i.name in settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES for i in instance_types
+    )
+    for instance_type_name in settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES:
         assert any(i.name == instance_type_name for i in instance_types)
 
 
