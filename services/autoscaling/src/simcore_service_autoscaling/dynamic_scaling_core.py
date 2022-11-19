@@ -1,9 +1,8 @@
 import logging
 
 from fastapi import FastAPI
-from pydantic import ByteSize, parse_obj_as
 
-from . import models, utils_aws, utils_docker
+from . import utils_aws, utils_docker
 from .core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -44,14 +43,18 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         app_settings.AUTOSCALING_AWS
     )
 
-    ec2_instance_needed = utils_aws.find_best_fitting_ec2_instance(
-        list_of_ec2_instances,
-        models.Resources(cpus=4, ram=parse_obj_as(ByteSize, "2Gib")),
-        score_type=utils_aws.closest_instance_policy,
-    )
-    logger.debug("%s", f"{ec2_instance_needed=}")
+    ec2_instances_needed = [
+        utils_aws.find_best_fitting_ec2_instance(
+            list_of_ec2_instances,
+            utils_docker.get_resource_from_task(task),
+            score_type=utils_aws.closest_instance_policy,
+        )
+        for task in pending_tasks
+    ]
+    logger.debug("%s", f"{ec2_instances_needed=}")
 
     assert app_settings.AUTOSCALING_AWS  # nosec
+
     # await utils_aws.start_instance_aws(
     #     app_settings.AUTOSCALING_AWS,
     #     instance_type=ec2_instance_needed.name,

@@ -7,7 +7,7 @@ from typing import Final
 
 import aiodocker
 from models_library.generated_models.docker_rest_api import Node, Task, TaskState
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from servicelib.utils import logged_gather
 
 from .models import Resources
@@ -96,6 +96,18 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
         )
 
     return Resources.parse_obj(dict(cluster_resources_counter))
+
+
+def get_resource_from_task(task: Task) -> Resources:
+    assert task.Spec  # nosec
+    if task.Spec.Resources and task.Spec.Resources.Reservations:
+        return Resources(
+            cpus=(task.Spec.Resources.Reservations.NanoCPUs or 0) / _NANO_CPU,
+            ram=parse_obj_as(
+                ByteSize, task.Spec.Resources.Reservations.MemoryBytes or 0
+            ),
+        )
+    return Resources(cpus=0, ram=ByteSize(0))
 
 
 async def compute_node_used_resources(node: Node) -> Resources:
