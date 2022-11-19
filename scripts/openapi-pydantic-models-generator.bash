@@ -17,6 +17,7 @@ Build()
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
+    --load \
     - <<EOF
 FROM python:${PYTHON_VERSION}-slim
 RUN pip install datamodel-code-generator[http]
@@ -28,6 +29,7 @@ ENTRYPOINT ["datamodel-codegen", \
           "--reuse-model", \
           "--set-default-enum-member", \
           "--use-title-as-name", \
+          "--target-python-version=3.9", \
           "--validation"]
 EOF
 }
