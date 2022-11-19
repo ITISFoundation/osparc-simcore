@@ -37,7 +37,7 @@ async def list_tags(request: web.Request):
 
     repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        tags = await repo.list_(conn)
+        tags = await repo.list(conn)
         return tags
 
 

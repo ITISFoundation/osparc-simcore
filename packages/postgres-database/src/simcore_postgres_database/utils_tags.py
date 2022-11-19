@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -38,6 +38,16 @@ class TagDict(TypedDict, total=False):
     color: str
 
 
+_TAG_COLUMNS = [tags.c.id, tags.c.name, tags.c.description, tags.c.color]
+
+
+@dataclass
+class AccessRights:
+    read: bool
+    write: bool
+    delete: bool
+
+
 @dataclass
 class TagsRepo:
     user_id: int
@@ -50,31 +60,57 @@ class TagsRepo:
                 values[k] = value
         return values
 
-    def _join_user_read_tags(self):
-        # select read tags in user's groups
-        j_user_read_tags = (
+    def _user_tags_with(self, access_condition):
+        j = (
             tags.join(
                 tags_to_groups,
-                (tags.c.id == tags_to_groups.c.tag_id)
-                & (tags_to_groups.c.read == True),
+                (tags.c.id == tags_to_groups.c.tag_id) & access_condition,
             )
             .join(groups)
-            .join(user_to_groups, user_to_groups.c.uid == self.user_id)
+            .join(
+                user_to_groups,
+                (user_to_groups.c.gid == groups.c.gid)
+                & (user_to_groups.c.uid == self.user_id),
+            )
         )
-        return j_user_read_tags
+        return j
+
+    async def access_count(self, conn: SAConnection, tag_id: int, access: str) -> int:
+        """Returns 0 if no access or >0 that is the count of groups giving this access to the user"""
+        access_col = {
+            "read": tags_to_groups.c.read,
+            "write": tags_to_groups.c.write,
+            "delete": tags_to_groups.c.delete,
+        }[access]
+
+        j = tags.join(
+            tags_to_groups,
+            (tags.c.id == tag_id)
+            & (tags_to_groups.c.tag_id == tag_id)  # explicit foreigh-key constraint
+            & (access_col == True),
+        ).join(
+            user_to_groups,
+            (
+                tags_to_groups.c.group_id == user_to_groups.c.gid
+            )  # explicit foreigh-key constraint
+            & (user_to_groups.c.uid == self.user_id),
+        )
+        stmt = sa.select(sa.func.count(user_to_groups.c.uid)).select_from(j)
+
+        # The number of occurrences of the user_id = how many groups are giving this access permission
+        permissions_count: Optional[int] = await conn.scalar(stmt)
+        return permissions_count if permissions_count else 0
 
     #
     # CRUD operations
     #
 
-    async def list_(self, conn: SAConnection) -> list[TagDict]:
-        j_user_read_tags = self._join_user_read_tags()
+    async def list(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
-            sa.select([tags.c.id, tags.c.name, tags.c.description, tags.c.color])
-            .distinct(tags.c.id, tags.c.name, tags.c.description, tags.c.color)
-            .select_from(j_user_read_tags)
+            sa.select(_TAG_COLUMNS)
+            .distinct(*_TAG_COLUMNS)
+            .select_from(self._user_tags_with(tags_to_groups.c.read == True))
             .order_by(tags.c.name)
-            .limit(50)
         )
 
         # pylint: disable=not-an-iterable
@@ -84,11 +120,11 @@ class TagsRepo:
         return items
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
-        j_user_read_tags = self._join_user_read_tags()
+
         select_stmt = (
-            sa.select([tags.c.id, tags.c.name, tags.c.description, tags.c.color])
+            sa.select(_TAG_COLUMNS)
             .distinct(tags.c.id)
-            .select_from(j_user_read_tags)
+            .select_from(self._user_tags_with(tags_to_groups.c.read == True))
             .where(tags.c.id == tag_id)
         )
 
@@ -102,14 +138,7 @@ class TagsRepo:
         self, conn: SAConnection, tag_id: int, tag_update: TagDict
     ) -> TagDict:
         # select write tags in user's groups
-        j_user_write_tags = (
-            tags.join(
-                tags_to_groups,
-                (tags.c.id == tag_id) & (tags_to_groups.c.write == True),
-            )
-            .join(groups)
-            .join(user_to_groups, (user_to_groups.c.uid == self.user_id))
-        )
+        j_user_write_tags = self._user_tags_with(tags_to_groups.c.write == True)
 
         values = self._get_values(
             data=tag_update, required=set(), optional={"description", "name", "color"}
@@ -119,13 +148,11 @@ class TagsRepo:
             tags.update()
             .values(**values)
             .where(tags.c.id == tag_id)
-            .returning(tags.c.id, tags.c.name, tags.c.description, tags.c.color)
+            .returning(*_TAG_COLUMNS)
         )
 
         can_update = await conn.scalar(
-            sa.select([tags_to_groups.c.write])
-            .select_from(j_user_write_tags)
-            .distinct()
+            sa.select([tags_to_groups.c.write]).select_from(j_user_write_tags).where()
         )
         if not can_update:
             raise TagOperationNotAllowed(
@@ -144,11 +171,7 @@ class TagsRepo:
         values = self._get_values(
             data=tag_create, required={"name", "color"}, optional={"description"}
         )
-        insert_tag_stmt = (
-            tags.insert()
-            .values(**values)
-            .returning(tags.c.id, tags.c.name, tags.c.description, tags.c.color)
-        )
+        insert_tag_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
 
         async with conn.begin():
 
@@ -175,20 +198,10 @@ class TagsRepo:
 
     async def delete(self, conn: SAConnection, tag_id: int) -> None:
         # select delete tags in user's groups
-        j_user_delete_tags = (
-            tags.join(
-                tags_to_groups,
-                (tags.c.id == tag_id) & (tags_to_groups.c.delete == True),
-            )
-            .join(groups)
-            .join(user_to_groups, (user_to_groups.c.uid == self.user_id))
-        )
-
-        # pylint: disable=no-value-for-parameter
         can_delete = await conn.scalar(
-            sa.select([tags_to_groups.c.delete])
-            .select_from(j_user_delete_tags)
-            .distinct()
+            sa.select([tags_to_groups.c.delete]).select_from(
+                self._user_tags_with(tags_to_groups.c.delete == True)
+            )
         )
 
         if not can_delete:
