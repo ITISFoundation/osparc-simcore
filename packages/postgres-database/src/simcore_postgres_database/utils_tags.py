@@ -79,7 +79,9 @@ class TagsRepo:
         self,
         access_condition,
         tag_id: int,
-    ) -> int:
+    ):
+        # FIXME: for access-checks there is no need to join tags table
+        # since we can works with the tag_id of tags_to_groups
         j = tags.join(
             tags_to_groups,
             (tags.c.id == tag_id)
@@ -94,6 +96,18 @@ class TagsRepo:
         )
         return j
 
+    def _join_user_to_tags(
+        self,
+        access_condition,
+    ):
+        j = user_to_groups.join(
+            tags_to_groups,
+            (user_to_groups.c.uid == self.user_id)
+            & (user_to_groups.c.gid == tags_to_groups.c.group_id)
+            & (access_condition),
+        ).join(tags)
+        return j
+
     async def access_count(self, conn: SAConnection, tag_id: int, access: str) -> int:
         """Returns 0 if no access or >0 that is the count of groups giving this access to the user"""
         access_col = {
@@ -102,7 +116,10 @@ class TagsRepo:
             "delete": tags_to_groups.c.delete,
         }[access]
 
-        j = self._join_user_can(tag_id=tag_id, access_condition=(access_col == True))
+        j = self._join_user_can(
+            access_condition=(access_col == True),
+            tag_id=tag_id,
+        )
         stmt = sa.select(sa.func.count(user_to_groups.c.uid)).select_from(j)
 
         # The number of occurrences of the user_id = how many groups are giving this access permission
@@ -116,8 +133,7 @@ class TagsRepo:
     async def list(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
             sa.select(_TAG_COLUMNS)
-            .distinct(*_TAG_COLUMNS)
-            .select_from(self._user_tags_with(tags_to_groups.c.read == True))
+            .select_from(self._join_user_to_tags(tags_to_groups.c.read == True))
             .order_by(tags.c.name)
         )
 

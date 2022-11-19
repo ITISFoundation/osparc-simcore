@@ -9,7 +9,6 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.tags import tags, tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_tags import (
@@ -98,23 +97,46 @@ async def test_tags_access_with_primary_groups(
         assert await other_repo.access_count(conn, tag["id"], "delete") == 0
 
 
+async def create_tag(
+    conn: SAConnection,
+    *,
+    name,
+    description,
+    color,
+    group_id,
+    read,
+    write,
+    delete,
+) -> int:
+    tag_id = await conn.scalar(
+        tags.insert()
+        .values(name=name, description=description, color=color)
+        .returning(tags.c.id)
+    )
+    assert tag_id
+    await conn.execute(
+        tags_to_groups.insert().values(
+            tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete
+        )
+    )
+    return tag_id
+
+
 async def test_tags_access_with_standard_groups(
     connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
 ):
     conn = connection
 
     # insert a tag and give RW access to a group
-    tag_id = await conn.scalar(
-        tags.insert()
-        .values(name="G1", description=f"Tag of group {group['type']}", color="black")
-        .returning(tags.c.id)
-    )
-    assert tag_id
-    assert group.type == GroupType.STANDARD.name
-    await conn.execute(
-        tags_to_groups.insert().values(
-            tag_id=tag_id, group_id=group.gid, read=True, write=True, delete=False
-        )
+    tag_id = await create_tag(
+        conn,
+        name="G1",
+        description=f"Tag of group {group['type']}",
+        color="black",
+        group_id=group.gid,
+        read=True,
+        write=True,
+        delete=False,
     )
 
     # user is part of this group
@@ -128,6 +150,94 @@ async def test_tags_access_with_standard_groups(
     assert await other_repo.access_count(conn, tag_id, "read") == 0
     assert await other_repo.access_count(conn, tag_id, "write") == 0
     assert await other_repo.access_count(conn, tag_id, "delete") == 0
+
+
+async def test_tags_repo_list(
+    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+):
+    conn = connection
+    tags_repo = TagsRepo(user_id=user.id)
+
+    # (1) no tags
+    listed_tags = await tags_repo.list(conn)
+    assert not listed_tags
+
+    # (2) one tag
+    expected_tags_ids = [
+        await create_tag(
+            conn,
+            name="T1",
+            description=f"tag for {user.id}",
+            color="blue",
+            group_id=user.primary_gid,
+            read=True,
+            write=False,
+            delete=False,
+        )
+    ]
+
+    listed_tags = await tags_repo.list(conn)
+    assert listed_tags
+    assert [t["id"] for t in listed_tags] == expected_tags_ids
+
+    # (3) another tag via its standard group
+    expected_tags_ids.append(
+        await create_tag(
+            conn,
+            name="T2",
+            description=f"tag via std group",
+            color="red",
+            group_id=group.gid,
+            read=True,
+            write=False,
+            delete=False,
+        )
+    )
+
+    listed_tags = await tags_repo.list(conn)
+    assert {t["id"] for t in listed_tags} == set(expected_tags_ids)
+
+    # (4) add another tag from a differnt user
+    await create_tag(
+        conn,
+        name="T3",
+        description=f"tag for {other_user.id}",
+        color="green",
+        group_id=other_user.primary_gid,
+        read=True,
+        write=False,
+        delete=False,
+    )
+
+    # same as before
+    prev_listed_tags = listed_tags
+    listed_tags = await tags_repo.list(conn)
+    assert listed_tags == prev_listed_tags
+
+    # (5) add a global tag
+    tag_id = await create_tag(
+        conn,
+        name="TG",
+        description="tag for EVERYBODY",
+        color="pink",
+        group_id=1,
+        read=True,
+        write=False,
+        delete=False,
+    )
+
+    listed_tags = await tags_repo.list(conn)
+    assert listed_tags == [
+        {"id": 1, "name": "T1", "description": "tag for 1", "color": "blue"},
+        {"id": 2, "name": "T2", "description": "tag via std group", "color": "red"},
+        {"id": 4, "name": "TG", "description": "tag for EVERYBODY", "color": "pink"},
+    ]
+
+    other_repo = TagsRepo(user_id=other_user.id)
+    assert await other_repo.list(conn) == [
+        {"id": 3, "name": "T3", "description": "tag for 2", "color": "green"},
+        {"id": 4, "name": "TG", "description": "tag for EVERYBODY", "color": "pink"},
+    ]
 
 
 @pytest.mark.skip(reason="DEV")
