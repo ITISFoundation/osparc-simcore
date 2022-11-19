@@ -9,6 +9,8 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from simcore_postgres_database.models.groups import GroupType
+from simcore_postgres_database.models.tags import tags, tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
@@ -66,34 +68,66 @@ async def other_user(
     return user_
 
 
-async def test_it(
-    pg_engine: Engine, user: RowProxy, group: RowProxy, other_user: RowProxy
+async def test_tags_access_with_primary_groups(
+    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
 ):
+    conn = connection
 
-    async with pg_engine.acquire() as conn:
-        # have a repo
-        tags_repo = TagsRepo(user_id=user.id)
+    # have a repo
+    tags_repo = TagsRepo(user_id=user.id)
 
-        # create & own
-        user_tags = [
-            await tags_repo.create(conn, {"name": f"t{n}", "color": "blue"})
-            for n in range(2)
-        ]
+    # create & own tag
+    user_tags = [
+        await tags_repo.create(conn, {"name": f"t{n}", "color": "blue"})
+        for n in range(2)
+    ]
 
-        # repo has access
-        for tag in user_tags:
-            assert await tags_repo.access_count(conn, tag["id"], "read") == 1
-            assert await tags_repo.access_count(conn, tag["id"], "write") == 1
-            assert await tags_repo.access_count(conn, tag["id"], "delete") == 1
+    # repo has access
+    for tag in user_tags:
+        assert await tags_repo.access_count(conn, tag["id"], "read") == 1
+        assert await tags_repo.access_count(conn, tag["id"], "write") == 1
+        assert await tags_repo.access_count(conn, tag["id"], "delete") == 1
 
-        # let's create a different repo for a different user i.e. other_user
-        other_repo = TagsRepo(user_id=other_user.id)
+    # let's create a different repo for a different user i.e. other_user
+    other_repo = TagsRepo(user_id=other_user.id)
 
-        # other_user will have NO access to user's tags
-        for tag in user_tags:
-            assert await other_repo.access_count(conn, tag["id"], "read") == 0
-            assert await other_repo.access_count(conn, tag["id"], "write") == 0
-            assert await other_repo.access_count(conn, tag["id"], "delete") == 0
+    # other_user will have NO access to user's tags
+    for tag in user_tags:
+        assert await other_repo.access_count(conn, tag["id"], "read") == 0
+        assert await other_repo.access_count(conn, tag["id"], "write") == 0
+        assert await other_repo.access_count(conn, tag["id"], "delete") == 0
+
+
+async def test_tags_access_with_standard_groups(
+    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+):
+    conn = connection
+
+    # insert a tag and give RW access to a group
+    tag_id = await conn.scalar(
+        tags.insert()
+        .values(name="G1", description=f"Tag of group {group['type']}", color="black")
+        .returning(tags.c.id)
+    )
+    assert tag_id
+    assert group.type == GroupType.STANDARD.name
+    await conn.execute(
+        tags_to_groups.insert().values(
+            tag_id=tag_id, group_id=group.gid, read=True, write=True, delete=False
+        )
+    )
+
+    # user is part of this group
+    tags_repo = TagsRepo(user_id=user.id)
+    assert await tags_repo.access_count(conn, tag_id, "read") == 1
+    assert await tags_repo.access_count(conn, tag_id, "write") == 1
+    assert await tags_repo.access_count(conn, tag_id, "delete") == 0
+
+    # other_user is NOT part of this group
+    other_repo = TagsRepo(user_id=other_user.id)
+    assert await other_repo.access_count(conn, tag_id, "read") == 0
+    assert await other_repo.access_count(conn, tag_id, "write") == 0
+    assert await other_repo.access_count(conn, tag_id, "delete") == 0
 
 
 async def test_tags_repo_workflow(
