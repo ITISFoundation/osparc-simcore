@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Optional
+from typing import Optional, cast
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -98,5 +98,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @validator("AUTOSCALING_LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value) -> str:
-        return cls.validate_log_level(value)
+    def valid_log_level(cls, value: str) -> str:
+        # NOTE: mypy is not happy without the cast
+        return cast(str, cls.validate_log_level(value))
