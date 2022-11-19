@@ -12,7 +12,8 @@ import psutil
 import pytest
 from deepdiff import DeepDiff
 from faker import Faker
-from pydantic import ByteSize
+from models_library.generated_models.docker_rest_api import Task
+from pydantic import ByteSize, parse_obj_as
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_docker import (
     Node,
@@ -29,7 +30,7 @@ async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
 ) -> Node:
-    nodes = await async_docker_client.nodes.list()
+    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
     assert len(nodes) == 1
     return nodes[0]
 
@@ -39,16 +40,23 @@ async def create_node_labels(
     host_node: Node,
     async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[Callable[[list[str]], Awaitable[None]]]:
-    old_labels = deepcopy(host_node["Spec"]["Labels"])
+    assert host_node.Spec
+    old_labels = deepcopy(host_node.Spec.Labels)
 
     async def _creator(labels: list[str]) -> None:
+        assert host_node.ID
+        assert host_node.Version
+        assert host_node.Version.Index
+        assert host_node.Spec
+        assert host_node.Spec.Role
+        assert host_node.Spec.Availability
         await async_docker_client.nodes.update(
-            node_id=host_node["ID"],
-            version=host_node["Version"]["Index"],
+            node_id=host_node.ID,
+            version=host_node.Version.Index,
             spec={
                 "Name": "foo",
-                "Availability": host_node["Spec"]["Availability"],
-                "Role": host_node["Spec"]["Role"],
+                "Availability": host_node.Spec.Availability.value,
+                "Role": host_node.Spec.Role.value,
                 "Labels": {f"{label}": "true" for label in labels},
             },
         )
@@ -103,18 +111,15 @@ async def test_get_monitored_nodes_with_valid_label(
     assert len(monitored_nodes) == 1
 
     # this is the host node with some keys slightly changed
-    diff = DeepDiff(
-        monitored_nodes[0],
-        host_node,
-        exclude_paths={
-            "Index",
-            "UpdatedAt",
-            "Version",
-            "root['Spec']['Name']",
-            "root['Spec']['Labels']",
-        },
+    EXCLUDED_KEYS = {
+        "Index": True,
+        "UpdatedAt": True,
+        "Version": True,
+        "Spec": {"Labels", "Name"},
+    }
+    assert host_node.dict(exclude=EXCLUDED_KEYS) == monitored_nodes[0].dict(
+        exclude=EXCLUDED_KEYS
     )
-    assert not diff, f"{diff}"
 
 
 async def test_pending_service_task_with_insufficient_resources_with_no_service(
@@ -156,8 +161,11 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
         service_with_too_many_resources,
         ["pending"],
     )
-    service_tasks = await async_docker_client.tasks.list(
-        filters={"service": service_with_too_many_resources["Spec"]["Name"]}
+    service_tasks = parse_obj_as(
+        list[Task],
+        await async_docker_client.tasks.list(
+            filters={"service": service_with_too_many_resources["Spec"]["Name"]}
+        ),
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -240,8 +248,11 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         service_labels=list(service_labels)
     )
 
-    service_tasks = await async_docker_client.tasks.list(
-        filters={"service": service_with_labels["Spec"]["Name"]}
+    service_tasks = parse_obj_as(
+        list[Task],
+        await async_docker_client.tasks.list(
+            filters={"service": service_with_labels["Spec"]["Name"]}
+        ),
     )
     assert service_tasks
     assert len(service_tasks) == 1
