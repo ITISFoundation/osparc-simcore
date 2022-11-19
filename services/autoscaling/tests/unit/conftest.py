@@ -4,6 +4,7 @@
 
 import asyncio
 import json
+import random
 from pathlib import Path
 from typing import (
     Any,
@@ -345,3 +346,18 @@ def aws_security_group_id(
     with ec2_client(settings) as client:
         client.delete_security_group(GroupId=security_group_id)
         print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
+
+
+@pytest.fixture
+def aws_ami_id(
+    mocked_aws_server_envs: None,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> str:
+    settings = AwsSettings.create_from_envs()
+    with ec2_client(settings) as client:
+        images = client.describe_images()
+    image = random.choice(images["Images"])
+    ami_id = image["ImageId"]  # type: ignore
+    monkeypatch.setenv("AWS_AMI_ID", ami_id)
+    return ami_id

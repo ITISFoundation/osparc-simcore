@@ -139,6 +139,7 @@ def test_start_instance_aws(
     mocked_aws_server_envs: None,
     aws_subnet_id: None,
     aws_security_group_id: None,
+    aws_ami_id: None,
     faker: Faker,
 ):
     settings = AwsSettings.create_from_envs()
