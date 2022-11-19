@@ -75,6 +75,25 @@ class TagsRepo:
         )
         return j
 
+    def _join_user_can(
+        self,
+        access_condition,
+        tag_id: int,
+    ) -> int:
+        j = tags.join(
+            tags_to_groups,
+            (tags.c.id == tag_id)
+            & (tags_to_groups.c.tag_id == tag_id)  # explicit foreigh-key constraint
+            & (access_condition),
+        ).join(
+            user_to_groups,
+            (
+                tags_to_groups.c.group_id == user_to_groups.c.gid
+            )  # explicit foreigh-key constraint
+            & (user_to_groups.c.uid == self.user_id),
+        )
+        return j
+
     async def access_count(self, conn: SAConnection, tag_id: int, access: str) -> int:
         """Returns 0 if no access or >0 that is the count of groups giving this access to the user"""
         access_col = {
@@ -83,18 +102,7 @@ class TagsRepo:
             "delete": tags_to_groups.c.delete,
         }[access]
 
-        j = tags.join(
-            tags_to_groups,
-            (tags.c.id == tag_id)
-            & (tags_to_groups.c.tag_id == tag_id)  # explicit foreigh-key constraint
-            & (access_col == True),
-        ).join(
-            user_to_groups,
-            (
-                tags_to_groups.c.group_id == user_to_groups.c.gid
-            )  # explicit foreigh-key constraint
-            & (user_to_groups.c.uid == self.user_id),
-        )
+        j = self._join_user_can(tag_id=tag_id, access_condition=(access_col == True))
         stmt = sa.select(sa.func.count(user_to_groups.c.uid)).select_from(j)
 
         # The number of occurrences of the user_id = how many groups are giving this access permission

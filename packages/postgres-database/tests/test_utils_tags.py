@@ -130,6 +130,7 @@ async def test_tags_access_with_standard_groups(
     assert await other_repo.access_count(conn, tag_id, "delete") == 0
 
 
+@pytest.mark.skip(reason="DEV")
 async def test_tags_repo_workflow(
     pg_engine: Engine, user: RowProxy, group: RowProxy, other_user: RowProxy
 ):
