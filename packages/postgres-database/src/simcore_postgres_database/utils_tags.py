@@ -85,13 +85,12 @@ class TagsRepo:
         j = tags.join(
             tags_to_groups,
             (tags.c.id == tag_id)
-            & (tags_to_groups.c.tag_id == tag_id)  # explicit foreigh-key constraint
-            & (access_condition),
+            # explicit foreigh-key constraint
+            & (tags_to_groups.c.tag_id == tag_id) & (access_condition),
         ).join(
             user_to_groups,
-            (
-                tags_to_groups.c.group_id == user_to_groups.c.gid
-            )  # explicit foreigh-key constraint
+            # explicit foreigh-key constraint
+            (tags_to_groups.c.group_id == user_to_groups.c.gid)
             & (user_to_groups.c.uid == self.user_id),
         )
         return j
@@ -105,6 +104,16 @@ class TagsRepo:
             (user_to_groups.c.uid == self.user_id)
             & (user_to_groups.c.gid == tags_to_groups.c.group_id)
             & (access_condition),
+        ).join(tags)
+        return j
+
+    def _join_user_to_given_tag(self, access_condition, tag_id):
+        j = user_to_groups.join(
+            tags_to_groups,
+            (user_to_groups.c.uid == self.user_id)
+            & (user_to_groups.c.gid == tags_to_groups.c.group_id)
+            & (access_condition)
+            & (tags_to_groups.c.tag_id == tag_id),
         ).join(tags)
         return j
 
@@ -134,10 +143,9 @@ class TagsRepo:
         select_stmt = (
             sa.select(_TAG_COLUMNS)
             .select_from(self._join_user_to_tags(tags_to_groups.c.read == True))
-            .order_by(tags.c.name)
+            .order_by(tags.c.id)
         )
 
-        # pylint: disable=not-an-iterable
         items = []
         async for row in conn.execute(select_stmt):
             items.append(TagDict(row.items()))  # type: ignore
@@ -145,11 +153,8 @@ class TagsRepo:
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
 
-        select_stmt = (
-            sa.select(_TAG_COLUMNS)
-            .distinct(tags.c.id)
-            .select_from(self._user_tags_with(tags_to_groups.c.read == True))
-            .where(tags.c.id == tag_id)
+        select_stmt = sa.select(_TAG_COLUMNS).select_from(
+            self._join_user_to_given_tag(tags_to_groups.c.read == True, tag_id=tag_id)
         )
 
         result = await conn.execute(select_stmt)

@@ -152,7 +152,7 @@ async def test_tags_access_with_standard_groups(
     assert await other_repo.access_count(conn, tag_id, "delete") == 0
 
 
-async def test_tags_repo_list(
+async def test_tags_repo_list_and_get(
     connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
 ):
     conn = connection
@@ -185,7 +185,7 @@ async def test_tags_repo_list(
         await create_tag(
             conn,
             name="T2",
-            description=f"tag via std group",
+            description="tag via std group",
             color="red",
             group_id=group.gid,
             read=True,
@@ -238,6 +238,28 @@ async def test_tags_repo_list(
         {"id": 3, "name": "T3", "description": "tag for 2", "color": "green"},
         {"id": 4, "name": "TG", "description": "tag for EVERYBODY", "color": "pink"},
     ]
+
+    # exclusive to user
+    assert await tags_repo.get(conn, tag_id=2) == {
+        "id": 2,
+        "name": "T2",
+        "description": "tag via std group",
+        "color": "red",
+    }
+
+    # exclusive ot other user
+    with pytest.raises(TagNotFoundError):
+        assert await tags_repo.get(conn, tag_id=3)
+
+    assert await other_repo.get(conn, tag_id=3) == {
+        "id": 3,
+        "name": "T3",
+        "description": "tag for 2",
+        "color": "green",
+    }
+
+    # a common tag
+    assert await tags_repo.get(conn, tag_id=4) == await other_repo.get(conn, tag_id=4)
 
 
 @pytest.mark.skip(reason="DEV")
