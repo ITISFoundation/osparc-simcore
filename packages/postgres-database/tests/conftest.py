@@ -111,13 +111,16 @@ async def pg_engine(make_engine: Callable, db_metadata) -> AsyncIterator[Engine]
 
 
 #
-# FIXTURES for users
+# FACTORY FIXTURES
 #
 
 
 @pytest.fixture
-def create_fake_group() -> Callable:
+def create_fake_group(
+    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+) -> Iterator[Callable]:
     """factory to create standard group"""
+    created_ids = []
 
     async def _create_group(conn: SAConnection, **overrides) -> RowProxy:
         result: ResultProxy = await conn.execute(
@@ -125,11 +128,15 @@ def create_fake_group() -> Callable:
             .values(**random_group(type=GroupType.STANDARD, **overrides))
             .returning(literal_column("*"))
         )
-        row = await result.fetchone()
-        assert row
-        return row
+        group = await result.fetchone()
+        assert group
+        created_ids.append(group.gid)
+        return group
 
-    return _create_group
+    yield _create_group
+
+    sync_engine = make_engine(is_async=False)
+    sync_engine.execute(groups.delete().where(groups.c.gid.in_(created_ids)))
 
 
 @pytest.fixture
@@ -143,13 +150,17 @@ def create_fake_user(
     async def _create_user(
         conn, group: Optional[RowProxy] = None, **overrides
     ) -> RowProxy:
-        result: ResultProxy = await conn.execute(
-            users.insert()
-            .values(**random_user(**overrides))
-            .returning(literal_column("*"))
+        user_id = await conn.scalar(
+            users.insert().values(**random_user(**overrides)).returning(users.c.id)
         )
-        assert result
-        user = await result.fetchone()
+        assert user_id is not None
+
+        # This is done in two executions instead of one (e.g. returning(literal_column("*")) )
+        # to allow triggering function in db that
+        # insert primary_gid column
+        r = await conn.execute(users.select().where(users.c.id == user_id))
+        assert r.rowcount == 1
+        user = await r.first()
         assert user
 
         created_ids.append(user.id)
