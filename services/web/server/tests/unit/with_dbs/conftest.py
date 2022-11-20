@@ -38,7 +38,6 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings
-from simcore_postgres_database.errors import OperationalError
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -546,7 +545,7 @@ def _patch_compose_mail(monkeypatch):
 
     monkeypatch.setattr(
         simcore_service_webserver.login.utils_email,
-        "compose_mail",
+        "_compose_mail",
         print_mail_to_stdout,
     )
 
@@ -557,6 +556,6 @@ def _is_postgres_responsive(url):
         engine = sa.create_engine(url)
         conn = engine.connect()
         conn.close()
-    except OperationalError:
+    except sa.exc.OperationalError:
         return False
     return True
