@@ -50,12 +50,12 @@ async def list_tags(request: web.Request):
 async def update_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = request.match_info["tag_id"]
+    tag_id = int(request.match_info["tag_id"])
     tag_data = await request.json()
 
     repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        tag = await repo.update(conn, tag_id=tag_id, tag_update=tag_data)
+        tag = await repo.update(conn, tag_id, **tag_data)
         return tag
 
 
@@ -68,7 +68,7 @@ async def create_tag(request: web.Request):
 
     repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        tag = await repo.create(conn, tag_create=tag_data)
+        tag = await repo.create(conn, **tag_data)
         return tag
 
 
@@ -77,7 +77,7 @@ async def create_tag(request: web.Request):
 async def delete_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = request.match_info["tag_id"]
+    tag_id = int(request.match_info["tag_id"])
 
     repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:

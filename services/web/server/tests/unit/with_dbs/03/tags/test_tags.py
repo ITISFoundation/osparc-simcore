@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import json
 from pathlib import Path
 from typing import Any, Callable
 
@@ -25,9 +24,11 @@ from simcore_service_webserver.db_models import UserRole
 
 
 @pytest.fixture
-def test_tags_data(fake_data_dir: Path) -> dict[str, Any]:
-    with (fake_data_dir / "test_tags_data.json").open() as fp:
-        return json.load(fp).get("added_tags")
+def fake_tags(fake_data_dir: Path) -> list[dict[str, Any]]:
+    return [
+        {"name": "tag1", "description": "description1", "color": "#f00"},
+        {"name": "tag2", "description": "description2", "color": "#00f"},
+    ]
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
@@ -35,19 +36,19 @@ async def test_tags_to_studies(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project,
-    expected: web.HTTPException,
-    test_tags_data: dict[str, Any],
+    expected: type[web.HTTPException],
+    fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable,
 ):
     catalog_subsystem_mock([user_project])
+    assert client.app
 
     # Add test tags
-    tags = test_tags_data
     added_tags = []
 
-    for tag in tags:
+    for tag in fake_tags:
         url = client.app.router["create_tag"].url_for()
-        resp = await client.post(url, json=tag)
+        resp = await client.post(f"{url}", json=tag)
         added_tag, _ = await assert_status(resp, expected)
         added_tags.append(added_tag)
 
@@ -55,7 +56,7 @@ async def test_tags_to_studies(
         url = client.app.router["add_tag"].url_for(
             study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
-        resp = await client.put(url)
+        resp = await client.put(f"{url}")
         data, _ = await assert_status(resp, expected)
 
         # Tag is included in response
@@ -74,7 +75,7 @@ async def test_tags_to_studies(
 
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     await assert_status(resp, web.HTTPNoContent)
 
     # Get project and check that tag is no longer there
@@ -86,7 +87,7 @@ async def test_tags_to_studies(
     url = client.app.router["remove_tag"].url_for(
         study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     await assert_status(resp, expected)
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[1]["id"])
@@ -95,5 +96,5 @@ async def test_tags_to_studies(
 
     # Delete tag1
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     await assert_status(resp, web.HTTPNoContent)
