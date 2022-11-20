@@ -6,6 +6,7 @@
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import pytest
+import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
@@ -77,8 +78,7 @@ async def test_tags_access_with_primary_groups(
 
     # create & own tag
     user_tags = [
-        await tags_repo.create(conn, {"name": f"t{n}", "color": "blue"})
-        for n in range(2)
+        await tags_repo.create(conn, name=f"t{n}", color="blue") for n in range(2)
     ]
 
     # repo has access
@@ -108,6 +108,7 @@ async def create_tag(
     write,
     delete,
 ) -> int:
+    """helper to create a tab by inserting  rows in two different tables"""
     tag_id = await conn.scalar(
         tags.insert()
         .values(name=name, description=description, color=color)
@@ -303,12 +304,10 @@ async def test_tags_repo_update(
     ]
 
     with pytest.raises(TagNotFoundError):
-        await tags_repo.update(
-            conn, tag_id=readonly_tid, tag_update={"description": "modified"}
-        )
+        await tags_repo.update(conn, tag_id=readonly_tid, description="modified")
 
     assert await tags_repo.update(
-        conn, tag_id=readwrite_tid, tag_update={"description": "modified"}
+        conn, tag_id=readwrite_tid, description="modified"
     ) == {
         "id": readwrite_tid,
         "name": "T2",
@@ -317,9 +316,7 @@ async def test_tags_repo_update(
     }
 
     with pytest.raises(TagNotFoundError):
-        await tags_repo.update(
-            conn, tag_id=other_tid, tag_update={"description": "modified"}
-        )
+        await tags_repo.update(conn, tag_id=other_tid, description="modified")
 
 
 async def test_tags_repo_delete(
@@ -376,6 +373,39 @@ async def test_tags_repo_delete(
     # cannot delete
     with pytest.raises(TagOperationNotAllowed):
         await tags_repo.delete(conn, tag_id=other_tid)
+
+
+async def test_tags_repo_create(
+    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+):
+    conn = connection
+    tags_repo = TagsRepo(user_id=user.id)
+
+    tag_1 = await tags_repo.create(
+        conn,
+        name="T1",
+        description="my first tag",
+        color="pink",
+        read=True,
+        write=True,
+        delete=True,
+    )
+    assert tag_1 == {
+        "id": 1,
+        "name": "T1",
+        "description": "my first tag",
+        "color": "pink",
+    }
+
+    # assigned primary group
+    assert (
+        await conn.scalar(
+            sa.select([tags_to_groups.c.group_id]).where(
+                tags_to_groups.c.tag_id == tag_1["id"]
+            )
+        )
+        == user.primary_gid
+    )
 
 
 @pytest.mark.skip(reason="DEV")

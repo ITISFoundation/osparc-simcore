@@ -5,11 +5,11 @@
 """
 
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from simcore_postgres_database.models.groups import groups, user_to_groups
+from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.tags import tags, tags_to_groups
 from simcore_postgres_database.models.users import users
 
@@ -18,11 +18,19 @@ from simcore_postgres_database.models.users import users
 #
 
 
-class TagNotFoundError(Exception):
+class BaseTagError(Exception):
     pass
 
 
-class TagOperationNotAllowed(Exception):  # maps to AccessForbidden
+class ValidationError(BaseTagError):
+    pass
+
+
+class TagNotFoundError(BaseTagError):
+    pass
+
+
+class TagOperationNotAllowed(BaseTagError):  # maps to AccessForbidden
     pass
 
 
@@ -31,7 +39,8 @@ class TagOperationNotAllowed(Exception):  # maps to AccessForbidden
 #
 
 
-class TagDict(TypedDict, total=False):
+class TagDict(TypedDict, total=True):
+    # NOTE: ONLY used as returned value, otherwise used
     id: int
     name: int
     description: str
@@ -46,27 +55,18 @@ class TagsRepo:
     user_id: int
 
     @classmethod
-    def _get_values(cls, *, data: TagDict, required: set[str], optional: set[str]):
-        values = {k: data[k] for k in required}  # type: ignore
+    def _get_values(
+        cls, *, data: dict[str, Any], required: set[str], optional: set[str]
+    ):
+        try:
+            values = {k: data[k] for k in required}  # type: ignore
+        except KeyError as err:
+            raise ValidationError(f"Valued required: {err}")
+
         for k in optional:
             if value := data.get(k):
                 values[k] = value
         return values
-
-    def _user_tags_with(self, access_condition):
-        j = (
-            tags.join(
-                tags_to_groups,
-                (tags.c.id == tags_to_groups.c.tag_id) & access_condition,
-            )
-            .join(groups)
-            .join(
-                user_to_groups,
-                (user_to_groups.c.gid == groups.c.gid)
-                & (user_to_groups.c.uid == self.user_id),
-            )
-        )
-        return j
 
     def _join_user_can(
         self,
@@ -156,9 +156,7 @@ class TagsRepo:
             raise TagNotFoundError(f"{tag_id=} not found")
         return TagDict(row.items())  # type: ignore
 
-    async def update(
-        self, conn: SAConnection, tag_id: int, tag_update: TagDict
-    ) -> TagDict:
+    async def update(self, conn: SAConnection, tag_id: int, **tag_update) -> TagDict:
         updates = self._get_values(
             data=tag_update, required=set(), optional={"description", "name", "color"}
         )
@@ -185,32 +183,41 @@ class TagsRepo:
 
         return TagDict(row.items())  # type: ignore
 
-    async def create(self, conn: SAConnection, tag_create: TagDict) -> TagDict:
+    async def create(
+        self,
+        conn: SAConnection,
+        *,
+        read: bool = True,
+        write: bool = True,
+        delete: bool = True,
+        **tag_create,
+    ) -> TagDict:
 
         values = self._get_values(
             data=tag_create, required={"name", "color"}, optional={"description"}
         )
-        insert_tag_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
 
         async with conn.begin():
 
             # insert new tag
-            result = await conn.execute(insert_tag_stmt)
+            insert_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
+            result = await conn.execute(insert_stmt)
             row = await result.first()
             assert row  # nosec
 
             # take tag ownership
-
-            primary_gid = await conn.scalar(
-                sa.select([users.c.primary_gid]).where(users.c.id == self.user_id)
+            scalar_subq = (
+                sa.select(users.c.primary_gid)
+                .where(users.c.id == self.user_id)
+                .scalar_subquery()
             )
             await conn.execute(
                 tags_to_groups.insert().values(
                     tag_id=row.id,
-                    group_id=primary_gid,
-                    read=True,
-                    write=True,
-                    delete=True,
+                    group_id=scalar_subq,
+                    read=read,
+                    write=write,
+                    delete=delete,
                 )
             )
             return TagDict(row.items())  # type: ignore
