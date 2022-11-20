@@ -96,7 +96,7 @@ async def login(request: web.Request):
                     "code": LOGIN_CODE_PHONE_NUMBER_REQUIRED,
                     "reason": "To login, please register first a phone number",
                 },
-                status=web.HTTPAccepted.status_code,
+                status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
             )
             return rsp
 
@@ -160,6 +160,7 @@ async def login_2fa(request: web.Request):
             reason=cfg.MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
         )
 
+    # FIXME: ask to register if user not found!!
     user = await db.get_user({"email": email})
 
     # dispose since used

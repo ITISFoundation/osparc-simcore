@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 
 def _get_user_name(email: str) -> str:
     username = email.split("@")[0]
+    # TODO: this has to be unique and add this in user registration!
     return username
 
 
@@ -86,7 +87,7 @@ async def register(request: web.Request):
             ),
             "role": USER,
             "expires_at": expires_at,
-            "created_ip": get_client_ip(request),
+            "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
         }
     )
 
