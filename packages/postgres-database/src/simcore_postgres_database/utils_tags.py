@@ -54,7 +54,7 @@ class TagsRepo:
         cls, *, data: dict[str, Any], required: set[str], optional: set[str]
     ):
         try:
-            values = {k: data[k] for k in required}  # type: ignore
+            values = {k: data[k] for k in required}
         except KeyError as err:
             raise ValidationError(f"Missing required value: {err}") from err
 
