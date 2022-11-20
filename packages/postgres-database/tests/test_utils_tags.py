@@ -322,6 +322,62 @@ async def test_tags_repo_update(
         )
 
 
+async def test_tags_repo_delete(
+    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+):
+    conn = connection
+    tags_repo = TagsRepo(user_id=user.id)
+
+    # Tags with different access rights
+    readonly_tid, delete_tid, other_tid = [
+        await create_tag(
+            conn,
+            name="T1",
+            description="read only",
+            color="blue",
+            group_id=user.primary_gid,
+            read=True,
+            write=False,  # <--- read only
+            delete=False,
+        ),
+        await create_tag(
+            conn,
+            name="T2",
+            description="read/write",
+            color="green",
+            group_id=user.primary_gid,
+            read=True,
+            write=True,
+            delete=True,  # <-- can delete
+        ),
+        await create_tag(
+            conn,
+            name="T3",
+            description="read/write but a other user",
+            color="blue",
+            group_id=other_user.primary_gid,
+            read=True,
+            write=True,
+            delete=True,  # <-- can delete but other user
+        ),
+    ]
+
+    # cannot delete
+    with pytest.raises(TagOperationNotAllowed):
+        await tags_repo.delete(conn, tag_id=readonly_tid)
+
+    # can delete
+    await tags_repo.get(conn, tag_id=delete_tid)
+    await tags_repo.delete(conn, tag_id=delete_tid)
+
+    with pytest.raises(TagNotFoundError):
+        await tags_repo.get(conn, tag_id=delete_tid)
+
+    # cannot delete
+    with pytest.raises(TagOperationNotAllowed):
+        await tags_repo.delete(conn, tag_id=other_tid)
+
+
 @pytest.mark.skip(reason="DEV")
 async def test_tags_repo_workflow(
     pg_engine: Engine, user: RowProxy, group: RowProxy, other_user: RowProxy

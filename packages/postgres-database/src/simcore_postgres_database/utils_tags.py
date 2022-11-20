@@ -41,14 +41,7 @@ class TagDict(TypedDict, total=False):
 _TAG_COLUMNS = [tags.c.id, tags.c.name, tags.c.description, tags.c.color]
 
 
-@dataclass
-class AccessRights:
-    read: bool
-    write: bool
-    delete: bool
-
-
-@dataclass
+@dataclass(frozen=True)
 class TagsRepo:
     user_id: int
 
@@ -223,17 +216,21 @@ class TagsRepo:
             return TagDict(row.items())  # type: ignore
 
     async def delete(self, conn: SAConnection, tag_id: int) -> None:
-        # select delete tags in user's groups
-        can_delete = await conn.scalar(
-            sa.select([tags_to_groups.c.delete]).select_from(
-                self._user_tags_with(tags_to_groups.c.delete == True)
+        delete_stmt = (
+            tags.delete()
+            .where(tags.c.id == tag_id)
+            .where(
+                (tags_to_groups.c.tag_id == tag_id) & (tags_to_groups.c.delete == True)
             )
+            .where(
+                (tags_to_groups.c.group_id == user_to_groups.c.gid)
+                & (user_to_groups.c.uid == self.user_id)
+            )
+            .returning(tags_to_groups.c.delete)
         )
 
-        if not can_delete:
+        deleted = await conn.scalar(delete_stmt)
+        if not deleted:
             raise TagOperationNotAllowed(
-                f"Insufficent access rights to delete {tag_id=}"
+                f"Could not delete {tag_id=}. Not found or insuficient access."
             )
-
-        assert can_delete  # nosec
-        await conn.execute(tags.delete().where(tags.c.id == tag_id))
