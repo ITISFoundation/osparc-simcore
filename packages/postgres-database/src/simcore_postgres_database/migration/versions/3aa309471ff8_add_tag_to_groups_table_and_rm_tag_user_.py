@@ -89,17 +89,13 @@ def downgrade():
         ondelete="CASCADE",
     )
 
-    # FIXME: this assigns only to the first user_id
+    # Sets tags.user_id
     op.execute(
         sa.DDL(
             """
-UPDATE tags
-SET
-    user_id = users.id
-FROM tags_to_groups
-INNER JOIN groups ON groups.gid = tags_to_groups.group_id AND groups.type = 'PRIMARY'
-INNER JOIN user_to_groups ON user_to_groups.gid = groups.gid
-INNER JOIN users ON users.id = user_to_groups.uid
+    UPDATE tags SET user_id=(SELECT users.id
+    FROM users JOIN tags_to_groups ON tags_to_groups.group_id = users.primary_gid
+    WHERE tags.id = tags_to_groups.tag_id)
             """
         )
     )
