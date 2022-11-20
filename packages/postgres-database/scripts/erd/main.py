@@ -36,7 +36,7 @@ def create_erd(image_path: Path, tables: Optional[list[str]] = None):
         kwargs["metadata"] = metadata
 
     graph = create_schema_graph(kwargs)
-    # pylint: disable=no-memeber
+    # pylint: disable=no-member
     graph.write_svg(f'{image_path.with_suffix(".svg")}')
     graph.write_png(f'{image_path.with_suffix(".png")}')
 
