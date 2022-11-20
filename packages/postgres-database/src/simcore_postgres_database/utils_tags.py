@@ -134,17 +134,51 @@ class TagsRepo:
     # CRUD operations
     #
 
+    async def create(
+        self,
+        conn: SAConnection,
+        *,
+        read: bool = True,
+        write: bool = True,
+        delete: bool = True,
+        **tag_create,
+    ) -> TagDict:
+
+        values = self._validate_data(
+            data=tag_create, required={"name", "color"}, optional={"description"}
+        )
+
+        async with conn.begin():
+            # insert new tag
+            insert_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
+            result = await conn.execute(insert_stmt)
+            row = await result.first()
+            assert row  # nosec
+
+            # take tag ownership
+            scalar_subq = (
+                sa.select(users.c.primary_gid)
+                .where(users.c.id == self.user_id)
+                .scalar_subquery()
+            )
+            await conn.execute(
+                tags_to_groups.insert().values(
+                    tag_id=row.id,
+                    group_id=scalar_subq,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+            )
+            return TagDict(row.items())  # type: ignore
+
     async def list(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
             sa.select(_TAG_COLUMNS)
             .select_from(self._join_user_to_tags(tags_to_groups.c.read == True))
             .order_by(tags.c.id)
         )
-
-        items = []
-        async for row in conn.execute(select_stmt):
-            items.append(TagDict(row.items()))  # type: ignore
-        return items
+        return [TagDict(row.items()) async for row in conn.execute(select_stmt)]  # type: ignore
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
         select_stmt = sa.select(_TAG_COLUMNS).select_from(
@@ -187,44 +221,6 @@ class TagsRepo:
             )
 
         return TagDict(row.items())  # type: ignore
-
-    async def create(
-        self,
-        conn: SAConnection,
-        *,
-        read: bool = True,
-        write: bool = True,
-        delete: bool = True,
-        **tag_create,
-    ) -> TagDict:
-
-        values = self._validate_data(
-            data=tag_create, required={"name", "color"}, optional={"description"}
-        )
-
-        async with conn.begin():
-            # insert new tag
-            insert_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
-            result = await conn.execute(insert_stmt)
-            row = await result.first()
-            assert row  # nosec
-
-            # take tag ownership
-            scalar_subq = (
-                sa.select(users.c.primary_gid)
-                .where(users.c.id == self.user_id)
-                .scalar_subquery()
-            )
-            await conn.execute(
-                tags_to_groups.insert().values(
-                    tag_id=row.id,
-                    group_id=scalar_subq,
-                    read=read,
-                    write=write,
-                    delete=delete,
-                )
-            )
-            return TagDict(row.items())  # type: ignore
 
     async def delete(self, conn: SAConnection, tag_id: int) -> None:
         delete_stmt = (

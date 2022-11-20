@@ -8,6 +8,7 @@ from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowed,
     TagsRepo,
+    ValidationError,
 )
 
 from .login.decorators import RQT_USERID_KEY, login_required
@@ -19,6 +20,9 @@ def _handle_tags_exceptions(handler: Handler):
     async def wrapper(request: web.Request) -> web.Response:
         try:
             return await handler(request)
+
+        except ValidationError as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
         except TagNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
