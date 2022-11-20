@@ -32,7 +32,7 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
         print("---------------")
 
     return mocker.patch(
-        "simcore_service_webserver.login.utils.send_mail",
+        "simcore_service_webserver.login.utils_email._send_mail",
         spec=True,
         side_effect=print_mail,
     )
