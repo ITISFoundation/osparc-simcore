@@ -1,7 +1,4 @@
-""" Includes some utils for tags in db
-
-
-    - All db logic is separated here and allows a simpler testing/development
+""" Repository pattern, errors and data structures for models.tags
 """
 
 import functools
@@ -14,11 +11,10 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.tags import tags, tags_to_groups
 from simcore_postgres_database.models.users import users
 
-#
-# errors
-#
 
-
+#
+# Errors
+#
 class BaseTagError(Exception):
     pass
 
@@ -36,10 +32,8 @@ class TagOperationNotAllowed(BaseTagError):  # maps to AccessForbidden
 
 
 #
-# repo
+# Repository: interface layer over pg database
 #
-
-
 class TagDict(TypedDict, total=True):
     # NOTE: ONLY used as returned value, otherwise used
     id: int
@@ -69,7 +63,7 @@ class TagsRepo:
                 values[k] = value
         return values
 
-    def _join_user_can(
+    def _join_user_groups_tag(
         self,
         access_condition,
         tag_id: int,
@@ -84,12 +78,9 @@ class TagsRepo:
         return j
 
     def _join_user_to_given_tag(self, access_condition, tag_id: int):
-        j = user_to_groups.join(
-            tags_to_groups,
-            (user_to_groups.c.uid == self.user_id)
-            & (user_to_groups.c.gid == tags_to_groups.c.group_id)
-            & (access_condition)
-            & (tags_to_groups.c.tag_id == tag_id),
+        j = self._join_user_groups_tag(
+            access_condition=access_condition,
+            tag_id=tag_id,
         ).join(tags)
         return j
 
@@ -129,7 +120,7 @@ class TagsRepo:
         if not access:
             raise ValueError("Undefined access")
 
-        j = self._join_user_can(
+        j = self._join_user_groups_tag(
             access_condition=functools.reduce(sa.and_, access),
             tag_id=tag_id,
         )
@@ -212,7 +203,6 @@ class TagsRepo:
         )
 
         async with conn.begin():
-
             # insert new tag
             insert_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
             result = await conn.execute(insert_stmt)
