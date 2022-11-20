@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 
+from ._common import column_created, column_modified
 from .base import metadata
 
 projects_to_products = sa.Table(
@@ -29,21 +30,8 @@ projects_to_products = sa.Table(
         nullable=False,
         doc="Products unique name",
     ),
-    # -----
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=sa.sql.func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=sa.sql.func.now(),
-        onupdate=sa.sql.func.now(),
-        doc="Timestamp with last row update",
-    ),
+    # TIME STAMPS ----
+    column_created(),
+    column_modified(),
     sa.UniqueConstraint("project_uuid", "product_name"),
 )
