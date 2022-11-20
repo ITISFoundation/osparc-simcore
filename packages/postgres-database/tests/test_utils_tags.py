@@ -83,18 +83,18 @@ async def test_tags_access_with_primary_groups(
 
     # repo has access
     for tag in user_tags:
-        assert await tags_repo.access_count(conn, tag["id"], "read") == 1
-        assert await tags_repo.access_count(conn, tag["id"], "write") == 1
-        assert await tags_repo.access_count(conn, tag["id"], "delete") == 1
+        assert await tags_repo.access_count(conn, tag["id"], read=True) == 1
+        assert await tags_repo.access_count(conn, tag["id"], write=True) == 1
+        assert await tags_repo.access_count(conn, tag["id"], delete=True) == 1
 
     # let's create a different repo for a different user i.e. other_user
     other_repo = TagsRepo(user_id=other_user.id)
 
     # other_user will have NO access to user's tags
     for tag in user_tags:
-        assert await other_repo.access_count(conn, tag["id"], "read") == 0
-        assert await other_repo.access_count(conn, tag["id"], "write") == 0
-        assert await other_repo.access_count(conn, tag["id"], "delete") == 0
+        assert await other_repo.access_count(conn, tag["id"], read=True) == 0
+        assert await other_repo.access_count(conn, tag["id"], write=True) == 0
+        assert await other_repo.access_count(conn, tag["id"], delete=True) == 0
 
 
 async def create_tag(
@@ -142,15 +142,15 @@ async def test_tags_access_with_standard_groups(
 
     # user is part of this group
     tags_repo = TagsRepo(user_id=user.id)
-    assert await tags_repo.access_count(conn, tag_id, "read") == 1
-    assert await tags_repo.access_count(conn, tag_id, "write") == 1
-    assert await tags_repo.access_count(conn, tag_id, "delete") == 0
+    assert await tags_repo.access_count(conn, tag_id, read=True) == 1
+    assert await tags_repo.access_count(conn, tag_id, write=True) == 1
+    assert await tags_repo.access_count(conn, tag_id, delete=True) == 0
 
     # other_user is NOT part of this group
     other_repo = TagsRepo(user_id=other_user.id)
-    assert await other_repo.access_count(conn, tag_id, "read") == 0
-    assert await other_repo.access_count(conn, tag_id, "write") == 0
-    assert await other_repo.access_count(conn, tag_id, "delete") == 0
+    assert await other_repo.access_count(conn, tag_id, read=True) == 0
+    assert await other_repo.access_count(conn, tag_id, write=True) == 0
+    assert await other_repo.access_count(conn, tag_id, delete=True) == 0
 
 
 async def test_tags_repo_list_and_get(

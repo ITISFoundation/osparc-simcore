@@ -4,6 +4,7 @@
     - All db logic is separated here and allows a simpler testing/development
 """
 
+import functools
 from dataclasses import dataclass
 from typing import Any, Optional, TypedDict
 
@@ -77,10 +78,19 @@ class TagsRepo:
             tags_to_groups,
             (user_to_groups.c.uid == self.user_id)
             & (user_to_groups.c.gid == tags_to_groups.c.group_id)
-            & (tags_to_groups.c.tag_id == tag_id)
-            & (access_condition),
+            & (access_condition)
+            & (tags_to_groups.c.tag_id == tag_id),
         )
+        return j
 
+    def _join_user_to_given_tag(self, access_condition, tag_id: int):
+        j = user_to_groups.join(
+            tags_to_groups,
+            (user_to_groups.c.uid == self.user_id)
+            & (user_to_groups.c.gid == tags_to_groups.c.group_id)
+            & (access_condition)
+            & (tags_to_groups.c.tag_id == tag_id),
+        ).join(tags)
         return j
 
     def _join_user_to_tags(
@@ -95,26 +105,32 @@ class TagsRepo:
         ).join(tags)
         return j
 
-    def _join_user_to_given_tag(self, access_condition, tag_id):
-        j = user_to_groups.join(
-            tags_to_groups,
-            (user_to_groups.c.uid == self.user_id)
-            & (user_to_groups.c.gid == tags_to_groups.c.group_id)
-            & (access_condition)
-            & (tags_to_groups.c.tag_id == tag_id),
-        ).join(tags)
-        return j
+    async def access_count(
+        self,
+        conn: SAConnection,
+        tag_id: int,
+        *,
+        read: Optional[bool] = None,
+        write: Optional[bool] = None,
+        delete: Optional[bool] = None,
+    ) -> int:
+        """
+        Returns 0 if tag does not match access
+        Returns >0 if it does and represents the number of groups granting this access to the user
+        """
+        access = []
+        if read is not None:
+            access.append(tags_to_groups.c.read == read)
+        if write is not None:
+            access.append(tags_to_groups.c.write == write)
+        if delete is not None:
+            access.append(tags_to_groups.c.delete == delete)
 
-    async def access_count(self, conn: SAConnection, tag_id: int, access: str) -> int:
-        """Returns 0 if no access or >0 that is the count of groups giving this access to the user"""
-        access_col = {
-            "read": tags_to_groups.c.read,
-            "write": tags_to_groups.c.write,
-            "delete": tags_to_groups.c.delete,
-        }[access]
+        if not access:
+            raise ValueError("Undefined access")
 
         j = self._join_user_can(
-            access_condition=(access_col == True),
+            access_condition=functools.reduce(sa.and_, access),
             tag_id=tag_id,
         )
         stmt = sa.select(sa.func.count(user_to_groups.c.uid)).select_from(j)
