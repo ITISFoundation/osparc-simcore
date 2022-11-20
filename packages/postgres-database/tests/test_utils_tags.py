@@ -262,6 +262,66 @@ async def test_tags_repo_list_and_get(
     assert await tags_repo.get(conn, tag_id=4) == await other_repo.get(conn, tag_id=4)
 
 
+async def test_tags_repo_update(
+    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+):
+    conn = connection
+    tags_repo = TagsRepo(user_id=user.id)
+
+    # Tags with different access rights
+    readonly_tid, readwrite_tid, other_tid = [
+        await create_tag(
+            conn,
+            name="T1",
+            description="read only",
+            color="blue",
+            group_id=user.primary_gid,
+            read=True,
+            write=False,  # <--- read only
+            delete=False,
+        ),
+        await create_tag(
+            conn,
+            name="T2",
+            description="read/write",
+            color="green",
+            group_id=user.primary_gid,
+            read=True,
+            write=True,  # <--- can write
+            delete=False,
+        ),
+        await create_tag(
+            conn,
+            name="T3",
+            description="read/write but a other user",
+            color="blue",
+            group_id=other_user.primary_gid,
+            read=True,
+            write=True,  # <--- can write but other user
+            delete=False,
+        ),
+    ]
+
+    with pytest.raises(TagNotFoundError):
+        await tags_repo.update(
+            conn, tag_id=readonly_tid, tag_update={"description": "modified"}
+        )
+
+    assert await tags_repo.update(
+        conn, tag_id=readwrite_tid, tag_update={"description": "modified"}
+    ) == {
+        "id": readwrite_tid,
+        "name": "T2",
+        "description": "modified",
+        "color": "green",
+    }
+
+    with pytest.raises(TagNotFoundError):
+        await tags_repo.update(
+            conn, tag_id=other_tid, tag_update={"description": "modified"}
+        )
+
+
 @pytest.mark.skip(reason="DEV")
 async def test_tags_repo_workflow(
     pg_engine: Engine, user: RowProxy, group: RowProxy, other_user: RowProxy

@@ -166,32 +166,29 @@ class TagsRepo:
     async def update(
         self, conn: SAConnection, tag_id: int, tag_update: TagDict
     ) -> TagDict:
-        # select write tags in user's groups
-        j_user_write_tags = self._user_tags_with(tags_to_groups.c.write == True)
-
-        values = self._get_values(
+        updates = self._get_values(
             data=tag_update, required=set(), optional={"description", "name", "color"}
         )
 
         update_stmt = (
             tags.update()
-            .values(**values)
             .where(tags.c.id == tag_id)
+            .where(
+                (tags.c.id == tags_to_groups.c.tag_id)
+                & (tags_to_groups.c.write == True)
+            )
+            .where(
+                (tags_to_groups.c.group_id == user_to_groups.c.gid)
+                & (user_to_groups.c.uid == self.user_id)
+            )
+            .values(**updates)
             .returning(*_TAG_COLUMNS)
         )
-
-        can_update = await conn.scalar(
-            sa.select([tags_to_groups.c.write]).select_from(j_user_write_tags).where()
-        )
-        if not can_update:
-            raise TagOperationNotAllowed(
-                f"Insufficent access rights to update {tag_id=}"
-            )
 
         result = await conn.execute(update_stmt)
         row = await result.first()
         if not row:
-            raise TagNotFoundError(f"{tag_id=} not found")
+            raise TagNotFoundError(f"{tag_id=} could not be updated")
 
         return TagDict(row.items())  # type: ignore
 
