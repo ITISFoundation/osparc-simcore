@@ -55,13 +55,13 @@ class TagsRepo:
     user_id: int
 
     @classmethod
-    def _get_values(
+    def _validate_data(
         cls, *, data: dict[str, Any], required: set[str], optional: set[str]
     ):
         try:
             values = {k: data[k] for k in required}  # type: ignore
         except KeyError as err:
-            raise ValidationError(f"Valued required: {err}")
+            raise ValidationError(f"Missing required value: {err}") from err
 
         for k in optional:
             if value := data.get(k):
@@ -73,19 +73,14 @@ class TagsRepo:
         access_condition,
         tag_id: int,
     ):
-        # FIXME: for access-checks there is no need to join tags table
-        # since we can works with the tag_id of tags_to_groups
-        j = tags.join(
+        j = user_to_groups.join(
             tags_to_groups,
-            (tags.c.id == tag_id)
-            # explicit foreigh-key constraint
-            & (tags_to_groups.c.tag_id == tag_id) & (access_condition),
-        ).join(
-            user_to_groups,
-            # explicit foreigh-key constraint
-            (tags_to_groups.c.group_id == user_to_groups.c.gid)
-            & (user_to_groups.c.uid == self.user_id),
+            (user_to_groups.c.uid == self.user_id)
+            & (user_to_groups.c.gid == tags_to_groups.c.group_id)
+            & (tags_to_groups.c.tag_id == tag_id)
+            & (access_condition),
         )
+
         return j
 
     def _join_user_to_tags(
@@ -145,7 +140,6 @@ class TagsRepo:
         return items
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
-
         select_stmt = sa.select(_TAG_COLUMNS).select_from(
             self._join_user_to_given_tag(tags_to_groups.c.read == True, tag_id=tag_id)
         )
@@ -153,11 +147,13 @@ class TagsRepo:
         result = await conn.execute(select_stmt)
         row = await result.first()
         if not row:
-            raise TagNotFoundError(f"{tag_id=} not found")
+            raise TagNotFoundError(
+                f"{tag_id=} not found: either no access or does not exists"
+            )
         return TagDict(row.items())  # type: ignore
 
     async def update(self, conn: SAConnection, tag_id: int, **tag_update) -> TagDict:
-        updates = self._get_values(
+        updates = self._validate_data(
             data=tag_update, required=set(), optional={"description", "name", "color"}
         )
 
@@ -179,7 +175,9 @@ class TagsRepo:
         result = await conn.execute(update_stmt)
         row = await result.first()
         if not row:
-            raise TagNotFoundError(f"{tag_id=} could not be updated")
+            raise TagOperationNotAllowed(
+                f"{tag_id=} not updated: either no access or not found"
+            )
 
         return TagDict(row.items())  # type: ignore
 
@@ -193,7 +191,7 @@ class TagsRepo:
         **tag_create,
     ) -> TagDict:
 
-        values = self._get_values(
+        values = self._validate_data(
             data=tag_create, required={"name", "color"}, optional={"description"}
         )
 

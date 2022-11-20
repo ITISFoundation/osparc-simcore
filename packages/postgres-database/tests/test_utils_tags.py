@@ -303,7 +303,7 @@ async def test_tags_repo_update(
         ),
     ]
 
-    with pytest.raises(TagNotFoundError):
+    with pytest.raises(TagOperationNotAllowed):
         await tags_repo.update(conn, tag_id=readonly_tid, description="modified")
 
     assert await tags_repo.update(
@@ -315,7 +315,7 @@ async def test_tags_repo_update(
         "color": "green",
     }
 
-    with pytest.raises(TagNotFoundError):
+    with pytest.raises(TagOperationNotAllowed):
         await tags_repo.update(conn, tag_id=other_tid, description="modified")
 
 
