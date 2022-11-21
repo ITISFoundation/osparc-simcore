@@ -9,6 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 async def check_dynamic_resources(app: FastAPI) -> None:
+    """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
+    If there are such tasks, this method will allocate new machines in AWS to cope with
+    the additional load.
+    """
     app_settings: ApplicationSettings = app.state.settings
     pending_tasks = (
         await utils_docker.pending_service_tasks_with_insufficient_resources(
