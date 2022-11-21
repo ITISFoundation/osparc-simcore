@@ -346,11 +346,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importStudyButton.setEnabled(!multiEnabled);
       });
 
-      this._resourcesContainer.bind("selection", studiesDeleteButton, "visibility", {
-        converter: selection => selection.length ? "visible" : "excluded"
-      });
-      this._resourcesContainer.bind("selection", studiesDeleteButton, "label", {
-        converter: selection => selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
+      this._resourcesContainer.addListener("changeSelection", e => {
+        const selection = e.getData();
+        studiesDeleteButton.set({
+          visibility: selection.length ? "visible" : "excluded",
+          label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
+        });
       });
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
@@ -413,7 +414,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createDeleteButton: function() {
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14");
+      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
+        visibility: "excluded"
+      });
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
