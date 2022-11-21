@@ -3,6 +3,7 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
+ *          Odei Maiz (odeimaiz)
  */
 
 /**
@@ -11,8 +12,8 @@
 qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
-  construct: function(layout) {
-    this.base(arguments, layout);
+  construct: function() {
+    this.base(arguments, new qx.ui.layout.Flow(15, 15));
 
     this.__emptyHeaders();
   },
@@ -80,6 +81,15 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       return this.getChildren().filter(child => !("GroupHeader" in child));
     },
 
+    __configureCard: function(card) {
+      card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
+      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.getVisibles()), this);
+      if (this.getMode() === "list") {
+        const width = this.getBounds().width - 15;
+        card.setWidth(width);
+      }
+    },
+
     // overridden
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
@@ -87,12 +97,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
           this.base(arguments, child);
           return;
         }
-        child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
-        child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.getVisibles()), this);
-        if (this.getMode() === "list") {
-          const width = this.getBounds().width - 15;
-          child.setWidth(width);
-        }
+        this.__configureCard(child);
         if (this.getGroupBy()) {
           const headerInfo = this.__addHeaders(child);
           const headerIdx = this.getChildren().findIndex(button => button === headerInfo.widget);
