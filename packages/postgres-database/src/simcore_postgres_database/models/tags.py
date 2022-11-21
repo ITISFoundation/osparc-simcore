@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import column_created, column_modified
+from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 
 #
@@ -92,8 +92,8 @@ tags_to_groups = sa.Table(
         doc="If true, group can *delete* the tag",
     ),
     # TIME STAMPS ----
-    column_created(),
-    column_modified(),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.UniqueConstraint("tag_id", "group_id"),
 )
 

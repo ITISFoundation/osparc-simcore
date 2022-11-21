@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 
 
-def column_created() -> sa.Column:
+def column_created_datetime() -> sa.Column:
     return sa.Column(
         "created",
         sa.DateTime(),
@@ -11,7 +11,7 @@ def column_created() -> sa.Column:
     )
 
 
-def column_modified() -> sa.Column:
+def column_modified_datetime() -> sa.Column:
     return sa.Column(
         "modified",
         sa.DateTime(),

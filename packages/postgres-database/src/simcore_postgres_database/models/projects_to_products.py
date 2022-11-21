@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import column_created, column_modified
+from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 
 projects_to_products = sa.Table(
@@ -31,7 +31,7 @@ projects_to_products = sa.Table(
         doc="Products unique name",
     ),
     # TIME STAMPS ----
-    column_created(),
-    column_modified(),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.UniqueConstraint("project_uuid", "product_name"),
 )
