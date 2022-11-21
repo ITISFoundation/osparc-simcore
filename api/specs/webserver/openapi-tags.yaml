@@ -35,21 +35,6 @@ paths:
         required: true
         schema:
           type: integer
-
-    get:
-      tags:
-        - tag
-      operationId: get_tag
-      responses:
-        "200":
-          description: returns a tag
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TagEnveloped"
-        default:
-          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
-
     put:
       tags:
         - tag

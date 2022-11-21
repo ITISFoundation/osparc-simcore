@@ -138,7 +138,7 @@ async def everybody_tag_id(client: TestClient) -> Iterator[int]:
             conn,
             name="TG",
             description="tag for EVERYBODY",
-            color="pink",
+            color="#f00",
             group_id=1,
             read=True,
             write=False,
@@ -179,14 +179,8 @@ async def test_read_tags(
         }
     ]
 
-    url = client.app.router["get_tag"].url_for()
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, web.HTTPOk)
-    assert data == datas[0]
 
-
-# async def test_create_and_update_tags(
-async def test_it(
+async def test_create_and_update_tags(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,

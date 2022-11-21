@@ -4462,19 +4462,6 @@ paths:
         required: true
         schema:
           type: integer
-    get:
-      tags:
-        - tag
-      operationId: get_tag
-      responses:
-        '200':
-          description: returns a tag
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
     put:
       tags:
         - tag
