@@ -2,7 +2,7 @@
     Models Front-end UI
 """
 
-from typing import Dict, Literal, Optional
+from typing import Dict, Literal, Optional, TypedDict
 
 from pydantic import BaseModel, Extra, Field
 from pydantic.color import Color
@@ -19,19 +19,12 @@ class WorkbenchUI(BaseModel):
         extra = Extra.forbid
 
 
-class Slideshow(BaseModel):
-    position: int = Field(..., description="Slide's position", examples=["0", "2"])
-    instructions: str = Field(
-        ...,
-        description="Instructions about what to do in this step",
-        examples=[
-            "This is a **sleeper**",
-            "Please, select the config file defined [in this link](asdf)"
-        ]
-    )
+class _SlideshowRequired(TypedDict):
+    position: int
 
-    class Config:
-        extra = Extra.forbid
+
+class Slideshow(_SlideshowRequired, total=False):
+    instructions: Optional[str] # "Instructions about what to do in this step"
 
 
 class Annotation(BaseModel):
