@@ -126,7 +126,7 @@ async def login(request: web.Request):
                     "reason": cfg.MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
-                    "next_url": request.app.router["auth_validate_2fa_login"].url_for(),
+                    "next_url": f"{request.app.router['auth_validate_2fa_login'].url_for()}",
                 },
                 status=web.HTTPAccepted.status_code,
             )

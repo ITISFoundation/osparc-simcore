@@ -90,9 +90,14 @@ def db(client: TestClient) -> AsyncpgStorage:
 @pytest.fixture
 def mocked_twilio_service(mocker) -> dict[str, Mock]:
     return {
-        "send_sms_code": mocker.patch(
-            "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
-        )
+        "send_sms_code_for_registration": mocker.patch(
+            "simcore_service_webserver.login.handlers_registration.send_sms_code",
+            autospec=True,
+        ),
+        "send_sms_code_for_login": mocker.patch(
+            "simcore_service_webserver.login.handlers.send_sms_code",
+            autospec=True,
+        ),
     }
 
 
@@ -173,8 +178,8 @@ async def test_workflow_register_and_login_with_2fa(
     await assert_status(rsp, web.HTTPAccepted)
 
     # check code generated and SMS sent
-    assert mocked_twilio_service["send_sms_code"].called
-    kwargs = mocked_twilio_service["send_sms_code"].call_args.kwargs
+    assert mocked_twilio_service["send_sms_code_for_registration"].called
+    kwargs = mocked_twilio_service["send_sms_code_for_registration"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
     assert phone == PHONE
 
@@ -216,7 +221,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert data["code"] == "SMS_CODE_REQUIRED"
 
     # assert SMS was sent
-    kwargs = mocked_twilio_service["send_sms_code"].call_args.kwargs
+    kwargs = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
     assert phone == PHONE
 
