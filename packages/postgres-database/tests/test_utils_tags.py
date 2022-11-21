@@ -334,15 +334,55 @@ async def test_tags_repo_list_and_get(
 
     listed_tags = await tags_repo.list(conn)
     assert listed_tags == [
-        {"id": 1, "name": "T1", "description": "tag for 1", "color": "blue"},
-        {"id": 2, "name": "T2", "description": "tag via std group", "color": "red"},
-        {"id": 4, "name": "TG", "description": "tag for EVERYBODY", "color": "pink"},
+        {
+            "id": 1,
+            "name": "T1",
+            "description": "tag for 1",
+            "color": "blue",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+        {
+            "id": 2,
+            "name": "T2",
+            "description": "tag via std group",
+            "color": "red",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+        {
+            "id": 4,
+            "name": "TG",
+            "description": "tag for EVERYBODY",
+            "color": "pink",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
     ]
 
     other_repo = TagsRepo(user_id=other_user.id)
     assert await other_repo.list(conn) == [
-        {"id": 3, "name": "T3", "description": "tag for 2", "color": "green"},
-        {"id": 4, "name": "TG", "description": "tag for EVERYBODY", "color": "pink"},
+        {
+            "id": 3,
+            "name": "T3",
+            "description": "tag for 2",
+            "color": "green",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
+        {
+            "id": 4,
+            "name": "TG",
+            "description": "tag for EVERYBODY",
+            "color": "pink",
+            "read": True,
+            "write": False,
+            "delete": False,
+        },
     ]
 
     # exclusive to user
@@ -351,6 +391,9 @@ async def test_tags_repo_list_and_get(
         "name": "T2",
         "description": "tag via std group",
         "color": "red",
+        "read": True,
+        "write": False,
+        "delete": False,
     }
 
     # exclusive ot other user
@@ -362,6 +405,9 @@ async def test_tags_repo_list_and_get(
         "name": "T3",
         "description": "tag for 2",
         "color": "green",
+        "read": True,
+        "write": False,
+        "delete": False,
     }
 
     # a common tag
@@ -418,6 +464,9 @@ async def test_tags_repo_update(
         "name": "T2",
         "description": "modified",
         "color": "green",
+        "read": True,
+        "write": True,  # <--- can write
+        "delete": False,
     }
 
     with pytest.raises(TagOperationNotAllowed):
@@ -500,6 +549,9 @@ async def test_tags_repo_create(
         "name": "T1",
         "description": "my first tag",
         "color": "pink",
+        "read": True,
+        "write": True,
+        "delete": True,
     }
 
     # assigned primary group

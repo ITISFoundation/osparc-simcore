@@ -2,6 +2,7 @@
 """
 
 import functools
+import itertools
 from dataclasses import dataclass
 from typing import Optional, TypedDict
 
@@ -30,15 +31,37 @@ class TagOperationNotAllowed(BaseTagError):  # maps to AccessForbidden
 #
 # Repository: interface layer over pg database
 #
+
+
+_TAG_COLUMNS = [
+    tags.c.id,
+    tags.c.name,
+    tags.c.description,
+    tags.c.color,
+]
+
+_ACCESS_COLUMNS = [
+    tags_to_groups.c.read,
+    tags_to_groups.c.write,
+    tags_to_groups.c.delete,
+]
+
+
+_COLUMNS = _TAG_COLUMNS + _ACCESS_COLUMNS
+
+
 class TagDict(TypedDict, total=True):
-    # NOTE: ONLY used as returned value, otherwise used
     id: int
-    name: int
+    name: str
     description: str
     color: str
+    # access rights
+    read: bool
+    write: bool
+    delete: bool
 
 
-_TAG_COLUMNS = [tags.c.id, tags.c.name, tags.c.description, tags.c.color]
+# keeps in sync
 
 
 @dataclass(frozen=True)
@@ -135,8 +158,8 @@ class TagsRepo:
             # insert new tag
             insert_stmt = tags.insert().values(**values).returning(*_TAG_COLUMNS)
             result = await conn.execute(insert_stmt)
-            row = await result.first()
-            assert row  # nosec
+            tag = await result.first()
+            assert tag  # nosec
 
             # take tag ownership
             scalar_subq = (
@@ -144,27 +167,33 @@ class TagsRepo:
                 .where(users.c.id == self.user_id)
                 .scalar_subquery()
             )
-            await conn.execute(
-                tags_to_groups.insert().values(
-                    tag_id=row.id,
+            result = await conn.execute(
+                tags_to_groups.insert()
+                .values(
+                    tag_id=tag.id,
                     group_id=scalar_subq,
                     read=read,
                     write=write,
                     delete=delete,
                 )
+                .returning(*_ACCESS_COLUMNS)
             )
-            return TagDict(row.items())  # type: ignore
+            access = await result.first()
+            assert access
+
+            return TagDict(itertools.chain(tag.items(), access.items()))  # type: ignore
 
     async def list(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
-            sa.select(_TAG_COLUMNS)
+            sa.select(_COLUMNS)
             .select_from(self._join_user_to_tags(tags_to_groups.c.read == True))
             .order_by(tags.c.id)
         )
+
         return [TagDict(row.items()) async for row in conn.execute(select_stmt)]  # type: ignore
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
-        select_stmt = sa.select(_TAG_COLUMNS).select_from(
+        select_stmt = sa.select(_COLUMNS).select_from(
             self._join_user_to_given_tag(tags_to_groups.c.read == True, tag_id=tag_id)
         )
 
@@ -205,7 +234,7 @@ class TagsRepo:
                 & (user_to_groups.c.uid == self.user_id)
             )
             .values(**updates)
-            .returning(*_TAG_COLUMNS)
+            .returning(*_COLUMNS)
         )
 
         result = await conn.execute(update_stmt)
