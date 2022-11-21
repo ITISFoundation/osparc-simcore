@@ -18,6 +18,7 @@ coveralls
 deepdiff
 docker
 faker
+httpx
 moto[server]
 psutil
 pytest
