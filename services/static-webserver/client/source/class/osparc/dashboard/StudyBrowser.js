@@ -722,20 +722,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __itemClicked: function(item, isShiftPressed) {
-      const studiesCont = this._resourcesContainer;
-
       if (isShiftPressed) {
-        const lastIdx = studiesCont.getLastSelectedIndex();
-        const currentIdx = studiesCont.getIndex(item);
+        const lastIdx = this._resourcesContainer.getLastSelectedIndex();
+        const currentIdx = this._resourcesContainer.getIndex(item);
         const minMaxIdx = [lastIdx, currentIdx].sort();
         for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
-          const button = studiesCont.getChildren()[i];
+          const button = this._resourcesContainer.getCards()[i];
           if (button.isVisible()) {
             button.setValue(true);
           }
         }
       }
-      studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
+      this._resourcesContainer.setLastSelectedIndex(this._resourcesContainer.getIndex(item));
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);

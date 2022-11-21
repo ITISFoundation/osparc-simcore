@@ -197,12 +197,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __removeFromTemplateList: function(studyId) {
-      const studyContainer = this._resourcesContainer;
-      const cards = studyContainer.getCards();
+      const cards = this._resourcesContainer.getCards();
       for (let i=0; i<cards.length; i++) {
         const card = cards[i];
         if (card.getUuid && studyId === card.getUuid()) {
-          studyContainer.remove(card);
+          this._resourcesContainer.remove(card);
           return;
         }
       }
