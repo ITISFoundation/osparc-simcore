@@ -35,7 +35,8 @@ from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, AwsSettings
-from simcore_service_autoscaling.utils_aws import ec2_client
+from simcore_service_autoscaling.utils_aws import EC2Client
+from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -173,14 +174,23 @@ async def create_service(
         # get more info on that service
 
         assert service["Spec"]["Name"] == service_name
+        excluded_paths = {
+            "ForceUpdate",
+            "Runtime",
+            "root['ContainerSpec']['Isolation']",
+        }
+        if (
+            task_template.get("Resources", {})
+            .get("Reservations", {})
+            .get("MemoryBytes", 0)
+            == 0
+        ):
+            # NOTE: if a 0 memory reservation is done, docker removes it from the task inspection
+            excluded_paths.add("root['Resources']['Reservations']['MemoryBytes']")
         diff = DeepDiff(
             task_template,
             service["Spec"]["TaskTemplate"],
-            exclude_paths={
-                "ForceUpdate",
-                "Runtime",
-                "root['ContainerSpec']['Isolation']",
-            },
+            exclude_paths=excluded_paths,
         )
         assert not diff, f"{diff}"
         assert service["Spec"]["Labels"] == (labels or {})
@@ -297,66 +307,65 @@ def mocked_aws_server_envs(
 
 
 @pytest.fixture
+def ec2_client() -> Iterator[EC2Client]:
+    settings = AwsSettings.create_from_envs()
+    with autoscaling_ec2_client(settings) as client:
+        yield client
+
+
+@pytest.fixture
 def aws_vpc_id(
     mocked_aws_server_envs: None,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    ec2_client: EC2Client,
 ) -> Iterator[str]:
-    settings = AwsSettings.create_from_envs()
-    with ec2_client(settings) as client:
-        vpc = client.create_vpc(
-            CidrBlock="10.0.0.0/16",
-        )
+    vpc = ec2_client.create_vpc(
+        CidrBlock="10.0.0.0/16",
+    )
     vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
     print(f"--> Created Vpc in AWS with {vpc_id=}")
     monkeypatch.setenv("AWS_VPC_ID", vpc_id)
     yield vpc_id
 
-    with ec2_client(settings) as client:
-        client.delete_vpc(VpcId=vpc_id)
-        print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
+    ec2_client.delete_vpc(VpcId=vpc_id)
+    print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
 
 
 @pytest.fixture
 def aws_subnet_id(
-    mocked_aws_server_envs: None,
-    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     aws_vpc_id: str,
+    ec2_client: EC2Client,
 ) -> Iterator[str]:
-    settings = AwsSettings.create_from_envs()
-    with ec2_client(settings) as client:
-        subnet = client.create_subnet(CidrBlock="10.0.1.0/24", VpcId=aws_vpc_id)
-        subnet_id = subnet["Subnet"]["SubnetId"]
-        print(f"--> Created Subnet in AWS with {subnet_id=}")
+    subnet = ec2_client.create_subnet(CidrBlock="10.0.1.0/24", VpcId=aws_vpc_id)
+    assert "Subnet" in subnet
+    assert "SubnetId" in subnet["Subnet"]
+    subnet_id = subnet["Subnet"]["SubnetId"]
+    print(f"--> Created Subnet in AWS with {subnet_id=}")
 
     monkeypatch.setenv("AWS_SUBNET_ID", subnet_id)
     yield subnet_id
-    with ec2_client(settings) as client:
-        client.delete_subnet(SubnetId=subnet_id)
-        print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
+    ec2_client.delete_subnet(SubnetId=subnet_id)
+    print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
 
 
 @pytest.fixture
 def aws_security_group_id(
-    mocked_aws_server_envs: None,
-    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     aws_vpc_id: str,
+    ec2_client: EC2Client,
 ) -> Iterator[str]:
-    settings = AwsSettings.create_from_envs()
-    with ec2_client(settings) as client:
-        security_group = client.create_security_group(
-            Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
-        )
-        security_group_id = security_group["GroupId"]
-        print(f"--> Created Security Group in AWS with {security_group_id=}")
+    security_group = ec2_client.create_security_group(
+        Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
+    )
+    security_group_id = security_group["GroupId"]
+    print(f"--> Created Security Group in AWS with {security_group_id=}")
     monkeypatch.setenv("AWS_SECURITY_GROUP_IDS", json.dumps([security_group_id]))
     yield security_group_id
-    with ec2_client(settings) as client:
-        client.delete_security_group(GroupId=security_group_id)
-        print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
+    ec2_client.delete_security_group(GroupId=security_group_id)
+    print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
 
 
 @pytest.fixture
@@ -364,10 +373,9 @@ def aws_ami_id(
     mocked_aws_server_envs: None,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    ec2_client: EC2Client,
 ) -> str:
-    settings = AwsSettings.create_from_envs()
-    with ec2_client(settings) as client:
-        images = client.describe_images()
+    images = ec2_client.describe_images()
     image = random.choice(images["Images"])
     ami_id = image["ImageId"]  # type: ignore
     monkeypatch.setenv("AWS_AMI_ID", ami_id)

@@ -43,9 +43,11 @@ def mock_start_aws_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
 def minimal_configuration(
     docker_swarm: None,
     disable_dynamic_service_background_task: None,
-    aws_security_group_id: None,
-):
-    ...
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+) -> Iterator[None]:
+    yield
 
 
 async def test_check_dynamic_resources_with_no_services_does_nothing(
@@ -96,13 +98,12 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
     mock_start_aws_instance: mock.Mock,
-    host_cpu_count: int,
 ):
-    task_template_for_r5n_8x_large_with_256Gib = task_template | create_task_resources(
-        int(host_cpu_count / 2) + 1, parse_obj_as(ByteSize, "128GiB")
+    task_template_for_r5n_4x_large_with_256Gib = task_template | create_task_resources(
+        4, parse_obj_as(ByteSize, "128GiB")
     )
     service_with_too_many_resources = await create_service(
-        task_template_for_r5n_8x_large_with_256Gib
+        task_template_for_r5n_4x_large_with_256Gib
     )
     await assert_for_service_state(
         async_docker_client,
@@ -116,3 +117,32 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
         instance_type="r5n.4xlarge",
         tags=mock.ANY,
     )
+
+
+async def test_check_dynamic_resources_with_pending_resources_actually_starts_new_instances(
+    minimal_configuration: None,
+    async_docker_client: aiodocker.Docker,
+    initialized_app: FastAPI,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int, int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+):
+
+    task_template_for_r5n_8x_large_with_256Gib = task_template | create_task_resources(
+        4, parse_obj_as(ByteSize, "128GiB")
+    )
+    service_with_too_many_resources = await create_service(
+        task_template_for_r5n_8x_large_with_256Gib
+    )
+    await assert_for_service_state(
+        async_docker_client,
+        service_with_too_many_resources,
+        ["pending"],
+    )
+
+    await check_dynamic_resources(initialized_app)
+
+    # check that the instances are really started
