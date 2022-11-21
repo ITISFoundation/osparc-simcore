@@ -1,7 +1,15 @@
 import functools
+from typing import Optional
 
 from aiohttp import web
+from models_library.users import UserID
+from pydantic import BaseModel, Extra, Field, PositiveInt
+from pydantic.color import Color
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_tags import (
@@ -11,7 +19,7 @@ from simcore_postgres_database.utils_tags import (
 )
 
 from .login.decorators import RQT_USERID_KEY, login_required
-from .security_api import check_permission
+from .security_decorators import permission_required
 
 
 def _handle_tags_exceptions(handler: Handler):
@@ -19,13 +27,6 @@ def _handle_tags_exceptions(handler: Handler):
     async def wrapper(request: web.Request) -> web.Response:
         try:
             return await handler(request)
-
-        except (KeyError, TypeError, ValueError) as exc:
-            # NOTE: will be replaced by more robust pydantic-based validation
-            # Bad match_info[*] -> KeyError
-            # Bad int(param) -> ValueError
-            # Bad update(**tag_update) -> TypeError
-            raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
         except TagNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
@@ -36,54 +37,87 @@ def _handle_tags_exceptions(handler: Handler):
     return wrapper
 
 
+class RequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    engine: str = Field(..., alias=APP_DB_ENGINE_KEY)
+
+
+class TagPathParams(BaseModel):
+    tag_id: PositiveInt
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.forbid
+
+
+class TagUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+
+
+class TagCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color: Color
+
+
 @login_required
+@permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-    await check_permission(request, "tag.crud.*")
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    req_ctx = RequestContext.parse_obj(request)
 
-    repo = TagsRepo(user_id=uid)
-    async with engine.acquire() as conn:
+    repo = TagsRepo(user_id=req_ctx.user_id)
+    async with req_ctx.engine.acquire() as conn:
         tags = await repo.list(conn)
         return tags
 
 
 @login_required
+@permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
-    await check_permission(request, "tag.crud.*")
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = int(request.match_info["tag_id"])
-    tag_data = await request.json()
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_path_parameters_as(TagPathParams, request)
+    tag_data = await parse_request_body_as(TagUpdate, request)
 
-    repo = TagsRepo(user_id=uid)
-    async with engine.acquire() as conn:
-        tag = await repo.update(conn, tag_id, **tag_data)
+    repo = TagsRepo(user_id=req_ctx.user_id)
+    async with req_ctx.engine.acquire() as conn:
+        tag = await repo.update(
+            conn, query_params.tag_id, **tag_data.dict(exclude_unset=True)
+        )
         return tag
 
 
 @login_required
+@permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
-    await check_permission(request, "tag.crud.*")
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_data = await request.json()
+    req_ctx = RequestContext.parse_obj(request)
+    tag_data = await parse_request_body_as(TagCreate, request)
 
-    repo = TagsRepo(user_id=uid)
-    async with engine.acquire() as conn:
-        tag = await repo.create(conn, read=True, write=True, delete=True, **tag_data)
+    repo = TagsRepo(user_id=req_ctx.user_id)
+    async with req_ctx.engine.acquire() as conn:
+        tag = await repo.create(
+            conn,
+            read=True,
+            write=True,
+            delete=True,
+            **tag_data.dict(exclude_unset=True),
+        )
         return tag
 
 
 @login_required
+@permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
-    await check_permission(request, "tag.crud.*")
-    uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = int(request.match_info["tag_id"])
+    req_ctx = RequestContext.parse_obj(request)
+    query_params = parse_request_path_parameters_as(TagPathParams, request)
 
-    repo = TagsRepo(user_id=uid)
-    async with engine.acquire() as conn:
-        await repo.delete(conn, tag_id=tag_id)
+    repo = TagsRepo(user_id=req_ctx.user_id)
+    async with req_ctx.engine.acquire() as conn:
+        await repo.delete(conn, tag_id=query_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
