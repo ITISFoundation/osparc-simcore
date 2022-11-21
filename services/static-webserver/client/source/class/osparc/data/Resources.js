@@ -703,10 +703,6 @@ qx.Class.define("osparc.data.Resources", {
         idField: "id",
         useCache: true,
         endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/tags"
-          },
           post: {
             method: "POST",
             url: statics.API + "/tags"
