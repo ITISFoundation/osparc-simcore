@@ -22,6 +22,7 @@ import aiodocker
 import httpx
 import psutil
 import pytest
+import requests
 import simcore_service_autoscaling
 from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
@@ -300,9 +301,21 @@ def mocked_aws_server() -> Iterator[ThreadedMotoServer]:
 
 
 @pytest.fixture
+def reset_aws_server_state(mocked_aws_server: ThreadedMotoServer) -> Iterator[None]:
+    # NOTE: reset_aws_server_state [http://docs.getmoto.org/en/latest/docs/server_mode.html#reset-api]
+    yield
+    # pylint: disable=protected-access
+    requests.post(
+        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}/moto-api/reset",
+        timeout=10,
+    )
+
+
+@pytest.fixture
 def mocked_aws_server_envs(
     app_environment: EnvVarsDict,
     mocked_aws_server: ThreadedMotoServer,
+    reset_aws_server_state: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[EnvVarsDict]:
     changed_envs = {
@@ -364,8 +377,25 @@ def aws_subnet_id(
 
     monkeypatch.setenv("AWS_SUBNET_ID", subnet_id)
     yield subnet_id
+
+    # all the instances in the subnet must be terminated before that works
+    instances_in_subnet = ec2_client.describe_instances(
+        Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
+    )
+    if instances_in_subnet["Reservations"]:
+        print(f"--> terminating {len(instances_in_subnet)} instances in subnet")
+        ec2_client.terminate_instances(
+            InstanceIds=[
+                instance["Instances"][0]["InstanceId"]  # type: ignore
+                for instance in instances_in_subnet["Reservations"]
+            ]
+        )
+        print(f"<-- terminated {len(instances_in_subnet)} instances in subnet")
+
     ec2_client.delete_subnet(SubnetId=subnet_id)
+    subnets = ec2_client.describe_subnets()
     print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
+    print(f"current {subnets=}")
 
 
 @pytest.fixture

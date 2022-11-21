@@ -141,7 +141,7 @@ def test_compose_user_data(aws_settings: AwsSettings):
             assert f"ubuntu@{aws_settings.AWS_DNS}" in line
 
 
-def test_start_instance_aws(
+def test_start_aws_instance(
     faker: Faker,
     mocked_ec2_server_with_client: EC2Client,
     aws_settings: AwsSettings,
