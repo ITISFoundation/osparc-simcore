@@ -43,7 +43,7 @@ def setup(app: FastAPI):
         ]
     ):
         logger.warning(
-            "the autoscaling is disabled by settings, no scaling will take place"
+            "the autoscaling background task is disabled by settings, nothing will happen!"
         )
         return
     app.add_event_handler("startup", on_app_startup(app))
