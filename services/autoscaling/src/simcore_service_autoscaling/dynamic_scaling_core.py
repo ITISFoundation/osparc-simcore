@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 
 from fastapi import FastAPI
+from mypy_boto3_ec2.literals import InstanceTypeType
+from pydantic import parse_obj_as
 
 from . import utils_aws, utils_docker
 from ._meta import VERSION
@@ -67,7 +69,9 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_ACCESS,
                 app_settings.AUTOSCALING_EC2_INSTANCES,
-                instance_type=ec2_instances_needed[0].name,
+                instance_type=parse_obj_as(
+                    InstanceTypeType, ec2_instances_needed[0].name
+                ),
                 tags={
                     "io.osparc.autoscaling.created": f"{datetime.utcnow()}",
                     "io.osparc.autoscaling.version": f"{VERSION}",
