@@ -24,5 +24,4 @@ RUN pip --no-cache-dir install --upgrade \
 RUN pip install --no-cache-dir \
   pyparsing \
   pydot \
-  eralchemy \
   sqlalchemy_schemadisplay
