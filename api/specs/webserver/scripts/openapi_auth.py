@@ -16,10 +16,6 @@ from models_library.generics import Envelope
 from pydantic import BaseModel, EmailStr, Field, SecretStr, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
 
-# TODO: move to simcore_service_webserver.login._models
-# TODO: how to ensure this is in sync with projects_ports_handlers.routes ??
-# this is the source of truth.
-
 app = FastAPI(redoc_url=None)
 
 TAGS: list[Union[str, Enum]] = [
