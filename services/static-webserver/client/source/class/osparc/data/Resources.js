@@ -818,14 +818,15 @@ qx.Class.define("osparc.data.Resources", {
       });
     },
 
-    getAllPages: function(resource, params) {
+    getAllPages: function(resource, params = {}) {
       return new Promise((resolve, reject) => {
         let resources = [];
         let offset = 0;
-        Object.assign(params.url, {
-          "offset": offset,
-          "limit": 50
-        });
+        if (!("url" in params)) {
+          params["url"] = {};
+        }
+        params["url"]["offset"] = offset;
+        params["url"]["limit"] = 40;
         const endpoint = "getPage";
         const options = {
           resolveWResponse: true

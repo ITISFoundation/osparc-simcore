@@ -184,79 +184,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    _createLoadMoreButton: function(widgetId = "studiesLoading", mode = "grid") {
-      const loadingMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
-      osparc.utils.Utils.setIdToWidget(loadingMoreBtn, widgetId);
-      return loadingMoreBtn;
-    },
-
-    _requestResources: function(templates = false) {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      osparc.data.Resources.get("tasks")
-        .then(tasks => {
-          if (tasks && tasks.length) {
-            this.__tasksReceived(tasks);
-          }
-        });
-      this._loadingResourcesBtn.setFetching(true);
-      const request = this.__getNextRequest(templates);
-      request
-        .then(resp => {
-          const resources = resp["data"];
-          this._resourcesContainer.nextRequest = resp["_links"]["next"];
-          this._addResourcesToList(resources);
-
-          if (osparc.utils.Utils.isProduct("tis")) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
-            if (dontShow === "true") {
-              return;
-            }
-            if (templates === false && "_meta" in resp && resp["_meta"]["total"] === 0) {
-              // there are no studies
-              const tutorialWindow = new osparc.component.tutorial.ti.Slides();
-              tutorialWindow.center();
-              tutorialWindow.open();
-            }
-          }
-        })
-        .catch(err => {
-          console.error(err);
-        })
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
-          this._moreResourcesRequired();
-        });
-    },
-
-    __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => this._taskDataReceived(taskData));
-    },
-
-    __getNextRequest: function(templates) {
-      const params = {
-        url: {
-          offset: 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
-        }
-      };
-      if ("nextRequest" in this._resourcesContainer &&
-        this._resourcesContainer.nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "limit")) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "limit");
-      }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, options);
-    },
-
     _addResourcesToList: function() {
       throw new Error("Abstract method called!");
+    },
+
+    _removeResourceCards: function() {
+      const cards = this._resourcesContainer.getCards();
+      for (let i=cards.length-1; i>=0; i--) {
+        const card = cards[i];
+        if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)) {
+          this._resourcesContainer.remove(card);
+        }
+      }
     },
 
     _moreResourcesRequired: function() {

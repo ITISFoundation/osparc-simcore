@@ -42,10 +42,21 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        this._requestResources(true);
+        this.__reloadTemplates();
       } else {
         this._resetResourcesList([]);
       }
+    },
+
+    __reloadTemplates: function() {
+      osparc.data.Resources.getInstance().getAllPages("templates")
+        .then(templates => {
+          this._addResourcesToList(templates);
+        })
+        .catch(err => {
+          console.error(err);
+          this._addResourcesToList([]);
+        });
     },
 
     _createLayout: function() {
@@ -58,10 +69,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const groupByButton = this.__createGroupByButton();
       this._secondaryBar.add(groupByButton);
 
-      const loadingTemplatesBtn = this._createLoadMoreButton("templatesLoading");
-      this._resourcesContainer.add(loadingTemplatesBtn);
-
-      this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
       this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
 
       return this._resourcesContainer;
@@ -126,16 +133,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       this.__templates = tempStudyList;
 
-      // check Load More card
-      let loadMoreFetching = null;
-      let loadMoreVisibility = null;
-      const loadMoreCard = this._resourcesContainer.getChildren().find(el => el === this._loadingResourcesBtn);
-      if (loadMoreCard) {
-        loadMoreFetching = loadMoreCard.getFetching();
-        loadMoreVisibility = loadMoreCard.getVisibility();
-      }
-
-      this._resourcesContainer.removeAll();
+      this._removeResourceCards();
 
       osparc.dashboard.ResourceBrowserBase.sortStudyList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
@@ -149,20 +147,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         this._resourcesContainer.add(templateItem);
       });
 
-      if (loadMoreCard) {
-        const newLoadMoreBtn = this._createLoadMoreButton("templatesLoading", this._resourcesContainer.getMode());
-        newLoadMoreBtn.set({
-          fetching: loadMoreFetching,
-          visibility: loadMoreVisibility
-        });
-        this._resourcesContainer.add(newLoadMoreBtn);
-      }
-
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     _addResourcesToList: function(newTemplatesList) {
-      // sort first
       newTemplatesList.forEach(template => {
         if (this.__templates.indexOf(template) === -1) {
           this.__templates.push(template);
@@ -173,20 +161,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const cards = this._resourcesContainer.getCards();
       newTemplatesList.forEach(template => {
         template["resourceType"] = "template";
-        const exists = cards.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
+        const exists = cards.findIndex(card => card.getUuid() === template["uuid"]);
         if (exists !== -1) {
           return;
         }
         const templateItem = this.__createTemplateItem(template, this._resourcesContainer.getMode());
-        const idx = this.__templates.indexOf(template);
-        const offset = this.__getNonTemplateCards().length;
-        this._resourcesContainer.addAt(templateItem, idx+offset);
+        this._resourcesContainer.add(templateItem);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(cards.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
-      const idx = cards.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
-      if (idx !== -1) {
-        cards.push(cards.splice(idx, 1)[0]);
-      }
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 

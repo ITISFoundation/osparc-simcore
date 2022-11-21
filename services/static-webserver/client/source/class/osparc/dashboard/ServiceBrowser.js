@@ -46,9 +46,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
     },
 
-    /**
-     *  Function that asks the backend for the list of services and sets it
-     */
     __reloadServices: function() {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly()
