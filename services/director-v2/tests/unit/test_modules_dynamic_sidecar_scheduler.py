@@ -265,7 +265,7 @@ async def test_scheduler_add_remove(
 ) -> None:
     await scheduler.add_service(scheduler_data)
     await manually_trigger_scheduler()
-    assert scheduler_data.dynamic_sidecar.is_available is True
+    assert scheduler_data.dynamic_sidecar.is_ready is True
 
     await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
     assert scheduler_data.service_name in scheduler._to_observe
@@ -315,7 +315,7 @@ async def test_scheduler_health_timing_out(
     await scheduler.add_service(scheduler_data)
     await manually_trigger_scheduler()
 
-    assert scheduler_data.dynamic_sidecar.is_available is False
+    assert scheduler_data.dynamic_sidecar.is_ready is False
 
 
 async def test_adding_service_two_times_does_not_raise(

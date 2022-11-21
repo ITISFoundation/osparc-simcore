@@ -23,7 +23,7 @@
       "current": "ok",
       "info": ""
     },
-    "is_available": false,
+    "is_ready": false,
     "was_compose_spec_submitted": false,
     "containers_inspect": [
       {

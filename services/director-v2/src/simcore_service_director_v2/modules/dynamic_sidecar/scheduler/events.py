@@ -260,7 +260,7 @@ class UpdateHealth(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        scheduler_data.dynamic_sidecar.is_available = (
+        scheduler_data.dynamic_sidecar.is_ready = (
             await get_dynamic_sidecar_service_health(app, scheduler_data)
         )
 
@@ -277,7 +277,7 @@ class GetStatus(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
-            and scheduler_data.dynamic_sidecar.is_available
+            and scheduler_data.dynamic_sidecar.is_ready
         )
 
     @classmethod
@@ -346,7 +346,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
-            and scheduler_data.dynamic_sidecar.is_available
+            and scheduler_data.dynamic_sidecar.is_ready
             and not scheduler_data.dynamic_sidecar.service_environment_prepared
         )
 

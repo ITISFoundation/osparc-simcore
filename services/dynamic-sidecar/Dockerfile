@@ -143,7 +143,7 @@ RUN chmod +x services/dynamic-sidecar/docker/*.sh
 # - remove WaitForSidecarAPI  - no longer required
 # - After `get_dynamic_sidecar_placement` inside CreateSidecars call
 #   (the sidecar's API will be up and running; guaranteed by the docker engine healthck).
-#   Add the following line `scheduler_data.dynamic_sidecar.is_available = True`
+#   Add the following line `scheduler_data.dynamic_sidecar.is_ready = True`
 #   The healthcheck guarantees that the API is available
 HEALTHCHECK NONE
 

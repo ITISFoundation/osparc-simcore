@@ -143,7 +143,7 @@ class DynamicSidecar(BaseModel):
         description="status of the service sidecar also with additional information",
     )
 
-    is_available: bool = Field(
+    is_ready: bool = Field(
         False,
         scription=(
             "is True while the health check on the dynamic-sidecar is responding. "

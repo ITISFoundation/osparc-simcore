@@ -109,7 +109,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "containers_inspect": [],
                         "dynamic_sidecar_id": None,
                         "dynamic_sidecar_network_id": None,
-                        "is_available": False,
+                        "is_ready": False,
                         "is_project_network_attached": False,
                         "service_environment_prepared": False,
                         "service_removal_state": {
