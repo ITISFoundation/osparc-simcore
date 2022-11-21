@@ -171,7 +171,7 @@ class DynamicSidecar(BaseModel):
     )
 
     was_dynamic_sidecar_started: bool = False
-    is_dynamic_sidecar_responding_health: bool = False
+    is_dynamic_sidecar_healthy: bool = False
     were_containers_created: bool = Field(
         False,
         description=(

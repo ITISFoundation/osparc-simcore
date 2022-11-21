@@ -224,8 +224,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started is True
-            and scheduler_data.dynamic_sidecar.is_dynamic_sidecar_responding_health
-            is False
+            and scheduler_data.dynamic_sidecar.is_dynamic_sidecar_healthy is False
         )
 
     @classmethod
@@ -236,7 +235,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
 
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_PLACEMENT_AND_START_TIMEOUT_S
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
             ),
             wait=wait_fixed(1),
             retry_error_cls=EntrypointContainerNotFoundError,
@@ -247,9 +246,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
                     app, scheduler_data, with_retry=False
                 ):
                     raise TryAgain()
-                scheduler_data.dynamic_sidecar.is_dynamic_sidecar_responding_health = (
-                    True
-                )
+                scheduler_data.dynamic_sidecar.is_dynamic_sidecar_healthy = True
 
 
 class UpdateHealth(DynamicSchedulerEvent):

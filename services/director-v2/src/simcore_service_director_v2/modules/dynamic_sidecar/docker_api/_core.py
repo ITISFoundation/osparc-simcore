@@ -178,7 +178,7 @@ async def get_dynamic_sidecar_placement(
     @retry(
         wait=wait_random_exponential(multiplier=2, min=1, max=20),
         stop=stop_after_delay(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PLACEMENT_AND_START_TIMEOUT_S
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
         ),
     )
     async def _get_task_data_when_service_running(service_id: str) -> Mapping[str, Any]:
