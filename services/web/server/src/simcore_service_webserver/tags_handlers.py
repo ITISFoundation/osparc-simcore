@@ -2,9 +2,9 @@ import functools
 from typing import Optional
 
 from aiohttp import web
+from aiopg.sa.engine import Engine
 from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, PositiveInt
-from pydantic.color import Color
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -43,7 +43,6 @@ def _handle_tags_exceptions(handler: Handler):
 #
 class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    engine: str = Field(..., alias=APP_DB_ENGINE_KEY)
 
 
 class TagPathParams(BaseModel):
@@ -63,7 +62,7 @@ class TagUpdate(BaseModel):
 class TagCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    color: Color
+    color: str
 
 
 class TagAccessRights(BaseModel):
@@ -74,9 +73,10 @@ class TagAccessRights(BaseModel):
 
 
 class TagGet(BaseModel):
+    id: PositiveInt
     name: str
     description: str
-    color: Color
+    color: str
 
     # analogous to UsersGroup
     access_rights: TagAccessRights = Field(..., alias="accessRights")
@@ -94,11 +94,12 @@ routes = web.RouteTableDef()
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
+    engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = RequestContext.parse_obj(request)
     tag_data = await parse_request_body_as(TagCreate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
-    async with req_ctx.engine.acquire() as conn:
+    async with engine.acquire() as conn:
         tag = await repo.create(
             conn,
             read=True,
@@ -114,10 +115,11 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
+    engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = RequestContext.parse_obj(request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
-    async with req_ctx.engine.acquire() as conn:
+    async with engine.acquire() as conn:
         tags = await repo.list(conn)
         return tags
 
@@ -129,12 +131,13 @@ async def list_tags(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
+    engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_data = await parse_request_body_as(TagUpdate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
-    async with req_ctx.engine.acquire() as conn:
+    async with engine.acquire() as conn:
         tag = await repo.update(
             conn, query_params.tag_id, **tag_data.dict(exclude_unset=True)
         )
@@ -146,11 +149,12 @@ async def update_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
+    engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_path_parameters_as(TagPathParams, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
-    async with req_ctx.engine.acquire() as conn:
+    async with engine.acquire() as conn:
         await repo.delete(conn, tag_id=query_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
