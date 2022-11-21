@@ -1,3 +1,4 @@
+import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
@@ -7,6 +8,8 @@ from .core.settings import ApplicationSettings
 from .dynamic_scaling_core import check_dynamic_resources
 
 _TASK_NAME = "Autoscaler dynamic services task"
+
+logger = logging.getLogger(__name__)
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
@@ -30,5 +33,18 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 
 def setup(app: FastAPI):
+    app_settings: ApplicationSettings = app.state.settings
+    if any(
+        s is None
+        for s in [
+            app_settings.AUTOSCALING_NODES_MONITORING,
+            app_settings.AUTOSCALING_EC2_ACCESS,
+            app_settings.AUTOSCALING_EC2_INSTANCES,
+        ]
+    ):
+        logger.warning(
+            "the autoscaling is disabled by settings, no scaling will take place"
+        )
+        return
     app.add_event_handler("startup", on_app_startup(app))
     app.add_event_handler("shutdown", on_app_shutdown(app))
