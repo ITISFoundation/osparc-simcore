@@ -14,6 +14,7 @@ from simcore_service_autoscaling.core.errors import Ec2InstanceNotFoundError
 from simcore_service_autoscaling.core.settings import AwsSettings
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_aws import (
+    EC2Client,
     EC2Instance,
     _compose_user_data,
     closest_instance_policy,
@@ -144,6 +145,27 @@ def test_start_instance_aws(
     aws_security_group_id: None,
     aws_ami_id: None,
     faker: Faker,
+    ec2_client: EC2Client,
 ):
+    # we have nothing running now in ec2
+    all_instances = ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
     settings = AwsSettings.create_from_envs()
-    start_aws_instance(settings, faker.pystr(), tags=faker.pylist(allowed_types=(str,)))
+    instance_type = faker.pystr()
+    tags = faker.pydict(allowed_types=(str,))
+    start_aws_instance(settings, instance_type, tags=tags)
+
+    # check we have that now in ec2
+    all_instances = ec2_client.describe_instances()
+    assert len(all_instances["Reservations"]) == 1
+    running_instance = all_instances["Reservations"][0]
+    assert "Instances" in running_instance
+    assert len(running_instance["Instances"]) == 1
+    running_instance = running_instance["Instances"][0]
+    assert "InstanceType" in running_instance
+    assert running_instance["InstanceType"] == instance_type
+    assert "Tags" in running_instance
+    assert running_instance["Tags"] == [
+        {"Key": key, "Value": value} for key, value in tags.items()
+    ]

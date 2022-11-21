@@ -126,7 +126,7 @@ def _compose_user_data(settings: AwsSettings) -> str:
 def start_aws_instance(
     settings: AwsSettings,
     instance_type: str,
-    tags: list[str],
+    tags: dict[str, str],
 ):
     with log_context(
         logger,
@@ -146,14 +146,16 @@ def start_aws_instance(
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
-                    "Tags": [{"Key": "Name", "Value": tag} for tag in tags],
+                    "Tags": [
+                        {"Key": tag_key, "Value": tag_value}
+                        for tag_key, tag_value in tags.items()
+                    ],
                 }
             ],
             UserData=user_data,
             SecurityGroupIds=settings.AWS_SECURITY_GROUP_IDS,
         )
         instance_id = instances["Instances"][0]["InstanceId"]
-
         logger.info(
             "New instance launched: %s, waiting for it to start now...", instance_id
         )

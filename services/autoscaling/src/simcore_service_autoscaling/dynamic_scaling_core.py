@@ -64,7 +64,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_AWS,
                 instance_type=ec2_instances_needed[0].name,
-                tags=["autoscaling created node", f"created at {datetime.utcnow()}"],
+                tags={"io.osparc.autoscaling.created": f"{datetime.utcnow()}"},
             )
 
             # NOTE: in this first trial we start one instance at a time
