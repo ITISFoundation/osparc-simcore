@@ -35,7 +35,7 @@
     "was_dynamic_sidecar_started": true,
     "were_containers_created": false,
     "is_project_network_attached": false,
-    "service_environment_prepared": false,
+    "is_service_environment_ready": false,
     "service_removal_state": {
       "can_remove": false,
       "can_save": null,

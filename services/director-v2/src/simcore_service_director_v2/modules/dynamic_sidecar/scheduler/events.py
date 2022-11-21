@@ -347,7 +347,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_ready
-            and not scheduler_data.dynamic_sidecar.service_environment_prepared
+            and not scheduler_data.dynamic_sidecar.is_service_environment_ready
         )
 
     @classmethod
@@ -399,7 +399,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                     dynamic_sidecar_endpoint, service_outputs_labels
                 )
 
-                scheduler_data.dynamic_sidecar.service_environment_prepared = True
+                scheduler_data.dynamic_sidecar.is_service_environment_ready = True
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
@@ -432,7 +432,7 @@ class CreateUserServices(DynamicSchedulerEvent):
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
-            scheduler_data.dynamic_sidecar.service_environment_prepared
+            scheduler_data.dynamic_sidecar.is_service_environment_ready
             and not scheduler_data.dynamic_sidecar.compose_spec_submitted
         )
 

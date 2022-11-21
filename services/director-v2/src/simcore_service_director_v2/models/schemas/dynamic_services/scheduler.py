@@ -188,7 +188,7 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
-    service_environment_prepared: bool = Field(
+    is_service_environment_ready: bool = Field(
         False,
         description=(
             "True when the environment setup required by the "
