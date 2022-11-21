@@ -35,7 +35,10 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
-from simcore_service_autoscaling.core.settings import ApplicationSettings, AwsSettings
+from simcore_service_autoscaling.core.settings import (
+    ApplicationSettings,
+    EC2AccessSettings,
+)
 from simcore_service_autoscaling.utils_aws import EC2Client
 from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
 from tenacity import retry
@@ -432,7 +435,7 @@ def aws_ami_id(
 
 @pytest.fixture
 def ec2_client() -> Iterator[EC2Client]:
-    settings = AwsSettings.create_from_envs()
+    settings = EC2AccessSettings.create_from_envs()
     with autoscaling_ec2_client(settings) as client:
         yield client
 

@@ -12,6 +12,7 @@ import pytest
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
 from simcore_service_autoscaling.utils_aws import EC2Client
 
@@ -91,6 +92,7 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
 
 async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge_instance(
     minimal_configuration: None,
+    app_settings: ApplicationSettings,
     async_docker_client: aiodocker.Docker,
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
@@ -115,7 +117,8 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
 
     await check_dynamic_resources(initialized_app)
     mock_start_aws_instance.assert_called_once_with(
-        initialized_app.state.settings.AUTOSCALING_AWS,
+        app_settings.AUTOSCALING_EC2_ACCESS,
+        app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type="r5n.4xlarge",
         tags=mock.ANY,
         startup_script=mock.ANY,

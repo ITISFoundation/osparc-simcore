@@ -18,10 +18,9 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     the additional load.
     """
     app_settings: ApplicationSettings = app.state.settings
-    pending_tasks = (
-        await utils_docker.pending_service_tasks_with_insufficient_resources(
-            service_labels=app_settings.AUTOSCALING_MONITORED_SERVICES_LABELS
-        )
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
+        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_LABELS
     )
     if not pending_tasks:
         logger.debug("no pending tasks with insufficient resources at the moment")
@@ -30,11 +29,11 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     logger.info(
         "%s service task(s) with %s label(s) are pending due to insufficient resources",
         f"{len(pending_tasks)}",
-        f"{app_settings.AUTOSCALING_MONITORED_SERVICES_LABELS}",
+        f"{app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_LABELS}",
     )
 
     monitored_nodes = await utils_docker.get_monitored_nodes(
-        node_labels=app_settings.AUTOSCALING_MONITORED_NODES_LABELS
+        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_NODES_LABELS
     )
 
     cluster_total_resources = await utils_docker.compute_cluster_total_resources(
@@ -46,9 +45,10 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     )
     logger.info("current %s", f"{cluster_used_resources=}")
 
-    assert app_settings.AUTOSCALING_AWS  # nosec
+    assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     list_of_ec2_instances = utils_aws.get_ec2_instance_capabilities(
-        app_settings.AUTOSCALING_AWS
+        app_settings.AUTOSCALING_EC2_ACCESS, app_settings.AUTOSCALING_EC2_INSTANCES
     )
 
     for task in pending_tasks:
@@ -60,23 +60,25 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                     score_type=utils_aws.closest_instance_policy,
                 )
             ]
-            assert app_settings.AUTOSCALING_AWS  # nosec
+            assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
+            assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
             utils_aws.start_aws_instance(
-                app_settings.AUTOSCALING_AWS,
+                app_settings.AUTOSCALING_EC2_ACCESS,
+                app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=ec2_instances_needed[0].name,
                 tags={
                     "io.osparc.autoscaling.created": f"{datetime.utcnow()}",
                     "io.osparc.autoscaling.version": f"{VERSION}",
                     "io.osparc.autoscaling.monitored_nodes_labels": json.dumps(
-                        app_settings.AUTOSCALING_MONITORED_NODES_LABELS
+                        app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_NODES_LABELS
                     ),
                     "io.osparc.autoscaling.monitored_services_labels": json.dumps(
-                        app_settings.AUTOSCALING_MONITORED_SERVICES_LABELS
+                        app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_LABELS
                     ),
                     "io.osparc.autoscaling.monitored_services_image_names": json.dumps(
-                        app_settings.AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES
+                        app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES
                     ),
                 },
                 startup_script=await utils_docker.get_docker_swarm_join_script(),

@@ -16,7 +16,7 @@ from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
 
 from .core.errors import Ec2InstanceNotFoundError, Ec2TooManyInstancesError
-from .core.settings import AwsSettings
+from .core.settings import EC2AccessSettings, EC2InstancesSettings
 from .models import Resources
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class EC2Instance(BaseModel):
 
 
 @contextlib.contextmanager
-def ec2_client(settings: AwsSettings) -> Iterator[EC2Client]:
+def ec2_client(settings: EC2AccessSettings) -> Iterator[EC2Client]:
     client = None
     try:
         client = boto3.client(
@@ -45,10 +45,12 @@ def ec2_client(settings: AwsSettings) -> Iterator[EC2Client]:
             client.close()
 
 
-def get_ec2_instance_capabilities(settings: AwsSettings) -> list[EC2Instance]:
+def get_ec2_instance_capabilities(
+    settings: EC2AccessSettings, instance_settings: EC2InstancesSettings
+) -> list[EC2Instance]:
     with ec2_client(settings) as ec2:
         instance_types = ec2.describe_instance_types(
-            InstanceTypes=settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES
+            InstanceTypes=instance_settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES
         )
 
     list_instances: list[EC2Instance] = []
@@ -112,7 +114,7 @@ def _compose_user_data(docker_join_script: str) -> str:
     )
 
 
-# def _compose_user_data(settings: AwsSettings) -> str:
+# def _compose_user_data(settings: EC2AccessSettings) -> str:
 #     # NOTE: docker swarm commands might be done with aioboto?
 #     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987820674
 #     return dedent(
@@ -139,7 +141,8 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
 
 
 def start_aws_instance(
-    settings: AwsSettings,
+    settings: EC2AccessSettings,
+    instance_settings: EC2InstancesSettings,
     instance_type: InstanceTypeType,
     tags: dict[str, str],
     startup_script: str,
@@ -158,23 +161,23 @@ def start_aws_instance(
         ):
             if (
                 len(current_instances.get("Reservations", []))
-                >= settings.AWS_MAX_NUMBER_OF_INSTANCES
+                >= instance_settings.AWS_MAX_NUMBER_OF_INSTANCES
             ) and all(
                 _is_ec2_instance_running(instance)
                 for instance in current_instances["Reservations"]
             ):
                 raise Ec2TooManyInstancesError(
-                    num_instances=settings.AWS_MAX_NUMBER_OF_INSTANCES
+                    num_instances=instance_settings.AWS_MAX_NUMBER_OF_INSTANCES
                 )
 
         instances = client.run_instances(
-            ImageId=settings.AWS_AMI_ID,
+            ImageId=instance_settings.AWS_AMI_ID,
             MinCount=1,
             MaxCount=1,
             InstanceType=instance_type,
             InstanceInitiatedShutdownBehavior="terminate",
-            KeyName=settings.AWS_KEY_NAME,
-            SubnetId=settings.AWS_SUBNET_ID,
+            KeyName=instance_settings.AWS_KEY_NAME,
+            SubnetId=instance_settings.AWS_SUBNET_ID,
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
@@ -185,7 +188,7 @@ def start_aws_instance(
                 }
             ],
             UserData=_compose_user_data(startup_script),
-            SecurityGroupIds=settings.AWS_SECURITY_GROUP_IDS,
+            SecurityGroupIds=instance_settings.AWS_SECURITY_GROUP_IDS,
         )
         instance_id = instances["Instances"][0]["InstanceId"]
         logger.info(

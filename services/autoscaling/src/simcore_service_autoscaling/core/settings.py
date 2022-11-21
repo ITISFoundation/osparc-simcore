@@ -15,8 +15,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
-class AwsSettings(BaseCustomSettings):
-    # AWS Access
+class EC2AccessSettings(BaseCustomSettings):
     AWS_ACCESS_KEY_ID: str
     AWS_ENDPOINT: Optional[str] = Field(
         default=None, description="do not define if using standard AWS"
@@ -24,14 +23,8 @@ class AwsSettings(BaseCustomSettings):
     AWS_REGION_NAME: str = "us-east-1"
     AWS_SECRET_ACCESS_KEY: str
 
-    # Cluster
-    AWS_DNS: str = Field(..., description="DNS Name of the docker swarm manager")
-    AWS_KEY_NAME: str = Field(
-        ...,
-        description="SSH key filename (without ext) to access the docker swarm manager",
-    )
 
-    # EC2 instance paramaters
+class EC2InstancesSettings(BaseCustomSettings):
     AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES: tuple[str, ...] = Field(
         ...,
         description="Defines which EC2 instances are considered as candidates for new docker nodes",
@@ -45,6 +38,27 @@ class AwsSettings(BaseCustomSettings):
     )
     AWS_SECURITY_GROUP_IDS: list[str] = Field(..., description="TO BE DEFINED")
     AWS_SUBNET_ID: str = Field(..., description="TO BE DEFINED")
+    AWS_KEY_NAME: str = Field(
+        ...,
+        description="SSH key filename (without ext) to access the docker swarm manager",
+    )
+
+
+class NodesMonitoringSettings(BaseCustomSettings):
+    AUTOSCALING_MONITORED_NODES_LABELS: list[str] = Field(
+        default_factory=list,
+        description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored)",
+    )
+
+    AUTOSCALING_MONITORED_SERVICES_LABELS: list[str] = Field(
+        default_factory=list,
+        description="autoscaling will only monitor services with the given labels (if empty all services will be monitored)",
+    )
+
+    AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES: list[str] = Field(
+        default_factory=list,
+        description="autoscaling will only monitor services with the given image names (if empty all services will be monitored)",
+    )
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -81,26 +95,21 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
-    AUTOSCALING_AWS: Optional[AwsSettings] = Field(auto_default_from_env=True)
+    AUTOSCALING_EC2_ACCESS: Optional[EC2AccessSettings] = Field(
+        auto_default_from_env=True
+    )
+
+    AUTOSCALING_EC2_INSTANCES: Optional[EC2InstancesSettings] = Field(
+        auto_default_from_env=True
+    )
+
+    AUTOSCALING_NODES_MONITORING: Optional[NodesMonitoringSettings] = Field(
+        auto_default_from_env=True
+    )
 
     AUTOSCALING_POLL_INTERVAL: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=10),
         description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-
-    AUTOSCALING_MONITORED_NODES_LABELS: list[str] = Field(
-        default_factory=list,
-        description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored)",
-    )
-
-    AUTOSCALING_MONITORED_SERVICES_LABELS: list[str] = Field(
-        default_factory=list,
-        description="autoscaling will only monitor services with the given labels (if empty all services will be monitored)",
-    )
-
-    AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES: list[str] = Field(
-        default_factory=list,
-        description="autoscaling will only monitor services with the given image names (if empty all services will be monitored)",
     )
 
     @cached_property
