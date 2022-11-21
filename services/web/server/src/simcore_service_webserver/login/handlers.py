@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 from typing import Any
 
 from aiohttp import web
@@ -37,13 +36,9 @@ from .utils import (
 log = logging.getLogger(__name__)
 
 
-class LoginCode(Enum):
-    """this string is used by the frontend to determine
-    what page to display to the user for next step
-    """
-
-    PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
-    SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
+# These string is used by the frontend to determine what page to display to the user for next step
+LOGIN_CODE_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
+LOGIN_CODE_SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 
 
 async def _authorize_login(
@@ -98,7 +93,7 @@ async def login(request: web.Request):
         if not user["phone"]:
             rsp = envelope_response(
                 {
-                    "code": LoginCode.PHONE_NUMBER_REQUIRED,  # this string is used by the frontend to show phone registration page
+                    "code": LOGIN_CODE_PHONE_NUMBER_REQUIRED,
                     "reason": "To login, please register first a phone number",
                 },
                 status=web.HTTPAccepted.status_code,
@@ -122,7 +117,7 @@ async def login(request: web.Request):
 
             rsp = envelope_response(
                 {
-                    "code": "SMS_CODE_REQUIRED",  # this string is used by the frontend
+                    "code": LOGIN_CODE_SMS_CODE_REQUIRED,
                     "reason": cfg.MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
@@ -149,7 +144,7 @@ async def login(request: web.Request):
 
 
 async def login_2fa(request: web.Request):
-    """2FA login (from-end requests after login -> SMS_CODE_REQUIRED )"""
+    """2FA login (from-end requests after login -> LOGIN_CODE_SMS_CODE_REQUIRED )"""
     _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
