@@ -14,7 +14,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   construct: function(layout) {
     this.base(arguments, layout);
 
-    this.__groupHeaders = {};
+    this.__emptyHeaders();
   },
 
   properties: {
@@ -56,7 +56,10 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     __reloadCards: function() {
       const cards = this.getCards();
       this.removeAll();
-      this.__groupHeaders = {};
+      const header = this.__emptyHeaders();
+      if (this.getGroupBy()) {
+        this.add(header);
+      }
       cards.forEach(card => this.add(card));
     },
 
@@ -92,7 +95,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         }
         if (this.getGroupBy()) {
           const headerInfo = this.__addHeaders(child);
-          const headerIdx = this.getChildren().findIndex(button => button === headerInfo.header);
+          const headerIdx = this.getChildren().findIndex(button => button === headerInfo.widget);
           const childIdx = headerInfo["children"].findIndex(button => button === child);
           this.addAt(child, headerIdx+1+childIdx);
         } else {
@@ -103,6 +106,17 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       }
     },
 
+    __emptyHeaders: function() {
+      const noGroupHeader = this.__createHeader(this.tr("No Group"), "transparent");
+      this.__groupHeaders = {
+        "no-group": {
+          widget: noGroupHeader,
+          children: []
+        }
+      };
+      return noGroupHeader;
+    },
+
     __addHeaders: function(child) {
       let headerInfo = null;
       if (this.getGroupBy() === "tags") {
@@ -111,11 +125,8 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
           tags = child.getTags();
         }
         if (tags.length === 0) {
-          tags = [{
-            id: "no-group",
-            name: this.tr("No Group"),
-            color: "transparent"
-          }];
+          headerInfo = this.__groupHeaders["no-group"];
+          headerInfo["children"].push(child);
         }
         tags.forEach(tag => {
           if (tag.id in this.__groupHeaders) {
@@ -123,8 +134,8 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
           } else {
             const header = this.__createHeader(tag.name, tag.color);
             headerInfo = {
-              header,
-              "children": []
+              widget: header,
+              children: []
             };
             this.__groupHeaders[tag.id] = headerInfo;
             this.add(header);
@@ -138,7 +149,8 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     __createHeader: function(label, color) {
       const header = new osparc.dashboard.GroupHeader();
       header.set({
-        width: this.getBounds().width - 15
+        minWidth: 1000,
+        allowGrowX: true
       });
       header.buildLayout(label);
       header.getChildControl("icon").setBackgroundColor(color);
