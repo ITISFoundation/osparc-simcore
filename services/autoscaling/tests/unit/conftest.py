@@ -226,11 +226,10 @@ async def create_service(
                 "label": [f"com.docker.swarm.service.id={service['ID']}"],
             }
         )
-        print(
-            f"<-- checking if service {service['ID']}:{service['Spec']['Name']} is gone."
-        )
+        print(f"<-- service {service['ID']}:{service['Spec']['Name']} is gone.")
 
     await asyncio.gather(*(_check_service_task_gone(s) for s in created_services))
+    await asyncio.sleep(0)
 
 
 @pytest.fixture
