@@ -1,0 +1,16 @@
+from simcore_service_autoscaling.cli import main
+from typer.testing import CliRunner
+
+runner = CliRunner()
+
+
+def test_settings():
+    result = runner.invoke(main, ["settings"])
+    assert result.exit_code == 0
+    assert "APP_NAME=simcore-service-autoscaling" in result.stdout
+
+
+def test_run():
+    result = runner.invoke(main, ["run"])
+    assert result.exit_code == 0
+    assert "disabled" in result.stdout
