@@ -301,41 +301,34 @@ def mocked_aws_server() -> Iterator[ThreadedMotoServer]:
 
 @pytest.fixture
 def mocked_aws_server_envs(
-    mocked_aws_server: ThreadedMotoServer, monkeypatch: pytest.MonkeyPatch
-) -> Iterator[None]:
-    monkeypatch.setenv(
-        "AWS_ENDPOINT",
-        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
-    )
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "xxx")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "xxx")
-
-    yield
-
-
-@pytest.fixture
-def ec2_client() -> Iterator[EC2Client]:
-    settings = AwsSettings.create_from_envs()
-    with autoscaling_ec2_client(settings) as client:
-        yield client
+    app_environment: EnvVarsDict,
+    mocked_aws_server: ThreadedMotoServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[EnvVarsDict]:
+    changed_envs = {
+        "AWS_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
+        "AWS_ACCESS_KEY_ID": "xxx",
+        "AWS_SECRET_ACCESS_KEY": "xxx",
+    }
+    yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
 @pytest.fixture
 def aws_allowed_ec2_instance_type_names(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[list[str]]:
-    allowed_instances = [
-        "t2.xlarge",
-        "t2.2xlarge",
-        "r5n.4xlarge",
-        "r5n.8xlarge",
-    ]
-    monkeypatch.setenv(
-        "AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES",
-        json.dumps(allowed_instances),
-    )
-    yield allowed_instances
+) -> Iterator[EnvVarsDict]:
+    changed_envs = {
+        "AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES": json.dumps(
+            [
+                "t2.xlarge",
+                "t2.2xlarge",
+                "r5n.4xlarge",
+                "r5n.8xlarge",
+            ]
+        ),
+    }
+    yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
 @pytest.fixture
@@ -395,8 +388,8 @@ def aws_security_group_id(
 
 @pytest.fixture
 def aws_ami_id(
-    mocked_aws_server_envs: None,
     app_environment: EnvVarsDict,
+    mocked_aws_server_envs: None,
     monkeypatch: pytest.MonkeyPatch,
     ec2_client: EC2Client,
 ) -> str:
@@ -405,6 +398,25 @@ def aws_ami_id(
     ami_id = image["ImageId"]  # type: ignore
     monkeypatch.setenv("AWS_AMI_ID", ami_id)
     return ami_id
+
+
+@pytest.fixture
+def ec2_client() -> Iterator[EC2Client]:
+    settings = AwsSettings.create_from_envs()
+    with autoscaling_ec2_client(settings) as client:
+        yield client
+
+
+@pytest.fixture
+def mocked_ec2_server_with_client(
+    mocked_aws_server_envs: None,
+    aws_vpc_id: str,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    ec2_client: EC2Client,
+) -> Iterator[EC2Client]:
+    yield ec2_client
 
 
 @pytest.fixture

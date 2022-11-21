@@ -10,10 +10,11 @@ from typing import Iterator
 
 import boto3
 from mypy_boto3_ec2.client import EC2Client
+from mypy_boto3_ec2.type_defs import ReservationTypeDef
 from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
 
-from .core.errors import Ec2InstanceNotFoundError
+from .core.errors import Ec2InstanceNotFoundError, Ec2TooManyInstancesError
 from .core.settings import AwsSettings
 from .models import Resources
 
@@ -123,6 +124,13 @@ def _compose_user_data(settings: AwsSettings) -> str:
     )
 
 
+def _is_ec2_instance_running(instance: ReservationTypeDef):
+    return (
+        instance.get("Instances", [{}])[0].get("State", {}).get("Name", "not_running")
+        == "running"
+    )
+
+
 def start_aws_instance(
     settings: AwsSettings,
     instance_type: str,
@@ -133,6 +141,24 @@ def start_aws_instance(
         logging.DEBUG,
         msg=f"launching AWS instance {instance_type} with {tags=}",
     ), ec2_client(settings) as client:
+
+        # first check the max amount is not already reached
+        if current_instances := client.describe_instances(
+            Filters=[
+                {"Name": "tag-key", "Values": [tag_key]} for tag_key in tags.keys()
+            ]
+        ):
+            if (
+                len(current_instances.get("Reservations", []))
+                >= settings.AWS_MAX_NUMBER_OF_INSTANCES
+            ) and all(
+                _is_ec2_instance_running(instance)
+                for instance in current_instances["Reservations"]
+            ):
+                raise Ec2TooManyInstancesError(
+                    num_instances=settings.AWS_MAX_NUMBER_OF_INSTANCES
+                )
+
         user_data = _compose_user_data(settings)
 
         instances = client.run_instances(
