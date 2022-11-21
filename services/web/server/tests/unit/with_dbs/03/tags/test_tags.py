@@ -174,7 +174,7 @@ async def test_read_tags(
             "id": everybody_tag_id,
             "name": "TG",
             "description": "tag for EVERYBODY",
-            "color": "pink",
+            "color": "#f00",
             "accessRights": {"read": True, "write": False, "delete": False},
         }
     ]
@@ -198,7 +198,7 @@ async def test_it(
 
     resp = await client.post(
         f"{client.app.router['create_tag'].url_for()}",
-        json={"name": "T", "color": "blue"},
+        json={"name": "T", "color": "#f00"},
     )
     created, _ = await assert_status(resp, web.HTTPOk)
 
@@ -206,7 +206,7 @@ async def test_it(
         "id": 2,
         "name": "T",
         "description": None,
-        "color": "blue",
+        "color": "#f00",
         "accessRights": {"read": True, "write": True, "delete": True},
     }
 
@@ -217,13 +217,7 @@ async def test_it(
     )
 
     updated, _ = await assert_status(resp, web.HTTPOk)
-    assert updated == {
-        "id": 2,
-        "name": "T",
-        "description": "This is my tag",
-        "color": "blue",
-        "accessRights": {"read": True, "write": True, "delete": True},
-    }
+    assert updated == created.update(description="This is my tag")
 
     with pytest.raises(web.HTTPUnauthorized):
         url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")

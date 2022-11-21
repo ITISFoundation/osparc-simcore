@@ -4,7 +4,7 @@ from typing import Optional
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field, PositiveInt
+from pydantic import BaseModel, Extra, Field, PositiveInt, constr
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -55,6 +55,9 @@ class _InputSchema(BaseModel):
         allow_mutations = False
 
 
+ColorStr = constr(regex=r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+
+
 class TagPathParams(_InputSchema):
     tag_id: PositiveInt
 
@@ -62,13 +65,13 @@ class TagPathParams(_InputSchema):
 class TagUpdate(_InputSchema):
     name: Optional[str] = None
     description: Optional[str] = None
-    color: Optional[str] = None
+    color: Optional[ColorStr] = None
 
 
 class TagCreate(_InputSchema):
     name: str
     description: Optional[str] = None
-    color: str
+    color: ColorStr
 
 
 class _OutputSchema(BaseModel):
@@ -88,7 +91,7 @@ class TagAccessRights(_OutputSchema):
 class TagGet(_OutputSchema):
     id: PositiveInt
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
     color: str
 
     # analogous to UsersGroup
