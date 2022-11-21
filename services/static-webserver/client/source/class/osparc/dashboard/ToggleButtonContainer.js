@@ -111,6 +111,22 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       }
     },
 
+    // overridden
+    remove: function(child) {
+      this.base(arguments, child);
+    },
+
+    removeCard: function(key) {
+      const cards = this.getCards();
+      for (let i=0; i<cards.length; i++) {
+        const card = cards[i];
+        if (card.getUuid && key === card.getUuid()) {
+          this.remove(card);
+          return;
+        }
+      }
+    },
+
     __emptyHeaders: function() {
       const noGroupHeader = this.__createHeader(this.tr("No Group"), "transparent");
       this.__groupHeaders = {

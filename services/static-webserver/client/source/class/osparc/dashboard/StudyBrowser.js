@@ -644,10 +644,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this.__studies.splice(idx, 1);
       }
-      const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
-      if (studyItem) {
-        this._resourcesContainer.remove(studyItem);
-      }
+      this._resourcesContainer.removeCard(studyId);
     },
 
     __createStudyItem: function(studyData) {
@@ -819,13 +816,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return duplicatingStudyCard;
     },
 
-    __attachDuplicateEventHandler: function(task, taskUI, studyCard) {
+    __attachDuplicateEventHandler: function(task, taskUI, duplicatingStudyCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
           osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
         }
         taskUI.stop();
-        this._resourcesContainer.remove(studyCard);
+        this._resourcesContainer.remove(duplicatingStudyCard);
       };
 
       task.addListener("taskAborted", () => {
@@ -1020,9 +1017,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
-        .then(() => {
-          this.__removeFromStudyList(studyData.uuid, false);
-        })
+        .then(() => this.__removeFromStudyList(studyData.uuid, false))
         .catch(err => {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");

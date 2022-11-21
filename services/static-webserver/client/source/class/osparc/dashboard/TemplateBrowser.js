@@ -153,15 +153,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    __removeFromTemplateList: function(studyId) {
-      const cards = this._resourcesContainer.getCards();
-      for (let i=0; i<cards.length; i++) {
-        const card = cards[i];
-        if (card.getUuid && studyId === card.getUuid()) {
-          this._resourcesContainer.remove(card);
-          return;
-        }
+    __removeFromTemplateList: function(templateId) {
+      const idx = this.__templates.findIndex(study => study["uuid"] === templateId);
+      if (idx > -1) {
+        this.__templates.splice(idx, 1);
       }
+      this._resourcesContainer.removeCard(templateId);
     },
 
     __createTemplateItem: function(templateData) {
