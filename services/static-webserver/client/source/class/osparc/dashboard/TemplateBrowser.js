@@ -127,54 +127,32 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     // overriden
-    _resetResourcesList: function(tempStudyList) {
-      if (tempStudyList === undefined) {
-        tempStudyList = this.__templates;
+    _resetResourcesList: function(templatesList) {
+      if (templatesList === undefined) {
+        templatesList = this.__templates;
       }
-      this.__templates = tempStudyList;
+      this.__templates = templatesList;
 
       this._removeResourceCards();
-
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(tempStudyList);
-      tempStudyList.forEach(tempStudy => {
-        tempStudy["resourceType"] = "template";
-        const templateItem = this.__createTemplateItem(tempStudy, this._resourcesContainer.getMode());
-        templateItem.addListener("updateTemplate", e => {
-          const updatedTemplateData = e.getData();
-          updatedTemplateData["resourceType"] = "template";
-          this._resetTemplateItem(updatedTemplateData);
-        }, this);
-        this._resourcesContainer.add(templateItem);
-      });
-
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      this._addResourcesToList(templatesList);
     },
 
-    _addResourcesToList: function(newTemplatesList) {
-      newTemplatesList.forEach(template => {
+    _addResourcesToList: function(templatesList) {
+      const cards = this._resourcesContainer.getCards();
+      templatesList.forEach(template => {
         if (this.__templates.indexOf(template) === -1) {
           this.__templates.push(template);
         }
-      });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(this.__templates);
-
-      const cards = this._resourcesContainer.getCards();
-      newTemplatesList.forEach(template => {
         template["resourceType"] = "template";
         const exists = cards.findIndex(card => card.getUuid() === template["uuid"]);
         if (exists !== -1) {
           return;
         }
-        const templateItem = this.__createTemplateItem(template, this._resourcesContainer.getMode());
+        const templateItem = this.__createTemplateItem(template);
         this._resourcesContainer.add(templateItem);
       });
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
-    },
 
-    __getNonTemplateCards: function() {
-      const cards = this._resourcesContainer.getCards();
-      const nonTemplateCards = cards.filter(card => !osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card));
-      return nonTemplateCards;
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __removeFromTemplateList: function(studyId) {
