@@ -165,7 +165,7 @@ async def get_docker_swarm_join_script() -> str:
     )
     stdout, stderr = await process.communicate()
     await asyncio.wait_for(process.wait(), timeout=_COMMAND_TIMEOUT_S)
-    assert process.returncode  # nosec
+    assert process.returncode is not None  # nosec
     if process.returncode > 0:
         raise RuntimeError(
             f"unexpected error running '{' '.join(command)}': {stderr.decode()}"
