@@ -52,6 +52,18 @@ services:
       - ../.env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+        limits:
+          cpus: "0.5"
+          memory: "512M"
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
