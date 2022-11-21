@@ -56,7 +56,7 @@ async def test_check_dynamic_resources_with_no_services_does_nothing(
     mock_start_aws_instance.assert_not_called()
 
 
-async def test_check_dynamic_resources_with_service_too_much_resources_starts_nothing(
+async def test_check_dynamic_resources_with_service_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
     async_docker_client: aiodocker.Docker,
     initialized_app: FastAPI,
