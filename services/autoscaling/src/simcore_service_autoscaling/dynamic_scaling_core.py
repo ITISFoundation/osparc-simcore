@@ -1,8 +1,10 @@
 import logging
+from datetime import datetime
 
 from fastapi import FastAPI
 
 from . import utils_aws, utils_docker
+from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -47,20 +49,30 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         app_settings.AUTOSCALING_AWS
     )
 
-    ec2_instances_needed = [
-        utils_aws.find_best_fitting_ec2_instance(
-            list_of_ec2_instances,
-            utils_docker.get_resources_from_docker_task(task),
-            score_type=utils_aws.closest_instance_policy,
-        )
-        for task in pending_tasks
-    ]
-    logger.debug("%s", f"{ec2_instances_needed=}")
+    for task in pending_tasks:
+        try:
+            ec2_instances_needed = [
+                utils_aws.find_best_fitting_ec2_instance(
+                    list_of_ec2_instances,
+                    utils_docker.get_resources_from_docker_task(task),
+                    score_type=utils_aws.closest_instance_policy,
+                )
+            ]
+            assert app_settings.AUTOSCALING_AWS  # nosec
 
-    assert app_settings.AUTOSCALING_AWS  # nosec
+            logger.debug("%s", f"{ec2_instances_needed[0]=}")
+            utils_aws.start_instance_aws(
+                app_settings.AUTOSCALING_AWS,
+                instance_type=ec2_instances_needed[0].name,
+                tags=["autoscaling created node", f"created at {datetime.utcnow()}"],
+            )
 
-    # await utils_aws.start_instance_aws(
-    #     app_settings.AUTOSCALING_AWS,
-    #     instance_type=ec2_instance_needed.name,
-    #     tags=["autoscaling created node", f"created at {datetime.utcnow()}"],
-    # )
+            # NOTE: in this first trial we start one instance at a time
+            # In the next iteration, some tasks might already run with that instance
+            break
+        except Ec2InstanceNotFoundError:
+            logger.error(
+                "Task %s needs more resources than any EC2 instance "
+                "can provide with the current configuration. Please check.",
+                {f"{task.Name=}:{task.ServiceID=}"},
+            )
