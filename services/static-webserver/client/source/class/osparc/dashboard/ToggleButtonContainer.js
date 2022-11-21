@@ -43,8 +43,18 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     __lastSelectedIdx: null,
     __groupHeaders: null,
 
+    areMoreResourcesRequired: function(loadingResourcesBtn) {
+      if (this.nextRequest !== null && loadingResourcesBtn &&
+        (this.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn))
+      ) {
+        return true;
+      }
+      return false;
+    },
+
     __reloadCards: function() {
-      const cards = this.__getCards();
+      const cards = this.getCards();
       this.removeAll();
       this.__groupHeaders = {};
       cards.forEach(card => this.add(card));
@@ -63,7 +73,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       this.__reloadCards();
     },
 
-    __getCards: function() {
+    getCards: function() {
       return this.getChildren().filter(child => !("GroupHeader" in child));
     },
 
@@ -139,7 +149,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * Resets the selection so no toggle button is checked.
      */
     resetSelection: function() {
-      this.__getCards().map(button => button.setValue(false));
+      this.getCards().map(button => button.setValue(false));
       this.__lastSelectedIdx = null;
       this.fireDataEvent("changeSelection", this.getSelection());
     },
@@ -148,14 +158,14 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * Returns an array that contains all buttons that are checked.
      */
     getSelection: function() {
-      return this.__getCards().filter(button => button.getValue());
+      return this.getCards().filter(button => button.getValue());
     },
 
     /**
      * Returns an array that contains all visible buttons.
      */
     getVisibles: function() {
-      return this.__getCards().filter(button => button.isVisible());
+      return this.getCards().filter(button => button.isVisible());
     },
 
     /**
@@ -163,7 +173,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * @param {qx.ui.form.ToggleButton} child Button that will be checked
      */
     getIndex: function(child) {
-      return this.__getCards().findIndex(button => button === child);
+      return this.getCards().findIndex(button => button === child);
     },
 
     getLastSelectedIndex: function() {
@@ -171,7 +181,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     setLastSelectedIndex: function(idx) {
-      if (idx >= 0 && idx < this.__getCards().length) {
+      if (idx >= 0 && idx < this.getCards().length) {
         this.__lastSelectedIdx = idx;
       }
     }

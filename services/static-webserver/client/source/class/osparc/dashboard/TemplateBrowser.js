@@ -170,10 +170,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(this.__templates);
 
-      const cardsList = this._resourcesContainer.getChildren();
+      const cards = this._resourcesContainer.getCards();
       newTemplatesList.forEach(template => {
         template["resourceType"] = "template";
-        const exists = cardsList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
+        const exists = cards.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === template["uuid"]);
         if (exists !== -1) {
           return;
         }
@@ -182,27 +182,27 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const offset = this.__getNonTemplateCards().length;
         this._resourcesContainer.addAt(templateItem, idx+offset);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(cardsList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
-      const idx = cardsList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(cards.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
+      const idx = cards.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
       if (idx !== -1) {
-        cardsList.push(cardsList.splice(idx, 1)[0]);
+        cards.push(cards.splice(idx, 1)[0]);
       }
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __getNonTemplateCards: function() {
-      const cardsList = this._resourcesContainer.getChildren();
-      const nonTemplateCards = cardsList.filter(card => !osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card));
+      const cards = this._resourcesContainer.getCards();
+      const nonTemplateCards = cards.filter(card => !osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card));
       return nonTemplateCards;
     },
 
     __removeFromTemplateList: function(studyId) {
       const studyContainer = this._resourcesContainer;
-      const items = studyContainer.getChildren();
-      for (let i=0; i<items.length; i++) {
-        const item = items[i];
-        if (item.getUuid && studyId === item.getUuid()) {
-          studyContainer.remove(item);
+      const cards = studyContainer.getCards();
+      for (let i=0; i<cards.length; i++) {
+        const card = cards[i];
+        if (card.getUuid && studyId === card.getUuid()) {
+          studyContainer.remove(card);
           return;
         }
       }

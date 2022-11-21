@@ -260,12 +260,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _moreResourcesRequired: function() {
-      if (this._resourcesContainer &&
-        this._loadingResourcesBtn &&
-        this._resourcesContainer.nextRequest !== null &&
-        (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        osparc.utils.Utils.checkIsOnScreen(this._loadingResourcesBtn))
-      ) {
+      if (this._resourcesContainer && this._resourcesContainer.areMoreResourcesRequired(this._loadingResourcesBtn)) {
         this.reloadResources();
       }
     },
