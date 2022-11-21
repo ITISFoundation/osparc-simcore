@@ -132,13 +132,11 @@ def test_find_best_fitting_ec2_instance_closest_instance_policy(
     )
 
 
-def test_compose_user_data(aws_settings: AwsSettings):
-    user_data = _compose_user_data(aws_settings)
-    print(user_data)
-
-    for line in user_data.split("\n"):
-        if "ssh" in line:
-            assert f"ubuntu@{aws_settings.AWS_DNS}" in line
+def test_compose_user_data(faker: Faker):
+    command = faker.text()
+    user_data = _compose_user_data(command)
+    assert user_data.startswith("#!/bin/bash")
+    assert command in user_data
 
 
 def test_start_aws_instance(
@@ -152,7 +150,13 @@ def test_start_aws_instance(
 
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
-    start_aws_instance(aws_settings, instance_type, tags=tags)
+    startup_script = faker.pystr()
+    start_aws_instance(
+        aws_settings,
+        instance_type,
+        tags=tags,
+        startup_script=startup_script,
+    )
 
     # check we have that now in ec2
     all_instances = mocked_ec2_server_with_client.describe_instances()
@@ -178,9 +182,20 @@ def test_start_aws_instance_is_limited_in_number_of_instances(
 
     # create as many instances as we can
     tags = faker.pydict(allowed_types=(str,))
+    startup_script = faker.pystr()
     for _ in range(aws_settings.AWS_MAX_NUMBER_OF_INSTANCES):
-        start_aws_instance(aws_settings, faker.pystr(), tags=tags)
+        start_aws_instance(
+            aws_settings,
+            faker.pystr(),
+            tags=tags,
+            startup_script=startup_script,
+        )
 
     # now creating one more shall fail
     with pytest.raises(Ec2TooManyInstancesError):
-        start_aws_instance(aws_settings, faker.pystr(), tags=tags)
+        start_aws_instance(
+            aws_settings,
+            faker.pystr(),
+            tags=tags,
+            startup_script=startup_script,
+        )

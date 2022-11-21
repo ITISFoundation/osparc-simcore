@@ -118,6 +118,7 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
         initialized_app.state.settings.AUTOSCALING_AWS,
         instance_type="r5n.4xlarge",
         tags=mock.ANY,
+        startup_script=mock.ANY,
     )
 
 

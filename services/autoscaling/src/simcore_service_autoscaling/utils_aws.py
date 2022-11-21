@@ -10,6 +10,7 @@ from typing import Iterator
 
 import boto3
 from mypy_boto3_ec2.client import EC2Client
+from mypy_boto3_ec2.literals import InstanceTypeType
 from mypy_boto3_ec2.type_defs import ReservationTypeDef
 from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
@@ -19,9 +20,6 @@ from .core.settings import AwsSettings
 from .models import Resources
 
 logger = logging.getLogger(__name__)
-
-# NOTE: Possible future improvement: Get this list programmatically instead of hardcoded
-# SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987819879
 
 
 class EC2Instance(BaseModel):
@@ -105,23 +103,32 @@ def find_best_fitting_ec2_instance(
     return instance
 
 
-def _compose_user_data(settings: AwsSettings) -> str:
-    # NOTE: docker swarm commands might be done with aioboto?
-    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987820674
+def _compose_user_data(docker_join_script: str) -> str:
     return dedent(
         f"""\
-    #!/bin/bash
-    cd /home/ubuntu
-    hostname=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "hostname" 2>&1)
-    token=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker swarm join-token -q worker")
-    host=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker swarm join-token worker" 2>&1)
-    docker swarm join --token ${{token}} ${{host##* }}
-    label=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node ls | grep $(hostname)")
-    label="$(cut -d' ' -f1 <<<"$label")"
-    ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add sidecar=true $label"
-    ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add standardworker=true $label"
-    """
+#!/bin/bash
+{docker_join_script}
+"""
     )
+
+
+# def _compose_user_data(settings: AwsSettings) -> str:
+#     # NOTE: docker swarm commands might be done with aioboto?
+#     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987820674
+#     return dedent(
+#         f"""\
+#     #!/bin/bash
+#     cd /home/ubuntu
+#     hostname=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "hostname" 2>&1)
+#     token=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker swarm join-token -q worker")
+#     host=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker swarm join-token worker" 2>&1)
+#     docker swarm join --token ${{token}} ${{host##* }}
+#     label=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node ls | grep $(hostname)")
+#     label="$(cut -d' ' -f1 <<<"$label")"
+#     ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add sidecar=true $label"
+#     ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add standardworker=true $label"
+#     """
+#     )
 
 
 def _is_ec2_instance_running(instance: ReservationTypeDef):
@@ -133,9 +140,10 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
 
 def start_aws_instance(
     settings: AwsSettings,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     tags: dict[str, str],
-):
+    startup_script: str,
+) -> None:
     with log_context(
         logger,
         logging.DEBUG,
@@ -159,8 +167,6 @@ def start_aws_instance(
                     num_instances=settings.AWS_MAX_NUMBER_OF_INSTANCES
                 )
 
-        user_data = _compose_user_data(settings)
-
         instances = client.run_instances(
             ImageId=settings.AWS_AMI_ID,
             MinCount=1,
@@ -178,13 +184,14 @@ def start_aws_instance(
                     ],
                 }
             ],
-            UserData=user_data,
+            UserData=_compose_user_data(startup_script),
             SecurityGroupIds=settings.AWS_SECURITY_GROUP_IDS,
         )
         instance_id = instances["Instances"][0]["InstanceId"]
         logger.info(
             "New instance launched: %s, waiting for it to start now...", instance_id
         )
+        # wait for the instance to be in a running state
         waiter = client.get_waiter("instance_running")
         waiter.wait(InstanceIds=[instance_id])
         logger.info("instance %s is now running, happy computing...", instance_id)

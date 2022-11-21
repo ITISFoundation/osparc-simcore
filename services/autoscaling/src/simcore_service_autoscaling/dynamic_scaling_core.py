@@ -79,6 +79,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                         app_settings.AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES
                     ),
                 },
+                startup_script=await utils_docker.get_docker_swarm_join_script(),
             )
 
             # NOTE: in this first trial we start one instance at a time
