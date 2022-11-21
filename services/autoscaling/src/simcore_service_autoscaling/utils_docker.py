@@ -2,7 +2,9 @@
 
 """
 
+import asyncio
 import collections
+import re
 from typing import Final
 
 import aiodocker
@@ -146,3 +148,28 @@ async def compute_cluster_used_resources(nodes: list[Node]) -> Resources:
         counter.update(result.dict())
 
     return Resources.parse_obj(dict(counter))
+
+
+_COMMAND_TIMEOUT_S = 10
+_DOCKER_SWARM_JOIN_RE = r"(docker swarm join) (--token .+)? (.+)"
+_DOCKER_SWARM_JOIN_PATTERN = re.compile(_DOCKER_SWARM_JOIN_RE)
+
+
+async def get_docker_swarm_join_script() -> str:
+    """this assumes we are on a manager node"""
+    command = ["docker", "swarm", "join-token", "worker"]
+    process = await asyncio.create_subprocess_exec(
+        *command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await process.communicate()
+    decoded_stdout = stdout.decode()
+    await asyncio.wait_for(process.wait(), timeout=_COMMAND_TIMEOUT_S)
+    if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
+        return (
+            f"{match.group(1)} --availability=drain {match.group(2)} {match.group(3)}"
+        )
+    raise RuntimeError(
+        f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
+    )

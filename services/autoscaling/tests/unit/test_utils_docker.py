@@ -19,6 +19,7 @@ from simcore_service_autoscaling.utils_docker import (
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
+    get_docker_swarm_join_script,
     get_monitored_nodes,
     get_resources_from_docker_task,
     pending_service_tasks_with_insufficient_resources,
@@ -468,3 +469,9 @@ async def test_compute_cluster_used_resources_with_services_running(
     )
     cluster_used_resources = await compute_cluster_used_resources([host_node])
     assert cluster_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
+
+
+async def test_get_docker_swarm_join_script(host_node: Node):
+    join_script = await get_docker_swarm_join_script()
+    assert join_script.startswith("docker swarm join")
+    assert "--availability=drain" in join_script
