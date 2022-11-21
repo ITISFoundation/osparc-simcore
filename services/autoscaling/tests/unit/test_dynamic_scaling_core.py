@@ -10,6 +10,7 @@ from unittest import mock
 import aiodocker
 import pytest
 from fastapi import FastAPI
+from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
 
@@ -62,13 +63,15 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
-    create_task_resources: Callable[[int], dict[str, Any]],
+    create_task_resources: Callable[[int, int], dict[str, Any]],
     assert_for_service_state: Callable[
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
     mock_start_aws_instance: mock.Mock,
 ):
-    task_template_with_too_many_resource = task_template | create_task_resources(1000)
+    task_template_with_too_many_resource = task_template | create_task_resources(
+        1000, 0
+    )
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource
     )
@@ -80,3 +83,36 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
 
     await check_dynamic_resources(initialized_app)
     mock_start_aws_instance.assert_not_called()
+
+
+async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge_instance(
+    minimal_configuration: None,
+    async_docker_client: aiodocker.Docker,
+    initialized_app: FastAPI,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int, int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+    mock_start_aws_instance: mock.Mock,
+    host_cpu_count: int,
+):
+    task_template_for_r5n_8x_large_with_256Gib = task_template | create_task_resources(
+        int(host_cpu_count / 2) + 1, parse_obj_as(ByteSize, "128GiB")
+    )
+    service_with_too_many_resources = await create_service(
+        task_template_for_r5n_8x_large_with_256Gib
+    )
+    await assert_for_service_state(
+        async_docker_client,
+        service_with_too_many_resources,
+        ["pending"],
+    )
+
+    await check_dynamic_resources(initialized_app)
+    mock_start_aws_instance.assert_called_once_with(
+        initialized_app.state.settings.AUTOSCALING_AWS,
+        instance_type="r5n.4xlarge",
+        tags=mock.ANY,
+    )

@@ -15,10 +15,12 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
+    Union,
 )
 
 import aiodocker
 import httpx
+import psutil
 import pytest
 import simcore_service_autoscaling
 from aiohttp.test_utils import unused_port
@@ -27,7 +29,7 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
-from pydantic import PositiveInt
+from pydantic import ByteSize, PositiveInt
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -128,9 +130,16 @@ NUM_CPUS = PositiveInt
 
 
 @pytest.fixture
-def create_task_resources() -> Callable[[NUM_CPUS], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS) -> dict[str, Any]:
-        return {"Resources": {"Reservations": {"NanoCPUs": num_cpus * _GIGA_NANO_CPU}}}
+def create_task_resources() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
+    def _creator(num_cpus: NUM_CPUS, memory: Union[ByteSize, int]) -> dict[str, Any]:
+        return {
+            "Resources": {
+                "Reservations": {
+                    "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
+                    "MemoryBytes": int(memory),
+                }
+            }
+        }
 
     return _creator
 
@@ -363,3 +372,13 @@ def aws_ami_id(
     ami_id = image["ImageId"]  # type: ignore
     monkeypatch.setenv("AWS_AMI_ID", ami_id)
     return ami_id
+
+
+@pytest.fixture
+def host_cpu_count() -> int:
+    return psutil.cpu_count()
+
+
+@pytest.fixture
+def host_memory_total() -> ByteSize:
+    return ByteSize(psutil.virtual_memory().total)
