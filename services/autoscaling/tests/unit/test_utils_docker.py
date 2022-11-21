@@ -21,6 +21,7 @@ from simcore_service_autoscaling.utils_docker import (
     compute_cluster_used_resources,
     compute_node_used_resources,
     get_monitored_nodes,
+    get_resources_from_docker_task,
     pending_service_tasks_with_insufficient_resources,
 )
 
@@ -287,16 +288,66 @@ async def test_compute_cluster_total_resources_returns_host_resources(
     )
 
 
-async def test_compute_node_used_resources_with_no_service(
-    docker_swarm: None, host_node: Node
+async def test_get_resources_from_docker_task_with_no_reservation_returns_0(
+    async_docker_client: aiodocker.Docker,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
 ):
+    service_with_no_resources = await create_service(task_template)
+    await assert_for_service_state(
+        async_docker_client, service_with_no_resources, ["running"]
+    )
+    service_tasks = parse_obj_as(
+        list[Task],
+        await async_docker_client.tasks.list(
+            filters={"service": service_with_no_resources["Spec"]["Name"]}
+        ),
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+
+    assert get_resources_from_docker_task(service_tasks[0]) == Resources(
+        cpus=0, ram=ByteSize(0)
+    )
+
+
+async def test_get_resources_from_docker_task_with_reservations(
+    async_docker_client: aiodocker.Docker,
+    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    task_template: dict[str, Any],
+    create_task_resources: Callable[[int], dict[str, Any]],
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
+):
+    NUM_CPUS = int(psutil.cpu_count() / 2 + 1)
+    task_template_with_reservations = task_template | create_task_resources(NUM_CPUS)
+    service = await create_service(task_template_with_reservations)
+    await assert_for_service_state(async_docker_client, service, ["running"])
+    service_tasks = parse_obj_as(
+        list[Task],
+        await async_docker_client.tasks.list(
+            filters={"service": service["Spec"]["Name"]}
+        ),
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+
+    assert get_resources_from_docker_task(service_tasks[0]) == Resources(
+        cpus=NUM_CPUS, ram=ByteSize(0)
+    )
+
+
+async def test_compute_node_used_resources_with_no_service(host_node: Node):
     cluster_resources = await compute_node_used_resources(host_node)
     assert cluster_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_compute_node_used_resources_with_service(
     async_docker_client: aiodocker.Docker,
-    docker_swarm: None,
     host_node: Node,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],

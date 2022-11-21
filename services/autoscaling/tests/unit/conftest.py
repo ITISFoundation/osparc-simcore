@@ -137,7 +137,9 @@ def create_task_resources() -> Callable[[NUM_CPUS], dict[str, Any]]:
 
 @pytest.fixture
 async def create_service(
-    async_docker_client: aiodocker.Docker, faker: Faker
+    async_docker_client: aiodocker.Docker,
+    docker_swarm: None,
+    faker: Faker,
 ) -> AsyncIterator[
     Callable[[dict[str, Any], Optional[dict[str, str]]], Awaitable[Mapping[str, Any]]]
 ]:

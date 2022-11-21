@@ -98,7 +98,7 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
     return Resources.parse_obj(dict(cluster_resources_counter))
 
 
-def get_resource_from_task(task: Task) -> Resources:
+def get_resources_from_docker_task(task: Task) -> Resources:
     assert task.Spec  # nosec
     if task.Spec.Resources and task.Spec.Resources.Reservations:
         return Resources(

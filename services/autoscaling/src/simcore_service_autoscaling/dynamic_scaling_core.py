@@ -46,7 +46,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     ec2_instances_needed = [
         utils_aws.find_best_fitting_ec2_instance(
             list_of_ec2_instances,
-            utils_docker.get_resource_from_task(task),
+            utils_docker.get_resources_from_docker_task(task),
             score_type=utils_aws.closest_instance_policy,
         )
         for task in pending_tasks
