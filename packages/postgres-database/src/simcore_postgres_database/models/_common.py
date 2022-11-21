@@ -11,7 +11,7 @@ def column_created() -> sa.Column:
     )
 
 
-def column_modified():
+def column_modified() -> sa.Column:
     return sa.Column(
         "modified",
         sa.DateTime(),
