@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
+from simcore_service_autoscaling.utils_aws import EC2Client
 
 
 @pytest.fixture
@@ -129,7 +130,11 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     assert_for_service_state: Callable[
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
+    ec2_client: EC2Client,
 ):
+    # we have nothing running now
+    all_instances = ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
 
     task_template_for_r5n_8x_large_with_256Gib = task_template | create_task_resources(
         4, parse_obj_as(ByteSize, "128GiB")
@@ -146,3 +151,11 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     await check_dynamic_resources(initialized_app)
 
     # check that the instances are really started
+    all_instances = ec2_client.describe_instances()
+    assert len(all_instances["Reservations"]) == 1
+    running_instance = all_instances["Reservations"][0]
+    assert "Instances" in running_instance
+    assert len(running_instance["Instances"]) == 1
+    running_instance = running_instance["Instances"][0]
+    assert "InstanceType" in running_instance
+    assert running_instance["InstanceType"] == "r5n.4xlarge"
