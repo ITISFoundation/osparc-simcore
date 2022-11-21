@@ -224,7 +224,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
-            and not scheduler_data.dynamic_sidecar.is_dynamic_sidecar_healthy
+            and not scheduler_data.dynamic_sidecar.is_healthy
         )
 
     @classmethod
@@ -246,7 +246,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
                     app, scheduler_data, with_retry=False
                 ):
                     raise TryAgain()
-                scheduler_data.dynamic_sidecar.is_dynamic_sidecar_healthy = True
+                scheduler_data.dynamic_sidecar.is_healthy = True
 
 
 class UpdateHealth(DynamicSchedulerEvent):
