@@ -6,28 +6,28 @@ paths:
       summary: List all tags for the current user
       operationId: list_tags
       responses:
-        '200':
+        "200":
           description: List of tags
           content:
             application/json:
               schema:
-                $ref: './components/schemas/tag.yaml#/TagListEnveloped'
+                $ref: "#/components/schemas/TagListEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
     post:
       tags:
         - tag
       summary: Creates a new tag
       operationId: create_tag
       responses:
-        '200':
+        "200":
           description: The created tag
           content:
             application/json:
               schema:
-                $ref: './components/schemas/tag.yaml#/TagEnveloped'
+                $ref: "#/components/schemas/TagEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
   /tags/{tag_id}:
     parameters:
       - name: tag_id
@@ -35,25 +35,96 @@ paths:
         required: true
         schema:
           type: integer
+
+    get:
+      tags:
+        - tag
+      operationId: get_tag
+      responses:
+        "200":
+          description: returns a tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagEnveloped"
+        default:
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+
     put:
       tags:
         - tag
       summary: Updates a tag
       operationId: update_tag
       responses:
-        '200':
+        "200":
           description: The updated tag
           content:
             application/json:
               schema:
-                $ref: './components/schemas/tag.yaml#/TagEnveloped'
+                $ref: "#/components/schemas/TagEnveloped"
         default:
-          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+          $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
     delete:
       tags:
         - tag
       summary: Deletes an existing tag
       operationId: delete_tag
       responses:
-        '204':
+        "204":
           description: The tag has been successfully deleted
+components:
+  schemas:
+    Tag:
+      type: object
+      required:
+        - name
+        - color
+        - accessRights
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+          pattern: "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        accessRights:
+          type: object
+          properties:
+            read:
+              type: boolean
+            write:
+              type: boolean
+            delete:
+              type: boolean
+
+    TagListEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - tags
+          properties:
+            tags:
+              type: array
+              items:
+                $ref: "#/components/schemas/Tag"
+        error:
+          nullable: true
+          default: null
+
+    TagEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Tag"
+        error:
+          nullable: true
+          default: null

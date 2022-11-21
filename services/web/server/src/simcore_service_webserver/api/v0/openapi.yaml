@@ -4430,6 +4430,7 @@ paths:
                     required:
                       - name
                       - color
+                      - accessRights
                     properties:
                       id:
                         type: integer
@@ -4440,6 +4441,15 @@ paths:
                       color:
                         type: string
                         pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                      accessRights:
+                        type: object
+                        properties:
+                          read:
+                            type: boolean
+                          write:
+                            type: boolean
+                          delete:
+                            type: boolean
                   error:
                     nullable: true
                     default: null
@@ -4452,6 +4462,19 @@ paths:
         required: true
         schema:
           type: integer
+    get:
+      tags:
+        - tag
+      operationId: get_tag
+      responses:
+        '200':
+          description: returns a tag
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
     put:
       tags:
         - tag
