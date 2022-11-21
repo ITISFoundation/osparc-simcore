@@ -61,9 +61,6 @@ class TagDict(TypedDict, total=True):
     delete: bool
 
 
-# keeps in sync
-
-
 @dataclass(frozen=True)
 class TagsRepo:
     user_id: int

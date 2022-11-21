@@ -35,7 +35,7 @@ paths:
         required: true
         schema:
           type: integer
-    put:
+    patch:
       tags:
         - tag
       summary: Updates a tag

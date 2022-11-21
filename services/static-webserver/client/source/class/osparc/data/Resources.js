@@ -60,7 +60,7 @@ qx.Class.define("osparc.data.Resources", {
 
   type: "singleton",
 
-  defer: function(statics) {
+  defer: function (statics) {
     /*
      * Define here all resources and their endpoints.
      */
@@ -161,7 +161,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           addTag: {
             useCache: false,
-            method: "PUT",
+            method: "PATCH",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
           removeTag: {
@@ -748,7 +748,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
      * @param {Object} options Collections of options
      */
-    fetch: function(resource, endpoint, params = {}, deleteId, options = {}) {
+    fetch: function (resource, endpoint, params = {}, deleteId, options = {}) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -818,7 +818,7 @@ qx.Class.define("osparc.data.Resources", {
       });
     },
 
-    getAllPages: function(resource, params) {
+    getAllPages: function (resource, params) {
       return new Promise((resolve, reject) => {
         let resources = [];
         let offset = 0;
@@ -836,7 +836,7 @@ qx.Class.define("osparc.data.Resources", {
             const meta = resp["_meta"];
             resources = [...resources, ...data];
             const allRequests = [];
-            for (let i=offset+meta.limit; i<meta.total; i+=meta.limit) {
+            for (let i = offset + meta.limit; i < meta.total; i += meta.limit) {
               params.url.offset = i;
               allRequests.push(this.fetch(resource, endpoint, params));
             }
@@ -905,7 +905,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} id Id(s) of the element to get, if it is a collection of elements.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
-    getOne: function(resource, params, id, useCache = true) {
+    getOne: function (resource, params, id, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
@@ -927,7 +927,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
-    get: function(resource, params, useCache = true) {
+    get: function (resource, params, useCache = true) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
@@ -941,7 +941,7 @@ qx.Class.define("osparc.data.Resources", {
      * Returns the cached version of the resource or null if empty.
      * @param {String} resource Resource name
      */
-    __getCached: function(resource) {
+    __getCached: function (resource) {
       let stored;
       try {
         stored = osparc.store.Store.getInstance().get(resource);
@@ -965,7 +965,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {*} data Resource or collection of resources to be cached.
      */
-    __setCached: function(resource, data) {
+    __setCached: function (resource, data) {
       osparc.store.Store.getInstance().update(resource, data, this.self().resources[resource].idField || "uuid");
     },
 
@@ -974,7 +974,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {*} data Resource or collection of resources to be addded to the cache.
      */
-    __addCached: function(resource, data) {
+    __addCached: function (resource, data) {
       osparc.store.Store.getInstance().append(resource, data, this.self().resources[resource].idField || "uuid");
     },
 
@@ -983,31 +983,31 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} deleteId Id of the item to remove from cache.
      */
-    __removeCached: function(resource, deleteId) {
+    __removeCached: function (resource, deleteId) {
       osparc.store.Store.getInstance().remove(resource, this.self().resources[resource].idField || "uuid", deleteId);
     }
   },
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId, options = {}) {
+    fetch: function (resource, endpoint, params, deleteId, options = {}) {
       return this.getInstance().fetch(resource, endpoint, params, deleteId, options);
     },
-    getOne: function(resource, params, id, useCache) {
+    getOne: function (resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);
     },
-    get: function(resource, params, useCache) {
+    get: function (resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
     },
 
-    getServiceUrl: function(key, version) {
+    getServiceUrl: function (key, version) {
       return {
         "key": encodeURIComponent(key),
         "version": version
       };
     },
 
-    getCompatibleInputs: function(node1, portId1, node2) {
+    getCompatibleInputs: function (node1, portId1, node2) {
       const url = this.__getMatchInputsUrl(node1, portId1, node2);
 
       // eslint-disable-next-line no-underscore-dangle
@@ -1028,7 +1028,7 @@ qx.Class.define("osparc.data.Resources", {
         });
     },
 
-    __getMatchInputsUrl: function(node1, portId1, node2) {
+    __getMatchInputsUrl: function (node1, portId1, node2) {
       return {
         "serviceKey2": encodeURIComponent(node2.getKey()),
         "serviceVersion2": node2.getVersion(),
@@ -1038,7 +1038,7 @@ qx.Class.define("osparc.data.Resources", {
       };
     },
 
-    getErrorMsg: function(resp) {
+    getErrorMsg: function (resp) {
       const error = resp["error"];
       return error ? error["errors"][0].message : null;
     }

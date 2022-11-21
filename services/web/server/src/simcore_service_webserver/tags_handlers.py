@@ -99,16 +99,17 @@ class TagGet(_OutputSchema):
 
     @classmethod
     def from_db(cls, tag: TagDict) -> "TagGet":
+        # NOTE: cls(access_rights=tag, **tag) would also work because of Config
         return cls(
             id=tag["id"],
             name=tag["name"],
             description=tag["description"],
             color=tag["color"],
-            access_rights={
-                "read": tag["read"],
-                "write": tag["write"],
-                "delete": tag["delete"],
-            },
+            accessRights=TagAccessRights(
+                read=tag["read"],
+                write=tag["write"],
+                delete=tag["delete"],
+            ),
         )
 
 
@@ -155,9 +156,7 @@ async def list_tags(request: web.Request):
         return [TagGet.from_db(t).dict(by_alias=True) for t in tags]
 
 
-@routes.put(
-    f"/{VTAG}/tags/{{tag_id}}", name="update_tag"
-)  # FIXME: here and in GUI request to patch
+@routes.patch(f"/{VTAG}/tags/{{tag_id}}", name="update_tag")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions

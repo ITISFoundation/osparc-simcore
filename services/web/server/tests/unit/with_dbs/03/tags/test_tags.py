@@ -205,7 +205,7 @@ async def test_create_and_update_tags(
     }
 
     url = client.app.router["update_tag"].url_for(tag_id="2")
-    resp = await client.put(
+    resp = await client.patch(
         f"{url}",
         json={"description": "This is my tag"},
     )
@@ -215,8 +215,9 @@ async def test_create_and_update_tags(
     assert updated == created
 
     url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")
-    resp = await client.put(
+    resp = await client.patch(
         f"{url}",
         json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
     )
-    await assert_status(resp, web.HTTPUnauthorized)
+    _, error = await assert_status(resp, web.HTTPUnauthorized)
+    print(error)
