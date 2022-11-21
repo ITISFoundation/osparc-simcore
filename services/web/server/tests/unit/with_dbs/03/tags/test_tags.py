@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 import pytest
 from aiohttp import web
@@ -19,14 +19,14 @@ from models_library.projects_state import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
+from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
 from simcore_service_webserver import tags_handlers
 from simcore_service_webserver._meta import api_version_prefix
+from simcore_service_webserver.db import get_database_engine
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.tags_handlers import TagGet
 
 
 @pytest.mark.parametrize(
@@ -127,11 +127,39 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
 
 
-@pytest.mark.skip(reason="UNDER DEV")
-async def test_list_tags_with_access_info(
+@pytest.fixture
+async def everybody_tag_id(client: TestClient) -> Iterator[int]:
+
+    engine = get_database_engine(client.app)
+    assert engine
+
+    async with engine.acquire() as conn:
+        tag_id = await create_tag(
+            conn,
+            name="TG",
+            description="tag for EVERYBODY",
+            color="pink",
+            group_id=1,
+            read=True,
+            write=False,
+            delete=False,
+        )
+
+        yield tag_id
+
+        await delete_tag(conn, tag_id=tag_id)
+
+
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.USER
+
+
+async def test_read_tags(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
+    everybody_tag_id: int,
 ):
     assert client.app
 
@@ -139,6 +167,67 @@ async def test_list_tags_with_access_info(
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    datas, _ = await assert_status(resp, web.HTTPOk)
 
-    assert parse_obj_as(data, list[TagGet])
+    assert datas == [
+        {
+            "id": everybody_tag_id,
+            "name": "TG",
+            "description": "tag for EVERYBODY",
+            "color": "pink",
+            "accessRights": {"read": True, "write": False, "delete": False},
+        }
+    ]
+
+    url = client.app.router["get_tag"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert data == datas[0]
+
+
+# async def test_create_and_update_tags(
+async def test_it(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    everybody_tag_id: int,
+):
+    assert client.app
+
+    assert user_role == UserRole.USER
+
+    resp = await client.post(
+        f"{client.app.router['create_tag'].url_for()}",
+        json={"name": "T", "color": "blue"},
+    )
+    created, _ = await assert_status(resp, web.HTTPOk)
+
+    assert created == {
+        "id": 2,
+        "name": "T",
+        "description": None,
+        "color": "blue",
+        "accessRights": {"read": True, "write": True, "delete": True},
+    }
+
+    url = client.app.router["update_tag"].url_for(tag_id="2")
+    resp = await client.put(
+        f"{url}",
+        json={"description": "This is my tag"},
+    )
+
+    updated, _ = await assert_status(resp, web.HTTPOk)
+    assert updated == {
+        "id": 2,
+        "name": "T",
+        "description": "This is my tag",
+        "color": "blue",
+        "accessRights": {"read": True, "write": True, "delete": True},
+    }
+
+    with pytest.raises(web.HTTPUnauthorized):
+        url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")
+        resp = await client.put(
+            f"{url}",
+            json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
+        )

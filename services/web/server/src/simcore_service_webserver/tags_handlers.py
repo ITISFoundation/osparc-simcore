@@ -88,7 +88,7 @@ class TagAccessRights(_OutputSchema):
 class TagGet(_OutputSchema):
     id: PositiveInt
     name: str
-    description: str
+    description: Optional[str]
     color: str
 
     # analogous to UsersGroup
