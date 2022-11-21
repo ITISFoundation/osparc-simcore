@@ -13,6 +13,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_tags import (
+    TagDict,
     TagNotFoundError,
     TagOperationNotAllowed,
     TagsRepo,
@@ -41,38 +42,50 @@ def _handle_tags_exceptions(handler: Handler):
 #
 # API components/schemas
 #
+
+
 class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)
 
 
-class TagPathParams(BaseModel):
+class _InputSchema(BaseModel):
+    class Config:
+        allow_population_by_field_name = False
+        extra = Extra.forbid
+        allow_mutations = False
+
+
+class TagPathParams(_InputSchema):
     tag_id: PositiveInt
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
 
-
-class TagUpdate(BaseModel):
+class TagUpdate(_InputSchema):
     name: Optional[str] = None
     description: Optional[str] = None
     color: Optional[str] = None
 
 
-class TagCreate(BaseModel):
+class TagCreate(_InputSchema):
     name: str
     description: Optional[str] = None
     color: str
 
 
-class TagAccessRights(BaseModel):
+class _OutputSchema(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.ignore
+        allow_mutations = False
+
+
+class TagAccessRights(_OutputSchema):
     # NOTE: analogous to GroupAccessRights
     read: bool
     write: bool
     delete: bool
 
 
-class TagGet(BaseModel):
+class TagGet(_OutputSchema):
     id: PositiveInt
     name: str
     description: str
@@ -80,6 +93,20 @@ class TagGet(BaseModel):
 
     # analogous to UsersGroup
     access_rights: TagAccessRights = Field(..., alias="accessRights")
+
+    @classmethod
+    def from_db(cls, tag: TagDict) -> "TagGet":
+        return cls(
+            id=tag["id"],
+            name=tag["name"],
+            description=tag["description"],
+            color=tag["color"],
+            access_rights={
+                "read": tag["read"],
+                "write": tag["write"],
+                "delete": tag["delete"],
+            },
+        )
 
 
 #
@@ -107,7 +134,8 @@ async def create_tag(request: web.Request):
             delete=True,
             **tag_data.dict(exclude_unset=True),
         )
-        return tag
+        model = TagGet.from_db(tag)
+        return model.dict(by_alias=True)
 
 
 @routes.get(f"/{VTAG}/tags", name="list_tags")
@@ -121,7 +149,7 @@ async def list_tags(request: web.Request):
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
         tags = await repo.list(conn)
-        return tags
+        return [TagGet.from_db(t).dict(by_alias=True) for t in tags]
 
 
 @routes.put(
@@ -141,7 +169,8 @@ async def update_tag(request: web.Request):
         tag = await repo.update(
             conn, query_params.tag_id, **tag_data.dict(exclude_unset=True)
         )
-        return tag
+        model = TagGet.from_db(tag)
+        return model.dict(by_alias=True)
 
 
 @routes.delete(f"/{VTAG}/tags/{{tag_id}}", name="delete_tag")
