@@ -35,10 +35,7 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.application import create_app
-from simcore_service_autoscaling.core.settings import (
-    ApplicationSettings,
-    EC2AccessSettings,
-)
+from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.utils_aws import EC2Client
 from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
 from tenacity import retry
@@ -78,15 +75,16 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "AWS_ACCESS_KEY_ID": faker.pystr(),
-            # "AWS_ENDPOINT": "null",
-            "AWS_SECRET_ACCESS_KEY": faker.pystr(),
-            "AWS_DNS": faker.domain_name(),
-            "AWS_KEY_NAME": faker.pystr(),
-            "AWS_SECURITY_GROUP_IDS": json.dumps(faker.pylist(allowed_types=(str,))),
-            "AWS_SUBNET_ID": faker.pystr(),
-            "AWS_AMI_ID": faker.pystr(),
-            "AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES": json.dumps(
+            "EC2_ACCESS_KEY_ID": faker.pystr(),
+            # "EC2_ENDPOINT": "null",
+            "EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "EC2_INSTANCES_KEY_NAME": faker.pystr(),
+            "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
+            "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "EC2_INSTANCES_AMI_ID": faker.pystr(),
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 faker.pylist(allowed_types=(str,))
             ),
         },
@@ -225,7 +223,6 @@ async def create_service(
         )
         assert not await async_docker_client.containers.list(
             filters={
-                "is-task": ["true"],
                 "label": [f"com.docker.swarm.service.id={service['ID']}"],
             }
         )
@@ -322,9 +319,9 @@ def mocked_aws_server_envs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[EnvVarsDict]:
     changed_envs = {
-        "AWS_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
-        "AWS_ACCESS_KEY_ID": "xxx",
-        "AWS_SECRET_ACCESS_KEY": "xxx",
+        "EC2_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
+        "EC2_ACCESS_KEY_ID": "xxx",
+        "EC2_SECRET_ACCESS_KEY": "xxx",
     }
     yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -335,7 +332,7 @@ def aws_allowed_ec2_instance_type_names(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[EnvVarsDict]:
     changed_envs = {
-        "AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES": json.dumps(
+        "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
             [
                 "t2.xlarge",
                 "t2.2xlarge",
@@ -359,7 +356,6 @@ def aws_vpc_id(
     )
     vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
     print(f"--> Created Vpc in AWS with {vpc_id=}")
-    monkeypatch.setenv("AWS_VPC_ID", vpc_id)
     yield vpc_id
 
     ec2_client.delete_vpc(VpcId=vpc_id)
@@ -378,7 +374,7 @@ def aws_subnet_id(
     subnet_id = subnet["Subnet"]["SubnetId"]
     print(f"--> Created Subnet in AWS with {subnet_id=}")
 
-    monkeypatch.setenv("AWS_SUBNET_ID", subnet_id)
+    monkeypatch.setenv("EC2_INSTANCES_SUBNET_ID", subnet_id)
     yield subnet_id
 
     # all the instances in the subnet must be terminated before that works
@@ -413,7 +409,9 @@ def aws_security_group_id(
     )
     security_group_id = security_group["GroupId"]
     print(f"--> Created Security Group in AWS with {security_group_id=}")
-    monkeypatch.setenv("AWS_SECURITY_GROUP_IDS", json.dumps([security_group_id]))
+    monkeypatch.setenv(
+        "EC2_INSTANCES_SECURITY_GROUP_IDS", json.dumps([security_group_id])
+    )
     yield security_group_id
     ec2_client.delete_security_group(GroupId=security_group_id)
     print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
@@ -429,13 +427,13 @@ def aws_ami_id(
     images = ec2_client.describe_images()
     image = random.choice(images["Images"])
     ami_id = image["ImageId"]  # type: ignore
-    monkeypatch.setenv("AWS_AMI_ID", ami_id)
+    monkeypatch.setenv("EC2_INSTANCES_AMI_ID", ami_id)
     return ami_id
 
 
 @pytest.fixture
 def ec2_client() -> Iterator[EC2Client]:
-    settings = EC2AccessSettings.create_from_envs()
+    settings = EC2Settings.create_from_envs()
     with autoscaling_ec2_client(settings) as client:
         yield client
 

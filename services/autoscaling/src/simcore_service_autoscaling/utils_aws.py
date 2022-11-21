@@ -16,7 +16,7 @@ from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
 
 from .core.errors import Ec2InstanceNotFoundError, Ec2TooManyInstancesError
-from .core.settings import EC2AccessSettings, EC2InstancesSettings
+from .core.settings import EC2InstancesSettings, EC2Settings
 from .models import Resources
 
 logger = logging.getLogger(__name__)
@@ -29,15 +29,15 @@ class EC2Instance(BaseModel):
 
 
 @contextlib.contextmanager
-def ec2_client(settings: EC2AccessSettings) -> Iterator[EC2Client]:
+def ec2_client(settings: EC2Settings) -> Iterator[EC2Client]:
     client = None
     try:
         client = boto3.client(
             "ec2",
-            endpoint_url=settings.AWS_ENDPOINT,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_REGION_NAME,
+            endpoint_url=settings.EC2_ENDPOINT,
+            aws_access_key_id=settings.EC2_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.EC2_SECRET_ACCESS_KEY,
+            region_name=settings.EC2_REGION_NAME,
         )
         yield client
     finally:
@@ -46,11 +46,11 @@ def ec2_client(settings: EC2AccessSettings) -> Iterator[EC2Client]:
 
 
 def get_ec2_instance_capabilities(
-    settings: EC2AccessSettings, instance_settings: EC2InstancesSettings
+    settings: EC2Settings, instance_settings: EC2InstancesSettings
 ) -> list[EC2Instance]:
     with ec2_client(settings) as ec2:
         instance_types = ec2.describe_instance_types(
-            InstanceTypes=instance_settings.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES
+            InstanceTypes=instance_settings.EC2_INSTANCES_ALLOWED_TYPES
         )
 
     list_instances: list[EC2Instance] = []
@@ -141,7 +141,7 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
 
 
 def start_aws_instance(
-    settings: EC2AccessSettings,
+    settings: EC2Settings,
     instance_settings: EC2InstancesSettings,
     instance_type: InstanceTypeType,
     tags: dict[str, str],
@@ -161,23 +161,23 @@ def start_aws_instance(
         ):
             if (
                 len(current_instances.get("Reservations", []))
-                >= instance_settings.AWS_MAX_NUMBER_OF_INSTANCES
+                >= instance_settings.EC2_INSTANCES_MAX_INSTANCES
             ) and all(
                 _is_ec2_instance_running(instance)
                 for instance in current_instances["Reservations"]
             ):
                 raise Ec2TooManyInstancesError(
-                    num_instances=instance_settings.AWS_MAX_NUMBER_OF_INSTANCES
+                    num_instances=instance_settings.EC2_INSTANCES_MAX_INSTANCES
                 )
 
         instances = client.run_instances(
-            ImageId=instance_settings.AWS_AMI_ID,
+            ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
             MinCount=1,
             MaxCount=1,
             InstanceType=instance_type,
             InstanceInitiatedShutdownBehavior="terminate",
-            KeyName=instance_settings.AWS_KEY_NAME,
-            SubnetId=instance_settings.AWS_SUBNET_ID,
+            KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
+            SubnetId=instance_settings.EC2_INSTANCES_SUBNET_ID,
             TagSpecifications=[
                 {
                     "ResourceType": "instance",
@@ -188,7 +188,7 @@ def start_aws_instance(
                 }
             ],
             UserData=_compose_user_data(startup_script),
-            SecurityGroupIds=instance_settings.AWS_SECURITY_GROUP_IDS,
+            SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
         )
         instance_id = instances["Instances"][0]["InstanceId"]
         logger.info(

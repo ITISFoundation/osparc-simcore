@@ -15,47 +15,49 @@ from settings_library.utils_logging import MixinLoggingSettings
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
-class EC2AccessSettings(BaseCustomSettings):
-    AWS_ACCESS_KEY_ID: str
-    AWS_ENDPOINT: Optional[str] = Field(
+class EC2Settings(BaseCustomSettings):
+    EC2_ACCESS_KEY_ID: str
+    EC2_ENDPOINT: Optional[str] = Field(
         default=None, description="do not define if using standard AWS"
     )
-    AWS_REGION_NAME: str = "us-east-1"
-    AWS_SECRET_ACCESS_KEY: str
+    EC2_REGION_NAME: str = "us-east-1"
+    EC2_SECRET_ACCESS_KEY: str
 
 
 class EC2InstancesSettings(BaseCustomSettings):
-    AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES: tuple[str, ...] = Field(
+    EC2_INSTANCES_ALLOWED_TYPES: tuple[str, ...] = Field(
         ...,
         description="Defines which EC2 instances are considered as candidates for new docker nodes",
     )
-    AWS_AMI_ID: str = Field(
+    EC2_INSTANCES_AMI_ID: str = Field(
         ..., description="Defines the AMI ID used to initialize a new docker node"
     )
-    AWS_MAX_NUMBER_OF_INSTANCES: int = Field(
+    EC2_INSTANCES_MAX_INSTANCES: int = Field(
         10,
         description="Defines the maximum number of instances the autoscaling app may create",
     )
-    AWS_SECURITY_GROUP_IDS: list[str] = Field(..., description="TO BE DEFINED")
-    AWS_SUBNET_ID: str = Field(..., description="TO BE DEFINED")
-    AWS_KEY_NAME: str = Field(
+    EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
+        ..., description="TO BE DEFINED"
+    )
+    EC2_INSTANCES_SUBNET_ID: str = Field(..., description="TO BE DEFINED")
+    EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         description="SSH key filename (without ext) to access the docker swarm manager",
     )
 
 
 class NodesMonitoringSettings(BaseCustomSettings):
-    AUTOSCALING_MONITORED_NODES_LABELS: list[str] = Field(
+    NODES_MONITORING_NODE_LABELS: list[str] = Field(
         default_factory=list,
         description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored)",
     )
 
-    AUTOSCALING_MONITORED_SERVICES_LABELS: list[str] = Field(
+    NODES_MONITORING_SERVICE_LABELS: list[str] = Field(
         default_factory=list,
         description="autoscaling will only monitor services with the given labels (if empty all services will be monitored)",
     )
 
-    AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES: list[str] = Field(
+    NODES_MONITORING_SERVICE_IMAGE_NAMES: list[str] = Field(
         default_factory=list,
         description="autoscaling will only monitor services with the given image names (if empty all services will be monitored)",
     )
@@ -95,9 +97,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
-    AUTOSCALING_EC2_ACCESS: Optional[EC2AccessSettings] = Field(
-        auto_default_from_env=True
-    )
+    AUTOSCALING_EC2_ACCESS: Optional[EC2Settings] = Field(auto_default_from_env=True)
 
     AUTOSCALING_EC2_INSTANCES: Optional[EC2InstancesSettings] = Field(
         auto_default_from_env=True

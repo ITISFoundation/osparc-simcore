@@ -68,18 +68,17 @@ def test_get_ec2_instance_capabilities(
     )
     assert instance_types
     assert len(instance_types) == len(
-        app_settings.AUTOSCALING_EC2_INSTANCES.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
 
     # all the instance names are found and valid
     assert all(
-        i.name
-        in app_settings.AUTOSCALING_EC2_INSTANCES.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES
+        i.name in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
         for i in instance_types
     )
     for (
         instance_type_name
-    ) in app_settings.AUTOSCALING_EC2_INSTANCES.AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES:
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES:
         assert any(i.name == instance_type_name for i in instance_types)
 
 
@@ -201,7 +200,7 @@ def test_start_aws_instance_is_limited_in_number_of_instances(
     # create as many instances as we can
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    for _ in range(app_settings.AUTOSCALING_EC2_INSTANCES.AWS_MAX_NUMBER_OF_INSTANCES):
+    for _ in range(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES):
         start_aws_instance(
             app_settings.AUTOSCALING_EC2_ACCESS,
             app_settings.AUTOSCALING_EC2_INSTANCES,

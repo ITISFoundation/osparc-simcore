@@ -20,7 +20,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
-        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_LABELS
+        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
     )
     if not pending_tasks:
         logger.debug("no pending tasks with insufficient resources at the moment")
@@ -29,11 +29,11 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     logger.info(
         "%s service task(s) with %s label(s) are pending due to insufficient resources",
         f"{len(pending_tasks)}",
-        f"{app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_LABELS}",
+        f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS}",
     )
 
     monitored_nodes = await utils_docker.get_monitored_nodes(
-        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_NODES_LABELS
+        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
     )
 
     cluster_total_resources = await utils_docker.compute_cluster_total_resources(
@@ -72,13 +72,13 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                     "io.osparc.autoscaling.created": f"{datetime.utcnow()}",
                     "io.osparc.autoscaling.version": f"{VERSION}",
                     "io.osparc.autoscaling.monitored_nodes_labels": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_NODES_LABELS
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
                     ),
                     "io.osparc.autoscaling.monitored_services_labels": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_LABELS
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
                     ),
                     "io.osparc.autoscaling.monitored_services_image_names": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_IMAGE_NAMES
                     ),
                 },
                 startup_script=await utils_docker.get_docker_swarm_join_script(),
