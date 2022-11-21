@@ -131,8 +131,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (templatesList === undefined) {
         templatesList = this.__templates;
       }
-      this.__templates = templatesList;
-
       this._removeResourceCards();
       this._addResourcesToList(templatesList);
     },

@@ -148,11 +148,22 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       if (servicesList === undefined) {
         servicesList = this.__servicesLatestList;
       }
-      this.__servicesLatestList = servicesList;
-      this._resourcesContainer.removeAll();
+      this._removeResourceCards();
+      this._addResourcesToList(servicesList);
+    },
+
+    _addResourcesToList: function(servicesList) {
+      const cards = this._resourcesContainer.getCards();
       osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
       servicesList.forEach(service => {
+        if (this.__servicesLatestList.indexOf(service) === -1) {
+          this.__servicesLatestList.push(service);
+        }
         service["resourceType"] = "service";
+        const idx = cards.findIndex(card => card.getUuid() === service["key"]);
+        if (idx !== -1) {
+          return;
+        }
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
         serviceItem.addListener("updateService", e => {
           const updatedServiceData = e.getData();
@@ -161,6 +172,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         }, this);
         this._resourcesContainer.add(serviceItem);
       });
+
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
