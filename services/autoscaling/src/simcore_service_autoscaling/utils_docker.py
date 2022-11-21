@@ -163,9 +163,14 @@ async def get_docker_swarm_join_script() -> str:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, _ = await process.communicate()
-    decoded_stdout = stdout.decode()
+    stdout, stderr = await process.communicate()
     await asyncio.wait_for(process.wait(), timeout=_COMMAND_TIMEOUT_S)
+    assert process.returncode  # nosec
+    if process.returncode > 0:
+        raise RuntimeError(
+            f"unexpected error running '{' '.join(command)}': {stderr.decode()}"
+        )
+    decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         return (
             f"{match.group(1)} --availability=drain {match.group(2)} {match.group(3)}"
