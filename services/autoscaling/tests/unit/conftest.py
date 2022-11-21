@@ -121,7 +121,7 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 def task_template() -> dict[str, Any]:
     return {
         "ContainerSpec": {
-            "Image": "redis",
+            "Image": "redis:7.0.5-alpine",
         },
     }
 
@@ -179,14 +179,17 @@ async def create_service(
             "Runtime",
             "root['ContainerSpec']['Isolation']",
         }
-        if (
-            task_template.get("Resources", {})
-            .get("Reservations", {})
-            .get("MemoryBytes", 0)
-            == 0
-        ):
-            # NOTE: if a 0 memory reservation is done, docker removes it from the task inspection
-            excluded_paths.add("root['Resources']['Reservations']['MemoryBytes']")
+        for reservation in ["MemoryBytes", "NanoCPUs"]:
+            if (
+                task_template.get("Resources", {})
+                .get("Reservations", {})
+                .get(reservation, 0)
+                == 0
+            ):
+                # NOTE: if a 0 memory reservation is done, docker removes it from the task inspection
+                excluded_paths.add(
+                    f"root['Resources']['Reservations']['{reservation}']"
+                )
         diff = DeepDiff(
             task_template,
             service["Spec"]["TaskTemplate"],
