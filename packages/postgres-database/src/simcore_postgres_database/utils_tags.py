@@ -3,7 +3,7 @@
 
 import functools
 from dataclasses import dataclass
-from typing import Any, Optional, TypedDict
+from typing import Optional, TypedDict
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -16,10 +16,6 @@ from simcore_postgres_database.models.users import users
 # Errors
 #
 class BaseTagError(Exception):
-    pass
-
-
-class ValidationError(BaseTagError):
     pass
 
 
@@ -48,22 +44,6 @@ _TAG_COLUMNS = [tags.c.id, tags.c.name, tags.c.description, tags.c.color]
 @dataclass(frozen=True)
 class TagsRepo:
     user_id: int
-
-    @classmethod
-    def _validate_data(
-        cls, *, data: dict[str, Any], required: set[str], optional: set[str]
-    ):
-        # NOTE: this is a temporary solution until the TagsRepo caller guarantees
-        # required/optional fields.
-        try:
-            values = {k: data[k] for k in required}
-        except KeyError as err:
-            raise ValidationError(f"Missing required value: {err}") from err
-
-        for k in optional:
-            if value := data.get(k):
-                values[k] = value
-        return values
 
     def _join_user_groups_tag(
         self,
@@ -140,15 +120,16 @@ class TagsRepo:
         self,
         conn: SAConnection,
         *,
+        name: str,
+        color: str,
+        description: Optional[str] = None,
         read: bool = True,
         write: bool = True,
         delete: bool = True,
-        **tag_create,
     ) -> TagDict:
-
-        values = self._validate_data(
-            data=tag_create, required={"name", "color"}, optional={"description"}
-        )
+        values = {"name": name, "color": color}
+        if description:
+            values["description"] = description
 
         async with conn.begin():
             # insert new tag
@@ -195,10 +176,22 @@ class TagsRepo:
             )
         return TagDict(row.items())  # type: ignore
 
-    async def update(self, conn: SAConnection, tag_id: int, **tag_update) -> TagDict:
-        updates = self._validate_data(
-            data=tag_update, required=set(), optional={"description", "name", "color"}
-        )
+    async def update(
+        self,
+        conn: SAConnection,
+        tag_id: int,
+        *,
+        name: Optional[str] = None,
+        color: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> TagDict:
+        updates = {}
+        if name:
+            updates["name"] = name
+        if color:
+            updates["color"] = color
+        if description:
+            updates["description"] = description
 
         update_stmt = (
             tags.update()

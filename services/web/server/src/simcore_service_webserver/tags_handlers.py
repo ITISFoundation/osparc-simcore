@@ -8,7 +8,6 @@ from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowed,
     TagsRepo,
-    ValidationError,
 )
 
 from .login.decorators import RQT_USERID_KEY, login_required
@@ -21,7 +20,11 @@ def _handle_tags_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ValidationError as exc:
+        except (KeyError, TypeError, ValueError) as exc:
+            # NOTE: will be replaced by more robust pydantic-based validation
+            # Bad match_info[*] -> KeyError
+            # Bad int(param) -> ValueError
+            # Bad update(**tag_update) -> TypeError
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
         except TagNotFoundError as exc:
@@ -68,7 +71,7 @@ async def create_tag(request: web.Request):
 
     repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        tag = await repo.create(conn, **tag_data)
+        tag = await repo.create(conn, read=True, write=True, delete=True, **tag_data)
         return tag
 
 
