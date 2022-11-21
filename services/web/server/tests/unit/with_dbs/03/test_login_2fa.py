@@ -90,9 +90,14 @@ def db(client: TestClient) -> AsyncpgStorage:
 @pytest.fixture
 def mocked_twilio_service(mocker) -> dict[str, Mock]:
     return {
-        "send_sms_code": mocker.patch(
-            "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
-        )
+        "send_sms_code_for_registration": mocker.patch(
+            "simcore_service_webserver.login.handlers_registration.send_sms_code",
+            autospec=True,
+        ),
+        "send_sms_code_for_login": mocker.patch(
+            "simcore_service_webserver.login.handlers.send_sms_code",
+            autospec=True,
+        ),
     }
 
 
@@ -132,7 +137,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 1. submit
     url = client.app.router["auth_register"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "password": PASSWORD,
@@ -164,7 +169,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "phone": PHONE,
@@ -173,8 +178,8 @@ async def test_workflow_register_and_login_with_2fa(
     await assert_status(rsp, web.HTTPAccepted)
 
     # check code generated and SMS sent
-    assert mocked_twilio_service["send_sms_code"].called
-    kwargs = mocked_twilio_service["send_sms_code"].call_args.kwargs
+    assert mocked_twilio_service["send_sms_code_for_registration"].called
+    kwargs = mocked_twilio_service["send_sms_code_for_registration"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
     assert phone == PHONE
 
@@ -186,7 +191,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 2. confirmation
     url = client.app.router["auth_validate_2fa_register"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "phone": PHONE,
@@ -204,7 +209,7 @@ async def test_workflow_register_and_login_with_2fa(
     # 1. check email/password then send SMS
     url = client.app.router["auth_login"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "password": PASSWORD,
@@ -216,14 +221,14 @@ async def test_workflow_register_and_login_with_2fa(
     assert data["code"] == "SMS_CODE_REQUIRED"
 
     # assert SMS was sent
-    kwargs = mocked_twilio_service["send_sms_code"].call_args.kwargs
+    kwargs = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
     assert phone == PHONE
 
     # 2. check SMS code
     url = client.app.router["auth_validate_2fa_login"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "code": received_code,
@@ -245,6 +250,7 @@ async def test_register_phone_fails_with_used_number(
     """
     Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
     """
+    assert client.app
 
     # some user ALREADY registered with the same phone
     await utils_login.create_fake_user(db, data={"phone": PHONE})
@@ -253,7 +259,7 @@ async def test_register_phone_fails_with_used_number(
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "email": EMAIL,
             "phone": PHONE,
