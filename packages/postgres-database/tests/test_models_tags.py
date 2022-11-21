@@ -4,16 +4,18 @@
 # pylint: disable=too-many-arguments
 
 
+import pytest
 import sqlalchemy as sa
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.tags import tags_to_groups
 from simcore_postgres_database.models.users import users
 
 
+@pytest.mark.skip(reason="DEV only")
 def test_migration_downgrade_script():
-    # This test keeps how the downgrade expression in
+    # NOTE: This test keeps for the record how the downgrade expression in
     # migration/versions/3aa309471ff8_add_tag_to_groups_table_and_rm_tag_user_.py
-    # was deduced
+    # was deduced.
     old_tags = sa.Table(
         "old_tags",
         metadata,
