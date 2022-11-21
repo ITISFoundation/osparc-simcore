@@ -854,47 +854,6 @@ qx.Class.define("osparc.data.Resources", {
             console.error(err);
             reject(err);
           });
-        /*
-        let offset = 0;
-        const limit = 2;
-        const endpoint = "getPage";
-        const options = {
-          resolveWResponse: true
-        };
-        let resources = [];
-        const requestMoreResources = off => {
-          Object.assign(params.url, {
-            "offset": off,
-            "limit": limit
-          });
-          return this.fetch(resource, endpoint, params, null, options)
-            .then(resp => {
-              console.log("resp", resp);
-              resources = [...resources, ...resp.data];
-              const meta = resp["_meta"];
-              const requestMore = (meta.offset + meta.count) < meta.total;
-              if (requestMore) {
-                requestMoreResources(off+limit);
-              } else {
-                resolve(resources);
-              }
-            })
-            .catch(err => {
-              console.error(err);
-              reject(err);
-            });
-        };
-        requestMoreResources(offset)
-          .then(resourcesResp => {
-            console.log(resourcesResp);
-            resources.push(...resourcesResp);
-            resolve(resources);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-        */
       });
     },
 
