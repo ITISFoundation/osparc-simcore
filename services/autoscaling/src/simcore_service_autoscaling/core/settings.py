@@ -18,19 +18,33 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 class AwsSettings(BaseCustomSettings):
     # AWS Access
     AWS_ACCESS_KEY_ID: str
-    AWS_ENDPOINT: Optional[str] = None
+    AWS_ENDPOINT: Optional[str] = Field(
+        default=None, description="do not define if using standard AWS"
+    )
     AWS_REGION_NAME: str = "us-east-1"
     AWS_SECRET_ACCESS_KEY: str
 
     # Cluster
-    AWS_DNS: str
-    AWS_KEY_NAME: str
+    AWS_DNS: str = Field(..., description="DNS Name of the docker swarm manager")
+    AWS_KEY_NAME: str = Field(
+        ...,
+        description="SSH key filename (without ext) to access the docker swarm manager",
+    )
 
     # EC2 instance paramaters
-    AWS_SECURITY_GROUP_IDS: list[str]
-    AWS_SUBNET_ID: str
-    AWS_AMI_ID: str
-    AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES: tuple[str, ...]
+    AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES: tuple[str, ...] = Field(
+        ...,
+        description="Defines which EC2 instances are considered as candidates for new docker nodes",
+    )
+    AWS_AMI_ID: str = Field(
+        ..., description="Defines the AMI ID used to initialize a new docker node"
+    )
+    AWS_MAX_NUMBER_OF_INSTANCES: int = Field(
+        10,
+        description="Defines the maximum number of instances the autoscaling app may create",
+    )
+    AWS_SECURITY_GROUP_IDS: list[str] = Field(..., description="TO BE DEFINED")
+    AWS_SUBNET_ID: str = Field(..., description="TO BE DEFINED")
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
