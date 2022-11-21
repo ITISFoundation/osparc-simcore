@@ -74,13 +74,17 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "AWS_KEY_NAME": "TODO",
-            "AWS_DNS": faker.domain_name(),
-            "AWS_ACCESS_KEY_ID": "str",
-            "AWS_SECRET_ACCESS_KEY": "str",
-            "AWS_SECURITY_GROUP_IDS": '["a", "b"]',
-            "AWS_SUBNET_ID": "str",
+            "AWS_ACCESS_KEY_ID": faker.pystr(),
             # "AWS_ENDPOINT": "null",
+            "AWS_SECRET_ACCESS_KEY": faker.pystr(),
+            "AWS_DNS": faker.domain_name(),
+            "AWS_KEY_NAME": faker.pystr(),
+            "AWS_SECURITY_GROUP_IDS": json.dumps(faker.pylist(allowed_types=(str,))),
+            "AWS_SUBNET_ID": faker.pystr(),
+            "AWS_AMI_ID": faker.pystr(),
+            "AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES": json.dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
         },
     )
     return mock_env_devel_environment | envs
@@ -314,6 +318,24 @@ def ec2_client() -> Iterator[EC2Client]:
     settings = AwsSettings.create_from_envs()
     with autoscaling_ec2_client(settings) as client:
         yield client
+
+
+@pytest.fixture
+def aws_allowed_ec2_instance_type_names(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[list[str]]:
+    allowed_instances = [
+        "t2.xlarge",
+        "t2.2xlarge",
+        "r5n.4xlarge",
+        "r5n.8xlarge",
+    ]
+    monkeypatch.setenv(
+        "AWS_ALLOWED_EC2_INSTANCE_TYPE_NAMES",
+        json.dumps(allowed_instances),
+    )
+    yield allowed_instances
 
 
 @pytest.fixture

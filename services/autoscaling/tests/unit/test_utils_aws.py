@@ -51,6 +51,7 @@ def test_ec2_client_with_mock_server(
 def test_get_ec2_instance_capabilities(
     app_environment: EnvVarsDict,
     mocked_aws_server_envs: None,
+    aws_allowed_ec2_instance_type_names: list[str],
 ):
     settings = AwsSettings.create_from_envs()
     instance_types = get_ec2_instance_capabilities(settings)

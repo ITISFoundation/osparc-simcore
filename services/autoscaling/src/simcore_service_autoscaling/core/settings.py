@@ -16,13 +16,15 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
 class AwsSettings(BaseCustomSettings):
-    AWS_KEY_NAME: str
-    AWS_DNS: str
-    AWS_ENDPOINT: Optional[str] = None
-
+    # AWS Access
     AWS_ACCESS_KEY_ID: str
+    AWS_ENDPOINT: Optional[str] = None
+    AWS_REGION_NAME: str = "us-east-1"
     AWS_SECRET_ACCESS_KEY: str
-    AWS_REGION_NAME: str = "us-east-1"  # see https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html
+
+    # Cluster
+    AWS_DNS: str
+    AWS_KEY_NAME: str
 
     # EC2 instance paramaters
     AWS_SECURITY_GROUP_IDS: list[str]

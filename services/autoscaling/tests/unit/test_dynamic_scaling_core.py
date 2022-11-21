@@ -47,6 +47,7 @@ def minimal_configuration(
     aws_subnet_id: str,
     aws_security_group_id: str,
     aws_ami_id: str,
+    aws_allowed_ec2_instance_type_names: list[str],
 ) -> Iterator[None]:
     yield
 
