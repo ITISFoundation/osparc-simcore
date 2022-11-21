@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       const groupByButton = new qx.ui.form.MenuButton(this.tr("Group by"), null, groupByMenu);
 
-      const dontGroup = new qx.ui.menu.RadioButton(this.tr("Don't"));
+      const dontGroup = new qx.ui.menu.RadioButton(this.tr("Don't group"));
       dontGroup.addListener("execute", () => this._resourcesContainer.setGroupBy(null));
       const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
       tagByGroup.addListener("execute", () => this._resourcesContainer.setGroupBy("tags"));
