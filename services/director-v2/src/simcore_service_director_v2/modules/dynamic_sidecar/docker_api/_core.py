@@ -325,11 +325,10 @@ async def is_sidecar_running(
 
         # check if the any of the tasks for the service is in running state
         service_id = sidecar_service_list[0]["ID"]
-        service_tasks = await client.tasks.list(filters={"service": f"{service_id}"})
-        for task in service_tasks:
-            if task["Status"]["State"] == "running":
-                return True
-        return False
+        service_tasks = await client.tasks.list(
+            filters={"service": f"{service_id}", "desired-state": "running"}
+        )
+        return len(service_tasks) == 1
 
 
 async def get_or_create_networks_ids(
