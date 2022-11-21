@@ -81,7 +81,6 @@ async def create_node_labels(
 
 
 async def test_get_monitored_nodes(
-    docker_swarm: None,
     host_node: Node,
 ):
     monitored_nodes = await get_monitored_nodes(node_labels=[])
@@ -90,7 +89,6 @@ async def test_get_monitored_nodes(
 
 
 async def test_get_monitored_nodes_with_invalid_label(
-    docker_swarm: None,
     host_node: Node,
     faker: Faker,
 ):
@@ -101,7 +99,6 @@ async def test_get_monitored_nodes_with_invalid_label(
 
 
 async def test_get_monitored_nodes_with_valid_label(
-    docker_swarm: None,
     host_node: Node,
     faker: Faker,
     create_node_labels: Callable[[list[str]], Awaitable[None]],
@@ -124,7 +121,6 @@ async def test_get_monitored_nodes_with_valid_label(
 
 
 async def test_pending_service_task_with_insufficient_resources_with_no_service(
-    docker_swarm: None,
     host_node: Node,
 ):
     assert (
@@ -133,7 +129,6 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
 
 
 async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
-    docker_swarm: None,
     host_node: Node,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
@@ -191,7 +186,6 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
 
 
 async def test_pending_service_task_with_insufficient_resources_with_labelled_services(
-    docker_swarm: None,
     host_node: Node,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
@@ -279,9 +273,7 @@ async def test_compute_cluster_total_resources_with_no_nodes_returns_0(
     assert cluster_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
-async def test_compute_cluster_total_resources_returns_host_resources(
-    docker_swarm: None, host_node: Node
-):
+async def test_compute_cluster_total_resources_returns_host_resources(host_node: Node):
     cluster_resources = await compute_cluster_total_resources([host_node])
     assert cluster_resources == Resources(
         cpus=psutil.cpu_count(), ram=ByteSize(psutil.virtual_memory().total)
@@ -406,7 +398,6 @@ async def test_compute_cluster_used_resources_with_no_nodes_returns_0(
 
 
 async def test_compute_cluster_used_resources_with_no_services_running_returns_0(
-    docker_swarm: None,
     host_node: Node,
 ):
     cluster_used_resources = await compute_cluster_used_resources([host_node])
