@@ -1,9 +1,11 @@
+import json
 import logging
 from datetime import datetime
 
 from fastapi import FastAPI
 
 from . import utils_aws, utils_docker
+from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
 
@@ -64,7 +66,19 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_AWS,
                 instance_type=ec2_instances_needed[0].name,
-                tags={"io.osparc.autoscaling.created": f"{datetime.utcnow()}"},
+                tags={
+                    "io.osparc.autoscaling.created": f"{datetime.utcnow()}",
+                    "io.osparc.autoscaling.version": f"{VERSION}",
+                    "io.osparc.autoscaling.monitored_nodes_labels": json.dumps(
+                        app_settings.AUTOSCALING_MONITORED_NODES_LABELS
+                    ),
+                    "io.osparc.autoscaling.monitored_services_labels": json.dumps(
+                        app_settings.AUTOSCALING_MONITORED_SERVICES_LABELS
+                    ),
+                    "io.osparc.autoscaling.monitored_services_image_names": json.dumps(
+                        app_settings.AUTOSCALING_MONITORED_SERVICES_IMAGE_NAMES
+                    ),
+                },
             )
 
             # NOTE: in this first trial we start one instance at a time
