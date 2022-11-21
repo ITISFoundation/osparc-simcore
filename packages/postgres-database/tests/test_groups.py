@@ -2,13 +2,15 @@
 # pylint: disable=no-value-for-parameter
 
 
-from typing import Optional
+from typing import Awaitable, Callable, Optional, Union
 
 import aiopg.sa.exc
 import pytest
+import sqlalchemy as sa
+from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
-from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
+from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     GroupType,
@@ -19,35 +21,19 @@ from simcore_postgres_database.webserver_models import (
 from sqlalchemy import func, literal_column, select
 
 
-async def _create_group(conn, **overrides) -> RowProxy:
-    result = await conn.execute(
-        groups.insert()
-        .values(**random_group(**overrides))
-        .returning(literal_column("*"))
-    )
-    return await result.fetchone()
-
-
-async def _create_user(conn, name: str, group: RowProxy) -> RowProxy:
-    result = await conn.execute(
-        users.insert().values(**random_user(name=name)).returning(literal_column("*"))
-    )
-    user = await result.fetchone()
-    result = await conn.execute(
-        user_to_groups.insert().values(uid=user.id, gid=group.gid)
-    )
-    return user
-
-
-async def test_user_group_uniqueness(make_engine):
+async def test_user_group_uniqueness(
+    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]],
+    create_fake_group: Callable,
+    create_fake_user: Callable,
+):
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
     async with engine.acquire() as conn:
-        rory_group = await _create_group(conn, name="Rory Storm and the Hurricanes")
-        ringo = await _create_user(conn, "Ringo", rory_group)
+        rory_group = await create_fake_group(conn, name="Rory Storm and the Hurricanes")
+        ringo = await create_fake_user(conn, name="Ringo", group=rory_group)
         # test unique user/group pair
         with pytest.raises(UniqueViolation, match="user_to_groups_uid_gid_key"):
             await conn.execute(
@@ -66,7 +52,9 @@ async def test_user_group_uniqueness(make_engine):
             await res.fetchone()
 
 
-async def test_all_group(make_engine):
+async def test_all_group(
+    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+):
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
@@ -117,7 +105,9 @@ async def test_all_group(make_engine):
         assert all_group_gid == 1  # it's the first group so it gets a 1
 
 
-async def test_own_group(make_engine):
+async def test_own_group(
+    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]]
+):
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
@@ -167,19 +157,23 @@ async def test_own_group(make_engine):
         assert relations_count == (users_count + users_count)
 
 
-async def test_group(make_engine):
+async def test_group(
+    make_engine: Callable[[bool], Union[Awaitable[Engine], sa.engine.base.Engine]],
+    create_fake_group: Callable,
+    create_fake_user: Callable,
+):
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
     async with engine.acquire() as conn:
-        rory_group = await _create_group(conn, name="Rory Storm and the Hurricanes")
-        quarrymen_group = await _create_group(conn, name="The Quarrymen")
-        await _create_user(conn, "John", quarrymen_group)
-        await _create_user(conn, "Paul", quarrymen_group)
-        await _create_user(conn, "Georges", quarrymen_group)
-        pete = await _create_user(conn, "Pete", quarrymen_group)
-        ringo = await _create_user(conn, "Ringo", rory_group)
+        rory_group = await create_fake_group(conn, name="Rory Storm and the Hurricanes")
+        quarrymen_group = await create_fake_group(conn, name="The Quarrymen")
+        await create_fake_user(conn, name="John", group=quarrymen_group)
+        await create_fake_user(conn, name="Paul", group=quarrymen_group)
+        await create_fake_user(conn, name="Georges", group=quarrymen_group)
+        pete = await create_fake_user(conn, name="Pete", group=quarrymen_group)
+        ringo = await create_fake_user(conn, name="Ringo", group=rory_group)
 
         # rationale: following linux user/group system, each user has its own group (primary group) + whatever other group (secondary groups)
         # check DB contents

@@ -1,84 +1,89 @@
-import sqlalchemy as sa
+import functools
+
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from sqlalchemy import and_
+from servicelib.aiohttp.typing_extension import Handler
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.utils_tags import (
+    TagNotFoundError,
+    TagOperationNotAllowed,
+    TagsRepo,
+)
 
-from .db_models import tags
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_api import check_permission
 
 
+def _handle_tags_exceptions(handler: Handler):
+    @functools.wraps(handler)
+    async def wrapper(request: web.Request) -> web.Response:
+        try:
+            return await handler(request)
+
+        except (KeyError, TypeError, ValueError) as exc:
+            # NOTE: will be replaced by more robust pydantic-based validation
+            # Bad match_info[*] -> KeyError
+            # Bad int(param) -> ValueError
+            # Bad update(**tag_update) -> TypeError
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+
+        except TagNotFoundError as exc:
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except TagOperationNotAllowed as exc:
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+
+    return wrapper
+
+
 @login_required
+@_handle_tags_exceptions
 async def list_tags(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+
+    repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        # pylint: disable=not-an-iterable
-        columns = [col for col in tags.columns if col.key != "user_id"]
-        query = sa.select(columns).where(tags.c.user_id == uid)
-        result = []
-        async for row_proxy in conn.execute(query):
-            row_dict = dict(row_proxy.items())
-            result.append(row_dict)
-    return result
+        tags = await repo.list(conn)
+        return tags
 
 
 @login_required
+@_handle_tags_exceptions
 async def update_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = request.match_info.get("tag_id")
+    tag_id = int(request.match_info["tag_id"])
     tag_data = await request.json()
+
+    repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        # pylint: disable=no-value-for-parameter
-        query = (
-            tags.update()
-            .values(
-                name=tag_data["name"],
-                description=tag_data["description"],
-                color=tag_data["color"],
-            )
-            .where(and_(tags.c.id == tag_id, tags.c.user_id == uid))
-            .returning(tags.c.id, tags.c.name, tags.c.description, tags.c.color)
-        )
-        async with conn.execute(query) as result:
-            if result.rowcount == 1:
-                row_proxy = await result.first()
-                return dict(row_proxy.items())
-            raise web.HTTPInternalServerError()
+        tag = await repo.update(conn, tag_id, **tag_data)
+        return tag
 
 
 @login_required
+@_handle_tags_exceptions
 async def create_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
     tag_data = await request.json()
+
+    repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        # pylint: disable=no-value-for-parameter
-        query = (
-            tags.insert()
-            .values(
-                user_id=uid,
-                name=tag_data["name"],
-                description=tag_data["description"],
-                color=tag_data["color"],
-            )
-            .returning(tags.c.id, tags.c.name, tags.c.description, tags.c.color)
-        )
-        async with conn.execute(query) as result:
-            if result.rowcount == 1:
-                row_proxy = await result.first()
-                return dict(row_proxy.items())
-            raise web.HTTPInternalServerError()
+        tag = await repo.create(conn, read=True, write=True, delete=True, **tag_data)
+        return tag
 
 
 @login_required
+@_handle_tags_exceptions
 async def delete_tag(request: web.Request):
     await check_permission(request, "tag.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
-    tag_id = request.match_info.get("tag_id")
+    tag_id = int(request.match_info["tag_id"])
+
+    repo = TagsRepo(user_id=uid)
     async with engine.acquire() as conn:
-        # pylint: disable=no-value-for-parameter
-        query = tags.delete().where(and_(tags.c.id == tag_id, tags.c.user_id == uid))
-        async with conn.execute(query):
-            raise web.HTTPNoContent(content_type="application/json")
+        await repo.delete(conn, tag_id=tag_id)
+
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
