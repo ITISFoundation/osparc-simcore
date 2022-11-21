@@ -140,7 +140,7 @@ async def everybody_tag_id(client: TestClient) -> Iterator[int]:
             description="tag for EVERYBODY",
             color="#f00",
             group_id=1,
-            read=True,
+            read=True,  # <--- READ ONLY
             write=False,
             delete=False,
         )
@@ -211,11 +211,12 @@ async def test_create_and_update_tags(
     )
 
     updated, _ = await assert_status(resp, web.HTTPOk)
-    assert updated == created.update(description="This is my tag")
+    created.update(description="This is my tag")
+    assert updated == created
 
-    with pytest.raises(web.HTTPUnauthorized):
-        url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")
-        resp = await client.put(
-            f"{url}",
-            json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
-        )
+    url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")
+    resp = await client.put(
+        f"{url}",
+        json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
+    )
+    await assert_status(resp, web.HTTPUnauthorized)
