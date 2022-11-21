@@ -10,7 +10,8 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.models.tags import tags, tags_to_groups
+from pytest_simcore.helpers.utils_tags import create_tag, create_tag_access
+from simcore_postgres_database.models.tags import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
@@ -68,54 +69,13 @@ async def other_user(
     return user_
 
 
-async def _create_tag_access(
-    conn: SAConnection,
-    *,
-    tag_id,
-    group_id,
-    read,
-    write,
-    delete,
-) -> int:
-    await conn.execute(
-        tags_to_groups.insert().values(
-            tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete
-        )
-    )
-    return tag_id
-
-
-async def _create_tag(
-    conn: SAConnection,
-    *,
-    name,
-    description,
-    color,
-    group_id,
-    read,
-    write,
-    delete,
-) -> int:
-    """helper to create a tab by inserting rows in two different tables"""
-    tag_id = await conn.scalar(
-        tags.insert()
-        .values(name=name, description=description, color=color)
-        .returning(tags.c.id)
-    )
-    assert tag_id
-    await _create_tag_access(
-        conn, tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete
-    )
-    return tag_id
-
-
 async def test_tags_access_with_primary_groups(
     connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
 ):
     conn = connection
 
     (tag_id, other_tag_id) = [
-        await _create_tag(
+        await create_tag(
             conn,
             name="T1",
             description="tag 1",
@@ -125,7 +85,7 @@ async def test_tags_access_with_primary_groups(
             write=True,
             delete=True,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="T2",
             description="tag for other_user",
@@ -175,7 +135,7 @@ async def test_tags_access_with_multiple_groups(
     conn = connection
 
     (tag_id, other_tag_id, group_tag_id, everyone_tag_id) = [
-        await _create_tag(
+        await create_tag(
             conn,
             name="T1",
             description="tag 1",
@@ -185,7 +145,7 @@ async def test_tags_access_with_multiple_groups(
             write=True,
             delete=True,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="T2",
             description="tag for other_user",
@@ -195,7 +155,7 @@ async def test_tags_access_with_multiple_groups(
             write=True,
             delete=True,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="TG",
             description="read-write tag shared in a GROUP ( currently only user)",
@@ -205,7 +165,7 @@ async def test_tags_access_with_multiple_groups(
             write=True,
             delete=False,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="TE",
             description="read-only tag shared with EVERYONE",
@@ -244,7 +204,7 @@ async def test_tags_access_with_multiple_groups(
 
     # now group adds read for all tags
     for t in (tag_id, other_tag_id, everyone_tag_id):
-        await _create_tag_access(
+        await create_tag_access(
             conn,
             group_id=group.gid,
             tag_id=t,
@@ -270,7 +230,7 @@ async def test_tags_repo_list_and_get(
 
     # (2) one tag
     expected_tags_ids = [
-        await _create_tag(
+        await create_tag(
             conn,
             name="T1",
             description=f"tag for {user.id}",
@@ -288,7 +248,7 @@ async def test_tags_repo_list_and_get(
 
     # (3) another tag via its standard group
     expected_tags_ids.append(
-        await _create_tag(
+        await create_tag(
             conn,
             name="T2",
             description="tag via std group",
@@ -304,7 +264,7 @@ async def test_tags_repo_list_and_get(
     assert {t["id"] for t in listed_tags} == set(expected_tags_ids)
 
     # (4) add another tag from a differnt user
-    await _create_tag(
+    await create_tag(
         conn,
         name="T3",
         description=f"tag for {other_user.id}",
@@ -321,7 +281,7 @@ async def test_tags_repo_list_and_get(
     assert listed_tags == prev_listed_tags
 
     # (5) add a global tag
-    tag_id = await _create_tag(
+    tag_id = await create_tag(
         conn,
         name="TG",
         description="tag for EVERYBODY",
@@ -422,7 +382,7 @@ async def test_tags_repo_update(
 
     # Tags with different access rights
     readonly_tid, readwrite_tid, other_tid = [
-        await _create_tag(
+        await create_tag(
             conn,
             name="T1",
             description="read only",
@@ -432,7 +392,7 @@ async def test_tags_repo_update(
             write=False,  # <--- read only
             delete=False,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="T2",
             description="read/write",
@@ -442,7 +402,7 @@ async def test_tags_repo_update(
             write=True,  # <--- can write
             delete=False,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="T3",
             description="read/write but a other user",
@@ -481,7 +441,7 @@ async def test_tags_repo_delete(
 
     # Tags with different access rights
     readonly_tid, delete_tid, other_tid = [
-        await _create_tag(
+        await create_tag(
             conn,
             name="T1",
             description="read only",
@@ -491,7 +451,7 @@ async def test_tags_repo_delete(
             write=False,  # <--- read only
             delete=False,
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="T2",
             description="read/write",
@@ -501,7 +461,7 @@ async def test_tags_repo_delete(
             write=True,
             delete=True,  # <-- can delete
         ),
-        await _create_tag(
+        await create_tag(
             conn,
             name="T3",
             description="read/write but a other user",
