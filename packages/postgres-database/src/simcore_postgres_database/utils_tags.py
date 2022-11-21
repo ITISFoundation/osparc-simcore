@@ -53,6 +53,8 @@ class TagsRepo:
     def _validate_data(
         cls, *, data: dict[str, Any], required: set[str], optional: set[str]
     ):
+        # NOTE: this is a temporary solution until the TagsRepo caller guarantees
+        # required/optional fields.
         try:
             values = {k: data[k] for k in required}
         except KeyError as err:
