@@ -20,7 +20,7 @@ from simcore_service_autoscaling.utils_aws import (
     ec2_client,
     find_best_fitting_ec2_instance,
     get_ec2_instance_capabilities,
-    start_instance_aws,
+    start_aws_instance,
 )
 
 
@@ -145,4 +145,4 @@ def test_start_instance_aws(
     faker: Faker,
 ):
     settings = AwsSettings.create_from_envs()
-    start_instance_aws(settings, faker.pystr(), tags=faker.pylist(allowed_types=(str,)))
+    start_aws_instance(settings, faker.pystr(), tags=faker.pylist(allowed_types=(str,)))

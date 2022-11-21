@@ -123,7 +123,7 @@ def _compose_user_data(settings: AwsSettings) -> str:
     )
 
 
-def start_instance_aws(
+def start_aws_instance(
     settings: AwsSettings,
     instance_type: str,
     tags: list[str],

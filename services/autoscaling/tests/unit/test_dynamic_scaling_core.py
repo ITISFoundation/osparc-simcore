@@ -5,6 +5,7 @@
 
 
 from typing import Any, Awaitable, Callable, Iterator, Mapping
+from unittest import mock
 
 import aiodocker
 import pytest
@@ -28,20 +29,36 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[N
     yield
 
 
-async def test_check_dynamic_resources_with_no_services_does_nothing(
-    docker_swarm: None,
-    disable_dynamic_service_background_task: None,
-    initialized_app: FastAPI,
-):
-    await check_dynamic_resources(initialized_app)
-    # TODO: assert nothing is actually done!
+@pytest.fixture
+def mock_start_aws_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_start_aws_instance = mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling_core.utils_aws.start_aws_instance",
+        autospec=True,
+    )
+    yield mocked_start_aws_instance
 
 
-async def test_check_dynamic_resources_with_service_too_much_resources_starts_nothing(
-    async_docker_client: aiodocker.Docker,
+@pytest.fixture
+def minimal_configuration(
     docker_swarm: None,
     disable_dynamic_service_background_task: None,
     aws_security_group_id: None,
+):
+    ...
+
+
+async def test_check_dynamic_resources_with_no_services_does_nothing(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    mock_start_aws_instance: mock.Mock,
+):
+    await check_dynamic_resources(initialized_app)
+    mock_start_aws_instance.assert_not_called()
+
+
+async def test_check_dynamic_resources_with_service_too_much_resources_starts_nothing(
+    minimal_configuration: None,
+    async_docker_client: aiodocker.Docker,
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
@@ -49,6 +66,7 @@ async def test_check_dynamic_resources_with_service_too_much_resources_starts_no
     assert_for_service_state: Callable[
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
+    mock_start_aws_instance: mock.Mock,
 ):
     task_template_with_too_many_resource = task_template | create_task_resources(1000)
     service_with_too_many_resources = await create_service(
@@ -61,3 +79,4 @@ async def test_check_dynamic_resources_with_service_too_much_resources_starts_no
     )
 
     await check_dynamic_resources(initialized_app)
+    mock_start_aws_instance.assert_not_called()

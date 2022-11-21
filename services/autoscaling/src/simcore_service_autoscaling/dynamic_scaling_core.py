@@ -61,7 +61,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             assert app_settings.AUTOSCALING_AWS  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            utils_aws.start_instance_aws(
+            utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_AWS,
                 instance_type=ec2_instances_needed[0].name,
                 tags=["autoscaling created node", f"created at {datetime.utcnow()}"],
