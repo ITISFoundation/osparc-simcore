@@ -4,12 +4,12 @@
 # pylint: disable=too-many-arguments
 
 
-from pathlib import Path
 from typing import Any, Callable
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -18,20 +18,46 @@ from models_library.projects_state import (
     RunningState,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from openapi_core.schema.specs.models import Spec as OpenApiSpecs
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
+from simcore_service_webserver import tags_handlers
+from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.tags_handlers import TagGet
+
+
+@pytest.mark.parametrize(
+    "route",
+    tags_handlers.routes,
+    ids=lambda r: f"{r.method.upper()} {r.path}",
+)
+def test_tags_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
+
+    assert route.path.startswith(f"/{api_version_prefix}")
+    path = route.path.replace(f"/{api_version_prefix}", "")
+
+    assert (
+        route.method.lower() in openapi_specs.paths[path].operations
+    ), f"operation {route.method} undefined in OAS"
+
+    assert (
+        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        == route.kwargs["name"]
+    ), "route's name differs from OAS operation_id"
 
 
 @pytest.fixture
-def fake_tags(fake_data_dir: Path) -> list[dict[str, Any]]:
+def fake_tags(faker: Faker) -> list[dict[str, Any]]:
     return [
         {"name": "tag1", "description": "description1", "color": "#f00"},
         {"name": "tag2", "description": "description2", "color": "#00f"},
     ]
 
 
+# TODO: extend tests to other roles
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_tags_to_studies(
     client: TestClient,
@@ -99,3 +125,20 @@ async def test_tags_to_studies(
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
     resp = await client.delete(f"{url}")
     await assert_status(resp, web.HTTPNoContent)
+
+
+@pytest.mark.skip(reason="UNDER DEV")
+async def test_list_tags_with_access_info(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+):
+    assert client.app
+
+    assert user_role == UserRole.USER
+
+    url = client.app.router["list_tags"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, web.HTTPOk)
+
+    assert parse_obj_as(data, list[TagGet])
