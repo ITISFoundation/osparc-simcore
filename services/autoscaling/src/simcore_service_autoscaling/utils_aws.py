@@ -140,13 +140,16 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
     )
 
 
+InstanceIpAddress = str
+
+
 def start_aws_instance(
     settings: EC2Settings,
     instance_settings: EC2InstancesSettings,
     instance_type: InstanceTypeType,
     tags: dict[str, str],
     startup_script: str,
-) -> None:
+) -> InstanceIpAddress:
     with log_context(
         logger,
         logging.DEBUG,
@@ -195,6 +198,21 @@ def start_aws_instance(
             "New instance launched: %s, waiting for it to start now...", instance_id
         )
         # wait for the instance to be in a running state
+        # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+        waiter = client.get_waiter("instance_exists")
+        waiter.wait(InstanceIds=[instance_id])
+        logger.info("instance %s exists now, waiting for running state...", instance_id)
+
         waiter = client.get_waiter("instance_running")
         waiter.wait(InstanceIds=[instance_id])
-        logger.info("instance %s is now running, happy computing...", instance_id)
+        logger.info(
+            "instance %s is now running, waiting for status now...", instance_id
+        )
+
+        waiter = client.get_waiter("instance_status_ok")
+        waiter.wait(InstanceIds=[instance_id])
+        logger.info("instance %s is OK, happy computing...", instance_id)
+
+        # get the private IP
+        instances = client.describe_instances(InstanceIds=[instance_id])
+        return instances["Reservations"][0]["Instances"][0]["PrivateIpAddress"]
