@@ -16,7 +16,7 @@ from json2html import json2html
 from pytest_mock import MockerFixture
 from simcore_service_webserver._constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email import setup_email
-from simcore_service_webserver.login.utils import (
+from simcore_service_webserver.login.utils_email import (
     get_template_path,
     render_and_send_mail,
     themed,
@@ -32,7 +32,7 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
         print("---------------")
 
     return mocker.patch(
-        "simcore_service_webserver.login.utils.send_mail",
+        "simcore_service_webserver.login.utils_email._send_mail",
         spec=True,
         side_effect=print_mail,
     )

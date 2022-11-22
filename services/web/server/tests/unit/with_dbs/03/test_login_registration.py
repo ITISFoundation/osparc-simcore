@@ -104,7 +104,8 @@ async def test_registration_with_expired_confirmation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login.settings.get_plugin_settings",
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
@@ -141,6 +142,7 @@ async def test_registration_with_invalid_confirmation_code(
     assert client.app
     mocker.patch(
         "simcore_service_webserver.login.settings.get_plugin_settings",
+        autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
@@ -168,7 +170,8 @@ async def test_registration_without_confirmation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
@@ -199,7 +202,8 @@ async def test_registration_with_confirmation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
@@ -260,7 +264,8 @@ async def test_registration_with_invitation(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
@@ -314,7 +319,8 @@ async def test_registraton_with_invitation_for_trial_account(
 ):
     assert client.app
     mocker.patch(
-        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
+        autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,

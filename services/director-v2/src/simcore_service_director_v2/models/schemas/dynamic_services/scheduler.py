@@ -143,7 +143,7 @@ class DynamicSidecar(BaseModel):
         description="status of the service sidecar also with additional information",
     )
 
-    is_available: bool = Field(
+    is_ready: bool = Field(
         False,
         scription=(
             "is True while the health check on the dynamic-sidecar is responding. "
@@ -171,6 +171,7 @@ class DynamicSidecar(BaseModel):
     )
 
     was_dynamic_sidecar_started: bool = False
+    is_healthy: bool = False
     were_containers_created: bool = Field(
         False,
         description=(
@@ -187,7 +188,7 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
-    service_environment_prepared: bool = Field(
+    is_service_environment_ready: bool = Field(
         False,
         description=(
             "True when the environment setup required by the "
