@@ -390,6 +390,7 @@ USER_ROLES = [
 
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
+@pytest.mark.flaky(max_runs=3)
 async def test_publish_to_other_user(
     not_logged_user_id: UserID,
     not_current_project_id: ProjectID,
