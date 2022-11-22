@@ -62,6 +62,11 @@ class NodesMonitoringSettings(BaseCustomSettings):
         description="autoscaling will only monitor services with the given image names (if empty all services will be monitored)",
     )
 
+    NODES_MONITORING_NEW_NODES_LABELS: list[str] = Field(
+        default_factory=list,
+        description="autoscaling will add these labels to any new node it creates (additional to the ones in NODES_MONITORING_NODE_LABELS",
+    )
+
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
