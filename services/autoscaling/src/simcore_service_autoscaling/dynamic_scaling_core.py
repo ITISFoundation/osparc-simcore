@@ -66,7 +66,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            utils_aws.start_aws_instance(
+            instance_private_ip_address = utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_ACCESS,
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(
