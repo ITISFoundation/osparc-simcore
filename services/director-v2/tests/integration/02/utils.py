@@ -455,7 +455,7 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
         return exposed_port
 
 
-async def assert_service_is_available(  # pylint: disable=redefined-outer-name
+async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
     exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
 ) -> None:
     service_address = (
@@ -518,14 +518,14 @@ async def assert_services_reply_200(
         )
 
         try:
-            await assert_service_is_available(
+            await assert_service_is_ready(
                 exposed_port=exposed_port,
                 is_legacy=is_legacy(node_data),
                 service_uuid=service_uuid,
             )
         finally:
             await _inspect_service_and_print_logs(
-                tag=f"after_service_is_available {service_uuid}",
+                tag=f"after_service_is_ready {service_uuid}",
                 service_name=service_data["service_host"],
                 is_legacy=is_legacy(node_data),
             )
