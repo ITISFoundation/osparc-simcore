@@ -140,7 +140,7 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
     )
 
 
-InstanceIpAddress = str
+InstancePrivateDNSName = str
 
 
 def start_aws_instance(
@@ -149,7 +149,7 @@ def start_aws_instance(
     instance_type: InstanceTypeType,
     tags: dict[str, str],
     startup_script: str,
-) -> InstanceIpAddress:
+) -> InstancePrivateDNSName:
     with log_context(
         logger,
         logging.DEBUG,
@@ -215,4 +215,8 @@ def start_aws_instance(
 
         # get the private IP
         instances = client.describe_instances(InstanceIds=[instance_id])
-        return instances["Reservations"][0]["Instances"][0]["PrivateIpAddress"]
+        private_dns_name = instances["Reservations"][0]["Instances"][0][
+            "PrivateDnsName"
+        ]
+        logger.info("instance %s is available on %s", instance_id, private_dns_name)
+        return private_dns_name
