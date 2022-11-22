@@ -42,6 +42,24 @@ def mock_start_aws_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
+def mock_wait_for_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_wait_for_node = mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.wait_for_node",
+        autospec=True,
+    )
+    yield mocked_wait_for_node
+
+
+@pytest.fixture
+def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_tag_node = mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.tag_node",
+        autospec=True,
+    )
+    yield mocked_tag_node
+
+
+@pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
     disable_dynamic_service_background_task: None,
@@ -102,6 +120,8 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
     mock_start_aws_instance: mock.Mock,
+    mock_wait_for_node: mock.Mock,
+    mock_tag_node: mock.Mock,
 ):
     task_template_for_r5n_4x_large_with_256Gib = task_template | create_task_resources(
         4, parse_obj_as(ByteSize, "128GiB")
@@ -123,6 +143,8 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
         tags=mock.ANY,
         startup_script=mock.ANY,
     )
+    mock_wait_for_node.assert_called_once()
+    mock_tag_node.assert_called_once()
 
 
 async def test_check_dynamic_resources_with_pending_resources_actually_starts_new_instances(
@@ -136,6 +158,8 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
     ec2_client: EC2Client,
+    mock_wait_for_node: mock.Mock,
+    mock_tag_node: mock.Mock,
 ):
     # we have nothing running now
     all_instances = ec2_client.describe_instances()
@@ -164,3 +188,6 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     running_instance = running_instance["Instances"][0]
     assert "InstanceType" in running_instance
     assert running_instance["InstanceType"] == "r5n.4xlarge"
+
+    mock_wait_for_node.assert_called_once()
+    mock_tag_node.assert_called_once()
