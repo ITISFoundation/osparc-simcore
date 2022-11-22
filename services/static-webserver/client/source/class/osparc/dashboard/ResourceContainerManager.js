@@ -51,8 +51,26 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __flatList: null,
     __groupedLists: null,
 
-    getContainer: function() {
-      return this.__flatList;
+    areMoreResourcesRequired: function() {
+      if (this.__flatList) {
+        return this.__flatList.areMoreResourcesRequired();
+      }
+      return false;
+    },
+
+    getCards: function() {
+      if (this.__flatList) {
+        return this.__flatList.getCards();
+      }
+      const cards = [];
+      this.__groupedLists.forEach(groupedList => cards.push(...groupedList.getCards()));
+      return cards;
+    },
+
+    resetSelection: function() {
+      if (this.__flatList) {
+        this.__flatList.resetSelection();
+      }
     },
 
     __applyGroupBy: function() {
