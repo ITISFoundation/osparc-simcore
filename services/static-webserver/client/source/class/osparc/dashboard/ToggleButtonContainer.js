@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.nextRequest !== null && loadingResourcesBtn &&
-        (this.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        (this.__getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
         osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn))
       ) {
         return true;
@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
 
     __configureCard: function(card) {
       card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
-      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.getVisibles()), this);
+      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
       if (this.getMode() === "list") {
         const width = this.getBounds().width - 15;
         card.setWidth(width);
@@ -197,7 +197,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     /**
      * Returns an array that contains all visible buttons.
      */
-    getVisibles: function() {
+    __getVisibles: function() {
       return this.getCards().filter(button => button.isVisible());
     },
 
