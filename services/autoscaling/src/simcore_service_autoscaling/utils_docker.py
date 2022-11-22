@@ -31,7 +31,7 @@ _TASK_STATUS_WITH_ASSIGNED_RESOURCES: Final[tuple[TaskState, ...]] = (
     TaskState.running,
 )
 _MINUTE: Final[int] = 60
-_TIMEOUT_WAITING_FOR_NODES: Final[int] = 5 * _MINUTE
+_TIMEOUT_WAITING_FOR_NODES_S: Final[int] = 5 * _MINUTE
 
 Label = str
 NodeID = str
@@ -189,7 +189,7 @@ async def get_docker_swarm_join_script() -> str:
 
 
 @retry(
-    stop=stop_after_delay(_TIMEOUT_WAITING_FOR_NODES),
+    stop=stop_after_delay(_TIMEOUT_WAITING_FOR_NODES_S),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     after=after_log(logger, logging.ERROR),
     wait=wait_fixed(5),
