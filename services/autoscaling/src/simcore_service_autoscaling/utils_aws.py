@@ -114,25 +114,6 @@ def _compose_user_data(docker_join_script: str) -> str:
     )
 
 
-# def _compose_user_data(settings: EC2AccessSettings) -> str:
-#     # NOTE: docker swarm commands might be done with aioboto?
-#     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/3364#discussion_r987820674
-#     return dedent(
-#         f"""\
-#     #!/bin/bash
-#     cd /home/ubuntu
-#     hostname=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "hostname" 2>&1)
-#     token=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker swarm join-token -q worker")
-#     host=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker swarm join-token worker" 2>&1)
-#     docker swarm join --token ${{token}} ${{host##* }}
-#     label=$(ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node ls | grep $(hostname)")
-#     label="$(cut -d' ' -f1 <<<"$label")"
-#     ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add sidecar=true $label"
-#     ssh -i {settings.AWS_KEY_NAME}.pem -oStrictHostKeyChecking=no ubuntu@{settings.AWS_DNS} "docker node update --label-add standardworker=true $label"
-#     """
-#     )
-
-
 def _is_ec2_instance_running(instance: ReservationTypeDef):
     return (
         instance.get("Instances", [{}])[0].get("State", {}).get("Name", "not_running")
