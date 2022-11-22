@@ -189,7 +189,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _removeResourceCards: function() {
-      const cards = this._resourcesContainer.getCards();
+      const cards = this._resourcesContainer.getChildren();
       for (let i=cards.length-1; i>=0; i--) {
         const card = cards[i];
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)) {

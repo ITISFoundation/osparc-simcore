@@ -136,7 +136,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     _addResourcesToList: function(templatesList) {
-      const cards = this._resourcesContainer.getCards();
+      const cards = this._resourcesContainer.getChildren();
       templatesList.forEach(template => {
         if (this.__templates.indexOf(template) === -1) {
           this.__templates.push(template);

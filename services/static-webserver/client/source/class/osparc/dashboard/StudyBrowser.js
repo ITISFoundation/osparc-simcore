@@ -226,7 +226,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __removeNewStudyButtons: function() {
-      const cards = this._resourcesContainer.getCards();
+      const cards = this._resourcesContainer.getChildren();
       for (let i=cards.length-1; i>=0; i--) {
         const card = cards[i];
         if (osparc.dashboard.ResourceBrowserBase.isCardNewItem(card)) {
@@ -363,7 +363,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__removeNewStudyButtons();
         this.__addNewStudyButtons(this._resourcesContainer.getMode());
 
-        const cards = this._resourcesContainer.getCards();
+        const cards = this._resourcesContainer.getChildren();
         cards.forEach(card => {
           if (card === this._loadingResourcesBtn) {
             const fetching = card.getFetching();
@@ -451,7 +451,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __applyMultiSelection: function(value) {
-      this._resourcesContainer.getCards().forEach(studyItem => {
+      this._resourcesContainer.getChildren().forEach(studyItem => {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           studyItem.setMultiSelectionMode(value);
           if (value === false) {
@@ -483,7 +483,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this.__studies[idx]["state"] = state;
       }
-      const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
+      const studyItem = this._resourcesContainer.getChildren().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
       if (studyItem) {
         studyItem.setState(state);
       }
@@ -621,7 +621,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _addResourcesToList: function(studiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
-      const cards = this._resourcesContainer.getCards();
+      const cards = this._resourcesContainer.getChildren();
       studiesList.forEach(study => {
         if (this.__studies.indexOf(study) === -1) {
           this.__studies.push(study);
@@ -790,16 +790,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __itemClicked: function(item, isShiftPressed) {
       if (isShiftPressed) {
         const lastIdx = this.__lastSelectedIdx;
-        const currentIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
+        const currentIdx = this._resourcesContainer.getChildren().findIndex(card => card === item);
         const minMaxIdx = [lastIdx, currentIdx].sort();
         for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
-          const button = this._resourcesContainer.getCards()[i];
+          const button = this._resourcesContainer.getChildren()[i];
           if (button.isVisible()) {
             button.setValue(true);
           }
         }
       }
-      const lastIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
+      const lastIdx = this._resourcesContainer.getChildren().findIndex(card => card === item);
       if (lastIdx !== -1) {
         this.__lastSelectedIdx = lastIdx;
       }
