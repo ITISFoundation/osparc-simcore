@@ -49,7 +49,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 class NodesMonitoringSettings(BaseCustomSettings):
     NODES_MONITORING_NODE_LABELS: list[str] = Field(
         default_factory=list,
-        description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored)",
+        description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored), these labels will be added to the new created nodes by default",
     )
 
     NODES_MONITORING_SERVICE_LABELS: list[str] = Field(
