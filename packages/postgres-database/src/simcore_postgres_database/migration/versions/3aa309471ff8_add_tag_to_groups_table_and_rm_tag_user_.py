@@ -99,6 +99,5 @@ def downgrade():
             """
         )
     )
-    op.alter_column("tags", "user_id", nullable=False)
 
     op.drop_table("tags_to_groups")

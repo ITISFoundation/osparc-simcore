@@ -220,4 +220,4 @@ async def test_create_and_update_tags(
         json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
     )
     _, error = await assert_status(resp, web.HTTPUnauthorized)
-    print(error)
+    assert error
