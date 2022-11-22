@@ -92,7 +92,7 @@ def app_environment(
     return mock_env_devel_environment | envs
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     app = create_app(settings)
@@ -106,7 +106,7 @@ def app_settings(initialized_app: FastAPI) -> ApplicationSettings:
     return initialized_app.state.settings
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
     async with httpx.AsyncClient(
