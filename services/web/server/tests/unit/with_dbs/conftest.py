@@ -544,7 +544,9 @@ def _patch_compose_mail(monkeypatch):
         print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
 
     monkeypatch.setattr(
-        simcore_service_webserver.login.utils, "compose_mail", print_mail_to_stdout
+        simcore_service_webserver.login.utils_email,
+        "_compose_mail",
+        print_mail_to_stdout,
     )
 
 
