@@ -3,7 +3,6 @@
  * Copyright: 2019 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
- *          Odei Maiz (odeimaiz)
  */
 
 /**
@@ -12,10 +11,8 @@
 qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
-  construct: function() {
-    this.base(arguments, new qx.ui.layout.Flow(15, 15));
-
-    this.__emptyHeaders();
+  construct: function(layout) {
+    this.base(arguments, layout);
   },
 
   properties: {
@@ -25,13 +22,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       nullable: false,
       event: "changeMode",
       apply: "__applyMode"
-    },
-
-    groupBy: {
-      check: [null, "tags"],
-      init: null,
-      nullable: true,
-      apply: "__applyGroupBy"
     }
   },
 
@@ -41,7 +31,85 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   },
 
   members: {
-    __groupHeaders: null,
+    __lastSelectedIdx: null,
+
+    // overridden
+    add: function(child, options) {
+      if (child instanceof qx.ui.form.ToggleButton) {
+        this.base(arguments, child, options);
+        this.__configureCard(child);
+      } else {
+        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+      }
+    },
+
+    /**
+     * Resets the selection so no toggle button is checked.
+     */
+    resetSelection: function() {
+      this.getChildren().map(button => button.setValue(false));
+      this.__lastSelectedIdx = null;
+      this.fireDataEvent("changeSelection", this.getSelection());
+    },
+
+    /**
+     * Returns an array that contains all buttons that are checked.
+     */
+    getSelection: function() {
+      return this.getChildren().filter(button => button.getValue());
+    },
+
+    /**
+     * Returns an array that contains all visible buttons.
+     */
+    __getVisibles: function() {
+      return this.getChildren().filter(button => button.isVisible());
+    },
+
+    /**
+     * Sets the given button's value to true (checks it) and unchecks all other buttons. If the given button is not present,
+     * every button in the container will get a false value (unchecked).
+     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     */
+    selectOne: function(child) {
+      this.getChildren().map(button => button.setValue(button === child));
+      this.setLastSelectedIndex(this.getIndex(child));
+    },
+
+    /**
+     * Gets the index in the container of the given button.
+     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     */
+    getIndex: function(child) {
+      return this.getChildren().findIndex(button => button === child);
+    },
+
+    getLastSelectedIndex: function() {
+      return this.__lastSelectedIdx;
+    },
+
+    setLastSelectedIndex: function(idx) {
+      if (idx >= 0 && idx < this.getChildren().length) {
+        this.__lastSelectedIdx = idx;
+      }
+    },
+
+    setLastSelectedItem: function(item) {
+      this.setLastSelectedIndex(this.getIndex(item));
+    },
+
+
+
+
+
+    __configureCard: function(card) {
+      card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
+      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
+      if (this.getMode() === "list") {
+        const width = this.getBounds().width - 15;
+        card.setWidth(width);
+      }
+    },
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.nextRequest !== null && loadingResourcesBtn &&
@@ -54,7 +122,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     __reloadCards: function() {
-      const cards = this.getCards();
+      const cards = this.getChildren();
       this.removeAll();
       const header = this.__emptyHeaders();
       if (this.getGroupBy()) {
@@ -72,51 +140,13 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       this.__reloadCards();
     },
 
-    __applyGroupBy: function() {
-      this.__reloadCards();
-    },
-
-    getCards: function() {
-      return this.getChildren().filter(child => !("GroupHeader" in child));
-    },
-
-    __configureCard: function(card) {
-      card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
-      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
-      if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
-        card.setWidth(width);
-      }
-    },
-
-    // overridden
-    add: function(child, options) {
-      if (child instanceof qx.ui.form.ToggleButton) {
-        if ("GroupHeader" in child) {
-          this.base(arguments, child);
-          return;
-        }
-        this.__configureCard(child);
-        if (this.getGroupBy()) {
-          const headerInfo = this.__addHeaders(child);
-          const headerIdx = this.getChildren().findIndex(button => button === headerInfo.widget);
-          const childIdx = headerInfo["children"].findIndex(button => button === child);
-          this.addAt(child, headerIdx+1+childIdx);
-        } else {
-          this.base(arguments, child, options);
-        }
-      } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
-      }
-    },
-
     // overridden
     remove: function(child) {
       this.base(arguments, child);
     },
 
     removeCard: function(key) {
-      const cards = this.getCards();
+      const cards = this.getChildren();
       for (let i=0; i<cards.length; i++) {
         const card = cards[i];
         if (card.getUuid && key === card.getUuid()) {
@@ -124,79 +154,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
           return;
         }
       }
-    },
-
-    __emptyHeaders: function() {
-      const noGroupHeader = this.__createHeader(this.tr("No Group"), "transparent");
-      this.__groupHeaders = {
-        "no-group": {
-          widget: noGroupHeader,
-          children: []
-        }
-      };
-      return noGroupHeader;
-    },
-
-    __addHeaders: function(child) {
-      let headerInfo = null;
-      if (this.getGroupBy() === "tags") {
-        let tags = [];
-        if (child.isPropertyInitialized("tags")) {
-          tags = child.getTags();
-        }
-        if (tags.length === 0) {
-          headerInfo = this.__groupHeaders["no-group"];
-          headerInfo["children"].push(child);
-        }
-        tags.forEach(tag => {
-          if (tag.id in this.__groupHeaders) {
-            headerInfo = this.__groupHeaders[tag.id];
-          } else {
-            const header = this.__createHeader(tag.name, tag.color);
-            headerInfo = {
-              widget: header,
-              children: []
-            };
-            this.__groupHeaders[tag.id] = headerInfo;
-            this.add(header);
-          }
-          headerInfo["children"].push(child);
-        });
-      }
-      return headerInfo;
-    },
-
-    __createHeader: function(label, color) {
-      const header = new osparc.dashboard.GroupHeader();
-      header.set({
-        minWidth: 1000,
-        allowGrowX: true
-      });
-      header.buildLayout(label);
-      header.getChildControl("icon").setBackgroundColor(color);
-      return header;
-    },
-
-    /**
-     * Resets the selection so no toggle button is checked.
-     */
-    resetSelection: function() {
-      this.getCards().map(button => button.setValue(false));
-      this.fireDataEvent("changeSelection", this.getSelection());
-    },
-
-    /**
-     * Returns an array that contains all buttons that are checked.
-     */
-    getSelection: function() {
-      return this.getCards().filter(button => button.getValue());
-    },
-
-    /**
-     * Returns an array that contains all visible buttons.
-     */
-    __getVisibles: function() {
-      return this.getCards().filter(button => button.isVisible());
     }
   }
 });
