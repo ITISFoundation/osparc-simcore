@@ -2302,7 +2302,9 @@ paths:
                                 - 0
                                 - 2
                             instructions:
-                              type: string
+                              type:
+                                - string
+                                - 'null'
                               description: Instructions about what to do in this step
                               example:
                                 - This is a **sleeper**
@@ -2477,12 +2479,12 @@ paths:
             CreationStatus:
               operationId: get_task_status
               parameters:
-                task_id: $response.body#/data/task_id
+                task_id: '$response.body#/data/task_id'
             CreationResult:
               operationId: get_task_result
               description: Returns 201 if creation succeeded
               parameters:
-                task_id: $response.body#/data/task_id
+                task_id: '$response.body#/data/task_id'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /projects/active:

@@ -407,7 +407,9 @@ properties:
                   - 0
                   - 2
               instructions:
-                type: string
+                type:
+                  - string
+                  - 'null'
                 description: Instructions about what to do in this step
                 example:
                   - This is a **sleeper**

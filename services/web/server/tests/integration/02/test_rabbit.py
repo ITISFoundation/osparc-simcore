@@ -493,6 +493,7 @@ async def test_publish_about_users_project(
     socketio_subscriber_handlers.mock_event.assert_called_once()
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_about_users_projects_node(
     logged_user: UserInfoDict,
