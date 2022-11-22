@@ -66,7 +66,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            instance_private_ip_address = utils_aws.start_aws_instance(
+            new_instance_dns_name = utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_ACCESS,
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(
@@ -88,6 +88,20 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                 startup_script=await utils_docker.get_docker_swarm_join_script(),
             )
 
+            new_node = await utils_docker.wait_for_node(new_instance_dns_name)
+            await utils_docker.tag_node(
+                new_node,
+                tags={"io.osparc.autoscaled_node": "true"}
+                | {
+                    tag_key: "true"
+                    for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+                }
+                | {
+                    tag_key: "true"
+                    for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+                },
+                available=True,
+            )
             # NOTE: in this first trial we start one instance at a time
             # In the next iteration, some tasks might already run with that instance
             break
