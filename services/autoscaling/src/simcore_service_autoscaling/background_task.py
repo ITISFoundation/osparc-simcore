@@ -9,7 +9,7 @@ from servicelib.logging_utils import log_context
 logger = logging.getLogger(__name__)
 
 
-async def _repeated_scheduled_task(
+async def _periodic_scheduled_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
@@ -36,7 +36,7 @@ async def start_background_task(
 ) -> asyncio.Task:
     with log_context(logger, logging.INFO, msg=f"create {task_name}"):
         return asyncio.create_task(
-            _repeated_scheduled_task(
+            _periodic_scheduled_task(
                 task,
                 interval=interval,
                 task_name=task_name,
