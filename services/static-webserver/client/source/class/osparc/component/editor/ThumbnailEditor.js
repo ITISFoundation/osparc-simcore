@@ -96,25 +96,12 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
         }
         case "scroll-thumbnails": {
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
-          control = new qx.ui.container.SlideBar().set({
+          control = new osparc.component.widget.SlideBar().set({
             alignX: "center",
             maxHeight: 170
           });
+          control.setScrollButtonsWidth(30);
           thumbnailsLayout.add(control);
-          [
-            control.getChildControl("button-backward"),
-            control.getChildControl("button-forward")
-          ].forEach(btn => {
-            btn.set({
-              maxWidth: 30,
-              maxHeight: 30,
-              alignY: "middle",
-              marginLeft: 5,
-              marginRight: 5,
-              icon: "@FontAwesome5Solid/ellipsis-h/16",
-              backgroundColor: "transparent"
-            });
-          });
           control.setLayout(new qx.ui.layout.HBox(5).set({
             alignX: "center"
           }));
