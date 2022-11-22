@@ -11,7 +11,7 @@ import aiodocker
 import pytest
 from deepdiff import DeepDiff
 from faker import Faker
-from models_library.generated_models.docker_rest_api import Task
+from models_library.generated_models.docker_rest_api import Availability, Task
 from pydantic import ByteSize, parse_obj_as
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_docker import (
@@ -23,6 +23,8 @@ from simcore_service_autoscaling.utils_docker import (
     get_monitored_nodes,
     get_resources_from_docker_task,
     pending_service_tasks_with_insufficient_resources,
+    tag_node,
+    wait_for_node,
 )
 
 
@@ -475,3 +477,28 @@ async def test_get_docker_swarm_join_script(host_node: Node):
     join_script = await get_docker_swarm_join_script()
     assert join_script.startswith("docker swarm join")
     assert "--availability=drain" in join_script
+
+
+async def test_wait_for_node(host_node: Node):
+    assert host_node.Description
+    assert host_node.Description.Hostname
+
+    received_node = await wait_for_node(host_node.Description.Hostname)
+    assert received_node == host_node
+
+
+async def test_tag_node(host_node: Node, faker: Faker):
+    assert host_node.Description
+    assert host_node.Description.Hostname
+    tags = faker.pydict(allowed_types=(str,))
+    await tag_node(host_node, tags=tags, available=False)
+    updated_node = await wait_for_node(host_node.Description.Hostname)
+    assert updated_node.Spec
+    assert updated_node.Spec.Availability == Availability.drain
+    assert updated_node.Spec.Labels == tags
+
+    await tag_node(updated_node, tags={}, available=True)
+    updated_node = await wait_for_node(host_node.Description.Hostname)
+    assert updated_node.Spec
+    assert updated_node.Spec.Availability == Availability.active
+    assert updated_node.Spec.Labels == {}

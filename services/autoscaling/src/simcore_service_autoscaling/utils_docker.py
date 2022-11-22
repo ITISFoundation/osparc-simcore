@@ -4,6 +4,7 @@
 
 import asyncio
 import collections
+import logging
 import re
 from typing import Final
 
@@ -11,9 +12,15 @@ import aiodocker
 from models_library.generated_models.docker_rest_api import Node, Task, TaskState
 from pydantic import ByteSize, parse_obj_as
 from servicelib.utils import logged_gather
+from tenacity import TryAgain, retry
+from tenacity.after import after_log
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from .models import Resources
 
+logger = logging.getLogger(__name__)
 _NANO_CPU: Final[float] = 10**9
 
 _TASK_STATUS_WITH_ASSIGNED_RESOURCES: Final[tuple[TaskState, ...]] = (
@@ -23,7 +30,8 @@ _TASK_STATUS_WITH_ASSIGNED_RESOURCES: Final[tuple[TaskState, ...]] = (
     TaskState.starting,
     TaskState.running,
 )
-
+_MINUTE: Final[int] = 60
+_TIMEOUT_WAITING_FOR_NODES: Final[int] = 5 * _MINUTE
 
 Label = str
 NodeID = str
@@ -178,3 +186,35 @@ async def get_docker_swarm_join_script() -> str:
     raise RuntimeError(
         f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     )
+
+
+@retry(
+    stop=stop_after_delay(_TIMEOUT_WAITING_FOR_NODES),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    after=after_log(logger, logging.ERROR),
+    wait=wait_fixed(5),
+)
+async def wait_for_node(node_name: str) -> Node:
+    async with aiodocker.Docker() as docker:
+        list_of_nodes = await docker.nodes.list(filters={"name": node_name})
+    if not list_of_nodes:
+        raise TryAgain
+    return parse_obj_as(Node, list_of_nodes[0])
+
+
+async def tag_node(node: Node, *, tags: dict[str, str], available: bool) -> None:
+    async with aiodocker.Docker() as docker:
+        assert node.ID  # nosec
+        assert node.Version  # nosec
+        assert node.Version.Index  # nosec
+        assert node.Spec  # nosec
+        assert node.Spec.Role  # nosec
+        await docker.nodes.update(
+            node_id=node.ID,
+            version=node.Version.Index,
+            spec={
+                "Availability": "active" if available else "drain",
+                "Labels": tags,
+                "Role": node.Spec.Role.value,
+            },
+        )
