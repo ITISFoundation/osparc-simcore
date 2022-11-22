@@ -4,12 +4,22 @@ from typing import Optional
 from aiohttp import web
 from pydantic import EmailStr, parse_obj_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..security_api import encrypt_password
+from ..security_api import encrypt_password, remember
+from ..utils import MINUTE
+from ..utils_rate_limiting import global_rate_limit_route
+from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
-from .settings import LoginOptions, get_plugin_options
+from .settings import (
+    LoginOptions,
+    LoginSettings,
+    get_plugin_options,
+    get_plugin_settings,
+)
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_response
 
@@ -81,6 +91,57 @@ async def email_confirmation(request: web.Request):
             )
 
     raise web.HTTPFound(location=redirect_url)
+
+
+@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+async def phone_confirmation(request: web.Request):
+    _, _, body = await extract_and_validate(request)
+
+    settings: LoginSettings = get_plugin_settings(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
+    email = body.email
+    phone = body.phone
+    code = body.code
+
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="Phone registration is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
+    if (expected := await get_2fa_code(request.app, email)) and code == expected:
+        await delete_2fa_code(request.app, email)
+
+        # db
+        try:
+            user = await db.get_user({"email": email})
+            await db.update_user(user, {"phone": phone})
+
+        except UniqueViolation as err:
+            raise web.HTTPUnauthorized(
+                reason="Invalid phone number",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from err
+
+        # login
+        with log_context(
+            log,
+            logging.INFO,
+            "login after phone_confirmation of user_id=%s with %s",
+            f"{user.get('id')}",
+            f"{email=}",
+        ):
+            identity = user["email"]
+            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+            await remember(request, response, identity)
+            return response
+
+    # unauthorized
+    raise web.HTTPUnauthorized(
+        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
+    )
 
 
 async def reset_password_allowed(request: web.Request):
