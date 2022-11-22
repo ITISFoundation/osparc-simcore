@@ -121,28 +121,12 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       return false;
     },
 
-    __reloadCards: function() {
-      const cards = this.getChildren();
-      this.removeAll();
-      const header = this.__emptyHeaders();
-      if (this.getGroupBy()) {
-        this.add(header);
-      }
-      cards.forEach(card => this.add(card));
-    },
-
     __applyMode: function(mode) {
       const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
       this.getLayout().set({
         spacingX: spacing,
         spacingY: spacing
       });
-      this.__reloadCards();
-    },
-
-    // overridden
-    remove: function(child) {
-      this.base(arguments, child);
     },
 
     removeCard: function(key) {
