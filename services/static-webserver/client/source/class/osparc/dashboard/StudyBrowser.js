@@ -70,6 +70,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   members: {
     __studies: null,
+    __lastSelectedIdx: null,
 
     reloadStudy: function(studyId) {
       const params = {
@@ -509,6 +510,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
+        this.__lastSelectedIdx = null;
         this.resetSelection();
         this.setMultiSelection(false);
       });
@@ -787,8 +789,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __itemClicked: function(item, isShiftPressed) {
       if (isShiftPressed) {
-        const lastIdx = this._resourcesContainer.getLastSelectedIndex();
-        const currentIdx = this._resourcesContainer.getIndex(item);
+        const lastIdx = this.__lastSelectedIdx;
+        const currentIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
         const minMaxIdx = [lastIdx, currentIdx].sort();
         for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
           const button = this._resourcesContainer.getCards()[i];
@@ -797,7 +799,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         }
       }
-      this._resourcesContainer.setLastSelectedIndex(this._resourcesContainer.getIndex(item));
+      const lastIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
+      if (lastIdx !== -1) {
+        this.__lastSelectedIdx = lastIdx;
+      }
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
@@ -1025,7 +1030,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
-        .finally(this.resetSelection());
+        .finally(() => {
+          this.__lastSelectedIdx = null;
+          this.resetSelection();
+        });
     },
 
     __deleteStudies: function(studiesData) {

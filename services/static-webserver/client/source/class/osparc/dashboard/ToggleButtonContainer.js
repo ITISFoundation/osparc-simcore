@@ -41,7 +41,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   },
 
   members: {
-    __lastSelectedIdx: null,
     __groupHeaders: null,
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
@@ -183,7 +182,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      */
     resetSelection: function() {
       this.getCards().map(button => button.setValue(false));
-      this.__lastSelectedIdx = null;
       this.fireDataEvent("changeSelection", this.getSelection());
     },
 
@@ -199,24 +197,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      */
     __getVisibles: function() {
       return this.getCards().filter(button => button.isVisible());
-    },
-
-    /**
-     * Gets the index in the container of the given button.
-     * @param {qx.ui.form.ToggleButton} child Button that will be checked
-     */
-    getIndex: function(child) {
-      return this.getCards().findIndex(button => button === child);
-    },
-
-    getLastSelectedIndex: function() {
-      return this.__lastSelectedIdx;
-    },
-
-    setLastSelectedIndex: function(idx) {
-      if (idx >= 0 && idx < this.getCards().length) {
-        this.__lastSelectedIdx = idx;
-      }
     }
   }
 });
