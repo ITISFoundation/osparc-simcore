@@ -161,7 +161,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           addTag: {
             useCache: false,
-            method: "PATCH",
+            method: "PUT",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
           removeTag: {
@@ -712,7 +712,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/tags"
           },
           put: {
-            method: "PUT",
+            method: "PATCH",
             url: statics.API + "/tags/{tagId}"
           },
           delete: {
