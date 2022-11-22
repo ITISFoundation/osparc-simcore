@@ -15,6 +15,11 @@
 
 ************************************************************************ */
 
+/*
+ * A SlideBar that has the backward/forward buttons ON the content container.
+ * Some transparency is given to the buttons to make the background container still visible.
+ */
+
 qx.Class.define("osparc.component.widget.SlideBar", {
   extend: qx.ui.container.SlideBar,
 
@@ -23,11 +28,21 @@ qx.Class.define("osparc.component.widget.SlideBar", {
 
     this.setLayout(new qx.ui.layout.HBox(0));
 
-    this.__pimpButtons();
+    this.__pimpLayout();
+  },
+
+  properties: {
+    buttonsWidth: {
+      check: "Integer",
+      init: 30,
+      nullable: false,
+      event: "changeButtonsWidth",
+      apply: "__updateElementSizes"
+    }
   },
 
   members: {
-    __pimpButtons: function() {
+    __pimpLayout: function() {
       const buttonBackward = this.getChildControl("button-backward");
       const buttonForward = this.getChildControl("button-forward");
       [
@@ -37,7 +52,7 @@ qx.Class.define("osparc.component.widget.SlideBar", {
         button.set({
           alignY: "middle",
           opacity: 0.6,
-          backgroundColor: "background-main-2",
+          backgroundColor: "background-main",
           allowGrowY: true
         });
       });
@@ -45,14 +60,34 @@ qx.Class.define("osparc.component.widget.SlideBar", {
       buttonForward.setIcon("@FontAwesome5Solid/chevron-right/16");
     },
 
-    setScrollButtonsWidth: function(width) {
-      const buttonBackward = this.getChildControl("button-backward");
-      buttonBackward.set({
-        width
+    _onResize: function() {
+      this.base(arguments);
+      this.__updateElementSizes();
+    },
+
+    __updateElementSizes: function() {
+      const btnWidth = this.getButtonsWidth();
+      const contentPane = this.getChildControl("scrollpane");
+      const padding = 3;
+      contentPane.set({
+        marginLeft: -btnWidth + padding,
+        marginRight: -btnWidth + padding
       });
+      const size = this.getInnerSize();
+      if (size) {
+        this.set({
+          scrollStep: parseInt(size.width/2)
+        });
+      }
+      const buttonBackward = this.getChildControl("button-backward");
       const buttonForward = this.getChildControl("button-forward");
-      buttonForward.set({
-        width
+      [
+        buttonBackward,
+        buttonForward
+      ].forEach(button => {
+        button.getChildControl("icon").set({
+          opacity: 1
+        });
       });
     }
   }

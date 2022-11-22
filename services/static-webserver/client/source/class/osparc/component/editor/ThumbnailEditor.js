@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
             alignX: "center",
             maxHeight: 170
           });
-          control.setScrollButtonsWidth(30);
+          control.setButtonsWidth(30);
           thumbnailsLayout.add(control);
           control.setLayout(new qx.ui.layout.HBox(5).set({
             alignX: "center"
