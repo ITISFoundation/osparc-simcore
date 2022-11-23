@@ -29,7 +29,7 @@ ENTRYPOINT ["datamodel-codegen", \
           "--reuse-model", \
           "--set-default-enum-member", \
           "--use-title-as-name", \
-          "--target-python-version=3.9", \
+          "--target-python-version=${PYTHON_VERSION}", \
           "--validation"]
 EOF
 }
