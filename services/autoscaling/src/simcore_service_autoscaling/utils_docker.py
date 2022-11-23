@@ -71,6 +71,7 @@ async def pending_service_tasks_with_insufficient_resources(
         )
 
     def _is_task_waiting_for_resources(task: Task) -> bool:
+        # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
         if (
             not task.Status
             or not task.Status.State
