@@ -30,25 +30,37 @@ class EC2InstancesSettings(BaseCustomSettings):
         ...,
         min_items=1,
         unique_items=True,
-        description="Defines which EC2 instances are considered as candidates for new docker nodes",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance",
     )
     EC2_INSTANCES_AMI_ID: str = Field(
         ...,
         min_length=1,
-        description="Defines the AMI ID used to initialize a new docker node",
+        description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
     )
     EC2_INSTANCES_MAX_INSTANCES: int = Field(
         10,
         description="Defines the maximum number of instances the autoscaling app may create",
     )
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
-        ..., min_items=1, description="TO BE DEFINED"
+        ...,
+        min_items=1,
+        description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
+        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
+        " this is required to start a new EC2 instance",
     )
-    EC2_INSTANCES_SUBNET_ID: str = Field(..., min_length=1, description="TO BE DEFINED")
+    EC2_INSTANCES_SUBNET_ID: str = Field(
+        ...,
+        min_length=1,
+        description="A subnet is a range of IP addresses in your VPC "
+        " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
+        "this is required to start a new EC2 instance",
+    )
     EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
-        description="SSH key filename (without ext) to access the instance",
+        description="SSH key filename (without ext) to access the instance through SSH"
+        " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
+        "this is required to start a new EC2 instance",
     )
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
