@@ -85,7 +85,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                         app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_IMAGE_NAMES
                     ),
                 },
-                startup_script=await utils_docker.get_docker_swarm_join_script(),
+                startup_script=await utils_docker.get_docker_swarm_join_bash_command(),
             )
 
             new_node = await utils_docker.wait_for_node(new_instance_dns_name)

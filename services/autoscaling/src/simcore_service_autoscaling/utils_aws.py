@@ -110,11 +110,11 @@ def find_best_fitting_ec2_instance(
     return instance
 
 
-def _compose_user_data(docker_join_script: str) -> str:
+def _compose_user_data(docker_join_bash_command: str) -> str:
     return dedent(
         f"""\
 #!/bin/bash
-{docker_join_script}
+{docker_join_bash_command}
 """
     )
 

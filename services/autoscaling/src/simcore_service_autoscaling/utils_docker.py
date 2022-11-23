@@ -163,7 +163,7 @@ _DOCKER_SWARM_JOIN_RE = r"(docker swarm join) (--token .+)? (.+)"
 _DOCKER_SWARM_JOIN_PATTERN = re.compile(_DOCKER_SWARM_JOIN_RE)
 
 
-async def get_docker_swarm_join_script() -> str:
+async def get_docker_swarm_join_bash_command() -> str:
     """this assumes we are on a manager node"""
     command = ["docker", "swarm", "join-token", "worker"]
     process = await asyncio.create_subprocess_exec(
