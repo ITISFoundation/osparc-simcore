@@ -138,7 +138,7 @@ def start_aws_instance(
 ) -> InstancePrivateDNSName:
     with log_context(
         logger,
-        logging.DEBUG,
+        logging.INFO,
         msg=f"launching AWS instance {instance_type} with {tags=}",
     ), ec2_client(settings) as client:
 
@@ -180,29 +180,35 @@ def start_aws_instance(
             SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
         )
         instance_id = instances["Instances"][0]["InstanceId"]
-        logger.info(
+        logger.debug(
             "New instance launched: %s, waiting for it to start now...", instance_id
         )
         # wait for the instance to be in a running state
         # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
         waiter = client.get_waiter("instance_exists")
         waiter.wait(InstanceIds=[instance_id])
-        logger.info("instance %s exists now, waiting for running state...", instance_id)
+        logger.debug(
+            "instance %s exists now, waiting for running state...", instance_id
+        )
 
         waiter = client.get_waiter("instance_running")
         waiter.wait(InstanceIds=[instance_id])
-        logger.info(
+        logger.debug(
             "instance %s is now running, waiting for status now...", instance_id
         )
 
         waiter = client.get_waiter("instance_status_ok")
         waiter.wait(InstanceIds=[instance_id])
-        logger.info("instance %s is OK, happy computing...", instance_id)
+        logger.info("instance %s status is OK...", instance_id)
 
         # get the private IP
         instances = client.describe_instances(InstanceIds=[instance_id])
         private_dns_name = instances["Reservations"][0]["Instances"][0][
             "PrivateDnsName"
         ]
-        logger.info("instance %s is available on %s", instance_id, private_dns_name)
+        logger.info(
+            "instance %s is available on %s, happy computing!!",
+            instance_id,
+            private_dns_name,
+        )
         return private_dns_name
