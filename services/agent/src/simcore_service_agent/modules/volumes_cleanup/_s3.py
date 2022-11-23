@@ -71,6 +71,17 @@ async def _read_stream(stream: StreamReader) -> str:
     return output
 
 
+def _get_r_clone_str_command(command: list[str], exclude_files: list[str]) -> str:
+    # add files to be ignored
+    for to_exclude in exclude_files:
+        command.append("--exclude")
+        command.append(to_exclude)
+
+    str_command = " ".join(command)
+    logger.info(str_command)
+    return str_command
+
+
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     volume_name: str,
     dyv_volume: dict,
@@ -95,7 +106,25 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     source_dir = dyv_volume["Mountpoint"]
     s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"], volume_name)
 
-    r_clone_command = [
+    # listing files rclone will sync
+    r_clone_ls = [
+        "rclone",
+        "--config",
+        f"{config_file_path}",
+        "ls",
+        f"{source_dir}",
+    ]
+    r_clone_ls = _get_r_clone_str_command(r_clone_ls, exclude_files)
+    process = await asyncio.create_subprocess_shell(
+        r_clone_ls, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+    )
+
+    output = await _read_stream(process.stdout)
+    await process.wait()
+    logger.info("Files to be synced:\n%s", output)
+
+    # sync files via rclone
+    r_clone_sync = [
         "rclone",
         "--config",
         f"{config_file_path}",
@@ -114,26 +143,19 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         "--verbose",
     ]
 
-    # add files to be ignored
-    for to_exclude in exclude_files:
-        r_clone_command.append("--exclude")
-        r_clone_command.append(to_exclude)
-
-    str_r_clone_command = " ".join(r_clone_command)
-    logger.info(r_clone_command)
-
+    str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)
     process = await asyncio.create_subprocess_shell(
-        str_r_clone_command,
+        str_r_clone_sync,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
 
     output = await _read_stream(process.stdout)
     await process.wait()
-    logger.info("Command stdout\n%s", output)
+    logger.info("Sync result:\n%s", output)
 
     if process.returncode != 0:
         raise RuntimeError(
             f"Shell subprocesses yielded nonzero error code {process.returncode} "
-            f"for command {str_r_clone_command}"
+            f"for command {str_r_clone_sync}"
         )
