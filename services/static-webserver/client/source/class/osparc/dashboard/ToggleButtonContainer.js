@@ -98,10 +98,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       this.setLastSelectedIndex(this.getIndex(item));
     },
 
-
-
-
-
     __configureCard: function(card) {
       card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
       card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);

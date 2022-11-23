@@ -163,6 +163,24 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     resetSelection: function() {
       if (this.__flatList) {
         this.__flatList.resetSelection();
+      } else {
+        this.__groupedLists.forEach(groupedList => groupedList.resetSelection());
+      }
+    },
+
+    removeCard: function(key) {
+      if (this.__flatList) {
+        this.__flatList.removeCard(key);
+      } else {
+        this.__groupedLists.forEach(groupedList => groupedList.removeCard(key));
+      }
+    },
+
+    __applyMode: function(mode) {
+      if (this.__flatList) {
+        this.__flatList.setMode(mode);
+      } else {
+        this.__groupedLists.forEach(groupedList => groupedList.setMode(mode));
       }
     },
 
