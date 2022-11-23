@@ -122,7 +122,8 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
 
     output = await _read_stream(process.stdout)
     await process.wait()
-    logger.info("Files to be synced:\n%s", output)
+    log_level = logging.INFO if output.strip() == "" else logging.WARNING
+    logger.log(log_level, "Files to be synced:\n%s", output)
 
     # sync files via rclone
     r_clone_sync = [
