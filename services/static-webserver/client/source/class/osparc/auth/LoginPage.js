@@ -198,9 +198,18 @@ qx.Class.define("osparc.auth.LoginPage", {
           versionLink.setValue(text);
         });
 
-      const organizationLink = new osparc.ui.basic.LinkLabel(`© ${new Date().getFullYear()} IT'IS Foundation`, "https://itis.swiss").set({
+      const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
+      osparc.store.VendorInfo.getInstance().getVendor()
+        .then(vendor => {
+          if (vendor) {
+            organizationLink.set({
+              value: vendor.copyright + " " + new Date().getFullYear(),
+              url: vendor.url
+            });
+          }
+        });
       versionLinkLayout.add(organizationLink);
 
       if (osparc.utils.Utils.isProduct("tis")) {

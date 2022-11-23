@@ -13,11 +13,11 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, 
 import pytest
 import respx
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
@@ -33,6 +33,35 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
 
 
+@pytest.fixture()
+async def products_names(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[list[str]]:
+    """Inits products db table and returns product names"""
+    data = [
+        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
+        ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
+        ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
+    ]
+
+    # pylint: disable=no-value-for-parameter
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
+        for n, (name, regex) in enumerate(data):
+            stmt = products.insert().values(name=name, host_regex=regex, priority=n)
+            await conn.execute(stmt)
+
+    names = [
+        "osparc",
+    ] + [items[0] for items in data]
+
+    yield names
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(products.delete())
+
+
 @pytest.fixture
 def app(
     monkeypatch: MonkeyPatch,
@@ -40,7 +69,11 @@ def app(
     service_test_environ: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
+    products_names: list[str],
 ) -> Iterable[FastAPI]:
+    print("database started:", postgres_host_config)
+    print("database w/products in table:", products_names)
+
     monkeypatch.setenv("CATALOG_TRACING", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
@@ -117,34 +150,6 @@ def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
         yield dict(user)
 
         con.execute(users.delete().where(users.c.id == user_id))
-
-
-@pytest.fixture()
-async def products_names(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[list[str]]:
-    """Inits products db table and returns product names"""
-    data = [
-        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
-        ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
-        ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
-    ]
-
-    # pylint: disable=no-value-for-parameter
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-        for name, regex in data:
-            stmt = products.insert().values(name=name, host_regex=regex)
-            await conn.execute(stmt)
-
-    names = [
-        "osparc",
-    ] + [items[0] for items in data]
-    yield names
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(products.delete())
 
 
 @pytest.fixture()

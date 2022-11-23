@@ -1555,10 +1555,12 @@ components:
                         - 0
                         - 2
                     instructions:
-                      type: string
+                      type:
+                        - string
+                        - 'null'
                       description: Instructions about what to do in this step
                       example:
-                        - 'This is a **sleeper**'
+                        - This is a **sleeper**
                         - 'Please, select the config file defined [in this link](asdf)'
               additionalProperties: true
             currentNodeId:

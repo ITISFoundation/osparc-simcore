@@ -8,11 +8,11 @@ from contextlib import suppress
 from typing import Any, AsyncIterable, Final
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveFloat
+from pytest import MonkeyPatch
 from redis.exceptions import LockError, LockNotOwnedError
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.errors import NodeRightsAcquireError

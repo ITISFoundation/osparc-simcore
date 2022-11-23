@@ -256,14 +256,14 @@ class ServiceInput(BaseServiceIOModel):
                 # file-wo-widget:
                 {
                     "displayOrder": 1,
-                    "label": "Input files",
+                    "label": "Input files - file-wo-widget",
                     "description": "Files downloaded from service connected at the input",
                     "type": "data:*/*",
                 },
                 # v2
                 {
                     "displayOrder": 2,
-                    "label": "Sleep Time",
+                    "label": "Sleep Time - v2",
                     "description": "Time to wait before completion",
                     "type": "number",
                     "defaultValue": 0,
@@ -272,7 +272,7 @@ class ServiceInput(BaseServiceIOModel):
                 },
                 # latest:
                 {
-                    "label": "Sleep Time",
+                    "label": "Sleep Time - latest",
                     "description": "Time to wait before completion",
                     "type": "number",
                     "defaultValue": 0,
@@ -332,13 +332,13 @@ class ServiceOutput(BaseServiceIOModel):
                 },
                 {
                     "displayOrder": 2,
-                    "label": "Time Slept",
+                    "label": "Time Slept - units",
                     "description": "Time the service waited before completion",
                     "type": "number",
                     "unit": "second",
                 },
                 {
-                    "label": "Time Slept",
+                    "label": "Time Slept - w/o displayorder",
                     "description": "Time the service waited before completion",
                     "type": "number",
                     "unit": "second",

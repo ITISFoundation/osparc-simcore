@@ -3,27 +3,26 @@
 # pylint: disable=unused-variable
 
 
-from copy import deepcopy
 from pathlib import Path
 
-import dotenv
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
+
+from .helpers.typing_env import EnvVarsDict
+from .helpers.utils_envs import load_dotenv, setenvs_from_dict
 
 
 @pytest.fixture(scope="session")
-def env_devel_dict(env_devel_file: Path) -> dict[str, str]:
+def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
-    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    assert all(v is not None for v in environ.values())
-    return environ  # type: ignore
+    envs = load_dotenv(env_devel_file, verbose=True, interpolate=True)
+    return envs
 
 
 @pytest.fixture(scope="function")
 def mock_env_devel_environment(
     env_devel_dict: dict[str, str], monkeypatch: MonkeyPatch
-) -> dict[str, str]:
-    for key, value in env_devel_dict.items():
-        monkeypatch.setenv(key, str(value))
-    return deepcopy(env_devel_dict)
+) -> EnvVarsDict:
+    envs = setenvs_from_dict(monkeypatch, env_devel_dict)
+    return envs

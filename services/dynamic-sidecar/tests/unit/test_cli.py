@@ -16,11 +16,6 @@ def cli_runner(mock_environment: EnvVarsDict) -> CliRunner:
 
 
 @pytest.fixture
-def mock_rabbitmq(mocker: MockerFixture) -> None:
-    mocker.patch("simcore_service_dynamic_sidecar.cli.RabbitMQ", spec=True)
-
-
-@pytest.fixture
 def mock_data_manager(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager",
@@ -36,9 +31,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
     )
 
 
-def test_list_state_dirs(
-    cli_runner: CliRunner, mock_rabbitmq: None, mock_data_manager: None
-):
+def test_list_state_dirs(cli_runner: CliRunner, mock_data_manager: None):
     result = cli_runner.invoke(main, ["state-list-dirs"])
     assert result.exit_code == os.EX_OK, result.stdout
     assert result.stdout.strip() == "\n".join(
@@ -46,17 +39,13 @@ def test_list_state_dirs(
     )
 
 
-def test_outputs_push_interface(
-    cli_runner: CliRunner, mock_rabbitmq: None, mock_data_manager: None
-):
+def test_outputs_push_interface(cli_runner: CliRunner, mock_data_manager: None):
     result = cli_runner.invoke(main, ["state-save"])
     assert result.exit_code == os.EX_OK, result.stdout
     assert result.stdout == "state save finished successfully\n"
 
 
-def test_state_save_interface(
-    cli_runner: CliRunner, mock_rabbitmq: None, mock_nodeports: None
-):
+def test_state_save_interface(cli_runner: CliRunner, mock_nodeports: None):
     result = cli_runner.invoke(main, ["outputs-push"])
     assert result.exit_code == os.EX_OK, result.stdout
     assert result.stdout == "output ports push finished successfully\n"

@@ -6,6 +6,7 @@
 
 aiodebug
 aiofiles
+aio-pika
 pydantic
 pyinstrument
 pyyaml

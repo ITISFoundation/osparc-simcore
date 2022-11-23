@@ -5,10 +5,9 @@ import asyncio
 from typing import Final
 
 import pytest
-from _pytest.logging import LogCaptureFixture
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -45,7 +44,7 @@ def mock_env(
             "POSTGRES_USER": "",
             "POSTGRES_PASSWORD": "",
             "POSTGRES_DB": "",
-            "DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S": f"{NETWORK_TOLERANCE_S}",
+            "DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S": f"{NETWORK_TOLERANCE_S}",
         },
     )
 

@@ -13,9 +13,9 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import respx
-from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceLabels
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -136,8 +136,6 @@ def mock_env(
     monkeypatch.setenv("POSTGRES_USER", "test")
     monkeypatch.setenv("POSTGRES_PASSWORD", "test")
     monkeypatch.setenv("POSTGRES_DB", "test")
-    # NOTE: makes retries go faster
-    monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
 
 
 @pytest.fixture
@@ -253,6 +251,7 @@ async def manually_trigger_scheduler(
     return _triggerer
 
 
+@pytest.mark.parametrize("with_observation_cycle", [True, False])
 async def test_scheduler_add_remove(
     disabled_scheduler_background_task: None,
     manually_trigger_scheduler: Callable[[], Awaitable[None]],
@@ -262,14 +261,21 @@ async def test_scheduler_add_remove(
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
     mock_update_label: None,
+    with_observation_cycle: bool,
 ) -> None:
     await scheduler.add_service(scheduler_data)
-    await manually_trigger_scheduler()
-    assert scheduler_data.dynamic_sidecar.is_available is True
+    if with_observation_cycle:
+        await manually_trigger_scheduler()
 
     await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
+    if with_observation_cycle:
+        await manually_trigger_scheduler()
+
     assert scheduler_data.service_name in scheduler._to_observe
+
     await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
+    if with_observation_cycle:
+        await manually_trigger_scheduler()
     assert scheduler_data.service_name not in scheduler._to_observe
 
 
@@ -315,7 +321,7 @@ async def test_scheduler_health_timing_out(
     await scheduler.add_service(scheduler_data)
     await manually_trigger_scheduler()
 
-    assert scheduler_data.dynamic_sidecar.is_available is False
+    assert scheduler_data.dynamic_sidecar.is_ready is False
 
 
 async def test_adding_service_two_times_does_not_raise(

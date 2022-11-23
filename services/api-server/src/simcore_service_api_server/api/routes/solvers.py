@@ -8,10 +8,10 @@ from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
 
-from ...core.settings import ApplicationSettings, BasicSettings
+from ...core.settings import BasicSettings
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort, VersionStr
 from ...modules.catalog import CatalogApi
-from ..dependencies.application import get_reverse_url_mapper, get_settings
+from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 
@@ -35,11 +35,11 @@ async def list_solvers(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
     """Lists all available solvers (latest version)"""
     solvers: list[Solver] = await catalog_client.list_latest_releases(
-        user_id, product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
+        user_id=user_id, product_name=product_name
     )
 
     for solver in solvers:
@@ -55,13 +55,13 @@ async def list_solvers_releases(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
     """Lists all released solvers (all released versions)"""
     assert await catalog_client.is_responsive()  # nosec
 
     solvers: list[Solver] = await catalog_client.list_solvers(
-        user_id, product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
+        user_id=user_id, product_name=product_name
     )
 
     for solver in solvers:
@@ -82,7 +82,7 @@ async def get_solver(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ) -> Solver:
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
@@ -90,9 +90,7 @@ async def get_solver(
     try:
 
         solver = await catalog_client.get_latest_release(
-            user_id,
-            solver_key,
-            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+            user_id, solver_key, product_name=product_name
         )
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
@@ -114,11 +112,11 @@ async def list_solver_releases(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
     """Lists all releases of a given solver"""
     releases: list[Solver] = await catalog_client.list_solver_releases(
-        user_id, solver_key, product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME
+        user_id, solver_key, product_name=product_name
     )
 
     for solver in releases:
@@ -136,15 +134,15 @@ async def get_solver_release(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
         solver = await catalog_client.get_solver(
-            user_id,
-            solver_key,
-            version,
-            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+            user_id=user_id,
+            name=solver_key,
+            version=version,
+            product_name=product_name,
         )
 
         solver.url = url_for(
@@ -176,7 +174,7 @@ async def list_solver_ports(
     version: VersionStr,
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    app_settings: ApplicationSettings = Depends(get_settings),
+    product_name: str = Depends(get_product_name),
 ):
     """Lists inputs and outputs of a given solver
 
@@ -185,10 +183,10 @@ async def list_solver_ports(
     try:
 
         ports = await catalog_client.get_solver_ports(
-            user_id,
-            solver_key,
-            version,
-            product_name=app_settings.API_SERVER_DEFAULT_PRODUCT_NAME,
+            user_id=user_id,
+            name=solver_key,
+            version=version,
+            product_name=product_name,
         )
         return ports
 

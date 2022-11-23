@@ -9,7 +9,7 @@ import os
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable, Iterable, Iterator, cast
+from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Iterator, cast
 from uuid import uuid4
 
 import aioboto3
@@ -18,7 +18,6 @@ import aiopg.sa
 import httpx
 import pytest
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
@@ -34,7 +33,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from py._path.local import LocalPath
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
@@ -42,7 +41,6 @@ from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
-    create_pipeline,
 )
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -250,6 +248,7 @@ async def current_study(
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
 
     project_at_db = project(current_user, workbench=fake_dy_workbench)
@@ -261,7 +260,6 @@ async def current_study(
         user_id=current_user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
 
     return project_at_db
@@ -390,11 +388,6 @@ async def cleanup_services_and_networks(
         # remove pending volumes for service
         for node_uuid in workbench_dynamic_services:
             await ensure_volume_cleanup(docker_client, node_uuid)
-
-
-@pytest.fixture
-def temp_dir(tmpdir: LocalPath) -> Path:
-    return Path(tmpdir)
 
 
 @pytest.fixture
@@ -826,9 +819,10 @@ async def test_nodeports_integration(
     services_node_uuids: ServicesNodeUUIDs,
     fake_dy_success: dict[str, Any],
     fake_dy_published: dict[str, Any],
-    temp_dir: Path,
+    tmp_path: Path,
     mocker: MockerFixture,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -869,15 +863,13 @@ async def test_nodeports_integration(
     )
 
     # STEP 2
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=current_study,
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
@@ -959,20 +951,20 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
         else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
         )
     )
     dy_compose_spec_path_volume_before = (
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
@@ -980,7 +972,7 @@ async def test_nodeports_integration(
         else await _fetch_data_from_container(
             dir_tag="dy_compose_spec",
             service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 
@@ -1009,7 +1001,7 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
@@ -1019,7 +1011,7 @@ async def test_nodeports_integration(
             user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 
@@ -1027,7 +1019,7 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
@@ -1037,7 +1029,7 @@ async def test_nodeports_integration(
             user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 
@@ -1055,20 +1047,20 @@ async def test_nodeports_integration(
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy,
             project_id=current_study.uuid,
         )
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
         else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
         )
     )
     dy_compose_spec_path_volume_after = (
         await _fetch_data_via_aioboto(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
             node_id=services_node_uuids.dy_compose_spec,
             project_id=current_study.uuid,
         )
@@ -1076,7 +1068,7 @@ async def test_nodeports_integration(
         else await _fetch_data_from_container(
             dir_tag="dy_compose_spec",
             service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=temp_dir,
+            temp_dir=tmp_path,
         )
     )
 

@@ -17,7 +17,7 @@ const templateName = "Mattward";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-  let studyId
+  let studyId;
   try {
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
@@ -48,10 +48,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId);
-    await tutorial.logOut();
-    await tutorial.close();
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

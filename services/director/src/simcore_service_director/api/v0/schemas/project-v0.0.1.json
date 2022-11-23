@@ -552,6 +552,17 @@
                     0,
                     2
                   ]
+                },
+                "instructions": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Instructions about what to do in this step",
+                  "examples": [
+                    "This is a **sleeper**",
+                    "Please, select the config file defined [in this link](asdf)"
+                  ]
                 }
               }
             }

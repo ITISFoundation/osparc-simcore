@@ -270,46 +270,25 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createManualMenuBtn: function() {
-      const manuals = osparc.navigation.Manuals.getManuals(this.__serverStatics);
-
-      let control = new qx.ui.core.Widget();
-      if (manuals.length === 1) {
-        const manual = manuals[0];
-        control = new osparc.ui.form.LinkButton(null, manual.icon, manual.url).set({
-          toolTipText: manual.label
-        });
-      } else if (manuals.length > 1) {
-        const menu = new qx.ui.menu.Menu().set({
-          font: "text-14"
-        });
-
-        manuals.forEach(manual => {
-          const manualBtn = new qx.ui.menu.Button(manual.label);
-          manualBtn.addListener("execute", () => {
-            window.open(manual.url);
-          }, this);
-          menu.add(manualBtn);
-        });
-
-        control = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
-          toolTipText: this.tr("Manuals")
-        });
-      }
-      return control;
+      const menu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
+        toolTipText: this.tr("Manuals")
+      });
+      osparc.navigation.Manuals.addManualButtonsToMenu(menu, menuButton);
+      return menuButton;
     },
 
     __createFeedbackMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-
-      osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
-
-      const feedbackBtn = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
-        toolTipText: this.tr("Give us feedback"),
-        visibility: osparc.utils.Utils.isProduct("tis") ? "excluded" : "visible"
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
+        toolTipText: this.tr("Support")
       });
-      return feedbackBtn;
+      osparc.navigation.Manuals.addSupportButtonsToMenu(menu, menuButton);
+      return menuButton;
     },
 
     addDashboardTabButtons: function(tabButtons) {

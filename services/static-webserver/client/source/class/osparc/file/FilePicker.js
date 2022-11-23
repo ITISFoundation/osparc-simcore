@@ -658,7 +658,9 @@ qx.Class.define("osparc.file.FilePicker", {
               this.__uploadedParts[chunkIdx]["e_tag"] = eTag.slice(1, -1);
               const uploadedParts = this.__uploadedParts.filter(uploadedPart => uploadedPart["e_tag"] !== null).length;
               const progress = uploadedParts/this.__uploadedParts.length;
-              this.getNode().getStatus().setProgress(100*progress-1);
+              // force progress value to be between 1 and 99
+              const nProgress = Math.min(Math.max(100*progress-1, 1), 99);
+              this.getNode().getStatus().setProgress(nProgress);
               if (this.__uploadedParts.every(uploadedPart => uploadedPart["e_tag"] !== null)) {
                 this.__checkCompleteUpload(file, presignedLinkData, xhr);
               }

@@ -197,9 +197,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
     # TIMEOUTS AND RETRY dark worlds
     #
 
-    DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES: int = Field(
-        4, description="maximum attempts to retry a request before giving up"
-    )
     DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveFloat = Field(
         15.0,
         description=(
@@ -213,7 +210,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
         ),
     )
-    DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
         60 * MINS,
         description=(
             "After starting the dynamic-sidecar its docker_node_id is required. "
@@ -275,7 +272,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
         1 * MINS,
         description=(
             "Connectivity between director-v2 and a dy-sidecar can be "

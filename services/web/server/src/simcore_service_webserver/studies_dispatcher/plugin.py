@@ -9,6 +9,7 @@ from servicelib.aiohttp.rest_routing import (
 
 from .._constants import APP_OPENAPI_SPECS_KEY
 from ..login.decorators import login_required
+from ..products import setup_products
 from ._studies_access import get_redirection_to_study_page
 from .handlers_redirects import get_redirection_to_viewer
 from .handlers_rest import rest_handler_functions
@@ -41,6 +42,8 @@ def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSetti
 )
 def setup_studies_dispatcher(app: web.Application) -> bool:
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
+
+    setup_products(app=app)
 
     _setup_studies_access(app, settings)
 

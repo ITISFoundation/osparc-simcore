@@ -236,25 +236,23 @@ class TutorialBase {
     return resp;
   }
 
-  async startSim4LifeLight() {
-    await this.takeScreenshot("startSim4LifeLight_before");
-    this.__responsesQueue.addResponseListener("projects?from_study=");
+  async startSim4LifeLite() {
+    await this.takeScreenshot("startSim4LifeLite_before");
     this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
-      await auto.dashboardStartSim4LifeLight(this.__page);
-      await this.__responsesQueue.waitUntilResponse("projects?from_study=");
+      await auto.dashboardStartSim4LifeLite(this.__page);
       resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`Sim4Life Light could not be started:\n`, err);
+      console.error(`Sim4Life Lite could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
-    await this.takeScreenshot("startSim4LifeLight_after");
+    await this.takeScreenshot("startSim4LifeLite_after");
     return resp;
   }
 
@@ -381,18 +379,6 @@ class TutorialBase {
     console.log("Timeout reached waiting for study done ", ((new Date().getTime()) - start) / 1000);
     await utils.takeScreenshot(this.__page, 'run_pipeline_timeout_reached');
     throw new Error("Pipeline timed out");
-  }
-
-  async waitForStudyUnlocked(studyId, timeout = 10000) {
-    const start = new Date().getTime();
-    while ((new Date().getTime()) - start < timeout) {
-      await this.waitFor(timeout / 10);
-      if (await utils.isStudyUnlocked(this.__page, studyId)) {
-        return;
-      }
-    }
-    console.log("Timeout reached waiting for study unlock", ((new Date().getTime()) - start) / 1000);
-    return;
   }
 
   async restoreIFrame() {
@@ -546,6 +532,15 @@ class TutorialBase {
     }
   }
 
+  async leave(studyId) {
+    if (studyId) {
+      await this.toDashboard()
+      await this.removeStudy(studyId);
+    }
+    await this.logOut();
+    await this.close();
+  }
+
   async toDashboard() {
     await this.takeScreenshot("toDashboard_before");
     this.__responsesQueue.addResponseListener("projects");
@@ -562,39 +557,21 @@ class TutorialBase {
     await this.takeScreenshot("toDashboard_after");
   }
 
-  async closeStudy() {
-    await this.takeScreenshot("closeStudy_before");
-    this.__responsesQueue.addResponseListener(":close");
-    try {
-      await auto.toDashboard(this.__page);
-      await this.__responsesQueue.waitUntilResponse(":close");
-    }
-    catch (err) {
-      console.error("Failed closing study", err);
-      throw (err);
-    }
-    await this.takeScreenshot("closeStudy_after");
-  }
-
-  async removeStudy(studyId, timeout = 5000) {
-    await this.waitFor(timeout, 'Wait to be unlocked');
+  async removeStudy(studyId, waitFor = 5000) {
+    await this.waitFor(waitFor, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
+    const intervalWait = 3000;
     try {
-      // await this.waitForStudyUnlocked(studyId);
-      const nTries = 10;
+      const nTries = 20;
       let i
       for (i = 0; i < nTries; i++) {
         const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
         if (cardUnlocked) {
+          console.log("Study Card unlocked in " + ((waitFor + intervalWait*i)/1000) + "s");
           break;
         }
         console.log(studyId, "study card still locked");
-        await this.waitFor(3000, 'Waiting in case the study was locked');
-      }
-      if (i === nTries) {
-        console.log(`Failed to delete the study after ${nTries}: Trying without the GUI`)
-        // do not call the API
-        // this.fetchRemoveStudy(studyId)
+        await this.waitFor(intervalWait, 'Waiting in case the study was locked');
       }
     }
     catch (err) {
@@ -602,17 +579,6 @@ class TutorialBase {
       throw (err);
     }
     await this.takeScreenshot("deleteFirstStudy_after");
-  }
-
-  async fetchRemoveStudy(studyId) {
-    console.log(`Removing study ${studyId}`)
-    await this.__page.evaluate(async function (studyId) {
-      return await osparc.data.Resources.fetch('studies', 'delete', {
-        url: {
-          "studyId": studyId
-        }
-      }, studyId);
-    }, studyId);
   }
 
   async logOut() {
@@ -634,6 +600,24 @@ class TutorialBase {
     }
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
+  }
+
+  async testS4L(s4lNodeId) {
+    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+
+    // do some basic interaction
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    const modelTree = await s4lIframe.$('.model-tree');
+    const modelItems = await modelTree.$$('.MuiTreeItem-label');
+    const nLabels = modelItems.length;
+    if (nLabels > 1) {
+      modelItems[0].click();
+      await this.waitFor(2000, 'Model clicked');
+      await this.takeScreenshot('ModelClicked');
+      modelItems[1].click();
+      await this.waitFor(2000, 'Grid clicked');
+      await this.takeScreenshot('GridlClicked');
+    }
   }
 
   async takeScreenshot(screenshotTitle) {

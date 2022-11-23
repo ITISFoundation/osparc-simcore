@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import re
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from pathlib import Path
@@ -24,7 +25,9 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_settings
+from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.projects.project_models import ProjectDict
 
 
@@ -274,3 +277,34 @@ async def user_project_with_num_dynamic_services(
 
         yield _creator
     print("<----- cleaned up projects")
+
+
+@pytest.fixture
+def mock_catalog_service_api_responses(client, aioresponses_mocker):
+    settings: CatalogSettings = get_plugin_settings(client.app)
+    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
+
+    aioresponses_mocker.get(
+        url_pattern,
+        payload={"data": {}},
+        repeat=True,
+    )
+    aioresponses_mocker.post(
+        url_pattern,
+        payload={"data": {}},
+        repeat=True,
+    )
+    aioresponses_mocker.put(
+        url_pattern,
+        payload={"data": {}},
+        repeat=True,
+    )
+    aioresponses_mocker.patch(
+        url_pattern,
+        payload={"data": {}},
+        repeat=True,
+    )
+    aioresponses_mocker.delete(
+        url_pattern,
+        repeat=True,
+    )

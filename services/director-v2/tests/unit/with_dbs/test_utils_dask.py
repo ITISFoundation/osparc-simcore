@@ -15,7 +15,6 @@ import aiopg
 import httpx
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
-from _pytest.monkeypatch import MonkeyPatch
 from dask_task_models_library.container_tasks.io import (
     FilePortSchema,
     FileUrl,
@@ -29,6 +28,7 @@ from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType

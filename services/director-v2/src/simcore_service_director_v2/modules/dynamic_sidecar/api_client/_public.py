@@ -50,11 +50,18 @@ class DynamicSidecarClient:
     def _dynamic_sidecar_settings(self) -> DynamicSidecarSettings:
         return self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
 
-    async def is_healthy(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
+    async def is_healthy(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True
+    ) -> bool:
         """returns True if service is UP and running else False"""
         try:
             # this request uses a very short timeout
-            response = await self._thin_client.get_health(dynamic_sidecar_endpoint)
+            if with_retry:
+                response = await self._thin_client.get_health(dynamic_sidecar_endpoint)
+            else:
+                response = await self._thin_client.get_health_no_retry(
+                    dynamic_sidecar_endpoint
+                )
             return response.json()["is_healthy"]
         except BaseClientHTTPError:
             return False
@@ -407,11 +414,11 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
 
 
 async def get_dynamic_sidecar_service_health(
-    app: FastAPI, scheduler_data: SchedulerData
+    app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
     api_client = get_dynamic_sidecar_client(app)
     service_endpoint = scheduler_data.endpoint
 
     # update service health
-    is_healthy = await api_client.is_healthy(service_endpoint)
+    is_healthy = await api_client.is_healthy(service_endpoint, with_retry=with_retry)
     return is_healthy

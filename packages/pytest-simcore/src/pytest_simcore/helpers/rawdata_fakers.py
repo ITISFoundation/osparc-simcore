@@ -22,7 +22,7 @@ import faker
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.webserver_models import ProjectType, UserStatus
+from simcore_postgres_database.webserver_models import GroupType, UserStatus
 
 STATES = [
     StateType.NOT_STARTED,
@@ -58,7 +58,7 @@ _DEFAULT_HASH = _compute_hash("secret")
 
 def random_user(**overrides) -> dict[str, Any]:
     data = dict(
-        name=FAKE.name(),
+        name=FAKE.user_name(),
         email=FAKE.email(),
         password_hash=_DEFAULT_HASH,
         status=UserStatus.ACTIVE,
@@ -97,7 +97,7 @@ def random_group(**overrides) -> dict[str, Any]:
     data = dict(
         name=FAKE.company(),
         description=FAKE.text(),
-        type=ProjectType.STANDARD.name,
+        type=GroupType.STANDARD.name,
     )
     data.update(overrides)
     return data

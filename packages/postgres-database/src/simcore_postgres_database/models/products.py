@@ -5,11 +5,76 @@
     - Every product has a front-end with exactly the same name
 """
 
+from typing import Literal, TypedDict
+
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
 from .jinja2_templates import jinja2_templates
+
+
+#
+# Layout of the data in the JSONB columns
+#
+class Vendor(TypedDict, total=False):
+    """
+        Brand information about the vendor
+    E.g. company name, address, copyright, etc.
+    """
+
+    name: str
+    copyright: str
+    url: str
+    license_url: str
+
+
+class IssueTracker(TypedDict, total=True):
+    """Link to actions in an online issue tracker (e.g. in fogbugz, github, gitlab ...)
+
+    e.g. URL to create a new issue for this product
+
+    new_url=https://github.com/ITISFoundation/osparc-simcore/issues/new/choose
+    """
+
+    label: str
+    login_url: str
+    new_url: str
+
+
+class Manual(TypedDict, total=True):
+    label: str
+    url: str
+
+
+class WebFeedback(TypedDict, total=True):
+    """URL to a feedback form (e.g. google forms etc)"""
+
+    kind: Literal["web"]
+    label: str
+    url: str
+
+
+class EmailFeedback(TypedDict, total=True):
+    """Give feedback via email"""
+
+    kind: Literal["email"]
+    label: str
+    email: str
+
+
+class Forum(TypedDict, total=True):
+    """Link to a forum"""
+
+    kind: Literal["forum"]
+    label: str
+    url: str
+
+
+#
+# Table
+#
 
 products = sa.Table(
     "products",
@@ -58,41 +123,19 @@ products = sa.Table(
         "The SID of the Messaging Service you want to associate with the message."
         "When set to None, this feature is disabled.",
     ),
+    sa.Column("vendor", JSONB, nullable=True, doc="Info about the Vendor"),
+    sa.Column("issues", JSONB, nullable=True, doc="Issue trackers: list[IssueTracker]"),
     sa.Column(
-        "manual_url",
-        sa.String,
-        nullable=False,
-        server_default="https://itisfoundation.github.io/osparc-manual/",
-        doc="URL to main product's manual",
+        "manuals",
+        JSONB,
+        nullable=True,
+        doc="User manuals: list[Manual]",
     ),
     sa.Column(
-        "manual_extra_url",
-        sa.String,
+        "support",
+        JSONB,
         nullable=True,
-        server_default="https://itisfoundation.github.io/osparc-manual-z43/",
-        doc="URL to extra product's manual",
-    ),
-    sa.Column(
-        "issues_login_url",
-        sa.String,
-        nullable=True,
-        server_default="https://github.com/ITISFoundation/osparc-simcore/issues",
-        doc="URL to login in the issue tracker site"
-        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
-    ),
-    sa.Column(
-        "issues_new_url",
-        sa.String,
-        nullable=True,
-        server_default="https://github.com/ITISFoundation/osparc-simcore/issues/new",
-        doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)"
-        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
-    ),
-    sa.Column(
-        "feedback_form_url",
-        sa.String,
-        nullable=True,
-        doc="URL to a feedback form (e.g. google forms etc)",
+        doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
     ),
     sa.Column(
         "registration_email_template",
@@ -120,6 +163,12 @@ products = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),
         doc="Automaticaly updates on modification of the row",
+    ),
+    sa.Column(
+        "priority",
+        sa.Integer(),
+        server_default=sa.text("0"),
+        doc="Index used to sort the products. E.g. determine default",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

@@ -122,7 +122,7 @@ async def test_task_result_times_out(
 
     url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    timeout = TASK_SLEEP_INTERVAL / 2
+    timeout = TASK_SLEEP_INTERVAL / 10
     with pytest.raises(TaskClientTimeoutError) as exec_info:
         async with periodic_task_result(
             client,

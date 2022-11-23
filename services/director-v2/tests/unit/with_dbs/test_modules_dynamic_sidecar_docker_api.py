@@ -11,7 +11,6 @@ from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from faker import Faker
@@ -19,7 +18,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pytest import FixtureRequest
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
@@ -678,7 +677,7 @@ async def test_list_dynamic_sidecar_services(
     assert len(services) == 1
 
 
-async def test_is_dynamic_service_running(
+async def test_is_sidecar_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: list[dict[str, Any]],
@@ -686,7 +685,7 @@ async def test_is_dynamic_service_running(
     docker_swarm: None,
 ):
     assert (
-        await docker_api.is_dynamic_service_running(node_uuid, dynamic_sidecar_settings)
+        await docker_api.is_sidecar_running(node_uuid, dynamic_sidecar_settings)
         is False
     )
 
@@ -695,10 +694,15 @@ async def test_is_dynamic_service_running(
         service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
         assert service_id
 
-    assert (
-        await docker_api.is_dynamic_service_running(node_uuid, dynamic_sidecar_settings)
-        is True
-    )
+    async for attempt in AsyncRetrying(
+        reraise=True, wait=wait_fixed(0.5), stop=stop_after_delay(10)
+    ):
+        with attempt:
+            is_sidecar_running = await docker_api.is_sidecar_running(
+                node_uuid, dynamic_sidecar_settings
+            )
+            print(f"Sidecar for service {node_uuid}: {is_sidecar_running=}")
+            assert is_sidecar_running is True
 
 
 async def test_get_projects_networks_containers(

@@ -26,6 +26,7 @@ from simcore_service_storage.s3_utils import (
         (parse_obj_as(ByteSize, "560Gib"), 5735, parse_obj_as(ByteSize, "100Mib")),
         (parse_obj_as(ByteSize, "5Tib"), 8739, parse_obj_as(ByteSize, "600Mib")),
         (parse_obj_as(ByteSize, "15Tib"), 7680, parse_obj_as(ByteSize, "2Gib")),
+        (parse_obj_as(ByteSize, "9431773844"), 900, parse_obj_as(ByteSize, "10Mib")),
     ],
     ids=byte_size_ids,
 )

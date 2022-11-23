@@ -13,7 +13,7 @@ from aiohttp_jinja2 import render_string
 from faker import Faker
 from simcore_service_webserver._resources import resources
 from simcore_service_webserver.email import setup_email
-from simcore_service_webserver.login.utils import themed
+from simcore_service_webserver.login.utils_email import themed
 
 
 @pytest.fixture

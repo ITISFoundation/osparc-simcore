@@ -6,9 +6,11 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
+from simcore_postgres_database.utils_products import get_default_product_name
 
 from ._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
-from .products_db import Product, iter_products
+from .products_db import iter_products
+from .products_model import Product
 from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
@@ -31,28 +33,37 @@ async def setup_product_templates(app: web.Application):
         # cleanup
 
 
+def _set_app_state(
+    app: web.Application, app_products: dict[str, Product], default_product_name: str
+):
+    app[APP_PRODUCTS_KEY] = app_products
+    assert default_product_name in app_products.keys()  # nosec
+    app[f"{APP_PRODUCTS_KEY}_default"] = default_product_name
+
+
 async def load_products_on_startup(app: web.Application):
     """
     Loads info on products stored in the database into app's storage (i.e. memory)
     """
     app_products: dict[str, Product] = {}
     engine: Engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        async for row in iter_products(conn):
+            try:
+                name = row.name  # type:ignore
+                app_products[name] = Product.from_orm(row)
 
-    async for row in iter_products(engine):
-        try:
-            name = row.name  # type:ignore
-            app_products[name] = Product.from_orm(row)
+                assert name in FRONTEND_APPS_AVAILABLE  # nosec
 
-            if name not in FRONTEND_APPS_AVAILABLE:
-                log.warning("There is not front-end registered for this product")
+            except ValidationError as err:
+                raise InvalidConfig(
+                    f"Invalid product configuration in db '{row}':\n {err}"
+                ) from err
 
-        except ValidationError as err:
-            raise InvalidConfig(
-                f"Invalid product configuration in db '{row}':\n {err}"
-            ) from err
+        assert FRONTEND_APP_DEFAULT in app_products.keys()  # nosec
 
-    if FRONTEND_APP_DEFAULT not in app_products.keys():
-        log.warning("Default front-end app is not in the products table")
+        default_product_name = await get_default_product_name(conn)
 
-    app[APP_PRODUCTS_KEY] = app_products
+    _set_app_state(app, app_products, default_product_name)
+
     log.debug("Product loaded: %s", [p.name for p in app_products.values()])

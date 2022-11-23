@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry
 
 from ..core.settings import PostgresSettings
+from .repositories.products import ProductsRepository
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ async def connect_to_db(app: FastAPI) -> None:
         # NOTE: engine must be closed because retry will create a new engine
         await engine.dispose()
         raise
+
     logger.debug("Migration up-to-date")
 
     app.state.engine = engine
@@ -56,3 +58,8 @@ async def close_db_connection(app: FastAPI) -> None:
         await engine.dispose()
 
     logger.debug("Disconnected from %s", engine.url)  # pylint: disable=no-member
+
+
+async def setup_default_product(app: FastAPI):
+    repo = ProductsRepository(db_engine=app.state.engine)
+    app.state.default_product_name = await repo.get_default_product_name()

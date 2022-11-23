@@ -31,6 +31,8 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     env_file:
@@ -170,7 +172,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llight`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llight/`,`/tis/`,`/transpiled/`,`/resource/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/tis/`,`/transpiled/`,`/resource/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.service=${SWARM_STACK_NAME}_static_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
@@ -275,18 +277,26 @@ services:
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     deploy:
       mode: global
-      # TODO: this requires some fixing
-      # resources:
-      #   limits:
-      #     cpus: "1.0"
-      #     memory: 200M
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 200M
+    networks:
+      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       LOGLEVEL: ${LOG_LEVEL:-INFO}
+      AGENT_VOLUMES_CLEANUP_S3_SECURE: ${AGENT_VOLUMES_CLEANUP_S3_SECURE}
+      AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: ${AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}
+      AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: ${AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY}
+      AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: ${AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY}
+      AGENT_VOLUMES_CLEANUP_S3_BUCKET: ${AGENT_VOLUMES_CLEANUP_S3_BUCKET}
+      AGENT_VOLUMES_CLEANUP_S3_PROVIDER: ${AGENT_VOLUMES_CLEANUP_S3_PROVIDER}
+      AGENT_VOLUMES_CLEANUP_S3_REGION: ${AGENT_VOLUMES_CLEANUP_S3_REGION:-us-east-1}
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -320,7 +330,6 @@ services:
       DASK_START_AS_SCHEDULER: 1
 
     networks:
-      - interactive_services_subnet
       - computational_services_subnet
 
   datcore-adapter:
@@ -361,7 +370,6 @@ services:
     networks:
       - default
       - interactive_services_subnet
-      - computational_services_subnet
       - storage_subnet
 
   rabbit:
@@ -373,15 +381,14 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
     networks:
       - default
-      - computational_services_subnet
       - interactive_services_subnet
     healthcheck:
       # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
       test: rabbitmq-diagnostics -q status
-      interval: 30s
+      interval: 5s
       timeout: 30s
       retries: 5
-      start_period: 15s
+      start_period: 5s
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
@@ -395,7 +402,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_USER=${POSTGRES_USER}
     networks:
-      - default
+      - default # actually needed for the postgres service only
 
   postgres:
     image: "postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce"
@@ -414,7 +421,6 @@ services:
     networks:
       - default
       - interactive_services_subnet
-      - computational_services_subnet
     healthcheck:
       test:
         [
@@ -425,7 +431,7 @@ services:
           "--dbname",
           "${POSTGRES_DB}"
         ]
-      interval: 15s
+      interval: 5s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
@@ -532,10 +538,9 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
-
     networks:
       - default
-      - interactive_services_subnet
+      - interactive_services_subnet # for legacy dynamic services
     #healthcheck:
     #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
     #  interval: 3s
@@ -569,7 +574,3 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.9.0.0/16"

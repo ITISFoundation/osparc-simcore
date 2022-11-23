@@ -58,53 +58,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
       preferencesWindow.center();
       preferencesWindow.open();
-    },
-
-    openGithubIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
-      );
-      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        window.open(osparc.utils.issue.Github.getNewIssueUrl());
-        issueConfirmationWindow.close();
-      }, this);
-      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
-    openFogbugzIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        qx.locale.Manager.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
-      );
-      const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-            if (fbNewIssueUrl) {
-              window.open(fbNewIssueUrl);
-              issueConfirmationWindow.close();
-            }
-          });
-      }, this);
-      const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            if (statics && statics.osparcIssuesLoginUrl) {
-              window.open(statics.osparcIssuesLoginUrl);
-            }
-          });
-      }, this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
     }
   },
 
@@ -147,7 +100,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
-          control.addListener("execute", () => window.open(osparc.navigation.Manuals.getLicenseLink()));
+          osparc.navigation.Manuals.getLicenseURL()
+            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
           this.getMenu().add(control);
           break;
         case "about":
@@ -203,18 +157,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     __addManualsToMenu: function() {
       const menu = this.getMenu();
-      const manuals = osparc.navigation.Manuals.getManuals(this.__serverStatics);
-
-      manuals.forEach(manual => {
-        const manualBtn = new qx.ui.menu.Button(manual.label);
-        manualBtn.addListener("execute", () => window.open(manual.url), this);
-        menu.add(manualBtn);
-      });
+      osparc.navigation.Manuals.addManualButtonsToMenu(menu);
     },
 
     __addFeedbacksToMenu: function() {
       const menu = this.getMenu();
-      osparc.navigation.Manuals.addFeedbackButtonsToMenu(menu, this.__serverStatics);
+      osparc.navigation.Manuals.addSupportButtonsToMenu(menu);
     }
   }
 });

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Literal, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -15,32 +15,39 @@ class RabbitEventMessageType(str, Enum):
 
 
 class RabbitMessageBase(BaseModel):
+    channel_name: str
     node_id: NodeID
     user_id: UserID
     project_id: ProjectID
 
+    @classmethod
+    def get_channel_name(cls) -> str:
+        # NOTE: this returns the channel type name
+        return cls.__fields__["channel_name"].default
+
 
 class LoggerRabbitMessage(RabbitMessageBase):
-    messages: List[str]
+    channel_name: Literal["simcore.services.logs"] = "simcore.services.logs"
+    messages: list[str]
 
 
 class EventRabbitMessage(RabbitMessageBase):
+    channel_name: Literal["simcore.services.events"] = "simcore.services.events"
     action: RabbitEventMessageType
 
 
 class ProgressRabbitMessage(RabbitMessageBase):
+    channel_name: Literal["simcore.services.progress"] = "simcore.services.progress"
     progress: NonNegativeFloat
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase):
+    channel_name: Literal[
+        "simcore.services.instrumentation"
+    ] = "simcore.services.instrumentation"
     metrics: str
     service_uuid: NodeID
     service_type: NodeClass
     service_key: str
     service_tag: str
     result: Optional[RunningState] = None
-
-
-RabbitMessageTypes = Union[
-    LoggerRabbitMessage, ProgressRabbitMessage, InstrumentationRabbitMessage
-]

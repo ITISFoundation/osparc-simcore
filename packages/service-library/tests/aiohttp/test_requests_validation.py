@@ -23,7 +23,8 @@ APP_SECRET_KEY = f"{__name__}.secret"
 
 
 def jsonable_encoder(data):
-    # q&d replacement for fastapi.encoders.jsonable_encoder
+    # Neither models_library nor fastapi is not part of requirements.
+    # Q&D replacement for fastapi.encoders.jsonable_encoder
     return json.loads(json_dumps(data))
 
 
@@ -194,9 +195,9 @@ async def test_parse_request_with_invalid_path_params(
     )
     assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
-    errors = await r.json()
-    assert errors["error"].pop("resource")
-    assert errors == {
+    response_body = await r.json()
+    assert response_body["error"].pop("resource")
+    assert response_body == {
         "error": {
             "msg": "Invalid parameter/s 'project_uuid' in request path",
             "details": [
@@ -223,9 +224,9 @@ async def test_parse_request_with_invalid_query_params(
     )
     assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
-    errors = await r.json()
-    assert errors["error"].pop("resource")
-    assert errors == {
+    response_body = await r.json()
+    assert response_body["error"].pop("resource")
+    assert response_body == {
         "error": {
             "msg": "Invalid parameter/s 'label' in request query",
             "details": [
@@ -252,11 +253,11 @@ async def test_parse_request_with_invalid_body(
     )
     assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
 
-    errors = await r.json()
+    response_body = await r.json()
 
-    assert errors["error"].pop("resource")
+    assert response_body["error"].pop("resource")
 
-    assert errors == {
+    assert response_body == {
         "error": {
             "msg": "Invalid field/s 'x, z' in request body",
             "details": [
@@ -273,3 +274,19 @@ async def test_parse_request_with_invalid_body(
             ],
         }
     }
+
+
+async def test_parse_request_with_invalid_json_body(
+    client: TestClient,
+    path_params: MyRequestPathParams,
+    query_params: MyRequestQueryParams,
+):
+
+    r = await client.get(
+        f"/projects/{path_params.project_uuid}",
+        params=query_params.as_params(),
+        data=b"[ 1 2, 3 'broken-json' ]",
+    )
+
+    body = await r.text()
+    assert r.status == web.HTTPBadRequest.status_code, body

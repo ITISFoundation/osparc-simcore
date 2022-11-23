@@ -12,7 +12,9 @@ from pint import Unit, UnitRegistry
 def test_service_port_units(project_tests_dir: Path):
     ureg = UnitRegistry()
 
-    data = yaml.safe_load((project_tests_dir / "data" / "image-meta.yaml").read_text())
+    data = yaml.safe_load(
+        (project_tests_dir / "data" / "metadata-sleeper-2.0.2.yaml").read_text()
+    )
     print(ServiceDockerData.schema_json(indent=2))
 
     service_meta = ServiceDockerData.parse_obj(data)

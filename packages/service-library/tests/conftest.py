@@ -12,9 +12,14 @@ import servicelib
 from faker import Faker
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 

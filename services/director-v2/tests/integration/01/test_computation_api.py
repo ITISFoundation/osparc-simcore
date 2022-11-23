@@ -10,25 +10,22 @@ import json
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import httpx
 import pytest
 import sqlalchemy as sa
-from _pytest.monkeypatch import MonkeyPatch
-from httpx import AsyncClient
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from pytest import MonkeyPatch
 from settings_library.rabbit import RabbitSettings
 from shared_comp_utils import (
-    COMPUTATION_URL,
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
-    create_pipeline,
 )
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
@@ -128,6 +125,9 @@ def fake_workbench_computational_pipeline_details_not_started(
     return completed_pipeline_details
 
 
+COMPUTATION_URL: str = "v2/computations"
+
+
 @pytest.mark.parametrize(
     "body,exp_response",
     [
@@ -179,17 +179,20 @@ async def test_start_empty_computation_is_refused(
     registered_user: Callable,
     project: Callable,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     empty_project = project(user)
-    await create_pipeline(
-        async_client,
-        project=empty_project,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-    )
+    with pytest.raises(
+        httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"
+    ):
+        await create_pipeline(
+            async_client,
+            project=empty_project,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+        )
 
 
 @dataclass
@@ -358,6 +361,7 @@ async def test_run_partial_computation(
     fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     sleepers_project: ProjectAtDB = project(
@@ -395,20 +399,18 @@ async def test_run_partial_computation(
     )
 
     # send a valid project with sleepers
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
             if index in params.subgraph_elements
         ],
     )
-    task_out = ComputationGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
@@ -439,19 +441,22 @@ async def test_run_partial_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    response = await create_pipeline(
-        async_client,
-        project=sleepers_project,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        subgraph=[
-            str(node_id)
-            for index, node_id in enumerate(sleepers_project.workbench)
-            if index in params.subgraph_elements
-        ],
-    )
+    with pytest.raises(
+        httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"
+    ):
+        await create_pipeline(
+            async_client,
+            project=sleepers_project,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+            expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            subgraph=[
+                str(node_id)
+                for index, node_id in enumerate(sleepers_project.workbench)
+                if index in params.subgraph_elements
+            ],
+        )
 
     # force run it this time.
     # the task are up-to-date but we force run them
@@ -460,7 +465,7 @@ async def test_run_partial_computation(
         params.exp_pipeline_adj_list_after_force_run,
         params.exp_node_states_after_force_run,
     )
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
@@ -474,7 +479,6 @@ async def test_run_partial_computation(
         ],
         force_restart=True,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     await assert_computation_task_out_obj(
         task_out,
@@ -501,11 +505,12 @@ async def test_run_computation(
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
@@ -513,7 +518,6 @@ async def test_run_computation(
         product_name=osparc_product_name,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
@@ -551,14 +555,16 @@ async def test_run_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
-    response = await create_pipeline(
-        async_client,
-        project=sleepers_project,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-    )
+    with pytest.raises(
+        httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"
+    ):
+        await create_pipeline(
+            async_client,
+            project=sleepers_project,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+        )
 
     # now force run again
     # the task are up-to-date but we force run them
@@ -571,16 +577,14 @@ async def test_run_computation(
                 node_id
             ].current_status
         )
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
         force_restart=True,
     )
-    task_out = ComputationGet.parse_obj(response.json())
     # check the contents is correct
     await assert_computation_task_out_obj(
         task_out,
@@ -613,6 +617,7 @@ async def test_abort_computation(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     # we need long running tasks to ensure cancellation is done properly
@@ -623,15 +628,13 @@ async def test_abort_computation(
                 node["inputs"]["in_2"] = 120
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -694,19 +697,18 @@ async def test_update_and_delete_computation(
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -719,15 +721,13 @@ async def test_update_and_delete_computation(
     )
 
     # update the pipeline
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -740,15 +740,13 @@ async def test_update_and_delete_computation(
     )
 
     # update the pipeline
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -761,15 +759,13 @@ async def test_update_and_delete_computation(
     )
 
     # start it now
-    response = await create_pipeline(
+    task_out = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
@@ -793,14 +789,14 @@ async def test_update_and_delete_computation(
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
 
     # now try to update the pipeline, is expected to be forbidden
-    response = await create_pipeline(
-        async_client,
-        project=sleepers_project,
-        user_id=user["id"],
-        start_pipeline=False,
-        product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_403_FORBIDDEN,
-    )
+    with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_403_FORBIDDEN}"):
+        await create_pipeline(
+            async_client,
+            project=sleepers_project,
+            user_id=user["id"],
+            start_pipeline=False,
+            product_name=osparc_product_name,
+        )
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
     response = await async_client.request(
@@ -826,6 +822,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     project: Callable,
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     # create a workbench with just a dynamic service
@@ -841,27 +838,25 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     )
 
     # this pipeline is not runnable as there are no computational services
-    response = await create_pipeline(
-        async_client,
-        project=project_with_dynamic_node,
-        user_id=user["id"],
-        start_pipeline=True,
-        product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-    )
+    with pytest.raises(
+        httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"
+    ):
+        await create_pipeline(
+            async_client,
+            project=project_with_dynamic_node,
+            user_id=user["id"],
+            start_pipeline=True,
+            product_name=osparc_product_name,
+        )
 
     # still this pipeline shall be createable if we do not want to start it
-    response = await create_pipeline(
+    await create_pipeline(
         async_client,
         project=project_with_dynamic_node,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
-        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
 
 
 def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
@@ -1017,7 +1012,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
 
 async def test_burst_create_computations(
     minimal_configuration: None,
-    async_client: AsyncClient,
+    async_client: httpx.AsyncClient,
     registered_user: Callable,
     project: Callable,
     fake_workbench_without_outputs: dict[str, Any],
@@ -1025,22 +1020,11 @@ async def test_burst_create_computations(
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
     osparc_product_name: str,
+    create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     sleepers_project2 = project(user, workbench=fake_workbench_without_outputs)
-
-    async def create_pipeline(project: ProjectAtDB, start_pipeline: bool):
-        return await async_client.post(
-            COMPUTATION_URL,
-            json={
-                "user_id": user["id"],
-                "project_id": str(project.uuid),
-                "start_pipeline": start_pipeline,
-                "product_name": osparc_product_name,
-            },
-            timeout=60,
-        )
 
     NUMBER_OF_CALLS = 4
 
@@ -1049,29 +1033,56 @@ async def test_burst_create_computations(
     responses = await asyncio.gather(
         *(
             [
-                create_pipeline(sleepers_project, start_pipeline=False)
+                create_pipeline(
+                    async_client,
+                    project=sleepers_project,
+                    user_id=user["id"],
+                    product_name=osparc_product_name,
+                    start_pipeline=False,
+                )
                 for _ in range(NUMBER_OF_CALLS)
             ]
-            + [create_pipeline(sleepers_project2, start_pipeline=False)]
+            + [
+                create_pipeline(
+                    async_client,
+                    project=sleepers_project2,
+                    user_id=user["id"],
+                    product_name=osparc_product_name,
+                    start_pipeline=False,
+                )
+            ]
         )
     )
-    received_status_codes = [r.status_code for r in responses]
-    assert status.HTTP_201_CREATED in received_status_codes
-    assert received_status_codes.count(status.HTTP_201_CREATED) == NUMBER_OF_CALLS + 1
+    assert all(isinstance(r, ComputationGet) for r in responses)
 
     # starting 4 pipelines should return 1 time 201 and 3 times 403
     # the second pipeline should return a 201
     responses = await asyncio.gather(
         *(
             [
-                create_pipeline(sleepers_project, start_pipeline=True)
+                create_pipeline(
+                    async_client,
+                    project=sleepers_project,
+                    user_id=user["id"],
+                    product_name=osparc_product_name,
+                    start_pipeline=True,
+                )
                 for _ in range(NUMBER_OF_CALLS)
             ]
-            + [create_pipeline(sleepers_project2, start_pipeline=False)]
-        )
+            + [
+                create_pipeline(
+                    async_client,
+                    project=sleepers_project2,
+                    user_id=user["id"],
+                    product_name=osparc_product_name,
+                    start_pipeline=False,
+                )
+            ]
+        ),
+        return_exceptions=True,
     )
-    received_status_codes = [r.status_code for r in responses]
-    assert received_status_codes.count(status.HTTP_201_CREATED) == 2
-    assert received_status_codes.count(status.HTTP_403_FORBIDDEN) == (
-        NUMBER_OF_CALLS - 1
-    )
+    created_tasks = [r for r in responses if isinstance(r, ComputationGet)]
+    failed_tasks = [r for r in responses if isinstance(r, httpx.HTTPStatusError)]
+
+    assert len(created_tasks) == 2
+    assert len(failed_tasks) == (NUMBER_OF_CALLS - 1)

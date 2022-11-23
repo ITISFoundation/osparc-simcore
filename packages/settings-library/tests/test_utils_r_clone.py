@@ -2,7 +2,11 @@
 
 import pytest
 from settings_library.r_clone import RCloneSettings, S3Provider
-from settings_library.utils_r_clone import _COMMON_ENTRIES, get_r_clone_config
+from settings_library.utils_r_clone import (
+    _COMMON_ENTRIES,
+    get_r_clone_config,
+    resolve_provider,
+)
 
 
 @pytest.fixture(params=list(S3Provider))
@@ -26,3 +30,15 @@ def test_r_clone_config_template_replacement(r_clone_settings: RCloneSettings) -
 
     for key in _COMMON_ENTRIES.keys():
         assert key in r_clone_config
+
+
+@pytest.mark.parametrize(
+    "s3_provider, expected",
+    [
+        (S3Provider.AWS, "AWS"),
+        (S3Provider.CEPH, "Ceph"),
+        (S3Provider.MINIO, "Minio"),
+    ],
+)
+def test_resolve_provider(s3_provider: S3Provider, expected: str) -> None:
+    assert resolve_provider(s3_provider) == expected

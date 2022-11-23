@@ -17,7 +17,7 @@ const templateName = "JupyterLabs";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-  let studyId
+  let studyId;
   try {
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
@@ -63,10 +63,10 @@ async function runTutorial() {
       await tutorial.takeScreenshot("after_run_all_menu");
 
       if (j === 2) {
-        await tutorial.waitFor(30000); // we are solving an em problem
+        await tutorial.waitFor(40000); // we are solving an em problem
       }
       else {
-        await tutorial.waitFor(5000); // we are NOT solving an em problem
+        await tutorial.waitFor(10000); // we are NOT solving an em problem
       }
 
       const outFiles = [
@@ -80,10 +80,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId, 20000);
-    await tutorial.logOut();
-    await tutorial.close();
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

@@ -12,6 +12,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._constants import INDEX_RESOURCE_NAME
+from .products import setup_products
 from .statics_events import create_cached_indexes, create_statics_json
 from .statics_handlers import get_cached_frontend_index, get_statics_json
 from .statics_settings import StaticWebserverModuleSettings, get_plugin_settings
@@ -23,11 +24,14 @@ log = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=log
 )
 def setup_statics(app: web.Application) -> None:
+
     settings: StaticWebserverModuleSettings = get_plugin_settings(app)
     assert settings  # nosec
 
+    setup_products(app)
+
     # serves information composed by making 4 http requests (once for each product)
-    # to the index.html in each of the 4 product directories /osparc, /s4l, /s4llight and /tis
+    # to the index.html in each of the 4 product directories /osparc, /s4l, /s4llite and /tis
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
     # statics.json is computed here and contains information used
     # by the frontend to properly render the client

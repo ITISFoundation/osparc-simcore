@@ -2,15 +2,10 @@ import logging
 from typing import Optional
 
 from aiohttp import web
+from servicelib.aiohttp.typing_extension import Handler
 
-from ._constants import (
-    APP_PRODUCTS_KEY,
-    RQ_PRODUCT_FRONTEND_KEY,
-    RQ_PRODUCT_KEY,
-    X_PRODUCT_NAME_HEADER,
-)
+from ._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from ._meta import API_VTAG
-from .statics_constants import FRONTEND_APP_DEFAULT
 
 log = logging.getLogger(__name__)
 
@@ -31,20 +26,28 @@ def discover_product_by_request_header(request: web.Request) -> Optional[str]:
     return None
 
 
+def _get_app_default_product_name(request: web.Request) -> str:
+    return request.app[f"{APP_PRODUCTS_KEY}_default"]
+
+
 @web.middleware
-async def discover_product_middleware(request, handler):
+async def discover_product_middleware(request: web.Request, handler: Handler):
     """
     This service can serve to different products
     Every request needs to reveal which product to serve and store it in request[RQ_PRODUCT_KEY]
         - request[RQ_PRODUCT_KEY] is set to discovered product in 3 types of entrypoints
         - if no product discovered, then it is set to default
     """
-    # API entrypoints: api calls
-    if request.path.startswith(f"/{API_VTAG}"):
+    # - API entrypoints
+    # - /static info for front-end
+    if (
+        request.path.startswith(f"/{API_VTAG}")
+        or request.path == "/static-frontend-data.json"
+    ):
         product_name = (
             discover_product_by_request_header(request)
             or discover_product_by_hostname(request)
-            or FRONTEND_APP_DEFAULT
+            or _get_app_default_product_name(request)
         )
         request[RQ_PRODUCT_KEY] = product_name
 
@@ -55,8 +58,11 @@ async def discover_product_middleware(request, handler):
         or request.path.startswith("/view")
         or request.path == "/"
     ):
-        product_name = discover_product_by_hostname(request) or FRONTEND_APP_DEFAULT
-        request[RQ_PRODUCT_FRONTEND_KEY] = request[RQ_PRODUCT_KEY] = product_name
+        product_name = discover_product_by_hostname(
+            request
+        ) or _get_app_default_product_name(request)
+
+        request[RQ_PRODUCT_KEY] = product_name
 
     response = await handler(request)
 
