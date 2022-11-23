@@ -44,6 +44,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     accessRights: {
       check: "Object",
       nullable: false,
+      apply: "__renderLayout",
       event: "changeAccessRights"
     },
     mode: {
@@ -200,15 +201,17 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
-        toolTipText: this.tr("Edit"),
-        enabled: this.getAccessRights()["write"]
+        toolTipText: this.tr("Edit")
       });
       const deleteButton = new osparc.ui.form.FetchButton().set({
         appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
-        toolTipText: this.tr("Delete"),
-        enabled: this.getAccessRights()["delete"]
+        toolTipText: this.tr("Delete")
       });
+      if (this.isPropertyInitialized("accessRights")) {
+        editButton.setEnabled(this.getAccessRights()["write"]);
+        deleteButton.setEnabled(this.getAccessRights()["delete"]);
+      }
       buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
       editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
