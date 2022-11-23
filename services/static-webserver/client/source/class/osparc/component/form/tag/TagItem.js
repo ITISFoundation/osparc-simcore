@@ -290,7 +290,6 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
      */
     __serializeData: function() {
       return {
-        id: this.isPropertyInitialized("id") ? this.getId() : null,
         name: this.getChildControl("nameinput").getValue().trim(),
         description: this.getChildControl("descriptioninput").getValue().trim(),
         color: this.getChildControl("colorinput").getValue()
