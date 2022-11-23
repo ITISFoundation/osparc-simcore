@@ -100,4 +100,20 @@ def downgrade():
         )
     )
 
+    # WARNING: downgrade with data loss
+    #
+    # With this migration upgrade, tags can now be associated to both users AND groups.
+    # Therefore, if in the new table contains group tags, the downgrade CANNOT map that tag
+    # to a user, resulting in user_id = null.
+    #
+    # In order to reduce the data loss, if any of the tags are assigned
+    # to groups, the non-nullable condition of user_id is dropped in exchange
+    # for not deleting group tags in the tags table.
+    #
+    # We tried to catch the `sa.exc.IntegrityError`` (column "user_id" of relation "tags" contains null values)
+    # and relax this condition only when the data requires it but the problem is that once there is failure
+    # the whole transaction gets cancelled.
+    #
+    # NOTE: this context can be reproduced in services/web/server/tests/unit/with_dbs/03/tags/test_tags.py::test_read_tags
+
     op.drop_table("tags_to_groups")

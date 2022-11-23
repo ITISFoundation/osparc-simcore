@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, Callable, Iterator
+from typing import Any, AsyncIterator, Callable
 
 import pytest
 from aiohttp import web
@@ -57,7 +57,6 @@ def fake_tags(faker: Faker) -> list[dict[str, Any]]:
     ]
 
 
-# TODO: extend tests to other roles
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_tags_to_studies(
     client: TestClient,
@@ -128,8 +127,8 @@ async def test_tags_to_studies(
 
 
 @pytest.fixture
-async def everybody_tag_id(client: TestClient) -> Iterator[int]:
-
+async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
+    assert client.app
     engine = get_database_engine(client.app)
     assert engine
 
@@ -197,7 +196,7 @@ async def test_create_and_update_tags(
     created, _ = await assert_status(resp, web.HTTPOk)
 
     assert created == {
-        "id": 2,
+        "id": created["id"],
         "name": "T",
         "description": None,
         "color": "#f00",
