@@ -15,7 +15,7 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 Have a look at `Pylint`'s configuration file [.pylintrc](.pylintrc).
 
 
-## Posgres
+## Postgres
 
 ### Foreign keys
 

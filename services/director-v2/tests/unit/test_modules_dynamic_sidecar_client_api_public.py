@@ -101,15 +101,22 @@ def get_patched_client(
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])
-async def test_is_healthy_api_ok(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl, is_healthy: bool
+@pytest.mark.parametrize("with_retry", [True, False])
+async def test_is_healthy(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    is_healthy: bool,
+    with_retry: bool,
 ) -> None:
     mock_json = {"is_healthy": is_healthy}
     with get_patched_client(
-        "get_health",
+        "get_health" if with_retry else "get_health_no_retry",
         return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
     ) as client:
-        assert await client.is_healthy(dynamic_sidecar_endpoint) == is_healthy
+        assert (
+            await client.is_healthy(dynamic_sidecar_endpoint, with_retry=with_retry)
+            == is_healthy
+        )
 
 
 async def test_is_healthy_times_out(

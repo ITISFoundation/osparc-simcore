@@ -210,7 +210,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
         ),
     )
-    DYNAMIC_SIDECAR_TIMEOUT_FETCH_DYNAMIC_SIDECAR_NODE_ID: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
         60 * MINS,
         description=(
             "After starting the dynamic-sidecar its docker_node_id is required. "

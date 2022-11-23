@@ -20,6 +20,7 @@ from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_service_director_v2.utils.dict_utils import nested_update
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -33,7 +34,11 @@ from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ...node_rights import NodeRightsManager
-from ..api_client import BaseClientHTTPError, get_dynamic_sidecar_client
+from ..api_client import (
+    BaseClientHTTPError,
+    get_dynamic_sidecar_client,
+    get_dynamic_sidecar_service_health,
+)
 from ..docker_api import (
     constrain_service_to_node,
     create_network,
@@ -210,6 +215,56 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started = True
 
 
+class WaitForSidecarAPI(DynamicSchedulerEvent):
+    """
+    Waits for the sidecar to start and respond to API calls.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return (
+            scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
+            and not scheduler_data.dynamic_sidecar.is_healthy
+        )
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
+            ),
+            wait=wait_fixed(1),
+            retry_error_cls=EntrypointContainerNotFoundError,
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+        ):
+            with attempt:
+                if not await get_dynamic_sidecar_service_health(
+                    app, scheduler_data, with_retry=False
+                ):
+                    raise TryAgain()
+                scheduler_data.dynamic_sidecar.is_healthy = True
+
+
+class UpdateHealth(DynamicSchedulerEvent):
+    """
+    Updates the health of the sidecar.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        scheduler_data.dynamic_sidecar.is_ready = (
+            await get_dynamic_sidecar_service_health(app, scheduler_data)
+        )
+
+
 class GetStatus(DynamicSchedulerEvent):
     """
     Triggered after CreateSidecars.action() runs.
@@ -222,7 +277,7 @@ class GetStatus(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
-            and scheduler_data.dynamic_sidecar.is_available == True
+            and scheduler_data.dynamic_sidecar.is_ready
         )
 
     @classmethod
@@ -291,8 +346,8 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
-            and scheduler_data.dynamic_sidecar.is_available == True
-            and scheduler_data.dynamic_sidecar.service_environment_prepared == False
+            and scheduler_data.dynamic_sidecar.is_ready
+            and not scheduler_data.dynamic_sidecar.is_service_environment_ready
         )
 
     @classmethod
@@ -344,7 +399,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                     dynamic_sidecar_endpoint, service_outputs_labels
                 )
 
-                scheduler_data.dynamic_sidecar.service_environment_prepared = True
+                scheduler_data.dynamic_sidecar.is_service_environment_ready = True
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
@@ -377,8 +432,8 @@ class CreateUserServices(DynamicSchedulerEvent):
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
-            scheduler_data.dynamic_sidecar.service_environment_prepared
-            and scheduler_data.dynamic_sidecar.compose_spec_submitted == False
+            scheduler_data.dynamic_sidecar.is_service_environment_ready
+            and not scheduler_data.dynamic_sidecar.compose_spec_submitted
         )
 
     @classmethod
@@ -504,7 +559,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.were_containers_created
-            and scheduler_data.dynamic_sidecar.is_project_network_attached == False
+            and not scheduler_data.dynamic_sidecar.is_project_network_attached
             and are_all_user_services_containers_running(
                 scheduler_data.dynamic_sidecar.containers_inspect
             )
@@ -552,7 +607,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         is not reachable a warning is logged.
     The outputs of the service wil be pushed. If dynamic-sidecar
         is not reachable a warning is logged.
-    The dynamic-sidcar together with spawned containers
+    The dynamic-sidecar together with spawned containers
     and dedicated network will be removed.
     The scheduler will no longer track the service.
     """
@@ -570,6 +625,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
 # A list is essential to guarantee execution order
 REGISTERED_EVENTS: list[type[DynamicSchedulerEvent]] = [
     CreateSidecars,
+    WaitForSidecarAPI,
+    UpdateHealth,
     GetStatus,
     PrepareServicesEnvironment,
     CreateUserServices,

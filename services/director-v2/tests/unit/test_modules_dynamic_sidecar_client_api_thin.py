@@ -91,6 +91,18 @@ async def test_get_health(
     assert_responses(mock_response, response)
 
 
+async def test_get_health_no_retry(
+    thin_client: ThinDynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+):
+    mock_response = Response(status.HTTP_200_OK)
+    mock_request("GET", "/health", mock_response, None)
+
+    response = await thin_client.get_health_no_retry(dynamic_sidecar_endpoint)
+    assert_responses(mock_response, response)
+
+
 @pytest.mark.parametrize("only_status", [False, True])
 async def test_get_containers(
     thin_client: ThinDynamicSidecarClient,

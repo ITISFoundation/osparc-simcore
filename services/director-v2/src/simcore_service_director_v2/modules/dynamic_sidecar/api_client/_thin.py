@@ -63,11 +63,22 @@ class ThinDynamicSidecarClient(BaseThinClient):
         api_version = "" if no_api_version else f"/{self.API_VERSION}"
         return f"{dynamic_sidecar_endpoint}{api_version}{postfix}"
 
+    async def _get_health_common(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
+        return await self.client.get(url, timeout=self._health_request_timeout)
+
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
     async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
-        return await self.client.get(url, timeout=self._health_request_timeout)
+        return await self._get_health_common(dynamic_sidecar_endpoint)
+
+    @expect_status(status.HTTP_200_OK)
+    async def get_health_no_retry(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        return await self._get_health_common(dynamic_sidecar_endpoint)
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)

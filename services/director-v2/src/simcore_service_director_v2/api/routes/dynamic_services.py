@@ -32,7 +32,7 @@ from ...models.schemas.dynamic_services import SchedulerData
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
-from ...modules.dynamic_sidecar.docker_api import is_dynamic_service_running
+from ...modules.dynamic_sidecar.docker_api import is_sidecar_running
 from ...modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
     LegacyServiceIsNotSupportedError,
@@ -132,7 +132,7 @@ async def create_dynamic_service(
         return RedirectResponse(str(redirect_url_with_query))
 
     #
-    if not await is_dynamic_service_running(
+    if not await is_sidecar_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
         scheduler_data = SchedulerData.from_http_request(

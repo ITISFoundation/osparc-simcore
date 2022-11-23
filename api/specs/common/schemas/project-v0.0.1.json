@@ -554,7 +554,10 @@
                   ]
                 },
                 "instructions": {
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "description": "Instructions about what to do in this step",
                   "examples": [
                     "This is a **sleeper**",
