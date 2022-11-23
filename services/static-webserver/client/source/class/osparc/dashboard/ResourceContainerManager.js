@@ -52,29 +52,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __flatList: null,
     __groupedLists: null,
 
-    __emptyHeaders: function() {
-      const noGroupHeader = this.__createHeader(this.tr("No Group"), "transparent");
-      this.__groupHeaders = {
-        "no-group": {
-          widget: noGroupHeader,
-          children: []
-        }
-      };
-      return noGroupHeader;
-    },
-
-    __createHeader: function(label, color) {
-      const header = new osparc.dashboard.GroupHeader();
-      header.set({
-        minWidth: 1000,
-        allowGrowX: true
-      });
-      header.buildLayout(label);
-      header.getChildControl("icon").setBackgroundColor(color);
-      return header;
-    },
-
-    // overridden
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
         if ("GroupHeader" in child) {
@@ -88,11 +65,33 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           const childIdx = headerInfo["children"].findIndex(button => button === child);
           this.addAt(child, headerIdx+1+childIdx);
         } else {
-          this.base(arguments, child, options);
+          this.__flatList.add(child, options);
         }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
+    },
+
+    __emptyHeaders: function() {
+      const noGroupHeader = this.__createHeader(this.tr("No Group"), "transparent");
+      this.__groupHeaders = {
+        "no-group": {
+          widget: noGroupHeader,
+          children: []
+        }
+      };
+      return noGroupHeader;
+    },
+
+    __createHeader: function(label, color) {
+      const header = new osparc.dashboard.GroupedToggleButtonContainer();
+      header.set({
+        minWidth: 1000,
+        allowGrowX: true
+      });
+      header.buildLayout(label);
+      header.getChildControl("icon").setBackgroundColor(color);
+      return header;
     },
 
     __configureCard: function(card) {
@@ -187,9 +186,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __applyGroupBy: function() {
       const cards = this.getCards();
       this.removeAll();
-      const header = this.__emptyHeaders();
       if (this.getGroupBy()) {
+        const header = this.__emptyHeaders();
         this.add(header);
+      } else {
+        this.__flatList = new osparc.dashboard.ToggleButtonContainer();
       }
       cards.forEach(card => this.add(card));
     }

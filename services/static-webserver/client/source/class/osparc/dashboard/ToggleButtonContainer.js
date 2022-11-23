@@ -12,6 +12,10 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function(layout) {
+    if (layout === undefined) {
+      const spacing = osparc.dashboard.GridButtonBase.SPACING;
+      layout = new qx.ui.layout.Flow(spacing, spacing);
+    }
     this.base(arguments, layout);
   },
 
@@ -37,7 +41,12 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
         this.base(arguments, child, options);
-        this.__configureCard(child);
+        child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
+        child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
+        if (this.getMode() === "list") {
+          const width = this.getBounds().width - 15;
+          child.setWidth(width);
+        }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
@@ -96,15 +105,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
 
     setLastSelectedItem: function(item) {
       this.setLastSelectedIndex(this.getIndex(item));
-    },
-
-    __configureCard: function(card) {
-      card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
-      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
-      if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
-        card.setWidth(width);
-      }
     },
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
