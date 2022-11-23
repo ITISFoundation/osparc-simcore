@@ -1,14 +1,15 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
-from pathlib import Path
-from typing import Any, Callable
+from typing import Any, AsyncIterator, Callable
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -17,14 +18,39 @@ from models_library.projects_state import (
     RunningState,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
+from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
+from simcore_service_webserver import tags_handlers
+from simcore_service_webserver._meta import api_version_prefix
+from simcore_service_webserver.db import get_database_engine
 from simcore_service_webserver.db_models import UserRole
 
 
+@pytest.mark.parametrize(
+    "route",
+    tags_handlers.routes,
+    ids=lambda r: f"{r.method.upper()} {r.path}",
+)
+def test_tags_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
+
+    assert route.path.startswith(f"/{api_version_prefix}")
+    path = route.path.replace(f"/{api_version_prefix}", "")
+
+    assert (
+        route.method.lower() in openapi_specs.paths[path].operations
+    ), f"operation {route.method} undefined in OAS"
+
+    assert (
+        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        == route.kwargs["name"]
+    ), "route's name differs from OAS operation_id"
+
+
 @pytest.fixture
-def fake_tags(fake_data_dir: Path) -> list[dict[str, Any]]:
+def fake_tags(faker: Faker) -> list[dict[str, Any]]:
     return [
         {"name": "tag1", "description": "description1", "color": "#f00"},
         {"name": "tag2", "description": "description2", "color": "#00f"},
@@ -98,3 +124,99 @@ async def test_tags_to_studies(
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
     resp = await client.delete(f"{url}")
     await assert_status(resp, web.HTTPNoContent)
+
+
+@pytest.fixture
+async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
+    assert client.app
+    engine = get_database_engine(client.app)
+    assert engine
+
+    async with engine.acquire() as conn:
+        tag_id = await create_tag(
+            conn,
+            name="TG",
+            description="tag for EVERYBODY",
+            color="#f00",
+            group_id=1,
+            read=True,  # <--- READ ONLY
+            write=False,
+            delete=False,
+        )
+
+        yield tag_id
+
+        await delete_tag(conn, tag_id=tag_id)
+
+
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.USER
+
+
+async def test_read_tags(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    everybody_tag_id: int,
+):
+    assert client.app
+
+    assert user_role == UserRole.USER
+
+    url = client.app.router["list_tags"].url_for()
+    resp = await client.get(f"{url}")
+    datas, _ = await assert_status(resp, web.HTTPOk)
+
+    assert datas == [
+        {
+            "id": everybody_tag_id,
+            "name": "TG",
+            "description": "tag for EVERYBODY",
+            "color": "#f00",
+            "accessRights": {"read": True, "write": False, "delete": False},
+        }
+    ]
+
+
+async def test_create_and_update_tags(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    everybody_tag_id: int,
+):
+    assert client.app
+
+    assert user_role == UserRole.USER
+
+    resp = await client.post(
+        f"{client.app.router['create_tag'].url_for()}",
+        json={"name": "T", "color": "#f00"},
+    )
+    created, _ = await assert_status(resp, web.HTTPOk)
+
+    assert created == {
+        "id": created["id"],
+        "name": "T",
+        "description": None,
+        "color": "#f00",
+        "accessRights": {"read": True, "write": True, "delete": True},
+    }
+
+    url = client.app.router["update_tag"].url_for(tag_id="2")
+    resp = await client.patch(
+        f"{url}",
+        json={"description": "This is my tag"},
+    )
+
+    updated, _ = await assert_status(resp, web.HTTPOk)
+    created.update(description="This is my tag")
+    assert updated == created
+
+    url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")
+    resp = await client.patch(
+        f"{url}",
+        json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
+    )
+    _, error = await assert_status(resp, web.HTTPUnauthorized)
+    assert error
