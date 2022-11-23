@@ -65,10 +65,11 @@ async def reset_password(request: web.Request):
             )  # 401
 
     except web.HTTPError as err:
-        # Email wiht be an explanation and suggest alternative approaches or ways to contact support for help
+        # Email will be an explanation and suggest alternative approaches or ways to contact support for help
         try:
             await render_and_send_mail(
                 request,
+                from_=product.support_email,
                 to=email,
                 template=await get_template_path(
                     request, "reset_password_email_failed.jinja2"
@@ -88,6 +89,7 @@ async def reset_password(request: web.Request):
             # primary reset email with a URL and the normal instructions.
             await render_and_send_mail(
                 request,
+                from_=product.support_email,
                 to=email,
                 template=await get_template_path(
                     request, "reset_password_email.jinja2"
@@ -112,6 +114,7 @@ async def change_email(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     email = body.email
 
@@ -136,6 +139,7 @@ async def change_email(request: web.Request):
     try:
         await render_and_send_mail(
             request,
+            from_=product.support_email,
             to=email,
             template=await get_template_path(request, "change_email_email.jinja2"),
             context={
