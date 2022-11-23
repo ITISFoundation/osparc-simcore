@@ -46,9 +46,6 @@ def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
     monkeypatch.setenv("POSTGRES_PASSWORD", "")
     monkeypatch.setenv("POSTGRES_DB", "")
 
-    # reduce number of retries to make more reliable
-    monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
-
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
     return app
