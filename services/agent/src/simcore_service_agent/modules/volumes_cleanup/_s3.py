@@ -114,9 +114,10 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         "ls",
         f"{source_dir}",
     ]
-    r_clone_ls = _get_r_clone_str_command(r_clone_ls, exclude_files)
     process = await asyncio.create_subprocess_shell(
-        r_clone_ls, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+        _get_r_clone_str_command(r_clone_ls, exclude_files),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
     )
 
     output = await _read_stream(process.stdout)
