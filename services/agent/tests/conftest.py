@@ -14,13 +14,13 @@ from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
 pytestmark = pytest.mark.asyncio
 
 pytest_plugins = [
+    "pytest_simcore.aws_services",
     "pytest_simcore.repository_paths",
 ]
 
@@ -183,21 +183,9 @@ def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 
 @pytest.fixture(scope="module")
-def mocked_s3_server_url() -> Iterator[HttpUrl]:
-    """
-    For download links, the in-memory moto.mock_s3() does not suffice since
-    we need an http entrypoint
-    """
-    # http://docs.getmoto.org/en/latest/docs/server_mode.html#start-within-python
-    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=9339)
-
+def mocked_s3_server_url(mocked_s3_server: ThreadedMotoServer) -> Iterator[HttpUrl]:
     # pylint: disable=protected-access
-    endpoint_url = parse_obj_as(HttpUrl, f"http://{server._ip_address}:{server._port}")
-
-    print(f"--> started mock S3 server on {endpoint_url}")
-    server.start()
-
+    endpoint_url = parse_obj_as(
+        HttpUrl, f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}"
+    )
     yield endpoint_url
-
-    server.stop()
-    print(f"<-- stopped mock S3 server on {endpoint_url}")
