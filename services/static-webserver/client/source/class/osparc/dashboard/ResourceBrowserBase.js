@@ -120,8 +120,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       this._add(secondaryBar);
 
-      const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      // const spacing = osparc.dashboard.GridButtonBase.SPACING;
+      // const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
       this._add(resourcesContainer);
     },
 
@@ -189,7 +190,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _removeResourceCards: function() {
-      const cards = this._resourcesContainer.getChildren();
+      const cards = this._resourcesContainer.getCards();
       for (let i=cards.length-1; i>=0; i--) {
         const card = cards[i];
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)) {

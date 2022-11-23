@@ -226,7 +226,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __removeNewStudyButtons: function() {
-      const cards = this._resourcesContainer.getChildren();
+      const cards = this._resourcesContainer.getCards();
       for (let i=cards.length-1; i>=0; i--) {
         const card = cards[i];
         if (osparc.dashboard.ResourceBrowserBase.isCardNewItem(card)) {
@@ -244,7 +244,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const width = this._resourcesContainer.getBounds().width - 15;
         newStudyBtn.setWidth(width);
       }
-      this._resourcesContainer.addAt(newStudyBtn, 0);
+      this._resourcesContainer.getFlatList().addAt(newStudyBtn, 0);
     },
 
     __addNewPlanButton: function(mode) {
@@ -262,7 +262,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const width = this._resourcesContainer.getBounds().width - 15;
               newPlanButton.setWidth(width);
             }
-            this._resourcesContainer.addAt(newPlanButton, 0);
+            this._resourcesContainer.getFlatList().addAt(newPlanButton, 0);
           }
         });
     },
@@ -280,7 +280,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const width = this._resourcesContainer.getBounds().width - 15;
           newStudyFromServiceButton.setWidth(width);
         }
-        this._resourcesContainer.addAt(newStudyFromServiceButton, 0);
+        this._resourcesContainer.getFlatList().addAt(newStudyFromServiceButton, 0);
       }
     },
 
@@ -338,7 +338,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.addListener("changeMultiSelection", e => {
         const multiEnabled = e.getData();
-        const cards = this._resourcesContainer.getChildren();
+        const cards = this._resourcesContainer.getCards();
         cards.forEach(card => {
           if (!osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)) {
             card.setEnabled(!multiEnabled);
@@ -363,7 +363,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__removeNewStudyButtons();
         this.__addNewStudyButtons(this._resourcesContainer.getMode());
 
-        const cards = this._resourcesContainer.getChildren();
+        const cards = this._resourcesContainer.getCards();
         cards.forEach(card => {
           if (card === this._loadingResourcesBtn) {
             const fetching = card.getFetching();
@@ -451,7 +451,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __applyMultiSelection: function(value) {
-      this._resourcesContainer.getChildren().forEach(studyItem => {
+      this._resourcesContainer.getCards().forEach(studyItem => {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           studyItem.setMultiSelectionMode(value);
           if (value === false) {
@@ -483,7 +483,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this.__studies[idx]["state"] = state;
       }
-      const studyItem = this._resourcesContainer.getChildren().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
+      const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
       if (studyItem) {
         studyItem.setState(state);
       }
@@ -621,7 +621,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _addResourcesToList: function(studiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
-      const cards = this._resourcesContainer.getChildren();
+      const cards = this._resourcesContainer.getCards();
       studiesList.forEach(study => {
         if (this.__studies.indexOf(study) === -1) {
           this.__studies.push(study);
@@ -790,16 +790,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __itemClicked: function(item, isShiftPressed) {
       if (isShiftPressed) {
         const lastIdx = this.__lastSelectedIdx;
-        const currentIdx = this._resourcesContainer.getChildren().findIndex(card => card === item);
+        const currentIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
         const minMaxIdx = [lastIdx, currentIdx].sort();
         for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
-          const button = this._resourcesContainer.getChildren()[i];
+          const button = this._resourcesContainer.getCards()[i];
           if (button.isVisible()) {
             button.setValue(true);
           }
         }
       }
-      const lastIdx = this._resourcesContainer.getChildren().findIndex(card => card === item);
+      const lastIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
       if (lastIdx !== -1) {
         this.__lastSelectedIdx = lastIdx;
       }
@@ -820,7 +820,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         true
       );
       duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addAt(duplicatingStudyCard, 1);
+      this._resourcesContainer.getFlatList().addAt(duplicatingStudyCard, 1);
       return duplicatingStudyCard;
     },
 
@@ -931,7 +931,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         true
       );
       importingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addAt(importingStudyCard, 1);
+      this._resourcesContainer.getFlatList().addAt(importingStudyCard, 1);
       importTask.setSubtitle(uploadingLabel);
 
       const body = new FormData();

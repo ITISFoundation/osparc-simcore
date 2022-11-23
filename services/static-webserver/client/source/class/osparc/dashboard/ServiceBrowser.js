@@ -153,7 +153,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     _addResourcesToList: function(servicesList) {
-      const cards = this._resourcesContainer.getChildren();
+      const cards = this._resourcesContainer.getCards();
       osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
       servicesList.forEach(service => {
         if (this.__servicesLatestList.indexOf(service) === -1) {

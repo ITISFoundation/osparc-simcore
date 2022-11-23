@@ -19,7 +19,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.VBox(10));
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+    this._add(this.__flatList);
 
     this.__groupedContainers = [];
   },
@@ -52,11 +57,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
-        if ("GroupHeader" in child) {
-          this.base(arguments, child);
-          return;
-        }
-        this.__configureCard(child);
         if (this.getGroupBy()) {
           const headerInfo = this.__addHeaders(child);
           const headerIdx = this.getChildren().findIndex(button => button === headerInfo.widget);
@@ -68,6 +68,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
+    },
+
+    getFlatList: function() {
+      return this.__flatList;
     },
 
     __createHeader: function(label, color) {
@@ -90,15 +94,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return noGroupContainer;
     },
 
-    __configureCard: function(card) {
-      card.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
-      card.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
-      if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
-        card.setWidth(width);
-      }
-    },
-
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__flatList) {
         return this.__flatList.areMoreResourcesRequired(loadingResourcesBtn);
@@ -109,7 +104,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     getCards: function() {
       if (this.__flatList) {
-        return this.__flatList.getCards();
+        return this.__flatList.getChildren();
       }
       const cards = [];
       this.__groupedContainers.forEach(groupedContainer => cards.push(...groupedContainer.getCards()));
@@ -166,7 +161,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           tags.forEach(tag => {
             let groupContainer = this.__getGroupContainer(tag.id);
             if (groupContainer === null) {
-              const header = this.__createHeader(this.tr(tag.name), tag.color);
+              const header = this.__createHeader(tag.name, tag.color);
               groupContainer = this.__createGroupContainer(tag.id, header);
               this.__groupedContainers.push(groupContainer);
             }
@@ -178,7 +173,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __applyGroupBy: function() {
       const cards = this.getCards();
-      this.removeAll();
+      this._removeAll();
       if (this.getGroupBy()) {
         this.__populateGroups(cards);
       } else {
