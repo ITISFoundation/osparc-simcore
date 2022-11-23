@@ -32,9 +32,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
                 connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             )
         )
-        self._request_max_retries: int = (
-            settings.DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES
-        )
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
@@ -51,7 +48,9 @@ class ThinDynamicSidecarClient(BaseThinClient):
             connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
-        super().__init__(request_max_retries=self._request_max_retries)
+        super().__init__(
+            request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
+        )
 
     def _get_url(
         self,

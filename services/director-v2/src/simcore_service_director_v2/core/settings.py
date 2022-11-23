@@ -197,9 +197,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
     # TIMEOUTS AND RETRY dark worlds
     #
 
-    DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES: int = Field(
-        4, description="maximum attempts to retry a request before giving up"
-    )
     DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT: PositiveFloat = Field(
         15.0,
         description=(
@@ -275,7 +272,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_NETWORK_ISSUES_TOLERANCE_S: PositiveFloat = Field(
+    DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
         1 * MINS,
         description=(
             "Connectivity between director-v2 and a dy-sidecar can be "

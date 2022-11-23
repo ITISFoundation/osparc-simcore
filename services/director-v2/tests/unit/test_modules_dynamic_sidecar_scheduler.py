@@ -136,8 +136,6 @@ def mock_env(
     monkeypatch.setenv("POSTGRES_USER", "test")
     monkeypatch.setenv("POSTGRES_PASSWORD", "test")
     monkeypatch.setenv("POSTGRES_DB", "test")
-    # NOTE: makes retries go faster
-    monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
 
 
 @pytest.fixture
