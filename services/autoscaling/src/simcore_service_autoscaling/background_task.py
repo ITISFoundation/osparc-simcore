@@ -34,7 +34,9 @@ async def start_background_task(
     task_name: str,
     **kwargs,
 ) -> asyncio.Task:
-    with log_context(logger, logging.INFO, msg=f"create {task_name}"):
+    with log_context(
+        logger, logging.INFO, msg=f"create periodic background task '{task_name}'"
+    ):
         return asyncio.create_task(
             _periodic_scheduled_task(
                 task,
@@ -48,7 +50,9 @@ async def start_background_task(
 
 async def stop_background_task(asyncio_task: asyncio.Task) -> None:
     with log_context(
-        logger, logging.INFO, msg=f"remove {asyncio_task.get_name()}"
+        logger,
+        logging.INFO,
+        msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ), contextlib.suppress(asyncio.CancelledError):
         asyncio_task.cancel()
         await asyncio_task

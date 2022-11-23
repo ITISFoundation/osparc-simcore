@@ -7,7 +7,7 @@ from .background_task import start_background_task, stop_background_task
 from .core.settings import ApplicationSettings
 from .dynamic_scaling_core import check_dynamic_resources
 
-_TASK_NAME = "Autoscaler dynamic services task"
+_TASK_NAME = "Autoscaling AWS EC2 instances"
 
 logger = logging.getLogger(__name__)
 
