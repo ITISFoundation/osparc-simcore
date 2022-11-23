@@ -21,8 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   construct: function() {
     this.base(arguments, new qx.ui.layout.VBox(10));
 
-    this.__emptyHeaders();
-    this.__groupedLists = [];
+    this.__groupedContainers = [];
   },
 
   properties: {
@@ -48,9 +47,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   members: {
-    __groupHeaders: null,
     __flatList: null,
-    __groupedLists: null,
+    __groupedContainers: null,
 
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
@@ -72,26 +70,24 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
-    __emptyHeaders: function() {
-      const noGroupHeader = this.__createHeader(this.tr("No Group"), "transparent");
-      this.__groupHeaders = {
-        "no-group": {
-          widget: noGroupHeader,
-          children: []
-        }
-      };
-      return noGroupHeader;
-    },
-
     __createHeader: function(label, color) {
-      const header = new osparc.dashboard.GroupedToggleButtonContainer();
-      header.set({
-        minWidth: 1000,
-        allowGrowX: true
-      });
-      header.buildLayout(label);
+      const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/12");
       header.getChildControl("icon").setBackgroundColor(color);
       return header;
+    },
+
+    __createGroupContainer: function(groupId, header) {
+      const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
+        groupId: groupId
+      });
+      groupContainer.setGroupHeader(header);
+      return groupContainer;
+    },
+
+    __createEmptyGroupContainer: function() {
+      const header = this.__createHeader(this.tr("No Group"), "transparent");
+      const noGroupContainer = this.__createGroupContainer("no-group", header);
+      return noGroupContainer;
     },
 
     __configureCard: function(card) {
@@ -101,45 +97,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         const width = this.getBounds().width - 15;
         card.setWidth(width);
       }
-    },
-
-    __addHeaders: function(child) {
-      let headerInfo = null;
-      if (this.getGroupBy() === "tags") {
-        let tags = [];
-        if (child.isPropertyInitialized("tags")) {
-          tags = child.getTags();
-        }
-        if (tags.length === 0) {
-          headerInfo = this.__groupHeaders["no-group"];
-          headerInfo["children"].push(child);
-        }
-        tags.forEach(tag => {
-          if (tag.id in this.__groupHeaders) {
-            headerInfo = this.__groupHeaders[tag.id];
-          } else {
-            const header = this.__createHeader(tag.name, tag.color);
-            headerInfo = {
-              widget: header,
-              children: []
-            };
-            this.__groupHeaders[tag.id] = headerInfo;
-            this.add(header);
-          }
-          headerInfo["children"].push(child);
-        });
-      }
-      return headerInfo;
-    },
-
-    __reloadCards: function() {
-      const cards = this.getChildren();
-      this.removeAll();
-      const header = this.__emptyHeaders();
-      if (this.getGroupBy()) {
-        this.add(header);
-      }
-      cards.forEach(card => this.add(card));
     },
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
@@ -155,44 +112,80 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         return this.__flatList.getCards();
       }
       const cards = [];
-      this.__groupedLists.forEach(groupedList => cards.push(...groupedList.getCards()));
+      this.__groupedContainers.forEach(groupedContainer => cards.push(...groupedContainer.getCards()));
       return cards;
     },
 
     resetSelection: function() {
-      if (this.__flatList) {
+      if (this.getGroupBy() === null) {
         this.__flatList.resetSelection();
-      } else {
-        this.__groupedLists.forEach(groupedList => groupedList.resetSelection());
       }
     },
 
     removeCard: function(key) {
-      if (this.__flatList) {
-        this.__flatList.removeCard(key);
+      if (this.getGroupBy()) {
+        this.__groupedContainers.forEach(groupedContainer => groupedContainer.removeCard(key));
       } else {
-        this.__groupedLists.forEach(groupedList => groupedList.removeCard(key));
+        this.__flatList.removeCard(key);
       }
     },
 
     __applyMode: function(mode) {
-      if (this.__flatList) {
+      if (this.getGroupBy() === null) {
         this.__flatList.setMode(mode);
-      } else {
-        this.__groupedLists.forEach(groupedList => groupedList.setMode(mode));
       }
+    },
+
+    __getGroupContainer: function(gid) {
+      const idx = this.__groupedContainers.findIndex(groupContainer => groupContainer.getGroupId() === gid);
+      if (idx > -1) {
+        return this.__groupedContainers[idx];
+      }
+      return null;
+    },
+
+    __populateGroups: function(cards) {
+      this.__groupedContainers = [];
+      const emptyGroupContainer = this.__createEmptyGroupContainer();
+      this.__groupedContainers.push(emptyGroupContainer);
+      this._add(emptyGroupContainer);
+
+      cards.forEach(card => {
+        if (this.getGroupBy() === "tags") {
+          let tags = [];
+          if (card.isPropertyInitialized("tags")) {
+            tags = card.getTags();
+          }
+          if (tags.length === 0) {
+            tags.push({
+              id: "no-group",
+              label: this.tr("No group"),
+              color: "transparent"
+            });
+          }
+          tags.forEach(tag => {
+            let groupContainer = this.__getGroupContainer(tag.id);
+            if (groupContainer === null) {
+              const header = this.__createHeader(this.tr(tag.name), tag.color);
+              groupContainer = this.__createGroupContainer(tag.id, header);
+              this.__groupedContainers.push(groupContainer);
+            }
+            groupContainer.add(card);
+          });
+        }
+      });
     },
 
     __applyGroupBy: function() {
       const cards = this.getCards();
       this.removeAll();
       if (this.getGroupBy()) {
-        const header = this.__emptyHeaders();
-        this.add(header);
+        this.__populateGroups(cards);
       } else {
         this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        cards.forEach(card => this.__flatList.add(card));
+        this._add(this.__flatList);
       }
-      cards.forEach(card => this.add(card));
     }
   }
 });
