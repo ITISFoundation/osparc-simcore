@@ -143,10 +143,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       cards.forEach(card => this.add(card));
     },
 
-    areMoreResourcesRequired: function() {
+    areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__flatList) {
-        return this.__flatList.areMoreResourcesRequired();
+        return this.__flatList.areMoreResourcesRequired(loadingResourcesBtn);
       }
+      // If containers are grouped all the resources are expected to be fetched
       return false;
     },
 
