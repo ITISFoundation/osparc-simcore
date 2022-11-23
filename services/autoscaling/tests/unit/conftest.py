@@ -351,15 +351,21 @@ def aws_allowed_ec2_instance_type_names(
     yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
+@pytest.fixture(scope="session")
+def vpc_cidr_block() -> str:
+    return "10.0.0.0/16"
+
+
 @pytest.fixture
 def aws_vpc_id(
     mocked_aws_server_envs: None,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     ec2_client: EC2Client,
+    vpc_cidr_block: str,
 ) -> Iterator[str]:
     vpc = ec2_client.create_vpc(
-        CidrBlock="10.0.0.0/16",
+        CidrBlock=vpc_cidr_block,
     )
     vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
     print(f"--> Created Vpc in AWS with {vpc_id=}")
@@ -369,13 +375,19 @@ def aws_vpc_id(
     print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
 
 
+@pytest.fixture(scope="session")
+def subnet_cidr_block() -> str:
+    return "10.0.1.0/24"
+
+
 @pytest.fixture
 def aws_subnet_id(
     monkeypatch: pytest.MonkeyPatch,
     aws_vpc_id: str,
     ec2_client: EC2Client,
+    subnet_cidr_block: str,
 ) -> Iterator[str]:
-    subnet = ec2_client.create_subnet(CidrBlock="10.0.1.0/24", VpcId=aws_vpc_id)
+    subnet = ec2_client.create_subnet(CidrBlock=subnet_cidr_block, VpcId=aws_vpc_id)
     assert "Subnet" in subnet
     assert "SubnetId" in subnet["Subnet"]
     subnet_id = subnet["Subnet"]["SubnetId"]
