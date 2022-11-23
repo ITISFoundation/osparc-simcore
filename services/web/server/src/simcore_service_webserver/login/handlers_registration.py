@@ -108,6 +108,7 @@ async def register(request: web.Request):
     try:
         await render_and_send_mail(
             request,
+            from_=product.support_email,
             to=email,
             template=await get_template_path(request, "registration_email.jinja2"),
             context={
