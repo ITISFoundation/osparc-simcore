@@ -6,7 +6,7 @@ import contextlib
 import logging
 from collections import OrderedDict
 from textwrap import dedent
-from typing import Iterator
+from typing import Callable, Iterator
 
 import boto3
 from mypy_boto3_ec2.client import EC2Client
@@ -15,7 +15,11 @@ from mypy_boto3_ec2.type_defs import ReservationTypeDef
 from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
 
-from .core.errors import Ec2InstanceNotFoundError, Ec2TooManyInstancesError
+from .core.errors import (
+    AutoscalingConfigurationError,
+    Ec2InstanceNotFoundError,
+    Ec2TooManyInstancesError,
+)
 from .core.settings import EC2InstancesSettings, EC2Settings
 from .models import Resources
 
@@ -82,21 +86,22 @@ def closest_instance_policy(
 
 
 def find_best_fitting_ec2_instance(
-    available_ec2_instances: list[EC2Instance],
+    allowed_ec2_instances: list[EC2Instance],
     resources: Resources,
-    score_type=closest_instance_policy,
+    score_type: Callable[[EC2Instance, Resources], float] = closest_instance_policy,
 ) -> EC2Instance:
+    if not allowed_ec2_instances:
+        raise AutoscalingConfigurationError(msg="allowed ec2 instances is missing!")
     score_to_ec2_candidate: dict[float, EC2Instance] = OrderedDict(
         sorted(
             {
                 score_type(instance, resources): instance
-                for instance in available_ec2_instances
+                for instance in allowed_ec2_instances
             }.items(),
             reverse=True,
         )
     )
-    if not score_to_ec2_candidate:
-        raise Ec2InstanceNotFoundError(needed_resources=resources)
+
     score, instance = next(iter(score_to_ec2_candidate.items()))
     if score == 0:
         raise Ec2InstanceNotFoundError(

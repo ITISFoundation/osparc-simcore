@@ -8,7 +8,8 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, PositiveInt, validator
+from mypy_boto3_ec2.literals import InstanceTypeType
+from pydantic import Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -25,25 +26,38 @@ class EC2Settings(BaseCustomSettings):
 
 
 class EC2InstancesSettings(BaseCustomSettings):
-    EC2_INSTANCES_ALLOWED_TYPES: tuple[str, ...] = Field(
+    EC2_INSTANCES_ALLOWED_TYPES: list[str] = Field(
         ...,
+        min_items=1,
+        unique_items=True,
         description="Defines which EC2 instances are considered as candidates for new docker nodes",
     )
     EC2_INSTANCES_AMI_ID: str = Field(
-        ..., description="Defines the AMI ID used to initialize a new docker node"
+        ...,
+        min_length=1,
+        description="Defines the AMI ID used to initialize a new docker node",
     )
     EC2_INSTANCES_MAX_INSTANCES: int = Field(
         10,
         description="Defines the maximum number of instances the autoscaling app may create",
     )
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
-        ..., description="TO BE DEFINED"
+        ..., min_items=1, description="TO BE DEFINED"
     )
-    EC2_INSTANCES_SUBNET_ID: str = Field(..., description="TO BE DEFINED")
+    EC2_INSTANCES_SUBNET_ID: str = Field(..., min_length=1, description="TO BE DEFINED")
     EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
-        description="SSH key filename (without ext) to access the docker swarm manager",
+        min_length=1,
+        description="SSH key filename (without ext) to access the instance",
     )
+
+    @validator("EC2_INSTANCES_ALLOWED_TYPES")
+    @classmethod
+    def check_valid_intance_names(cls, value):
+        # NOTE: needed because of a flaw in BaseCustomSettings
+        # issubclass raises TypeError if used on Aliases
+        parse_obj_as(tuple[InstanceTypeType, ...], value)
+        return value
 
 
 class NodesMonitoringSettings(BaseCustomSettings):

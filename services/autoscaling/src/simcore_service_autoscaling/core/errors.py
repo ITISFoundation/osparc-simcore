@@ -5,6 +5,11 @@ class AutoscalingRuntimeError(PydanticErrorMixin, RuntimeError):
     ...
 
 
+class AutoscalingConfigurationError(AutoscalingRuntimeError):
+    code = "autoscaling.configuration_error"
+    msg_template: str = "Application misconfiguration: {msg}"
+
+
 class Ec2InstanceNotFoundError(AutoscalingRuntimeError):
     code = "autoscaling.ec2_instance_not_found_error"
     msg_template: str = "Needed instance was not found"

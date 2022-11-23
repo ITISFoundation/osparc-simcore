@@ -11,6 +11,7 @@ from faker import Faker
 from pydantic import ByteSize
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_autoscaling.core.errors import (
+    AutoscalingConfigurationError,
     Ec2InstanceNotFoundError,
     Ec2TooManyInstancesError,
 )
@@ -84,9 +85,9 @@ def test_get_ec2_instance_capabilities(
 
 def test_find_best_fitting_ec2_instance_with_no_instances_raises():
     # this shall raise as there are no available instances
-    with pytest.raises(Ec2InstanceNotFoundError):
+    with pytest.raises(AutoscalingConfigurationError):
         find_best_fitting_ec2_instance(
-            available_ec2_instances=[],
+            allowed_ec2_instances=[],
             resources=Resources(cpus=0, ram=ByteSize(0)),
         )
 
@@ -110,7 +111,7 @@ def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
         find_best_fitting_ec2_instance(
-            available_ec2_instances=random_fake_available_instances,
+            allowed_ec2_instances=random_fake_available_instances,
             resources=Resources(cpus=0, ram=ByteSize(0)),
             score_type=closest_instance_policy,
         )
@@ -132,7 +133,7 @@ def test_find_best_fitting_ec2_instance_closest_instance_policy(
     random_fake_available_instances: list[EC2Instance],
 ):
     found_instance: EC2Instance = find_best_fitting_ec2_instance(
-        available_ec2_instances=random_fake_available_instances,
+        allowed_ec2_instances=random_fake_available_instances,
         resources=needed_resources,
         score_type=closest_instance_policy,
     )

@@ -30,6 +30,7 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
+from mypy_boto3_ec2.literals import InstanceTypeType
 from pydantic import ByteSize, PositiveInt
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -67,9 +68,18 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
+@pytest.fixture(scope="session")
+def ec2_instances() -> list[InstanceTypeType]:
+    # these are some examples
+    return ["t2.nano", "m5.12xlarge"]
+
+
 @pytest.fixture
 def app_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
+    mock_env_devel_environment: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
+    faker: Faker,
+    ec2_instances: list[InstanceTypeType],
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
     envs = setenvs_from_dict(
@@ -84,9 +94,7 @@ def app_environment(
             ),
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "EC2_INSTANCES_AMI_ID": faker.pystr(),
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                faker.pylist(allowed_types=(str,))
-            ),
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
         },
     )
     return mock_env_devel_environment | envs
