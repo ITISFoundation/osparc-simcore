@@ -71,7 +71,6 @@ class LoginOptions(BaseModel):
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
 
-    SMTP_SENDER: str
     SMTP_HOST: str
     SMTP_PORT: int
     SMTP_PROTOCOL: EmailProtocol
