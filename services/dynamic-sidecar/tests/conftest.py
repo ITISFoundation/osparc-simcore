@@ -7,7 +7,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Iterator
+from typing import Iterable, Iterator
 
 import pytest
 import simcore_service_dynamic_sidecar
@@ -16,7 +16,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from models_library.users import UserID
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
     setenvs_from_dict,
@@ -204,3 +204,9 @@ def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
         f.unlink()
     shared_store_dir.rmdir()
     assert shared_store_dir.exists() is False
+
+
+@pytest.fixture()
+def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+    with caplog.at_level(logging.DEBUG):
+        yield caplog

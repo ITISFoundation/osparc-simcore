@@ -46,9 +46,6 @@ def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
     monkeypatch.setenv("POSTGRES_PASSWORD", "")
     monkeypatch.setenv("POSTGRES_DB", "")
 
-    # reduce number of retries to make more reliable
-    monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
-
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
     return app
@@ -91,6 +88,18 @@ async def test_get_health(
     mock_request("GET", "/health", mock_response, None)
 
     response = await thin_client.get_health(dynamic_sidecar_endpoint)
+    assert_responses(mock_response, response)
+
+
+async def test_get_health_no_retry(
+    thin_client: ThinDynamicSidecarClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+):
+    mock_response = Response(status.HTTP_200_OK)
+    mock_request("GET", "/health", mock_response, None)
+
+    response = await thin_client.get_health_no_retry(dynamic_sidecar_endpoint)
     assert_responses(mock_response, response)
 
 
