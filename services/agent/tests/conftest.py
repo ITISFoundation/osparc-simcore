@@ -182,14 +182,14 @@ def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
         yield caplog
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mocked_s3_server_url() -> Iterator[HttpUrl]:
     """
     For download links, the in-memory moto.mock_s3() does not suffice since
     we need an http entrypoint
     """
     # http://docs.getmoto.org/en/latest/docs/server_mode.html#start-within-python
-    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=9000)
+    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=9339)
 
     # pylint: disable=protected-access
     endpoint_url = parse_obj_as(HttpUrl, f"http://{server._ip_address}:{server._port}")
