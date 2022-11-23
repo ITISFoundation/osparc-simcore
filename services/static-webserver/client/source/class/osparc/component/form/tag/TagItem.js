@@ -41,6 +41,11 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       event: "changeColor",
       init: "#303030"
     },
+    accessRights: {
+      check: "Object",
+      nullable: false,
+      event: "changeAccessRights"
+    },
     mode: {
       check: "String",
       init: "display",
@@ -195,18 +200,18 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
-        toolTipText: this.tr("Edit")
+        toolTipText: this.tr("Edit"),
+        enabled: this.getAccessRights()["write"]
       });
       const deleteButton = new osparc.ui.form.FetchButton().set({
         appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
-        toolTipText: this.tr("Delete")
+        toolTipText: this.tr("Delete"),
+        enabled: this.getAccessRights()["delete"]
       });
       buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
-      editButton.addListener("execute", () => {
-        this.setMode(this.self().modes.EDIT);
-      }, this);
+      editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
       deleteButton.addListener("execute", () => {
         deleteButton.setFetching(true);
         const params = {
