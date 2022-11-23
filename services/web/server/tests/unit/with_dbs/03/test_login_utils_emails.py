@@ -17,6 +17,7 @@ from pytest_mock import MockerFixture
 from simcore_service_webserver._constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.email import setup_email
 from simcore_service_webserver.login.utils_email import (
+    AttachmentTuple,
     get_template_path,
     render_and_send_mail,
     themed,
@@ -160,7 +161,12 @@ async def test_render_and_send_mail_for_submission(
             ),
             "subject": "TEST",
         },
-        attachments=[("test_login_utils.py", bytearray(Path(__file__).read_bytes()))],
+        attachments=[
+            AttachmentTuple(
+                filename="test_login_utils.py",
+                payload=bytearray(Path(__file__).read_bytes()),
+            )
+        ],
     )
 
 

@@ -539,9 +539,12 @@ async def all_group(client, logged_user) -> dict[str, str]:
 
 
 def _patch_compose_mail(monkeypatch):
-    async def print_mail_to_stdout(*args):
-        _app, recipient, subject, body = args
-        print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
+    async def print_mail_to_stdout(
+        app: web.Application, *, sender: str, recipient: str, subject: str, body: str
+    ):
+        print(
+            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
+        )
 
     monkeypatch.setattr(
         simcore_service_webserver.login.utils_email,
