@@ -2,8 +2,8 @@ import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
+from servicelib.background_task import start_background_task, stop_background_task
 
-from .background_task import start_background_task, stop_background_task
 from .core.settings import ApplicationSettings
 from .dynamic_scaling_core import check_dynamic_resources
 

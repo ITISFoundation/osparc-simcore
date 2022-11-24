@@ -45,25 +45,3 @@ async def test_dynamic_scaling_task_created_and_deleted(
     assert hasattr(initialized_app.state, "autoscaler_task")
     await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
     mock_background_task.assert_called()
-
-
-async def test_dynamic_scaling_task_raises_restarts(
-    app_environment: EnvVarsDict,
-    mock_background_task: mock.Mock,
-    initialized_app: FastAPI,
-):
-    mock_background_task.side_effect = RuntimeError("pytest faked runtime error")
-    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
-    mock_background_task.assert_called()
-    assert mock_background_task.call_count > 1
-
-
-async def test_dynamic_scaling_task_correctly_cancels(
-    app_environment: EnvVarsDict,
-    mock_background_task: mock.Mock,
-    initialized_app: FastAPI,
-):
-    mock_background_task.side_effect = asyncio.CancelledError
-    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
-    # the task will be called once, and then stop
-    mock_background_task.assert_called_once()
