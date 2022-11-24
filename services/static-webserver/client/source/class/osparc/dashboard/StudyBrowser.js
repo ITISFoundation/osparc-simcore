@@ -230,7 +230,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       for (let i=cards.length-1; i>=0; i--) {
         const card = cards[i];
         if (osparc.dashboard.ResourceBrowserBase.isCardNewItem(card)) {
-          this._resourcesContainer.remove(card);
+          this._resourcesContainer.getFlatList().remove(card);
         }
       }
     },
@@ -368,7 +368,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (card === this._loadingResourcesBtn) {
             const fetching = card.getFetching();
             const visibility = card.getVisibility();
-            this._resourcesContainer.remove(card);
+            this._resourcesContainer.getFlatList().remove(card);
             const newLoadMoreBtn = this.__createLoadMoreButton("studiesLoading", this._resourcesContainer.getMode());
             newLoadMoreBtn.set({
               fetching,
