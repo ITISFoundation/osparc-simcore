@@ -81,9 +81,6 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                     "io.osparc.autoscaling.monitored_services_labels": json.dumps(
                         app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
                     ),
-                    "io.osparc.autoscaling.monitored_services_image_names": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_IMAGE_NAMES
-                    ),
                 },
                 startup_script=await utils_docker.get_docker_swarm_join_bash_command(),
             )
