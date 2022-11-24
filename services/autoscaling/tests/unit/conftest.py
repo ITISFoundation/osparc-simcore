@@ -86,7 +86,6 @@ def app_environment(
         monkeypatch,
         {
             "EC2_ACCESS_KEY_ID": faker.pystr(),
-            # "EC2_ENDPOINT": "null",
             "EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
