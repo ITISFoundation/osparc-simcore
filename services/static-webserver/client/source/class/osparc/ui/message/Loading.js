@@ -54,6 +54,12 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   properties: {
+    logo: {
+      check: "String",
+      nullable: true,
+      apply: "__applyLogo"
+    },
+
     header: {
       check: "String",
       nullable: true,
@@ -77,19 +83,22 @@ qx.Class.define("osparc.ui.message.Loading", {
 
   statics: {
     LOGO_WIDTH: 260,
+    LOGO_HEIGHT: 110,
     STATUS_ICON_SIZE: 32
   },
 
   members: {
+    __logo: null,
     __header: null,
     __messages: null,
+    __loadingWidget: null,
 
     __maxButton: null,
 
     __buildLayout: function(showMaximize) {
-      const image = new osparc.ui.basic.Logo().set({
+      const image = this.__logo = new osparc.ui.basic.Logo().set({
         width: this.self().LOGO_WIDTH,
-        height: 110
+        height: this.self().LOGO_HEIGHT
       });
 
       const atom = this.__header = new qx.ui.basic.Atom().set({
@@ -108,10 +117,12 @@ qx.Class.define("osparc.ui.message.Loading", {
         padding: 20
       });
 
-      const loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+      const loadingWidget = this.__loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
-      }));
+      })).set({
+        maxWidth: this.self().LOGO_WIDTH*2
+      });
       loadingWidget.add(image);
       loadingWidget.add(atom);
       loadingWidget.add(messages);
@@ -143,6 +154,17 @@ qx.Class.define("osparc.ui.message.Loading", {
         });
         this._add(maximizeLayout);
       }
+    },
+
+    __applyLogo: function(value) {
+      this.__loadingWidget.remove(this.__logo);
+
+      this.__logo = new osparc.ui.basic.Thumbnail(null, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT);
+      const image = this.__logo.getChildControl("image");
+      image.set({
+        source: value
+      });
+      this.__loadingWidget.addAt(this.__logo, 0);
     },
 
     __applyHeader: function(value) {
