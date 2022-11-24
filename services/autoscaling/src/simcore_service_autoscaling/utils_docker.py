@@ -9,6 +9,7 @@ import re
 from typing import Final
 
 import aiodocker
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task, TaskState
 from pydantic import ByteSize, parse_obj_as
 from servicelib.utils import logged_gather
@@ -203,7 +204,9 @@ async def wait_for_node(node_name: str) -> Node:
     return parse_obj_as(Node, list_of_nodes[0])
 
 
-async def tag_node(node: Node, *, tags: dict[str, str], available: bool) -> None:
+async def tag_node(
+    node: Node, *, tags: dict[DockerLabelKey, str], available: bool
+) -> None:
     async with aiodocker.Docker() as docker:
         assert node.ID  # nosec
         assert node.Version  # nosec

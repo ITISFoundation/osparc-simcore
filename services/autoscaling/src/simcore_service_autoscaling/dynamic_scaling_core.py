@@ -91,8 +91,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             new_node = await utils_docker.wait_for_node(new_instance_dns_name)
             await utils_docker.tag_node(
                 new_node,
-                tags={"io.osparc.autoscaled_node": "true"}
-                | {
+                tags={
                     tag_key: "true"
                     for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
                 }
