@@ -6,13 +6,13 @@ import contextlib
 import logging
 from collections import OrderedDict
 from textwrap import dedent
-from typing import Callable, Iterator
+from typing import Callable, Iterator, cast
 
 import boto3
 from mypy_boto3_ec2.client import EC2Client
 from mypy_boto3_ec2.literals import InstanceTypeType
 from mypy_boto3_ec2.type_defs import ReservationTypeDef
-from pydantic import BaseModel, ByteSize, PositiveInt, parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 
 from .core.errors import (
@@ -21,15 +21,9 @@ from .core.errors import (
     Ec2TooManyInstancesError,
 )
 from .core.settings import EC2InstancesSettings, EC2Settings
-from .models import Resources
+from .models import EC2Instance, Resources
 
 logger = logging.getLogger(__name__)
-
-
-class EC2Instance(BaseModel):
-    name: str
-    cpus: PositiveInt
-    ram: ByteSize
 
 
 @contextlib.contextmanager
@@ -54,7 +48,9 @@ def get_ec2_instance_capabilities(
 ) -> list[EC2Instance]:
     with ec2_client(settings) as ec2:
         instance_types = ec2.describe_instance_types(
-            InstanceTypes=instance_settings.EC2_INSTANCES_ALLOWED_TYPES
+            InstanceTypes=cast(
+                list[InstanceTypeType], instance_settings.EC2_INSTANCES_ALLOWED_TYPES
+            )
         )
 
     list_instances: list[EC2Instance] = []
