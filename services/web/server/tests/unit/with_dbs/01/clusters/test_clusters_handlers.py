@@ -8,11 +8,10 @@
 
 import json
 import random
-from typing import Any, Dict, Type
+from typing import Any
 
 import hypothesis
 import pytest
-from _helpers import ExpectedResponse, standard_role_response  # nopycln: import
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -20,6 +19,10 @@ from hypothesis import strategies as st
 from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (  # nopycln: import
+    ExpectedResponse,
+    standard_role_response,
+)
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.director_v2_exceptions import (
@@ -59,7 +62,7 @@ def mocked_director_v2_api(mocker: MockerFixture):
 
 @pytest.fixture
 def mocked_director_v2_with_error(
-    mocker: MockerFixture, faker: Faker, director_v2_error: Type[DirectorServiceError]
+    mocker: MockerFixture, faker: Faker, director_v2_error: type[DirectorServiceError]
 ):
     mocked_director_v2_api = mocker.patch(
         "simcore_service_webserver.clusters.handlers.director_v2_api", autospec=True
@@ -100,7 +103,7 @@ async def test_create_cluster(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     faker: Faker,
     cluster_create: ClusterCreate,
     user_role: UserRole,
@@ -134,7 +137,7 @@ async def test_list_clusters(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     expected: ExpectedResponse,
 ):
     # check empty clusters
@@ -151,7 +154,7 @@ async def test_get_cluster(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -169,7 +172,7 @@ async def test_get_cluster_details(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -197,7 +200,7 @@ async def test_update_cluster(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     cluster_patch: ClusterPatch,
     expected: ExpectedResponse,
 ):
@@ -219,7 +222,7 @@ async def test_delete_cluster(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     expected: ExpectedResponse,
 ):
     assert client.app
@@ -245,7 +248,7 @@ async def test_ping_cluster(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     expected: ExpectedResponse,
     cluster_ping: ClusterPing,
 ):
@@ -263,7 +266,7 @@ async def test_ping_specific_cluster(
     enable_dev_features: None,
     mocked_director_v2_api,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     faker: Faker,
     expected: ExpectedResponse,
 ):
@@ -288,10 +291,10 @@ async def test_create_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     faker: Faker,
     cluster_create: ClusterCreate,
-    expected_http_error: Type[web.HTTPException],
+    expected_http_error: type[web.HTTPException],
 ):
     cluster_create.access_rights[logged_user["id"]] = CLUSTER_ADMIN_RIGHTS
     print(f"--> creating {cluster_create=!r}")
@@ -318,8 +321,8 @@ async def test_list_clusters_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
-    expected_http_error: Type[web.HTTPException],
+    logged_user: dict[str, Any],
+    expected_http_error: type[web.HTTPException],
 ):
     # check empty clusters
     assert client.app
@@ -343,8 +346,8 @@ async def test_get_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
-    expected_http_error: Type[web.HTTPException],
+    logged_user: dict[str, Any],
+    expected_http_error: type[web.HTTPException],
 ):
     # check empty clusters
     assert client.app
@@ -368,8 +371,8 @@ async def test_get_cluster_details_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
-    expected_http_error: Type[web.HTTPException],
+    logged_user: dict[str, Any],
+    expected_http_error: type[web.HTTPException],
 ):
     # check not found
     assert client.app
@@ -393,8 +396,8 @@ async def test_update_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
-    expected_http_error: Type[web.HTTPException],
+    logged_user: dict[str, Any],
+    expected_http_error: type[web.HTTPException],
 ):
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     assert client.app
@@ -421,8 +424,8 @@ async def test_delete_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
-    expected_http_error: Type[web.HTTPException],
+    logged_user: dict[str, Any],
+    expected_http_error: type[web.HTTPException],
 ):
     assert client.app
     url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
@@ -444,7 +447,7 @@ async def test_ping_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     faker: Faker,
     expected_http_error,
 ):
@@ -474,7 +477,7 @@ async def test_ping_specific_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
     client: TestClient,
-    logged_user: Dict[str, Any],
+    logged_user: dict[str, Any],
     faker: Faker,
     expected_http_error,
 ):
