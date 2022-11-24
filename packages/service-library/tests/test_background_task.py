@@ -64,6 +64,7 @@ async def test_background_task_created_and_deleted(
     )
     await asyncio.sleep(5 * task_interval.total_seconds())
     mock_background_task.assert_called()
+    assert mock_background_task.call_count > 1
 
 
 async def test_dynamic_scaling_task_raises_restarts(

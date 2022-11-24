@@ -5,6 +5,7 @@ import logging
 from typing import Awaitable, Callable
 
 from servicelib.logging_utils import log_catch, log_context
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.wait import wait_fixed
 
@@ -20,13 +21,15 @@ async def _periodic_scheduled_task(
 ):
     # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
-        with attempt, log_context(
-            logger,
-            logging.DEBUG,
-            msg=f"Run {task_name}, {attempt.retry_state.attempt_number=}",
-        ), log_catch(logger):
+        with attempt:
+            with log_context(
+                logger,
+                logging.DEBUG,
+                msg=f"Run {task_name}, {attempt.retry_state.attempt_number=}",
+            ), log_catch(logger):
+                await task(**task_kwargs)
 
-            await task(**task_kwargs)
+            raise TryAgain
 
 
 async def start_periodic_task(
