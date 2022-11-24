@@ -20,12 +20,12 @@ from simcore_service_autoscaling.utils_aws import EC2Client
 @pytest.fixture
 def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[None]:
     mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.start_background_task",
+        "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.stop_background_task",
+        "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
         autospec=True,
     )
 
