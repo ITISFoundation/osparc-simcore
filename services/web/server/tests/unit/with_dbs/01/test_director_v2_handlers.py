@@ -4,12 +4,15 @@
 from typing import AsyncIterator
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
 

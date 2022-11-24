@@ -8,12 +8,12 @@ from copy import deepcopy
 from typing import Callable
 
 import pytest
-from _helpers import standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
+from pytest_simcore.helpers.utils_webserver_unit_with_db import standard_role_response
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
