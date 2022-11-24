@@ -120,7 +120,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       const loadingWidget = this.__loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
-      }));
+      })).set({
+        maxWidth: this.self().LOGO_WIDTH*2
+      });
       loadingWidget.add(image);
       loadingWidget.add(atom);
       loadingWidget.add(messages);
