@@ -389,6 +389,7 @@ USER_ROLES = [
 ]
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_other_user(
     not_logged_user_id: UserID,
@@ -416,6 +417,7 @@ async def test_publish_to_other_user(
     socketio_subscriber_handlers.mock_event.assert_not_called()
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_user(
     logged_user: UserInfoDict,
@@ -456,6 +458,7 @@ async def test_publish_to_user(
 
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
+@pytest.mark.flaky(max_runs=3)
 async def test_publish_about_users_project(
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
