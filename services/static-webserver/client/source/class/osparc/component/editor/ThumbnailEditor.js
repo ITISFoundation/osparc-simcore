@@ -102,9 +102,6 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           });
           control.setButtonsWidth(30);
           thumbnailsLayout.add(control);
-          control.setLayout(new qx.ui.layout.HBox(5).set({
-            alignX: "center"
-          }));
           break;
         }
         case "buttons-layout":

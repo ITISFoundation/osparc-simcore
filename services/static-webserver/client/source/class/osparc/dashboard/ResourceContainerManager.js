@@ -75,16 +75,18 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createHeader: function(label, color) {
-      const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/12");
-      header.getChildControl("icon").setBackgroundColor(color);
+      const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24");
+      header.getChildControl("icon").setTextColor(color);
       return header;
     },
 
     __createGroupContainer: function(groupId, header) {
       const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
-        groupId: groupId
+        groupId: groupId.toString()
       });
       groupContainer.setGroupHeader(header);
+      this._add(groupContainer);
+      this.__groupedContainers.push(groupContainer);
       return groupContainer;
     },
 
@@ -96,6 +98,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__flatList) {
+        return false;
         return this.__flatList.areMoreResourcesRequired(loadingResourcesBtn);
       }
       // If containers are grouped all the resources are expected to be fetched
@@ -132,7 +135,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __getGroupContainer: function(gid) {
-      const idx = this.__groupedContainers.findIndex(groupContainer => groupContainer.getGroupId() === gid);
+      const idx = this.__groupedContainers.findIndex(groupContainer => groupContainer.getGroupId() === gid.toString());
       if (idx > -1) {
         return this.__groupedContainers[idx];
       }
@@ -141,9 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __populateGroups: function(cards) {
       this.__groupedContainers = [];
-      const emptyGroupContainer = this.__createEmptyGroupContainer();
-      this.__groupedContainers.push(emptyGroupContainer);
-      this._add(emptyGroupContainer);
+      this.__createEmptyGroupContainer();
 
       cards.forEach(card => {
         if (this.getGroupBy() === "tags") {
@@ -163,7 +164,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             if (groupContainer === null) {
               const header = this.__createHeader(tag.name, tag.color);
               groupContainer = this.__createGroupContainer(tag.id, header);
-              this.__groupedContainers.push(groupContainer);
             }
             groupContainer.add(card);
           });

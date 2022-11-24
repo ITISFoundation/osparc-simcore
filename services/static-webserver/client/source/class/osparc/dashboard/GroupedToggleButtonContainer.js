@@ -22,10 +22,6 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
-
-    const container = this.__container = new osparc.component.widget.SlideBar();
-    container.setButtonsWidth(30);
-    this._addAt(container, 1);
   },
 
   properties: {
@@ -44,11 +40,25 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
   },
 
   members: {
-    __container: null,
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "content-container":
+          control = new osparc.component.widget.SlideBar();
+          control.setButtonsWidth(30);
+          this._addAt(control, 1, {
+            flex: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
-    __applyGroupHeader: function(header) {
-      this._removeAt(0);
-      this._addAt(header, 0);
+    __applyGroupHeader: function(newHeader, oldHeader) {
+      if (oldHeader) {
+        this._remove(oldHeader);
+      }
+      this._addAt(newHeader, 0);
     },
 
     // overridden
@@ -56,9 +66,9 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       if (child instanceof qx.ui.form.ToggleButton) {
         child.addListener("changeVisibility", () => this.__childVisibilityChanged(), this);
         if (idx === undefined) {
-          this.__container.add(child);
+          this.getChildControl("content-container").add(child);
         } else {
-          this.__container.addAt(child, idx);
+          this.getChildControl("content-container").addAt(child, idx);
         }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
@@ -66,7 +76,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     getCards: function() {
-      return this.__container.getChildren();
+      return this.getChildControl("content-container").getChildren();
     },
 
     removeCard: function(key) {
@@ -81,8 +91,8 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     __childVisibilityChanged: function() {
-      const children = this.__container.getChildren();
-      this.__container.set({
+      const children = this.getChildControl("content-container").getChildren();
+      this.getChildControl("content-container").set({
         visibility: children.any(child => child.isVisible()) ? "visible" : "excluded"
       });
     }
