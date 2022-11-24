@@ -12,13 +12,16 @@ from unittest import mock
 from uuid import UUID, uuid4
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog_settings import get_plugin_settings
 from simcore_service_webserver.db_models import UserRole

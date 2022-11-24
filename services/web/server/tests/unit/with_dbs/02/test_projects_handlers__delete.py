@@ -10,11 +10,15 @@ from unittest.mock import MagicMock, call
 
 import pytest
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    MockedStorageSubsystem,
+    standard_role_response,
+)
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
