@@ -81,7 +81,7 @@ function listenToEvents(page) {
     e2eLogger.fatal(error.message);
   });
   page.on('response', response => {
-    e2eLogger.info(response.status(), request.method(), request.url());
+    e2eLogger.info(response.status(), response.method(), response.url());
   });
   page.on('requestfailed', request => {
     e2eLogger.error(request.failure().errorText, request.method(), request.url());
