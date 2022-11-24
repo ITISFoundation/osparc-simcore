@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     groupHeader: {
-      check: qx.ui.core.Widget,
+      // check: qx.ui.core.Widget,
       init: null,
       nullable: true,
       apply: "__applyGroupHeader"
