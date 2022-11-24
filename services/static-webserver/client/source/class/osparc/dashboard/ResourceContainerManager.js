@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__flatList = new osparc.dashboard.ToggleButtonContainer();
     this._add(this.__flatList);
@@ -75,14 +75,17 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createHeader: function(label, color) {
-      const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24");
+      const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24").set({
+        padding: 10
+      });
       header.getChildControl("icon").setTextColor(color);
       return header;
     },
 
     __createGroupContainer: function(groupId, header) {
       const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
-        groupId: groupId.toString()
+        groupId: groupId.toString(),
+        visibility: "excluded"
       });
       groupContainer.setGroupHeader(header);
       this._add(groupContainer);
@@ -99,6 +102,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__flatList) {
         return false;
+        // FIXME OM
         return this.__flatList.areMoreResourcesRequired(loadingResourcesBtn);
       }
       // If containers are grouped all the resources are expected to be fetched
@@ -148,10 +152,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
       cards.forEach(card => {
         if (this.getGroupBy() === "tags") {
-          let tags = [];
-          if (card.isPropertyInitialized("tags")) {
-            tags = card.getTags();
-          }
+          const tags = card.isPropertyInitialized("tags") ? card.getTags() : [];
           if (tags.length === 0) {
             tags.push({
               id: "no-group",
@@ -165,6 +166,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
               const header = this.__createHeader(tag.name, tag.color);
               groupContainer = this.__createGroupContainer(tag.id, header);
             }
+            console.log(groupContainer.getGroupId(), card.getTitle());
             groupContainer.add(card);
           });
         }

@@ -189,7 +189,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadResources: function() {
-      this.__getActiveStudy();
+      // this.__getActiveStudy();
       this.reloadResources();
     },
 

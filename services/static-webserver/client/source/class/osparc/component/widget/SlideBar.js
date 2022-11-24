@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.widget.SlideBar", {
   construct: function() {
     this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.HBox(0));
+    this.setLayout(new qx.ui.layout.HBox(5));
 
     this.__pimpLayout();
   },

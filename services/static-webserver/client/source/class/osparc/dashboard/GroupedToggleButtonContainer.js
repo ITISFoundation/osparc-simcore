@@ -65,11 +65,13 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     add: function(child, idx) {
       if (child instanceof qx.ui.form.ToggleButton) {
         child.addListener("changeVisibility", () => this.__childVisibilityChanged(), this);
+        const container = this.getChildControl("content-container");
         if (idx === undefined) {
-          this.getChildControl("content-container").add(child);
+          container.add(child);
         } else {
-          this.getChildControl("content-container").addAt(child, idx);
+          container.addAt(child, idx);
         }
+        this.__childVisibilityChanged();
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
@@ -91,9 +93,10 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     __childVisibilityChanged: function() {
-      const children = this.getChildControl("content-container").getChildren();
-      this.getChildControl("content-container").set({
-        visibility: children.any(child => child.isVisible()) ? "visible" : "excluded"
+      const children = this.getCards();
+      const anyVis = children.some(child => child.isVisible());
+      this.set({
+        visibility: anyVis ? "visible" : "excluded"
       });
     }
   }
