@@ -27,7 +27,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       check: "Object",
       nullable: false,
       apply: "_applyAccessRights",
-      event: "changeAcessRights"
+      event: "changeAccessRights"
     }
   },
 
