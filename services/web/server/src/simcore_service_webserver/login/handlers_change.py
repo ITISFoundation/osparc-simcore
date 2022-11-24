@@ -65,7 +65,6 @@ async def reset_password(request: web.Request):
             )  # 401
 
     except web.HTTPError as err:
-        # Email will be an explanation and suggest alternative approaches or ways to contact support for help
         try:
             await render_and_send_mail(
                 request,
@@ -79,9 +78,11 @@ async def reset_password(request: web.Request):
                     "reason": err.reason,
                 },
             )
-        except Exception as err2:  # pylint: disable=broad-except
+        except Exception as err_mail:  # pylint: disable=broad-except
             log.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err2
+            raise web.HTTPServiceUnavailable(
+                reason=cfg.MSG_CANT_SEND_MAIL
+            ) from err_mail
     else:
         confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
