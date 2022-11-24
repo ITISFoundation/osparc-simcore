@@ -1001,6 +1001,10 @@ qx.Class.define("osparc.data.model.Node", {
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+      const thumbnail = this.getMetaData()["thumbnail"];
+      if (thumbnail) {
+        loadingPage.setLogo(thumbnail);
+      }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
