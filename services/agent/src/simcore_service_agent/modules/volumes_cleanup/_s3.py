@@ -99,15 +99,14 @@ def _log_expected_operation(
         ---
         Volume data
         ---
-        volume_name:    {volume_name}
-        s3_path:        {s3_path}
-        study_id:       {dyv_volume_labels['study_id']}
-        node_id:        {dyv_volume_labels['node_uuid']}
-        user_id:        {dyv_volume_labels['user_id']}
-        run_id:         {dyv_volume_labels['run_id']}
+        volume_name         {volume_name}
+        destination_path    {s3_path}
+        study_id:           {dyv_volume_labels['study_id']}
+        node_id:            {dyv_volume_labels['node_uuid']}
+        user_id:            {dyv_volume_labels['user_id']}
+        run_id:             {dyv_volume_labels['run_id']}
         ---
-        Files to sync
-        size_bytes file_path
+        Files to sync by rclone
         ---\n{r_clone_ls_output.rstrip()}
         ---
     """
