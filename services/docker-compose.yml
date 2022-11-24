@@ -48,8 +48,7 @@ services:
       - AWS_SECURITY_GROUP_IDS=${AWS_SECURITY_GROUP_IDS}
       - AWS_SUBNET_ID=${AWS_SUBNET_ID}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-    env_file:
-      - ../.env
+
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
