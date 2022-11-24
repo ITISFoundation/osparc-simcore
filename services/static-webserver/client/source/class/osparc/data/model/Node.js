@@ -998,9 +998,14 @@ qx.Class.define("osparc.data.model.Node", {
       return [];
     },
 
+
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+      const thumbnail = this.getMetaData()["thumbnail"];
+      if (thumbnail) {
+        loadingPage.setLogo(thumbnail);
+      }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
@@ -1344,7 +1349,7 @@ qx.Class.define("osparc.data.model.Node", {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", () => {
-        this.__serviceReadyIn(srvUrl);
+        this.__waitForServiceWebsite(srvUrl);
       }, this);
       pingRequest.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse();
@@ -1360,6 +1365,33 @@ qx.Class.define("osparc.data.model.Node", {
       pingRequest.send();
     },
 
+    __waitForServiceWebsite: function(srvUrl) {
+      // request the frontend to make sure it is ready
+      let retries = 5;
+      const request = new XMLHttpRequest();
+      const openAndSend = () => {
+        if (retries === 0) {
+          return;
+        }
+        retries--;
+        request.open("GET", srvUrl);
+        request.send();
+      };
+      const retry = () => {
+        setTimeout(() => openAndSend(), 2000);
+      };
+      request.onerror = () => retry();
+      request.ontimeout = () => retry();
+      request.onload = () => {
+        if (request.status < 200 || request.status >= 300) {
+          retry();
+        } else {
+          this.__serviceReadyIn(srvUrl);
+        }
+      };
+      openAndSend();
+    },
+
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
       this.getStatus().setInteractive("ready");
@@ -1369,14 +1401,7 @@ qx.Class.define("osparc.data.model.Node", {
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);
-
-      // FIXME: Apparently no all services are inmediately ready when they publish the port
-      // ping the service until it is accessible through the platform
-      const waitFor = 500;
-      qx.event.Timer.once(ev => {
-        this.__restartIFrame();
-      }, this, waitFor);
-
+      this.__restartIFrame();
       this.callRetrieveInputs();
     },
 
