@@ -1570,7 +1570,7 @@ jobs:
       - name: a previous integration-test job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
+          echo "::error title=ERROR::one of the integration-tests failed!"
           exit 1
       - name: all the previous integration-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
@@ -1824,7 +1824,7 @@ jobs:
       - name: a previous system-test job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
+          echo "::error title=ERROR::one of the system-tests failed!"
           exit 1
       - name: all the previous system-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
