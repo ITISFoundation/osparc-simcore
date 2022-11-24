@@ -199,7 +199,7 @@ def start_aws_instance(
 
         # get the private IP
         instances = client.describe_instances(InstanceIds=[instance_id])
-        private_dns_name = instances["Reservations"][0]["Instances"][0][
+        private_dns_name: str = instances["Reservations"][0]["Instances"][0][
             "PrivateDnsName"
         ]
         logger.info(
