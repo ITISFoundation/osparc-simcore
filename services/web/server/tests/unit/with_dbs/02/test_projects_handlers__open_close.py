@@ -15,7 +15,6 @@ from unittest.mock import call
 
 import pytest
 import socketio
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
@@ -35,6 +34,10 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
