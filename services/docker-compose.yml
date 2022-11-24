@@ -35,7 +35,6 @@ services:
       - default
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
