@@ -4,7 +4,9 @@ import datetime
 import logging
 from typing import Awaitable, Callable
 
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
+from tenacity._asyncio import AsyncRetrying
+from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +18,14 @@ async def _periodic_scheduled_task(
     task_name: str,
     **kwargs,
 ):
-    while await asyncio.sleep(interval.total_seconds(), result=True):
-        try:
-            with log_context(logger, logging.DEBUG, msg=f"Run {task_name}"):
-                await task(**kwargs)
-        except asyncio.CancelledError:
-            logger.info("%s cancelled", task_name)
-            raise
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error in %s, restarting...", task_name)
+    async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
+        with attempt, log_context(
+            logger,
+            logging.DEBUG,
+            msg=f"Run {task_name}, {attempt.retry_state.attempt_number=}",
+        ), log_catch(logger):
+
+            await task(**kwargs)
 
 
 async def start_background_task(
