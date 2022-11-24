@@ -2,7 +2,7 @@ import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
-from servicelib.background_task import start_background_task, stop_background_task
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 
 from .core.settings import ApplicationSettings
 from .dynamic_scaling_core import check_dynamic_resources
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
-        app.state.autoscaler_task = await start_background_task(
+        app.state.autoscaler_task = await start_periodic_task(
             check_dynamic_resources,
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME,
@@ -27,7 +27,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        await stop_background_task(app.state.autoscaler_task)
+        await stop_periodic_task(app.state.autoscaler_task)
 
     return _stop
 

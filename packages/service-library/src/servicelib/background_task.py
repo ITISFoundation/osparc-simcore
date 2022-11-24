@@ -16,8 +16,9 @@ async def _periodic_scheduled_task(
     *,
     interval: datetime.timedelta,
     task_name: str,
-    **kwargs,
+    **task_kwargs,
 ):
+    # NOTE: This retries forever unless cancelled
     async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
         with attempt, log_context(
             logger,
@@ -25,10 +26,10 @@ async def _periodic_scheduled_task(
             msg=f"Run {task_name}, {attempt.retry_state.attempt_number=}",
         ), log_catch(logger):
 
-            await task(**kwargs)
+            await task(**task_kwargs)
 
 
-async def start_background_task(
+async def start_periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
@@ -49,7 +50,7 @@ async def start_background_task(
         )
 
 
-async def stop_background_task(asyncio_task: asyncio.Task) -> None:
+async def stop_periodic_task(asyncio_task: asyncio.Task) -> None:
     with log_context(
         logger,
         logging.INFO,

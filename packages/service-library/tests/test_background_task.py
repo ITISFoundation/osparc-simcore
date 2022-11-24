@@ -12,7 +12,7 @@ from unittest import mock
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.background_task import start_background_task, stop_background_task
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 
 _FAST_POLL_INTERVAL = 1
 
@@ -37,7 +37,7 @@ async def create_background_task(
     async def _creator(
         interval: datetime.timedelta, task: Callable[..., Awaitable]
     ) -> asyncio.Task:
-        background_task = await start_background_task(
+        background_task = await start_periodic_task(
             task,
             interval=interval,
             task_name=faker.pystr(),
@@ -48,7 +48,7 @@ async def create_background_task(
 
     yield _creator
     # cleanup
-    await asyncio.gather(*(stop_background_task(t) for t in created_tasks))
+    await asyncio.gather(*(stop_periodic_task(t) for t in created_tasks))
 
 
 async def test_background_task_created_and_deleted(
