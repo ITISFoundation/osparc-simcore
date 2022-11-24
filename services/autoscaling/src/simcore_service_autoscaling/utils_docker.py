@@ -161,7 +161,7 @@ async def compute_cluster_used_resources(nodes: list[Node]) -> Resources:
 
 
 _COMMAND_TIMEOUT_S = 10
-_DOCKER_SWARM_JOIN_RE = r"(docker swarm join) (--token .+)? (.+)"
+_DOCKER_SWARM_JOIN_RE = r"(?P<command>docker swarm join)\s+(?P<token>--token\s+[\w-]+)\s+(?P<address>[0-9\.:]+)"
 _DOCKER_SWARM_JOIN_PATTERN = re.compile(_DOCKER_SWARM_JOIN_RE)
 
 
@@ -182,9 +182,8 @@ async def get_docker_swarm_join_bash_command() -> str:
         )
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
-        return (
-            f"{match.group(1)} --availability=drain {match.group(2)} {match.group(3)}"
-        )
+        capture = match.groupdict()
+        return f"{capture['command']} --availability=drain {capture['token']} {capture['address']}"
     raise RuntimeError(
         f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     )
