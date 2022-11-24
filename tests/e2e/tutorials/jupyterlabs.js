@@ -31,12 +31,12 @@ async function runTutorial() {
       false
     );
 
-    await tutorial.waitFor(2000);
+    await tutorial.waitFor(5000);
 
     for (let j = 1; j < 3; j++) {
       // open JLab
       await tutorial.openNode(j);
-      await tutorial.waitFor(10000);
+      await tutorial.waitFor(12000);
 
       // Run the jlab nbook
       const jLabIframe = await tutorial.getIframe(workbenchData["nodeIds"][j]);
