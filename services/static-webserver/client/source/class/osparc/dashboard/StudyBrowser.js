@@ -170,7 +170,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesList.forEach(study => study["resourceType"] = "study");
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
       studiesList.forEach(study => {
-        if (this._resourcesList.indexOf(study) === -1) {
+        const idx = this._resourcesList.findIndex(std => std["uuid"] === study["uuid"]);
+        if (idx === -1) {
           this._resourcesList.push(study);
         }
       });
