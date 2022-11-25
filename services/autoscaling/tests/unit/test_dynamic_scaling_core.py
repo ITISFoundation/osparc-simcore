@@ -34,10 +34,18 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[N
 
 
 @pytest.fixture
-def mock_start_aws_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def aws_instance_private_dns() -> str:
+    return "ip-10-23-40-12.ec2.internal"
+
+
+@pytest.fixture
+def mock_start_aws_instance(
+    mocker: MockerFixture, aws_instance_private_dns: str
+) -> Iterator[mock.Mock]:
     mocked_start_aws_instance = mocker.patch(
         "simcore_service_autoscaling.dynamic_scaling_core.utils_aws.start_aws_instance",
         autospec=True,
+        return_value=aws_instance_private_dns,
     )
     yield mocked_start_aws_instance
 
@@ -123,6 +131,7 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
     mock_start_aws_instance: mock.Mock,
     mock_wait_for_node: mock.Mock,
     mock_tag_node: mock.Mock,
+    aws_instance_private_dns: str,
 ):
     task_template_for_r5n_4x_large_with_256Gib = task_template | create_task_resources(
         4, parse_obj_as(ByteSize, "128GiB")
@@ -144,7 +153,9 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
         tags=mock.ANY,
         startup_script=mock.ANY,
     )
-    mock_wait_for_node.assert_called_once()
+    mock_wait_for_node.assert_called_once_with(
+        aws_instance_private_dns[: aws_instance_private_dns.find(".")]
+    )
     mock_tag_node.assert_called_once()
 
 
@@ -189,6 +200,11 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     running_instance = running_instance["Instances"][0]
     assert "InstanceType" in running_instance
     assert running_instance["InstanceType"] == "r5n.4xlarge"
+    assert "PrivateDnsName" in running_instance
+    instance_private_dns_name = running_instance["PrivateDnsName"]
+    assert instance_private_dns_name.endswith(".ec2.internal")
 
-    mock_wait_for_node.assert_called_once()
+    mock_wait_for_node.assert_called_once_with(
+        instance_private_dns_name[: instance_private_dns_name.find(".")]
+    )
     mock_tag_node.assert_called_once()

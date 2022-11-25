@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from datetime import datetime
 
 from fastapi import FastAPI
@@ -12,6 +13,8 @@ from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
+
+_EC2_INTERNAL_DNS_RE: re.Pattern = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
 
 
 async def check_dynamic_resources(app: FastAPI) -> None:
@@ -87,20 +90,23 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             logger.info(
                 "a new instance was created with %s", f"{new_instance_dns_name=}"
             )
+            # NOTE: new_instance_dns_name is of type ip-123-23-23-3.ec2.internal and we need only the first part
 
-            new_node = await utils_docker.wait_for_node(new_instance_dns_name)
-            await utils_docker.tag_node(
-                new_node,
-                tags={
-                    tag_key: "true"
-                    for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-                }
-                | {
-                    tag_key: "true"
-                    for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-                },
-                available=True,
-            )
+            if match := re.match(_EC2_INTERNAL_DNS_RE, new_instance_dns_name):
+                new_instance_dns_name = match.group(1)
+                new_node = await utils_docker.wait_for_node(new_instance_dns_name)
+                await utils_docker.tag_node(
+                    new_node,
+                    tags={
+                        tag_key: "true"
+                        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+                    }
+                    | {
+                        tag_key: "true"
+                        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+                    },
+                    available=True,
+                )
             # NOTE: in this first trial we start one instance at a time
             # In the next iteration, some tasks might already run with that instance
             break

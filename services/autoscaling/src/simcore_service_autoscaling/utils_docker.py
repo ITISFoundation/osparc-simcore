@@ -35,11 +35,8 @@ _TASK_STATUS_WITH_ASSIGNED_RESOURCES: Final[tuple[TaskState, ...]] = (
 _MINUTE: Final[int] = 60
 _TIMEOUT_WAITING_FOR_NODES_S: Final[int] = 5 * _MINUTE
 
-Label = str
-NodeID = str
 
-
-async def get_monitored_nodes(node_labels: list[Label]) -> list[Node]:
+async def get_monitored_nodes(node_labels: list[DockerLabelKey]) -> list[Node]:
     async with aiodocker.Docker() as docker:
         nodes = parse_obj_as(
             list[Node],
@@ -51,7 +48,7 @@ async def get_monitored_nodes(node_labels: list[Label]) -> list[Node]:
 
 
 async def pending_service_tasks_with_insufficient_resources(
-    service_labels: list[Label],
+    service_labels: list[DockerLabelKey],
 ) -> list[Task]:
     """
     Returns the docker service tasks that are currently pending due to missing resources.
