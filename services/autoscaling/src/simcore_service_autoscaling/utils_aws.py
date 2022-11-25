@@ -176,20 +176,18 @@ def start_aws_instance(
             SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
         )
         instance_id = instances["Instances"][0]["InstanceId"]
-        logger.debug(
+        logger.info(
             "New instance launched: %s, waiting for it to start now...", instance_id
         )
         # wait for the instance to be in a running state
         # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
         waiter = client.get_waiter("instance_exists")
         waiter.wait(InstanceIds=[instance_id])
-        logger.debug(
-            "instance %s exists now, waiting for running state...", instance_id
-        )
+        logger.info("instance %s exists now, waiting for running state...", instance_id)
 
         waiter = client.get_waiter("instance_running")
         waiter.wait(InstanceIds=[instance_id])
-        logger.debug(
+        logger.info(
             "instance %s is now running, waiting for status now...", instance_id
         )
 
