@@ -69,6 +69,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
         case "content-container":
           control = new osparc.component.widget.SlideBar().set({
             padding: 5,
+            allowGrowX: false,
             backgroundColor: "background-main-1"
           });
           control.setButtonsWidth(30);

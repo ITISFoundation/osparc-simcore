@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.widget.SlideBar", {
       ].forEach(button => {
         button.set({
           alignY: "middle",
-          opacity: 0.6,
+          opacity: 0.7,
           backgroundColor: "background-main",
           allowGrowY: true
         });
