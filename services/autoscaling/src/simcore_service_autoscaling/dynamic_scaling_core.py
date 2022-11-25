@@ -84,6 +84,9 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                 },
                 startup_script=await utils_docker.get_docker_swarm_join_bash_command(),
             )
+            logger.info(
+                "a new instance was created with %s", f"{new_instance_dns_name=}"
+            )
 
             new_node = await utils_docker.wait_for_node(new_instance_dns_name)
             await utils_docker.tag_node(
