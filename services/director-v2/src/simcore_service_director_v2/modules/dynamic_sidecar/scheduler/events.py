@@ -134,7 +134,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },
             "Attachable": True,
-            "Internal": False,
+            "Internal": True,
         }
         dynamic_sidecar_network_id = await create_network(network_config)
 
@@ -393,6 +393,21 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
+        # check values have been set by previous step
+        if (
+            scheduler_data.dynamic_sidecar.dynamic_sidecar_id is None
+            or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_name is None
+        ):
+            raise ValueError(
+                "Expected a value for all the following values: "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
+            )
+
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
@@ -405,6 +420,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
         )
         logger.debug(
@@ -427,21 +443,6 @@ class CreateUserServices(DynamicSchedulerEvent):
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
         # continue starting the proxy
-
-        # check values have been set by previous step
-        if (
-            scheduler_data.dynamic_sidecar.dynamic_sidecar_id is None
-            or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
-            or scheduler_data.dynamic_sidecar.swarm_network_id is None
-            or scheduler_data.dynamic_sidecar.swarm_network_name is None
-        ):
-            raise ValueError(
-                "Expected a value for all the following values: "
-                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
-                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
-            )
 
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(

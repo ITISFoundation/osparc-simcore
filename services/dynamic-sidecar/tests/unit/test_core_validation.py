@@ -5,8 +5,8 @@ from inspect import signature
 
 import pytest
 from simcore_service_dynamic_sidecar.core.validation import (
-    _DEFAULT_BACKEND_NETWORK_NAME,
-    _inject_backend_networking,
+    _DEFAULT_USER_SERVICES_NETWORK_NAME,
+    _connect_user_services,
     parse_compose_spec,
 )
 
@@ -105,13 +105,13 @@ def test_inject_backend_networking(incoming_compose_file: str):
     NOTE: this goes with issue [https://github.com/ITISFoundation/osparc-simcore/issues/3261]
     """
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
-    _inject_backend_networking(parsed_compose_spec)
-    assert _DEFAULT_BACKEND_NETWORK_NAME in parsed_compose_spec["networks"]
+    _connect_user_services(parsed_compose_spec)
+    assert _DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["networks"]
     assert (
-        _DEFAULT_BACKEND_NETWORK_NAME
+        _DEFAULT_USER_SERVICES_NETWORK_NAME
         in parsed_compose_spec["services"]["iseg-app"]["networks"]
     )
     assert (
-        _DEFAULT_BACKEND_NETWORK_NAME
+        _DEFAULT_USER_SERVICES_NETWORK_NAME
         in parsed_compose_spec["services"]["iseg-web"]["networks"]
     )

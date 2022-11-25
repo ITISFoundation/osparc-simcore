@@ -16,6 +16,8 @@ from ._dependencies import get_shared_store
 
 logger = logging.getLogger(__name__)
 
+_TOO_LONG_TO_MATCH: str = "NOPE" * 100
+
 
 def _raise_if_container_is_missing(
     container_id: str, container_names: list[str]
@@ -160,7 +162,10 @@ async def get_containers_name(
     Searches for the container's name given the network
     on which the proxy communicates with it.
     Supported filters:
-        network: name of the network
+        network: matches against the exact network name
+            assigned to the container
+        exclude_name_part: if this is included in the
+            name of the container, it will skip
     """
     assert request  # nosec
 
@@ -171,6 +176,7 @@ async def get_containers_name(
             detail=f"Provided filters, could not parsed {filters_dict}",
         )
     network_name = filters_dict.get("network", None)
+    exclude_name_part = filters_dict.get("exclude_name_part", _TOO_LONG_TO_MATCH)
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
@@ -187,8 +193,9 @@ async def get_containers_name(
     for service in spec_services:
         service_content = spec_services[service]
         if network_name in service_content.get("networks", {}):
-            container_name = service_content["container_name"]
-            break
+            if exclude_name_part not in service_content["container_name"]:
+                container_name = service_content["container_name"]
+                break
 
     if container_name is None:
         raise HTTPException(

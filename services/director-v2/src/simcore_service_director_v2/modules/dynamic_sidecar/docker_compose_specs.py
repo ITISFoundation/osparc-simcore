@@ -15,6 +15,8 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
+from .docker_compose_egress_proxy_specs import add_egress_configuration
+
 EnvKeyEqValueList = list[str]
 EnvVarsMap = dict[str, Optional[str]]
 
@@ -22,20 +24,28 @@ EnvVarsMap = dict[str, Optional[str]]
 logger = logging.getLogger(__name__)
 
 
-def _update_proxy_network_configuration(
+def _update_networking_configuration(
     service_spec: ComposeSpecLabel,
     target_container: str,
     dynamic_sidecar_network_name: str,
+    swarm_network_name: str,
 ) -> None:
     """
-    Injects network configuration to allow the service
+    Adds network configuration to allow the service
     to be accessible on `uuid.services.SERVICE_DNS`
+    Adds networking configuration allowing egress
+    proxies to access the internet.
     """
 
     # add external network to existing networks defined in the container
     networks = service_spec.get("networks", {})
     networks[dynamic_sidecar_network_name] = {
         "external": {"name": dynamic_sidecar_network_name},
+        "driver": "overlay",
+    }
+    # used by egress proxies
+    networks[swarm_network_name] = {
+        "external": {"name": swarm_network_name},
         "driver": "overlay",
     }
     service_spec["networks"] = networks
@@ -177,6 +187,7 @@ def assemble_spec(
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
+    swarm_network_name: str,
     service_resources: ServiceResourcesDict,
 ) -> str:
     """
@@ -210,16 +221,23 @@ def assemble_spec(
     assert service_spec is not None  # nosec
     assert container_name is not None  # nosec
 
-    _update_proxy_network_configuration(
+    _update_networking_configuration(
         service_spec=service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+        swarm_network_name=swarm_network_name,
     )
 
     _update_paths_mappings(service_spec, paths_mapping)
 
     _update_resource_limits_and_reservations(
         service_resources=service_resources, service_spec=service_spec
+    )
+
+    add_egress_configuration(
+        service_spec=service_spec,
+        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+        swarm_network_name=swarm_network_name,
     )
 
     stringified_service_spec = replace_env_vars_in_compose_spec(

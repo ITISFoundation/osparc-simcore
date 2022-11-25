@@ -21,6 +21,7 @@ from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
@@ -159,8 +160,15 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
                     "networks": [
                         dynamic_sidecar_network_name,
                     ],
+                    "labels": {"io.osparc.test-label": "mark-entrypoint"},
                 },
                 "second-box": {"image": "busybox:latest"},
+                "egress": {
+                    "image": "busybox:latest",
+                    "networks": [
+                        dynamic_sidecar_network_name,
+                    ],
+                },
             },
             "networks": {dynamic_sidecar_network_name: {}},
         }
@@ -174,6 +182,7 @@ def compose_spec_single_service() -> str:
             "version": "3",
             "services": {
                 "solo-box": {"image": "busybox:latest"},
+                "labels": {"io.osparc.test-label": "mark-entrypoint"},
             },
         }
     )
@@ -481,15 +490,13 @@ async def test_container_create_outputs_dirs(
     assert mock_async_push_directory.call_count == 2 * len(mock_outputs_labels)
 
 
-def _get_entrypoint_container_name(
-    test_client: TestClient, dynamic_sidecar_network_name: str
-) -> str:
+def _get_entrypoint_container_name(test_client: TestClient) -> str:
     parsed_spec = parse_compose_spec(
         test_client.application.state.shared_store.compose_spec
     )
     container_name = None
     for service_name, service_details in parsed_spec["services"].items():
-        if dynamic_sidecar_network_name in service_details.get("networks", []):
+        if service_details.get("labels", None) is not None:
             container_name = service_name
             break
     assert container_name is not None
@@ -504,9 +511,7 @@ async def test_containers_entrypoint_name_ok(
     filters = json.dumps({"network": dynamic_sidecar_network_name})
     response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json() == _get_entrypoint_container_name(
-        test_client, dynamic_sidecar_network_name
-    )
+    assert response.json() == _get_entrypoint_container_name(test_client)
 
 
 async def test_containers_entrypoint_name_containers_not_started(
@@ -514,9 +519,7 @@ async def test_containers_entrypoint_name_containers_not_started(
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
 ):
-    entrypoint_container = _get_entrypoint_container_name(
-        test_client, dynamic_sidecar_network_name
-    )
+    entrypoint_container = _get_entrypoint_container_name(test_client)
 
     # remove the container from the spec
     parsed_spec = parse_compose_spec(
@@ -527,7 +530,12 @@ async def test_containers_entrypoint_name_containers_not_started(
         parsed_spec
     )
 
-    filters = json.dumps({"network": dynamic_sidecar_network_name})
+    filters = json.dumps(
+        {
+            "network": dynamic_sidecar_network_name,
+            "exclude_name_part": SUFFIX_EGRESS_PROXY_NAME,
+        }
+    )
     response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     assert response.json() == {
