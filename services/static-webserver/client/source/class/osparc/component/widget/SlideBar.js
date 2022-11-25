@@ -89,6 +89,20 @@ qx.Class.define("osparc.component.widget.SlideBar", {
           opacity: 1
         });
       });
+    },
+
+    // override
+    _updateArrowsEnabled: function() {
+      this.base(arguments);
+
+      const buttonBackward = this.getChildControl("button-backward");
+      const buttonForward = this.getChildControl("button-forward");
+      [
+        buttonBackward,
+        buttonForward
+      ].forEach(button => {
+        button.setVisibility(button.getEnabled() ? "visible" : "hidden");
+      });
     }
   }
 });
