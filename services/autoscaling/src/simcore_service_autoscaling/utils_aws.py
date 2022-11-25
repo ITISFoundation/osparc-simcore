@@ -190,13 +190,15 @@ async def start_aws_instance(
 
             waiter = client.get_waiter("instance_running")
             await waiter.wait(InstanceIds=[instance_id])
-            logger.info(
-                "instance %s is now running, waiting for status now...", instance_id
-            )
+            logger.info("instance %s is now running", instance_id)
 
-            waiter = client.get_waiter("instance_status_ok")
-            await waiter.wait(InstanceIds=[instance_id])
-            logger.info("instance %s status is OK...", instance_id)
+            # NOTE: this is currently disactivated as this makes starting an instance
+            # take between 2-4 minutes more and it seems to be responsive much before
+            # nevertheless if we get weird errors, this should be activated again!
+
+            # waiter = client.get_waiter("instance_status_ok")
+            # await waiter.wait(InstanceIds=[instance_id])
+            # logger.info("instance %s status is OK...", instance_id)
 
             # get the private IP
             instances = await client.describe_instances(InstanceIds=[instance_id])
