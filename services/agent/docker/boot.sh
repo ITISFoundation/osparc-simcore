@@ -55,5 +55,6 @@ else
   exec uvicorn simcore_service_agent.main:the_app \
     --host 0.0.0.0 \
     --port 8000 \
-    --log-level "${SERVER_LOG_LEVEL}"
+    --log-level "${SERVER_LOG_LEVEL}" \
+    --no-access-log
 fi

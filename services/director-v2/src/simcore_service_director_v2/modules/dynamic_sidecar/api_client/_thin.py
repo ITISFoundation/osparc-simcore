@@ -33,9 +33,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
                 connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             )
         )
-        self._request_max_retries: int = (
-            settings.DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES
-        )
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
@@ -52,7 +49,9 @@ class ThinDynamicSidecarClient(BaseThinClient):
             connect=settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
-        super().__init__(request_max_retries=self._request_max_retries)
+        super().__init__(
+            request_timeout=settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S
+        )
 
     def _get_url(
         self,
@@ -65,11 +64,22 @@ class ThinDynamicSidecarClient(BaseThinClient):
         api_version = "" if no_api_version else f"/{self.API_VERSION}"
         return f"{dynamic_sidecar_endpoint}{api_version}{postfix}"
 
+    async def _get_health_common(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
+        return await self.client.get(url, timeout=self._health_request_timeout)
+
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
     async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
-        return await self.client.get(url, timeout=self._health_request_timeout)
+        return await self._get_health_common(dynamic_sidecar_endpoint)
+
+    @expect_status(status.HTTP_200_OK)
+    async def get_health_no_retry(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        return await self._get_health_common(dynamic_sidecar_endpoint)
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)

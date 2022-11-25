@@ -94,6 +94,7 @@ class LoginOptions(BaseModel):
     MSG_LOGGED_IN: str = "You are logged in"
     MSG_LOGGED_OUT: str = "You are logged out"
     MSG_2FA_CODE_SENT: str = "Code sent by SMS to {phone_number}"
+    MSG_WRONG_2FA_CODE: str = "Invalid code (wrong or expired)"
     MSG_ACTIVATED: str = "Your account is activated"
     MSG_UNKNOWN_EMAIL: str = "This email is not registered"
     MSG_WRONG_PASSWORD: str = "Wrong password"

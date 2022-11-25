@@ -8,11 +8,14 @@ from math import ceil
 from typing import Any, Awaitable, Callable, Optional, Union
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict

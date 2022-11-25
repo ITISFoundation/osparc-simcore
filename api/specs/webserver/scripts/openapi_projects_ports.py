@@ -10,12 +10,10 @@
 from enum import Enum
 from typing import Union
 
-import yaml
 from fastapi import FastAPI
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_service_webserver.projects.projects_ports_handlers import (
     ProjectPort,
     ProjectPortGet,
@@ -62,17 +60,6 @@ async def get_project_outputs(project_id: ProjectID):
 
 
 if __name__ == "__main__":
-    override_fastapi_openapi_method(app)
-    openapi = app.openapi()
+    from _common import CURRENT_DIR, create_openapi_specs
 
-    # Remove these sections
-    for section in ("info", "openapi"):
-        openapi.pop(section)
-
-    # Removes default response 422
-    for _, method_item in openapi.get("paths", {}).items():
-        for _, param in method_item.items():
-            param.get("responses", {}).pop("422")
-
-    with open("../openapi-projects-ports.yaml", "wt") as fh:
-        yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
+    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-ports.yaml")

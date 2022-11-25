@@ -5,7 +5,6 @@ from fastapi import FastAPI
 
 from ....core.settings import DynamicServicesSettings
 from ....models.schemas.dynamic_services import SchedulerData
-from ..api_client import get_dynamic_sidecar_service_health
 from ..docker_api import are_sidecar_and_proxy_services_present
 from .events import REGISTERED_EVENTS
 
@@ -41,12 +40,6 @@ async def apply_observation_cycle(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.were_containers_created,
         )
-
-    # TODO: ANE this can be moved to a handler in the future scheduled
-    # to all the correct cases
-    scheduler_data.dynamic_sidecar.is_available = (
-        await get_dynamic_sidecar_service_health(app, scheduler_data)
-    )
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(

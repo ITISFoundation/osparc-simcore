@@ -50,7 +50,7 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
     monkeypatch.setenv("POSTGRES_DB", "")
 
     # reduce number of retries to make more reliable
-    monkeypatch.setenv("DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", "1")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S", "3")
     monkeypatch.setenv("S3_ENDPOINT", "")
 
 
@@ -68,17 +68,16 @@ async def dynamic_sidecar_client(
 
 
 @pytest.fixture
-def retry_count() -> int:
-    return 2
+def request_timeout() -> int:
+    # below refer to exponential wait step duration
+    return 1 + 2
 
 
 @pytest.fixture
-def raise_retry_count(
-    monkeypatch: MonkeyPatch, retry_count: int, mock_env: EnvVarsDict
+def raise_request_timeout(
+    monkeypatch: MonkeyPatch, request_timeout: int, mock_env: EnvVarsDict
 ) -> None:
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_API_CLIENT_REQUEST_MAX_RETRIES", f"{retry_count}"
-    )
+    monkeypatch.setenv("DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S", f"{request_timeout}")
 
 
 @pytest.fixture
@@ -102,23 +101,29 @@ def get_patched_client(
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])
-async def test_is_healthy_api_ok(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl, is_healthy: bool
+@pytest.mark.parametrize("with_retry", [True, False])
+async def test_is_healthy(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    is_healthy: bool,
+    with_retry: bool,
 ) -> None:
     mock_json = {"is_healthy": is_healthy}
     with get_patched_client(
-        "get_health",
+        "get_health" if with_retry else "get_health_no_retry",
         return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
     ) as client:
-        assert await client.is_healthy(dynamic_sidecar_endpoint) == is_healthy
+        assert (
+            await client.is_healthy(dynamic_sidecar_endpoint, with_retry=with_retry)
+            == is_healthy
+        )
 
 
 async def test_is_healthy_times_out(
-    raise_retry_count: None,
+    raise_request_timeout: None,
     dynamic_sidecar_client: DynamicSidecarClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     caplog_info_level: LogCaptureFixture,
-    retry_count: int,
 ) -> None:
     assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
     # check if the right amount of messages was captured by the logs
@@ -127,8 +132,7 @@ async def test_is_healthy_times_out(
         if log_message.startswith("Retrying"):
             assert "as it raised" in log_message
             continue
-        assert log_message.startswith("Unexpected error")
-        assert log_message.endswith(f"(attempt [{unexpected_counter}/{retry_count}])")
+        assert log_message.startswith(f"Request timed-out after {unexpected_counter}")
         unexpected_counter += 1
 
 
