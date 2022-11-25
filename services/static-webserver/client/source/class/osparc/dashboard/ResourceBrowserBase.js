@@ -235,7 +235,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _resetStudyItem: function(studyData) {
+    _updateStudyData: function(studyData) {
       throw new Error("Abstract method called!");
     },
 
@@ -244,10 +244,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _updateServiceData: function(serviceData) {
-      throw new Error("Abstract method called!");
-    },
-
-    _resetResourcesList: function(resourcesList) {
       throw new Error("Abstract method called!");
     },
 
@@ -264,7 +260,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
         moreOpts.addListener("updateStudy", e => {
           const updatedStudyData = e.getData();
-          this._resetStudyItem(updatedStudyData);
+          this._updateStudyData(updatedStudyData);
         });
         moreOpts.addListener("updateTemplate", e => {
           const updatedTemplateData = e.getData();

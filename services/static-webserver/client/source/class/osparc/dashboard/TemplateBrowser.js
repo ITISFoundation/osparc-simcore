@@ -19,8 +19,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   members: {
-    _resourcesList: null,
-
     // overridden
     initResources: function() {
       this._resourcesList = [];
@@ -55,6 +53,16 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           console.error(err);
           this.__setResourcesToList([]);
         });
+    },
+
+    _updateTemplateData: function(templateData) {
+      templateData["resourceType"] = "template";
+      const templatesList = this._resourcesList;
+      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
+      if (index !== -1) {
+        templatesList[index] = templateData;
+        this._reloadCards();
+      }
     },
 
     __setResourcesToList: function(templatesList) {
@@ -156,16 +164,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return groupByButton;
     },
     // LAYOUT //
-
-    _updateTemplateData: function(templateData) {
-      templateData["resourceType"] = "template";
-      const templatesList = this._resourcesList;
-      const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
-      if (index !== -1) {
-        templatesList[index] = templateData;
-        this._reloadCards();
-      }
-    },
 
     // MENU //
     _populateCardMenu: function(menu, studyData) {

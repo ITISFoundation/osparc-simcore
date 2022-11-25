@@ -32,7 +32,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   },
 
   members: {
-    _resourcesList: null,
     __servicesAll: null,
     __sortBy: null,
 
@@ -79,6 +78,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           console.error(err);
           this.__setResourcesToList([]);
         });
+    },
+
+    _updateServiceData: function(serviceData) {
+      serviceData["resourceType"] = "service";
+      const servicesList = this._resourcesList;
+      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
+      if (index !== -1) {
+        servicesList[index] = serviceData;
+        this._reloadCards();
+      }
     },
 
     __setResourcesToList: function(servicesList) {
@@ -180,16 +189,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       }, this);
       this._secondaryBar.add(containterSortBtns);
     },
-
-    _updateServiceData: function(serviceData) {
-      serviceData["resourceType"] = "service";
-      const servicesList = this._resourcesList;
-      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
-      if (index !== -1) {
-        servicesList[index] = serviceData;
-        this._reloadCards();
-      }
-    },
+    // LAYOUT //
 
     // MENU //
     _populateCardMenu: function(menu, studyData) {
