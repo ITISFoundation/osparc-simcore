@@ -116,8 +116,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this.fireDataEvent("startStudy", data);
     },
 
-
-
+    // LAYOUT //
     _createLayout: function() {
       this._createResourcesLayout("template");
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "templatesList");
@@ -156,20 +155,19 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       return groupByButton;
     },
+    // LAYOUT //
 
     _updateTemplateData: function(templateData) {
       templateData["resourceType"] = "template";
       const templatesList = this._resourcesList;
       const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
-      if (index === -1) {
-        templatesList.push(templateData);
-      } else {
+      if (index !== -1) {
         templatesList[index] = templateData;
+        this.__reloadCards();
       }
-
-      this.__reloadCards();
     },
 
+    // MENU //
     _populateCardMenu: function(menu, studyData) {
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
@@ -249,6 +247,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
       this._resourcesContainer.removeCard(templateId);
     },
+    // MENU //
 
     // TASKS //
     __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {

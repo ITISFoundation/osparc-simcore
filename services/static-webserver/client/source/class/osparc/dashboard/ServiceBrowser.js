@@ -32,44 +32,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   },
 
   members: {
+    _resourcesList: null,
     __servicesAll: null,
-    __servicesLatestList: null,
     __sortBy: null,
-
-    __reloadService: function(key, version, reload) {
-      osparc.store.Store.getInstance().getService(key, version, reload)
-        .then(serviceData => {
-          this._resetServiceItem(serviceData);
-        })
-        .catch(err => {
-          console.error(err);
-        });
-    },
-
-    __reloadServices: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getServicesOnly()
-        .then(services => {
-          const favServices = osparc.utils.Utils.localCache.getFavServices();
-          this.__servicesAll = services;
-          const servicesList = [];
-          for (const key in services) {
-            const latestService = osparc.utils.Services.getLatest(services, key);
-            const found = Object.keys(favServices).find(favSrv => favSrv === key);
-            latestService.hits = found ? favServices[found]["hits"] : 0;
-            servicesList.push(latestService);
-          }
-          this._resetResourcesList(servicesList);
-        })
-        .catch(err => {
-          console.error(err);
-        });
-    },
 
     // overridden
     initResources: function() {
       this.__servicesAll = {};
-      this.__servicesLatestList = [];
+      this._resourcesList = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getServicesOnly());
@@ -90,17 +60,47 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__reloadServices();
     },
 
-    _createLayout: function() {
-      this._createResourcesLayout("service");
+    __reloadServices: function() {
+      const store = osparc.store.Store.getInstance();
+      store.getServicesOnly()
+        .then(services => {
+          this.__servicesAll = services;
+          const favServices = osparc.utils.Utils.localCache.getFavServices();
+          const servicesList = [];
+          for (const key in services) {
+            const latestService = osparc.utils.Services.getLatest(services, key);
+            const found = Object.keys(favServices).find(favSrv => favSrv === key);
+            latestService.hits = found ? favServices[found]["hits"] : 0;
+            servicesList.push(latestService);
+          }
+          this.__setResourcesToList(servicesList);
+        })
+        .catch(err => {
+          console.error(err);
+          this.__setResourcesToList([]);
+        });
+    },
 
-      this.__addNewServiceButtons();
-      this.__addSortingButtons();
+    __setResourcesToList: function(servicesList) {
+      servicesList.forEach(service => service["resourceType"] = "service");
+      this._resourcesList = servicesList;
+      this.__reloadCards();
+    },
 
-      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
+    __reloadCards: function() {
+      this._resourcesContainer.setResourcesToList(this._resourcesList);
+      const cards = this._resourcesContainer.reloadCards();
+      cards.forEach(card => {
+        card.addListener("execute", () => this.__itemClicked(card), this);
+        this._populateCardMenu(card.getMenu(), card.getResourceData());
+      });
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+    },
 
-      this._resourcesContainer.addListener("changeMode", () => this._resetResourcesList());
-
-      return this._resourcesContainer;
+    __itemClicked: function(card) {
+      const key = card.getUuid();
+      this._createStudyFromService(key, null);
+      this.resetSelection();
     },
 
     _createStudyFromService: function(key, version) {
@@ -133,66 +133,18 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.fireDataEvent("startStudy", data);
     },
 
-    _resetServiceItem: function(serviceData) {
-      serviceData["resourceType"] = "service";
-      const servicesList = this.__servicesLatestList;
-      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
-      if (index !== -1) {
-        servicesList[index] = serviceData;
-        this._resetResourcesList(servicesList);
-      }
-    },
+    // LAYOUT //
+    _createLayout: function() {
+      this._createResourcesLayout("service");
 
-    // overriden
-    _resetResourcesList: function(servicesList) {
-      if (servicesList === undefined) {
-        servicesList = this.__servicesLatestList;
-      }
-      this._removeResourceCards();
-      this.__addResourcesToList(servicesList);
-    },
+      this.__addNewServiceButtons();
+      this.__addSortingButtons();
 
-    __addResourcesToList: function(servicesList) {
-      const cards = this._resourcesContainer.getCards();
-      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
-      servicesList.forEach(service => {
-        if (this.__servicesLatestList.indexOf(service) === -1) {
-          this.__servicesLatestList.push(service);
-        }
-        service["resourceType"] = "service";
-        const idx = cards.findIndex(card => card.getUuid() === service["key"]);
-        if (idx !== -1) {
-          return;
-        }
-        const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
-        serviceItem.addListener("updateService", e => {
-          const updatedServiceData = e.getData();
-          updatedServiceData["resourceType"] = "service";
-          this._resetServiceItem(updatedServiceData);
-        }, this);
-        this._resourcesContainer.add(serviceItem);
-      });
+      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
 
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
-    },
+      this._resourcesContainer.addListener("changeMode", () => this.__reloadCards());
 
-    __createServiceItem: function(serviceData) {
-      const item = this._createResourceItem(serviceData);
-      item.addListener("execute", () => this.__itemClicked(item), this);
-      return item;
-    },
-
-    _populateCardMenu: function(menu, studyData) {
-      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
-      }
-    },
-
-    __itemClicked: function(item) {
-      const key = item.getUuid();
-      this._createStudyFromService(key, null);
-      this.resetSelection();
+      return this._resourcesContainer;
     },
 
     __addNewServiceButtons: function() {
@@ -213,6 +165,61 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const addServiceButton = new qx.ui.form.Button(this.tr("Submit new service"), "@FontAwesome5Solid/plus-circle/14");
       addServiceButton.addListener("execute", () => this.__displayServiceSubmissionForm());
       this._secondaryBar.add(addServiceButton);
+    },
+
+    __addSortingButtons: function() {
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      containterSortBtns.addListener("sortBy", e => {
+        this.__sortBy = e.getData();
+        this.__setResourcesToList();
+      }, this);
+      this._secondaryBar.add(containterSortBtns);
+    },
+
+    _updateServiceData: function(serviceData) {
+      serviceData["resourceType"] = "service";
+      const servicesList = this._resourcesList;
+      const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
+      if (index !== -1) {
+        servicesList[index] = serviceData;
+        this.__reloadCards();
+      }
+    },
+
+    __addResourcesToList: function(servicesList) {
+      const cards = this._resourcesContainer.getCards();
+      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
+      servicesList.forEach(service => {
+        if (this._resourcesList.indexOf(service) === -1) {
+          this._resourcesList.push(service);
+        }
+        service["resourceType"] = "service";
+        const idx = cards.findIndex(card => card.getUuid() === service["key"]);
+        if (idx !== -1) {
+          return;
+        }
+        const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
+        serviceItem.addListener("updateService", e => {
+          const updatedServiceData = e.getData();
+          updatedServiceData["resourceType"] = "service";
+          this._updateServiceData(updatedServiceData);
+        }, this);
+        this._resourcesContainer.add(serviceItem);
+      });
+
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+    },
+
+    // MENU //
+    _populateCardMenu: function(menu, studyData) {
+      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
+      if (moreInfoButton) {
+        menu.add(moreInfoButton);
+      }
     },
 
     __displayServiceSubmissionForm: function(formData) {
@@ -266,19 +273,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           .finally(() => form.setFetching(false));
       });
       scroll.add(form);
-    },
-
-    __addSortingButtons: function() {
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const containterSortBtns = new osparc.component.service.SortServicesButtons();
-      containterSortBtns.addListener("sortBy", e => {
-        this.__sortBy = e.getData();
-        this._resetResourcesList();
-      }, this);
-      this._secondaryBar.add(containterSortBtns);
     }
   }
 });

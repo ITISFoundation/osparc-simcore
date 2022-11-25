@@ -237,7 +237,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _resetServiceItem: function(serviceData) {
+    _updateServiceData: function(serviceData) {
       throw new Error("Abstract method called!");
     },
 
@@ -266,7 +266,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         });
         moreOpts.addListener("updateService", e => {
           const updatedServiceData = e.getData();
-          this._resetServiceItem(updatedServiceData);
+          this._updateServiceData(updatedServiceData);
         });
         moreOpts.addListener("publishTemplate", e => {
           win.close();
