@@ -165,18 +165,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         resourceData: resourceData,
         tags
       });
-      const menu = this.__getResourceItemMenu();
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
       card.setMenu(menu);
       this.__populateCardMenu(menu, resourceData);
       card.subscribeToFilterGroup("searchBarFilter");
       return card;
-    },
-
-    __getResourceItemMenu: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
-      return menu;
     },
 
     __populateCardMenu: function(menu, resourceData) {
