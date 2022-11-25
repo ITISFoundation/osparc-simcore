@@ -6,10 +6,13 @@
 from typing import Any
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from simcore_postgres_database.models.users import UserRole
 
 
