@@ -27,7 +27,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import FixtureRequest
+from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -463,18 +463,19 @@ async def test_containers_down_after_starting(
 
 
 async def test_containers_down_missing_spec(
-    httpx_async_client: AsyncClient, client: Client
+    httpx_async_client: AsyncClient,
+    client: Client,
+    caplog_info_debug: LogCaptureFixture,
 ):
-    with pytest.raises(TaskClientResultError) as exec_info:
-        async with periodic_task_result(
-            client=client,
-            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
-            task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-            status_poll_interval=FAST_STATUS_POLL,
-            progress_callback=_debug_progress,
-        ) as result:
-            assert result is None
-    assert 'RuntimeError("No compose-spec was found")' in f"{exec_info.value}"
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
+    ) as result:
+        assert result is None
+    assert "No compose-spec was found" in caplog_info_debug.text
 
 
 async def test_container_restore_state(

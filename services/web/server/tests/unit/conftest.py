@@ -12,7 +12,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable
+from typing import Any, Callable, Iterable
 
 import pytest
 import yaml
@@ -54,7 +54,7 @@ def default_app_config_unit_file(tests_data_dir: Path) -> Path:
 def default_app_cfg(default_app_config_unit_file: Path) -> ConfigDict:
     # NOTE: ONLY used at the session scopes
     # TODO: create instead a loader function and return a Callable
-    config: Dict = yaml.safe_load(default_app_config_unit_file.read_text())
+    config: dict = yaml.safe_load(default_app_config_unit_file.read_text())
     return config
 
 
@@ -76,15 +76,9 @@ def project_schema_file(api_version_prefix) -> Path:
 
 
 @pytest.fixture
-def activity_data(fake_data_dir: Path) -> Iterable[Dict[str, Any]]:
+def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
     with (fake_data_dir / "test_activity_data.json").open() as fp:
         yield json.load(fp)
-
-
-@pytest.fixture
-def test_tags_data(fake_data_dir: Path) -> Iterable[Dict[str, Any]]:
-    with (fake_data_dir / "test_tags_data.json").open() as fp:
-        yield json.load(fp).get("added_tags")
 
 
 @pytest.fixture

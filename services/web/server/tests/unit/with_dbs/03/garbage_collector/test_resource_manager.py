@@ -18,13 +18,13 @@ import pytest
 import socketio
 import socketio.exceptions
 import sqlalchemy as sa
-from _helpers import MockedStorageSubsystem
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
+from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed

@@ -6,14 +6,8 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.rest_routing import (
-    get_handlers_from_namespace,
-    iter_path_operations,
-    map_handlers_with_operations,
-)
 
 from . import tags_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +21,4 @@ logger = logging.getLogger(__name__)
 )
 def setup_tags(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_TAGS  # nosec
-    # routes
-    specs = app[APP_OPENAPI_SPECS_KEY]
-    routes = map_handlers_with_operations(
-        get_handlers_from_namespace(tags_handlers),
-        filter(lambda o: "tag" in o[3], iter_path_operations(specs)),
-        strict=True,
-    )
-    app.router.add_routes(routes)
+    app.router.add_routes(tags_handlers.routes)

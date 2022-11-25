@@ -34,7 +34,7 @@ qx.Class.define("osparc.ui.list.ClusterListItem", {
       check: "Object",
       nullable: false,
       apply: "__applyAccessRights",
-      event: "changeAcessRights"
+      event: "changeAccessRights"
     },
 
     endpoint: {
