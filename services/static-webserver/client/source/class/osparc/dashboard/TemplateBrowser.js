@@ -51,11 +51,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __reloadTemplates: function() {
       osparc.data.Resources.getInstance().getAllPages("templates")
         .then(templates => {
-          this._addResourcesToList(templates);
+          this.__addResourcesToList(templates);
         })
         .catch(err => {
           console.error(err);
-          this._addResourcesToList([]);
+          this.__addResourcesToList([]);
         });
     },
 
@@ -136,10 +136,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         templatesList = this.__templates;
       }
       this._removeResourceCards();
-      this._addResourcesToList(templatesList);
+      this.__addResourcesToList(templatesList);
     },
 
-    _addResourcesToList: function(templatesList) {
+    __addResourcesToList: function(templatesList) {
       const cards = this._resourcesContainer.getCards();
       templatesList.forEach(template => {
         if (this.__templates.indexOf(template) === -1) {

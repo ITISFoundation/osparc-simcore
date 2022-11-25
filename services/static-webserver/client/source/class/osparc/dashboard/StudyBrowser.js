@@ -107,8 +107,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       request
         .then(resp => {
           const resources = resp["data"];
-          this._resourcesContainer.nextRequest = resp["_links"]["next"];
-          this._addResourcesToList(resources);
+          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
+          this.__addResourcesToList(resources);
 
           if (osparc.utils.Utils.isProduct("tis")) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
@@ -128,7 +128,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
+          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
           this._moreResourcesRequired();
         });
     },
@@ -144,12 +144,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
         }
       };
-      if ("nextRequest" in this._resourcesContainer &&
-        this._resourcesContainer.nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "limit")) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "limit");
+      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
+        this._resourcesContainer.getFlatList().nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit");
       }
       const options = {
         resolveWResponse: true
@@ -160,7 +160,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
       this._resetResourcesList([]);
-      this._resourcesContainer.nextRequest = null;
+      this._resourcesContainer.getFlatList().nextRequest = null;
     },
 
     // overridden
@@ -614,10 +614,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         studiesList = this.__studies;
       }
       this._removeResourceCards();
-      this._addResourcesToList(studiesList);
+      this.__addResourcesToList(studiesList);
     },
 
-    _addResourcesToList: function(studiesList) {
+    __addResourcesToList: function(studiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
       const cards = this._resourcesContainer.getCards();
       studiesList.forEach(study => {

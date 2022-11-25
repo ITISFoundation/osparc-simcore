@@ -185,10 +185,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    _addResourcesToList: function() {
-      throw new Error("Abstract method called!");
-    },
-
     _removeResourceCards: function() {
       const cards = this._resourcesContainer.getCards();
       for (let i=cards.length-1; i>=0; i--) {
