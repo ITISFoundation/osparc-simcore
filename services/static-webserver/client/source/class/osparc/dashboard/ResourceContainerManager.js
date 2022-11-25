@@ -76,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createHeader: function(label, color) {
       const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24").set({
+        font: "title-14",
         gap: 10,
         padding: 10
       });
