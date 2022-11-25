@@ -3,8 +3,8 @@ import logging
 from datetime import datetime
 
 from fastapi import FastAPI
-from mypy_boto3_ec2.literals import InstanceTypeType
 from pydantic import parse_obj_as
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from . import utils_aws, utils_docker
 from ._meta import VERSION
@@ -49,7 +49,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
 
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    list_of_ec2_instances = utils_aws.get_ec2_instance_capabilities(
+    list_of_ec2_instances = await utils_aws.get_ec2_instance_capabilities(
         app_settings.AUTOSCALING_EC2_ACCESS, app_settings.AUTOSCALING_EC2_INSTANCES
     )
 
@@ -66,7 +66,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            new_instance_dns_name = utils_aws.start_aws_instance(
+            new_instance_dns_name = await utils_aws.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_ACCESS,
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(

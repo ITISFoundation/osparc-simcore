@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-astroid==2.12.12
+astroid==2.12.13
     # via pylint
 black==22.10.0
     # via -r requirements/../../../requirements/devenv.txt
@@ -26,7 +26,7 @@ distlib==0.3.6
     # via virtualenv
 filelock==3.8.0
     # via virtualenv
-identify==2.5.8
+identify==2.5.9
     # via pre-commit
 isort==5.10.1
     # via
@@ -58,7 +58,7 @@ platformdirs==2.5.4
     #   virtualenv
 pre-commit==2.20.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==2.15.5
+pylint==2.15.6
     # via -r requirements/../../../requirements/devenv.txt
 pyparsing==3.0.9
     # via
@@ -100,6 +100,7 @@ wheel==0.38.4
     # via pip-tools
 wrapt==1.14.1
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   astroid
 

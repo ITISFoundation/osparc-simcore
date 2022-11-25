@@ -9,10 +9,10 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.docker import DockerLabelKey
-from mypy_boto3_ec2.literals import InstanceTypeType
 from pydantic import Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 

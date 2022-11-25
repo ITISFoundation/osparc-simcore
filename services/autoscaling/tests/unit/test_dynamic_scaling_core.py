@@ -163,7 +163,7 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     mock_tag_node: mock.Mock,
 ):
     # we have nothing running now
-    all_instances = ec2_client.describe_instances()
+    all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     task_template_for_r5n_8x_large_with_256Gib = task_template | create_task_resources(
@@ -181,7 +181,7 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     await check_dynamic_resources(initialized_app)
 
     # check that the instances are really started
-    all_instances = ec2_client.describe_instances()
+    all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == 1
     running_instance = all_instances["Reservations"][0]
     assert "Instances" in running_instance

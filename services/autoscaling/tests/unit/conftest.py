@@ -30,7 +30,6 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
-from mypy_boto3_ec2.literals import InstanceTypeType
 from pydantic import ByteSize, PositiveInt
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -44,6 +43,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
     "pytest_simcore.docker_swarm",
@@ -356,21 +356,21 @@ def vpc_cidr_block() -> str:
 
 
 @pytest.fixture
-def aws_vpc_id(
+async def aws_vpc_id(
     mocked_aws_server_envs: None,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     ec2_client: EC2Client,
     vpc_cidr_block: str,
-) -> Iterator[str]:
-    vpc = ec2_client.create_vpc(
+) -> AsyncIterator[str]:
+    vpc = await ec2_client.create_vpc(
         CidrBlock=vpc_cidr_block,
     )
     vpc_id = vpc["Vpc"]["VpcId"]  # type: ignore
     print(f"--> Created Vpc in AWS with {vpc_id=}")
     yield vpc_id
 
-    ec2_client.delete_vpc(VpcId=vpc_id)
+    await ec2_client.delete_vpc(VpcId=vpc_id)
     print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
 
 
@@ -380,13 +380,15 @@ def subnet_cidr_block() -> str:
 
 
 @pytest.fixture
-def aws_subnet_id(
+async def aws_subnet_id(
     monkeypatch: pytest.MonkeyPatch,
     aws_vpc_id: str,
     ec2_client: EC2Client,
     subnet_cidr_block: str,
-) -> Iterator[str]:
-    subnet = ec2_client.create_subnet(CidrBlock=subnet_cidr_block, VpcId=aws_vpc_id)
+) -> AsyncIterator[str]:
+    subnet = await ec2_client.create_subnet(
+        CidrBlock=subnet_cidr_block, VpcId=aws_vpc_id
+    )
     assert "Subnet" in subnet
     assert "SubnetId" in subnet["Subnet"]
     subnet_id = subnet["Subnet"]["SubnetId"]
@@ -396,12 +398,12 @@ def aws_subnet_id(
     yield subnet_id
 
     # all the instances in the subnet must be terminated before that works
-    instances_in_subnet = ec2_client.describe_instances(
+    instances_in_subnet = await ec2_client.describe_instances(
         Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
     )
     if instances_in_subnet["Reservations"]:
         print(f"--> terminating {len(instances_in_subnet)} instances in subnet")
-        ec2_client.terminate_instances(
+        await ec2_client.terminate_instances(
             InstanceIds=[
                 instance["Instances"][0]["InstanceId"]  # type: ignore
                 for instance in instances_in_subnet["Reservations"]
@@ -409,20 +411,20 @@ def aws_subnet_id(
         )
         print(f"<-- terminated {len(instances_in_subnet)} instances in subnet")
 
-    ec2_client.delete_subnet(SubnetId=subnet_id)
-    subnets = ec2_client.describe_subnets()
+    await ec2_client.delete_subnet(SubnetId=subnet_id)
+    subnets = await ec2_client.describe_subnets()
     print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
     print(f"current {subnets=}")
 
 
 @pytest.fixture
-def aws_security_group_id(
+async def aws_security_group_id(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     aws_vpc_id: str,
     ec2_client: EC2Client,
-) -> Iterator[str]:
-    security_group = ec2_client.create_security_group(
+) -> AsyncIterator[str]:
+    security_group = await ec2_client.create_security_group(
         Description=faker.text(), GroupName=faker.pystr(), VpcId=aws_vpc_id
     )
     security_group_id = security_group["GroupId"]
@@ -431,18 +433,18 @@ def aws_security_group_id(
         "EC2_INSTANCES_SECURITY_GROUP_IDS", json.dumps([security_group_id])
     )
     yield security_group_id
-    ec2_client.delete_security_group(GroupId=security_group_id)
+    await ec2_client.delete_security_group(GroupId=security_group_id)
     print(f"<-- Deleted Security Group in AWS with {security_group_id=}")
 
 
 @pytest.fixture
-def aws_ami_id(
+async def aws_ami_id(
     app_environment: EnvVarsDict,
     mocked_aws_server_envs: None,
     monkeypatch: pytest.MonkeyPatch,
     ec2_client: EC2Client,
 ) -> str:
-    images = ec2_client.describe_images()
+    images = await ec2_client.describe_images()
     image = random.choice(images["Images"])
     ami_id = image["ImageId"]  # type: ignore
     monkeypatch.setenv("EC2_INSTANCES_AMI_ID", ami_id)
@@ -450,9 +452,9 @@ def aws_ami_id(
 
 
 @pytest.fixture
-def ec2_client() -> Iterator[EC2Client]:
+async def ec2_client() -> AsyncIterator[EC2Client]:
     settings = EC2Settings.create_from_envs()
-    with autoscaling_ec2_client(settings) as client:
+    async with autoscaling_ec2_client(settings) as client:
         yield client
 
 

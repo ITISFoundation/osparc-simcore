@@ -36,35 +36,35 @@ def app_settings(
     return ApplicationSettings.create_from_envs()
 
 
-def test_ec2_client(app_settings: ApplicationSettings):
+async def test_ec2_client(app_settings: ApplicationSettings):
     assert app_settings.AUTOSCALING_EC2_ACCESS
-    with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
+    async with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
         ...
 
     with pytest.raises(
         botocore.exceptions.ClientError, match=r".+ AWS was not able to validate .+"
     ):
-        with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
-            client.describe_account_attributes(DryRun=True)
+        async with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
+            await client.describe_account_attributes(DryRun=True)
 
 
-def test_ec2_client_with_mock_server(
+async def test_ec2_client_with_mock_server(
     mocked_aws_server_envs: None, app_settings: ApplicationSettings
 ):
     # passes without exception
     assert app_settings.AUTOSCALING_EC2_ACCESS
-    with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
-        client.describe_account_attributes(DryRun=True)
+    async with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
+        await client.describe_account_attributes(DryRun=True)
 
 
-def test_get_ec2_instance_capabilities(
+async def test_get_ec2_instance_capabilities(
     mocked_aws_server_envs: None,
     aws_allowed_ec2_instance_type_names: list[str],
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    instance_types = get_ec2_instance_capabilities(
+    instance_types = await get_ec2_instance_capabilities(
         app_settings.AUTOSCALING_EC2_ACCESS, app_settings.AUTOSCALING_EC2_INSTANCES
     )
     assert instance_types
@@ -83,7 +83,7 @@ def test_get_ec2_instance_capabilities(
         assert any(i.name == instance_type_name for i in instance_types)
 
 
-def test_find_best_fitting_ec2_instance_with_no_instances_raises():
+async def test_find_best_fitting_ec2_instance_with_no_instances_raises():
     # this shall raise as there are no available instances
     with pytest.raises(AutoscalingConfigurationError):
         find_best_fitting_ec2_instance(
@@ -106,7 +106,7 @@ def random_fake_available_instances(faker: Faker) -> list[EC2Instance]:
     return list_of_instances
 
 
-def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_raises(
+async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_raises(
     random_fake_available_instances: list[EC2Instance],
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
@@ -127,7 +127,7 @@ def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_
         for n in range(1, 30)
     ],
 )
-def test_find_best_fitting_ec2_instance_closest_instance_policy(
+async def test_find_best_fitting_ec2_instance_closest_instance_policy(
     needed_resources: Resources,
     expected_ec2_instance: EC2Instance,
     random_fake_available_instances: list[EC2Instance],
@@ -150,7 +150,7 @@ def test_compose_user_data(faker: Faker):
     assert command in user_data
 
 
-def test_start_aws_instance(
+async def test_start_aws_instance(
     faker: Faker,
     mocked_ec2_server_with_client: EC2Client,
     app_settings: ApplicationSettings,
@@ -158,13 +158,13 @@ def test_start_aws_instance(
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
-    all_instances = mocked_ec2_server_with_client.describe_instances()
+    all_instances = await mocked_ec2_server_with_client.describe_instances()
     assert not all_instances["Reservations"]
 
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    start_aws_instance(
+    await start_aws_instance(
         app_settings.AUTOSCALING_EC2_ACCESS,
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
@@ -173,7 +173,7 @@ def test_start_aws_instance(
     )
 
     # check we have that now in ec2
-    all_instances = mocked_ec2_server_with_client.describe_instances()
+    all_instances = await mocked_ec2_server_with_client.describe_instances()
     assert len(all_instances["Reservations"]) == 1
     running_instance = all_instances["Reservations"][0]
     assert "Instances" in running_instance
@@ -187,7 +187,7 @@ def test_start_aws_instance(
     ]
 
 
-def test_start_aws_instance_is_limited_in_number_of_instances(
+async def test_start_aws_instance_is_limited_in_number_of_instances(
     mocked_ec2_server_with_client: EC2Client,
     app_settings: ApplicationSettings,
     faker: Faker,
@@ -195,14 +195,14 @@ def test_start_aws_instance_is_limited_in_number_of_instances(
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
-    all_instances = mocked_ec2_server_with_client.describe_instances()
+    all_instances = await mocked_ec2_server_with_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # create as many instances as we can
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     for _ in range(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES):
-        start_aws_instance(
+        await start_aws_instance(
             app_settings.AUTOSCALING_EC2_ACCESS,
             app_settings.AUTOSCALING_EC2_INSTANCES,
             faker.pystr(),
@@ -212,7 +212,7 @@ def test_start_aws_instance_is_limited_in_number_of_instances(
 
     # now creating one more shall fail
     with pytest.raises(Ec2TooManyInstancesError):
-        start_aws_instance(
+        await start_aws_instance(
             app_settings.AUTOSCALING_EC2_ACCESS,
             app_settings.AUTOSCALING_EC2_INSTANCES,
             faker.pystr(),
