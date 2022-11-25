@@ -175,16 +175,17 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         if (this.getGroupBy() === "tags") {
           const card = this.__createCard(resourceData, tags);
           if (tags.length === 0) {
-            let groupContainer = this.__getGroupContainer("no-group");
-            groupContainer.add(card);
+            let noGroupContainer = this.__getGroupContainer("no-group");
+            noGroupContainer.add(card);
           } else {
             tags.forEach(tag => {
               let groupContainer = this.__getGroupContainer(tag.id);
               if (groupContainer === null) {
                 const header = this.__createHeader(tag.name, tag.color);
                 groupContainer = this.__createGroupContainer(tag.id, header);
-                // Force no-group to go last
-                const idx = this.__groupedContainers.length-2;
+                // Add it right before the no-group
+                const noGroupContainer = this.__getGroupContainer("no-group");
+                const idx = this._getChildren().findIndex(grpContainer => grpContainer === noGroupContainer);
                 this._addAt(groupContainer, idx);
               }
               groupContainer.add(card);
