@@ -182,17 +182,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return item;
     },
 
-    _getResourceItemMenu: function(studyData) {
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
-
+    _populateCardMenu: function(menu, studyData) {
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
       }
-
-      return menu;
     },
 
     __itemClicked: function(item) {

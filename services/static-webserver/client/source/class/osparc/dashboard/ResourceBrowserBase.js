@@ -213,8 +213,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         resourceData,
         tags
       });
-      const menu = this._getResourceItemMenu(resourceData, item);
+
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
       item.setMenu(menu);
+      this._populateCardMenu(menu, resourceData);
       item.subscribeToFilterGroup("searchBarFilter");
 
       return item;
@@ -224,7 +228,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _getResourceItemMenu: function(resourceData, item) {
+    _populateCardMenu: function(menu, resourceData) {
       throw new Error("Abstract method called!");
     },
 

@@ -168,11 +168,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return item;
     },
 
-    _getResourceItemMenu: function(studyData) {
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
-
+    _populateCardMenu: function(menu, studyData) {
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
@@ -183,8 +179,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         menu.addSeparator();
         menu.add(deleteButton);
       }
-
-      return menu;
     },
 
     __getDeleteTemplateMenuButton: function(templateData) {

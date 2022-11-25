@@ -161,13 +161,27 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createCard: function(resourceData, tags) {
       // create card
-      const card = new osparc.dashboard.GridButtonItem();
+      const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
         resourceData: resourceData,
         tags
       });
+      const menu = this.__getResourceItemMenu();
+      card.setMenu(menu);
+      this.__populateCardMenu(menu, resourceData);
       card.subscribeToFilterGroup("searchBarFilter");
       return card;
+    },
+
+    __getResourceItemMenu: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+      return menu;
+    },
+
+    __populateCardMenu: function(menu, resourceData) {
+
     },
 
     setResourcesData: function(resourcesData) {
