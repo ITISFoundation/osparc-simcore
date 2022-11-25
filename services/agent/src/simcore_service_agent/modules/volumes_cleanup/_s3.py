@@ -2,6 +2,7 @@ import asyncio
 import logging
 from asyncio.streams import StreamReader
 from pathlib import Path
+from textwrap import dedent
 from typing import Final
 
 from settings_library.r_clone import S3Provider
@@ -82,6 +83,37 @@ def _get_r_clone_str_command(command: list[str], exclude_files: list[str]) -> st
     return str_command
 
 
+def _log_expected_operation(
+    dyv_volume_labels: dict[str, str],
+    s3_path: Path,
+    r_clone_ls_output: str,
+    volume_name: str,
+) -> None:
+    """
+    This message will be logged as warning if any files will be synced
+    """
+    log_level = logging.INFO if r_clone_ls_output.strip() == "" else logging.WARNING
+
+    formatted_message = dedent(
+        f"""
+        ---
+        Volume data
+        ---
+        volume_name         {volume_name}
+        destination_path    {s3_path}
+        study_id:           {dyv_volume_labels['study_id']}
+        node_id:            {dyv_volume_labels['node_uuid']}
+        user_id:            {dyv_volume_labels['user_id']}
+        run_id:             {dyv_volume_labels['run_id']}
+        ---
+        Files to sync by rclone
+        ---\n{r_clone_ls_output.rstrip()}
+        ---
+    """
+    )
+    logger.log(log_level, formatted_message)
+
+
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     volume_name: str,
     dyv_volume: dict,
@@ -120,10 +152,11 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stderr=asyncio.subprocess.STDOUT,
     )
 
-    output = await _read_stream(process.stdout)
+    r_clone_ls_output = await _read_stream(process.stdout)
     await process.wait()
-    log_level = logging.INFO if output.strip() == "" else logging.WARNING
-    logger.log(log_level, "Files to be synced:\n%s", output)
+    _log_expected_operation(
+        dyv_volume["Labels"], s3_path, r_clone_ls_output, volume_name
+    )
 
     # sync files via rclone
     r_clone_sync = [
@@ -152,9 +185,9 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stderr=asyncio.subprocess.STDOUT,
     )
 
-    output = await _read_stream(process.stdout)
+    r_clone_sync_output = await _read_stream(process.stdout)
     await process.wait()
-    logger.info("Sync result:\n%s", output)
+    logger.info("Sync result:\n%s", r_clone_sync_output)
 
     if process.returncode != 0:
         raise RuntimeError(
