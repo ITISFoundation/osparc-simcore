@@ -156,8 +156,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       topBar.add(containterModeBtns);
 
-      viewGridBtn.addListener("execute", () => this._resourcesContainer.setMode("grid"));
-      viewListBtn.addListener("execute", () => this._resourcesContainer.setMode("list"));
+      viewGridBtn.addListener("execute", () => {
+        this._resourcesContainer.setMode("grid");
+        this._reloadCards();
+      });
+      viewListBtn.addListener("execute", () => {
+        this._resourcesContainer.setMode("list");
+        this._reloadCards();
+      });
 
       return topBar;
     },
@@ -202,7 +208,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    _createResourceItem: function(resourceData) {
+    _createStudyItem: function(resourceData) {
       const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
 
       const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];

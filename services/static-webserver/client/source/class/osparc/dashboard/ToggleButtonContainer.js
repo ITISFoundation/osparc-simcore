@@ -19,16 +19,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     this.base(arguments, layout);
   },
 
-  properties: {
-    mode: {
-      check: ["grid", "list"],
-      init: "grid",
-      nullable: false,
-      event: "changeMode",
-      apply: "__applyMode"
-    }
-  },
-
   events: {
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
@@ -43,10 +33,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         this.base(arguments, child, options);
         child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
-        if (this.getMode() === "list") {
-          const width = this.getBounds().width - 15;
-          child.setWidth(width);
-        }
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
@@ -115,14 +101,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         return true;
       }
       return false;
-    },
-
-    __applyMode: function(mode) {
-      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      this.getLayout().set({
-        spacingX: spacing,
-        spacingY: spacing
-      });
     },
 
     removeCard: function(key) {

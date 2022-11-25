@@ -83,11 +83,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __setResourcesToList: function(servicesList) {
       servicesList.forEach(service => service["resourceType"] = "service");
+      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
       this._resourcesList = servicesList;
-      this.__reloadCards();
+      this._reloadCards();
     },
 
-    __reloadCards: function() {
+    _reloadCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards();
       cards.forEach(card => {
@@ -142,7 +143,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
 
-      this._resourcesContainer.addListener("changeMode", () => this.__reloadCards());
+      this._resourcesContainer.addListener("changeMode", () => this._reloadCards());
 
       return this._resourcesContainer;
     },
@@ -175,7 +176,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const containterSortBtns = new osparc.component.service.SortServicesButtons();
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
-        this.__setResourcesToList();
+        this.__setResourcesToList(this._resourcesList);
       }, this);
       this._secondaryBar.add(containterSortBtns);
     },
@@ -186,32 +187,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
       if (index !== -1) {
         servicesList[index] = serviceData;
-        this.__reloadCards();
+        this._reloadCards();
       }
-    },
-
-    __addResourcesToList: function(servicesList) {
-      const cards = this._resourcesContainer.getCards();
-      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
-      servicesList.forEach(service => {
-        if (this._resourcesList.indexOf(service) === -1) {
-          this._resourcesList.push(service);
-        }
-        service["resourceType"] = "service";
-        const idx = cards.findIndex(card => card.getUuid() === service["key"]);
-        if (idx !== -1) {
-          return;
-        }
-        const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
-        serviceItem.addListener("updateService", e => {
-          const updatedServiceData = e.getData();
-          updatedServiceData["resourceType"] = "service";
-          this._updateServiceData(updatedServiceData);
-        }, this);
-        this._resourcesContainer.add(serviceItem);
-      });
-
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     // MENU //

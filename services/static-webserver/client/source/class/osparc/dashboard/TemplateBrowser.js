@@ -60,10 +60,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
       this._resourcesList = templatesList;
-      this.__reloadCards();
+      this._reloadCards();
     },
 
-    __reloadCards: function() {
+    _reloadCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards();
       cards.forEach(card => {
@@ -124,7 +124,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const groupByButton = this.__createGroupByButton();
       this._secondaryBar.add(groupByButton);
 
-      this._resourcesContainer.addListener("changeMode", () => this.__reloadCards());
+      this._resourcesContainer.addListener("changeMode", () => this._reloadCards());
 
       return this._resourcesContainer;
     },
@@ -137,7 +137,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const groupByChanged = groupBy => {
         this._resourcesContainer.setGroupBy(groupBy);
-        this.__reloadCards();
+        this._reloadCards();
       };
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       dontGroup.addListener("execute", () => groupByChanged(null));
@@ -163,7 +163,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
       if (index !== -1) {
         templatesList[index] = templateData;
-        this.__reloadCards();
+        this._reloadCards();
       }
     },
 

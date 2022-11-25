@@ -651,7 +651,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyItem: function(studyData) {
-      const item = this._createResourceItem(studyData);
+      const item = this._createStudyItem(studyData);
       item.addListener("tap", e => {
         if (!item.isLocked()) {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);

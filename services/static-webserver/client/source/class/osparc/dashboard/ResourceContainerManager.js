@@ -35,7 +35,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       init: "grid",
       nullable: false,
       event: "changeMode",
-      apply: "__applyMode"
+      apply: "reloadCards"
     },
 
     groupBy: {
@@ -122,12 +122,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
-    __applyMode: function(mode) {
-      if (this.getGroupBy() === null) {
-        this.__flatList.setMode(mode);
-      }
-    },
-
     __getGroupContainer: function(gid) {
       const idx = this.__groupedContainers.findIndex(groupContainer => groupContainer.getGroupId() === gid.toString());
       if (idx > -1) {
@@ -142,6 +136,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         resourceData: resourceData,
         tags
       });
+      if (this.getMode() === "list") {
+        const width = this.getBounds().width - 15;
+        card.setWidth(width);
+      }
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
@@ -170,6 +168,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this._add(noGroupContainer);
       } else {
         this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+        this.__flatList.getLayout().set({
+          spacingX: spacing,
+          spacingY: spacing
+        });
         this._add(this.__flatList);
       }
 
