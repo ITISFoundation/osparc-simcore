@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
             toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });
-          osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
+          osparc.utils.Utils.setIdToWidget(control, "downloadLogsToClipboardButton");
           toolbar.add(control);
           break;
         }
