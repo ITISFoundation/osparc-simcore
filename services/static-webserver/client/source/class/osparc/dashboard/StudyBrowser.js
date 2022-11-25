@@ -70,7 +70,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   members: {
     __studies: null,
-    __lastSelectedIdx: null,
 
     reloadStudy: function(studyId) {
       const params = {
@@ -189,7 +188,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadResources: function() {
-      // this.__getActiveStudy();
+      this.__getActiveStudy();
       this.reloadResources();
     },
 
@@ -510,7 +509,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
-        this.__lastSelectedIdx = null;
         this.resetSelection();
         this.setMultiSelection(false);
       });
@@ -782,21 +780,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __itemClicked: function(item, isShiftPressed) {
+      const studiesCont = this._resourcesContainer.getFlatList();
+
       if (isShiftPressed) {
-        const lastIdx = this.__lastSelectedIdx;
-        const currentIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
+        const lastIdx = studiesCont.getLastSelectedIndex();
+        const currentIdx = studiesCont.getIndex(item);
         const minMaxIdx = [lastIdx, currentIdx].sort();
         for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
-          const button = this._resourcesContainer.getCards()[i];
+          const button = studiesCont.getCards()[i];
           if (button.isVisible()) {
             button.setValue(true);
           }
         }
       }
-      const lastIdx = this._resourcesContainer.getCards().findIndex(card => card === item);
-      if (lastIdx !== -1) {
-        this.__lastSelectedIdx = lastIdx;
-      }
+      studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
@@ -1025,7 +1022,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
         .finally(() => {
-          this.__lastSelectedIdx = null;
           this.resetSelection();
         });
     },
