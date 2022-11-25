@@ -89,7 +89,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         visibility: "excluded"
       });
       groupContainer.setGroupHeader(header);
-      this._add(groupContainer);
       this.__groupedContainers.push(groupContainer);
       return groupContainer;
     },
@@ -97,6 +96,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __createEmptyGroupContainer: function() {
       const header = this.__createHeader(this.tr("No Group"), "transparent");
       const noGroupContainer = this.__createGroupContainer("no-group", header);
+      this._add(noGroupContainer);
       return noGroupContainer;
     },
 
@@ -183,6 +183,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
               if (groupContainer === null) {
                 const header = this.__createHeader(tag.name, tag.color);
                 groupContainer = this.__createGroupContainer(tag.id, header);
+                // Force no-group to go last
+                const idx = this.__groupedContainers.length-2;
+                this._addAt(groupContainer, idx);
               }
               groupContainer.add(card);
             });
