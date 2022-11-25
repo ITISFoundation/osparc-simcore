@@ -16,14 +16,15 @@ class EmailProtocol(str, Enum):
 
 
 class SMTPSettings(BaseCustomSettings):
-    """Simple Mail Transfer Protocol"""
+    """Settings for Simple Mail Transfer Protocol (SMTP)
 
-    # TODO: NameEmail or EmailStr
-    SMTP_SENDER: str = "@".join(["O2SPARC support <support", "osparc.io>"])
+    NOTE: These settings are only intended to login and access an email server.
+    Extra info necessary to send an email such as sender email 'from' or 'reply-to' are now
+    product-dependent and therefore can be found in the product table of the database
+    """
 
     SMTP_HOST: str
     SMTP_PORT: PortInt
-
     SMTP_PROTOCOL: EmailProtocol = Field(
         EmailProtocol.UNENCRYPTED,
         description="Select between TLS, STARTTLS Secure Mode or unencrypted communication",

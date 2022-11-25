@@ -242,7 +242,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     running_services = _RunninServices()
     assert running_services.running_services_uuids == []
     mocked_director_v2_api[
-        "director_v2_api.get_dynamic_services"
+        "director_v2_api.list_dynamic_services"
     ].side_effect = running_services.num_services
     mocked_director_v2_api[
         "director_v2_api.run_dynamic_service"
@@ -308,7 +308,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
         max_amount_of_auto_started_dyn_services
     )
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -353,7 +353,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     running_services = _RunninServices()
     assert running_services.running_services_uuids == []
     mocked_director_v2_api[
-        "director_v2_api.get_dynamic_services"
+        "director_v2_api.list_dynamic_services"
     ].side_effect = running_services.num_services
     mocked_director_v2_api[
         "director_v2_api.run_dynamic_service"
@@ -406,7 +406,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     assert client.app
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -481,7 +481,7 @@ async def test_delete_node(
         for service_uuid, service_data in user_project["workbench"].items()
         if "/dynamic/" in service_data["key"] and dy_service_running
     ]
-    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in running_dy_services
     ]
     for node_id in user_project["workbench"]:
@@ -495,9 +495,9 @@ async def test_delete_node(
             continue
 
         mocked_director_v2_api[
-            "director_v2_api.get_dynamic_services"
+            "director_v2_api.list_dynamic_services"
         ].assert_called_once()
-        mocked_director_v2_api["director_v2_api.get_dynamic_services"].reset_mock()
+        mocked_director_v2_api["director_v2_api.list_dynamic_services"].reset_mock()
 
         if node_id in running_dy_services:
             mocked_director_v2_api[
@@ -572,7 +572,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
         max_amount_of_auto_started_dyn_services
     )
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
@@ -603,7 +603,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     assert client.app
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2_api.get_dynamic_services"].return_value = [
+    mocked_director_v2_api["director_v2_api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected

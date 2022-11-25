@@ -189,7 +189,7 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.get_dynamic_services(
+    project_running_nodes = await director_v2_api.list_dynamic_services(
         request.app, user_id, f"{project_uuid}"
     )
 
@@ -309,7 +309,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_running_dynamic_services = await director_v2_api.get_dynamic_services(
+    list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
     if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
@@ -864,7 +864,7 @@ async def run_project_dynamic_services(
     assert project_settings  # nosec
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
-        for d in await director_v2_api.get_dynamic_services(
+        for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]

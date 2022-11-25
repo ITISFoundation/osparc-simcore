@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from os.path import join
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, NamedTuple, Optional, Union
 
 import aiosmtplib
 from aiohttp import web
@@ -24,8 +24,6 @@ log = logging.getLogger(__name__)
 async def _send_mail(app: web.Application, msg: Union[MIMEText, MIMEMultipart]):
     cfg: LoginOptions = get_plugin_options(app)
     log.debug("Email configuration %s", cfg)
-
-    msg["From"] = cfg.SMTP_SENDER
     smtp_args = dict(
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
@@ -64,36 +62,51 @@ async def _send_mail(app: web.Application, msg: Union[MIMEText, MIMEMultipart]):
 
 
 async def _compose_mail(
-    app: web.Application, recipient: str, subject: str, body: str
+    app: web.Application, *, sender: str, recipient: str, subject: str, body: str
 ) -> None:
     msg = MIMEText(body, "html")
     msg["Subject"] = subject
+    msg["From"] = sender
     msg["To"] = recipient
 
     await _send_mail(app, msg)
 
 
+class AttachmentTuple(NamedTuple):
+    filename: str
+    payload: bytearray
+
+
 async def _compose_multipart_mail(
     app: web.Application,
+    *,
+    sender: str,
     recipient: str,
     subject: str,
     body: str,
-    attachments: list[tuple[str, bytearray]],
+    attachments: list[AttachmentTuple],
 ) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
+    msg["From"] = sender
     msg["To"] = recipient
 
     part1 = MIMEText(body, "html")
     msg.attach(part1)
 
     for attachment in attachments:
-        filename = attachment[0]
-        payload = attachment[1]
-        mimetype = mimetypes.guess_type(filename)[0].split("/")
-        part = MIMEBase(mimetype[0], mimetype[1])
-        part.set_payload(payload)
-        part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
+        mimetype, _encoding = mimetypes.guess_type(attachment.filename)
+        if not mimetype:
+            # default if guess fails
+            main_type, subtype = "application", "octet-stream"
+        else:
+            main_type, subtype = mimetype.split("/", maxsplit=1)
+
+        part = MIMEBase(main_type, subtype)
+        part.set_payload(attachment.payload)
+        part.add_header(
+            "Content-Disposition", f'attachment; filename="{attachment.filename}"'
+        )
         encoders.encode_base64(part)
         msg.attach(part)
 
@@ -110,18 +123,33 @@ async def get_template_path(request: web.Request, filename: str) -> Path:
 
 async def render_and_send_mail(
     request: web.Request,
+    from_: str,
     to: str,
     template: Path,
     context: Mapping[str, Any],
-    attachments: Optional[list[tuple[str, bytearray]]] = None,
+    attachments: Optional[list[AttachmentTuple]] = None,
 ):
     page = render_string(template_name=f"{template}", request=request, context=context)
-    # NOTE: Expects first line of the template to be the Subject of the email
+    #
+    # NOTE: By CONVENTION, it expects first line of the template
+    # to be the Subject of the email.
+    #
     subject, body = page.split("\n", 1)
 
     if attachments:
         await _compose_multipart_mail(
-            request.app, to, subject.strip(), body, attachments
+            request.app,
+            sender=from_,
+            recipient=to,
+            subject=subject.strip(),
+            body=body,
+            attachments=attachments,
         )
     else:
-        await _compose_mail(request.app, to, subject.strip(), body)
+        await _compose_mail(
+            request.app,
+            sender=from_,
+            recipient=to,
+            subject=subject.strip(),
+            body=body,
+        )
