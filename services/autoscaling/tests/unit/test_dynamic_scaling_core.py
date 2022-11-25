@@ -95,13 +95,13 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
-    create_task_resources: Callable[[int, int], dict[str, Any]],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
     assert_for_service_state: Callable[
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
     mock_start_aws_instance: mock.Mock,
 ):
-    task_template_with_too_many_resource = task_template | create_task_resources(
+    task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
     )
     service_with_too_many_resources = await create_service(
@@ -124,7 +124,7 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
-    create_task_resources: Callable[[int, int], dict[str, Any]],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
     assert_for_service_state: Callable[
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
@@ -133,8 +133,8 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
     mock_tag_node: mock.Mock,
     aws_instance_private_dns: str,
 ):
-    task_template_for_r5n_4x_large_with_256Gib = task_template | create_task_resources(
-        4, parse_obj_as(ByteSize, "128GiB")
+    task_template_for_r5n_4x_large_with_256Gib = (
+        task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB"))
     )
     service_with_too_many_resources = await create_service(
         task_template_for_r5n_4x_large_with_256Gib
@@ -165,7 +165,7 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     initialized_app: FastAPI,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
     task_template: dict[str, Any],
-    create_task_resources: Callable[[int, int], dict[str, Any]],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
     assert_for_service_state: Callable[
         [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
     ],
@@ -177,8 +177,8 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    task_template_for_r5n_8x_large_with_256Gib = task_template | create_task_resources(
-        4, parse_obj_as(ByteSize, "128GiB")
+    task_template_for_r5n_8x_large_with_256Gib = (
+        task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB"))
     )
     service_with_too_many_resources = await create_service(
         task_template_for_r5n_8x_large_with_256Gib

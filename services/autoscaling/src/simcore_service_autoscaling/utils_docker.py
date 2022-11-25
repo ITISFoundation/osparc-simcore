@@ -107,13 +107,34 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
     return Resources.parse_obj(dict(cluster_resources_counter))
 
 
-def get_resources_from_docker_task(task: Task) -> Resources:
+def get_max_resources_from_docker_task(task: Task) -> Resources:
+    """returns the highest values for resources based on both docker reservations and limits"""
     assert task.Spec  # nosec
-    if task.Spec.Resources and task.Spec.Resources.Reservations:
+    if task.Spec.Resources:
         return Resources(
-            cpus=(task.Spec.Resources.Reservations.NanoCPUs or 0) / _NANO_CPU,
+            cpus=max(
+                (
+                    task.Spec.Resources.Reservations
+                    and task.Spec.Resources.Reservations.NanoCPUs
+                    or 0
+                ),
+                (
+                    task.Spec.Resources.Limits
+                    and task.Spec.Resources.Limits.NanoCPUs
+                    or 0
+                ),
+            )
+            / _NANO_CPU,
             ram=parse_obj_as(
-                ByteSize, task.Spec.Resources.Reservations.MemoryBytes or 0
+                ByteSize,
+                max(
+                    task.Spec.Resources.Reservations
+                    and task.Spec.Resources.Reservations.MemoryBytes
+                    or 0,
+                    task.Spec.Resources.Limits
+                    and task.Spec.Resources.Limits.MemoryBytes
+                    or 0,
+                ),
             ),
         )
     return Resources(cpus=0, ram=ByteSize(0))

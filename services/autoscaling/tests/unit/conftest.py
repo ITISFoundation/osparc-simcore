@@ -144,11 +144,26 @@ NUM_CPUS = PositiveInt
 
 
 @pytest.fixture
-def create_task_resources() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
+def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
     def _creator(num_cpus: NUM_CPUS, memory: Union[ByteSize, int]) -> dict[str, Any]:
         return {
             "Resources": {
                 "Reservations": {
+                    "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
+                    "MemoryBytes": int(memory),
+                }
+            }
+        }
+
+    return _creator
+
+
+@pytest.fixture
+def create_task_limits() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
+    def _creator(num_cpus: NUM_CPUS, memory: Union[ByteSize, int]) -> dict[str, Any]:
+        return {
+            "Resources": {
+                "Limits": {
                     "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
                     "MemoryBytes": int(memory),
                 }
