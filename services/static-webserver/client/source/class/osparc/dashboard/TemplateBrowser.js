@@ -79,7 +79,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const groupByChanged = groupBy => {
         this._resourcesContainer.setGroupBy(groupBy);
-        this._resourcesContainer.setResourcesData(this.__templates);
+        const cards = this._resourcesContainer.setResourcesData(this.__templates);
+        cards.forEach(card => {
+          this._populateCardMenu(card.getMenu(), card.getResourceData());
+        });
       };
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       dontGroup.addListener("execute", () => groupByChanged(null));

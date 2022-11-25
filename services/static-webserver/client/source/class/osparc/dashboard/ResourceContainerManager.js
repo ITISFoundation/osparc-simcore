@@ -160,20 +160,17 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         position: "bottom-right"
       });
       card.setMenu(menu);
-      this.__populateCardMenu(menu, resourceData);
       card.subscribeToFilterGroup("searchBarFilter");
       return card;
     },
 
-    __populateCardMenu: function(menu, resourceData) {
-
-    },
-
     setResourcesData: function(resourcesData) {
+      let cards = [];
       resourcesData.forEach(resourceData => {
         const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
         if (this.getGroupBy() === "tags") {
           const card = this.__createCard(resourceData, tags);
+          cards.push(card);
           if (tags.length === 0) {
             let noGroupContainer = this.__getGroupContainer("no-group");
             noGroupContainer.add(card);
@@ -192,9 +189,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           }
         } else {
           const card = this.__createCard(resourceData, tags);
+          cards.push(card);
           this.__flatList.add(card);
         }
       });
+      return cards;
     }
   }
 });
