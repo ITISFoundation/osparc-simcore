@@ -12,6 +12,7 @@ import aiodocker
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task, TaskState
 from pydantic import ByteSize, parse_obj_as
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from tenacity import TryAgain, retry
 from tenacity.after import after_log
@@ -206,18 +207,21 @@ async def wait_for_node(node_name: str) -> Node:
 async def tag_node(
     node: Node, *, tags: dict[DockerLabelKey, str], available: bool
 ) -> None:
-    async with aiodocker.Docker() as docker:
-        assert node.ID  # nosec
-        assert node.Version  # nosec
-        assert node.Version.Index  # nosec
-        assert node.Spec  # nosec
-        assert node.Spec.Role  # nosec
-        await docker.nodes.update(
-            node_id=node.ID,
-            version=node.Version.Index,
-            spec={
-                "Availability": "active" if available else "drain",
-                "Labels": tags,
-                "Role": node.Spec.Role.value,
-            },
-        )
+    with log_context(
+        logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
+    ):
+        async with aiodocker.Docker() as docker:
+            assert node.ID  # nosec
+            assert node.Version  # nosec
+            assert node.Version.Index  # nosec
+            assert node.Spec  # nosec
+            assert node.Spec.Role  # nosec
+            await docker.nodes.update(
+                node_id=node.ID,
+                version=node.Version.Index,
+                spec={
+                    "Availability": "active" if available else "drain",
+                    "Labels": tags,
+                    "Role": node.Spec.Role.value,
+                },
+            )
