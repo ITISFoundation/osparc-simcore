@@ -63,9 +63,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._createResourcesLayout("template");
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "templatesList");
 
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
       const groupByButton = this.__createGroupByButton();
       this._secondaryBar.add(groupByButton);
 

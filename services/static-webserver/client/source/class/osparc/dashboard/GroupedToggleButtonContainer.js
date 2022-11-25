@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(10));
   },
 
   properties: {
@@ -32,7 +32,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     groupHeader: {
-      // check: qx.ui.core.Widget,
+      check: "qx.ui.core.Widget",
       init: null,
       nullable: true,
       apply: "__applyGroupHeader"

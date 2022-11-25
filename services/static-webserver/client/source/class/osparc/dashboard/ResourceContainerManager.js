@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__flatList = new osparc.dashboard.ToggleButtonContainer();
     this._add(this.__flatList);
@@ -78,7 +78,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24").set({
         font: "title-14",
         gap: 10,
-        padding: 10
+        paddingLeft: 10
       });
       header.getChildControl("icon").setTextColor(color);
       return header;
@@ -97,7 +97,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __createEmptyGroupContainer: function() {
       const header = this.__createHeader(this.tr("No Group"), "transparent");
       const noGroupContainer = this.__createGroupContainer("no-group", header);
-      this._add(noGroupContainer);
       return noGroupContainer;
     },
 
@@ -150,6 +149,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __applyGroupBy: function() {
       this._removeAll();
+      this.__groupedContainers = [];
+      if (this.getGroupBy() === "tags") {
+        const noGroupContainer = this.__createEmptyGroupContainer();
+        this._add(noGroupContainer);
+      } else {
+        this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        this._add(this.__flatList);
+      }
     },
 
     __createCard: function(resourceData, tags) {
@@ -164,13 +171,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     setResourcesData: function(resourcesData) {
-      this.__groupedContainers = [];
-      if (this.getGroupBy() === "tags") {
-        this.__createEmptyGroupContainer();
-      } else {
-        this.__flatList = new osparc.dashboard.ToggleButtonContainer();
-        this._add(this.__flatList);
-      }
       resourcesData.forEach(resourceData => {
         const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
         if (this.getGroupBy() === "tags") {
