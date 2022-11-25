@@ -238,7 +238,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         const study = this.getStudy();
         if (nodeId === study.getUuid()) {
           const studyDetails = new osparc.studycard.Large(study);
-          const title = this.tr("Study Details");
+          const title = this.tr("Study Information");
           const width = 500;
           const height = 500;
           osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
