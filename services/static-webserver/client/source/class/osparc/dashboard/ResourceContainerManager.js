@@ -138,6 +138,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __applyGroupBy: function() {
       this._removeAll();
+      this.__flatList = null;
       this.__groupedContainers = [];
       if (this.getGroupBy() === "tags") {
         const noGroupContainer = this.__createEmptyGroupContainer();
@@ -162,27 +163,28 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return card;
     },
 
-    setResourcesData: function(resourcesData) {
+    setResourcesList: function(resourcesData) {
       let cards = [];
       resourcesData.forEach(resourceData => {
         const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
         if (this.getGroupBy() === "tags") {
-          const card = this.__createCard(resourceData, tags);
-          cards.push(card);
           if (tags.length === 0) {
             let noGroupContainer = this.__getGroupContainer("no-group");
+            const card = this.__createCard(resourceData, tags);
             noGroupContainer.add(card);
+            cards.push(card);
           } else {
             tags.forEach(tag => {
               let groupContainer = this.__getGroupContainer(tag.id);
               if (groupContainer === null) {
                 groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
-                // Add it right before the no-group
                 const noGroupContainer = this.__getGroupContainer("no-group");
                 const idx = this._getChildren().findIndex(grpContainer => grpContainer === noGroupContainer);
                 this._addAt(groupContainer, idx);
               }
+              const card = this.__createCard(resourceData, tags);
               groupContainer.add(card);
+              cards.push(card);
             });
           }
         } else {
