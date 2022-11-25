@@ -75,13 +75,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const groupByMenu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group by"), null, groupByMenu);
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group by"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
 
       const groupByChanged = groupBy => {
         this._resourcesContainer.setGroupBy(groupBy);
         this._resourcesContainer.setResourcesData(this.__templates);
       };
-      const dontGroup = new qx.ui.menu.RadioButton(this.tr("Don't group"));
+      const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       dontGroup.addListener("execute", () => groupByChanged(null));
       const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
       tagByGroup.addListener("execute", () => groupByChanged("tags"));

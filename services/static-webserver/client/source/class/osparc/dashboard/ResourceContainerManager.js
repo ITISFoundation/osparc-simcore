@@ -160,7 +160,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createCard: function(resourceData, tags) {
-      // create card
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
         resourceData: resourceData,
