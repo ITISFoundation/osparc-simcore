@@ -60,16 +60,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __setResourcesToList: function(templatesList) {
       templatesList.forEach(template => template["resourceType"] = "template");
       this._resourcesList = templatesList;
-      this.__resourcesListToCards();
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      this.__reloadCards();
     },
 
-    __resourcesListToCards: function() {
-      const cards = this._resourcesContainer.setResourcesList(this._resourcesList);
+    __reloadCards: function() {
+      this._resourcesContainer.setResourcesToList(this._resourcesList);
+      const cards = this._resourcesContainer.reloadCards();
       cards.forEach(card => {
         card.addListener("execute", () => this.__itemClicked(card), this);
         this._populateCardMenu(card.getMenu(), card.getResourceData());
       });
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __itemClicked: function(card) {
@@ -124,7 +125,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const groupByButton = this.__createGroupByButton();
       this._secondaryBar.add(groupByButton);
 
-      this._resourcesContainer.addListener("changeMode", () => this.__resourcesListToCards());
+      this._resourcesContainer.addListener("changeMode", () => this.__reloadCards());
 
       return this._resourcesContainer;
     },
@@ -137,7 +138,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const groupByChanged = groupBy => {
         this._resourcesContainer.setGroupBy(groupBy);
-        this.__resourcesListToCards();
+        this.__reloadCards();
       };
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       dontGroup.addListener("execute", () => groupByChanged(null));
@@ -166,10 +167,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         templatesList[index] = templateData;
       }
 
-      const allCards = this._resourcesContainer.getCards();
-      const cards = allCards.filter(card => card.getUuid() === templateData["uuid"]);
-      cards.forEach(card => card.setResourceData(templateData));
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      this.__reloadCards();
     },
 
     _populateCardMenu: function(menu, studyData) {

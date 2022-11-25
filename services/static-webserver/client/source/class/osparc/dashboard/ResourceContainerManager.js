@@ -41,8 +41,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     groupBy: {
       check: [null, "tags"],
       init: null,
-      nullable: true,
-      apply: "__applyGroupBy"
+      nullable: true
     }
   },
 
@@ -54,6 +53,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   members: {
     __flatList: null,
     __groupedContainers: null,
+    __resourcesList: null,
 
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
@@ -136,19 +136,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return null;
     },
 
-    __applyGroupBy: function() {
-      this._removeAll();
-      this.__flatList = null;
-      this.__groupedContainers = [];
-      if (this.getGroupBy() === "tags") {
-        const noGroupContainer = this.__createEmptyGroupContainer();
-        this._add(noGroupContainer);
-      } else {
-        this.__flatList = new osparc.dashboard.ToggleButtonContainer();
-        this._add(this.__flatList);
-      }
-    },
-
     __createCard: function(resourceData, tags) {
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
@@ -163,9 +150,31 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return card;
     },
 
-    setResourcesList: function(resourcesData) {
+    setResourcesToList: function(resourcesList) {
+      this.__resourcesList = resourcesList;
+    },
+
+    __cleanAll: function() {
+      if (this.__flatList) {
+        this.__flatList.removeAll();
+      }
+      this.__groupedContainers.forEach(groupedContainer => groupedContainer.getChildControl("content-container").removeAll());
+      this.__groupedContainers = [];
+      this._removeAll();
+    },
+
+    reloadCards: function() {
+      this.__cleanAll();
+      if (this.getGroupBy() === "tags") {
+        const noGroupContainer = this.__createEmptyGroupContainer();
+        this._add(noGroupContainer);
+      } else {
+        this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        this._add(this.__flatList);
+      }
+
       let cards = [];
-      resourcesData.forEach(resourceData => {
+      this.__resourcesList.forEach(resourceData => {
         const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
         if (this.getGroupBy() === "tags") {
           if (tags.length === 0) {
