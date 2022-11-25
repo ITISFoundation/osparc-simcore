@@ -76,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createHeader: function(label, color) {
       const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24").set({
+        gap: 10,
         padding: 10
       });
       header.getChildControl("icon").setTextColor(color);
@@ -146,43 +147,51 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return null;
     },
 
-    __populateGroups: function(cards) {
-      this.__groupedContainers = [];
-      this.__createEmptyGroupContainer();
-
-      cards.forEach(card => {
-        if (this.getGroupBy() === "tags") {
-          const tags = card.isPropertyInitialized("tags") ? card.getTags() : [];
-          if (tags.length === 0) {
-            tags.push({
-              id: "no-group",
-              label: this.tr("No group"),
-              color: "transparent"
-            });
-          }
-          tags.forEach(tag => {
-            let groupContainer = this.__getGroupContainer(tag.id);
-            if (groupContainer === null) {
-              const header = this.__createHeader(tag.name, tag.color);
-              groupContainer = this.__createGroupContainer(tag.id, header);
-            }
-            console.log(groupContainer.getGroupId(), card.getTitle());
-            groupContainer.add(card);
-          });
-        }
-      });
+    __applyGroupBy: function() {
+      this._removeAll();
     },
 
-    __applyGroupBy: function() {
-      const cards = this.getCards();
-      this._removeAll();
-      if (this.getGroupBy()) {
-        this.__populateGroups(cards);
+    __createCard: function(resourceData, tags) {
+      // create card
+      const card = new osparc.dashboard.GridButtonItem();
+      card.set({
+        resourceData: resourceData,
+        tags
+      });
+      card.subscribeToFilterGroup("searchBarFilter");
+      return card;
+    },
+
+    setResourcesData: function(resourcesData) {
+      this.__groupedContainers = [];
+      if (this.getGroupBy() === "tags") {
+        this.__createEmptyGroupContainer();
       } else {
         this.__flatList = new osparc.dashboard.ToggleButtonContainer();
-        cards.forEach(card => this.__flatList.add(card));
         this._add(this.__flatList);
       }
+      resourcesData.forEach(resourceData => {
+        const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
+        if (this.getGroupBy() === "tags") {
+          const card = this.__createCard(resourceData, tags);
+          if (tags.length === 0) {
+            let groupContainer = this.__getGroupContainer("no-group");
+            groupContainer.add(card);
+          } else {
+            tags.forEach(tag => {
+              let groupContainer = this.__getGroupContainer(tag.id);
+              if (groupContainer === null) {
+                const header = this.__createHeader(tag.name, tag.color);
+                groupContainer = this.__createGroupContainer(tag.id, header);
+              }
+              groupContainer.add(card);
+            });
+          }
+        } else {
+          const card = this.__createCard(resourceData, tags);
+          this.__flatList.add(card);
+        }
+      });
     }
   }
 });

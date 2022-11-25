@@ -206,14 +206,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _createResourceItem: function(resourceData) {
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
-
       const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+
+      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
       item.set({
         resourceData,
         tags
       });
-
       const menu = this._getResourceItemMenu(resourceData, item);
       item.setMenu(menu);
       item.subscribeToFilterGroup("searchBarFilter");

@@ -82,6 +82,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const groupByChanged = groupBy => {
         this._resourcesContainer.setGroupBy(groupBy);
+        this._resourcesContainer.setResourcesData(this.__templates);
       };
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("Don't group"));
       dontGroup.addListener("execute", () => groupByChanged(null));
