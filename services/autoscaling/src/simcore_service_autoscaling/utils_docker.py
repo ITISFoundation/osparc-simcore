@@ -15,7 +15,6 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from tenacity import TryAgain, retry
-from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -190,7 +189,6 @@ async def get_docker_swarm_join_bash_command() -> str:
 @retry(
     stop=stop_after_delay(_TIMEOUT_WAITING_FOR_NODES_S),
     before_sleep=before_sleep_log(logger, logging.WARNING),
-    after=after_log(logger, logging.ERROR),
     wait=wait_fixed(5),
 )
 async def wait_for_node(node_name: str) -> Node:
