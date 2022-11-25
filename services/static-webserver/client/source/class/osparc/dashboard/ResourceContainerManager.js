@@ -93,8 +93,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__flatList) {
-        return false;
-        // FIXME OM
         return this.__flatList.areMoreResourcesRequired(loadingResourcesBtn);
       }
       // If containers are grouped all the resources are expected to be fetched
