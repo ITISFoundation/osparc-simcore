@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__flatList = new osparc.dashboard.ToggleButtonContainer();
     this._add(this.__flatList);
@@ -74,29 +74,20 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return this.__flatList;
     },
 
-    __createHeader: function(label, color) {
-      const header = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/tag/24").set({
-        font: "title-14",
-        gap: 10,
-        paddingLeft: 10
-      });
-      header.getChildControl("icon").setTextColor(color);
-      return header;
-    },
-
-    __createGroupContainer: function(groupId, header) {
+    __createGroupContainer: function(groupId, headerLabel, headerColor) {
       const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
         groupId: groupId.toString(),
+        headerLabel,
+        headerIcon: "@FontAwesome5Solid/tag/24",
+        headerColor,
         visibility: "excluded"
       });
-      groupContainer.setGroupHeader(header);
       this.__groupedContainers.push(groupContainer);
       return groupContainer;
     },
 
     __createEmptyGroupContainer: function() {
-      const header = this.__createHeader(this.tr("No Group"), "transparent");
-      const noGroupContainer = this.__createGroupContainer("no-group", header);
+      const noGroupContainer = this.__createGroupContainer("no-group", this.tr("No Group"), "transparent");
       return noGroupContainer;
     },
 
@@ -190,8 +181,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             tags.forEach(tag => {
               let groupContainer = this.__getGroupContainer(tag.id);
               if (groupContainer === null) {
-                const header = this.__createHeader(tag.name, tag.color);
-                groupContainer = this.__createGroupContainer(tag.id, header);
+                groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
                 // Add it right before the no-group
                 const noGroupContainer = this.__getGroupContainer("no-group");
                 const idx = this._getChildren().findIndex(grpContainer => grpContainer === noGroupContainer);

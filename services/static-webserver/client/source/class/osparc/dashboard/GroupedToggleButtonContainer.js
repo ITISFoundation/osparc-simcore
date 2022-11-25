@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox());
   },
 
   properties: {
@@ -31,11 +31,19 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       nullable: false
     },
 
-    groupHeader: {
-      check: "qx.ui.core.Widget",
-      init: null,
-      nullable: true,
-      apply: "__applyGroupHeader"
+    headerLabel: {
+      check: "String",
+      apply: "__updateHeaderLabel"
+    },
+
+    headerIcon: {
+      check: "String",
+      apply: "__updateHeaderIcon"
+    },
+
+    headerColor: {
+      check: "String",
+      apply: "__updateHeaderColor"
     }
   },
 
@@ -43,8 +51,26 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "header":
+          control = new qx.ui.basic.Atom().set({
+            font: "title-14",
+            gap: 10,
+            padding: 10,
+            paddingBottom: 5,
+            allowGrowX: false,
+            backgroundColor: "background-main-1"
+          });
+          control.getContentElement().setStyles({
+            "border-top-left-radius": "4px",
+            "border-top-right-radius": "4px"
+          });
+          this._addAt(control, 0);
+          break;
         case "content-container":
-          control = new osparc.component.widget.SlideBar();
+          control = new osparc.component.widget.SlideBar().set({
+            padding: 5,
+            backgroundColor: "background-main-1"
+          });
           control.setButtonsWidth(30);
           this._addAt(control, 1, {
             flex: 1
@@ -54,11 +80,19 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       return control || this.base(arguments, id);
     },
 
-    __applyGroupHeader: function(newHeader, oldHeader) {
-      if (oldHeader) {
-        this._remove(oldHeader);
-      }
-      this._addAt(newHeader, 0);
+    __updateHeaderLabel: function(label) {
+      const atom = this.getChildControl("header");
+      atom.setLabel(label);
+    },
+
+    __updateHeaderIcon: function(icon) {
+      const atom = this.getChildControl("header");
+      atom.setIcon(icon);
+    },
+
+    __updateHeaderColor: function(color) {
+      const atom = this.getChildControl("header");
+      atom.getChildControl("icon").setTextColor(color);
     },
 
     // overridden

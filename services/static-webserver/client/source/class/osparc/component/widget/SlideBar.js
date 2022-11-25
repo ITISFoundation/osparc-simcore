@@ -36,7 +36,6 @@ qx.Class.define("osparc.component.widget.SlideBar", {
       check: "Integer",
       init: 30,
       nullable: false,
-      event: "changeButtonsWidth",
       apply: "__updateElementSizes"
     }
   },
@@ -60,6 +59,7 @@ qx.Class.define("osparc.component.widget.SlideBar", {
       buttonForward.setIcon("@FontAwesome5Solid/chevron-right/16");
     },
 
+    // override
     _onResize: function() {
       this.base(arguments);
       this.__updateElementSizes();
