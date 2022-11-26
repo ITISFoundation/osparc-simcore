@@ -113,7 +113,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       const cards = this.getChildren();
       for (let i=0; i<cards.length; i++) {
         const card = cards[i];
-        if (card.getUuid && key === card.getUuid()) {
+        if (card.isPropertyInitialized("uuid") && key === card.getUuid()) {
           this.remove(card);
           return;
         }

@@ -279,9 +279,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       };
       return osparc.data.Resources.getOne("studies", params)
-        .then(studyData => {
-          this._resetStudyItem(studyData);
-        })
+        .then(studyData => this._updateStudyData(studyData))
         .catch(err => console.error(err));
     },
 
@@ -715,9 +713,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         data: studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedStudyData => {
-          this._resetStudyItem(updatedStudyData);
-        })
+        .then(updatedStudyData => this._updateStudyData(updatedStudyData))
         .catch(err => {
           const msg = this.tr("Something went wrong updating the Service");
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
@@ -888,9 +884,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
           };
           osparc.data.Resources.getOne("studies", params)
-            .then(studyData => {
-              this._resetStudyItem(studyData);
-            })
+            .then(studyData => this._updateStudyData(studyData))
             .catch(err => {
               console.log(err);
               const msg = this.tr("Something went wrong Fetching the study");
