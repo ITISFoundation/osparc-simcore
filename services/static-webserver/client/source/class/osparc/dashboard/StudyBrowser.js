@@ -186,6 +186,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _reloadCards: function() {
+      let fetching = false;
+      let visibility = "excluded";
+      if (this._loadingResourcesBtn) {
+        fetching = this._loadingResourcesBtn.getFetching();
+        visibility = this._loadingResourcesBtn.getVisibility();
+      }
+
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards();
       cards.forEach(card => {
@@ -199,8 +206,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._populateCardMenu(card.getMenu(), card.getResourceData());
       });
       this.__addNewStudyButtons();
-      const loadingStudiesBtn = this.__createLoadMoreButton("studiesLoading");
-      this._resourcesContainer.add(loadingStudiesBtn);
+      const newLoadMoreBtn = this.__createLoadMoreButton();
+      newLoadMoreBtn.set({
+        fetching,
+        visibility
+      });
+      this._resourcesContainer.add(newLoadMoreBtn);
+
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
@@ -450,25 +462,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
-      this._resourcesContainer.addListener("changeMode", () => {
-        let fetching = false;
-        let visibility = "excluded";
-        if (this._loadingResourcesBtn) {
-          fetching = this._loadingResourcesBtn.getFetching();
-          visibility = this._loadingResourcesBtn.getVisibility();
-        }
-
-        this.__setResourcesToList([]);
-
-        this.__addNewStudyButtons();
-
-        const newLoadMoreBtn = this.__createLoadMoreButton();
-        newLoadMoreBtn.set({
-          fetching,
-          visibility
-        });
-        this._resourcesContainer.add(newLoadMoreBtn);
-      }, this);
+      this._resourcesContainer.addListener("changeMode", () => this._reloadCards(), this);
 
       return this._resourcesContainer;
     },
