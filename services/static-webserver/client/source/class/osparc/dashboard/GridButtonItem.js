@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   construct: function() {
     this.base(arguments);
 
+    this.set(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
+
     this.addListener("changeValue", this.__itemSelected, this);
   },
 

@@ -25,6 +25,8 @@ qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
   construct: function() {
     this.base(arguments);
 
+    this.set(osparc.dashboard.CardBase.CARD_PRIORITY.LOADER);
+
     this._applyFetching(false);
   },
 
