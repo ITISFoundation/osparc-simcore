@@ -115,7 +115,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         const card = cards[i];
         if (card.isPropertyInitialized("uuid") && key === card.getUuid()) {
           this.remove(card);
-          return;
         }
       }
     }
