@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.ListButtonLoadMore", {
   construct: function() {
     this.base(arguments);
 
-    this.set(osparc.dashboard.CardBase.CARD_PRIORITY.LOADER);
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.LOADER);
 
     this._applyFetching(false);
   },

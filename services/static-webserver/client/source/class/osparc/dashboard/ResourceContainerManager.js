@@ -203,6 +203,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           const card = this.__createCard(resourceData, tags);
           cards.push(card);
           this.__flatList.add(card);
+          this.__flatList.getChildren().sort((a, b) => a.getPriority() - b.getPriority());
         }
       });
       return cards;

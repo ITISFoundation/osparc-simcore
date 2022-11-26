@@ -318,7 +318,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         true
       );
       toTemplateCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addAt(toTemplateCard, 0);
+      this._resourcesContainer.add(toTemplateCard);
       return toTemplateCard;
     }
     // TASKS //

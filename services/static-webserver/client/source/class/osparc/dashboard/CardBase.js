@@ -214,7 +214,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     priority: {
       check: "Number",
       init: null,
-      nullable: true
+      nullable: false
     }
   },
 

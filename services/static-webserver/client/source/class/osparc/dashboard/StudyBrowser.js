@@ -340,7 +340,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const width = this._resourcesContainer.getBounds().width - 15;
         newStudyBtn.setWidth(width);
       }
-      this._resourcesContainer.getFlatList().addAt(newStudyBtn, 0);
+      this._resourcesContainer.add(newStudyBtn);
     },
 
     __addNewPlanButton: function(mode) {
@@ -358,7 +358,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const width = this._resourcesContainer.getBounds().width - 15;
               newPlanButton.setWidth(width);
             }
-            this._resourcesContainer.getFlatList().addAt(newPlanButton, 0);
+            this._resourcesContainer.add(newPlanButton);
           }
         });
     },
@@ -376,7 +376,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const width = this._resourcesContainer.getBounds().width - 15;
           newStudyFromServiceButton.setWidth(width);
         }
-        this._resourcesContainer.getFlatList().addAt(newStudyFromServiceButton, 0);
+        this._resourcesContainer.add(newStudyFromServiceButton);
       }
     },
 
@@ -793,7 +793,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         true
       );
       duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.getFlatList().addAt(duplicatingStudyCard, 1);
+      this._resourcesContainer.add(duplicatingStudyCard);
       return duplicatingStudyCard;
     },
 
@@ -855,7 +855,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         true
       );
       importingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.getFlatList().addAt(importingStudyCard, 1);
+      this._resourcesContainer.add(importingStudyCard);
       importTask.setSubtitle(uploadingLabel);
 
       const body = new FormData();
