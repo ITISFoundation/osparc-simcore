@@ -308,26 +308,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.getFlatList().nextRequest = null;
     },
 
-    __addNewStudyButtons: function(mode = "grid") {
-      this.__addNewStudyButton(mode);
-      if (osparc.utils.Utils.isProduct("tis")) {
-        this.__removeNewStudyButtons();
-        this.__addNewPlanButton(mode);
-      } else if (osparc.utils.Utils.isProduct("s4l")) {
-        this.__addNewS4LServiceButtons(mode);
-      } else if (osparc.utils.Utils.isProduct("s4llite")) {
-        this.__removeNewStudyButtons();
-        this.__addNewS4LLiteServiceButtons(mode);
-      }
-    },
-
-    __removeNewStudyButtons: function() {
-      const cards = this._resourcesContainer.getCards();
-      for (let i=cards.length-1; i>=0; i--) {
-        const card = cards[i];
-        if (osparc.dashboard.ResourceBrowserBase.isCardNewItem(card)) {
-          this._resourcesContainer.getFlatList().remove(card);
-        }
+    __addNewStudyButtons: function() {
+      const mode = this._resourcesContainer.getMode();
+      switch (osparc.utils.Utils.getProductName()) {
+        case "osparc":
+          this.__addNewStudyButton(mode);
+          break;
+        case "tis":
+          this.__addNewPlanButton(mode);
+          break;
+        case "s4l":
+          this.__addNewS4LServiceButtons(mode);
+          break;
+        case "s4llite":
+          this.__addNewS4LLiteServiceButtons(mode);
+          break;
       }
     },
 
@@ -455,10 +450,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       this._resourcesContainer.addListener("changeMode", () => {
-        this.__setResourcesToList();
+        this.__setResourcesToList([]);
 
-        this.__removeNewStudyButtons();
-        this.__addNewStudyButtons(this._resourcesContainer.getMode());
+        this.__addNewStudyButtons();
 
         const cards = this._resourcesContainer.getCards();
         cards.forEach(card => {
