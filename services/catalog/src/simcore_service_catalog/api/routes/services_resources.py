@@ -18,6 +18,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.users import UserID
 from pydantic import parse_obj_as, parse_raw_as
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
 
@@ -135,11 +136,12 @@ def _get_service_settings(
 )
 @cached(
     ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['service_key']}_{kwargs['service_version']}",
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
 )
 async def get_service_resources(
     service_key: DockerImageKey,
     service_version: DockerImageVersion,
+    user_id: Optional[UserID] = None,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
 ) -> ServiceResourcesDict:
@@ -173,6 +175,8 @@ async def get_service_resources(
         service_resources = _from_service_settings(
             service_settings, default_service_resources, service_key, service_version
         )
+        if user_id is not None:
+            ...
         # TODO: merge with user specific settings here
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, service_resources
@@ -209,6 +213,8 @@ async def get_service_resources(
                 service_key,
                 service_version,
             )
+        if user_id is not None:
+            ...
         # TODO: merge with user specific settings here
         service_to_resources[spec_key] = ImageResources.parse_obj(
             {"image": image, "resources": spec_service_resources}
