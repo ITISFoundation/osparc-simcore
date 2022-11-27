@@ -438,5 +438,5 @@ def _merge_specs(
     merged_spec = {}
     for spec in chain([everyone_spec], team_specs.values(), [user_spec]):
         if spec is not None:
-            merged_spec.update(spec.dict(include={"sidecar"}))
+            merged_spec.update(spec.dict(include={"sidecar", "service_resources"}))
     return merged_spec
