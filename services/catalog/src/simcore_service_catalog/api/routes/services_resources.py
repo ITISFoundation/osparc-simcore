@@ -168,14 +168,17 @@ async def get_service_resources(
     logger.debug("received %s", f"{service_spec=}")
 
     if service_spec is None:
+        # no compose specifications -> single service
         service_settings = _get_service_settings(service_labels)
         service_resources = _from_service_settings(
             service_settings, default_service_resources, service_key, service_version
         )
+        # TODO: merge with user specific settings here
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, service_resources
         )
 
+    # compose specifications available, potentially multiple services
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry="",
@@ -183,7 +186,7 @@ async def get_service_resources(
     )
     full_service_spec: ComposeSpecLabel = yaml.safe_load(stringified_service_spec)
 
-    results: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
+    service_to_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
 
     for spec_key, spec_data in full_service_spec["services"].items():
         # image can be:
@@ -206,9 +209,9 @@ async def get_service_resources(
                 service_key,
                 service_version,
             )
-
-        results[spec_key] = ImageResources.parse_obj(
+        # TODO: merge with user specific settings here
+        service_to_resources[spec_key] = ImageResources.parse_obj(
             {"image": image, "resources": spec_service_resources}
         )
 
-    return results
+    return service_to_resources
