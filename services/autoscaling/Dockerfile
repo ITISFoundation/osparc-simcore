@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.9.12"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
@@ -9,14 +10,36 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-LABEL maintainer=pcrespov
+LABEL maintainer=sanderegg
 
-RUN set -eux; \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends gosu; \
-  rm -rf /var/lib/apt/lists/*; \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  ca-certificates \
+  curl \
+  gnupg \
+  lsb-release \
+  && mkdir -p /etc/apt/keyrings \
+  && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  # only the cli is needed and we remove the unnecessary stuff again
+  docker-ce-cli \
+  && apt-get remove -y\
+  ca-certificates \
+  curl \
+  gnupg \
+  lsb-release \
+  && apt-get autoclean -y\
+  && apt-get autoremove -y\
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -56,7 +79,10 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update \
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
   && apt-get clean \
@@ -67,7 +93,8 @@ RUN apt-get update \
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade  \
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install --upgrade  \
   pip~=22.0  \
   wheel \
   setuptools
@@ -77,7 +104,9 @@ WORKDIR /build
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
 COPY  --chown=scu:scu services/autoscaling/requirements/_base.txt .
-RUN pip --no-cache-dir install -r _base.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement _base.txt
 
 
 # --------------------------Prod-depends-only stage -------------------
@@ -95,8 +124,10 @@ COPY --chown=scu:scu services/autoscaling /build/services/autoscaling
 
 WORKDIR /build/services/autoscaling
 
-RUN pip3 --no-cache-dir install -r requirements/prod.txt \
-  && pip3 --no-cache-dir list -v
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement requirements/prod.txt \
+  && pip --no-cache-dir list -v
 
 
 # --------------------------Production stage -------------------
@@ -123,10 +154,10 @@ COPY --chown=scu:scu services/autoscaling/docker services/autoscaling/docker
 RUN chmod +x services/autoscaling/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
-  --timeout=20s \
-  --start-period=30s \
-  --retries=3 \
+HEALTHCHECK --interval=10s \
+  --timeout=5s \
+  --start-period=5s \
+  --retries=5 \
   CMD ["python3", "services/autoscaling/docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/autoscaling/docker/entrypoint.sh" ]
