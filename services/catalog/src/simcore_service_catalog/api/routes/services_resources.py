@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Final, Optional, cast
 
 import yaml
-from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.docker import DockerImageKey, DockerImageVersion
 from models_library.generated_models.docker_rest_api import ServiceSpec
@@ -25,7 +24,6 @@ from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
-    DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
@@ -195,10 +193,10 @@ def _merge_service_resources_with_user_specs(
     response_model=ServiceResourcesDict,
     **RESPONSE_MODEL_POLICY,
 )
-@cached(
-    ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
-)
+# @cached(
+#     ttl=DIRECTOR_CACHING_TTL,
+#     key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
+# )
 async def get_service_resources(
     service_key: DockerImageKey,
     service_version: DockerImageVersion,
@@ -282,12 +280,16 @@ async def get_service_resources(
             )
             user_specific_service_specs = (
                 await services_repo.get_service_specifications(
-                    service_key,
-                    service_version,
+                    key,
+                    version,
                     tuple(user_groups),
                     allow_use_latest_service_version=True,
                 )
             )
+            if user_specific_service_specs:
+                spec_service_resources = _merge_service_resources_with_user_specs(
+                    spec_service_resources, user_specific_service_specs.service
+                )
 
         # TODO: merge with user specific settings here
         service_to_resources[spec_key] = ImageResources.parse_obj(
