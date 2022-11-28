@@ -114,15 +114,6 @@ async function toDashboard(page) {
   await utils.waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
 }
 
-async function __waitForAllTemplates(page) {
-  await page.waitForSelector('[osparc-test-id="templatesList"]');
-  let loadingTemplatesCardVisible = true;
-  while(loadingTemplatesCardVisible) {
-    const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
-    loadingTemplatesCardVisible = childrenIDs.some(childrenID => childrenID.includes("templatesLoading"));
-  }
-}
-
 async function dashboardOpenFirstTemplate(page, templateName) {
   // wait for All Templates
   await utils.sleep(10000);
