@@ -579,7 +579,15 @@ async def try_open_project_for_user(
 
             with managed_resource(user_id, client_session_id, app) as rt:
                 if max_number_of_studies_per_user is not None and (
-                    len(await rt.find_all_resources_of_user(PROJECT_ID_KEY))
+                    len(
+                        {
+                            uuid
+                            for uuid in await rt.find_all_resources_of_user(
+                                PROJECT_ID_KEY
+                            )
+                            if uuid != project_uuid
+                        }
+                    )
                     >= max_number_of_studies_per_user
                 ):
                     # too many projects
