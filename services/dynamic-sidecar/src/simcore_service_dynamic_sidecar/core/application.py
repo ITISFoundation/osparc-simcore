@@ -143,8 +143,6 @@ def create_app():
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
 
-    app.state.container_inspect_lock = Lock()
-
     if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
@@ -163,6 +161,8 @@ def create_app():
     # EVENTS ---------------------
 
     async def _on_startup() -> None:
+        app.state.container_inspect_lock = Lock()
+
         app_state = AppState(app)
         await login_registry(app_state.settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(app_state.mounted_volumes)
