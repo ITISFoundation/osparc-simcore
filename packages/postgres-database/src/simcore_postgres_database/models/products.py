@@ -170,5 +170,11 @@ products = sa.Table(
         server_default=sa.text("0"),
         doc="Index used to sort the products. E.g. determine default",
     ),
+    sa.Column(
+        "max_open_studies_per_user",
+        sa.Integer(),
+        nullable=True,
+        doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+    ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )
