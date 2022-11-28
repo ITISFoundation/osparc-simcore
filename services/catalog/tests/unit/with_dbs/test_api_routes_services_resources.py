@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 import urllib.parse
 from copy import deepcopy
 from random import choice, randint
@@ -185,10 +184,7 @@ async def test_get_service_resources(
     )
     assert type(expected_service_resources) == dict
 
-    assert received_resources == expected_service_resources, "{}\n{}".format(
-        json.dumps(received_resources, indent=2),
-        json.dumps(expected_service_resources, indent=2),
-    )
+    assert received_resources == expected_service_resources
 
 
 @pytest.fixture
