@@ -39,4 +39,4 @@ def get_mounted_volumes(app_state: State = Depends(get_app_state)) -> MountedVol
 
 
 def get_container_inspect_lock(app_state: State = Depends(get_app_state)) -> Lock:
-    return app_state.container_inspect_lock
+    return app_state.container_inspect_lock  # type: ignore
