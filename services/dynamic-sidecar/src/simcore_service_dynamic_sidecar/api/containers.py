@@ -2,6 +2,7 @@
 
 import json
 import logging
+from asyncio import Lock
 from typing import Any, Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,7 +13,7 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from ..core.docker_utils import docker_client
 from ..core.validation import parse_compose_spec
 from ..models.shared_store import SharedStore
-from ._dependencies import get_shared_store
+from ._dependencies import get_container_inspect_lock, get_shared_store
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ async def containers_docker_inspect(
         False, description="if True only show the status of the container"
     ),
     shared_store: SharedStore = Depends(get_shared_store),
+    container_inspect_lock: Lock = Depends(get_container_inspect_lock),
 ) -> dict[str, Any]:
     """
     Returns entire docker inspect data, if only_state is True,
@@ -61,17 +63,18 @@ async def containers_docker_inspect(
 
         return container_inspect
 
-    async with docker_client() as docker:
-        container_names = shared_store.container_names
+    async with container_inspect_lock:
+        async with docker_client() as docker:
+            container_names = shared_store.container_names
 
-        results = {}
+            results = {}
 
-        for container in container_names:
-            container_instance = await docker.containers.get(container)
-            container_inspect = await container_instance.show()
-            results[container] = _format_result(container_inspect)
+            for container in container_names:
+                container_instance = await docker.containers.get(container)
+                container_inspect = await container_instance.show()
+                results[container] = _format_result(container_inspect)
 
-        return results
+            return results
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.

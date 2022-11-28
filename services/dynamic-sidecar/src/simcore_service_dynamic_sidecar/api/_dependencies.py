@@ -1,6 +1,7 @@
 """ Free functions to inject dependencies in routes handlers
 """
 
+from asyncio import Lock
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
@@ -35,3 +36,7 @@ def get_shared_store(app_state: State = Depends(get_app_state)) -> SharedStore:
 
 def get_mounted_volumes(app_state: State = Depends(get_app_state)) -> MountedVolumes:
     return app_state.mounted_volumes  # type: ignore
+
+
+def get_container_inspect_lock(app_state: State = Depends(get_app_state)) -> Lock:
+    return app_state.container_inspect_lock

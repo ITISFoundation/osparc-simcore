@@ -310,38 +310,39 @@ async def task_containers_restart(
     settings: ApplicationSettings,
     shared_store: SharedStore,
 ) -> None:
+    assert app.state.container_inspect_lock  # nosec
 
-    # TODO: use internal locking to stop the inspect propagation while this is happening
-    # a lock is acquired and released by this task in any situation
-    # This will cause errors with the inspect, we can delay the inspect for a bit
+    async with app.state.container_inspect_lock:
 
-    # This has 1 minute timeout, which should be OK with the status,
-    # event if it times out it is OK
+        # This has 1 minute timeout, which should be OK with the status,
+        # event if it times out it is OK
 
-    progress.update(message="starting containers restart", percent=0.0)
-    if shared_store.compose_spec is None:
-        raise RuntimeError("No spec for docker-compose command was found")
+        progress.update(message="starting containers restart", percent=0.0)
+        if shared_store.compose_spec is None:
+            raise RuntimeError("No spec for docker-compose command was found")
 
-    for container_name in shared_store.container_names:
-        await stop_log_fetching(app, container_name)
+        for container_name in shared_store.container_names:
+            await stop_log_fetching(app, container_name)
 
-    progress.update(message="stopped log fetching", percent=0.1)
+        progress.update(message="stopped log fetching", percent=0.1)
 
-    result = await docker_compose_restart(shared_store.compose_spec, settings)
+        result = await docker_compose_restart(shared_store.compose_spec, settings)
 
-    if not result.success:
-        logger.warning(
-            "docker-compose restart finished with errors\n%s", result.message
+        if not result.success:
+            logger.warning(
+                "docker-compose restart finished with errors\n%s", result.message
+            )
+            raise RuntimeError(result.message)
+
+        progress.update(message="containers restarted", percent=0.8)
+
+        for container_name in shared_store.container_names:
+            await start_log_fetching(app, container_name)
+
+        progress.update(message="started log fetching", percent=0.9)
+
+        await post_sidecar_log_message(
+            app, "Service was restarted please reload the UI"
         )
-        raise RuntimeError(result.message)
-
-    progress.update(message="containers restarted", percent=0.8)
-
-    for container_name in shared_store.container_names:
-        await start_log_fetching(app, container_name)
-
-    progress.update(message="started log fetching", percent=0.9)
-
-    await post_sidecar_log_message(app, "Service was restarted please reload the UI")
-    await post_event_reload_iframe(app)
-    progress.update(message="started log fetching", percent=0.99)
+        await post_event_reload_iframe(app)
+        progress.update(message="started log fetching", percent=0.99)

@@ -1,4 +1,5 @@
 import logging
+from asyncio import Lock
 from typing import Optional
 
 from fastapi import FastAPI
@@ -141,6 +142,8 @@ def create_app():
 
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
+
+    app.state.container_inspect_lock = Lock()
 
     if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
