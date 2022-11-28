@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Final, Optional, cast
 
 import yaml
-from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.docker import DockerImageKey, DockerImageVersion
 from models_library.service_settings_labels import (
@@ -14,7 +13,6 @@ from models_library.service_settings_labels import (
 from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
-    ResourceValue,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
@@ -24,12 +22,14 @@ from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
-    DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
 from ...services.function_services import is_function_service
-from ...utils.service_resources import merge_service_resources_with_user_specs
+from ...utils.service_resources import (
+    merge_service_resources_with_user_specs,
+    parse_generic_resource,
+)
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 from ..dependencies.services import get_default_service_resources
@@ -40,25 +40,6 @@ logger = logging.getLogger(__name__)
 
 SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
-
-
-def _parse_generic_resource(
-    generic_resources: list[Any], service_resources: ResourcesDict
-) -> None:
-    for res in generic_resources:
-        if not isinstance(res, dict):
-            continue
-
-        if named_resource_spec := res.get("NamedResourceSpec"):
-            service_resources.setdefault(
-                named_resource_spec["Kind"],
-                ResourceValue(limit=0, reservation=named_resource_spec["Value"]),
-            ).reservation = named_resource_spec["Value"]
-        if discrete_resource_spec := res.get("DiscreteResourceSpec"):
-            service_resources.setdefault(
-                discrete_resource_spec["Kind"],
-                ResourceValue(limit=0, reservation=discrete_resource_spec["Value"]),
-            ).reservation = discrete_resource_spec["Value"]
 
 
 def _from_service_settings(
@@ -88,9 +69,8 @@ def _from_service_settings(
         if ram_reservation := entry.value.get("Reservations", {}).get("MemoryBytes"):
             service_resources["RAM"].reservation = ram_reservation
 
-        _parse_generic_resource(
+        service_resources |= parse_generic_resource(
             entry.value.get("Reservations", {}).get("GenericResources", []),
-            service_resources,
         )
 
     return service_resources
@@ -138,10 +118,10 @@ def _get_service_settings(
     response_model=ServiceResourcesDict,
     **RESPONSE_MODEL_POLICY,
 )
-@cached(
-    ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
-)
+# @cached(
+#     ttl=DIRECTOR_CACHING_TTL,
+#     key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
+# )
 async def get_service_resources(
     service_key: DockerImageKey,
     service_version: DockerImageVersion,
