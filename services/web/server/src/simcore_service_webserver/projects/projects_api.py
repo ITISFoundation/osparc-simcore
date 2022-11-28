@@ -578,6 +578,8 @@ async def try_open_project_for_user(
         ):
 
             with managed_resource(user_id, client_session_id, app) as rt:
+                # NOTE: if max_number_of_studies_per_user is set, the same
+                # project shall still be openable if the tab was closed
                 if max_number_of_studies_per_user is not None and (
                     len(
                         {
@@ -590,7 +592,6 @@ async def try_open_project_for_user(
                     )
                     >= max_number_of_studies_per_user
                 ):
-                    # too many projects
                     raise ProjectTooManyProjectOpened(
                         max_num_projects=max_number_of_studies_per_user
                     )
