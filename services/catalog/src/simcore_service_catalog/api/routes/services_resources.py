@@ -221,8 +221,15 @@ async def get_service_resources(
                 service_key,
                 service_version,
             )
-        if user_id is not None:
-            ...
+            user_specific_service_specs = (
+                await services_repo.get_service_specifications(
+                    service_key,
+                    service_version,
+                    tuple(user_groups),
+                    allow_use_latest_service_version=True,
+                )
+            )
+
         # TODO: merge with user specific settings here
         service_to_resources[spec_key] = ImageResources.parse_obj(
             {"image": image, "resources": spec_service_resources}
