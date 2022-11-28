@@ -10,6 +10,7 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
+from ..dynamic_scaling import setup as setup_background_task
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
 
-    logger.debug("app settings: %s", settings.json(indent=1))
+    logger.info("app settings: %s", settings.json(indent=1))
 
     app = FastAPI(
         debug=settings.AUTOSCALING_DEBUG,
@@ -34,6 +35,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     setup_api_routes(app)
+
+    # autoscaler background task
+    setup_background_task(app)
 
     # ERROR HANDLERS
 
