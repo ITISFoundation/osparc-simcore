@@ -23,7 +23,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+    const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+    [
+      "changeSelection",
+      "changeVisibility"
+    ].forEach(signalName => {
+      flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+    });
     this._add(this.__flatList);
 
     this.__groupedContainers = [];
@@ -168,7 +174,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         const noGroupContainer = this.__createEmptyGroupContainer();
         this._add(noGroupContainer);
       } else {
-        this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        [
+          "changeSelection",
+          "changeVisibility"
+        ].forEach(signalName => {
+          flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+        });
         const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
         this.__flatList.getLayout().set({
           spacingX: spacing,
