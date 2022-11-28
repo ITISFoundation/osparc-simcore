@@ -126,10 +126,10 @@ def _get_service_settings(
     response_model=ServiceResourcesDict,
     **RESPONSE_MODEL_POLICY,
 )
-# @cached(
-#     ttl=DIRECTOR_CACHING_TTL,
-#     key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
-# )
+@cached(
+    ttl=DIRECTOR_CACHING_TTL,
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
+)
 async def get_service_resources(
     service_key: DockerImageKey,
     service_version: DockerImageVersion,
