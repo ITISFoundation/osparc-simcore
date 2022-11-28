@@ -37,24 +37,6 @@ class ResourceValue(BaseModel):
     limit: Union[StrictInt, StrictFloat, str]
     reservation: Union[StrictInt, StrictFloat, str]
 
-    # @validator("limit")
-    # @classmethod
-    # def ensure_smaller_limit_sets_reservation_as_well(cls, v, values):
-    #     if (
-    #         "reservation" in values
-    #         and not isinstance(values["reservation"], str)
-    #         and v < values["reservation"]
-    #     ):
-    #         values["reservation"] = v
-    #     return v
-
-    # @validator("reservation")
-    # @classmethod
-    # def ensure_higher_reservation_sets_limit_as_well(cls, v, values):
-    #     if "limit" in values and not isinstance(v, str) and v > values["limit"]:
-    #         values["limit"] = v
-    #     return v
-
     @root_validator()
     @classmethod
     def ensure_limits_are_equal_or_above_reservations(cls, values):
