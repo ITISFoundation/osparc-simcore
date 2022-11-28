@@ -19,7 +19,7 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   extend: qx.ui.form.MenuButton,
 
   construct: function() {
-    this.base(arguments, this.tr("Sort by"), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
 
     this.set({
       marginRight: 8

@@ -146,18 +146,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createResourcesLayout("service");
+      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
 
       this.__addNewServiceButtons();
-
       this._secondaryBar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
-
       this.__addSortingButtons();
-
-      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
-
-      this._resourcesContainer.addListener("changeMode", () => this._reloadCards());
+      this._addViewModeButton();
 
       return this._resourcesContainer;
     },

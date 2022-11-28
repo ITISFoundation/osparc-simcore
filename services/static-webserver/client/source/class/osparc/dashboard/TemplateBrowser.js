@@ -132,11 +132,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._secondaryBar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
-
       const groupByButton = this.__createGroupByButton();
       this._secondaryBar.add(groupByButton);
 
-      this._resourcesContainer.addListener("changeMode", () => this._reloadCards());
+      this._addViewModeButton();
 
       return this._resourcesContainer;
     },
@@ -145,7 +144,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const groupByMenu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group by"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
 
       const groupByChanged = groupBy => {
         this._resourcesContainer.setGroupBy(groupBy);

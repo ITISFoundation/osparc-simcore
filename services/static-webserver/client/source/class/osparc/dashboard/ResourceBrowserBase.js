@@ -118,7 +118,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const topBar = this.__createTopBar(resourceType);
       this._add(topBar);
 
-      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        paddingRight: 8,
+        alignY: "middle"
+      });
       this._add(secondaryBar);
 
       // const spacing = osparc.dashboard.GridButtonBase.SPACING;
@@ -128,7 +131,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     __createTopBar: function(resourceType) {
-      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(12)).set({
+      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         paddingRight: 8,
         alignY: "middle"
       });
@@ -140,32 +143,33 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         flex: 1
       });
 
-      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-      const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
-      const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
-      const group = new qx.ui.form.RadioGroup();
-      [
-        viewGridBtn,
-        viewListBtn
-      ].forEach(btn => {
-        containterModeBtns.add(btn);
-        group.add(btn);
-        btn.getContentElement().setStyles({
-          "border-radius": "8px"
-        });
-      });
-      topBar.add(containterModeBtns);
-
-      viewGridBtn.addListener("execute", () => {
-        this._resourcesContainer.setMode("grid");
-        this._reloadCards();
-      });
-      viewListBtn.addListener("execute", () => {
-        this._resourcesContainer.setMode("list");
-        this._reloadCards();
-      });
-
       return topBar;
+    },
+
+    _addViewModeButton: function() {
+      const viewByMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const viewMenuButton = this._viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
+      this._secondaryBar.add(viewMenuButton);
+
+      const viewByChanged = viewMode => {
+        this._resourcesContainer.setMode(viewMode);
+        this._reloadCards();
+      };
+      const gridBtn = new qx.ui.menu.RadioButton(this.tr("Grid"));
+      gridBtn.addListener("execute", () => viewByChanged("grid"));
+      const listBtn = new qx.ui.menu.RadioButton(this.tr("List"));
+      listBtn.addListener("execute", () => viewByChanged("list"));
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+      [
+        gridBtn,
+        listBtn
+      ].forEach(btn => {
+        viewByMenu.add(btn);
+        groupOptions.add(btn);
+      });
     },
 
     /**
