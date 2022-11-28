@@ -41,7 +41,7 @@ services_specifications = sa.Table(
         "service",
         JSONB,
         nullable=True,
-        doc="schedule-time resources specifications for the service (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
+        doc="schedule-time specifications for the service (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
     ),
     # If service-key/version gets deleted from service_metadata, it should be deleted from here
     sa.ForeignKeyConstraint(
