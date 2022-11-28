@@ -240,9 +240,9 @@ def test_parse_generic_resources(
                     "RAM": ResourceValue(limit=27, reservation=12),
                 }
             ),
-            ServiceSpec(
-                TaskTemplate=TaskSpec(
-                    Resources=Resources1(Limits=Limit(NanoCPUs=3 * 10**9))
+            ServiceSpec(  # type: ignore
+                TaskTemplate=TaskSpec(  # type: ignore
+                    Resources=Resources1(Limits=Limit(NanoCPUs=3 * 10**9))  # type: ignore
                 )
             ),
             ResourcesDict(

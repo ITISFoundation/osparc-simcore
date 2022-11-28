@@ -64,7 +64,6 @@ def merge_service_resources_with_user_specs(
                 continue
             if res_name not in _DOCKER_TO_OSPARC_RESOURCE_MAP:
                 continue
-
             if _DOCKER_TO_OSPARC_RESOURCE_MAP[res_name] in merged_resources:
                 # upgrade
                 merged_resources[_DOCKER_TO_OSPARC_RESOURCE_MAP[res_name]].__setattr__(

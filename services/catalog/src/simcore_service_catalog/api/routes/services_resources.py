@@ -63,10 +63,18 @@ def _from_service_settings(
         if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
             service_resources["CPU"].limit = nano_cpu_limit / 1.0e09
         if nano_cpu_reservation := entry.value.get("Reservations", {}).get("NanoCPUs"):
+            # NOTE: if the limit was below, it needs to be increased as well
+            service_resources["CPU"].limit = max(
+                service_resources["CPU"].limit, nano_cpu_reservation / 1.0e09
+            )
             service_resources["CPU"].reservation = nano_cpu_reservation / 1.0e09
         if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
             service_resources["RAM"].limit = ram_limit
         if ram_reservation := entry.value.get("Reservations", {}).get("MemoryBytes"):
+            # NOTE: if the limit was below, it needs to be increased as well
+            service_resources["RAM"].limit = max(
+                service_resources["RAM"].limit, ram_reservation
+            )
             service_resources["RAM"].reservation = ram_reservation
 
         service_resources |= parse_generic_resource(
