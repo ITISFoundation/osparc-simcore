@@ -43,10 +43,13 @@ class ResourceValue(BaseModel):
         if isinstance(values["reservation"], str):
             # in case of string, the limit is the same as the reservation
             values["limit"] = values["reservation"]
-        else:
-            values["limit"] = max(values["limit"], values["reservation"])
+        elif values["limit"] < values["reservation"]:
+            values["reservation"] = values["limit"]
 
         return values
+
+    class Config:
+        validate_assignment = True
 
 
 ResourcesDict = dict[ResourceName, ResourceValue]
