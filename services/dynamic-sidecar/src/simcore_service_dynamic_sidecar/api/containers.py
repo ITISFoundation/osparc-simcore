@@ -63,18 +63,17 @@ async def containers_docker_inspect(
 
         return container_inspect
 
-    async with container_inspect_lock:
-        async with docker_client() as docker:
-            container_names = shared_store.container_names
+    async with container_inspect_lock, docker_client() as docker:
+        container_names = shared_store.container_names
 
-            results = {}
+        results = {}
 
-            for container in container_names:
-                container_instance = await docker.containers.get(container)
-                container_inspect = await container_instance.show()
-                results[container] = _format_result(container_inspect)
+        for container in container_names:
+            container_instance = await docker.containers.get(container)
+            container_inspect = await container_instance.show()
+            results[container] = _format_result(container_inspect)
 
-            return results
+        return results
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.
