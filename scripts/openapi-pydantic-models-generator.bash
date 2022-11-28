@@ -28,6 +28,7 @@ ENTRYPOINT ["datamodel-codegen", \
           "--reuse-model", \
           "--set-default-enum-member", \
           "--use-title-as-name", \
+          "--use-subclass-enum", \
           "--validation"]
 EOF
 }
