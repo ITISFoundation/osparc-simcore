@@ -100,6 +100,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
             alignX: "center",
             maxHeight: 170
           });
+          control.setButtonsWidth(30);
           thumbnailsLayout.add(control);
           break;
         }

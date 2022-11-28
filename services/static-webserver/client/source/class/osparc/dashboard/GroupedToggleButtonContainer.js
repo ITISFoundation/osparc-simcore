@@ -72,6 +72,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
             allowGrowX: false,
             backgroundColor: "background-main-1"
           });
+          control.setButtonsWidth(30);
           this._addAt(control, 1, {
             flex: 1
           });

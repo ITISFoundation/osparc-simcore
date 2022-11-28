@@ -160,6 +160,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         groupByMenu.add(btn);
         groupOptions.add(btn);
       });
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        tagByGroup.execute();
+      }
 
       return groupByButton;
     },
