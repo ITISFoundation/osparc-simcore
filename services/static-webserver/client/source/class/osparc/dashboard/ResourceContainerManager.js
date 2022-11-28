@@ -23,6 +23,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.__resourcesList = [];
+
     const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
     [
       "changeSelection",
@@ -69,9 +71,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   members: {
+    __resourcesList: null,
     __flatList: null,
     __groupedContainers: null,
-    __resourcesList: null,
 
     addNonResourceCard: function(card) {
       if (card instanceof qx.ui.form.ToggleButton) {

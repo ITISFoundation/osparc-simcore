@@ -123,8 +123,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       this._add(secondaryBar);
 
-      // const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      // const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      const viewByMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
+
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
       this._add(resourcesContainer);
     },
@@ -159,11 +162,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addViewModeButton: function() {
-      const viewByMenu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-      const viewMenuButton = this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
-      this._secondaryBar.add(viewMenuButton);
+      const viewByMenu = this.__viewMenuButton.getMenu();
 
       const gridBtn = new qx.ui.menu.RadioButton(this.tr("Grid"));
       gridBtn.addListener("execute", () => this._viewByChanged("grid"));
