@@ -80,9 +80,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
+    __viewMenuButton: null,
     _resourcesContainer: null,
-    _viewGridBtn: null,
-    _viewListBtn: null,
     _loadingResourcesBtn: null,
 
     _createChildControlImpl: function(id) {
@@ -146,21 +145,30 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return topBar;
     },
 
+    _groupByChanged: function(groupBy) {
+      // if cards are grouped they need to be in grid mode
+      this._resourcesContainer.setMode("grid");
+      this.__viewMenuButton.setVisibility(groupBy ? "excluded" : "visible");
+      this._resourcesContainer.setGroupBy(groupBy);
+      this._reloadCards();
+    },
+
+    _viewByChanged: function(viewMode) {
+      this._resourcesContainer.setMode(viewMode);
+      this._reloadCards();
+    },
+
     _addViewModeButton: function() {
       const viewByMenu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const viewMenuButton = this._viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
+      const viewMenuButton = this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
       this._secondaryBar.add(viewMenuButton);
 
-      const viewByChanged = viewMode => {
-        this._resourcesContainer.setMode(viewMode);
-        this._reloadCards();
-      };
       const gridBtn = new qx.ui.menu.RadioButton(this.tr("Grid"));
-      gridBtn.addListener("execute", () => viewByChanged("grid"));
+      gridBtn.addListener("execute", () => this._viewByChanged("grid"));
       const listBtn = new qx.ui.menu.RadioButton(this.tr("List"));
-      listBtn.addListener("execute", () => viewByChanged("list"));
+      listBtn.addListener("execute", () => this._viewByChanged("list"));
 
       const groupOptions = new qx.ui.form.RadioGroup();
       [

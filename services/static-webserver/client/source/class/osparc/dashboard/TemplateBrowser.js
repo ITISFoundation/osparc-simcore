@@ -146,14 +146,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
 
-      const groupByChanged = groupBy => {
-        this._resourcesContainer.setGroupBy(groupBy);
-        this._reloadCards();
-      };
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
-      dontGroup.addListener("execute", () => groupByChanged(null));
+      dontGroup.addListener("execute", () => this._groupByChanged(null));
       const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-      tagByGroup.addListener("execute", () => groupByChanged("tags"));
+      tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
 
       const groupOptions = new qx.ui.form.RadioGroup();
       [

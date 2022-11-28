@@ -38,10 +38,10 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
     hitsAsc["orderBy"] = "up";
     const nameAsc = new qx.ui.menu.RadioButton(this.tr("Name Asc"));
     nameAsc["sortBy"] = "name";
-    nameAsc["orderBy"] = "up";
+    nameAsc["orderBy"] = "down";
     const nameDesc = new qx.ui.menu.RadioButton(this.tr("Name Desc"));
     nameDesc["sortBy"] = "name";
-    nameDesc["orderBy"] = "down";
+    nameDesc["orderBy"] = "up";
     hitsDesc.addListener("execute", () => this.__btnExecuted(hitsDesc));
     hitsAsc.addListener("execute", () => this.__btnExecuted(hitsAsc));
     nameAsc.addListener("execute", () => this.__btnExecuted(nameAsc));
