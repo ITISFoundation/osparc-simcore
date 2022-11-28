@@ -5,6 +5,7 @@ from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
 from models_library.basic_types import PortInt
+from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
@@ -84,20 +85,16 @@ class Status(BaseModel):
         return initial_state
 
 
-class DockerStatus(str, Enum):
-    CREATED = "created"
-    DEAD = "dead"
-    EXITED = "exited"
-    PAUSED = "paused"
-    REMOVING = "removing"
-    RESTARTING = "restarting"
-    RUNNING = "running"
+DockerStatus = Status2
 
 
 class DockerContainerInspect(BaseModel):
     status: DockerStatus = Field(
         ...,
-        scription="status of the underlying container",
+        description="status of the underlying container",
+    )
+    container_state: ContainerState = Field(
+        ..., description="current state of container"
     )
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
@@ -106,6 +103,7 @@ class DockerContainerInspect(BaseModel):
     def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":
         return cls(
             status=DockerStatus(container["State"]["Status"]),
+            container_state=ContainerState(**container["State"]),
             name=container["Name"],
             id=container["Id"],
         )

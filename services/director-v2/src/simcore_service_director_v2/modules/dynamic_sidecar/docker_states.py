@@ -3,7 +3,10 @@ States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
 import logging
 
+from models_library.generated_models.docker_rest_api import ContainerState
+
 from ...models.schemas.dynamic_services import ServiceState
+from ...models.schemas.dynamic_services.scheduler import DockerContainerInspect
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +33,15 @@ TASK_STATES_ALL: set[str] = (
 # mapping container states into 4 categories
 # For all avaliable containerstates SEE
 # https://github.com/moby/moby/blob/master/container/state.go#L140
-CONTAINER_STATUSES_FAILED: set[str] = {"restarting", "dead", "paused"}
-CONTAINER_STATUSES_STARTING: set[str] = {"created"}
-CONTAINER_STATUSES_RUNNING: set[str] = {"running"}
-CONTAINER_STATUSES_COMPLETE: set[str] = {
+CONTAINER_STATUSES_FAILED: set[str] = {
+    "restarting",
+    "dead",
+    "paused",
     "removing",
     "exited",
-}  # TODO: ANE what if exited with error???
+}
+CONTAINER_STATUSES_STARTING: set[str] = {"created"}
+CONTAINER_STATUSES_RUNNING: set[str] = {"running"}
 
 
 _TASK_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
@@ -53,7 +58,6 @@ _CONTAINER_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
     **dict.fromkeys(CONTAINER_STATUSES_FAILED, ServiceState.FAILED),
     **dict.fromkeys(CONTAINER_STATUSES_STARTING, ServiceState.STARTING),
     **dict.fromkeys(CONTAINER_STATUSES_RUNNING, ServiceState.RUNNING),
-    **dict.fromkeys(CONTAINER_STATUSES_COMPLETE, ServiceState.COMPLETE),
 }
 
 
@@ -68,28 +72,27 @@ ServiceMessage = str
 
 
 def _extract_container_status(
-    container_status: dict[str, str]
+    container_state: ContainerState,
 ) -> tuple[ServiceState, ServiceMessage]:
-    last_task_error_msg = (
-        container_status["Error"] if "Error" in container_status else ""
+    assert container_state.Status  # nosec
+    return (
+        _CONTAINER_STATE_TO_SERVICE_STATE[container_state.Status],
+        container_state.Error if container_state.Error else "",
     )
 
-    container_state = _CONTAINER_STATE_TO_SERVICE_STATE[container_status["Status"]]
-    return (container_state, last_task_error_msg)
 
-
-def extract_containers_minimim_statuses(
-    containers_status: dict[str, dict[str, str]]
+def extract_containers_minimum_statuses(
+    containers_inspect: list[DockerContainerInspect],
 ) -> tuple[ServiceState, ServiceMessage]:
     """
     Because more then one container can be started by the dynamic-sidecar,
     the lowest (considered worst) state will be forwarded to the frontend.
     `ServiceState` defines the order of the states.
     """
-    logger.info("containers_status=%s", containers_status)
+    logger.info("containers_inspect=%s", containers_inspect)
     remapped_service_statuses = {
-        k: _extract_container_status(value)
-        for k, value in enumerate(containers_status.values())
+        k: _extract_container_status(value.container_state)
+        for k, value in enumerate(containers_inspect)
     }
     result: tuple[ServiceState, str] = min(
         remapped_service_statuses.values(), key=lambda x: x
