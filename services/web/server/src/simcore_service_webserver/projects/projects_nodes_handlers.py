@@ -313,7 +313,10 @@ async def get_node_resources(request: web.Request) -> web.Response:
         )
 
         resources = await projects_api.get_project_node_resources(
-            request.app, project=project, node_id=path_params.node_id
+            request.app,
+            user_id=req_ctx.user_id,
+            project=project,
+            node_id=path_params.node_id,
         )
         return web.json_response({"data": resources}, dumps=json_dumps)
 
