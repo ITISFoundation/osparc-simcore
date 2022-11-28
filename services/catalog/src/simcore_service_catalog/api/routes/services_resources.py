@@ -18,18 +18,22 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from models_library.users import UserID
 from pydantic import parse_obj_as, parse_raw_as
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
 
+from ...db.repositories.groups import GroupsRepository
+from ...db.repositories.services import ServicesRepository
+from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
     DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
 from ...services.function_services import is_function_service
+from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 from ..dependencies.services import get_default_service_resources
+from ..dependencies.user_groups import list_user_groups
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -141,13 +145,12 @@ def _get_service_settings(
 async def get_service_resources(
     service_key: DockerImageKey,
     service_version: DockerImageVersion,
-    user_id: Optional[UserID] = None,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
+    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
+    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    user_groups: list[GroupAtDB] = Depends(list_user_groups),
 ) -> ServiceResourcesDict:
-    # TODO: --> PC: I'll need to go through that with you for function services,
-    # cause these entries are not in ServiceDockerData
-
     image_version = f"{service_key}:{service_version}"
     if is_function_service(service_key):
         return ServiceResourcesDictHelpers.create_from_single_service(
@@ -175,8 +178,13 @@ async def get_service_resources(
         service_resources = _from_service_settings(
             service_settings, default_service_resources, service_key, service_version
         )
-        if user_id is not None:
-            ...
+        user_specific_service_specs = await services_repo.get_service_specifications(
+            service_key,
+            service_version,
+            tuple(user_groups),
+            allow_use_latest_service_version=True,
+        )
+
         # TODO: merge with user specific settings here
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, service_resources
