@@ -7,7 +7,6 @@ import yaml
 from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.docker import DockerImageKey, DockerImageVersion
-from models_library.generated_models.docker_rest_api import ServiceSpec
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceSettingLabelEntry,
@@ -30,6 +29,7 @@ from ...models.schemas.constants import (
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
 from ...services.function_services import is_function_service
+from ...utils.service_resources import merge_service_resources_with_user_specs
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 from ..dependencies.services import get_default_service_resources
@@ -133,63 +133,6 @@ def _get_service_settings(
     return service_settings
 
 
-def _merge_service_resources_with_user_specs(
-    service_resources: ResourcesDict, user_specific_resources: ServiceSpec
-) -> ResourcesDict:
-    merged_resources = deepcopy(service_resources)
-    if (
-        user_specific_resources.TaskTemplate
-        and user_specific_resources.TaskTemplate.Resources
-    ):
-        user_specific_resources = user_specific_resources.TaskTemplate.Resources
-        if user_specific_resources.Limits:
-            if user_specific_resources.Limits.NanoCPUs:
-                merged_resources["CPU"].limit = (
-                    user_specific_resources.Limits.NanoCPUs / 10**9
-                )
-            if user_specific_resources.Limits.MemoryBytes:
-                merged_resources[
-                    "RAM"
-                ].limit = user_specific_resources.Limits.MemoryBytes
-        if user_specific_resources.Reservations:
-            if user_specific_resources.Reservations.NanoCPUs:
-                merged_resources["CPU"].reservation = (
-                    user_specific_resources.Reservations.NanoCPUs / 10**9
-                )
-            if user_specific_resources.Reservations.MemoryBytes:
-                merged_resources[
-                    "RAM"
-                ].reservation = user_specific_resources.Reservations.MemoryBytes
-            if user_specific_resources.Reservations.GenericResources:
-                for (
-                    generic_resource
-                ) in user_specific_resources.Reservations.GenericResources.__root__:
-                    if (
-                        generic_resource.DiscreteResourceSpec
-                        and generic_resource.DiscreteResourceSpec.Kind
-                        and generic_resource.DiscreteResourceSpec.Value
-                    ):
-                        merged_resources[
-                            generic_resource.DiscreteResourceSpec.Kind
-                        ] = ResourceValue(
-                            limit=generic_resource.DiscreteResourceSpec.Value,
-                            reservation=generic_resource.DiscreteResourceSpec.Value,
-                        )
-                    if (
-                        generic_resource.NamedResourceSpec
-                        and generic_resource.NamedResourceSpec.Kind
-                        and generic_resource.NamedResourceSpec.Value
-                    ):
-                        merged_resources[
-                            generic_resource.NamedResourceSpec.Kind
-                        ] = ResourceValue(
-                            limit=generic_resource.NamedResourceSpec.Value,
-                            reservation=generic_resource.NamedResourceSpec.Value,
-                        )
-
-    return merged_resources
-
-
 @router.get(
     "/{service_key:path}/{service_version}/resources",
     response_model=ServiceResourcesDict,
@@ -240,8 +183,8 @@ async def get_service_resources(
             tuple(user_groups),
             allow_use_latest_service_version=True,
         )
-        if user_specific_service_specs:
-            service_resources = _merge_service_resources_with_user_specs(
+        if user_specific_service_specs and user_specific_service_specs.service:
+            service_resources = merge_service_resources_with_user_specs(
                 service_resources, user_specific_service_specs.service
             )
 
@@ -288,12 +231,11 @@ async def get_service_resources(
                     allow_use_latest_service_version=True,
                 )
             )
-            if user_specific_service_specs:
-                spec_service_resources = _merge_service_resources_with_user_specs(
+            if user_specific_service_specs and user_specific_service_specs.service:
+                spec_service_resources = merge_service_resources_with_user_specs(
                     spec_service_resources, user_specific_service_specs.service
                 )
 
-        # TODO: merge with user specific settings here
         service_to_resources[spec_key] = ImageResources.parse_obj(
             {"image": image, "resources": spec_service_resources}
         )
