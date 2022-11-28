@@ -124,7 +124,8 @@ async function __waitForAllTemplates(page) {
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
-  await utils.sleep(5000);
+  // wait for All Templates
+  await utils.sleep(10000);
 
   // Returns true if template is found
   console.log("Creating New Study from template");
@@ -138,8 +139,6 @@ async function dashboardOpenFirstTemplate(page, templateName) {
     await __filterTemplatesByText(page, templateName);
     await utils.takeScreenshot(page, "typed filter text");
   }
-
-  await __waitForAllTemplates(page);
 
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
