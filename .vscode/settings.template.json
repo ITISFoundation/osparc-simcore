@@ -65,8 +65,10 @@
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true,
   "python.formatting.provider": "black",
-  "python.sortImports.path": "${workspaceFolder}/.venv/bin/isort",
-  "python.sortImports.args": [
+  "isort.path": [
+    "${workspaceFolder}/.venv/bin/isort"
+  ],
+  "isort.args": [
     "--settings-path=${workspaceFolder}/.isort.cfg"
   ]
 }

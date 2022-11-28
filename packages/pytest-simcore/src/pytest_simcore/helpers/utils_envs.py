@@ -17,7 +17,7 @@ from .typing_env import EnvVarsDict
 #
 # monkeypatch using dict
 #
-def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
+def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
     for key, value in envs.items():
         assert value is not None  # None keys cannot be is defined w/o value
         monkeypatch.setenv(key, str(value))
