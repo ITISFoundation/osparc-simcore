@@ -72,6 +72,7 @@ from .projects_exceptions import (
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodes,
+    ProjectTooManyProjectOpened,
 )
 from .projects_utils import extract_dns_without_default_port
 
@@ -560,7 +561,11 @@ async def _clean_user_disconnected_clients(
 
 
 async def try_open_project_for_user(
-    user_id: UserID, project_uuid: str, client_session_id: str, app: web.Application
+    user_id: UserID,
+    project_uuid: str,
+    client_session_id: str,
+    app: web.Application,
+    max_number_of_studies_per_user: Optional[int],
 ) -> bool:
     try:
         async with lock_with_notification(
@@ -573,6 +578,15 @@ async def try_open_project_for_user(
         ):
 
             with managed_resource(user_id, client_session_id, app) as rt:
+                if max_number_of_studies_per_user is not None and (
+                    len(await rt.find_all_resources_of_user(PROJECT_ID_KEY))
+                    >= max_number_of_studies_per_user
+                ):
+                    # too many projects
+                    raise ProjectTooManyProjectOpened(
+                        max_num_projects=max_number_of_studies_per_user
+                    )
+
                 user_session_id_list: list[
                     UserSessionID
                 ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)

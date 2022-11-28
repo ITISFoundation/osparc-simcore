@@ -18,20 +18,20 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
+from ..products import ProductRepository
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import ProjectNotFoundError, ProjectStartsTooManyDynamicNodes
+from .projects_exceptions import (
+    ProjectNotFoundError,
+    ProjectStartsTooManyDynamicNodes,
+    ProjectTooManyProjectOpened,
+)
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-#
-# open project: custom methods https://google.aip.dev/136
-#
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
@@ -56,11 +56,19 @@ async def open_project(request: web.Request) -> web.Response:
             include_state=True,
         )
 
+        repo = ProductRepository(request)
+        max_number_of_studies_per_user = (
+            await repo.get_product_max_number_studies_open_per_user(
+                req_ctx.product_name
+            )
+        )
+
         if not await projects_api.try_open_project_for_user(
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
             app=request.app,
+            max_number_of_studies_per_user=max_number_of_studies_per_user,
         ):
             raise HTTPLocked(reason="Project is locked, try later")
 
@@ -106,6 +114,8 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPServiceUnavailable(
             reason="Unexpected error while starting services."
         ) from exc
+    except ProjectTooManyProjectOpened as exc:
+        raise web.HTTPConflict(reason=f"{exc}") from exc
 
 
 #
