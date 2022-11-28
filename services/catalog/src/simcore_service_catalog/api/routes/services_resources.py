@@ -22,7 +22,6 @@ from models_library.services_resources import (
 from pydantic import parse_obj_as, parse_raw_as
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
 
-from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
@@ -134,6 +133,63 @@ def _get_service_settings(
     return service_settings
 
 
+def _merge_service_resources_with_user_specs(
+    service_resources: ResourcesDict, user_specific_resources: ServiceSpec
+) -> ResourcesDict:
+    merged_resources = deepcopy(service_resources)
+    if (
+        user_specific_resources.TaskTemplate
+        and user_specific_resources.TaskTemplate.Resources
+    ):
+        user_specific_resources = user_specific_resources.TaskTemplate.Resources
+        if user_specific_resources.Limits:
+            if user_specific_resources.Limits.NanoCPUs:
+                merged_resources["CPU"].limit = (
+                    user_specific_resources.Limits.NanoCPUs / 10**9
+                )
+            if user_specific_resources.Limits.MemoryBytes:
+                merged_resources[
+                    "RAM"
+                ].limit = user_specific_resources.Limits.MemoryBytes
+        if user_specific_resources.Reservations:
+            if user_specific_resources.Reservations.NanoCPUs:
+                merged_resources["CPU"].reservation = (
+                    user_specific_resources.Reservations.NanoCPUs / 10**9
+                )
+            if user_specific_resources.Reservations.MemoryBytes:
+                merged_resources[
+                    "RAM"
+                ].reservation = user_specific_resources.Reservations.MemoryBytes
+            if user_specific_resources.Reservations.GenericResources:
+                for (
+                    generic_resource
+                ) in user_specific_resources.Reservations.GenericResources.__root__:
+                    if (
+                        generic_resource.DiscreteResourceSpec
+                        and generic_resource.DiscreteResourceSpec.Kind
+                        and generic_resource.DiscreteResourceSpec.Value
+                    ):
+                        merged_resources[
+                            generic_resource.DiscreteResourceSpec.Kind
+                        ] = ResourceValue(
+                            limit=generic_resource.DiscreteResourceSpec.Value,
+                            reservation=generic_resource.DiscreteResourceSpec.Value,
+                        )
+                    if (
+                        generic_resource.NamedResourceSpec
+                        and generic_resource.NamedResourceSpec.Kind
+                        and generic_resource.NamedResourceSpec.Value
+                    ):
+                        merged_resources[
+                            generic_resource.NamedResourceSpec.Kind
+                        ] = ResourceValue(
+                            limit=generic_resource.NamedResourceSpec.Value,
+                            reservation=generic_resource.NamedResourceSpec.Value,
+                        )
+
+    return merged_resources
+
+
 @router.get(
     "/{service_key:path}/{service_version}/resources",
     response_model=ServiceResourcesDict,
@@ -148,7 +204,6 @@ async def get_service_resources(
     service_version: DockerImageVersion,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
-    groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     user_groups: list[GroupAtDB] = Depends(list_user_groups),
 ) -> ServiceResourcesDict:
@@ -186,74 +241,10 @@ async def get_service_resources(
             allow_use_latest_service_version=True,
         )
         if user_specific_service_specs:
-
-            def _merge_service_resources_with_user_specs(
-                service_resources: ResourcesDict, user_specific_resources: ServiceSpec
-            ) -> ResourcesDict:
-                merged_resources = deepcopy(service_resources)
-                if (
-                    user_specific_resources.TaskTemplate
-                    and user_specific_resources.TaskTemplate.Resources
-                ):
-                    user_specific_resources = (
-                        user_specific_resources.TaskTemplate.Resources
-                    )
-                    if user_specific_resources.Limits:
-                        if user_specific_resources.Limits.NanoCPUs:
-                            merged_resources["CPU"].limit = (
-                                user_specific_resources.Limits.NanoCPUs / 10**9
-                            )
-                        if user_specific_resources.Limits.MemoryBytes:
-                            merged_resources[
-                                "RAM"
-                            ].limit = user_specific_resources.Limits.MemoryBytes
-                    if user_specific_resources.Reservations:
-                        if user_specific_resources.Reservations.NanoCPUs:
-                            merged_resources["CPU"].reservation = (
-                                user_specific_resources.Reservations.NanoCPUs / 10**9
-                            )
-                        if user_specific_resources.Reservations.MemoryBytes:
-                            merged_resources[
-                                "RAM"
-                            ].reservation = (
-                                user_specific_resources.Reservations.MemoryBytes
-                            )
-                        if user_specific_resources.Reservations.GenericResources:
-                            for (
-                                generic_resource
-                            ) in (
-                                user_specific_resources.Reservations.GenericResources.__root__
-                            ):
-                                if (
-                                    generic_resource.DiscreteResourceSpec
-                                    and generic_resource.DiscreteResourceSpec.Kind
-                                    and generic_resource.DiscreteResourceSpec.Value
-                                ):
-                                    merged_resources[
-                                        generic_resource.DiscreteResourceSpec.Kind
-                                    ] = ResourceValue(
-                                        limit=generic_resource.DiscreteResourceSpec.Value,
-                                        reservation=generic_resource.DiscreteResourceSpec.Value,
-                                    )
-                                if (
-                                    generic_resource.NamedResourceSpec
-                                    and generic_resource.NamedResourceSpec.Kind
-                                    and generic_resource.NamedResourceSpec.Value
-                                ):
-                                    merged_resources[
-                                        generic_resource.NamedResourceSpec.Kind
-                                    ] = ResourceValue(
-                                        limit=generic_resource.NamedResourceSpec.Value,
-                                        reservation=generic_resource.NamedResourceSpec.Value,
-                                    )
-
-                return merged_resources
-
             service_resources = _merge_service_resources_with_user_specs(
                 service_resources, user_specific_service_specs.service
             )
 
-        # TODO: merge with user specific settings here
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, service_resources
         )
