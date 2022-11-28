@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, Final, Optional, cast
 
 import yaml
+from aiocache import cached
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.docker import DockerImageKey, DockerImageVersion
 from models_library.service_settings_labels import (
@@ -22,6 +23,7 @@ from servicelib.docker_compose import replace_env_vars_in_compose_spec
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
+    DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
