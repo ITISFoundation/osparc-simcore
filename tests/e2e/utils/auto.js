@@ -126,6 +126,12 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   await utils.takeScreenshot(page, "clicked on templates tab");
 
   if (templateName) {
+    // Show flat list
+    await utils.waitAndClick(page, '[osparc-test-id="groupByButton"]', 1000);
+    await utils.sleep(1000);
+    await utils.waitAndClick(page, '[osparc-test-id="groupByNone"]', 1000);
+    await utils.sleep(1000);
+
     await utils.takeScreenshot(page, "type filter text");
     await __filterTemplatesByText(page, templateName);
     await utils.takeScreenshot(page, "typed filter text");

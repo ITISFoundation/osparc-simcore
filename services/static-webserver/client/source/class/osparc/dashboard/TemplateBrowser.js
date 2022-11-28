@@ -145,8 +145,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         font: "text-14"
       });
       const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
+      osparc.utils.Utils.setIdToWidget(groupByButton, "groupByButton");
 
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
+      osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
       dontGroup.addListener("execute", () => this._groupByChanged(null));
       const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
       tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
