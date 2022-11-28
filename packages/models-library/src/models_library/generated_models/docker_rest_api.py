@@ -1090,6 +1090,20 @@ class Type4(str, Enum):
     regular = "regular"
 
 
+class Type4(Enum):
+    """
+    Cache record type.
+
+    """
+
+    internal = "internal"
+    frontend = "frontend"
+    source_local = "source.local"
+    source_git_checkout = "source.git.checkout"
+    exec_cachemount = "exec.cachemount"
+    regular = "regular"
+
+
 class BuildCache(BaseModel):
     """
     BuildCache contains information about a build cache record.
@@ -4000,3 +4014,6 @@ class SystemInfo(BaseModel):
             "WARNING: bridge-nf-call-ip6tables is disabled",
         ],
     )
+
+
+# nopycln: file

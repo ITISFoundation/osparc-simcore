@@ -310,6 +310,14 @@ async def task_containers_restart(
     settings: ApplicationSettings,
     shared_store: SharedStore,
 ) -> None:
+
+    # TODO: use internal locking to stop the inspect propagation while this is happening
+    # a lock is acquired and released by this task in any situation
+    # This will cause errors with the inspect, we can delay the inspect for a bit
+
+    # This has 1 minute timeout, which should be OK with the status,
+    # event if it times out it is OK
+
     progress.update(message="starting containers restart", percent=0.0)
     if shared_store.compose_spec is None:
         raise RuntimeError("No spec for docker-compose command was found")

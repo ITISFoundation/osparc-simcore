@@ -109,7 +109,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             else 0,
         },
         "smtp": {
-            "sender": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_SENDER", None),
             "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
             "port": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PORT", None),
             "username": str(
@@ -254,7 +253,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         )
 
     if section := cfg.get("smtp"):
-        envs["SMTP_SENDER"] = section.get("sender")
         envs["SMTP_HOST"] = section.get("host")
         envs["SMTP_PORT"] = section.get("port")
         envs["SMTP_USERNAME"] = section.get("username")
