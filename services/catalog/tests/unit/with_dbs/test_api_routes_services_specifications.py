@@ -92,7 +92,7 @@ def create_service_specifications(
             service_version=service_version,
             gid=gid,
             sidecar=ServiceSpec(Labels=faker.pydict(allowed_types=(str,))),  # type: ignore
-            service_resources=ServiceTaskResources(
+            service=ServiceTaskResources(
                 Limits=Limit(
                     NanoCPUs=faker.pyint(),
                     MemoryBytes=faker.pyint(),
