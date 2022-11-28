@@ -254,7 +254,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
         }
         taskUI.stop();
-        this._resourcesContainer.remove(toTemplateCard);
+        this._resourcesContainer.removeNonResourceCard(toTemplateCard);
       };
 
       task.addListener("taskAborted", () => {
@@ -318,7 +318,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         true
       );
       toTemplateCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.add(toTemplateCard);
+      this._resourcesContainer.addNonResourceCard(toTemplateCard);
       return toTemplateCard;
     }
     // TASKS //
