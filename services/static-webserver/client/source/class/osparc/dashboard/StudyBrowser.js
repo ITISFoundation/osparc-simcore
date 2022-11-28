@@ -438,15 +438,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
         });
 
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      const selectStudiesButton = this.__createSelectButton();
+      this._secondaryBar.add(selectStudiesButton);
 
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._secondaryBar.add(studiesDeleteButton);
 
-      const selectStudiesButton = this.__createSelectButton();
-      this._secondaryBar.add(selectStudiesButton);
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "studiesList");
 

@@ -84,7 +84,7 @@ qx.Class.define("osparc.component.widget.SlideBar", {
       const size = this.getInnerSize();
       if (size) {
         this.set({
-          scrollStep: parseInt(size.width/2)
+          scrollStep: parseInt(size.width/0.9)
         });
       }
       const buttonBackward = this.getChildControl("button-backward");

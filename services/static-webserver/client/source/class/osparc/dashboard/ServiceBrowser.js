@@ -148,6 +148,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._createResourcesLayout("service");
 
       this.__addNewServiceButtons();
+
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
       this.__addSortingButtons();
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
@@ -178,10 +183,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addSortingButtons: function() {
-      this._secondaryBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       const containterSortBtns = new osparc.component.service.SortServicesButtons();
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();

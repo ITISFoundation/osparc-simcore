@@ -16,38 +16,47 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.service.SortServicesButtons", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.form.MenuButton,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, this.tr("Sort by"), "@FontAwesome5Solid/chevron-down/10");
 
-    this._setLayout(new qx.ui.layout.HBox(4));
     this.set({
       marginRight: 8
     });
 
-    const hitsBtn = this.__hitsBtn = new qx.ui.form.ToggleButton().set({
-      toolTipText: this.tr("Sort by Hits")
+    const sortByMenu = new qx.ui.menu.Menu().set({
+      font: "text-14"
     });
-    hitsBtn.sortBy = "hits";
-    const nameBtn = this.__nameBtn = new qx.ui.form.ToggleButton().set({
-      toolTipText: this.tr("Sort by Name")
-    });
-    nameBtn.sortBy = "name";
-    [
-      hitsBtn,
-      nameBtn
-    ].forEach(btn => {
-      this._add(btn);
-      btn.getContentElement().setStyles({
-        "border-radius": "8px"
-      });
-      btn.addListener("tap", () => this.__btnExecuted(btn));
-    });
+    this.setMenu(sortByMenu);
 
-    this.__hitsBtn.tristate = 1;
-    this.__nameBtn.tristate = 0;
-    this.__updateState();
+    const hitsDesc = new qx.ui.menu.RadioButton(this.tr("Hits Desc"));
+    hitsDesc["sortBy"] = "hits";
+    hitsDesc["orderBy"] = "down";
+    const hitsAsc = new qx.ui.menu.RadioButton(this.tr("Hits Asc"));
+    hitsAsc["sortBy"] = "hits";
+    hitsAsc["orderBy"] = "up";
+    const nameAsc = new qx.ui.menu.RadioButton(this.tr("Name Asc"));
+    nameAsc["sortBy"] = "name";
+    nameAsc["orderBy"] = "up";
+    const nameDesc = new qx.ui.menu.RadioButton(this.tr("Name Desc"));
+    nameDesc["sortBy"] = "name";
+    nameDesc["orderBy"] = "down";
+    hitsDesc.addListener("execute", () => this.__btnExecuted(hitsDesc));
+    hitsAsc.addListener("execute", () => this.__btnExecuted(hitsAsc));
+    nameAsc.addListener("execute", () => this.__btnExecuted(nameAsc));
+    nameDesc.addListener("execute", () => this.__btnExecuted(nameDesc));
+
+    const sortByGroup = new qx.ui.form.RadioGroup();
+    [
+      hitsDesc,
+      hitsAsc,
+      nameAsc,
+      nameDesc
+    ].forEach(btn => {
+      sortByMenu.add(btn);
+      sortByGroup.add(btn);
+    });
   },
 
   events: {
@@ -55,10 +64,6 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   },
 
   statics: {
-    NUMERIC_ICON_DOWN: "@FontAwesome5Solid/sort-numeric-down/14",
-    NUMERIC_ICON_UP: "@FontAwesome5Solid/sort-numeric-up/14",
-    ALPHA_ICON_DOWN: "@FontAwesome5Solid/sort-alpha-down/14",
-    ALPHA_ICON_UP: "@FontAwesome5Solid/sort-alpha-up/14",
     DefaultSorting: {
       "sort": "hits",
       "order": "down"
@@ -66,80 +71,11 @@ qx.Class.define("osparc.component.service.SortServicesButtons", {
   },
 
   members: {
-    __hitsBtn: null,
-    __nameBtn: null,
-
     __btnExecuted: function(btn) {
-      if (btn === this.__hitsBtn) {
-        this.__hitsBtn.tristate++;
-        if (this.__hitsBtn.tristate === 3) {
-          this.__hitsBtn.tristate = 1;
-        }
-        this.__nameBtn.tristate = 0;
-      } else if (btn === this.__nameBtn) {
-        this.__hitsBtn.tristate = 0;
-        this.__nameBtn.tristate++;
-        if (this.__nameBtn.tristate === 3) {
-          this.__nameBtn.tristate = 1;
-        }
-      }
-      this.__updateState();
-      this.__announceSortChange();
-    },
-
-    __updateState: function() {
-      switch (this.__hitsBtn.tristate) {
-        case 0:
-          this.__hitsBtn.set({
-            value: false,
-            icon: this.self().NUMERIC_ICON_DOWN
-          });
-          break;
-        case 1:
-          this.__hitsBtn.set({
-            value: true,
-            icon: this.self().NUMERIC_ICON_DOWN
-          });
-          break;
-        case 2:
-          this.__hitsBtn.set({
-            value: true,
-            icon: this.self().NUMERIC_ICON_UP
-          });
-          break;
-      }
-
-      switch (this.__nameBtn.tristate) {
-        case 0:
-          this.__nameBtn.set({
-            value: false,
-            icon: this.self().ALPHA_ICON_DOWN
-          });
-          break;
-        case 1:
-          this.__nameBtn.set({
-            value: true,
-            icon: this.self().ALPHA_ICON_DOWN
-          });
-          break;
-        case 2:
-          this.__nameBtn.set({
-            value: true,
-            icon: this.self().ALPHA_ICON_UP
-          });
-          break;
-      }
-    },
-
-    __announceSortChange: function() {
-      const data = {};
-      if (this.__hitsBtn.tristate > 0) {
-        data["sort"] = "hits";
-        data["order"] = this.__hitsBtn.tristate === 1 ? "down" : "up";
-      } else if (this.__nameBtn.tristate > 0) {
-        data["sort"] = "name";
-        data["order"] = this.__nameBtn.tristate === 1 ? "down" : "up";
-      }
+      const data = {
+        "sort": btn["sortBy"],
+        "order": btn["orderBy"]
+      };
       this.fireDataEvent("sortBy", data);
     }
   }
