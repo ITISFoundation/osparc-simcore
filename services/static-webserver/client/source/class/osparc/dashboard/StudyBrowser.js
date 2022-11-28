@@ -234,9 +234,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (isShiftPressed) {
         const lastIdx = studiesCont.getLastSelectedIndex();
         const currentIdx = studiesCont.getIndex(item);
-        const minMaxIdx = [lastIdx, currentIdx].sort();
-        for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
-          const card = studiesCont.getCards()[i];
+        const minMax = [lastIdx, currentIdx];
+        minMax.sort();
+        for (let i=minMax[0]; i<=minMax[1]; i++) {
+          const card = studiesCont.getChildren()[i];
           if (card.isVisible()) {
             card.setValue(true);
           }
