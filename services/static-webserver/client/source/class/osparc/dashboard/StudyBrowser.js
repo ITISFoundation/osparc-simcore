@@ -166,23 +166,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
+    __setResourcesToList: function(studiesList) {
+      studiesList.forEach(study => study["resourceType"] = "study");
+      this._resourcesList = studiesList;
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList);
+      this._reloadCards();
+    },
+
     __addResourcesToList: function(studiesList) {
       studiesList.forEach(study => study["resourceType"] = "study");
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
       studiesList.forEach(study => {
         const idx = this._resourcesList.findIndex(std => std["uuid"] === study["uuid"]);
         if (idx === -1) {
           this._resourcesList.push(study);
         }
       });
-      this._reloadCards();
-    },
-
-    __setResourcesToList: function(studiesList) {
-      studiesList.forEach(study => study["resourceType"] = "study");
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
-      this._resourcesList = studiesList;
-      this._reloadCards();
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList);
+      this._reloadNewCards();
     },
 
     _reloadCards: function() {
@@ -195,6 +195,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards();
+      this.__configureCards(cards);
+      this.__addNewStudyButtons();
+      const newLoadMoreBtn = this.__createLoadMoreButton();
+      newLoadMoreBtn.set({
+        fetching,
+        visibility
+      });
+      this._resourcesContainer.add(newLoadMoreBtn);
+
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+    },
+
+    _reloadNewCards: function() {
+      this._resourcesContainer.setResourcesToList(this._resourcesList);
+      const cards = this._resourcesContainer.reloadNewCards();
+      this.__configureCards(cards);
+
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+    },
+
+    __configureCards: function(cards) {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => {
@@ -205,15 +226,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
         this._populateCardMenu(card.getMenu(), card.getResourceData());
       });
-      this.__addNewStudyButtons();
-      const newLoadMoreBtn = this.__createLoadMoreButton();
-      newLoadMoreBtn.set({
-        fetching,
-        visibility
-      });
-      this._resourcesContainer.add(newLoadMoreBtn);
-
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __itemClicked: function(item, isShiftPressed) {

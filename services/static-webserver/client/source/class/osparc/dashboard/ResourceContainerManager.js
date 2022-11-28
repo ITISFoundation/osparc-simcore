@@ -179,33 +179,51 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
       let cards = [];
       this.__resourcesList.forEach(resourceData => {
-        const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
-        if (this.getGroupBy() === "tags") {
-          if (tags.length === 0) {
-            let noGroupContainer = this.__getGroupContainer("no-group");
-            const card = this.__createCard(resourceData, tags);
-            noGroupContainer.add(card);
-            cards.push(card);
-          } else {
-            tags.forEach(tag => {
-              let groupContainer = this.__getGroupContainer(tag.id);
-              if (groupContainer === null) {
-                groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
-                const noGroupContainer = this.__getGroupContainer("no-group");
-                const idx = this._getChildren().findIndex(grpContainer => grpContainer === noGroupContainer);
-                this._addAt(groupContainer, idx);
-              }
-              const card = this.__createCard(resourceData, tags);
-              groupContainer.add(card);
-              cards.push(card);
-            });
-          }
-        } else {
-          const card = this.__createCard(resourceData, tags);
-          cards.push(card);
-          this.__flatList.add(card);
+        Array.prototype.push.apply(cards, this.__reourceToCards(resourceData));
+      });
+      return cards;
+    },
+
+    reloadNewCards: function() {
+      let newCards = [];
+      const currentCards = this.getCards();
+      this.__resourcesList.forEach(resourceData => {
+        const idx = currentCards.findIndex(card => card.isPropertyInitialized("uuid") && resourceData["uuid"] === card.getUuid());
+        if (idx === -1) {
+          Array.prototype.push.apply(newCards, this.__reourceToCards(resourceData));
         }
       });
+      return newCards;
+    },
+
+    __reourceToCards: function(resourceData) {
+      const cards = [];
+      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
+      if (this.getGroupBy() === "tags") {
+        if (tags.length === 0) {
+          let noGroupContainer = this.__getGroupContainer("no-group");
+          const card = this.__createCard(resourceData, tags);
+          noGroupContainer.add(card);
+          cards.push(card);
+        } else {
+          tags.forEach(tag => {
+            let groupContainer = this.__getGroupContainer(tag.id);
+            if (groupContainer === null) {
+              groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
+              const noGroupContainer = this.__getGroupContainer("no-group");
+              const idx = this._getChildren().findIndex(grpContainer => grpContainer === noGroupContainer);
+              this._addAt(groupContainer, idx);
+            }
+            const card = this.__createCard(resourceData, tags);
+            groupContainer.add(card);
+            cards.push(card);
+          });
+        }
+      } else {
+        const card = this.__createCard(resourceData, tags);
+        cards.push(card);
+        this.__flatList.add(card);
+      }
       return cards;
     }
   }
