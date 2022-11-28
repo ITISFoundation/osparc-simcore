@@ -56,7 +56,15 @@ qx.Class.define("osparc.component.widget.SlideBar", {
         });
       });
       buttonBackward.setIcon("@FontAwesome5Solid/chevron-left/16");
+      buttonBackward.getContentElement().setStyles({
+        "border-top-left-radius": "0px",
+        "border-bottom-left-radius": "0px"
+      });
       buttonForward.setIcon("@FontAwesome5Solid/chevron-right/16");
+      buttonForward.getContentElement().setStyles({
+        "border-top-right-radius": "0px",
+        "border-bottom-right-radius": "0px"
+      });
     },
 
     // override
