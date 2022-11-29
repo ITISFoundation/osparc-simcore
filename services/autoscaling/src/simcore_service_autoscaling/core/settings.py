@@ -11,6 +11,7 @@ from models_library.basic_types import (
 from models_library.docker import DockerLabelKey
 from pydantic import Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -138,6 +139,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=datetime.timedelta(seconds=10),
         description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
+
+    AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
