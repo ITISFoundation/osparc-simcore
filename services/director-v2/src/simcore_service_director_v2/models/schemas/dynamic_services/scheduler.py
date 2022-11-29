@@ -109,6 +109,7 @@ class DockerContainerInspect(BaseModel):
 
     class Config:
         keep_untouched = (cached_property,)
+        allow_mutation = False
 
 
 class ServiceRemovalState(BaseModel):
