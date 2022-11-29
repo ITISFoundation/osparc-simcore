@@ -193,19 +193,25 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.addListener("execute", () => console.log("info study-service"));
           this.getChildControl("left-items").add(control);
           break;
-        case "edit-title-label":
-          control = new osparc.ui.form.EditLabel("asf").set({
-            labelFont: "text-16",
-            inputFont: "text-16"
-          });
-          this.getChildControl("left-items").add(control);
-          break;
         case "download-logs":
           control = new qx.ui.form.Button().set({
+            ...this.self().BUTTON_OPTIONS,
             icon: "@FontAwesome5Solid/download/14",
             toolTipText: this.tr("Download logs")
           });
           control.addListener("execute", () => console.log("download logs"));
+          this.getChildControl("left-items").add(control);
+          break;
+        case "edit-title-label":
+          control = new osparc.ui.form.EditLabel().set({
+            labelFont: "text-16",
+            inputFont: "text-16"
+          });
+          control.addListener("editValue", e => {
+            const newLabel = e.getData();
+            this.getStudy().setName(newLabel);
+            control.setValue(newLabel);
+          });
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-icon":
@@ -276,8 +282,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-button").exclude();
           if (osparc.utils.Utils.isProduct("s4llite")) {
             this.getChildControl("info-button-study-service").exclude();
-            this.getChildControl("edit-title-label").exclude();
             this.getChildControl("download-logs").exclude();
+            this.getChildControl("edit-title-label").exclude();
           }
           this.getChildControl("read-only-icon").exclude();
           if (this.__tabButtons) {
@@ -291,9 +297,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-button").show();
           if (osparc.utils.Utils.isProduct("s4llite")) {
             this.getChildControl("info-button-study-service").show();
+            this.getChildControl("download-logs").show();
             this.getChildControl("edit-title-label").setValue(this.getStudy().getName());
             this.getChildControl("edit-title-label").show();
-            this.getChildControl("download-logs").show();
           }
           if (this.__tabButtons) {
             this.__tabButtons.exclude();
