@@ -34,6 +34,7 @@ from pydantic import ByteSize, PositiveInt
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.utils_aws import EC2Client
@@ -46,9 +47,13 @@ from tenacity.wait import wait_fixed
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -97,6 +102,20 @@ def app_environment(
         },
     )
     return mock_env_devel_environment | envs
+
+
+@pytest.fixture
+def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("RABBIT_HOST")
+    monkeypatch.delenv("RABBIT_USER")
+    monkeypatch.delenv("RABBIT_PASSWORD")
+
+
+@pytest.fixture
+def enabled_rabbitmq(
+    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+) -> RabbitSettings:
+    return rabbit_service
 
 
 @pytest.fixture

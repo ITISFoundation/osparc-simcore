@@ -71,6 +71,7 @@ def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
 @pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
+    disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
     aws_subnet_id: str,
     aws_security_group_id: str,
