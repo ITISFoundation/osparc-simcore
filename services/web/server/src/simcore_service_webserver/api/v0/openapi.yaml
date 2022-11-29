@@ -3243,7 +3243,7 @@ paths:
       tags:
         - project
       summary: List Project Metadata Ports
-      description: New in version *0.11*
+      description: New in version *0.12*
       operationId: list_project_metadata_ports
       parameters:
         - required: true

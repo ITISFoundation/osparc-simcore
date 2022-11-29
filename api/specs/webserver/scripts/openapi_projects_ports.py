@@ -69,7 +69,7 @@ async def get_project_outputs(project_id: ProjectID):
     operation_id="list_project_metadata_ports",
 )
 async def list_project_metadata_ports(project_id: ProjectID):
-    """New in version *0.11*"""
+    """New in version *0.12*"""
 
 
 if __name__ == "__main__":
