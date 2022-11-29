@@ -42,7 +42,7 @@ paths:
               title: Updates
               type: array
               items:
-                $ref: '#/components/schemas/ProjectIOBase'
+                $ref: '#/components/schemas/ProjectInputUpdate'
         required: true
       responses:
         '200':
@@ -73,6 +73,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet__'
+  /projects/{project_id}/metadata/ports:
+    get:
+      tags:
+      - project
+      summary: List Project Metadata Ports
+      description: New in version *0.11*
+      operationId: list_project_metadata_ports
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet__'
 components:
   schemas:
     Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__:
@@ -97,6 +119,17 @@ components:
             $ref: '#/components/schemas/ProjectOutputGet'
         error:
           title: Error
+    Envelope_list_simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet__:
+      title: Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectMetadataPortGet'
+        error:
+          title: Error
     HTTPValidationError:
       title: HTTPValidationError
       type: object
@@ -106,22 +139,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
-    ProjectIOBase:
-      title: ProjectIOBase
-      required:
-      - key
-      - value
-      type: object
-      properties:
-        key:
-          title: Key
-          type: string
-          description: Project port's unique identifer. Same as the UUID of the associated
-            port node
-          format: uuid
-        value:
-          title: Value
-          description: Value assigned to this i/o port
     ProjectInputGet:
       title: ProjectInputGet
       required:
@@ -142,12 +159,11 @@ components:
         label:
           title: Label
           type: string
-    ProjectOutputGet:
-      title: ProjectOutputGet
+    ProjectInputUpdate:
+      title: ProjectInputUpdate
       required:
       - key
       - value
-      - label
       type: object
       properties:
         key:
@@ -159,9 +175,45 @@ components:
         value:
           title: Value
           description: Value assigned to this i/o port
-        label:
-          title: Label
+    ProjectMetadataPortGet:
+      title: ProjectMetadataPortGet
+      required:
+      - key
+      - kind
+      type: object
+      properties:
+        key:
+          title: Key
           type: string
+          description: Project port's unique identifer. Same as the UUID of the associated
+            port node
+          format: uuid
+        kind:
+          title: Kind
+          enum:
+          - input
+          - output
+          type: string
+        content_schema:
+          title: Content Schema
+          type: object
+          description: jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/
+    ProjectOutputGet:
+      title: ProjectOutputGet
+      required:
+      - key
+      - value
+      type: object
+      properties:
+        key:
+          title: Key
+          type: string
+          description: Project port's unique identifer. Same as the UUID of the associated
+            port node
+          format: uuid
+        value:
+          title: Value
+          description: Value assigned to this i/o port
     ValidationError:
       title: ValidationError
       required:

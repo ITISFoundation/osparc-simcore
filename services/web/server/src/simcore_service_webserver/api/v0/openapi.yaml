@@ -3172,7 +3172,7 @@ paths:
               title: Updates
               type: array
               items:
-                title: ProjectIOBase
+                title: ProjectInputUpdate
                 required:
                   - key
                   - value
@@ -3226,7 +3226,6 @@ paths:
                       required:
                         - key
                         - value
-                        - label
                       type: object
                       properties:
                         key:
@@ -3237,9 +3236,57 @@ paths:
                         value:
                           title: Value
                           description: Value assigned to this i/o port
-                        label:
-                          title: Label
+                  error:
+                    title: Error
+  '/projects/{project_id}/metadata/ports':
+    get:
+      tags:
+        - project
+      summary: List Project Metadata Ports
+      description: New in version *0.11*
+      operationId: list_project_metadata_ports
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: ProjectMetadataPortGet
+                      required:
+                        - key
+                        - kind
+                      type: object
+                      properties:
+                        key:
+                          title: Key
                           type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        kind:
+                          title: Kind
+                          enum:
+                            - input
+                            - output
+                          type: string
+                        content_schema:
+                          title: Content Schema
+                          type: object
+                          description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
                   error:
                     title: Error
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':

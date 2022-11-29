@@ -240,6 +240,9 @@ paths:
   /projects/{project_id}/outputs:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1outputs"
 
+  /projects/{project_id}/metadata/ports:
+    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1metadata~1ports"
+
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"
 
