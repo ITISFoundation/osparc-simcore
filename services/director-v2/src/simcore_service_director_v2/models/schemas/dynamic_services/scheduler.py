@@ -1,6 +1,7 @@
 import json
 import logging
 from enum import Enum
+from functools import cached_property
 from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
@@ -89,24 +90,27 @@ DockerStatus = Status2
 
 
 class DockerContainerInspect(BaseModel):
-    status: DockerStatus = Field(
-        ...,
-        description="status of the underlying container",
-    )
     container_state: ContainerState = Field(
         ..., description="current state of container"
     )
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
 
+    @cached_property
+    def status(self) -> DockerStatus:
+        assert self.container_state.Status  # nosec
+        return self.container_state.Status
+
     @classmethod
     def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":
         return cls(
-            status=DockerStatus(container["State"]["Status"]),
             container_state=ContainerState(**container["State"]),
             name=container["Name"],
             id=container["Id"],
         )
+
+    class Config:
+        keep_untouched = (cached_property,)
 
 
 class ServiceRemovalState(BaseModel):
