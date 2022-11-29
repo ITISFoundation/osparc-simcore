@@ -268,10 +268,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_message=sidecar_message,
             )
 
-        # NOTE: no longer querying the docker API directly, bur relying from the
-        # updates from the scheduler. This will mean that this status will
-        # not be updated while starting the containers, only afterwards.
-        # This has no repercussions with regards to the startup.
+        # NOTE: This will be repeatedly called until the
+        # user services are effectively started
 
         # wait for containers to start
         if len(scheduler_data.dynamic_sidecar.containers_inspect) == 0:
