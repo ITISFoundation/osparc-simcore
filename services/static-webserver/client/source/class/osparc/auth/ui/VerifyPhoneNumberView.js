@@ -78,6 +78,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       phoneNumberVerifyLayout.add(phoneNumber, {
         flex: 1
       });
+      const msg = this.tr("Phone number in <a href='https://en.wikipedia.org/wiki/E.164' target='_blank'>E.164 format</a>");
+      const infoButton = new osparc.ui.hint.InfoHint(msg).set({
+        alignY: "middle"
+      });
+      phoneNumberVerifyLayout.add(infoButton);
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
         minWidth: 80
       });
