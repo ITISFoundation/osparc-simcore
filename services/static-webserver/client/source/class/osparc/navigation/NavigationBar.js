@@ -182,26 +182,38 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             paddingLeft: 20, // to align it with the button
-            font: "text-16"
+            font: "text-14"
           });
           this.getChildControl("left-items").add(control);
           break;
-        case "info-button-study-service":
-          control = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14").set({
+        case "study-menu-info":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Information..."),
+            icon: "@MaterialIcons/info_outline/14",
             ...this.self().BUTTON_OPTIONS
           });
           control.addListener("execute", () => console.log("info study-service"));
-          this.getChildControl("left-items").add(control);
           break;
-        case "download-logs":
-          control = new qx.ui.form.Button().set({
-            ...this.self().BUTTON_OPTIONS,
+        case "study-menu-download-logs":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Download logs"),
             icon: "@FontAwesome5Solid/download/14",
-            toolTipText: this.tr("Download logs")
+            ...this.self().BUTTON_OPTIONS
           });
-          control.addListener("execute", () => console.log("download logs"));
+          control.addListener("execute", () => console.log("info study-service"));
+          break;
+        case "study-menu-button": {
+          const optionsMenu = new qx.ui.menu.Menu();
+          optionsMenu.add(this.getChildControl("study-menu-info"));
+          optionsMenu.add(this.getChildControl("study-menu-download-logs"));
+          control = new qx.ui.form.MenuButton().set({
+            ...this.self().BUTTON_OPTIONS,
+            menu: optionsMenu,
+            icon: "@FontAwesome5Solid/ellipsis-v/16"
+          });
           this.getChildControl("left-items").add(control);
           break;
+        }
         case "edit-title-label":
           control = new osparc.ui.form.EditLabel().set({
             labelFont: "text-16",
@@ -281,8 +293,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
           if (osparc.utils.Utils.isProduct("s4llite")) {
-            this.getChildControl("info-button-study-service").exclude();
-            this.getChildControl("download-logs").exclude();
+            this.getChildControl("study-menu-button").exclude();
             this.getChildControl("edit-title-label").exclude();
           }
           this.getChildControl("read-only-icon").exclude();
@@ -296,8 +307,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
           if (osparc.utils.Utils.isProduct("s4llite")) {
-            this.getChildControl("info-button-study-service").show();
-            this.getChildControl("download-logs").show();
+            this.getChildControl("study-menu-button").show();
             this.getChildControl("edit-title-label").setValue(this.getStudy().getName());
             this.getChildControl("edit-title-label").show();
           }
