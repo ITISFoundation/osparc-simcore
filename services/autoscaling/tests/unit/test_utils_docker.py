@@ -11,8 +11,13 @@ import aiodocker
 import pytest
 from deepdiff import DeepDiff
 from faker import Faker
-from models_library.generated_models.docker_rest_api import Availability, Task
+from models_library.generated_models.docker_rest_api import (
+    Availability,
+    NodeState,
+    Task,
+)
 from pydantic import ByteSize, parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils_docker import (
     Node,
@@ -23,6 +28,7 @@ from simcore_service_autoscaling.utils_docker import (
     get_max_resources_from_docker_task,
     get_monitored_nodes,
     pending_service_tasks_with_insufficient_resources,
+    remove_monitored_down_nodes,
     tag_node,
     wait_for_node,
 )
@@ -119,6 +125,32 @@ async def test_get_monitored_nodes_with_valid_label(
     }
     assert host_node.dict(exclude=EXCLUDED_KEYS) == monitored_nodes[0].dict(
         exclude=EXCLUDED_KEYS
+    )
+
+
+async def test_remove_monitored_down_nodes_with_empty_list_does_nothing():
+    assert await remove_monitored_down_nodes([]) == []
+
+
+async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
+    host_node: Node,
+):
+    assert await remove_monitored_down_nodes([host_node]) == []
+
+
+async def test_remove_monitored_down_nodes_of_down_node(
+    host_node: Node, faker: Faker, mocker: MockerFixture
+):
+    mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
+    fake_node = host_node.copy(deep=True)
+    fake_node.ID = faker.uuid4()
+    assert fake_node.Status
+    fake_node.Status.State = NodeState.down
+    assert fake_node.Status.State == NodeState.down
+    assert await remove_monitored_down_nodes([fake_node]) == [fake_node]
+    # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
+    mocked_aiodocker.return_value.__aenter__.return_value.nodes.remove.assert_called_once_with(
+        node_id=fake_node.ID
     )
 
 
