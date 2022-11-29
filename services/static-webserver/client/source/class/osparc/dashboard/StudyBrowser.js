@@ -429,7 +429,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createResourcesLayout("study");
-      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "studiesList");
+      const list = this._resourcesContainer.getFlatList();
+      if (list) {
+        osparc.utils.Utils.setIdToWidget(list, "studiesList");
+      }
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);

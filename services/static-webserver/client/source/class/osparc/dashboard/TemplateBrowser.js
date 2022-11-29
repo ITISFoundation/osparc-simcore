@@ -127,7 +127,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createResourcesLayout("template");
-      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "templatesList");
+      const list = this._resourcesContainer.getFlatList();
+      if (list) {
+        osparc.utils.Utils.setIdToWidget(list, "templatesList");
+      }
 
       this._secondaryBar.add(new qx.ui.core.Spacer(), {
         flex: 1
