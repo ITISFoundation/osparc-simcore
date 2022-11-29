@@ -91,8 +91,8 @@ def extract_containers_minimum_statuses(
     """
     logger.info("containers_inspect=%s", containers_inspect)
     remapped_service_statuses = {
-        k: _extract_container_status(value.container_state)
-        for k, value in enumerate(containers_inspect)
+        index: _extract_container_status(value.container_state)
+        for index, value in enumerate(containers_inspect)
     }
     result: tuple[ServiceState, str] = min(
         remapped_service_statuses.values(), key=lambda x: x
