@@ -94,7 +94,7 @@ def mocked_webserver_service_api(
 
     # TODO: add more examples in openapi!
     openapi = deepcopy(webserver_service_openapi_specs)
-    schemas = openapi["components"]["schemas"]
+    oas_paths = openapi["paths"]
 
     # DATA ---
     study_ports = fake_study_ports
@@ -114,6 +114,8 @@ def mocked_webserver_service_api(
         assert_all_mocked=True,
     ) as respx_mock:
 
+        # Mocks /health
+        assert oas_paths["/health"]
         respx_mock.get("/v0/health").respond(
             200,
             json={
@@ -126,6 +128,9 @@ def mocked_webserver_service_api(
             },
         )
 
+        # Mocks /projects/{*}/ports
+        assert oas_paths["/projects/{project_id}/ports"]
+        assert "get" in oas_paths["/projects/{project_id}/ports"].keys()
         respx_mock.get(
             path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/ports",
             name="get_project_ports",
@@ -134,6 +139,9 @@ def mocked_webserver_service_api(
             json={"data": study_ports},
         )
 
+        # Mocks /projects/{*}/inputs
+        assert oas_paths["/projects/{project_id}/inputs"]
+        assert "get" in oas_paths["/projects/{project_id}/inputs"].keys()
         respx_mock.get(
             path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/inputs",
             name="get_project_inputs",
@@ -146,6 +154,7 @@ def mocked_webserver_service_api(
             },
         )
 
+        assert "patch" in oas_paths["/projects/{project_id}/inputs"].keys()
         respx_mock.patch(
             path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/inputs",
             name="update_project_inputs",
@@ -155,6 +164,8 @@ def mocked_webserver_service_api(
         )
 
         # Mocks /projects/{*}/outputs
+        assert oas_paths["/projects/{project_id}/outputs"]
+        assert "get" in oas_paths["/projects/{project_id}/outputs"].keys()
         respx_mock.get(
             path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/outputs",
             name="get_project_outputs",

@@ -3,6 +3,9 @@
 
 """
 
+#
+# studies/{project_id}
+#
 
 # CRUD
 def create_study():
@@ -29,29 +32,29 @@ def delete_study():
     pass
 
 
-# Sub-Resources ports and inputs/outputs
-
-
 def list_study_ports():
-    # as similar as possible to list[SolverPort]
-    # refers to the json-schema (semantics)
-    # this connects with /home/crespo/devp/osparc-simcore/services/web/server/src/simcore_service_webserver/projects/projects_ports_handlers.py
+    # GET /projects/{project_id}/inputs
     pass
 
 
-def get_study_inputs():
+#
+# studies/{project_id}/jobs/{job_id}
+#
+
+
+def get_study_job_inputs():
     # GET /projects/{project_id}/inputs
     # Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]
     pass
 
 
-def update_study_inputs():
+def update_study_job_inputs():
     # PATCH /projects/{project_id}/inputs
     # Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]
     pass
 
 
-def get_study_outputs():
+def get_study_job_outputs():
     # GET /projects/{project_id}/outputs
     # Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]
     pass
