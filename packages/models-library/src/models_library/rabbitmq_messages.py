@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -53,3 +53,11 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     service_key: str
     service_tag: str
     result: Optional[RunningState] = None
+
+
+class RabbitClusterStateMessage(RabbitMessageBase):
+    origin: str
+    number_monitored_nodes: int
+    cluster_total_resources: dict[str, Any]
+    cluster_used_resources: dict[str, Any]
+    number_pending_tasks_without_resources: int
