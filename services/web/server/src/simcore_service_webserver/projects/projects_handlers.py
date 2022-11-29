@@ -18,7 +18,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
-from ..products import ProductRepository
+from ..products import Product, get_current_product
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import (
@@ -55,20 +55,14 @@ async def open_project(request: web.Request) -> web.Response:
             include_templates=False,
             include_state=True,
         )
-
-        repo = ProductRepository(request)
-        max_number_of_studies_per_user = (
-            await repo.get_product_max_number_studies_open_per_user(
-                req_ctx.product_name
-            )
-        )
+        product: Product = get_current_product(request)
 
         if not await projects_api.try_open_project_for_user(
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
             app=request.app,
-            max_number_of_studies_per_user=max_number_of_studies_per_user,
+            max_number_of_studies_per_user=product.max_open_studies_per_user,
         ):
             raise HTTPLocked(reason="Project is locked, try later")
 

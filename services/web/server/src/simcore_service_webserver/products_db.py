@@ -68,13 +68,3 @@ class ProductRepository(BaseRepository):
                 .where(products.c.name == product_name)
             )
             return f"{content}" if content else None
-
-    async def get_product_max_number_studies_open_per_user(
-        self, product_name: str
-    ) -> Optional[int]:
-        async with self.engine.acquire() as conn:
-            return await conn.scalar(
-                sa.select([products.c.max_open_studies_per_user]).where(
-                    products.c.name == product_name
-                )
-            )

@@ -14,6 +14,9 @@ from sqlalchemy.sql import func
 from .base import metadata
 from .jinja2_templates import jinja2_templates
 
+# NOTE: a default entry is created in the table Product
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+
 
 #
 # Layout of the data in the JSONB columns
@@ -75,6 +78,8 @@ class Forum(TypedDict, total=True):
 #
 # Table
 #
+# NOTE: a default entry is created in the table Product
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
 
 products = sa.Table(
     "products",
