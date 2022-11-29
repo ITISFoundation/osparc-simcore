@@ -20,7 +20,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__'
     patch:
       tags:
       - project
@@ -42,7 +42,7 @@ paths:
               title: Updates
               type: array
               items:
-                $ref: '#/components/schemas/ProjectPort'
+                $ref: '#/components/schemas/ProjectIOBase'
         required: true
       responses:
         '200':
@@ -50,7 +50,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__'
   /projects/{project_id}/outputs:
     get:
       tags:
@@ -72,18 +72,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet__'
 components:
   schemas:
-    Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet__:
-      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]
+    Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet__:
+      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]
       type: object
       properties:
         data:
           title: Data
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/ProjectPortGet'
+            $ref: '#/components/schemas/ProjectInputGet'
+        error:
+          title: Error
+    Envelope_dict_uuid.UUID__simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet__:
+      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ProjectOutputGet'
         error:
           title: Error
     HTTPValidationError:
@@ -95,8 +106,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
-    ProjectPort:
-      title: ProjectPort
+    ProjectIOBase:
+      title: ProjectIOBase
       required:
       - key
       - value
@@ -111,8 +122,28 @@ components:
         value:
           title: Value
           description: Value assigned to this i/o port
-    ProjectPortGet:
-      title: ProjectPortGet
+    ProjectInputGet:
+      title: ProjectInputGet
+      required:
+      - key
+      - value
+      - label
+      type: object
+      properties:
+        key:
+          title: Key
+          type: string
+          description: Project port's unique identifer. Same as the UUID of the associated
+            port node
+          format: uuid
+        value:
+          title: Value
+          description: Value assigned to this i/o port
+        label:
+          title: Label
+          type: string
+    ProjectOutputGet:
+      title: ProjectOutputGet
       required:
       - key
       - value

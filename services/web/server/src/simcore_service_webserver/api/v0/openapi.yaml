@@ -3124,14 +3124,14 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
                     title: Data
                     type: object
                     additionalProperties:
-                      title: ProjectPortGet
+                      title: ProjectInputGet
                       required:
                         - key
                         - value
@@ -3172,7 +3172,7 @@ paths:
               title: Updates
               type: array
               items:
-                title: ProjectPort
+                title: ProjectIOBase
                 required:
                   - key
                   - value
@@ -3215,7 +3215,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: object
+                    additionalProperties:
+                      title: ProjectOutputGet
+                      required:
+                        - key
+                        - value
+                        - label
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        value:
+                          title: Value
+                          description: Value assigned to this i/o port
+                        label:
+                          title: Label
+                          type: string
+                  error:
+                    title: Error
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
     get:
       tags:

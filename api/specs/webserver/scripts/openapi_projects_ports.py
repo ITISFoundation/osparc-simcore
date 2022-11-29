@@ -15,8 +15,9 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from simcore_service_webserver.projects.projects_ports_handlers import (
-    ProjectPort,
-    ProjectPortGet,
+    ProjectInputGet,
+    ProjectIOBase,
+    ProjectOutputGet,
 )
 
 # TODO: how to ensure this is in sync with projects_ports_handlers.routes ??
@@ -31,7 +32,7 @@ TAGS: list[Union[str, Enum]] = [
 
 @app.get(
     "/projects/{project_id}/inputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectInputGet]],
     tags=TAGS,
     operation_id="get_project_inputs",
 )
@@ -41,17 +42,17 @@ async def get_project_inputs(project_id: ProjectID):
 
 @app.patch(
     "/projects/{project_id}/inputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectInputGet]],
     tags=TAGS,
     operation_id="update_project_inputs",
 )
-async def update_project_inputs(project_id: ProjectID, updates: list[ProjectPort]):
+async def update_project_inputs(project_id: ProjectID, updates: list[ProjectIOBase]):
     """New in version *0.10*"""
 
 
 @app.get(
     "/projects/{project_id}/outputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectOutputGet]],
     tags=TAGS,
     operation_id="get_project_outputs",
 )

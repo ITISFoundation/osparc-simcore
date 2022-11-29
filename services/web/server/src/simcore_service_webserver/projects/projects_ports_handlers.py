@@ -83,13 +83,11 @@ async def _get_validated_workbench_model(
 
 
 #
-# projects/*/inputs COLLECTION -------------------------
+# Models
 #
 
-routes = web.RouteTableDef()
 
-
-class ProjectPort(BaseModel):
+class ProjectIOBase(BaseModel):
     key: NodeID = Field(
         ...,
         description="Project port's unique identifer. Same as the UUID of the associated port node",
@@ -97,8 +95,19 @@ class ProjectPort(BaseModel):
     value: Any = Field(..., description="Value assigned to this i/o port")
 
 
-class ProjectPortGet(ProjectPort):
+class ProjectInputGet(ProjectIOBase):
     label: str
+
+
+class ProjectOutputGet(ProjectInputGet):
+    pass
+
+
+#
+# projects/*/inputs COLLECTION -------------------------
+#
+
+routes = web.RouteTableDef()
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
@@ -118,7 +127,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 
     return _web_json_response_enveloped(
         data={
-            node_id: ProjectPortGet(
+            node_id: ProjectInputGet(
                 key=node_id, label=workbench[node_id].label, value=value
             )
             for node_id, value in inputs.items()
@@ -134,7 +143,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    inputs_updates = await parse_request_body_as(list[ProjectPort], request)
+    inputs_updates = await parse_request_body_as(list[ProjectIOBase], request)
 
     assert request.app  # nosec
 
@@ -168,7 +177,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 
     return _web_json_response_enveloped(
         data={
-            node_id: ProjectPortGet(
+            node_id: ProjectInputGet(
                 key=node_id, label=workbench[node_id].label, value=value
             )
             for node_id, value in inputs.items()
@@ -198,7 +207,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 
     return _web_json_response_enveloped(
         data={
-            node_id: ProjectPortGet(
+            node_id: ProjectOutputGet(
                 key=node_id, label=workbench[node_id].label, value=value
             )
             for node_id, value in outputs.items()
