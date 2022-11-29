@@ -138,20 +138,37 @@ async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
     assert await remove_monitored_down_nodes([host_node]) == []
 
 
-async def test_remove_monitored_down_nodes_of_down_node(
-    host_node: Node, faker: Faker, mocker: MockerFixture
-):
-    mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
+@pytest.fixture
+def fake_docker_node(host_node: Node, faker: Faker) -> Node:
     fake_node = host_node.copy(deep=True)
     fake_node.ID = faker.uuid4()
-    assert fake_node.Status
-    fake_node.Status.State = NodeState.down
-    assert fake_node.Status.State == NodeState.down
-    assert await remove_monitored_down_nodes([fake_node]) == [fake_node]
+    assert (
+        host_node.ID != fake_node.ID
+    ), "this should never happen, or you are really unlucky"
+    return fake_node
+
+
+async def test_remove_monitored_down_nodes_of_down_node(
+    fake_docker_node: Node, mocker: MockerFixture
+):
+    mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
+    assert fake_docker_node.Status
+    fake_docker_node.Status.State = NodeState.down
+    assert fake_docker_node.Status.State == NodeState.down
+    assert await remove_monitored_down_nodes([fake_docker_node]) == [fake_docker_node]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
     mocked_aiodocker.return_value.__aenter__.return_value.nodes.remove.assert_called_once_with(
-        node_id=fake_node.ID
+        node_id=fake_docker_node.ID
     )
+
+
+async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
+    fake_docker_node: Node,
+):
+    assert fake_docker_node.Status
+    fake_docker_node.Status = None
+    assert not fake_docker_node.Status
+    assert await remove_monitored_down_nodes([fake_docker_node]) == []
 
 
 async def test_pending_service_task_with_insufficient_resources_with_no_service(
