@@ -28,3 +28,12 @@ async def test_healthcheck(async_client: httpx.AsyncClient):
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
     assert "simcore_service_autoscaling" in response.text
+
+
+async def test_status(async_client: httpx.AsyncClient):
+    response = await async_client.get("/status")
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_200_OK
+    status_response = response.json()
+    assert "rabbitmq" in status_response
+    assert status_response["rabbitmq"] == "connected"
