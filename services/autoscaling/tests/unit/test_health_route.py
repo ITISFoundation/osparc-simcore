@@ -30,10 +30,25 @@ async def test_healthcheck(async_client: httpx.AsyncClient):
     assert "simcore_service_autoscaling" in response.text
 
 
+async def test_status_no_rabbit(
+    disabled_rabbitmq: None, async_client: httpx.AsyncClient
+):
+    response = await async_client.get("/status")
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_200_OK
+    status_response = response.json()
+    assert "rabbitmq" in status_response
+    rabbitmq_status = status_response["rabbitmq"]
+    assert "initialized" in rabbitmq_status
+    assert rabbitmq_status["initialized"] is False
+
+
 async def test_status(async_client: httpx.AsyncClient):
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
     status_response = response.json()
     assert "rabbitmq" in status_response
-    assert status_response["rabbitmq"] == "connected"
+    rabbitmq_status = status_response["rabbitmq"]
+    assert "initialized" in rabbitmq_status
+    assert rabbitmq_status["initialized"] is True

@@ -39,7 +39,7 @@ async def post_cluster_state_message(
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    if not hasattr(app.state, "rabbitmq_client"):
+    if not app.state.rabbitmq_client:
         raise ConfigurationError(
             msg="RabbitMQ client is not available. Please check the configuration."
         )

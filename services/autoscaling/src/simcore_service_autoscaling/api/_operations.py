@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from ..rabbitmq import get_rabbitmq_client
 from .dependencies.application import get_app
 
 router = APIRouter()
@@ -21,12 +22,25 @@ async def health_check():
     return f"{__name__}.health_check@{datetime.utcnow().isoformat()}"
 
 
+class RabbitMQStatus(BaseModel):
+    initialized: bool
+    connection_state: bool
+
+    @classmethod
+    def from_app(cls, app: FastAPI) -> "RabbitMQStatus":
+        if app.state.rabbitmq_client:
+            client = get_rabbitmq_client(app)
+
+        # TODO: ping the rabbit MQ
+        return RabbitMQStatus(
+            initialized=bool(app.state.rabbitmq_client), connection_state=False
+        )
+
+
 class StatusGet(BaseModel):
-    rabbitmq: str
+    rabbitmq: RabbitMQStatus
 
 
 @router.get("/status", include_in_schema=True, response_model=StatusGet)
 async def get_status(app: FastAPI = Depends(get_app)) -> StatusGet:
-    return StatusGet(
-        rabbitmq="connected" if app.state.rabbitmq_client else "not connected"
-    )
+    return StatusGet(rabbitmq=RabbitMQStatus.from_app(app))
