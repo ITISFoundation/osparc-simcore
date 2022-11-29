@@ -175,11 +175,13 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         catalog_client = CatalogClient.instance(app)
-        user_specific_service_spec = await catalog_client.get_service_specifications(
-            scheduler_data.user_id, scheduler_data.key, scheduler_data.version
-        )
+        user_specific_service_spec = (
+            await catalog_client.get_service_specifications(
+                scheduler_data.user_id, scheduler_data.key, scheduler_data.version
+            )
+        ).get("sidecar", {}) or {}
         user_specific_service_spec = AioDockerServiceSpec.parse_obj(
-            user_specific_service_spec.get("sidecar", {})
+            user_specific_service_spec
         )
         # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
         # we do not use aliases when exporting dynamic_sidecar_service_spec_base
