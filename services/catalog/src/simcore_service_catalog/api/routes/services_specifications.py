@@ -34,7 +34,7 @@ async def get_service_specifications(
     ),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
-    default_service_specifcations: ServiceSpecifications = Depends(
+    default_service_specifications: ServiceSpecifications = Depends(
         get_default_service_specifications
     ),
 ):
@@ -62,7 +62,7 @@ async def get_service_specifications(
 
     if not service_specs:
         # nothing found, let's return the default then
-        service_specs = default_service_specifcations.copy()
+        service_specs = default_service_specifications.copy()
 
     logger.debug("returning %s", f"{service_specs=}")
     return service_specs

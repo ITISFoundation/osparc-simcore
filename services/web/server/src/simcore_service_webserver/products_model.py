@@ -7,7 +7,7 @@ from models_library.basic_regex import (
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, EmailStr, Extra, Field, validator
+from pydantic import BaseModel, EmailStr, Extra, Field, PositiveInt, validator
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -72,6 +72,11 @@ class Product(BaseModel):
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
+    )
+
+    max_open_studies_per_user: Optional[PositiveInt] = Field(
+        default=None,
+        description="Limits the number of studies a user may have open concurently (disabled if NULL)",
     )
 
     @validator("name", pre=True, always=True)
