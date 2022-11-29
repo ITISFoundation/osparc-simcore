@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     _reloadCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards();
+      const cards = this._resourcesContainer.reloadCards("templatesList");
       cards.forEach(card => {
         card.addListener("execute", () => this.__itemClicked(card), this);
         this._populateCardMenu(card.getMenu(), card.getResourceData());

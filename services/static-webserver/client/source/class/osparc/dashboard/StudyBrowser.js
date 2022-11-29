@@ -194,7 +194,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards();
+      const cards = this._resourcesContainer.reloadCards("studiesList");
       this.__configureCards(cards);
       this.__addNewStudyButtons();
       const newLoadMoreBtn = this.__createLoadMoreButton();

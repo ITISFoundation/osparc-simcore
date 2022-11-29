@@ -202,13 +202,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._removeAll();
     },
 
-    reloadCards: function() {
+    reloadCards: function(listId) {
       this.__cleanAll();
       if (this.getGroupBy() === "tags") {
         const noGroupContainer = this.__createEmptyGroupContainer();
         this._add(noGroupContainer);
       } else {
         const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        osparc.utils.Utils.setIdToWidget(flatList, listId);
         [
           "changeSelection",
           "changeVisibility"
