@@ -6,7 +6,8 @@ from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
 from models_library.basic_types import PortInt
-from models_library.generated_models.docker_rest_api import ContainerState, Status2
+from models_library.generated_models.docker_rest_api import ContainerState
+from models_library.generated_models.docker_rest_api import Status2 as DockerStatus
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
@@ -84,9 +85,6 @@ class Status(BaseModel):
         # the service is initially ok when started
         initial_state = cls(current=DynamicSidecarStatus.OK, info="")
         return initial_state
-
-
-DockerStatus = Status2
 
 
 class DockerContainerInspect(BaseModel):
