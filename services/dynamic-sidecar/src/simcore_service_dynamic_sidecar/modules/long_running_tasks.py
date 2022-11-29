@@ -310,12 +310,12 @@ async def task_containers_restart(
     settings: ApplicationSettings,
     shared_store: SharedStore,
 ) -> None:
-    assert app.state.container_inspect_lock  # nosec
+    assert app.state.container_restart_lock  # nosec
 
     # NOTE: if containers inspect reports that the containers are restarting
     # or some other state, the service will get shutdown, to prevent this
     # blocking status while containers are being restarted.
-    async with app.state.container_inspect_lock:
+    async with app.state.container_restart_lock:
 
         progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
