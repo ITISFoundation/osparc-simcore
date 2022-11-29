@@ -27,6 +27,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
   construct: function() {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
+
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
