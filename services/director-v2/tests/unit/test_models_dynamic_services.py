@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+import string
 from collections import namedtuple
 
 import pytest
