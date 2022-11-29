@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.servicecard.Utils", {
+qx.Class.define("osparc.info.ServiceUtils", {
   type: "static",
 
   statics: {

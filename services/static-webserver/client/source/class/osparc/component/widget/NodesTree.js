@@ -237,14 +237,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       if (nodeId) {
         const study = this.getStudy();
         if (nodeId === study.getUuid()) {
-          const studyDetails = new osparc.studycard.Large(study);
+          const studyDetails = new osparc.info.StudyLarge(study);
           const title = this.tr("Study Information");
           const width = 500;
           const height = 500;
           osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
         } else {
           const node = study.getWorkbench().getNode(nodeId);
-          const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), {
+          const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
             nodeId,
             label: node.getLabel(),
             study

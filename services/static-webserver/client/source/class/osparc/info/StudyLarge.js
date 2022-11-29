@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.studycard.Large", {
+qx.Class.define("osparc.info.StudyLarge", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -219,7 +219,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.studycard.Utils.createExtraInfo(extraInfo).set({
+      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
         width: this.self().EXTRA_INFO_WIDTH
       });
 
@@ -227,51 +227,51 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __createTitle: function() {
-      const title = osparc.studycard.Utils.createTitle(this.getStudy()).set({
+      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
         font: "title-16"
       });
       return title;
     },
 
     __createUuid: function() {
-      return osparc.studycard.Utils.createUuid(this.getStudy());
+      return osparc.info.StudyUtils.createUuid(this.getStudy());
     },
 
     __createOwner: function() {
-      return osparc.studycard.Utils.createOwner(this.getStudy());
+      return osparc.info.StudyUtils.createOwner(this.getStudy());
     },
 
     __createCreationDate: function() {
-      return osparc.studycard.Utils.createCreationDate(this.getStudy());
+      return osparc.info.StudyUtils.createCreationDate(this.getStudy());
     },
 
     __createLastChangeDate: function() {
-      return osparc.studycard.Utils.createLastChangeDate(this.getStudy());
+      return osparc.info.StudyUtils.createLastChangeDate(this.getStudy());
     },
 
     __createAccessRights: function() {
-      return osparc.studycard.Utils.createAccessRights(this.getStudy());
+      return osparc.info.StudyUtils.createAccessRights(this.getStudy());
     },
 
     __createClassifiers: function() {
-      return osparc.studycard.Utils.createClassifiers(this.getStudy());
+      return osparc.info.StudyUtils.createClassifiers(this.getStudy());
     },
 
     __createQuality: function() {
-      return osparc.studycard.Utils.createQuality(this.getStudy());
+      return osparc.info.StudyUtils.createQuality(this.getStudy());
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+      return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
     __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.getStudy());
+      return osparc.info.StudyUtils.createTags(this.getStudy());
     },
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
+      return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
     },
 
     __openTitleEditor: function() {
@@ -293,7 +293,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
+      const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
       permissionsView.addListener("updateStudy", e => {
         const updatedData = e.getData();
         this.getStudy().setAccessRights(updatedData["accessRights"]);
@@ -320,7 +320,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openQuality: function() {
-      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      const qualityEditor = osparc.info.StudyUtils.openQuality(this.getStudy().serialize());
       qualityEditor.addListener("updateQuality", e => {
         const updatedData = e.getData();
         this.getStudy().setQuality(updatedData["quality"]);

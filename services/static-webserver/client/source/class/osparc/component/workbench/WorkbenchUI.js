@@ -1520,7 +1520,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __openNodeInfo: function(nodeId) {
       if (nodeId) {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), {
+        const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
           nodeId,
           label: node.getLabel(),
           study: this.getStudy()

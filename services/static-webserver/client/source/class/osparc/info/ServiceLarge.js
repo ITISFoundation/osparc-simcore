@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.servicecard.Large", {
+qx.Class.define("osparc.info.ServiceLarge", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -199,7 +199,7 @@ qx.Class.define("osparc.servicecard.Large", {
       } else {
         text = serviceName;
       }
-      const title = osparc.servicecard.Utils.createTitle(text).set({
+      const title = osparc.info.ServiceUtils.createTitle(text).set({
         font: "title-16"
       });
       return title;
@@ -280,7 +280,7 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.servicecard.Utils.createExtraInfo(extraInfo).set({
+      const moreInfo = osparc.info.ServiceUtils.createExtraInfo(extraInfo).set({
         width: this.self().EXTRA_INFO_WIDTH
       });
 
@@ -288,48 +288,48 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __createNodeId: function() {
-      return osparc.servicecard.Utils.createNodeId(this.getNodeId());
+      return osparc.info.ServiceUtils.createNodeId(this.getNodeId());
     },
 
     __createKey: function() {
-      return osparc.servicecard.Utils.createKey(this.getService());
+      return osparc.info.ServiceUtils.createKey(this.getService());
     },
 
     __createVersion: function() {
-      return osparc.servicecard.Utils.createVersion(this.getService());
+      return osparc.info.ServiceUtils.createVersion(this.getService());
     },
 
     __createContact: function() {
-      return osparc.servicecard.Utils.createContact(this.getService());
+      return osparc.info.ServiceUtils.createContact(this.getService());
     },
 
     __createAuthors: function() {
-      return osparc.servicecard.Utils.createAuthors(this.getService());
+      return osparc.info.ServiceUtils.createAuthors(this.getService());
     },
 
     __createAccessRights: function() {
-      return osparc.servicecard.Utils.createAccessRights(this.getService());
+      return osparc.info.ServiceUtils.createAccessRights(this.getService());
     },
 
     __createClassifiers: function() {
-      return osparc.servicecard.Utils.createClassifiers(this.getService());
+      return osparc.info.ServiceUtils.createClassifiers(this.getService());
     },
 
     __createQuality: function() {
-      return osparc.servicecard.Utils.createQuality(this.getService());
+      return osparc.info.ServiceUtils.createQuality(this.getService());
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.servicecard.Utils.createThumbnail(this.getService(), maxWidth, maxHeight);
+      return osparc.info.ServiceUtils.createThumbnail(this.getService(), maxWidth, maxHeight);
     },
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.servicecard.Utils.createDescription(this.getService(), maxHeight);
+      return osparc.info.ServiceUtils.createDescription(this.getService(), maxHeight);
     },
 
     __createResources: function() {
-      const resourcesLayout = osparc.servicecard.Utils.createResourcesInfo();
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
       resourcesLayout.exclude();
       let promise = null;
       if (this.getNodeId()) {
@@ -352,7 +352,7 @@ qx.Class.define("osparc.servicecard.Large", {
       promise
         .then(serviceResources => {
           resourcesLayout.show();
-          osparc.servicecard.Utils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+          osparc.info.ServiceUtils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
         })
         .catch(err => console.error(err));
       return resourcesLayout;
@@ -387,7 +387,7 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.servicecard.Utils.openAccessRights(this.getService());
+      const permissionsView = osparc.info.ServiceUtils.openAccessRights(this.getService());
       permissionsView.addListener("updateService", e => {
         const updatedServiceData = e.getData();
         this.setService(updatedServiceData);
@@ -414,7 +414,7 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __openQuality: function() {
-      const qualityEditor = osparc.servicecard.Utils.openQuality(this.getService());
+      const qualityEditor = osparc.info.ServiceUtils.openQuality(this.getService());
       qualityEditor.addListener("updateQuality", e => {
         const updatedServiceData = e.getData();
         this.setService(updatedServiceData);
