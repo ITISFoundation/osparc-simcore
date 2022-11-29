@@ -16,7 +16,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from types_aiobotocore_ec2.type_defs import ReservationTypeDef
 
 from .core.errors import (
-    AutoscalingConfigurationError,
+    ConfigurationError,
     Ec2InstanceNotFoundError,
     Ec2TooManyInstancesError,
 )
@@ -88,7 +88,7 @@ def find_best_fitting_ec2_instance(
     score_type: Callable[[EC2Instance, Resources], float] = closest_instance_policy,
 ) -> EC2Instance:
     if not allowed_ec2_instances:
-        raise AutoscalingConfigurationError(msg="allowed ec2 instances is missing!")
+        raise ConfigurationError(msg="allowed ec2 instances is missing!")
     score_to_ec2_candidate: dict[float, EC2Instance] = OrderedDict(
         sorted(
             {
