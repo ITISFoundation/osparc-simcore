@@ -61,7 +61,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "backToDashboardPressed": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event",
+    "downloadStudyLogs": "qx.event.type.Event"
   },
 
   properties: {
@@ -200,7 +201,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             icon: "@FontAwesome5Solid/download/14",
             ...this.self().BUTTON_OPTIONS
           });
-          control.addListener("execute", () => console.log("info study-service"));
+          control.addListener("execute", () => this.fireEvent("downloadStudyLogs"));
           break;
         case "study-menu-button": {
           const optionsMenu = new qx.ui.menu.Menu();

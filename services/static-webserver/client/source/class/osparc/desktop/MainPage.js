@@ -74,6 +74,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
       navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+      navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
       return navBar;
     },
 
@@ -122,6 +123,12 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__closeStudy(studyId);
         });
       dashboardBtn.setFetching(false);
+    },
+
+    __downloadStudyLogs: function() {
+      if (this.__studyEditor) {
+        this.__studyEditor.getStudyLogger().downloadLogs();
+      }
     },
 
     __createMainStack: function() {
