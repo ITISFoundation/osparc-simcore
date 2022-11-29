@@ -5,13 +5,14 @@
 
 import functools
 import logging
-from typing import Any
+from typing import Any, Literal, Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -82,8 +83,10 @@ async def _get_validated_workbench_model(
     return workbench
 
 
+routes = web.RouteTableDef()
+
 #
-# Models
+# projects/*/inputs COLLECTION -------------------------
 #
 
 
@@ -95,19 +98,16 @@ class ProjectIOBase(BaseModel):
     value: Any = Field(..., description="Value assigned to this i/o port")
 
 
+class ProjectInputUpdate(ProjectIOBase):
+    pass
+
+
 class ProjectInputGet(ProjectIOBase):
     label: str
 
 
-class ProjectOutputGet(ProjectInputGet):
+class ProjectOutputGet(ProjectIOBase):
     pass
-
-
-#
-# projects/*/inputs COLLECTION -------------------------
-#
-
-routes = web.RouteTableDef()
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
@@ -143,7 +143,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    inputs_updates = await parse_request_body_as(list[ProjectIOBase], request)
+    inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
 
     assert request.app  # nosec
 
@@ -212,4 +212,50 @@ async def get_project_outputs(request: web.Request) -> web.Response:
             )
             for node_id, value in outputs.items()
         }
+    )
+
+
+#
+# projects/*/metadata/ports sub-collection -------------------------
+#
+
+
+class ProjectMetadataPortGet(BaseModel):
+    key: NodeID = Field(
+        ...,
+        description="Project port's unique identifer. Same as the UUID of the associated port node",
+    )
+    kind: Literal["input", "output"]
+    content_schema: Optional[JsonSchemaDict] = Field(
+        None,
+        description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
+    )
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_id}}/metadata/ports",
+    name="list_project_metadata_ports",
+)
+@login_required
+@permission_required("project.read")
+@_handle_project_exceptions
+async def list_project_metadata_ports(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    assert request.app  # nosec
+
+    workbench = await _get_validated_workbench_model(
+        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+    )
+
+    return _web_json_response_enveloped(
+        data=[
+            ProjectMetadataPortGet(
+                key=port.node_id,
+                kind=port.kind,
+                content_schema=port.get_schema(),
+            )
+            for port in _ports.iter_project_ports(workbench)
+        ]
     )
