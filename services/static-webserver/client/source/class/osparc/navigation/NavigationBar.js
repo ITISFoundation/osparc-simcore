@@ -171,7 +171,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
             ...this.self().BUTTON_OPTIONS,
             font: "title-14"
           });
