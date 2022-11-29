@@ -12,9 +12,9 @@ from models_library.utils.json_schema import jsonschema_validate_schema
 from pydantic import parse_obj_as
 from simcore_service_webserver.projects._ports import (
     InvalidInputValue,
-    _iter_project_ports,
     get_project_inputs,
     get_project_outputs,
+    iter_project_ports,
     set_project_inputs,
 )
 
@@ -210,7 +210,7 @@ def test_get_project_outputs(workbench: dict[NodeID, Node]):
 
 def test_project_port_get_schema(workbench):
 
-    for port in _iter_project_ports(workbench):
+    for port in iter_project_ports(workbench):
         # eval json-schema
         schema = port.get_schema()
         assert schema

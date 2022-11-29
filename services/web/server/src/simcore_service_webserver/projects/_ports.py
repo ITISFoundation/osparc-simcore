@@ -8,12 +8,12 @@ from models_library.utils.json_schema import (
     JsonSchemaValidationError,
     jsonschema_validate_data,
 )
-from models_library.utils.services_io import get_service_io_json_schema
+from models_library.utils.services_io import JsonSchemaDict, get_service_io_json_schema
 from pydantic import ValidationError
 
 
 @dataclass(frozen=True)
-class _ProjectPort:
+class ProjectPortData:
     kind: Literal["input", "output"]
     node_id: NodeID
     io_key: str
@@ -23,7 +23,7 @@ class _ProjectPort:
     def key(self):
         return f"{self.node_id}.{self.io_key}"
 
-    def get_schema(self) -> Optional[dict[str, Any]]:
+    def get_schema(self) -> Optional[JsonSchemaDict]:
         node_meta = catalog.get_metadata(self.node.key, self.node.version)
         if self.kind == "input" and node_meta.outputs:
             if input_meta := node_meta.outputs[self.io_key]:
@@ -34,10 +34,10 @@ class _ProjectPort:
         return None
 
 
-def _iter_project_ports(
+def iter_project_ports(
     workbench: dict[NodeID, Node],
     filter_kind: Optional[Literal["input", "output"]] = None,
-) -> Iterator[_ProjectPort]:
+) -> Iterator[ProjectPortData]:
     """Iterates the nodes in a workbench that define the input/output ports of a project
 
     - A node in general has inputs and outputs:
@@ -63,7 +63,7 @@ def _iter_project_ports(
             assert list(node.outputs.keys()) == ["out_1"]  # nosec
 
             for output_key in node.outputs.keys():
-                yield _ProjectPort(
+                yield ProjectPortData(
                     kind="input", node_id=node_id, io_key=output_key, node=node
                 )
 
@@ -79,7 +79,7 @@ def _iter_project_ports(
             assert list(node.inputs.keys()) == ["in_1"]  # nosec
 
             for inputs_key in node.inputs.keys():
-                yield _ProjectPort(
+                yield ProjectPortData(
                     kind="output", node_id=node_id, io_key=inputs_key, node=node
                 )
 
@@ -87,7 +87,7 @@ def _iter_project_ports(
 def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     """Returns the values assigned to each input node"""
     input_to_value = {}
-    for port in _iter_project_ports(workbench, "input"):
+    for port in iter_project_ports(workbench, "input"):
         input_to_value[port.node_id] = (
             port.node.outputs["out_1"] if port.node.outputs else None
         )
@@ -113,7 +113,7 @@ def set_project_inputs(
         if (node := workbench[node_id]) and node.outputs != output:
             # validates value against jsonschema
             try:
-                port = _ProjectPort(
+                port = ProjectPortData(
                     kind="input", node_id=node_id, io_key="out_1", node=node
                 )
                 if schema := port.get_schema():
@@ -136,7 +136,7 @@ class _NonStrictPortLink(PortLink):
 def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     """Returns values assigned to each output node"""
     output_to_value = {}
-    for port in _iter_project_ports(workbench, "output"):
+    for port in iter_project_ports(workbench, "output"):
         if port.node.inputs:
             try:
                 # Is link?
