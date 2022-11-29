@@ -10,10 +10,17 @@
 #
 --constraint _base.txt
 
+asgi-lifespan
+
 codecov
 coverage
 coveralls
+deepdiff
+docker
 faker
+httpx
+moto[server]
+psutil
 pytest
 pytest-asyncio
 pytest-cov

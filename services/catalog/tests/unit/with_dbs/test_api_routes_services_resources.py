@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 import urllib.parse
 from copy import deepcopy
 from random import choice, randint
@@ -115,7 +114,7 @@ def _update_copy(dict_data: dict, update: dict) -> dict:
                     "RAM": ResourceValue(
                         limit=ByteSize(17179869184), reservation=ByteSize(536870912)
                     ),
-                    "VRAM": ResourceValue(limit=0, reservation=1),
+                    "VRAM": ResourceValue(limit=1, reservation=1),
                     "AIRAM": ResourceValue(limit=0, reservation="some_string"),
                 },
             ),
@@ -155,7 +154,7 @@ def _update_copy(dict_data: dict, update: dict) -> dict:
                         limit=ByteSize(53687091232),
                         reservation=ByteSize(53687091232),
                     ),
-                    "VRAM": ResourceValue(limit=0, reservation=1),
+                    "VRAM": ResourceValue(limit=1, reservation=1),
                 },
             ),
             id="no_limits_with_reservations_above_default_returns_same_as_reservation",
@@ -185,10 +184,7 @@ async def test_get_service_resources(
     )
     assert type(expected_service_resources) == dict
 
-    assert received_resources == expected_service_resources, "{}\n{}".format(
-        json.dumps(received_resources, indent=2),
-        json.dumps(expected_service_resources, indent=2),
-    )
+    assert received_resources == expected_service_resources
 
 
 @pytest.fixture

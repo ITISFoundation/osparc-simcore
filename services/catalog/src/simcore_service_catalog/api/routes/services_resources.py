@@ -14,46 +14,34 @@ from models_library.service_settings_labels import (
 from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
-    ResourceValue,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as, parse_raw_as
 from servicelib.docker_compose import replace_env_vars_in_compose_spec
 
+from ...db.repositories.services import ServicesRepository
+from ...models.domain.group import GroupAtDB
 from ...models.schemas.constants import (
     DIRECTOR_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
     SIMCORE_SERVICE_SETTINGS_LABELS,
 )
 from ...services.function_services import is_function_service
+from ...utils.service_resources import (
+    merge_service_resources_with_user_specs,
+    parse_generic_resource,
+)
+from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 from ..dependencies.services import get_default_service_resources
+from ..dependencies.user_groups import list_user_groups
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
 SIMCORE_SERVICE_COMPOSE_SPEC_LABEL: Final[str] = "simcore.service.compose-spec"
-
-
-def _parse_generic_resource(
-    generic_resources: list[Any], service_resources: ResourcesDict
-) -> None:
-    for res in generic_resources:
-        if not isinstance(res, dict):
-            continue
-
-        if named_resource_spec := res.get("NamedResourceSpec"):
-            service_resources.setdefault(
-                named_resource_spec["Kind"],
-                ResourceValue(limit=0, reservation=named_resource_spec["Value"]),
-            ).reservation = named_resource_spec["Value"]
-        if discrete_resource_spec := res.get("DiscreteResourceSpec"):
-            service_resources.setdefault(
-                discrete_resource_spec["Kind"],
-                ResourceValue(limit=0, reservation=discrete_resource_spec["Value"]),
-            ).reservation = discrete_resource_spec["Value"]
 
 
 def _from_service_settings(
@@ -77,15 +65,22 @@ def _from_service_settings(
         if nano_cpu_limit := entry.value.get("Limits", {}).get("NanoCPUs"):
             service_resources["CPU"].limit = nano_cpu_limit / 1.0e09
         if nano_cpu_reservation := entry.value.get("Reservations", {}).get("NanoCPUs"):
+            # NOTE: if the limit was below, it needs to be increased as well
+            service_resources["CPU"].limit = max(
+                service_resources["CPU"].limit, nano_cpu_reservation / 1.0e09
+            )
             service_resources["CPU"].reservation = nano_cpu_reservation / 1.0e09
         if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
             service_resources["RAM"].limit = ram_limit
         if ram_reservation := entry.value.get("Reservations", {}).get("MemoryBytes"):
+            # NOTE: if the limit was below, it needs to be increased as well
+            service_resources["RAM"].limit = max(
+                service_resources["RAM"].limit, ram_reservation
+            )
             service_resources["RAM"].reservation = ram_reservation
 
-        _parse_generic_resource(
+        service_resources |= parse_generic_resource(
             entry.value.get("Reservations", {}).get("GenericResources", []),
-            service_resources,
         )
 
     return service_resources
@@ -135,17 +130,16 @@ def _get_service_settings(
 )
 @cached(
     ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['service_key']}_{kwargs['service_version']}",
+    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs.get('user_id', 'default')}_{kwargs['service_key']}_{kwargs['service_version']}",
 )
 async def get_service_resources(
     service_key: DockerImageKey,
     service_version: DockerImageVersion,
     director_client: DirectorApi = Depends(get_director_api),
     default_service_resources: ResourcesDict = Depends(get_default_service_resources),
+    services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
+    user_groups: list[GroupAtDB] = Depends(list_user_groups),
 ) -> ServiceResourcesDict:
-    # TODO: --> PC: I'll need to go through that with you for function services,
-    # cause these entries are not in ServiceDockerData
-
     image_version = f"{service_key}:{service_version}"
     if is_function_service(service_key):
         return ServiceResourcesDictHelpers.create_from_single_service(
@@ -168,14 +162,27 @@ async def get_service_resources(
     logger.debug("received %s", f"{service_spec=}")
 
     if service_spec is None:
+        # no compose specifications -> single service
         service_settings = _get_service_settings(service_labels)
         service_resources = _from_service_settings(
             service_settings, default_service_resources, service_key, service_version
         )
+        user_specific_service_specs = await services_repo.get_service_specifications(
+            service_key,
+            service_version,
+            tuple(user_groups),
+            allow_use_latest_service_version=True,
+        )
+        if user_specific_service_specs and user_specific_service_specs.service:
+            service_resources = merge_service_resources_with_user_specs(
+                service_resources, user_specific_service_specs.service
+            )
+
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, service_resources
         )
 
+    # compose specifications available, potentially multiple services
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry="",
@@ -183,7 +190,7 @@ async def get_service_resources(
     )
     full_service_spec: ComposeSpecLabel = yaml.safe_load(stringified_service_spec)
 
-    results: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
+    service_to_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
 
     for spec_key, spec_data in full_service_spec["services"].items():
         # image can be:
@@ -206,9 +213,21 @@ async def get_service_resources(
                 service_key,
                 service_version,
             )
+            user_specific_service_specs = (
+                await services_repo.get_service_specifications(
+                    key,
+                    version,
+                    tuple(user_groups),
+                    allow_use_latest_service_version=True,
+                )
+            )
+            if user_specific_service_specs and user_specific_service_specs.service:
+                spec_service_resources = merge_service_resources_with_user_specs(
+                    spec_service_resources, user_specific_service_specs.service
+                )
 
-        results[spec_key] = ImageResources.parse_obj(
+        service_to_resources[spec_key] = ImageResources.parse_obj(
             {"image": image, "resources": spec_service_resources}
         )
 
-    return results
+    return service_to_resources

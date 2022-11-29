@@ -189,7 +189,7 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.get_dynamic_services(
+    project_running_nodes = await director_v2_api.list_dynamic_services(
         request.app, user_id, f"{project_uuid}"
     )
 
@@ -206,6 +206,7 @@ async def _start_dynamic_service(
     # this is a dynamic node, let's gather its resources and start it
     service_resources: ServiceResourcesDict = await get_project_node_resources(
         request.app,
+        user_id=user_id,
         project={
             "workbench": {
                 f"{node_uuid}": {"key": service_key, "version": service_version}
@@ -309,7 +310,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_running_dynamic_services = await director_v2_api.get_dynamic_services(
+    list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
     if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
@@ -836,12 +837,13 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, project: dict[str, Any], node_id: NodeID
+    app: web.Application, user_id: UserID, project: dict[str, Any], node_id: NodeID
 ) -> ServiceResourcesDict:
     if project_node := project.get("workbench", {}).get(f"{node_id}"):
-        return await catalog_client.get_service_resources(
-            app, project_node["key"], project_node["version"]
+        default_service_resources = await catalog_client.get_service_resources(
+            app, user_id, project_node["key"], project_node["version"]
         )
+        return default_service_resources
     raise NodeNotFoundError(project["uuid"], f"{node_id}")
 
 
@@ -864,7 +866,7 @@ async def run_project_dynamic_services(
     assert project_settings  # nosec
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
-        for d in await director_v2_api.get_dynamic_services(
+        for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]
