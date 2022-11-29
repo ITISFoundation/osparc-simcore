@@ -1,6 +1,4 @@
 # pylint: disable=redefined-outer-name
-import random
-import string
 from collections import namedtuple
 
 import pytest
@@ -14,7 +12,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     DockerContainerInspect,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
-    CONTAINER_STATUSES_FAILED,
+    CONTAINER_STATUSES_UNEXPECTED,
     extract_containers_minimum_statuses,
 )
 
@@ -75,14 +73,10 @@ def mock_containers_statuses() -> dict[str, dict[str, str]]:
 # UTILS
 
 
-def _random_string(length: int = 4) -> str:
-    return "".join(random.choices(RANDOM_STRING_DATASET, k=length))
-
-
 def _make_status_dict(status: str) -> DockerContainerInspect:
     assert status in ALL_CONTAINER_STATUSES
     status_dict = {"Status": status}
-    if status in CONTAINER_STATUSES_FAILED:
+    if status in CONTAINER_STATUSES_UNEXPECTED:
         status_dict["Error"] = "failed state here"
 
     return DockerContainerInspect.from_container(

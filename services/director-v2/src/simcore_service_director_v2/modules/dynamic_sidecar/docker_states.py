@@ -33,7 +33,7 @@ TASK_STATES_ALL: set[str] = (
 # mapping container states into 4 categories
 # For all avaliable containerstates SEE
 # https://github.com/moby/moby/blob/master/container/state.go#L140
-CONTAINER_STATUSES_FAILED: set[str] = {
+CONTAINER_STATUSES_UNEXPECTED: set[str] = {
     "restarting",
     "dead",
     "paused",
@@ -55,7 +55,7 @@ _TASK_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
 
 
 _CONTAINER_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
-    **dict.fromkeys(CONTAINER_STATUSES_FAILED, ServiceState.FAILED),
+    **dict.fromkeys(CONTAINER_STATUSES_UNEXPECTED, ServiceState.FAILED),
     **dict.fromkeys(CONTAINER_STATUSES_STARTING, ServiceState.STARTING),
     **dict.fromkeys(CONTAINER_STATUSES_RUNNING, ServiceState.RUNNING),
 }
