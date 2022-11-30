@@ -41,6 +41,7 @@ async def test_status_no_rabbit(
     rabbitmq_status = status_response["rabbitmq"]
     assert "initialized" in rabbitmq_status
     assert rabbitmq_status["initialized"] is False
+    assert rabbitmq_status["connection_state"] is False
 
 
 async def test_status(async_client: httpx.AsyncClient):
@@ -52,3 +53,4 @@ async def test_status(async_client: httpx.AsyncClient):
     rabbitmq_status = status_response["rabbitmq"]
     assert "initialized" in rabbitmq_status
     assert rabbitmq_status["initialized"] is True
+    assert rabbitmq_status["connection_state"] is True

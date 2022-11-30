@@ -22,25 +22,23 @@ async def health_check():
     return f"{__name__}.health_check@{datetime.utcnow().isoformat()}"
 
 
-class RabbitMQStatus(BaseModel):
+class _RabbitMQStatus(BaseModel):
     initialized: bool
     connection_state: bool
 
-    @classmethod
-    def from_app(cls, app: FastAPI) -> "RabbitMQStatus":
-        if app.state.rabbitmq_client:
-            client = get_rabbitmq_client(app)
 
-        # TODO: ping the rabbit MQ
-        return RabbitMQStatus(
-            initialized=bool(app.state.rabbitmq_client), connection_state=False
+class _StatusGet(BaseModel):
+    rabbitmq: _RabbitMQStatus
+
+
+@router.get("/status", include_in_schema=True, response_model=_StatusGet)
+async def get_status(app: FastAPI = Depends(get_app)) -> _StatusGet:
+
+    return _StatusGet(
+        rabbitmq=_RabbitMQStatus(
+            initialized=bool(app.state.rabbitmq_client),
+            connection_state=await get_rabbitmq_client(app).ping()
+            if app.state.rabbitmq_client
+            else False,
         )
-
-
-class StatusGet(BaseModel):
-    rabbitmq: RabbitMQStatus
-
-
-@router.get("/status", include_in_schema=True, response_model=StatusGet)
-async def get_status(app: FastAPI = Depends(get_app)) -> StatusGet:
-    return StatusGet(rabbitmq=RabbitMQStatus.from_app(app))
+    )
