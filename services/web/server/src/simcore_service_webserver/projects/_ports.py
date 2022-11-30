@@ -27,11 +27,20 @@ class ProjectPortData:
         node_meta = catalog.get_metadata(self.node.key, self.node.version)
         if self.kind == "input" and node_meta.outputs:
             if input_meta := node_meta.outputs[self.io_key]:
-                return get_service_io_json_schema(input_meta)
+                return self._get_port_schema(input_meta)
         elif self.kind == "output" and node_meta.inputs:
             if output_meta := node_meta.inputs[self.io_key]:
-                return get_service_io_json_schema(output_meta)
+                return self._get_port_schema(output_meta)
         return None
+
+    def _get_port_schema(self, io_meta):
+        schema = get_service_io_json_schema(io_meta)
+        if schema:
+            # uses node label instead of service title
+            # This way it will contain the label the user
+            # gave to the port
+            schema["title"] = self.node.label
+        return schema
 
 
 def iter_project_ports(
