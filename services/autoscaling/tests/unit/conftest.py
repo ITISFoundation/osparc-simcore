@@ -256,8 +256,8 @@ async def create_service(
     @retry(
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
-        wait=wait_fixed(0.5),
-        stop=stop_after_delay(10),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
     )
     async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
         print(
