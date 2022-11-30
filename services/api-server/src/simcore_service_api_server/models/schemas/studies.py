@@ -10,6 +10,7 @@ StudyID = ProjectID
 class StudyPort(SolverPort):
     key: NodeID = Field(
         ...,
-        description="port identifier name",
+        description="port identifier name."
+        "Correponds to the UUID of the parameter/probe node in the study",
         title="Key name",
     )
