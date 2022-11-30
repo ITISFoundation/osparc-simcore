@@ -155,6 +155,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
     # via
+    #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_test.in
     #   pytest-forked
 pylint==2.15.5
