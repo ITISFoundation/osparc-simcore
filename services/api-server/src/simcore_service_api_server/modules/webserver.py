@@ -4,12 +4,13 @@ import logging
 from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response
+from models_library.projects import ProjectID
 from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
@@ -22,7 +23,7 @@ from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
-from ..models.raw_data import JSON, ListAnyDict
+from ..models.types import JSON, ListAnyDict
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ class AuthSession:
         )
 
     @classmethod
-    def _process(cls, resp: Response) -> Optional[JSON]:
+    def _postprocess(cls, resp: Response) -> Optional[JSON]:
         # enveloped answer
         data, error = None, None
 
@@ -97,7 +98,7 @@ class AuthSession:
             logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._process(resp)
+        return self._postprocess(resp)
 
     async def put(self, path: str, body: dict) -> Optional[JSON]:
         url = path.lstrip("/")
@@ -107,7 +108,7 @@ class AuthSession:
             logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._process(resp)
+        return self._postprocess(resp)
 
     # PROJECTS resource ---
     # TODO: error handling!
@@ -122,7 +123,7 @@ class AuthSession:
             ),  ## FIXME: REEAAAALY HACKY!
             cookies=self.session_cookies,
         )
-        data: Optional[JSON] = self._process(resp)
+        data: Optional[JSON] = self._postprocess(resp)
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
         # NOTE: /v0 is already included in the http client base_url
@@ -155,7 +156,7 @@ class AuthSession:
             f"/projects/{project_id}", cookies=self.session_cookies
         )
 
-        data: Optional[JSON] = self._process(resp)
+        data: Optional[JSON] = self._postprocess(resp)
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> list[Project]:
@@ -166,7 +167,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = self._process(resp) or []
+        data: ListAnyDict = self._postprocess(resp) or []
 
         # FIXME: move filter to webserver API (next PR)
         projects: deque[Project] = deque()
@@ -181,6 +182,20 @@ class AuthSession:
                     )
 
         return list(projects)
+
+    async def get_project_metadata_ports(
+        self, project_id: ProjectID
+    ) -> list[dict[str, Any]]:
+        # GET "/projects/{study_id}/metadata/ports"
+        # FIXME: improve error handling
+        resp = await self.client.get(
+            f"/projects/{project_id}/metadata/ports",
+            cookies=self.session_cookies,
+        )
+        data = self._postprocess(resp)
+        assert data
+        assert isinstance(data, list)
+        return data
 
 
 def _get_secret_key(settings: WebServerSettings):

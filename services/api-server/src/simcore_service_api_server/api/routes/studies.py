@@ -3,11 +3,12 @@
 
 """
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends
 
 from ...core.settings import BasicSettings
-from ...models.schemas.studies import StudyPort
+from ...models.schemas.studies import StudyID, StudyPort
 from ..dependencies.webserver import AuthSession, get_webserver_session
 
 logger = logging.getLogger(__name__)
@@ -24,13 +25,15 @@ settings = BasicSettings.create_from_envs()
     response_model=list[StudyPort],
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-def list_study_ports(
-    client: AuthSession = Depends(get_webserver_session),
+async def list_study_ports(
+    study_id: StudyID,
+    webserver_api: AuthSession = Depends(get_webserver_session),
 ):
     """Lists metadata on ports of a given study
 
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
-    # GET /projects/{project_id}/metadata/ports
-
-    raise NotImplementedError()
+    project_ports: list[
+        dict[str, Any]
+    ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
+    return project_ports
