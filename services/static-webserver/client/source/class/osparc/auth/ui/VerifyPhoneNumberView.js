@@ -71,6 +71,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.add(verificationInfoDesc);
 
       const phoneNumberVerifyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      phoneNumberVerifyLayout.getContentElement().setStyles({
+        "overflow": "visible"
+      });
 
       const html = "<input type='tel' id='phone' name='phone' autocomplete='off' required>";
       const phoneNumber = this.__phoneNumberTF = new qx.ui.embed.Html(html);
@@ -83,6 +86,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         const itiInput = this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
         console.log("qx", phoneNumber);
         console.log("iti", itiInput);
+        phoneNumber.getContentElement().setStyles({
+          "overflow": "visible"
+        });
       }, 1000);
 
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
@@ -93,7 +99,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __buildValidationLayout: function() {
-      const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+        zIndex: 1 // the contries list that goes on top has a z-index of 1
+      });
       const validationCode = this.__validateCodeTF = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type the SMS code"),
         enabled: false
