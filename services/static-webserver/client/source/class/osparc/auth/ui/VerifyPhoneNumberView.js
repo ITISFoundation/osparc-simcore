@@ -110,7 +110,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __buildValidationLayout: function() {
       const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-        zIndex: 1 // the contries list that goes on top has a z-index of 1
+        zIndex: 1 // the contries list that goes on top has a z-index of 2
       });
       const validationCode = this.__validateCodeTF = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type the SMS code"),
