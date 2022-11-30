@@ -28,4 +28,3 @@ pytest-mock
 pytest-runner
 python-dotenv
 respx
-types-aiobotocore[s3] # s3 storage
