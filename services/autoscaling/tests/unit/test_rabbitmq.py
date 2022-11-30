@@ -9,7 +9,7 @@ import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import RabbitAutoscalingMessage
+from models_library.rabbitmq_messages import AutoscalingStatus, RabbitAutoscalingMessage
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.errors import ConfigurationError
 from simcore_service_autoscaling.rabbitmq import (
@@ -54,6 +54,7 @@ def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingMessage:
         cluster_total_resources=faker.pydict(),
         cluster_used_resources=faker.pydict(),
         number_pending_tasks_without_resources=faker.pyint(),
+        status=AutoscalingStatus.IDLE,
     )
 
 

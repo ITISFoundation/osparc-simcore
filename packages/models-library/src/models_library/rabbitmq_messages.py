@@ -55,6 +55,11 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     result: Optional[RunningState] = None
 
 
+class AutoscalingStatus(str, Enum):
+    IDLE = "IDLE"
+    SCALING_UP = "SCALING_UP"
+
+
 class RabbitAutoscalingMessage(RabbitMessageBase):
     channel_name: Literal["io.osparc.autoscaling"] = "io.osparc.autoscaling"
     origin: str
@@ -62,3 +67,4 @@ class RabbitAutoscalingMessage(RabbitMessageBase):
     cluster_total_resources: dict[str, Any]
     cluster_used_resources: dict[str, Any]
     number_pending_tasks_without_resources: int
+    status: AutoscalingStatus
