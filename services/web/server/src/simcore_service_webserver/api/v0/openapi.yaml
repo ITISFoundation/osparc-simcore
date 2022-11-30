@@ -3226,6 +3226,7 @@ paths:
                       required:
                         - key
                         - value
+                        - label
                       type: object
                       properties:
                         key:
@@ -3236,6 +3237,9 @@ paths:
                         value:
                           title: Value
                           description: Value assigned to this i/o port
+                        label:
+                          title: Label
+                          type: string
                   error:
                     title: Error
   '/projects/{project_id}/metadata/ports':

@@ -203,6 +203,7 @@ components:
       required:
       - key
       - value
+      - label
       type: object
       properties:
         key:
@@ -214,6 +215,9 @@ components:
         value:
           title: Value
           description: Value assigned to this i/o port
+        label:
+          title: Label
+          type: string
     ValidationError:
       title: ValidationError
       required:
