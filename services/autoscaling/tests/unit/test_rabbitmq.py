@@ -67,6 +67,16 @@ async def test_post_cluster_state_message(
     )
 
 
+async def test_post_cluster_state_message_with_disabled_rabbit(
+    disabled_rabbitmq: None,
+    initialized_app: FastAPI,
+    rabbit_autoscaling_message: RabbitAutoscalingMessage,
+):
+    await post_cluster_state_message(
+        initialized_app, state_msg=rabbit_autoscaling_message
+    )
+
+
 async def test_post_cluster_state_message_when_rabbit_disconnected(
     enabled_rabbitmq: RabbitSettings,
     initialized_app: FastAPI,
