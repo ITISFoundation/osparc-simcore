@@ -46,6 +46,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
   members: {
     __phoneNumberTF: null,
+    __itiInput: null,
+    __invalidNumberText: null,
     __verifyPhoneNumberBtn: null,
     __validateCodeTF: null,
     __validateCodeBtn: null,
@@ -83,9 +85,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
       const convertInputToPhoneInput = () => {
         const domElement = document.querySelector("#phone");
-        const itiInput = this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
-        console.log("qx", phoneNumber);
-        console.log("iti", itiInput);
+        this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
         phoneNumber.getContentElement().setStyles({
           "overflow": "visible"
         });
@@ -99,6 +99,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           }
         });
       }
+      const invalidNumberText = this.__invalidNumberText = new qx.ui.basic.Label().set({
+        textColor: "failed-red",
+        visibility: "excluded"
+      });
+      phoneNumberVerifyLayout.add(invalidNumberText);
 
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
         maxHeight: 23,
@@ -134,6 +139,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __verifyPhoneNumber: function() {
       const isValid = this.__itiInput.isValidNumber();
+      this.__invalidNumberText.setVisibility(isValid ? "excluded" : "visible");
       if (isValid) {
         console.log("valid", this.__itiInput.getNumber());
         this.__phoneNumberTF.setEnabled(false);
@@ -150,7 +156,15 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__phoneNumberTF.setEnabled(true);
           });
       } else {
-        console.log("not valid", this.__itiInput.getValidationError());
+        const validationError = this.__itiInput.getValidationError();
+        const errorMap = {
+          0: this.tr("Invalid number"),
+          1: this.tr("Invalid country code"),
+          2: this.tr("Number too short"),
+          3: this.tr("Number too long")
+        };
+        const errorMsg = validationError in errorMap ? errorMap[validationError] : "Invalid number";
+        this.__invalidNumberText.setValue(errorMsg);
       }
     },
 
