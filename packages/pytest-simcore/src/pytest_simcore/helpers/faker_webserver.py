@@ -4,7 +4,7 @@ from typing import Any, Final
 # as reponses in this mock. SEE services/web/server/tests/unit/with_dbs/02/test_projects_ports_handlers.py
 # NOTE: this could be added as examples in the OAS but for the moment we want to avoid overloading openapi.yml
 # in the web-server.
-PROJECTS_METADATA_PORTS_RESPOSE_BODY_DATA: Final[list[dict[str, Any]]] = [
+PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA: Final[list[dict[str, Any]]] = [
     {
         "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
         "kind": "input",

@@ -14,7 +14,7 @@ import yaml
 from faker import Faker
 from fastapi import FastAPI, status
 from pytest_simcore.helpers.faker_webserver import (
-    PROJECTS_METADATA_PORTS_RESPOSE_BODY_DATA,
+    PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -43,7 +43,7 @@ def study_id(faker: Faker) -> StudyID:
 def fake_study_ports() -> list[dict[str, Any]]:
     # NOTE: Reuses fakes used to test web-server API responses of /projects/{project_id}/metadata/ports
     # as reponses in this mock. SEE services/web/server/tests/unit/with_dbs/02/test_projects_ports_handlers.py
-    return deepcopy(PROJECTS_METADATA_PORTS_RESPOSE_BODY_DATA)
+    return deepcopy(PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA)
 
 
 @pytest.fixture
