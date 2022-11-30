@@ -1,7 +1,3 @@
-""" Studies collections
-
-
-"""
 import logging
 from typing import Any
 
@@ -14,10 +10,6 @@ from ..dependencies.webserver import AuthSession, get_webserver_session
 logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = BasicSettings.create_from_envs()
-
-#
-# studies/{project_id}
-#
 
 
 @router.get(
