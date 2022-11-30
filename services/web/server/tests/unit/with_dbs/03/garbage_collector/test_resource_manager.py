@@ -355,6 +355,27 @@ _TENACITY_ASSERT_RETRY = dict(
 )
 
 
+@pytest.mark.skip(
+    reason="this test is here to show warnings when closing "
+    "the socketio server and could be useful as a proof"
+    "see https://github.com/miguelgrinberg/python-socketio/discussions/1092"
+    "and simcore_service_webserver.socketio.server _socketio_server_cleanup_ctx"
+)
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        (UserRole.TESTER),
+    ],
+)
+async def test_asyncio_task_pending_on_close(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    socketio_client_factory: Callable,
+):
+    sio = await socketio_client_factory()
+    # this test generates warnings on its own
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
