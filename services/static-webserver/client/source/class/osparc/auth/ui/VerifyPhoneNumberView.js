@@ -79,17 +79,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       });
       // hack to load the library
       setTimeout(() => {
-        const countryData = window.intlTelInputGlobals.getCountryData();
-        console.log(countryData);
-        /*
-        const flags = new qx.ui.form.SelectBox();
-        countryData.forEach(cData => {
-          const roleItem = new qx.ui.form.ListItem(cData);
-          role.add(roleItem);
-          role.setSelection([roleItem]);
-        });
-        */
-
         const domElement = document.querySelector("#phone");
         const itiInput = this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
         console.log("qx", phoneNumber);
