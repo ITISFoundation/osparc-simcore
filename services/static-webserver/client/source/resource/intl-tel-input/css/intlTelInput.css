@@ -47,6 +47,8 @@
     margin: 0 0 0 -1px;
     box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
     background-color: white;
+    /* osparc */
+    background-color: #202426;
     border: 1px solid #CCC;
     white-space: nowrap;
     max-height: 200px;
