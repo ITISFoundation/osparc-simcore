@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 
-import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterator
@@ -11,6 +10,7 @@ from typing import Any, Iterator
 import httpx
 import pytest
 import respx
+import yaml
 from faker import Faker
 from fastapi import FastAPI, status
 from pytest_simcore.helpers.faker_webserver import (
@@ -30,7 +30,7 @@ def webserver_service_openapi_specs(
         osparc_simcore_services_dir
         / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
     )
-    openapi_specs = json.loads(openapi_path.read_text())
+    openapi_specs = yaml.safe_load(openapi_path.read_text())
     return openapi_specs
 
 
@@ -73,7 +73,11 @@ def mocked_webserver_service_api(
 
         # Mocks /health
         assert oas_paths["/health"]
-        respx_mock.get("/v0/health").respond(
+        assert (
+            oas_paths["/health"]["get"]["operationId"] == "healthcheck_liveness_probe"
+        )
+        # 'http://webserver:8080/v0/health'
+        respx_mock.get("/health", name="healthcheck_liveness_probe").respond(
             200,
             json={
                 "data": {
@@ -89,7 +93,7 @@ def mocked_webserver_service_api(
         assert oas_paths["/projects/{project_id}/metadata/ports"]
         assert "get" in oas_paths["/projects/{project_id}/metadata/ports"].keys()
         respx_mock.get(
-            path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/metadata/ports",
+            path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
             name="list_project_metadata_ports",
         ).respond(
             200,
@@ -99,33 +103,42 @@ def mocked_webserver_service_api(
         yield respx_mock
 
 
-async def test_mocked_webserver_service_api(
-    client: httpx.AsyncClient,
+def test_mocked_webserver_service_api(
+    app: FastAPI,
     mocked_webserver_service_api: MockRouter,
+    study_id: StudyID,
     fake_study_ports: list[dict[str, Any]],
 ):
+    #
+    # This test intends to help building the urls in mocked_webserver_service_api
+    # At some point, it can be skipped and reenabled only for development
+    #
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER
+    webserver_api_baseurl = settings.API_SERVER_WEBSERVER.base_url
+
+    resp = httpx.get(f"{webserver_api_baseurl}/health")
+    assert resp.status_code == status.HTTP_200_OK
+
     # Sometimes is difficult to adjust respx.Mock
-    resp = await client.get(f"/v0/study/{study_id}/ports")
-
-    assert mocked_webserver_service_api.assert_all_called()
-
+    resp = httpx.get(f"{webserver_api_baseurl}/projects/{study_id}/metadata/ports")
     assert resp.status_code == status.HTTP_200_OK
 
     payload = resp.json()
     assert payload.get("error") is None
     assert payload.get("data") == fake_study_ports
 
+    mocked_webserver_service_api.assert_all_called()
 
-async def test_study_io_ports_workflow(
+
+async def test_list_study_ports(
     client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
     mocked_webserver_service_api: MockRouter,
-    faker: Faker,
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
 ):
-    study_id = faker.uuid4()
-
     # list_study_ports
-    resp = await client.get(f"/v0/study/{study_id}/ports")
+    resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == fake_study_ports
