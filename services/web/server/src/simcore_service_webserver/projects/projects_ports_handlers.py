@@ -13,7 +13,7 @@ from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.services_io import JsonSchemaDict
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -85,12 +85,28 @@ async def _get_validated_workbench_model(
 
 routes = web.RouteTableDef()
 
-#
+
+class _InputSchema:
+    class Config:
+        allow_population_by_field_name = False
+        extra = Extra.forbid
+        allow_mutations = False
+
+
+class _OutputSchema:
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.ignore
+        allow_mutations = False
+
+        #
+
+
 # projects/*/inputs COLLECTION -------------------------
 #
 
 
-class ProjectIOBase(BaseModel):
+class _ProjectIOBase(BaseModel):
     key: NodeID = Field(
         ...,
         description="Project port's unique identifer. Same as the UUID of the associated port node",
@@ -98,16 +114,16 @@ class ProjectIOBase(BaseModel):
     value: Any = Field(..., description="Value assigned to this i/o port")
 
 
-class ProjectInputUpdate(ProjectIOBase):
-    pass
+class ProjectInputUpdate(_InputSchema, _ProjectIOBase):
+    ...
 
 
-class ProjectInputGet(ProjectIOBase):
+class ProjectInputGet(_OutputSchema, _ProjectIOBase):
     label: str
 
 
-class ProjectOutputGet(ProjectIOBase):
-    pass
+class ProjectOutputGet(_OutputSchema, _ProjectIOBase):
+    label: str
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")
