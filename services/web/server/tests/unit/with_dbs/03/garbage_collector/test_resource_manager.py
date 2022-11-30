@@ -245,23 +245,27 @@ async def test_websocket_resource_management(
 ):
     cur_client_session_id = client_session_id_factory()
     sio = await socketio_client_factory(cur_client_session_id)
-    sid = sio.sid
+    sid = sio.get_sid()
     resource_key = {
         "user_id": str(logged_user["id"]),
         "client_session_id": cur_client_session_id,
     }
     # FIXME: this check fails with python-socketio>=5.0.0 (see requirements/_base.in)
-    assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
-    assert sio.sid in await socket_registry.find_resources(resource_key, "socket_id")
+    assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
+        resource_key
+    ]
+    assert sio.get_sid() in await socket_registry.find_resources(
+        resource_key, "socket_id"
+    )
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
 
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
     await sio.disconnect()
-    assert not sio.sid
+    assert not sio.get_sid()
     # NOTE: let the disconnection propagate
     await asyncio.sleep(1)
     # now the entries should be removed
-    assert not await socket_registry.find_keys(("socket_id", sio.sid))
+    assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
     assert not sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert not await socket_registry.find_resources(resource_key, "socket_id")
 
