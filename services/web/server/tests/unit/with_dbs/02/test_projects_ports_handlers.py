@@ -12,6 +12,9 @@ from aiohttp.test_utils import TestClient
 from models_library.projects_nodes import Node, NodeID
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import parse_obj_as
+from pytest_simcore.helpers.faker_webserver import (
+    PROJECTS_METADATA_PORTS_RESPOSE_BODY_DATA,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver._meta import API_VTAG as VX
@@ -267,6 +270,8 @@ async def test_io_workflow(
                 },
             },
         ]
+
+        assert ports_meta == PROJECTS_METADATA_PORTS_RESPOSE_BODY_DATA
 
     # get_project_inputs
     expected_url = client.app.router["get_project_inputs"].url_for(
