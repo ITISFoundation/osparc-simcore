@@ -84,8 +84,7 @@ qx.Class.define("osparc.wrapper.IntlTelInput", {
 
     inputToPhoneInput: function(input) {
       const iti = intlTelInput(input, {
-        initialCountry: "ch", // auto: geoIpLookup. need to unlock https://ipinfo.io/
-        separateDialCode: true
+        initialCountry: "ch" // auto: geoIpLookup. need to unlock https://ipinfo.io/
       });
       return iti;
     }

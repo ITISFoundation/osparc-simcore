@@ -71,13 +71,31 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.add(verificationInfoDesc);
 
       const phoneNumberVerifyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const phoneNumber = this.__phoneNumberTF = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr("Type your phone number")
-      });
+
+      const html = "<input type='tel' id='phone' name='phone' autocomplete='off' required>";
+      const phoneNumber = this.__phoneNumberTF = new qx.ui.embed.Html(html);
       phoneNumberVerifyLayout.add(phoneNumber, {
         flex: 1
       });
+      // hack to load the library
+      setTimeout(() => {
+        const countryData = window.intlTelInputGlobals.getCountryData();
+        console.log(countryData);
+        /*
+        const flags = new qx.ui.form.SelectBox();
+        countryData.forEach(cData => {
+          const roleItem = new qx.ui.form.ListItem(cData);
+          role.add(roleItem);
+          role.setSelection([roleItem]);
+        });
+        */
+
+        const domElement = document.querySelector("#phone");
+        const itiInput = this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
+        console.log("qx", phoneNumber);
+        console.log("iti", itiInput);
+      }, 1000);
+
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
         minWidth: 80
       });
@@ -108,12 +126,13 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __verifyPhoneNumber: function() {
-      const isValid = osparc.auth.core.Utils.phoneNumberValidator(this.__phoneNumberTF.getValue(), this.__phoneNumberTF);
+      const isValid = this.__itiInput.isValidNumber();
       if (isValid) {
+        console.log("valid", this.__itiInput.getNumber());
         this.__phoneNumberTF.setEnabled(false);
         this.__verifyPhoneNumberBtn.setEnabled(false);
         this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
-        osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__phoneNumberTF.getValue())
+        osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
             this.__validateCodeTF.setEnabled(true);
@@ -123,6 +142,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
             this.__phoneNumberTF.setEnabled(true);
           });
+      } else {
+        console.log("not valid", this.__itiInput.getValidationError());
       }
     },
 
