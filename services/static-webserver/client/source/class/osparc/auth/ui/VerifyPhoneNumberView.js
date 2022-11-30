@@ -80,8 +80,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       phoneNumberVerifyLayout.add(phoneNumber, {
         flex: 1
       });
-      // hack to load the library
-      setTimeout(() => {
+      const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
+      const convertInputToPhoneInput = () => {
         const domElement = document.querySelector("#phone");
         const itiInput = this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
         console.log("qx", phoneNumber);
@@ -89,9 +89,19 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         phoneNumber.getContentElement().setStyles({
           "overflow": "visible"
         });
-      }, 1000);
+      };
+      if (intlTelInputLib.getLibReady()) {
+        convertInputToPhoneInput();
+      } else {
+        intlTelInputLib.addListenerOnce("changeLibReady", e => {
+          if (e.getData()) {
+            convertInputToPhoneInput();
+          }
+        });
+      }
 
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
+        allowGrowY: false,
         minWidth: 80
       });
       phoneNumberVerifyLayout.add(verifyPhoneNumberBtn);

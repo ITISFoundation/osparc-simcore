@@ -48,9 +48,10 @@ qx.Class.define("osparc.wrapper.IntlTelInput", {
 
   properties: {
     libReady: {
-      nullable: false,
+      check: "Boolean",
       init: false,
-      check: "Boolean"
+      nullable: false,
+      event: "changeLibReady"
     }
   },
 
