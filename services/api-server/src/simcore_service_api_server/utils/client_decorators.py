@@ -24,7 +24,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from ..models.raw_data import JSON
+from ..models.types import JSON
 
 
 def handle_retry(logger: logging.Logger):
