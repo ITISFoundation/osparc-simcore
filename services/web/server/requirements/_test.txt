@@ -260,7 +260,7 @@ urllib3==1.26.11
     #   requests
 websocket-client==1.4.1
     # via docker
-websockets==10.3
+websockets==10.4
     # via -r requirements/_test.in
 wrapt==1.14.1
     # via
