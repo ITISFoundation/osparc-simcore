@@ -32,7 +32,6 @@ from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products import setup_products
@@ -133,7 +132,6 @@ def client(
     setup_users(app)
     setup_socketio(app)
     setup_projects(app)
-    setup_director(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
     setup_products(app)
