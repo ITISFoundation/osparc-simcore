@@ -15,6 +15,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.models.schemas.studies import StudyID
 
 
 @pytest.fixture(scope="session")
@@ -31,26 +32,58 @@ def webserver_service_openapi_specs(
 
 
 @pytest.fixture
+def study_id(faker: Faker) -> StudyID:
+    return faker.uuid4()
+
+
+@pytest.fixture
 def fake_study_ports(faker: Faker) -> list[dict[str, Any]]:
+    # same as the fake data used in services/web/server/tests/unit/with_dbs/02/test_projects_ports_handlers.py
     return [
-        # input
         {
-            "key": faker.uuid4(),
+            "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
             "kind": "input",
             "content_schema": {
+                "description": "Parameter of type integer",
                 "title": "X",
                 "type": "integer",
-                "x_unit": "second",
-                "minimum": 0,
-                "maximum": 5,
             },
         },
-        # output
         {
-            "key": faker.uuid4(),
-            "kind": "ouput",
+            "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+            "kind": "input",
             "content_schema": {
-                "title": "Y",
+                "description": "Parameter of type integer",
+                "title": "Z",
+                "type": "integer",
+            },
+        },
+        {
+            "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+            "kind": "input",
+            "content_schema": {
+                "description": "Parameter of type boolean",
+                "title": "on",
+                "type": "boolean",
+            },
+        },
+        {
+            "key": "09fd512e-0768-44ca-81fa-0cecab74ec1a",
+            "kind": "output",
+            "content_schema": {
+                "default": 0,
+                "description": "Captures integer values attached to it",
+                "title": "Random sleep interval_2",
+                "type": "integer",
+            },
+        },
+        {
+            "key": "76f607b4-8761-4f96-824d-cab670bc45f5",
+            "kind": "output",
+            "content_schema": {
+                "default": 0,
+                "description": "Captures integer values attached to it",
+                "title": "Random sleep interval",
                 "type": "integer",
             },
         },
@@ -58,32 +91,10 @@ def fake_study_ports(faker: Faker) -> list[dict[str, Any]]:
 
 
 @pytest.fixture
-def fake_study_input(fake_study_ports: dict[str, Any]) -> dict[str, Any]:
-    input_port = next(p for p in fake_study_ports if p["kind"] == "input")
-    return {
-        "key": input_port["key"],
-        "value": 2,
-        "label": input_port["content_schema"]["title"],
-    }
-
-
-@pytest.fixture
-def fake_study_output(faker: Faker, fake_study_ports: dict[str, Any]) -> dict[str, Any]:
-    output_port = next(p for p in fake_study_ports if p["kind"] == "output")
-    return {
-        "key": output_port["key"],
-        "value": 42,
-        "label": output_port["content_schema"]["title"],
-    }
-
-
-@pytest.fixture
 def mocked_webserver_service_api(
     app: FastAPI,
     webserver_service_openapi_specs: dict[str, Any],
     fake_study_ports: list[dict[str, Any]],
-    fake_study_input: dict[str, Any],
-    fake_study_output: dict[str, Any],
     faker: Faker,
 ) -> Iterator[MockRouter]:
     """
@@ -95,16 +106,6 @@ def mocked_webserver_service_api(
     # TODO: add more examples in openapi!
     openapi = deepcopy(webserver_service_openapi_specs)
     oas_paths = openapi["paths"]
-
-    # DATA ---
-    study_ports = fake_study_ports
-    study_inputs = {fake_study_input["key"]: fake_study_input}
-    study_outputs = {fake_study_output["key"]: fake_study_output}
-
-    def _update_project_inputs(request: httpx.Request):
-        changes = json.loads(request.content.decode(request.headers.encoding))
-        study_inputs.update(*changes)
-        return httpx.Response(status.HTTP_200_OK, json={"data": study_inputs})
 
     # ENTRYPOINTS ---------
     # pylint: disable=not-context-manager
@@ -128,57 +129,35 @@ def mocked_webserver_service_api(
             },
         )
 
-        # Mocks /projects/{*}/ports
-        assert oas_paths["/projects/{project_id}/ports"]
-        assert "get" in oas_paths["/projects/{project_id}/ports"].keys()
+        # Mocks /projects/{*}/metadata/ports
+        assert oas_paths["/projects/{project_id}/metadata/ports"]
+        assert "get" in oas_paths["/projects/{project_id}/metadata/ports"].keys()
         respx_mock.get(
-            path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/ports",
-            name="get_project_ports",
+            path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/metadata/ports",
+            name="list_project_metadata_ports",
         ).respond(
             200,
-            json={"data": study_ports},
-        )
-
-        # Mocks /projects/{*}/inputs
-        assert oas_paths["/projects/{project_id}/inputs"]
-        assert "get" in oas_paths["/projects/{project_id}/inputs"].keys()
-        respx_mock.get(
-            path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/inputs",
-            name="get_project_inputs",
-        ).respond(
-            200,
-            # Envelope[dict[uuid.UUID, ProjectPortGet]
-            json={
-                "data": study_inputs,
-                "error": None,
-            },
-        )
-
-        assert "patch" in oas_paths["/projects/{project_id}/inputs"].keys()
-        respx_mock.patch(
-            path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/inputs",
-            name="update_project_inputs",
-        ).respond(
-            200,
-            side_effect=_update_project_inputs,
-        )
-
-        # Mocks /projects/{*}/outputs
-        assert oas_paths["/projects/{project_id}/outputs"]
-        assert "get" in oas_paths["/projects/{project_id}/outputs"].keys()
-        respx_mock.get(
-            path__regex=r"/v0/projects/(?P<project_id>[\w-]+)/outputs",
-            name="get_project_outputs",
-        ).respond(
-            200,
-            # Envelope[dict[uuid.UUID, ProjectPortGet]
-            json={
-                "data": study_outputs,
-                "error": None,
-            },
+            json={"data": fake_study_ports},
         )
 
         yield respx_mock
+
+
+async def test_mocked_webserver_service_api(
+    client: httpx.AsyncClient,
+    mocked_webserver_service_api: MockRouter,
+    fake_study_ports: list[dict[str, Any]],
+):
+    # Sometimes is difficult to adjust respx.Mock
+    resp = await client.get(f"/v0/study/{study_id}/ports")
+
+    assert mocked_webserver_service_api.assert_all_called()
+
+    assert resp.status_code == status.HTTP_200_OK
+
+    payload = resp.json()
+    assert payload.get("error") is None
+    assert payload.get("data") == fake_study_ports
 
 
 async def test_study_io_ports_workflow(
@@ -186,44 +165,11 @@ async def test_study_io_ports_workflow(
     mocked_webserver_service_api: MockRouter,
     faker: Faker,
     fake_study_ports: list[dict[str, Any]],
-    fake_study_input: dict[str, Any],
-    fake_study_output: dict[str, Any],
+    study_id: StudyID,
 ):
     study_id = faker.uuid4()
-    input_port_key = fake_study_input["key"]
-
-    # list studies
-    resp = await client.get("/v0/studies")
-    assert resp.status_code == status.HTTP_200_OK
 
     # list_study_ports
     resp = await client.get(f"/v0/study/{study_id}/ports")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == fake_study_ports
-
-    # get_study_inputs
-    resp = await client.get(f"/v0/study/{study_id}/inputs")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == {fake_study_input["key"]: fake_study_input}
-
-    # update_study_inputs
-    resp = await client.patch(
-        f"/v0/study/{study_id}/inputs", [{"key": input_port_key, "value": 2}]
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-    # list_study_inputs
-    resp = await client.get(f"/v0/study/{study_id}/inputs")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == {
-        input_port_key: {
-            "key": input_port_key,
-            "value": 2,  # <---- updated
-            "label": "X",
-        },
-    }
-
-    # get_study_outputs
-    resp = await client.get(f"/v0/study/{study_id}/outputs")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == {fake_study_output["key"]: fake_study_output}
