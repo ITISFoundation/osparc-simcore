@@ -55,7 +55,8 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     result: Optional[RunningState] = None
 
 
-class RabbitClusterStateMessage(RabbitMessageBase):
+class RabbitAutoscalingMessage(RabbitMessageBase):
+    channel_name: Literal["io.osparc.autoscaling"] = "io.osparc.autoscaling"
     origin: str
     number_monitored_nodes: int
     cluster_total_resources: dict[str, Any]
