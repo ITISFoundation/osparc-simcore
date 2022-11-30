@@ -186,8 +186,10 @@ class AuthSession:
     async def get_project_metadata_ports(
         self, project_id: ProjectID
     ) -> list[dict[str, Any]]:
-        # GET "/projects/{study_id}/metadata/ports"
-        # FIXME: improve error handling
+        """
+        maps GET "/projects/{study_id}/metadata/ports", unenvelopes
+        and returns data
+        """
         resp = await self.client.get(
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
@@ -226,7 +228,7 @@ class WebserverApi(BaseServiceClientApi):
 
 def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
     if not settings:
-        settings = WebServerSettings()
+        settings = WebServerSettings.create_from_envs()
 
     assert settings is not None  # nosec
 
