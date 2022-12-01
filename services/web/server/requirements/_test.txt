@@ -155,7 +155,6 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
     # via
-    #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_test.in
     #   pytest-forked
 pylint==2.15.5
@@ -260,7 +259,7 @@ urllib3==1.26.11
     #   requests
 websocket-client==1.4.1
     # via docker
-websockets==10.4
+websockets==10.3
     # via -r requirements/_test.in
 wrapt==1.14.1
     # via
