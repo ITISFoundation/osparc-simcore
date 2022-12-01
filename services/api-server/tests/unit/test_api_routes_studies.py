@@ -59,7 +59,6 @@ def mocked_webserver_service_api(
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
-    # TODO: add more examples in openapi!
     openapi = deepcopy(webserver_service_openapi_specs)
     oas_paths = openapi["paths"]
 
