@@ -226,7 +226,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await asyncio.sleep(self.task_monitor_interval_s)
 
         # NOTE: checking if there were any errors during the last port upload,
-        # for each port. If such errors are present an error will be raised
+        # for each port. If any error is detected this will raise.
         any_failed_upload = any(
             True for v in self._last_upload_error_tracker.values() if v is not None
         )

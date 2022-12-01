@@ -152,7 +152,7 @@ async def outputs_manager(
 # TESTS
 
 
-async def test_upload_port_wait_parallel(
+async def test_upload_port_wait_sequential(
     mock_upload_outputs: AsyncMock,
     outputs_manager: OutputsManager,
     port_keys: list[str],
