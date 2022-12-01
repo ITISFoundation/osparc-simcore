@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.studycard.Utils", {
+qx.Class.define("osparc.info.StudyUtils", {
   type: "static",
 
   statics: {
