@@ -291,7 +291,8 @@ async def task_ports_outputs_push(
     progress.update(message="starting outputs pushing", percent=0.0)
 
     await post_sidecar_log_message(
-        app, f"Waiting for outputs {outputs_manager.outputs_port_keys} to be pushed"
+        app,
+        f"Waiting for outputs {outputs_manager.outputs_context.port_keys} to be pushed",
     )
 
     await outputs_manager.wait_for_all_uploads_to_finish()

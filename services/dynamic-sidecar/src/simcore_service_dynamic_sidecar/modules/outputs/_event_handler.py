@@ -1,3 +1,5 @@
+# pylint:disable=no-member
+
 import logging
 from asyncio import CancelledError, Task, create_task, get_event_loop
 from asyncio import sleep as async_sleep

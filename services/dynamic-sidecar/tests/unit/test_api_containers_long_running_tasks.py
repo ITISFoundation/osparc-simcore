@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=no-member
 
 import json
 from collections import namedtuple
@@ -41,7 +42,7 @@ from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
