@@ -5,7 +5,11 @@
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
 aio-pika==8.2.4
-    # via -r requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -84,6 +88,8 @@ attrs==21.4.0
     #   aiohttp
     #   jsonschema
     #   openapi-core
+bidict==0.22.0
+    # via python-socketio
 certifi==2022.6.15
     # via requests
 cffi==1.15.0
@@ -198,6 +204,7 @@ openapi-spec-validator==0.4.0
     #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/./constraints.txt
     #   openapi-core
 openpyxl==3.0.9
     # via -r requirements/_base.in
@@ -262,11 +269,11 @@ pyparsing==3.0.9
     # via packaging
 pyrsistent==0.18.1
     # via jsonschema
-python-engineio==3.14.2
+python-engineio==4.3.4
     # via python-socketio
 python-magic==0.4.25
     # via -r requirements/_base.in
-python-socketio==4.6.1
+python-socketio==5.7.2
     # via -r requirements/_base.in
 pytz==2022.1
     # via twilio
@@ -302,8 +309,6 @@ six==1.16.0
     #   isodate
     #   jsonschema
     #   openapi-core
-    #   python-engineio
-    #   python-socketio
 sqlalchemy==1.4.37
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
