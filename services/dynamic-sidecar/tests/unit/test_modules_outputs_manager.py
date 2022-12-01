@@ -16,8 +16,8 @@ from simcore_sdk.node_ports_common.exceptions import S3TransferError
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
-    PortKeyTracker,
     UploadPortsFailed,
+    _PortKeyTracker,
 )
 
 # UTILS
@@ -115,14 +115,14 @@ def _assert_ports_uploaded(
 
 
 @pytest.fixture
-def port_key_tracker() -> PortKeyTracker:
-    return PortKeyTracker()
+def port_key_tracker() -> _PortKeyTracker:
+    return _PortKeyTracker()
 
 
 @pytest.fixture
 async def port_key_tracker_with_ports(
-    port_key_tracker: PortKeyTracker, port_keys: list[str]
-) -> PortKeyTracker:
+    port_key_tracker: _PortKeyTracker, port_keys: list[str]
+) -> _PortKeyTracker:
     for port_key in port_keys:
         await port_key_tracker.add_pending(port_key)
     return port_key_tracker
@@ -226,7 +226,7 @@ async def test_recovers_after_raising_error(
 
 
 async def test_port_key_tracker_add_pending(
-    port_key_tracker: PortKeyTracker, port_keys: list[str]
+    port_key_tracker: _PortKeyTracker, port_keys: list[str]
 ):
     for key in port_keys:
         await port_key_tracker.add_pending(key)
@@ -235,14 +235,12 @@ async def test_port_key_tracker_add_pending(
         assert key not in port_key_tracker._uploading_port_keys
 
 
-@pytest.mark.parametrize("move_all", [True, False])
 async def test_port_key_tracker_are_pending_ports_uploading(
-    port_key_tracker_with_ports: PortKeyTracker, port_keys: list[str], move_all: bool
+    port_key_tracker_with_ports: _PortKeyTracker, port_keys: list[str]
 ):
-    if move_all:
-        await port_key_tracker_with_ports.move_all_ports_to_uploading()
-    else:
-        await port_key_tracker_with_ports.move_port_to_uploading()
+
+    await port_key_tracker_with_ports.move_all_ports_to_uploading()
+
     assert await port_key_tracker_with_ports.are_pending_ports_uploading() is False
 
     for port_key in port_keys:
@@ -250,36 +248,18 @@ async def test_port_key_tracker_are_pending_ports_uploading(
     assert await port_key_tracker_with_ports.are_pending_ports_uploading() is True
 
 
-@pytest.mark.parametrize("move_all", [True, False])
 async def test_port_key_tracker_can_schedule_ports_to_upload(
-    port_key_tracker_with_ports: PortKeyTracker, move_all: bool
+    port_key_tracker_with_ports: _PortKeyTracker,
 ):
     assert await port_key_tracker_with_ports.can_schedule_ports_to_upload() is True
-    if move_all:
-        await port_key_tracker_with_ports.move_all_ports_to_uploading()
-    else:
-        await port_key_tracker_with_ports.move_port_to_uploading()
+
+    await port_key_tracker_with_ports.move_all_ports_to_uploading()
+
     assert await port_key_tracker_with_ports.can_schedule_ports_to_upload() is False
 
 
-async def test_port_key_tracker_move_port_to_uploading(
-    port_key_tracker_with_ports: PortKeyTracker,
-):
-    previous_pending = set(port_key_tracker_with_ports._pending_port_keys)
-    previous_uploading = set(port_key_tracker_with_ports._uploading_port_keys)
-    await port_key_tracker_with_ports.move_port_to_uploading()
-    assert len(previous_pending) - 1 == len(
-        port_key_tracker_with_ports._pending_port_keys
-    )
-    assert len(previous_uploading) + 1 == len(
-        port_key_tracker_with_ports._uploading_port_keys
-    )
-    assert len(port_key_tracker_with_ports._uploading_port_keys) == 1
-    assert port_key_tracker_with_ports._uploading_port_keys.pop() in previous_pending
-
-
 async def test_port_key_tracker_move_all_ports_to_uploading(
-    port_key_tracker_with_ports: PortKeyTracker,
+    port_key_tracker_with_ports: _PortKeyTracker,
 ):
     previous_pending = set(port_key_tracker_with_ports._pending_port_keys)
     assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
@@ -289,13 +269,12 @@ async def test_port_key_tracker_move_all_ports_to_uploading(
 
 
 async def test_port_key_tracker_move_all_uploading_to_pending(
-    port_key_tracker_with_ports: PortKeyTracker,
+    port_key_tracker_with_ports: _PortKeyTracker,
 ):
     initial_pending = set(port_key_tracker_with_ports._pending_port_keys)
     initial_uploading = set(port_key_tracker_with_ports._uploading_port_keys)
 
     assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
-    await port_key_tracker_with_ports.move_port_to_uploading()
     await port_key_tracker_with_ports.move_all_uploading_to_pending()
     assert port_key_tracker_with_ports._pending_port_keys == initial_pending
     assert port_key_tracker_with_ports._uploading_port_keys == initial_uploading
@@ -308,7 +287,7 @@ async def test_port_key_tracker_move_all_uploading_to_pending(
 
 
 async def test_port_key_tracker_remove_all_uploading(
-    port_key_tracker_with_ports: PortKeyTracker,
+    port_key_tracker_with_ports: _PortKeyTracker,
 ):
     initial_pending = set(port_key_tracker_with_ports._pending_port_keys)
     initial_uploading = set(port_key_tracker_with_ports._uploading_port_keys)
@@ -321,9 +300,8 @@ async def test_port_key_tracker_remove_all_uploading(
     assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
 
 
-@pytest.mark.parametrize("move_all", [True, False])
 async def test_port_key_tracker_workflow(
-    port_key_tracker: PortKeyTracker, port_keys: list[str], move_all: bool
+    port_key_tracker: _PortKeyTracker, port_keys: list[str]
 ):
     for port_key in port_keys:
         await port_key_tracker.add_pending(port_key)
@@ -331,10 +309,7 @@ async def test_port_key_tracker_workflow(
     assert await port_key_tracker.are_pending_ports_uploading() is False
 
     assert await port_key_tracker.can_schedule_ports_to_upload() is True
-    if move_all:
-        await port_key_tracker.move_all_ports_to_uploading()
-    else:
-        await port_key_tracker.move_port_to_uploading()
+    await port_key_tracker.move_all_ports_to_uploading()
     expected_uploading = set(port_key_tracker._uploading_port_keys)
     assert len(expected_uploading) > 0
 

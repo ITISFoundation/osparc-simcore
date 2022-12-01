@@ -42,7 +42,15 @@ class UploadPortsFailed(PydanticErrorMixin, Exception):
     msg_template: str = "Failed while uploading: failures={failures}"
 
 
-class PortKeyTracker:
+class _PortKeyTracker:
+    """
+    Once a port requires upload is added here to be tracked.
+    While a port is tracked it can be in two states:
+    - `pending` port waiting to be uploaded
+    - `uploading` port upload in progress
+
+    """
+
     def __init__(self) -> None:
         self._lock = Lock()
 
@@ -75,11 +83,6 @@ class PortKeyTracker:
                 and len(self._uploading_port_keys) == 0
             )
 
-    async def move_port_to_uploading(self) -> None:
-        async with self._lock:
-            port_key = self._pending_port_keys.pop()
-            self._uploading_port_keys.add(port_key)
-
     async def move_all_ports_to_uploading(self) -> None:
         async with self._lock:
             self._uploading_port_keys.update(self._pending_port_keys)
@@ -105,19 +108,17 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         outputs_context: OutputsContext,
         io_log_redirect_cb: Optional[LogRedirectCB],
         *,
-        bulk_scheduling: bool = True,
         upload_upon_api_request: bool = True,
         task_cancellation_timeout_s: PositiveFloat = 5,
         task_monitor_interval_s: PositiveFloat = 1.0,
     ):
         self.outputs_context = outputs_context
         self.io_log_redirect_cb = io_log_redirect_cb
-        self.bulk_scheduling = bulk_scheduling
         self.upload_upon_api_request = upload_upon_api_request
         self.task_cancellation_timeout_s = task_cancellation_timeout_s
         self.task_monitor_interval_s = task_monitor_interval_s
 
-        self._port_key_tracker = PortKeyTracker()
+        self._port_key_tracker = _PortKeyTracker()
         self._keep_running = True
         self._task_uploading: Optional[Task] = None
         self._task_scheduler_worker: Optional[Task] = None
@@ -174,10 +175,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 await self._port_key_tracker.move_all_uploading_to_pending()
 
             if await self._port_key_tracker.can_schedule_ports_to_upload():
-                if self.bulk_scheduling:
-                    await self._port_key_tracker.move_all_ports_to_uploading()
-                else:
-                    await self._port_key_tracker.move_port_to_uploading()
+                await self._port_key_tracker.move_all_ports_to_uploading()
 
                 await self._uploading_task_start()
 
