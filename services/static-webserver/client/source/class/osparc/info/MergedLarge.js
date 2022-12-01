@@ -21,9 +21,8 @@ qx.Class.define("osparc.info.MergedLarge", {
 
   /**
     * @param study {osparc.data.model.Study} Study
-    * @param serviceData {Object} Serialized Service Object
     */
-  construct: function(study, serviceData) {
+  construct: function(study) {
     this.base(arguments);
 
     this.set({
@@ -33,7 +32,8 @@ qx.Class.define("osparc.info.MergedLarge", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this.setStudy(study);
-    this.setService(serviceData);
+    console.log("study", study);
+    // this.setService(serviceData);
 
     this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
     this.addListener("resize", () => this.__rebuildLayout(), this);
@@ -156,7 +156,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         view: this.__createAccessRights(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
+          callback: "openAccessRights",
           ctx: this
         }
       }];
@@ -167,7 +167,7 @@ qx.Class.define("osparc.info.MergedLarge", {
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
+            callback: "openQuality",
             ctx: this
           }
         });
@@ -178,7 +178,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         view: this.__createClassifiers(),
         action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
+          callback: "openClassifiers",
           ctx: this
         } : null
       });
