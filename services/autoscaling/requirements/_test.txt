@@ -33,10 +33,6 @@ botocore==1.27.59
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.29.16
-    # via
-    #   -c requirements/_base.txt
-    #   types-aiobotocore
 certifi==2022.9.24
     # via
     #   -c requirements/_base.txt
@@ -279,23 +275,8 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-types-aiobotocore==2.4.0.post1
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
-types-aiobotocore-s3==2.4.0.post1
-    # via types-aiobotocore
-types-awscrt==0.15.3
-    # via
-    #   -c requirements/_base.txt
-    #   botocore-stubs
 types-toml==0.10.8.1
     # via responses
-typing-extensions==4.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   types-aiobotocore
-    #   types-aiobotocore-s3
 urllib3==1.26.13
     # via
     #   -c requirements/../../../requirements/constraints.txt

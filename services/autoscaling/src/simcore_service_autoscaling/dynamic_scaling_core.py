@@ -24,6 +24,25 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     """
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+
+    # 1. get monitored nodes information and resources
+    monitored_nodes = await utils_docker.get_monitored_nodes(
+        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+    )
+
+    cluster_total_resources = await utils_docker.compute_cluster_total_resources(
+        monitored_nodes
+    )
+    logger.info("%s", f"{cluster_total_resources=}")
+    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
+        monitored_nodes
+    )
+    logger.info("%s", f"{cluster_used_resources=}")
+
+    # 2. Remove nodes that are gone
+    await utils_docker.remove_monitored_down_nodes(monitored_nodes)
+
+    # 3. Scale up nodes if there are pending tasks
     pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
     )
@@ -36,19 +55,6 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         f"{len(pending_tasks)}",
         f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS}",
     )
-
-    monitored_nodes = await utils_docker.get_monitored_nodes(
-        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-    )
-
-    cluster_total_resources = await utils_docker.compute_cluster_total_resources(
-        monitored_nodes
-    )
-    logger.info("current %s", f"{cluster_total_resources=}")
-    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
-        monitored_nodes
-    )
-    logger.info("current %s", f"{cluster_used_resources=}")
 
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
