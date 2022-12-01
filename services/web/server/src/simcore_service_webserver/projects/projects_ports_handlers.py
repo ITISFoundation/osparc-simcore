@@ -86,20 +86,18 @@ async def _get_validated_workbench_model(
 routes = web.RouteTableDef()
 
 
-class _InputSchema:
+class _InputSchemaConfig:
     class Config:
         allow_population_by_field_name = False
         extra = Extra.forbid
         allow_mutations = False
 
 
-class _OutputSchema:
+class _OutputSchemaConfig:
     class Config:
         allow_population_by_field_name = True
-        extra = Extra.ignore
+        extra = Extra.ignore  # Used to prune extra fields from internal data
         allow_mutations = False
-
-        #
 
 
 # projects/*/inputs COLLECTION -------------------------
@@ -114,15 +112,15 @@ class _ProjectIOBase(BaseModel):
     value: Any = Field(..., description="Value assigned to this i/o port")
 
 
-class ProjectInputUpdate(_InputSchema, _ProjectIOBase):
+class ProjectInputUpdate(_InputSchemaConfig, _ProjectIOBase):
     ...
 
 
-class ProjectInputGet(_OutputSchema, _ProjectIOBase):
+class ProjectInputGet(_OutputSchemaConfig, _ProjectIOBase):
     label: str
 
 
-class ProjectOutputGet(_OutputSchema, _ProjectIOBase):
+class ProjectOutputGet(_OutputSchemaConfig, _ProjectIOBase):
     label: str
 
 
