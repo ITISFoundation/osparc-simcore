@@ -81,10 +81,12 @@ async def create_output_dirs(
     outputs_path = mounted_volumes.disk_outputs_path
     port_keys = []
     for port_key, service_output in request_mode.outputs_labels.items():
+        logger.debug("Parsing output labels, detected: %s", f"{port_key=}")
         if is_file_type(service_output.property_type):
             dir_to_create = outputs_path / port_key
             dir_to_create.mkdir(parents=True, exist_ok=True)
             port_keys.append(port_key)
+    logger.debug("Setting: %s", f"{port_keys=}")
     await outputs_context.set_port_keys(port_keys)
 
 
