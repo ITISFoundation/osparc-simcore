@@ -205,9 +205,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       });
 
       if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.unshift({
-          label: this.tr("UUID"),
-          view: this.__createUuid(),
+        extraInfo.splice(0, 0, {
+          label: this.tr("Study ID"),
+          view: this.__createStudyId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
             callback: this.__copyUuidToClipboard,
@@ -233,7 +233,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       return title;
     },
 
-    __createUuid: function() {
+    __createStudyId: function() {
       return osparc.info.StudyUtils.createUuid(this.getStudy());
     },
 
