@@ -134,7 +134,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         flex: 1
       });
       const copy2Clip = osparc.utils.Utils.getCopyButton();
-      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
+      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService().serialize())), this);
       more.getChildControl("header").add(copy2Clip);
     },
 
@@ -345,7 +345,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __createRawMetadata: function() {
       const container = new qx.ui.container.Scroll();
-      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
+      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService().serialize(), "serviceDescriptionSettings"));
       return container;
     },
 
