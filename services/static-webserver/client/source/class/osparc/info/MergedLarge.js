@@ -32,8 +32,11 @@ qx.Class.define("osparc.info.MergedLarge", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this.setStudy(study);
-    console.log("study", study);
-    // this.setService(serviceData);
+    const nodes = study.getWorkbench().getNodes();
+    const nodeIds = Object.keys(nodes);
+    if (nodeIds.length) {
+      this.setService(nodes[nodeIds[0]]);
+    }
 
     this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
     this.addListener("resize", () => this.__rebuildLayout(), this);
@@ -55,10 +58,9 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     service: {
-      check: "Object",
+      check: "osparc.data.model.Node",
       init: null,
-      nullable: false,
-      apply: "__rebuildLayout"
+      nullable: false
     }
   },
 
@@ -70,10 +72,6 @@ qx.Class.define("osparc.info.MergedLarge", {
   },
 
   members: {
-    __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
-    },
-
     __rebuildLayout: function() {
       this._removeAll();
 
@@ -122,6 +120,26 @@ qx.Class.define("osparc.info.MergedLarge", {
         description.addAt(editInTitle, 0);
       }
       this._add(description);
+
+      const resources = this.__createResources();
+      this._add(resources);
+
+      const rawMetadata = this.__createRawMetadata();
+      const more = new osparc.desktop.PanelView(this.tr("Raw metadata"), rawMetadata).set({
+        caretSize: 14
+      });
+      more.setCollapsed(true);
+      more.getChildControl("title").setFont("title-12");
+      this._add(more, {
+        flex: 1
+      });
+      const copy2Clip = osparc.utils.Utils.getCopyButton();
+      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
+      more.getChildControl("header").add(copy2Clip);
+    },
+
+    __isOwner: function() {
+      return osparc.data.model.Study.isOwner(this.getStudy());
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -184,14 +202,40 @@ qx.Class.define("osparc.info.MergedLarge", {
       });
 
       if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.unshift({
-          label: this.tr("UUID"),
-          view: this.__createUuid(),
+        extraInfo.splice(0, 0, {
+          label: this.tr("Study ID"),
+          view: this.__createStudyId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
             callback: this.__copyUuidToClipboard,
             ctx: this
           }
+        });
+
+        extraInfo.splice(1, 0, {
+          label: this.tr("Service ID"),
+          view: this.__createNodeId(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyNodeIdToClipboard,
+            ctx: this
+          }
+        });
+
+        extraInfo.splice(2, 0, {
+          label: this.tr("Key"),
+          view: this.__createKey(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyKeyToClipboard,
+            ctx: this
+          }
+        });
+
+        extraInfo.splice(3, 0, {
+          label: this.tr("Version"),
+          view: this.__createVersion(),
+          action: null
         });
       }
       return extraInfo;
@@ -212,8 +256,24 @@ qx.Class.define("osparc.info.MergedLarge", {
       return title;
     },
 
-    __createUuid: function() {
-      return osparc.info.StudyUtils.createUuid(this.getStudy());
+    __createStudyId: function() {
+      return osparc.info.StudyUtils.createUuid(this.getStudy()).set({
+        maxWidth: 200
+      });
+    },
+
+    __createNodeId: function() {
+      return osparc.info.ServiceUtils.createNodeId(this.getService().getNodeId()).set({
+        maxWidth: 200
+      });
+    },
+
+    __createKey: function() {
+      return osparc.info.ServiceUtils.createKey(this.getService().getKey());
+    },
+
+    __createVersion: function() {
+      return osparc.info.ServiceUtils.createVersion(this.getService().getVersion());
     },
 
     __createOwner: function() {
@@ -253,6 +313,42 @@ qx.Class.define("osparc.info.MergedLarge", {
       return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
     },
 
+    __createResources: function() {
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
+      resourcesLayout.exclude();
+      let promise = null;
+      if (this.getService().getNodeId()) {
+        const params = {
+          url: {
+            studyId: this.getStudy().getUuid(),
+            nodeId: this.getService().getNodeId()
+          }
+        };
+        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
+      } else {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.getService().getKey(),
+            this.getService().getVersion()
+          )
+        };
+        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
+      }
+      promise
+        .then(serviceResources => {
+          resourcesLayout.show();
+          osparc.info.ServiceUtils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+        })
+        .catch(err => console.error(err));
+      return resourcesLayout;
+    },
+
+    __createRawMetadata: function() {
+      const container = new qx.ui.container.Scroll();
+      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
+      return container;
+    },
+
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
       const titleEditor = new osparc.component.widget.Renamer(this.getStudy().getName(), null, title);
@@ -269,6 +365,14 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __copyUuidToClipboard: function() {
       osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid());
+    },
+
+    __copyNodeIdToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getService().getNodeId());
+    },
+
+    __copyKeyToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getService().getKey());
     },
 
     __openAccessRights: function() {

@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       this._add(resources);
 
       const rawMetadata = this.__createRawMetadata();
-      const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
+      const more = new osparc.desktop.PanelView(this.tr("Raw metadata"), rawMetadata).set({
         caretSize: 14
       });
       more.setCollapsed(true);
