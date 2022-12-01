@@ -12,11 +12,11 @@ from ..mounted_fs import MountedVolumes
 class OutputsContext:
     outputs_path: Path
 
-    # data flow _PortKeysEventHandler -> EventFilter
+    # _PortKeysEventHandler (generates) -> EventFilter (receives)
     port_key_events_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
 
     _port_keys: list[str] = field(default_factory=list)
-    # data flow OutputsContext -> ???
+    # OutputsContext (generates) -> _EventHandlerProcess(receives)
     port_keys_updates_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
 
     async def set_port_keys(self, port_keys: list[str]) -> None:

@@ -28,10 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 class _PortKeysEventHandler(SafeFileSystemEventHandler):
-    def __init__(self, outputs_context: OutputsContext):
+    def __init__(self, outputs_path: Path, port_key_events_queue: AioQueue):
         super().__init__()
 
-        self.outputs_context: OutputsContext = outputs_context
+        self.outputs_path: Path = outputs_path
+        self.port_key_events_queue: AioQueue = port_key_events_queue
         self._outputs_port_keys: set[str] = set()
 
     def set_outputs_port_keys(self, outputs_port_keys: set[str]) -> None:
@@ -41,9 +42,7 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         # NOTE: ignoring all events which are not relative to modifying
         # the contents of the `port_key` folders from the outputs directory
 
-        path_relative_to_outputs = Path(event.src_path).relative_to(
-            self.outputs_context.outputs_path
-        )
+        path_relative_to_outputs = Path(event.src_path).relative_to(self.outputs_path)
 
         # discard event if not part of a subfolder
         relative_path_parents = path_relative_to_outputs.parents
@@ -57,7 +56,7 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         if port_key_candidate in self._outputs_port_keys:
             # NOTE: messages in this queues are put from an process
             # and will be used inside the async loop
-            self.outputs_context.port_key_events_queue.put(port_key_candidate)
+            self.port_key_events_queue.put(port_key_candidate)
 
 
 class _EventHandlerProcess:
@@ -143,7 +142,8 @@ class _EventHandlerProcess:
 
         observer = ExtendedInotifyObserver()
         self._file_system_event_handler = _PortKeysEventHandler(
-            outputs_context=self.outputs_context
+            outputs_path=self.outputs_context.outputs_path,
+            port_key_events_queue=self.outputs_context.port_key_events_queue,
         )
         watch = None
 
