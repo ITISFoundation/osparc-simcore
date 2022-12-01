@@ -11,7 +11,7 @@ from typing import Any, Iterator
 import pytest
 import respx
 from fastapi import FastAPI
-from pytest_simcore.helpers import catalog_data_fakers
+from pytest_simcore.helpers import faker_catalog
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 
@@ -50,14 +50,14 @@ def mocked_catalog_service_api(
             200,
             json=[
                 # one solver
-                catalog_data_fakers.create_service_out(
+                faker_catalog.create_service_out(
                     key="simcore/services/comp/Foo", name="Foo"
                 ),
                 # two version of the same solver
-                catalog_data_fakers.create_service_out(version="0.0.1"),
-                catalog_data_fakers.create_service_out(version="1.0.1"),
+                faker_catalog.create_service_out(version="0.0.1"),
+                faker_catalog.create_service_out(version="1.0.1"),
                 # not a solver
-                catalog_data_fakers.create_service_out(type="dynamic"),
+                faker_catalog.create_service_out(type="dynamic"),
             ],
         )
 

@@ -1,4 +1,6 @@
-""" Helper script to generate OAS automatically
+""" Helper script to automatically generate OAS
+
+This OAS are the source of truth
 """
 
 # pylint: disable=redefined-outer-name
@@ -15,12 +17,11 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from simcore_service_webserver.projects.projects_ports_handlers import (
-    ProjectPort,
-    ProjectPortGet,
+    ProjectInputGet,
+    ProjectInputUpdate,
+    ProjectMetadataPortGet,
+    ProjectOutputGet,
 )
-
-# TODO: how to ensure this is in sync with projects_ports_handlers.routes ??
-# this is the source of truth.
 
 app = FastAPI(redoc_url=None)
 
@@ -31,7 +32,7 @@ TAGS: list[Union[str, Enum]] = [
 
 @app.get(
     "/projects/{project_id}/inputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectInputGet]],
     tags=TAGS,
     operation_id="get_project_inputs",
 )
@@ -41,22 +42,34 @@ async def get_project_inputs(project_id: ProjectID):
 
 @app.patch(
     "/projects/{project_id}/inputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectInputGet]],
     tags=TAGS,
     operation_id="update_project_inputs",
 )
-async def update_project_inputs(project_id: ProjectID, updates: list[ProjectPort]):
+async def update_project_inputs(
+    project_id: ProjectID, updates: list[ProjectInputUpdate]
+):
     """New in version *0.10*"""
 
 
 @app.get(
     "/projects/{project_id}/outputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectOutputGet]],
     tags=TAGS,
     operation_id="get_project_outputs",
 )
 async def get_project_outputs(project_id: ProjectID):
     """New in version *0.10*"""
+
+
+@app.get(
+    "/projects/{project_id}/metadata/ports",
+    response_model=Envelope[list[ProjectMetadataPortGet]],
+    tags=TAGS,
+    operation_id="list_project_metadata_ports",
+)
+async def list_project_metadata_ports(project_id: ProjectID):
+    """New in version *0.12*"""
 
 
 if __name__ == "__main__":
