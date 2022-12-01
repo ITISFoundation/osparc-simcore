@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.11.0
+  version: 0.12.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -3124,14 +3124,14 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
                     title: Data
                     type: object
                     additionalProperties:
-                      title: ProjectPortGet
+                      title: ProjectInputGet
                       required:
                         - key
                         - value
@@ -3172,7 +3172,7 @@ paths:
               title: Updates
               type: array
               items:
-                title: ProjectPort
+                title: ProjectInputUpdate
                 required:
                   - key
                   - value
@@ -3215,7 +3215,84 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: object
+                    additionalProperties:
+                      title: ProjectOutputGet
+                      required:
+                        - key
+                        - value
+                        - label
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        value:
+                          title: Value
+                          description: Value assigned to this i/o port
+                        label:
+                          title: Label
+                          type: string
+                  error:
+                    title: Error
+  '/projects/{project_id}/metadata/ports':
+    get:
+      tags:
+        - project
+      summary: List Project Metadata Ports
+      description: New in version *0.12*
+      operationId: list_project_metadata_ports
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: ProjectMetadataPortGet
+                      required:
+                        - key
+                        - kind
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        kind:
+                          title: Kind
+                          enum:
+                            - input
+                            - output
+                          type: string
+                        content_schema:
+                          title: Content Schema
+                          type: object
+                          description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
+                  error:
+                    title: Error
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
     get:
       tags:
