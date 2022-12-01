@@ -14,7 +14,7 @@ from .core.application import create_base_app
 from .core.settings import ApplicationSettings
 from .modules.long_running_tasks import task_ports_outputs_push, task_save_state
 from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
-from .modules.outputs._manager import OutputsManager, setup_outputs_manager
+from .modules.outputs import OutputsManager, setup_outputs
 
 log = logging.getLogger(__name__)
 main = typer.Typer(name=PROJECT_NAME)
@@ -36,7 +36,7 @@ async def _initialized_app() -> AsyncIterator[FastAPI]:
 
     # setup MountedVolumes
     setup_mounted_fs(app)
-    setup_outputs_manager(app)
+    setup_outputs(app)
 
     await app.router.startup()
     yield app

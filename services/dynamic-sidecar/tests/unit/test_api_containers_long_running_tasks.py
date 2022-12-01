@@ -40,8 +40,8 @@ from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
-from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
 FAST_STATUS_POLL: Final[float] = 0.1
@@ -214,7 +214,7 @@ def mock_data_manager(mocker: MockerFixture) -> None:
 @pytest.fixture()
 def mock_nodeports(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         return_value=None,
     )
     mocker.patch(
@@ -231,16 +231,18 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-def mock_port_keys(request: FixtureRequest, client: Client) -> Optional[list[str]]:
-    outputs_manager: OutputsManager = AppState(client.app).outputs_manager
+async def mock_port_keys(
+    request: FixtureRequest, client: Client
+) -> Optional[list[str]]:
+    outputs_context: OutputsContext = client.app.state.outputs_context
     if request.param is not None:
-        outputs_manager.outputs_port_keys.update(request.param)
+        await outputs_context.set_port_keys(request.param)
     return request.param
 
 
 @pytest.fixture
 def outputs_manager(client: Client) -> OutputsManager:
-    return AppState(client.app).outputs_manager
+    return client.app.state.outputs_manager
 
 
 @pytest.fixture
@@ -254,7 +256,7 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
         raise NodeNotFound(missing_node_uuid)
 
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mocked,
     )
 
