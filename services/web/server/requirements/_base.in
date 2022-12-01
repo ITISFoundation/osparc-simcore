@@ -22,7 +22,7 @@
 # From 5.0.0, https://github.com/miguelgrinberg/python-socketio/blob/main/CHANGES.md
 # test_resource_manager.py::test_websocket_resource_management fails because
 # socket_id saved in redis does not correspond to client's sio
-python-socketio
+python-socketio~=4.6.1
 
 
 
