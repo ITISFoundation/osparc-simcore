@@ -74,36 +74,13 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
       const phoneNumberVerifyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       phoneNumberVerifyLayout.getContentElement().setStyles({
-        "overflow": "visible"
+        "overflow": "visible" // needed for countries dropdown menu
       });
 
-      const html = "<input type='tel' id='phone' name='phone' autocomplete='off' required>";
-      const phoneNumber = this.__phoneNumberTF = new qx.ui.embed.Html(html);
-      phoneNumberVerifyLayout.add(phoneNumber, {
+      const itiInput = this.__itiInput = new osparc.component.widget.IntlTelInput();
+      phoneNumberVerifyLayout.add(itiInput, {
         flex: 1
       });
-      const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
-      const convertInputToPhoneInput = () => {
-        const domElement = document.querySelector("#phone");
-        this.__itiInput = osparc.wrapper.IntlTelInput.getInstance().inputToPhoneInput(domElement);
-        phoneNumber.getContentElement().setStyles({
-          "overflow": "visible"
-        });
-      };
-      if (intlTelInputLib.getLibReady()) {
-        convertInputToPhoneInput();
-      } else {
-        intlTelInputLib.addListenerOnce("changeLibReady", e => {
-          if (e.getData()) {
-            convertInputToPhoneInput();
-          }
-        });
-      }
-      const invalidNumberText = this.__invalidNumberText = new qx.ui.basic.Label().set({
-        textColor: "failed-red",
-        visibility: "excluded"
-      });
-      phoneNumberVerifyLayout.add(invalidNumberText);
 
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
         maxHeight: 23,
@@ -138,11 +115,10 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __verifyPhoneNumber: function() {
+      this.__itiInput.verifyPhoneNumber();
       const isValid = this.__itiInput.isValidNumber();
-      this.__invalidNumberText.setVisibility(isValid ? "excluded" : "visible");
       if (isValid) {
-        console.log("valid", this.__itiInput.getNumber());
-        this.__phoneNumberTF.setEnabled(false);
+        this.__itiInput.setEnabled(false);
         this.__verifyPhoneNumberBtn.setEnabled(false);
         this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
@@ -153,18 +129,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
-            this.__phoneNumberTF.setEnabled(true);
+            this.__itiInput.setEnabled(true);
           });
-      } else {
-        const validationError = this.__itiInput.getValidationError();
-        const errorMap = {
-          0: this.tr("Invalid number"),
-          1: this.tr("Invalid country code"),
-          2: this.tr("Number too short"),
-          3: this.tr("Number too long")
-        };
-        const errorMsg = validationError in errorMap ? errorMap[validationError] : "Invalid number";
-        this.__invalidNumberText.setValue(errorMsg);
       }
     },
 
@@ -192,7 +158,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.validateCodeRegister(this.getUserEmail(), this.__phoneNumberTF.getValue(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
+      manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
     }
   }
 });

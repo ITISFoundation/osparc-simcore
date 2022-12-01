@@ -15,8 +15,6 @@
 
 ************************************************************************ */
 
-/* global intlTelInput */
-
 /**
  * @asset(intl-tel-input/js/intlTelInput.min.js)
  * @asset(intl-tel-input/js/data.min.js)
@@ -24,7 +22,6 @@
  * @asset(intl-tel-input/css/intlTelInput.css)
  * @asset(intl-tel-input/img/flags.png)
  * @asset(intl-tel-input/img/flags@2x.png)
- * @ignore(intlTelInput)
  */
 
 /**
@@ -39,15 +36,7 @@ qx.Class.define("osparc.wrapper.IntlTelInput", {
   statics: {
     NAME: "intlTelInput",
     VERSION: "17.0.19",
-    URL: "https://github.com/jackocnr/intl-tel-input",
-
-    updateStyle: function(itiInput) {
-      itiInput.a.style["width"] = "215px";
-      itiInput.a.style["height"] = "23px";
-      itiInput.a.style["borderWidth"] = "0px";
-      itiInput.a.style["backgroundColor"] = qx.theme.manager.Meta.getInstance().getTheme().name.includes("Light") ? "#eaedef" : "#202426";
-      itiInput.a.style["color"] = qx.theme.manager.Color.getInstance().resolve("text");
-    }
+    URL: "https://github.com/jackocnr/intl-tel-input"
   },
 
   properties: {
@@ -84,17 +73,6 @@ qx.Class.define("osparc.wrapper.IntlTelInput", {
       }, this);
 
       dynLoader.start();
-    },
-
-    inputToPhoneInput: function(input) {
-      const iti = intlTelInput(input, {
-        initialCountry: "ch", // auto: geoIpLookup. need to unlock https://ipinfo.io/,
-        preferredCountries: ["ch", "us"]
-      });
-      const themeManager = qx.theme.manager.Meta.getInstance();
-      themeManager.addListener("changeTheme", () => this.self().updateStyle(iti));
-      this.self().updateStyle(iti);
-      return iti;
     }
   }
 });
