@@ -27,7 +27,7 @@ from ..modules.long_running_tasks import (
     task_save_state,
 )
 from ..modules.mounted_fs import MountedVolumes
-from ..modules.outputs_manager import OutputsManager
+from ..modules.outputs import OutputsManager
 from ._dependencies import (
     get_application,
     get_application_health,

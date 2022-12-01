@@ -5,7 +5,6 @@ from asyncio import TimeoutError as AsyncioTimeoutError
 from asyncio import create_task, wait_for
 from contextlib import suppress
 from functools import partial
-from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
@@ -13,11 +12,11 @@ from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
 from servicelib.logging_utils import log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
-from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
-from ..core.rabbitmq import post_log_message
-from .mounted_fs import MountedVolumes
-from .nodeports import upload_outputs
+from ...core.rabbitmq import post_log_message
+from ...core.settings import ApplicationSettings
+from ..nodeports import upload_outputs
+from ._context import OutputsContext
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
 
 
 class UploadPortsFailed(PydanticErrorMixin, Exception):
-    code: str = "dynamic_sidecar.outputs_watcher.failed_while_uploading"
+    code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"
     msg_template: str = "Failed while uploading: failures={failures}"
 
 
@@ -103,7 +102,7 @@ class PortKeyTracker:
 class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
-        outputs_path: Path,
+        outputs_context: OutputsContext,
         io_log_redirect_cb: Optional[LogRedirectCB],
         *,
         bulk_scheduling: bool = True,
@@ -111,14 +110,12 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         task_cancellation_timeout_s: PositiveFloat = 5,
         task_monitor_interval_s: PositiveFloat = 1.0,
     ):
-        self.outputs_path = outputs_path
+        self.outputs_context = outputs_context
         self.io_log_redirect_cb = io_log_redirect_cb
         self.bulk_scheduling = bulk_scheduling
         self.upload_upon_api_request = upload_upon_api_request
         self.task_cancellation_timeout_s = task_cancellation_timeout_s
         self.task_monitor_interval_s = task_monitor_interval_s
-
-        self.outputs_port_keys: set[str] = set()
 
         self._port_key_tracker = PortKeyTracker()
         self._keep_running = True
@@ -133,11 +130,10 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         port_keys = await self._port_key_tracker.get_uploading()
         assert len(port_keys) > 0  # nosec
 
-        logger.debug("Will upload %s", port_keys)
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
         self._task_uploading = create_task(
             upload_outputs(
-                outputs_path=self.outputs_path,
+                outputs_path=self.outputs_context.outputs_path,
                 port_keys=port_keys,
                 io_log_redirect_cb=self.io_log_redirect_cb,
             ),
@@ -162,10 +158,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 except Exception as e:  # pylint: disable=broad-except
                     self._last_upload_error_tracker[port_key] = e
 
-            logger.debug("Removing ports %s", port_keys)
-            # NOTE: can this be better?
             create_task(self._port_key_tracker.remove_all_uploading())
-            logger.debug("Port tracker %s", self._port_key_tracker)
 
         self._task_uploading.add_done_callback(_remove_downloads)
 
@@ -224,9 +217,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             logger.warning(
                 "Scheduled %s for upload. The watchdog was rebooted. "
                 "This is a safety measure to make sure no data is lost. ",
-                self.outputs_port_keys,
+                self.outputs_context.outputs_path,
             )
-            for port_key in self.outputs_port_keys:
+            for port_key in self.outputs_context.port_keys:
                 await self.port_key_content_changed(port_key)
 
         while not await self._port_key_tracker.no_tracked_ports():
@@ -243,8 +236,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
 def setup_outputs_manager(app: FastAPI) -> None:
     async def on_startup() -> None:
-        assert isinstance(app.state.mounted_volumes, MountedVolumes)  # nosec
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+        assert isinstance(app.state.outputs_context, OutputsContext)  # nosec
+        outputs_context: OutputsContext = app.state.outputs_context
         assert isinstance(app.state.settings, ApplicationSettings)  # nosec
         settings: ApplicationSettings = app.state.settings
 
@@ -257,7 +250,7 @@ def setup_outputs_manager(app: FastAPI) -> None:
         )
 
         outputs_manager = app.state.outputs_manager = OutputsManager(
-            outputs_path=mounted_volumes.disk_outputs_path,
+            outputs_context=outputs_context,
             io_log_redirect_cb=io_log_redirect_cb,
         )
         await outputs_manager.start()

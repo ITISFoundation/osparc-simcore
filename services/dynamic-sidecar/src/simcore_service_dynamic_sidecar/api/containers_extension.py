@@ -9,10 +9,13 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..modules import outputs_watcher
 from ..modules.mounted_fs import MountedVolumes
-from ..modules.outputs_manager import OutputsManager
-from ._dependencies import get_application, get_mounted_volumes, get_outputs_manager
+from ..modules.outputs import (
+    OutputsContext,
+    disable_outputs_watcher,
+    enable_outputs_watcher,
+)
+from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +57,9 @@ async def toggle_outputs_watcher(
     app: FastAPI = Depends(get_application),
 ) -> None:
     if patch_outputs_watcher_item.is_enabled:
-        outputs_watcher.enable_outputs_watcher(app)
+        enable_outputs_watcher(app)
     else:
-        outputs_watcher.disable_outputs_watcher(app)
+        disable_outputs_watcher(app)
 
 
 @router.post(
@@ -73,14 +76,16 @@ async def toggle_outputs_watcher(
 async def create_output_dirs(
     request_mode: CreateDirsRequestItem,
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    outputs_manager: OutputsManager = Depends(get_outputs_manager),
+    outputs_context: OutputsContext = Depends(get_outputs_context),
 ) -> None:
     outputs_path = mounted_volumes.disk_outputs_path
+    port_keys = []
     for port_key, service_output in request_mode.outputs_labels.items():
         if is_file_type(service_output.property_type):
             dir_to_create = outputs_path / port_key
             dir_to_create.mkdir(parents=True, exist_ok=True)
-            outputs_manager.outputs_port_keys.add(port_key)
+            port_keys.append(port_key)
+    await outputs_context.set_port_keys(port_keys)
 
 
 @router.post(

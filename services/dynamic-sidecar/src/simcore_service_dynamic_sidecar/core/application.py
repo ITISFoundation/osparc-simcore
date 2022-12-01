@@ -17,8 +17,7 @@ from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
-from ..modules.outputs_manager import OutputsManager, setup_outputs_manager
-from ..modules.outputs_watcher import setup_outputs_watcher
+from ..modules.outputs import setup_outputs
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
@@ -88,11 +87,6 @@ class AppState:
         return self._app.state.mounted_volumes
 
     @property
-    def outputs_manager(self) -> OutputsManager:
-        assert isinstance(self._app.state.outputs_manager, OutputsManager)  # nosec
-        return self._app.state.outputs_manager  # nosec
-
-    @property
     def _shared_store(self) -> SharedStore:
         assert isinstance(self._app.state.shared_store, SharedStore)  # nosec
         return self._app.state.shared_store
@@ -157,8 +151,7 @@ def create_app():
 
     # also sets up mounted_volumes
     setup_mounted_fs(app)
-    setup_outputs_manager(app)
-    setup_outputs_watcher(app)
+    setup_outputs(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)

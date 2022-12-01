@@ -9,12 +9,13 @@ from unittest.mock import AsyncMock
 import pytest
 from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
-from simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter import (
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
+from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
     DefaultDelayPolicy,
     EventFilter,
 )
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
 # FIXTURES
 
@@ -36,11 +37,20 @@ def port_keys(outputs_path: Path, port_key_1: str) -> list[str]:
 
 
 @pytest.fixture
+async def outputs_context(outputs_path: Path, port_keys: list[str]) -> OutputsContext:
+    outputs_context = OutputsContext(outputs_path)
+    await outputs_context.set_port_keys(port_keys)
+    return outputs_context
+
+
+@pytest.fixture
 async def outputs_manager(
-    outputs_path: Path, port_keys: list[str]
+    outputs_context: OutputsContext,
 ) -> AsyncIterator[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_path=outputs_path, io_log_redirect_cb=None)
-    outputs_manager.outputs_port_keys.update(port_keys)
+    outputs_manager = OutputsManager(
+        outputs_context=outputs_context, io_log_redirect_cb=None
+    )
+    await outputs_manager.start()
     yield outputs_manager
     await outputs_manager.shutdown()
 
@@ -76,7 +86,7 @@ def mock_delay_policy() -> BaseDelayPolicy:
 @pytest.fixture
 def mock_get_dir_size(mocker: MockerFixture) -> Iterator[AsyncMock]:
     yield mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs_watcher._event_filter.get_dir_size",
+        "simcore_service_dynamic_sidecar.modules.outputs._event_filter.get_dir_size",
         return_value=1,
     )
 
@@ -113,14 +123,14 @@ async def test_event_triggers_once(
     mocked_port_key_content_changed: AsyncMock,
 ):
     # event triggers once
-    event_filter.enqueue(port_key_1)
+    await event_filter.enqueue(port_key_1)
     await _wait_for_event_to_trigger(event_filter)
     assert mocked_port_key_content_changed.call_count == 1
 
     await _wait_for_event_to_trigger(event_filter)
 
     # event triggers a second time
-    event_filter.enqueue(port_key_1)
+    await event_filter.enqueue(port_key_1)
     await _wait_for_event_to_trigger(event_filter)
     assert mocked_port_key_content_changed.call_count == 2
 
@@ -131,7 +141,7 @@ async def test_trigger_once_after_event_chain(
     mocked_port_key_content_changed: AsyncMock,
 ):
     for _ in range(100):
-        event_filter.enqueue(port_key_1)
+        await event_filter.enqueue(port_key_1)
     await _wait_for_event_to_trigger(event_filter)
     assert mocked_port_key_content_changed.call_count == 1
 
@@ -143,7 +153,7 @@ async def test_always_trigger_after_delay(
     mocked_port_key_content_changed: AsyncMock,
 ):
     # event triggers once
-    event_filter.enqueue(port_key_1)
+    await event_filter.enqueue(port_key_1)
     await _wait_for_event_to_trigger(event_filter)
     assert mocked_port_key_content_changed.call_count == 0
 
@@ -152,7 +162,7 @@ async def test_always_trigger_after_delay(
     assert mocked_port_key_content_changed.call_count == 1
 
     # trigger once more and see if it triggers after expected interval
-    event_filter.enqueue(port_key_1)
+    await event_filter.enqueue(port_key_1)
     await _wait_for_event_to_trigger_big_directory(event_filter)
     assert mocked_port_key_content_changed.call_count == 2
 
@@ -163,7 +173,7 @@ async def test_minimum_amount_of_get_dir_size_calls(
     port_key_1: str,
     mocked_port_key_content_changed: AsyncMock,
 ):
-    event_filter.enqueue(port_key_1)
+    await event_filter.enqueue(port_key_1)
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
@@ -182,7 +192,7 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
     port_key_1: str,
     mocked_port_key_content_changed: AsyncMock,
 ):
-    event_filter.enqueue(port_key_1)
+    await event_filter.enqueue(port_key_1)
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
@@ -194,7 +204,7 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
     # size of directory will not be computed
     VERY_LONG_EVENT_CHAIN = 1000
     for _ in range(VERY_LONG_EVENT_CHAIN):
-        event_filter.enqueue(port_key_1)
+        await event_filter.enqueue(port_key_1)
         await _wait_for_event_to_trigger(event_filter)
         assert mock_get_dir_size.call_count == 1
         assert mocked_port_key_content_changed.call_count == 0

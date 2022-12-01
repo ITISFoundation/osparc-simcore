@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import aiodocker
+import aiofiles
 import pytest
 import yaml
 from aiodocker.volumes import DockerVolume
@@ -32,9 +33,9 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
-from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
-from simcore_service_dynamic_sidecar.modules.outputs_manager import OutputsManager
-from simcore_service_dynamic_sidecar.modules.outputs_watcher._core import OutputsWatcher
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
+from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -55,7 +56,6 @@ async def _assert_enable_outputs_watcher(test_client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
 
 
 async def _assert_disable_outputs_watcher(test_client: TestClient) -> None:
@@ -64,7 +64,6 @@ async def _assert_disable_outputs_watcher(test_client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
 
 
 async def _start_containers(test_client: TestClient, compose_spec: str) -> list[str]:
@@ -414,27 +413,31 @@ async def test_outputs_watcher_disabling(
     mock_event_filter_enqueue: AsyncMock,
 ):
     assert isinstance(test_client.application, FastAPI)
-    outputs_manager: OutputsManager = AppState(test_client.application).outputs_manager
-    mounted_volumes: MountedVolumes = AppState(test_client.application).mounted_volumes
-    outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER
+    outputs_context: OutputsContext = test_client.application.state.outputs_context
+    outputs_manager: OutputsManager = test_client.application.state.outputs_manager
+    outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
+    WAIT_FOR_EVENTS = outputs_manager.task_monitor_interval_s * 10
 
-    def _create_file_in_random_dir_in_inputs() -> int:
+    async def _create_file_in_random_dir_in_inputs() -> int:
         random_subdir = f"{uuid4()}"
 
-        outputs_manager.outputs_port_keys.add(random_subdir)
-        dir_name = mounted_volumes.disk_outputs_path / random_subdir
+        await outputs_context.set_port_keys([random_subdir])
+        await asyncio.sleep(WAIT_FOR_EVENTS)
+
+        dir_name = outputs_context.outputs_path / random_subdir
         dir_name.mkdir()
 
-        file_in_dir = dir_name / f"file_{uuid4()}"
-        file_in_dir.touch()
+        async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
+            await f.write("ok")
 
         dir_count = len(
             [
                 1
-                for x in mounted_volumes.disk_outputs_path.glob("*")
+                for x in outputs_context.outputs_path.glob("*")
                 if not f"{x}".endswith(HIDDEN_FILE_NAME)
             ]
         )
+        await asyncio.sleep(WAIT_FOR_EVENTS)
         return dir_count
 
     CALLS_RECEIVED_BY_EVENT_FILTER = 3
@@ -442,24 +445,21 @@ async def test_outputs_watcher_disabling(
     # by default outputs-watcher it is disabled
     await _assert_enable_outputs_watcher(test_client)
     assert mock_event_filter_enqueue.call_count == 0
-    files_in_dir = _create_file_in_random_dir_in_inputs()
+    files_in_dir = await _create_file_in_random_dir_in_inputs()
     assert files_in_dir == 1
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
     # disable and wait for events should have the same count as before
     await _assert_disable_outputs_watcher(test_client)
-    files_in_dir = _create_file_in_random_dir_in_inputs()
+    files_in_dir = await _create_file_in_random_dir_in_inputs()
     assert files_in_dir == 2
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
     # enable and wait for events
     await _assert_enable_outputs_watcher(test_client)
 
-    files_in_dir = _create_file_in_random_dir_in_inputs()
+    files_in_dir = await _create_file_in_random_dir_in_inputs()
     assert files_in_dir == 3
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
     assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
 
 
@@ -473,6 +473,7 @@ async def test_container_create_outputs_dirs(
 
     # by default outputs-watcher it is disabled
     await _assert_enable_outputs_watcher(test_client)
+    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
 
     assert mock_event_filter_enqueue.call_count == 0
 

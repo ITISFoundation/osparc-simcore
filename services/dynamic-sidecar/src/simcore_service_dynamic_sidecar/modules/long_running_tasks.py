@@ -31,8 +31,7 @@ from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
-from ..modules.outputs_manager import OutputsManager
-from ..modules.outputs_watcher import outputs_watcher_disabled
+from ..modules.outputs import OutputsManager, outputs_watcher_disabled
 
 logger = logging.getLogger(__name__)
 

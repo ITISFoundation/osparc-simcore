@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from _pytest.fixtures import FixtureRequest
 from pydantic import NonNegativeInt, PositiveInt
-from simcore_service_dynamic_sidecar.modules.outputs_watcher._directory_utils import (
+from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
     get_dir_size,
 )
 

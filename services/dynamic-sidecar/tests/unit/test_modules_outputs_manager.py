@@ -13,7 +13,8 @@ from pydantic import PositiveFloat
 from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
-from simcore_service_dynamic_sidecar.modules.outputs_manager import (
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
+from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
     PortKeyTracker,
     UploadPortsFailed,
@@ -57,7 +58,7 @@ def mock_upload_outputs(
         await asyncio.sleep(upload_duration)
 
     yield mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mock_upload_outputs,
     )
 
@@ -85,7 +86,7 @@ def mock_upload_outputs_raises_error(
         await asyncio.sleep(upload_duration)
 
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs_manager.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mock_upload_outputs,
     )
 
@@ -127,20 +128,28 @@ async def port_key_tracker_with_ports(
     return port_key_tracker
 
 
-# TESTS
+@pytest.fixture
+async def outputs_context(outputs_path: Path, port_keys: list[str]) -> OutputsContext:
+    outputs_context = OutputsContext(outputs_path=outputs_path)
+    await outputs_context.set_port_keys(port_keys)
+    return outputs_context
 
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_path: Path, port_keys: list[str]
+    outputs_context: OutputsContext,
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_path=outputs_path, io_log_redirect_cb=None, task_monitor_interval_s=0.01
+        outputs_context=outputs_context,
+        io_log_redirect_cb=None,
+        task_monitor_interval_s=0.01,
     )
-    outputs_manager.outputs_port_keys.update(port_keys)
     await outputs_manager.start()
     yield outputs_manager
     await outputs_manager.shutdown()
+
+
+# TESTS
 
 
 async def test_upload_port_wait_parallel(

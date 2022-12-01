@@ -2,8 +2,9 @@ import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
-from asyncio import Queue, Task, create_task
+from asyncio import CancelledError, Queue, Task, create_task
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Final, Optional
 
@@ -18,8 +19,8 @@ from pydantic import (
 from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
-from ..outputs_manager import OutputsManager
 from ._directory_utils import get_dir_size
+from ._manager import OutputsManager
 
 PortEvent = Optional[str]
 
@@ -128,7 +129,9 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
                     tracked_event.wait_interval is None
                     or elapsed_since_detection > tracked_event.wait_interval
                 ):
-                    port_key_dir_path = self.outputs_manager.outputs_path / port_key
+                    port_key_dir_path = (
+                        self.outputs_manager.outputs_context.outputs_path / port_key
+                    )
                     total_wait_for = self.delay_policy.get_wait_interval(
                         get_dir_size(port_key_dir_path)
                     )
@@ -154,7 +157,7 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
             )
 
     async def _worker_upload_events(self) -> None:
-        """requests an upload for `port_key`"""
+        """enqueues uploads for port  `port_key`"""
         while True:
             port_key: Optional[str] = await self._upload_events_queue.get()
             if port_key is None:
@@ -162,8 +165,8 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
 
             await self.outputs_manager.port_key_content_changed(port_key)
 
-    def enqueue(self, port_key: str) -> None:
-        self._events_queue.put_nowait(port_key)
+    async def enqueue(self, port_key: str) -> None:
+        await self._events_queue.put(port_key)
 
     async def start(self) -> None:
         self._worker_task_event_ingestion = create_task(
@@ -176,7 +179,7 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
         )
 
         self._worker_task_upload_events = create_task(
-            self._worker_upload_events(), name=self._worker_check_events.__name__
+            self._worker_upload_events(), name=self._worker_upload_events.__name__
         )
 
         logger.info("started event filter")
@@ -185,12 +188,18 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
         with log_context(logger, logging.INFO, f"{EventFilter.__name__} shutdown"):
             await self._events_queue.put(None)
             if self._worker_task_event_ingestion is not None:
-                await self._worker_task_event_ingestion
+                self._worker_task_event_ingestion.cancel()
+                with suppress(CancelledError):
+                    await self._worker_task_event_ingestion
 
             self._keep_running = False
             if self._worker_task_check_events is not None:
-                await self._worker_task_check_events
+                self._worker_task_check_events.cancel()
+                with suppress(CancelledError):
+                    await self._worker_task_check_events
 
             await self._upload_events_queue.put(None)
             if self._worker_task_upload_events is not None:
-                await self._worker_task_upload_events
+                self._worker_task_upload_events.cancel()
+                with suppress(CancelledError):
+                    await self._worker_task_upload_events
