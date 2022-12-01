@@ -15,6 +15,7 @@ from unittest.mock import call
 
 import pytest
 import socketio
+import sqlalchemy as sa
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
@@ -39,6 +40,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     standard_role_response,
 )
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
@@ -465,6 +467,61 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     resp = await client.post(url, json=client_session_id_factory())
     await assert_status(resp, expected.ok)
     mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_not_called()
+
+
+@pytest.fixture
+def one_max_open_studies_per_user(
+    postgres_db: sa.engine.Engine, osparc_product_name: str
+) -> Iterator[None]:
+    with postgres_db.connect() as conn:
+        old_value = conn.scalar(
+            sa.select([products.c.max_open_studies_per_user]).where(
+                products.c.name == osparc_product_name
+            )
+        )
+        conn.execute(
+            products.update()
+            .values(max_open_studies_per_user=1)
+            .where(products.c.name == osparc_product_name)
+        )
+    yield
+
+    with postgres_db.connect() as conn:
+        conn.execute(
+            products.update()
+            .values(max_open_studies_per_user=old_value)
+            .where(products.c.name == osparc_product_name)
+        )
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
+    one_max_open_studies_per_user: None,
+    client,
+    logged_user,
+    client_session_id_factory: Callable,
+    user_project: ProjectDict,
+    shared_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
+    user_role: UserRole,
+):
+    client_id_1 = client_session_id_factory()
+    await _open_project(
+        client,
+        client_id_1,
+        user_project,
+        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+    )
+
+    client_id_2 = client_session_id_factory()
+    await _open_project(
+        client,
+        client_id_2,
+        shared_project,
+        expected.conflict if user_role != UserRole.GUEST else web.HTTPConflict,
+    )
 
 
 @pytest.mark.parametrize(*standard_role_response())

@@ -33,6 +33,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
@@ -122,7 +123,7 @@ def app_environment(
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
-    app_environment,
+    app_environment: dict[str, str],
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
@@ -153,9 +154,10 @@ def web_server(
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client,
+    aiohttp_client: Callable,
     web_server: TestServer,
     mock_orphaned_services,
+    redis_client: Redis,
 ) -> TestClient:
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli

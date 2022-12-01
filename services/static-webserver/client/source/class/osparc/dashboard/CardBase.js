@@ -58,6 +58,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_GUIDED: "@FontAwesome5Solid/play/14",
     MODE_APP: "@FontAwesome5Solid/desktop/14",
 
+    CARD_PRIORITY: {
+      NEW: 0,
+      PLACEHOLDER: 1,
+      ITEM: 2,
+      LOADER: 3
+    },
+
     filterText: function(checks, text) {
       if (text) {
         const includesSome = checks.some(check => check.toLowerCase().trim().includes(text.toLowerCase()));
@@ -202,6 +209,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       init: false,
       nullable: false,
       apply: "_applyFetching"
+    },
+
+    priority: {
+      check: "Number",
+      init: null,
+      nullable: false
     }
   },
 

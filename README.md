@@ -7,7 +7,6 @@
 
 <!-- NOTE: when branched replace `master` in urls -->
 [![Code style: black]](https://github.com/psf/black)
-[![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
 [![CI](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg)](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
 [![codecov](https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic)](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![github.io]](https://itisfoundation.github.io/)
@@ -17,7 +16,6 @@
 
 <!-- ADD HERE ALL BADGE URLS. Use https://shields.io/ -->
 [Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
-[Requires.io]:https://requires.io/github/ITISFoundation/osparc-simcore/requirements.svg?branch=master
 [github.io]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
 [license]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore

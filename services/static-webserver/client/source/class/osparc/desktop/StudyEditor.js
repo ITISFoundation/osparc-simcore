@@ -235,7 +235,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         })
         .catch(err => {
           let msg = "";
-          if ("status" in err && err["status"] == 423) { // Locked
+          if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
+            msg = err["message"];
+          } else if ("status" in err && err["status"] == 423) { // Locked
             msg = study.getName() + this.tr(" is already opened");
           } else {
             console.error(err);

@@ -10,7 +10,12 @@ from typing import Final
 
 import aiodocker
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import Node, Task, TaskState
+from models_library.generated_models.docker_rest_api import (
+    Node,
+    NodeState,
+    Task,
+    TaskState,
+)
 from pydantic import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -44,6 +49,32 @@ async def get_monitored_nodes(node_labels: list[DockerLabelKey]) -> list[Node]:
             ),
         )
     return nodes
+
+
+async def remove_monitored_down_nodes(nodes: list[Node]) -> list[Node]:
+    """removes docker nodes that are in the down state"""
+
+    def _check_if_node_is_removable(node: Node) -> bool:
+        if node.Status and node.Status.State:
+            return node.Status.State in [
+                NodeState.down,
+                NodeState.disconnected,
+                NodeState.unknown,
+            ]
+        logger.warning(
+            "%s has no Status/State! This is unexpected and shall be checked",
+            f"{node=}",
+        )
+        # we do not remove a node that has a weird state, let it be done by someone smarter.
+        return False
+
+    nodes_that_need_removal = [n for n in nodes if _check_if_node_is_removable(n)]
+    async with aiodocker.Docker() as docker:
+        for node in nodes_that_need_removal:
+            assert node.ID  # nosec
+            with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
+                await docker.nodes.remove(node_id=node.ID)
+    return nodes_that_need_removal
 
 
 async def pending_service_tasks_with_insufficient_resources(

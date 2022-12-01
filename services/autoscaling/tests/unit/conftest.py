@@ -229,6 +229,7 @@ async def create_service(
         return service
 
     yield _creator
+
     await asyncio.gather(
         *(async_docker_client.services.delete(s["ID"]) for s in created_services)
     )
@@ -244,9 +245,10 @@ async def create_service(
             f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
         )
         assert not await async_docker_client.containers.list(
+            all=True,
             filters={
                 "label": [f"com.docker.swarm.service.id={service['ID']}"],
-            }
+            },
         )
         print(f"<-- service {service['ID']}:{service['Spec']['Name']} is gone.")
 
