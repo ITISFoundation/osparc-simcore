@@ -304,7 +304,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __showServiceDetails: function() {
-      const serviceDetails = new osparc.servicecard.Large(this.__getSelectedService());
+      const serviceDetails = new osparc.info.ServiceLarge(this.__getSelectedService());
       const title = this.tr("Service information");
       const width = 600;
       const height = 700;

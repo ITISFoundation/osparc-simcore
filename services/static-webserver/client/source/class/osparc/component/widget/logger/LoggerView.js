@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
             toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });
-          osparc.utils.Utils.setIdToWidget(control, "downloadLogsToClipboardButton");
+          osparc.utils.Utils.setIdToWidget(control, "downloadLogsButton");
           toolbar.add(control);
           break;
         }
@@ -226,7 +226,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       toolbar.add(copyToClipboardButton);
 
       const downloadButton = this.getChildControl("download-logs-button");
-      downloadButton.addListener("execute", () => this.__downloadLogs(), this);
+      downloadButton.addListener("execute", () => this.downloadLogs(), this);
       toolbar.add(downloadButton);
 
       return toolbar;
@@ -297,7 +297,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
     },
 
-    __downloadLogs: function() {
+    downloadLogs: function() {
       const logs = this.__getLogsString();
       osparc.utils.Utils.downloadContent("data:text/plain;charset=utf-8," + logs, "logs.log");
     },
