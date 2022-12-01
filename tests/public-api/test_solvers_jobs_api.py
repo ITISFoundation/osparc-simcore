@@ -179,8 +179,9 @@ def test_create_job(
     assert job.id != job2.id
 
 
-_RETRY_POLICY_IF_LOGFILE_NOT_FOUND = dict(
-    # only 404 are retried, the rest are failures
+_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
+    # NOTE: Only 404s https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+    # are retried, the rest are failures
     retry=retry_if_exception_type(TryAgain),
     wait=wait_fixed(1),
     stop=stop_after_attempt(3),
@@ -288,7 +289,7 @@ def test_run_job(
         # NOTE: https://github.com/itisfoundation/osparc-simcore/issues/3569 shows
         # that this test might not have the logs ready in time and returns a 404 (not found)
         # for that reason we do a few retries before giving up
-        for attempt in Retrying(_RETRY_POLICY_IF_LOGFILE_NOT_FOUND):
+        for attempt in Retrying(_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND):
             with attempt:
                 try:
                     logfile: str = solvers_api.get_job_output_logfile(
