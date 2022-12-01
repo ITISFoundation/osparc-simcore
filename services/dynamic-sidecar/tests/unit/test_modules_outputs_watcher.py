@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
+from threading import Thread
 from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator, Optional
 from unittest.mock import AsyncMock
 
@@ -263,8 +264,6 @@ async def _generate_event_burst(
         # delete
         file_path_2.unlink()
         # let fs events trigger
-
-    from threading import Thread
 
     thread = Thread(target=_worker, daemon=True)
     thread.start()
