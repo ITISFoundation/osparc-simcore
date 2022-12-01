@@ -183,7 +183,7 @@ _RETRY_POLICY_IF_LOGFILE_NOT_FOUND = dict(
     # only 404 are retried, the rest are failures
     retry=retry_if_exception_type(TryAgain),
     wait=wait_fixed(1),
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(3),
     after=after_log(logger, logging.WARNING),
     reraise=True,
 )
