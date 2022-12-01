@@ -456,8 +456,11 @@ class TutorialBase {
     }
   }
 
-  async waitAndClick(osparcTestId) {
-    await utils.waitAndClick(this.__page, `[osparc-test-id=${osparcTestId}]`);
+  async waitAndClick(osparcTestId, page) {
+    if (page === undefined) {
+      page = this.__page;
+    }
+    await utils.waitAndClick(page, `[osparc-test-id=${osparcTestId}]`);
   }
 
   async closeNodeFiles() {
@@ -607,8 +610,8 @@ class TutorialBase {
 
     // do some basic interaction
     const s4lIframe = await this.getIframe(s4lNodeId);
-    const modelTree = await s4lIframe.$('.model-tree');
-    const modelItems = await modelTree.$$('.MuiTreeItem-label');
+    await this.waitAndClick('model-tree', s4lIframe);
+    const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
     const nLabels = modelItems.length;
     if (nLabels > 1) {
       modelItems[0].click();
@@ -617,6 +620,33 @@ class TutorialBase {
       modelItems[1].click();
       await this.waitFor(2000, 'Grid clicked');
       await this.takeScreenshot('GridlClicked');
+    }
+  }
+
+  async testS4LDipole(s4lNodeId) {
+    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    await this.waitAndClick('mode-button-modeling', s4lIframe);
+    await this.waitAndClick('mode-button-simulation', s4lIframe);
+    await this.waitAndClick('simulation-tree', s4lIframe);
+    await this.waitAndClick('toolbar-tool-Update grid', s4lIframe);
+    await this.waitFor(4000, 'Updating grid...');
+    await this.waitAndClick('toolbar-tool-Create Voxels', s4lIframe);
+    await this.waitFor(4000, 'Creating voxels...');
+    // open context menu
+    await s4lIframe.click('[osparc-test-id="simulation-tree"]', {
+      button: 'right'
+    });
+    await this.waitAndClick('context-menu-item-Run', s4lIframe);
+    const simulationPostproSwitchTries = 100;
+    for (let i=0; i<simulationPostproSwitchTries; i++) {
+      await this.waitFor(2000, 'Waiting for results');
+      await this.waitAndClick('mode-button-postro', s4lIframe);
+      if (await s4lIframe.$('[osparc-test-id="postpro-tree"]')) {
+        break;
+      }
+      await this.waitAndClick('mode-button-modeling', s4lIframe);
     }
   }
 
