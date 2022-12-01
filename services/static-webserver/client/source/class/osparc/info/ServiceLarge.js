@@ -292,11 +292,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createKey: function() {
-      return osparc.info.ServiceUtils.createKey(this.getService());
+      return osparc.info.ServiceUtils.createKey(this.getService()["key"]);
     },
 
     __createVersion: function() {
-      return osparc.info.ServiceUtils.createVersion(this.getService());
+      return osparc.info.ServiceUtils.createVersion(this.getService()["version"]);
     },
 
     __createContact: function() {
