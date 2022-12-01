@@ -43,11 +43,7 @@ qx.Class.define("osparc.info.MergedLarge", {
   },
 
   events: {
-    "openAccessRights": "qx.event.type.Event",
-    "openClassifiers": "qx.event.type.Event",
-    "openQuality": "qx.event.type.Event",
-    "updateStudy": "qx.event.type.Data",
-    "updateTags": "qx.event.type.Data"
+    "updateStudy": "qx.event.type.Data"
   },
 
   properties: {
@@ -172,33 +168,21 @@ qx.Class.define("osparc.info.MergedLarge", {
       }, {
         label: this.tr("Access Rights"),
         view: this.__createAccessRights(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: "openAccessRights",
-          ctx: this
-        }
+        action: null
       }];
 
       if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
-          action: {
-            button: osparc.utils.Utils.getViewButton(),
-            callback: "openQuality",
-            ctx: this
-          }
+          action: null
         });
       }
 
       extraInfo.push({
         label: this.tr("Classifiers"),
         view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: "openClassifiers",
-          ctx: this
-        } : null
+        action: null
       });
 
       if (osparc.data.Permissions.getInstance().isTester()) {
@@ -373,42 +357,6 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __copyKeyToClipboard: function() {
       osparc.utils.Utils.copyTextToClipboard(this.getService().getKey());
-    },
-
-    __openAccessRights: function() {
-      const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
-        const updatedData = e.getData();
-        this.getStudy().setAccessRights(updatedData["accessRights"]);
-        this.fireDataEvent("updateStudy", updatedData);
-      }, this);
-    },
-
-    __openClassifiers: function() {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (this.__isOwner()) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
-        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateClassifiers", e => {
-          win.close();
-          const updatedData = e.getData();
-          this.getStudy().setClassifiers(updatedData["classifiers"]);
-          this.fireDataEvent("updateStudy", updatedData);
-        }, this);
-      } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getStudy().serialize());
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-      }
-    },
-
-    __openQuality: function() {
-      const qualityEditor = osparc.info.StudyUtils.openQuality(this.getStudy().serialize());
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedData = e.getData();
-        this.getStudy().setQuality(updatedData["quality"]);
-        this.fireDataEvent("updateStudy", updatedData);
-      });
     },
 
     __openTagsEditor: function() {

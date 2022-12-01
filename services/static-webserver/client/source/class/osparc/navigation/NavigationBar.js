@@ -229,7 +229,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.addListener("editValue", e => {
             const newLabel = e.getData();
             this.getStudy().setName(newLabel);
-            control.setValue(newLabel);
           });
           this.getChildControl("left-items").add(control);
           break;
@@ -315,7 +314,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-button").show();
           if (osparc.utils.Utils.isProduct("s4llite")) {
             this.getChildControl("study-menu-button").show();
-            this.getChildControl("edit-title-label").setValue(this.getStudy().getName());
+            this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
             this.getChildControl("edit-title-label").show();
           }
           if (this.__tabButtons) {
