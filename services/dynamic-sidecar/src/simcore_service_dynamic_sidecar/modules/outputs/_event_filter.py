@@ -66,7 +66,7 @@ class TrackedEvent:
     wait_interval: Optional[NonNegativeFloat] = None
 
 
-class EventFilter:  # pylint:disable=too-many-instance-attributes
+class EventFilter:
     def __init__(
         self,
         outputs_manager: OutputsManager,

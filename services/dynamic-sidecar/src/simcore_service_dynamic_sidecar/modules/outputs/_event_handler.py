@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 class _PortKeysEventHandler(SafeFileSystemEventHandler):
+    # NOTE: runs in the created process
+
     def __init__(self, outputs_path: Path, port_key_events_queue: AioQueue):
         super().__init__()
 
@@ -54,8 +56,8 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         port_key_candidate = f"{relative_path_parents[0]}"
 
         if port_key_candidate in self._outputs_port_keys:
-            # NOTE: messages in this queues are put from an process
-            # and will be used inside the async loop
+            # messages in this queue (part of the process),
+            # will be consumed by the asyncio thread
             self.port_key_events_queue.put(port_key_candidate)
 
 
@@ -191,7 +193,7 @@ class _EventHandlerProcess:
 
 class EventHandlerObserver:
     """
-    Ensures watchdog does not blocking.
+    Ensures watchdog is not blocking.
     When blocking, it will restart the process handling the watchdog.
     """
 
