@@ -23,6 +23,7 @@ from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 from tenacity import Retrying, TryAgain
 from tenacity.after import after_log
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
@@ -179,10 +180,12 @@ def test_create_job(
 
 
 _RETRY_POLICY_IF_LOGFILE_NOT_FOUND = dict(
-    reraise=True,
+    # only 404 are retried, the rest are failures
+    retry=retry_if_exception_type(TryAgain),
     wait=wait_fixed(1),
     stop=stop_after_attempt(5),
     after=after_log(logger, logging.WARNING),
+    reraise=True,
 )
 
 
@@ -283,8 +286,8 @@ def test_run_job(
         print("Testing output logfile ...")
 
         # NOTE: https://github.com/itisfoundation/osparc-simcore/issues/3569 shows
-        # that this test might not have the logs ready in time and returns a 404
-        # for that reason we make a retry
+        # that this test might not have the logs ready in time and returns a 404 (not found)
+        # for that reason we do a few retries before giving up
         for attempt in Retrying(_RETRY_POLICY_IF_LOGFILE_NOT_FOUND):
             with attempt:
                 try:
