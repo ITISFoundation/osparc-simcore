@@ -1,7 +1,6 @@
 import logging
 from collections import deque
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, Final, List, Optional, Type
+from typing import Any, Deque, Final, Optional
 
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
@@ -47,30 +46,7 @@ logger = logging.getLogger(__name__)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
-@asynccontextmanager
-async def disabled_outputs_watcher(
-    dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> AsyncIterator[None]:
-    """
-    The following will happen when using this context manager:
-    - Disables file system event watcher while writing
-        to the outputs directory to avoid data being pushed
-        via nodeports upon change.
-    - Enables file system event watcher so data from outputs
-        can be again synced via nodeports upon change.
-    """
-    try:
-        await dynamic_sidecar_client.service_disable_outputs_watcher(
-            dynamic_sidecar_endpoint
-        )
-        yield
-    finally:
-        await dynamic_sidecar_client.service_enable_outputs_watcher(
-            dynamic_sidecar_endpoint
-        )
-
-
-def get_repository(app: FastAPI, repo_type: Type[BaseRepository]) -> BaseRepository:
+def get_repository(app: FastAPI, repo_type: type[BaseRepository]) -> BaseRepository:
     return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 
@@ -80,8 +56,8 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
+    containers_inspect: Optional[dict[str, Any]]
+) -> list[DockerContainerInspect]:
     results: Deque[DockerContainerInspect] = deque()
 
     if containers_inspect is None:
@@ -94,10 +70,10 @@ def parse_containers_inspect(
 
 
 def are_all_user_services_containers_running(
-    containers_inspect: List[DockerContainerInspect],
+    containers_inspect: list[DockerContainerInspect],
 ) -> bool:
     return len(containers_inspect) > 0 and all(
-        (x.status == DockerStatus.RUNNING for x in containers_inspect)
+        x.status == DockerStatus.RUNNING for x in containers_inspect
     )
 
 

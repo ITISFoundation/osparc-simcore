@@ -163,6 +163,7 @@ class EventFilter:  # pylint:disable=too-many-instance-attributes
             if port_key is None:
                 break
 
+            logger.debug("Request upload for port_key %s", port_key)
             await self.outputs_manager.port_key_content_changed(port_key)
 
     async def enqueue(self, port_key: str) -> None:
