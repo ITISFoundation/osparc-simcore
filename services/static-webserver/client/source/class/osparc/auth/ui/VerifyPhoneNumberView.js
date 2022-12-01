@@ -45,9 +45,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
   },
 
   members: {
-    __phoneNumberTF: null,
     __itiInput: null,
-    __invalidNumberText: null,
     __verifyPhoneNumberBtn: null,
     __validateCodeTF: null,
     __validateCodeBtn: null,
