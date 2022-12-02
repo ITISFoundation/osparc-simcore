@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -95,17 +95,23 @@ async def login(request: web.Request):
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
     assert user["email"] == email, "db corrupted. Invalid email"  # nosec
 
-    if settings.LOGIN_2FA_REQUIRED and UserRole(user["role"]) <= UserRole.USER:
-        if not user["phone"]:
-            rsp = envelope_response(
-                {
-                    "code": _PHONE_NUMBER_REQUIRED,
-                    "reason": "To login, please register first a phone number",
-                },
-                status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
-            )
-            return rsp
+    # Some roles have login privileges
+    has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
+    if has_privileges or not settings.LOGIN_2FA_REQUIRED:
+        rsp = await _authorize_login(request, user, cfg)
+        return rsp
 
+    elif not user["phone"]:
+        rsp = envelope_response(
+            {
+                "code": _PHONE_NUMBER_REQUIRED,
+                "reason": "To login, please register first a phone number",
+            },
+            status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
+        )
+        return rsp
+
+    else:
         assert user["phone"]  # nosec
         assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
         assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
@@ -121,7 +127,7 @@ async def login(request: web.Request):
                 user_name=user["name"],
             )
 
-            # TODO: send "continuation" token needed to enter login_2fa only
+            # TODO: send "continuation token" needed to enter login_2fa only
             rsp = envelope_response(
                 {
                     "code": _SMS_CODE_REQUIRED,
@@ -137,17 +143,14 @@ async def login(request: web.Request):
         except Exception as e:
             error_code = create_error_code(e)
             log.exception(
-                "2FA login unexpectedly failed [%s]",
+                "Unexpectedly failed while setting up 2FA code and sending SMS[%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
             raise web.HTTPServiceUnavailable(
-                reason=f"Currently we cannot validate 2FA code, please try again later ({error_code})",
+                reason=f"Currently we cannot use 2FA, please try again later ({error_code})",
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from e
-
-    rsp = await _authorize_login(request, user, cfg)
-    return rsp
 
 
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
