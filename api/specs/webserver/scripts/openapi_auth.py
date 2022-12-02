@@ -117,7 +117,7 @@ async def login(authentication: LoginForm):
     "/auth/validate-code-login",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="auth_validate_2fa_login",
+    operation_id="auth_login_2fa",
 )
 async def login_2fa(authentication: Login2FAForm):
     """user enters 2 Factor Authentication code when login in"""

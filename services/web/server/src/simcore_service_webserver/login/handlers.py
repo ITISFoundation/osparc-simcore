@@ -39,9 +39,11 @@ log = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
-# These string is used by the frontend to determine what page to display to the user for next step
-LOGIN_CODE_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
-LOGIN_CODE_SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
+# Login Accepted Response Codes:
+#  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
+#  - The frontend uses them alwo to determine what page/form has to display to the user for next step
+_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
+_SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 
 
 async def _authorize_login(
@@ -97,7 +99,7 @@ async def login(request: web.Request):
         if not user["phone"]:
             rsp = envelope_response(
                 {
-                    "code": LOGIN_CODE_PHONE_NUMBER_REQUIRED,
+                    "code": _PHONE_NUMBER_REQUIRED,
                     "reason": "To login, please register first a phone number",
                 },
                 status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
@@ -119,13 +121,14 @@ async def login(request: web.Request):
                 user_name=user["name"],
             )
 
+            # TODO: send "continuation" token needed to enter login_2fa only
             rsp = envelope_response(
                 {
-                    "code": LOGIN_CODE_SMS_CODE_REQUIRED,
+                    "code": _SMS_CODE_REQUIRED,
                     "reason": cfg.MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
-                    "next_url": f"{request.app.router['auth_validate_2fa_login'].url_for()}",
+                    "next_url": f"{request.app.router['auth_login_2fa'].url_for()}",
                 },
                 status=web.HTTPAccepted.status_code,
             )
@@ -147,16 +150,19 @@ async def login(request: web.Request):
     return rsp
 
 
-@routes.post("/v0/auth/validate-code-login", name="auth_validate_2fa_login")
+@routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """2FA login (from-end requests after login -> LOGIN_CODE_SMS_CODE_REQUIRED )"""
     _, _, body = await extract_and_validate(request)
 
+    settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
     code = body.code
+
+    assert settings.LOGIN_2FA_REQUIRED  # nosec
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed
@@ -167,6 +173,8 @@ async def login_2fa(request: web.Request):
 
     # FIXME: ask to register if user not found!!
     user = await db.get_user({"email": email})
+
+    assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since used
     await delete_2fa_code(request.app, email)

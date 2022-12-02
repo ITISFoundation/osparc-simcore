@@ -226,7 +226,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert phone == PHONE
 
     # 2. check SMS code
-    url = client.app.router["auth_validate_2fa_login"].url_for()
+    url = client.app.router["auth_login_2fa"].url_for()
     rsp = await client.post(
         f"{url}",
         json={

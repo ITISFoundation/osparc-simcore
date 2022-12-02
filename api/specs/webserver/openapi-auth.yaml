@@ -95,7 +95,7 @@ paths:
       summary: user enters 2 Factor Authentication code when login in
       tags:
         - authentication
-      operationId: auth_validate_2fa_login
+      operationId: auth_login_2fa
       requestBody:
         content:
           application/json:
