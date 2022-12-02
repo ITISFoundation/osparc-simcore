@@ -22,6 +22,8 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
+
+    this._createChildControlImpl("see-all-group");
   },
 
   properties: {
@@ -47,11 +49,19 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     }
   },
 
+  events: {
+    "seeAllPressed": "qx.event.type.Data"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "header":
+        case "header-bar":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._addAt(control, 0);
+          break;
+        case "header": {
           control = new qx.ui.basic.Atom().set({
             font: "title-14",
             gap: 10,
@@ -64,8 +74,20 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"
           });
-          this._addAt(control, 0);
+          const headerBar = this.getChildControl("header-bar");
+          headerBar.addAt(control, 0);
           break;
+        }
+        case "see-all-group": {
+          control = new qx.ui.form.Button(this.tr("See all")).set({
+            margin: 10,
+            marginBottom: 5
+          });
+          control.addListener("execute", () => this.fireDataEvent("seeAllPressed", this.getGroupId()));
+          const headerBar = this.getChildControl("header-bar");
+          headerBar.addAt(control, 1);
+          break;
+        }
         case "content-container":
           control = new osparc.component.widget.SlideBar().set({
             padding: 5,
