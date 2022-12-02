@@ -23,7 +23,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this._createChildControlImpl("see-all-group");
+    this._createChildControlImpl("expand-collapse-button");
   },
 
   properties: {
@@ -46,11 +46,14 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     headerColor: {
       check: "String",
       apply: "__updateHeaderColor"
-    }
-  },
+    },
 
-  events: {
-    "seeAllPressed": "qx.event.type.Data"
+    expanded: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeExpanded"
+    }
   },
 
   members: {
@@ -78,12 +81,15 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
           headerBar.addAt(control, 0);
           break;
         }
-        case "see-all-group": {
-          control = new qx.ui.form.Button(this.tr("See all")).set({
+        case "expand-collapse-button": {
+          control = new qx.ui.form.Button().set({
             margin: 10,
             marginBottom: 5
           });
-          control.addListener("execute", () => this.fireDataEvent("seeAllPressed", this.getGroupId()));
+          this.bind("expanded", control, "label", {
+            converter: expanded => expanded ? this.tr("Show less") : this.tr("Show all")
+          });
+          control.addListener("execute", () => this.setExpanded(!this.isExpanded()));
           const headerBar = this.getChildControl("header-bar");
           headerBar.addAt(control, 1);
           break;
