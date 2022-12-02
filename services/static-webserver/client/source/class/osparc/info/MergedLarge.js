@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2021 IT'IS Foundation, https://itis.swiss
+     2022 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -16,14 +16,13 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.studycard.Large", {
+qx.Class.define("osparc.info.MergedLarge", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
-    * @param openOptions {Boolean} open edit options in new window or fire event
+    * @param study {osparc.data.model.Study} Study
     */
-  construct: function(study, openOptions = true) {
+  construct: function(study) {
     this.base(arguments);
 
     this.set({
@@ -32,31 +31,19 @@ qx.Class.define("osparc.studycard.Large", {
     });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    if (study instanceof osparc.data.model.Study) {
-      this.setStudy(study);
-    } else if (study instanceof Object) {
-      const studyModel = new osparc.data.model.Study(study);
-      this.setStudy(studyModel);
+    this.setStudy(study);
+    const nodes = study.getWorkbench().getNodes();
+    const nodeIds = Object.keys(nodes);
+    if (nodeIds.length) {
+      this.setService(nodes[nodeIds[0]]);
     }
 
-    if (openOptions !== undefined) {
-      this.setOpenOptions(openOptions);
-    }
-
-    this.addListenerOnce("appear", () => {
-      this.__rebuildLayout();
-    }, this);
-    this.addListener("resize", () => {
-      this.__rebuildLayout();
-    }, this);
+    this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
+    this.addListener("resize", () => this.__rebuildLayout(), this);
   },
 
   events: {
-    "openAccessRights": "qx.event.type.Event",
-    "openClassifiers": "qx.event.type.Event",
-    "openQuality": "qx.event.type.Event",
-    "updateStudy": "qx.event.type.Data",
-    "updateTags": "qx.event.type.Data"
+    "updateStudy": "qx.event.type.Data"
   },
 
   properties: {
@@ -66,9 +53,9 @@ qx.Class.define("osparc.studycard.Large", {
       nullable: false
     },
 
-    openOptions: {
-      check: "Boolean",
-      init: true,
+    service: {
+      check: "osparc.data.model.Node",
+      init: null,
       nullable: false
     }
   },
@@ -81,10 +68,6 @@ qx.Class.define("osparc.studycard.Large", {
   },
 
   members: {
-    __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
-    },
-
     __rebuildLayout: function() {
       this._removeAll();
 
@@ -94,55 +77,65 @@ qx.Class.define("osparc.studycard.Large", {
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
+      this._add(extraInfoLayout);
 
       const bounds = this.getBounds();
       const offset = 30;
-      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
+      const widgetWidth = bounds ? bounds.width - offset : 500 - offset;
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
-      let hBox = null;
-      if (slim) {
-        this._add(extraInfoLayout);
-      } else {
-        hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        hBox.add(extraInfoLayout);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
-      }
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+        alignX: "center"
+      }));
+      hBox.add(extraInfoLayout);
+      thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
       thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
       thumbnailLayout.getLayout().set({
         alignX: "center"
       });
-      if (slim) {
-        this._add(thumbnailLayout);
-      } else {
-        hBox.add(thumbnailLayout, {
-          flex: 1
-        });
-        this._add(hBox);
-      }
+      hBox.add(thumbnailLayout, {
+        flex: 1
+      });
+      this._add(hBox);
 
-      if (this.getStudy().getTags().length || this.__isOwner()) {
-        const tags = this.__createTags();
+      const tags = this.__createTags();
+      if (this.__isOwner()) {
         const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
         tags.addAt(editInTitle, 0);
         if (this.__isOwner()) {
           osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
         }
-        this._add(tags);
       }
+      this._add(tags);
 
-      if (this.getStudy().getDescription() || this.__isOwner()) {
-        const description = this.__createDescription();
+      const description = this.__createDescription();
+      if (this.__isOwner()) {
         const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
         description.addAt(editInTitle, 0);
-        this._add(description);
       }
+      this._add(description);
+
+      const resources = this.__createResources();
+      this._add(resources);
+
+      const rawMetadata = this.__createRawMetadata();
+      const more = new osparc.desktop.PanelView(this.tr("Raw metadata"), rawMetadata).set({
+        caretSize: 14
+      });
+      more.setCollapsed(true);
+      more.getChildControl("title").setFont("title-12");
+      this._add(more, {
+        flex: 1
+      });
+      const copy2Clip = osparc.utils.Utils.getCopyButton();
+      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService().serialize())), this);
+      more.getChildControl("header").add(copy2Clip);
+    },
+
+    __isOwner: function() {
+      return osparc.data.model.Study.isOwner(this.getStudy());
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -175,51 +168,65 @@ qx.Class.define("osparc.studycard.Large", {
       }, {
         label: this.tr("Access Rights"),
         view: this.__createAccessRights(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
-          ctx: this
-        }
+        action: null
       }];
 
       if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
-          action: {
-            button: osparc.utils.Utils.getViewButton(),
-            callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
-            ctx: this
-          }
+          action: null
         });
       }
 
       extraInfo.push({
         label: this.tr("Classifiers"),
         view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
-          ctx: this
-        } : null
+        action: null
       });
 
       if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.unshift({
-          label: this.tr("UUID"),
-          view: this.__createUuid(),
+        extraInfo.splice(0, 0, {
+          label: this.tr("Study ID"),
+          view: this.__createStudyId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
             callback: this.__copyUuidToClipboard,
             ctx: this
           }
         });
+
+        extraInfo.splice(1, 0, {
+          label: this.tr("Service ID"),
+          view: this.__createNodeId(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyNodeIdToClipboard,
+            ctx: this
+          }
+        });
+
+        extraInfo.splice(2, 0, {
+          label: this.tr("Key"),
+          view: this.__createKey(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyKeyToClipboard,
+            ctx: this
+          }
+        });
+
+        extraInfo.splice(3, 0, {
+          label: this.tr("Version"),
+          view: this.__createVersion(),
+          action: null
+        });
       }
       return extraInfo;
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.studycard.Utils.createExtraInfo(extraInfo).set({
+      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
         width: this.self().EXTRA_INFO_WIDTH
       });
 
@@ -227,51 +234,103 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __createTitle: function() {
-      const title = osparc.studycard.Utils.createTitle(this.getStudy()).set({
+      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
         font: "title-16"
       });
       return title;
     },
 
-    __createUuid: function() {
-      return osparc.studycard.Utils.createUuid(this.getStudy());
+    __createStudyId: function() {
+      return osparc.info.StudyUtils.createUuid(this.getStudy()).set({
+        maxWidth: 200
+      });
+    },
+
+    __createNodeId: function() {
+      return osparc.info.ServiceUtils.createNodeId(this.getService().getNodeId()).set({
+        maxWidth: 200
+      });
+    },
+
+    __createKey: function() {
+      return osparc.info.ServiceUtils.createKey(this.getService().getKey());
+    },
+
+    __createVersion: function() {
+      return osparc.info.ServiceUtils.createVersion(this.getService().getVersion());
     },
 
     __createOwner: function() {
-      return osparc.studycard.Utils.createOwner(this.getStudy());
+      return osparc.info.StudyUtils.createOwner(this.getStudy());
     },
 
     __createCreationDate: function() {
-      return osparc.studycard.Utils.createCreationDate(this.getStudy());
+      return osparc.info.StudyUtils.createCreationDate(this.getStudy());
     },
 
     __createLastChangeDate: function() {
-      return osparc.studycard.Utils.createLastChangeDate(this.getStudy());
+      return osparc.info.StudyUtils.createLastChangeDate(this.getStudy());
     },
 
     __createAccessRights: function() {
-      return osparc.studycard.Utils.createAccessRights(this.getStudy());
+      return osparc.info.StudyUtils.createAccessRights(this.getStudy());
     },
 
     __createClassifiers: function() {
-      return osparc.studycard.Utils.createClassifiers(this.getStudy());
+      return osparc.info.StudyUtils.createClassifiers(this.getStudy());
     },
 
     __createQuality: function() {
-      return osparc.studycard.Utils.createQuality(this.getStudy());
+      return osparc.info.StudyUtils.createQuality(this.getStudy());
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+      return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
     __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.getStudy());
+      return osparc.info.StudyUtils.createTags(this.getStudy());
     },
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
+      return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
+    },
+
+    __createResources: function() {
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
+      resourcesLayout.exclude();
+      let promise = null;
+      if (this.getService().getNodeId()) {
+        const params = {
+          url: {
+            studyId: this.getStudy().getUuid(),
+            nodeId: this.getService().getNodeId()
+          }
+        };
+        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
+      } else {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.getService().getKey(),
+            this.getService().getVersion()
+          )
+        };
+        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
+      }
+      promise
+        .then(serviceResources => {
+          resourcesLayout.show();
+          osparc.info.ServiceUtils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+        })
+        .catch(err => console.error(err));
+      return resourcesLayout;
+    },
+
+    __createRawMetadata: function() {
+      const container = new qx.ui.container.Scroll();
+      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService().serialize(), "serviceDescriptionSettings"));
+      return container;
     },
 
     __openTitleEditor: function() {
@@ -292,40 +351,12 @@ qx.Class.define("osparc.studycard.Large", {
       osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid());
     },
 
-    __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
-        const updatedData = e.getData();
-        this.getStudy().setAccessRights(updatedData["accessRights"]);
-        this.fireDataEvent("updateStudy", updatedData);
-      }, this);
+    __copyNodeIdToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getService().getNodeId());
     },
 
-    __openClassifiers: function() {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (this.__isOwner()) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
-        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateClassifiers", e => {
-          win.close();
-          const updatedData = e.getData();
-          this.getStudy().setClassifiers(updatedData["classifiers"]);
-          this.fireDataEvent("updateStudy", updatedData);
-        }, this);
-      } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getStudy().serialize());
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-      }
-    },
-
-    __openQuality: function() {
-      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedData = e.getData();
-        this.getStudy().setQuality(updatedData["quality"]);
-        this.fireDataEvent("updateStudy", updatedData);
-      });
+    __copyKeyToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getService().getKey());
     },
 
     __openTagsEditor: function() {
