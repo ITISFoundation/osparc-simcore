@@ -627,6 +627,10 @@ class TutorialBase {
     await this.waitFor(20000, 'Wait for the splash screen to disappear');
 
     const s4lIframe = await this.getIframe(s4lNodeId);
+    await this.waitAndClick('tree-model', s4lIframe);
+    const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
+    console.log("N items in model tree:", modelItems.length);
+
     await this.waitAndClick('mode-button-modeling', s4lIframe);
     await this.waitAndClick('mode-button-simulation', s4lIframe);
     await this.waitAndClick('simulation-tree', s4lIframe);
