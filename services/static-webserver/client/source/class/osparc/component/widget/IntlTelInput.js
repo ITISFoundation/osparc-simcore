@@ -40,23 +40,25 @@ qx.Class.define("osparc.component.widget.IntlTelInput", {
       maxHeight: 25
     });
     this._add(phoneNumber);
-    const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
-    const convertInputToPhoneInput = () => {
-      const domElement = document.querySelector(`#phone-${randId}`);
-      this.__itiInput = this.__inputToPhoneInput(domElement);
-      phoneNumber.getContentElement().setStyles({
-        "overflow": "visible" // needed for countries dropdown menu
-      });
-    };
-    if (intlTelInputLib.getLibReady()) {
-      convertInputToPhoneInput();
-    } else {
-      intlTelInputLib.addListenerOnce("changeLibReady", e => {
-        if (e.getData()) {
-          convertInputToPhoneInput();
-        }
-      });
-    }
+    phoneNumber.addListenerOnce("appear", () => {
+      const convertInputToPhoneInput = () => {
+        const domElement = document.querySelector(`#phone-${randId}`);
+        this.__itiInput = this.__inputToPhoneInput(domElement);
+        phoneNumber.getContentElement().setStyles({
+          "overflow": "visible" // needed for countries dropdown menu
+        });
+      };
+      const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
+      if (intlTelInputLib.getLibReady()) {
+        convertInputToPhoneInput();
+      } else {
+        intlTelInputLib.addListenerOnce("changeLibReady", e => {
+          if (e.getData()) {
+            convertInputToPhoneInput();
+          }
+        });
+      }
+    });
 
     const feedbackCheck = this.__feedbackCheck = new qx.ui.basic.Image().set({
       paddingTop: 3
