@@ -44,11 +44,10 @@ async function runTutorial() {
       false
     );
 
-    // await tutorial.testS4L(s4lNodeId);
-    // update
+    await tutorial.testS4LDipole(s4lNodeId);
   }
   catch (err) {
-    tutorial.setTutorialFailed(true);
+    tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }

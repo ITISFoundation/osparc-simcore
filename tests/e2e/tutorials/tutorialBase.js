@@ -627,27 +627,35 @@ class TutorialBase {
     await this.waitFor(20000, 'Wait for the splash screen to disappear');
 
     const s4lIframe = await this.getIframe(s4lNodeId);
+    await this.waitAndClick('mode-button-modeling', s4lIframe);
     await this.waitAndClick('tree-model', s4lIframe);
     const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
-    console.log("N items in model tree:", modelItems.length);
+    console.log("N items in model tree:", modelItems.length/2); // there are 2 trees
 
-    await this.waitAndClick('mode-button-modeling', s4lIframe);
     await this.waitAndClick('mode-button-simulation', s4lIframe);
-    await this.waitAndClick('simulation-tree', s4lIframe);
-    await this.waitAndClick('toolbar-tool-Update grid', s4lIframe);
+    await this.waitFor(2000, 'Simulation Mode clicked');
+
+    // click on simulation root element
+    const simulationsItems = await s4lIframe.$$('.MuiTreeItem-label');
+    simulationsItems[0].click();
+    await this.waitFor(2000, '1st item in Simulation Tree clicked');
+
+    await this.waitAndClick('toolbar-tool-Update_Grid', s4lIframe);
     await this.waitFor(4000, 'Updating grid...');
-    await this.waitAndClick('toolbar-tool-Create Voxels', s4lIframe);
+    await this.waitAndClick('toolbar-tool-Create_Voxels', s4lIframe);
     await this.waitFor(4000, 'Creating voxels...');
-    // open context menu
-    await s4lIframe.click('[osparc-test-id="simulation-tree"]', {
+
+    // open context menu and run
+    simulationsItems[0].click('[osparc-test-id="tree-simulation"]', {
       button: 'right'
     });
     await this.waitAndClick('context-menu-item-Run', s4lIframe);
+
     const simulationPostproSwitchTries = 100;
     for (let i=0; i<simulationPostproSwitchTries; i++) {
       await this.waitFor(2000, 'Waiting for results');
       await this.waitAndClick('mode-button-postro', s4lIframe);
-      if (await s4lIframe.$('[osparc-test-id="postpro-tree"]')) {
+      if (await s4lIframe.$('[osparc-test-id="tree-postpro"]')) {
         break;
       }
       await this.waitAndClick('mode-button-modeling', s4lIframe);
@@ -672,8 +680,8 @@ class TutorialBase {
     return this.__failed;
   }
 
-  async setTutorialFailed(failed) {
-    if (failed) {
+  async setTutorialFailed(failed, loggerScreenshot = true) {
+    if (failed && loggerScreenshot) {
       await this.takeLoggerScreenshot();
     }
     this.__failed = failed;
