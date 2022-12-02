@@ -74,7 +74,7 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
 }
 
 
-async def check_registration(
+async def validate_registration(
     email: str,
     password: str,
     confirm: Optional[str],
@@ -88,12 +88,12 @@ async def check_registration(
         raise web.HTTPBadRequest(
             reason="Both email and password are required",
             content_type=MIMETYPE_APPLICATION_JSON,
-        )
+        )  # https://developer.mozilla.org/en-US/docs/web/http/status/400
 
     if confirm and password != confirm:
         raise web.HTTPConflict(
             reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        )  # https://developer.mozilla.org/en-US/docs/web/http/status/409
 
     try:
         parse_obj_as(EmailStr, email)
@@ -101,11 +101,17 @@ async def check_registration(
         raise web.HTTPUnprocessableEntity(
             reason="Invalid email", content_type=MIMETYPE_APPLICATION_JSON
         ) from err
+        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
 
+    #
     # NOTE: Extra requirements on passwords
+    #
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
+    #
 
     if user := await db.get_user({"email": email}):
+        # FIXME: see logic here!????
+
         # Resets pending confirmation if re-registers?
         if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
             _confirmation: ConfirmationTokenDict = await db.get_confirmation(

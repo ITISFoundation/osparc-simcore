@@ -9,12 +9,13 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
-from ..security_api import encrypt_password, remember
+from ..security_api import encrypt_password
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import mask_phone_number, send_sms_code, set_2fa_code
 from ._confirmation import make_confirmation_link
-from ._registration import check_and_consume_invitation, check_registration
+from ._registration import check_and_consume_invitation, validate_registration
+from ._security import authorize_login
 from .settings import (
     LoginOptions,
     LoginSettings,
@@ -66,6 +67,8 @@ async def register(request: web.Request):
 
     expires_at = None
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
+        # Only requests with INVITATION can register user
+        # to either a permanent or to a trial account
         try:
             invitation_code = body.invitation
         except AttributeError as e:
@@ -78,8 +81,9 @@ async def register(request: web.Request):
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
-    await check_registration(email, password, confirm, db, cfg)
+    await validate_registration(email, password, confirm, db=db, cfg=cfg)
 
+    # TODO: context that drops user if something goes wrong -> atomic!
     user: dict = await db.create_user(
         {
             "name": username,
@@ -96,46 +100,57 @@ async def register(request: web.Request):
         }
     )
 
+    # FIXME: SAN, should this go here or when user is actually logged in?
     await auto_add_user_to_groups(request.app, user["id"])
 
     if not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         assert not settings.LOGIN_2FA_REQUIRED  # nosec
+        # No confirmation required: login
+        #
 
-        # user is logged in
-        identity = body.email
-        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-        await remember(request, response, identity)
+        response = await authorize_login(request=request, user=user, cfg=cfg)
         return response
-
-    confirmation_: ConfirmationTokenDict = await db.create_confirmation(
-        user["id"], REGISTRATION
-    )
-    link = make_confirmation_link(request, confirmation_)
-    try:
-        await render_and_send_mail(
-            request,
-            from_=product.support_email,
-            to=email,
-            template=await get_template_path(request, "registration_email.jinja2"),
-            context={
-                "host": request.host,
-                "link": link,
-                "name": username,
-                "support_email": product.support_email,
-            },
+    else:
+        assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+        # Confirmation required: send confirmation email
+        #
+        confirmation_: ConfirmationTokenDict = await db.create_confirmation(
+            user["id"], REGISTRATION
         )
-    except Exception as err:  # pylint: disable=broad-except
-        log.exception("Can not send email")
-        await db.delete_confirmation(confirmation_)
-        await db.delete_user(user)
-        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(
-        "You are registered successfully! To activate your account, please, "
-        "click on the verification link in the email we sent you.",
-        "INFO",
-    )
-    return response
+        try:
+            confirmation_url = make_confirmation_link(request, confirmation_)
+            email_template_path = await get_template_path(
+                request, "registration_email.jinja2"
+            )
+            await render_and_send_mail(
+                request,
+                from_=product.support_email,
+                to=email,
+                template=email_template_path,
+                context={
+                    "host": request.host,
+                    "link": confirmation_url,
+                    "name": username,
+                    "support_email": product.support_email,
+                },
+            )
+        except Exception as err:  # pylint: disable=broad-except
+
+            # TODO: add OCE??????
+            log.exception("Can not send email")
+
+            await db.delete_confirmation(confirmation_)
+            await db.delete_user(user)
+            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+
+        else:
+            response = flash_response(
+                "You are registered successfully! To activate your account, please, "
+                f"click on the verification link in the email we sent you to {email}.",
+                "INFO",
+            )
+            return response
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Final
+from typing import Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -10,7 +10,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
 from ..products import Product, get_current_product
-from ..security_api import check_password, forget, remember
+from ..security_api import check_password, forget
 from ._2fa import (
     delete_2fa_code,
     get_2fa_code,
@@ -18,6 +18,7 @@ from ._2fa import (
     send_sms_code,
     set_2fa_code,
 )
+from ._security import authorize_login
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import (
     LoginOptions,
@@ -44,26 +45,6 @@ routes = RouteTableDef()
 #  - The frontend uses them alwo to determine what page/form has to display to the user for next step
 _PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
 _SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
-
-
-async def _authorize_login(
-    request: web.Request, user: dict[str, Any], cfg: LoginOptions
-):
-    email = user["email"]
-    with log_context(
-        log,
-        logging.INFO,
-        "login of user_id=%s with %s",
-        f"{user.get('id')}",
-        f"{email=}",
-    ):
-        rsp = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-        await remember(
-            request=request,
-            response=rsp,
-            identity=email,
-        )
-        return rsp
 
 
 @routes.post("/v0/auth/login", name="auth_login")
@@ -98,7 +79,7 @@ async def login(request: web.Request):
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
-        rsp = await _authorize_login(request, user, cfg)
+        rsp = await authorize_login(request, user, cfg)
         return rsp
 
     elif not user["phone"]:
@@ -182,7 +163,7 @@ async def login_2fa(request: web.Request):
     # dispose since used
     await delete_2fa_code(request.app, email)
 
-    rsp = await _authorize_login(request, user, cfg)
+    rsp = await authorize_login(request, user, cfg)
     return rsp
 
 
