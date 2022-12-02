@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -36,6 +37,8 @@ from .utils import (
 log = logging.getLogger(__name__)
 
 
+routes = RouteTableDef()
+
 # These string is used by the frontend to determine what page to display to the user for next step
 LOGIN_CODE_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
 LOGIN_CODE_SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
@@ -61,6 +64,7 @@ async def _authorize_login(
         return rsp
 
 
+@routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -143,6 +147,7 @@ async def login(request: web.Request):
     return rsp
 
 
+@routes.post("/v0/auth/validate-code-login", name="auth_validate_2fa_login")
 async def login_2fa(request: web.Request):
     """2FA login (from-end requests after login -> LOGIN_CODE_SMS_CODE_REQUIRED )"""
     _, _, body = await extract_and_validate(request)
@@ -170,6 +175,7 @@ async def login_2fa(request: web.Request):
     return rsp
 
 
+@routes.post("/v0/auth/logout", name="auth_logout")
 @login_required
 async def logout(request: web.Request) -> web.Response:
     cfg: LoginOptions = get_plugin_options(request.app)

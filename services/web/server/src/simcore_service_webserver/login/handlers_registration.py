@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -40,6 +41,10 @@ def _get_user_name(email: str) -> str:
     return username
 
 
+routes = RouteTableDef()
+
+
+@routes.post("/v0/auth/register", name="auth_register")
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
@@ -134,6 +139,7 @@ async def register(request: web.Request):
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+@routes.post("/auth/verify-phone-number", name="auth_verify_2fa_phone")
 async def register_phone(request: web.Request):
     """
     Submits phone registration

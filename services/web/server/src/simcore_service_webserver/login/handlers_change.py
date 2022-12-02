@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -24,7 +25,11 @@ from .utils_email import get_template_path, render_and_send_mail
 log = logging.getLogger(__name__)
 
 
+routes = RouteTableDef()
+
+
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+@routes.post("/v0/auth/reset-password", name="auth_reset_password")
 async def reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -109,6 +114,7 @@ async def reset_password(request: web.Request):
     return response
 
 
+@routes.post("/v0/auth/change-email", name="auth_change_email")
 @login_required
 async def change_email(request: web.Request):
     _, _, body = await extract_and_validate(request)
@@ -157,6 +163,7 @@ async def change_email(request: web.Request):
     return response
 
 
+@routes.post("/v0/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
 

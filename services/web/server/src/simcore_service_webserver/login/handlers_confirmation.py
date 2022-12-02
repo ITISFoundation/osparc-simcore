@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from pydantic import EmailStr, parse_obj_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.logging_utils import log_context
@@ -26,6 +27,10 @@ from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_res
 log = logging.getLogger(__name__)
 
 
+routes = RouteTableDef()
+
+
+@routes.get("/auth/confirmation/{code}", name="auth_confirmation")
 async def email_confirmation(request: web.Request):
     """Handles email confirmation by checking a code passed as query parameter
 
@@ -94,6 +99,7 @@ async def email_confirmation(request: web.Request):
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+@routes.post("/auth/validate-code-register", name="auth_validate_2fa_register")
 async def phone_confirmation(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
@@ -144,6 +150,7 @@ async def phone_confirmation(request: web.Request):
     )
 
 
+@routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")
 async def reset_password_allowed(request: web.Request):
     """Changes password using a token code without being logged in"""
     params, _, body = await extract_and_validate(request)
