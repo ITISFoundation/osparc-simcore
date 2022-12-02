@@ -640,9 +640,9 @@ class TutorialBase {
     simulationsItems[0].click();
     await this.waitFor(2000, '1st item in Simulation Tree clicked');
 
-    await this.waitAndClick('toolbar-tool-Update_Grid', s4lIframe);
+    await this.waitAndClick('toolbar-tool-UpdateGrid', s4lIframe);
     await this.waitFor(4000, 'Updating grid...');
-    await this.waitAndClick('toolbar-tool-Create_Voxels', s4lIframe);
+    await this.waitAndClick('toolbar-tool-CreateVoxels', s4lIframe);
     await this.waitFor(4000, 'Creating voxels...');
 
     // open context menu and run
