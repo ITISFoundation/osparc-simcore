@@ -170,20 +170,20 @@ class EventFilter:
         await self._events_queue.put(port_key)
 
     async def start(self) -> None:
-        self._worker_task_event_ingestion = create_task(
-            self._worker_event_ingestion(), name=self._worker_event_ingestion.__name__
-        )
+        with log_context(logger, logging.INFO, f"{EventFilter.__name__} start"):
+            self._worker_task_event_ingestion = create_task(
+                self._worker_event_ingestion(),
+                name=self._worker_event_ingestion.__name__,
+            )
 
-        self._keep_running = True
-        self._worker_task_check_events = create_task(
-            self._worker_check_events(), name=self._worker_check_events.__name__
-        )
+            self._keep_running = True
+            self._worker_task_check_events = create_task(
+                self._worker_check_events(), name=self._worker_check_events.__name__
+            )
 
-        self._worker_task_upload_events = create_task(
-            self._worker_upload_events(), name=self._worker_upload_events.__name__
-        )
-
-        logger.info("started event filter")
+            self._worker_task_upload_events = create_task(
+                self._worker_upload_events(), name=self._worker_upload_events.__name__
+            )
 
     async def shutdown(self) -> None:
         with log_context(logger, logging.INFO, f"{EventFilter.__name__} shutdown"):
