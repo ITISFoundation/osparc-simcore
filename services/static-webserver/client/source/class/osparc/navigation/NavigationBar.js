@@ -61,7 +61,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "backToDashboardPressed": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event",
+    "downloadStudyLogs": "qx.event.type.Event"
   },
 
   properties: {
@@ -171,7 +172,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
             ...this.self().BUTTON_OPTIONS,
             font: "title-14"
           });
@@ -182,7 +183,52 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             paddingLeft: 20, // to align it with the button
-            font: "text-16"
+            font: "text-14"
+          });
+          this.getChildControl("left-items").add(control);
+          break;
+        case "study-menu-info":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Information..."),
+            icon: "@MaterialIcons/info_outline/14",
+            ...this.self().BUTTON_OPTIONS
+          });
+          control.addListener("execute", () => {
+            const infoMerged = new osparc.info.MergedLarge(this.getStudy());
+            const title = this.tr("Information");
+            const width = 600;
+            const height = 700;
+            osparc.ui.window.Window.popUpInWindow(infoMerged, title, width, height);
+          });
+          break;
+        case "study-menu-download-logs":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Download logs"),
+            icon: "@FontAwesome5Solid/download/14",
+            ...this.self().BUTTON_OPTIONS
+          });
+          control.addListener("execute", () => this.fireEvent("downloadStudyLogs"));
+          break;
+        case "study-menu-button": {
+          const optionsMenu = new qx.ui.menu.Menu();
+          optionsMenu.add(this.getChildControl("study-menu-info"));
+          optionsMenu.add(this.getChildControl("study-menu-download-logs"));
+          control = new qx.ui.form.MenuButton().set({
+            ...this.self().BUTTON_OPTIONS,
+            menu: optionsMenu,
+            icon: "@FontAwesome5Solid/ellipsis-v/16"
+          });
+          this.getChildControl("left-items").add(control);
+          break;
+        }
+        case "edit-title-label":
+          control = new osparc.ui.form.EditLabel().set({
+            labelFont: "text-16",
+            inputFont: "text-16"
+          });
+          control.addListener("editValue", e => {
+            const newLabel = e.getData();
+            this.getStudy().setName(newLabel);
           });
           this.getChildControl("left-items").add(control);
           break;
@@ -252,6 +298,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
+          if (osparc.utils.Utils.isProduct("s4llite")) {
+            this.getChildControl("study-menu-button").exclude();
+            this.getChildControl("edit-title-label").exclude();
+          }
           this.getChildControl("read-only-icon").exclude();
           if (this.__tabButtons) {
             this.__tabButtons.show();
@@ -262,6 +312,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
+          if (osparc.utils.Utils.isProduct("s4llite")) {
+            this.getChildControl("study-menu-button").show();
+            this.getStudy().bind("name", this.getChildControl("edit-title-label"), "value");
+            this.getChildControl("edit-title-label").show();
+          }
           if (this.__tabButtons) {
             this.__tabButtons.exclude();
           }

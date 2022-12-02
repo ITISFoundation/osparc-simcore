@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-          const serviceDetails = new osparc.servicecard.Large(metadata, {
+          const serviceDetails = new osparc.info.ServiceLarge(metadata, {
             nodeId,
             label: node["label"]
           });
