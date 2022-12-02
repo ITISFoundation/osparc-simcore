@@ -610,7 +610,7 @@ class TutorialBase {
 
     // do some basic interaction
     const s4lIframe = await this.getIframe(s4lNodeId);
-    await this.waitAndClick('model-tree', s4lIframe);
+    await this.waitAndClick('tree-model', s4lIframe);
     const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
     const nLabels = modelItems.length;
     if (nLabels > 1) {
