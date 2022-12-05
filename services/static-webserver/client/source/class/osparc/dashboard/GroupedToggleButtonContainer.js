@@ -23,8 +23,19 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this._createChildControlImpl("expand-collapse-button");
+    const showAllButton = this.__showAllButton = new qx.ui.form.Button().set({
+      margin: 10,
+      marginBottom: 5
+    });
+    const headerBar = this.getChildControl("header-bar");
+    headerBar.addAt(showAllButton, 1);
+
     this.__contentContainer = this.__createContentContainer();
+
+    this.bind("expanded", showAllButton, "label", {
+      converter: expanded => expanded ? this.tr("Show less") : this.tr("Show all")
+    });
+    showAllButton.addListener("execute", () => this.setExpanded(!this.isExpanded()));
   },
 
   properties: {
@@ -59,6 +70,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
   },
 
   members: {
+    __showAllButton: null,
     __contentContainer: null,
 
     _createChildControlImpl: function(id) {
@@ -85,19 +97,6 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
           headerBar.addAt(control, 0);
           break;
         }
-        case "expand-collapse-button": {
-          control = new qx.ui.form.Button().set({
-            margin: 10,
-            marginBottom: 5
-          });
-          this.bind("expanded", control, "label", {
-            converter: expanded => expanded ? this.tr("Show less") : this.tr("Show all")
-          });
-          control.addListener("execute", () => this.setExpanded(!this.isExpanded()));
-          const headerBar = this.getChildControl("header-bar");
-          headerBar.addAt(control, 1);
-          break;
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -105,12 +104,24 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     __createContentContainer: function() {
       let contentContainer = null;
       const expanded = this.isExpanded();
+      const showAllBtn = this.__showAllButton;
       if (expanded) {
         contentContainer = new osparc.dashboard.ToggleButtonContainer();
+        showAllBtn.show();
       } else {
         const spacing = osparc.dashboard.GridButtonBase.SPACING;
         contentContainer = new osparc.component.widget.SlideBar(spacing);
         contentContainer.setButtonsWidth(30);
+
+        // show showAllBtn only if slidebar is full
+        const buttonBackward = contentContainer.getChildControl("button-backward");
+        const buttonForward = contentContainer.getChildControl("button-forward");
+        buttonBackward.bind("visibility", showAllBtn, "visibility", {
+          converter: visibility => (visibility === "visible" || buttonForward.isVisible()) ? "visible" : "excluded"
+        });
+        buttonForward.bind("visibility", showAllBtn, "visibility", {
+          converter: visibility => (visibility === "visible" || buttonBackward.isVisible()) ? "visible" : "excluded"
+        });
       }
       contentContainer.set({
         padding: 5,
