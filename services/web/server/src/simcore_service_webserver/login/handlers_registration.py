@@ -119,7 +119,7 @@ async def register(request: web.Request):
         )
 
         try:
-            confirmation_url = make_confirmation_link(request, confirmation_)
+            email_confirmation_url = make_confirmation_link(request, confirmation_)
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
             )
@@ -130,19 +130,28 @@ async def register(request: web.Request):
                 template=email_template_path,
                 context={
                     "host": request.host,
-                    "link": confirmation_url,
+                    "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
                     "name": username,
                     "support_email": product.support_email,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
+            error_code = create_error_code(err)
+            log.exception(
+                "Failed while sending confirmation email to %s, %s [%s]",
+                f"{user=}",
+                f"{confirmation_=}",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
 
-            # TODO: add OCE??????
-            log.exception("Can not send email")
-
+            # FIXME: these two operations need to be atomic and no-throw
             await db.delete_confirmation(confirmation_)
             await db.delete_user(user)
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+
+            raise web.HTTPServiceUnavailable(
+                reason=f"{cfg.MSG_CANT_SEND_MAIL} [{error_code}]"
+            ) from err
 
         else:
             response = flash_response(
