@@ -18,7 +18,7 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
-from ._security import authorize_login
+from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import (
     LoginOptions,
@@ -79,7 +79,7 @@ async def login(request: web.Request):
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
-        rsp = await authorize_login(request, user, cfg)
+        rsp = await login_granted_response(request, user=user, cfg=cfg)
         return rsp
 
     elif not user["phone"]:
@@ -163,7 +163,7 @@ async def login_2fa(request: web.Request):
     # dispose since used
     await delete_2fa_code(request.app, email)
 
-    rsp = await authorize_login(request, user, cfg)
+    rsp = await login_granted_response(request, user=user, cfg=cfg)
     return rsp
 
 

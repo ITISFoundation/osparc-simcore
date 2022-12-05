@@ -14,11 +14,15 @@ from .utils import flash_response
 log = logging.getLogger(__name__)
 
 
-async def authorize_login(
-    request: web.Request, user: dict[str, Any], cfg: LoginOptions
-):
+async def login_granted_response(
+    request: web.Request, *, user: dict[str, Any], cfg: LoginOptions
+) -> web.Response:
     """
-    Uses security API to authorize authenticated user
+    Grants authorization for user creating a responses with an auth cookie
+
+    NOTE: All handlers with @login_required needs this cookie!
+
+    Uses security API
     """
     email = user["email"]
     with log_context(
@@ -28,10 +32,10 @@ async def authorize_login(
         f"{user.get('id')}",
         f"{email=}",
     ):
-        rsp = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
         await remember(
             request=request,
-            response=rsp,
+            response=response,
             identity=email,
         )
-        return rsp
+        return response

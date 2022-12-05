@@ -19,7 +19,7 @@ from ._registration import (
     validate_email,
     validate_registration,
 )
-from ._security import authorize_login
+from ._security import login_granted_response
 from .settings import (
     LoginOptions,
     LoginSettings,
@@ -159,7 +159,7 @@ async def register(request: web.Request):
         assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
         assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
-        response = await authorize_login(request=request, user=user, cfg=cfg)
+        response = await login_granted_response(request=request, user=user, cfg=cfg)
         return response
 
 
