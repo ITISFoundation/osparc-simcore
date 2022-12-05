@@ -59,6 +59,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
           })).set({
+            padding: 5,
             appearance: "margined-layout"
           });
           this._add(control);
