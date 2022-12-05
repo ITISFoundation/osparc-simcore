@@ -19,15 +19,20 @@ qx.Class.define("osparc.ui.window.Dialog", {
    */
   construct: function(caption, icon, message) {
     this.base(arguments, caption, icon);
+    this.getChildControl("captionbar").setPadding(10);
     this.set({
       autoDestroy: true,
       layout: new qx.ui.layout.VBox(),
       showMinimize: false,
       showMaximize: false,
-      contentPadding: 0,
+      contentPadding: 20, // same as caption
       maxWidth: 350,
       resizable: false,
       modal: true
+    });
+
+    this.getChildControl("title").set({
+      font: "title-14"
     });
     this.__buildLayout();
     if (message) {
@@ -54,13 +59,16 @@ qx.Class.define("osparc.ui.window.Dialog", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
           })).set({
+            padding: 5,
             appearance: "margined-layout"
           });
           this._add(control);
           break;
         case "cancel-button": {
           const btnsLayout = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button(this.tr("Cancel"));
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            font: "text-14"
+          });
           btnsLayout.add(control);
           break;
         }
@@ -70,18 +78,21 @@ qx.Class.define("osparc.ui.window.Dialog", {
 
     __buildLayout: function() {
       this.__messageLabel = new qx.ui.basic.Label().set({
-        rich: true,
-        padding: 10
+        font: "text-14",
+        rich: true
       });
       this.add(this.__messageLabel, {
         flex: 1
       });
-      this.__extraWidgetsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        padding: 10
+
+      this.__extraWidgetsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+        paddingTop: 15
       });
+      this.__extraWidgetsLayout.exclude();
       this.add(this.__extraWidgetsLayout, {
         flex: 1
       });
+
       this.getChildControl("buttons-layout");
     },
 
@@ -90,6 +101,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
     },
 
     addWidget: function(widget) {
+      this.__extraWidgetsLayout.show();
       this.__extraWidgetsLayout.add(widget);
     },
 
@@ -99,6 +111,9 @@ qx.Class.define("osparc.ui.window.Dialog", {
      */
     addButton: function(button) {
       const btnToolbar = this.getChildControl("buttons-layout");
+      button.set({
+        font: "text-14"
+      });
       btnToolbar.add(button);
     },
 
