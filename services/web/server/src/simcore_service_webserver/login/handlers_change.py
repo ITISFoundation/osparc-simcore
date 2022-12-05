@@ -58,7 +58,7 @@ async def reset_password(request: web.Request):
                 reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        validate_user_status(user, cfg, product.support_email)
+        validate_user_status(user=user, support_email=product.support_email, cfg=cfg)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == email  # nosec

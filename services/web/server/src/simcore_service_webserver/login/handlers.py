@@ -18,6 +18,7 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
+from ._registration import validate_email
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import (
@@ -60,13 +61,16 @@ async def login(request: web.Request):
     password = body.password
 
     user = await db.get_user({"email": email})
-
     if not user:
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    validate_user_status(user, cfg, product.support_email)
+    validate_user_status(
+        user=user,
+        support_email=product.support_email,
+        cfg=cfg,
+    )
 
     if not check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
@@ -79,18 +83,19 @@ async def login(request: web.Request):
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
-        rsp = await login_granted_response(request, user=user, cfg=cfg)
-        return rsp
+        response = await login_granted_response(request, user=user, cfg=cfg)
+        return response
 
     elif not user["phone"]:
-        rsp = envelope_response(
+        response = envelope_response(
             {
                 "code": _PHONE_NUMBER_REQUIRED,
                 "reason": "To login, please register first a phone number",
+                "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
             },
             status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
         )
-        return rsp
+        return response
 
     else:
         assert user["phone"]  # nosec
@@ -109,7 +114,7 @@ async def login(request: web.Request):
             )
 
             # TODO: send "continuation token" needed to enter login_2fa only
-            rsp = envelope_response(
+            response = envelope_response(
                 {
                     "code": _SMS_CODE_REQUIRED,
                     "reason": cfg.MSG_2FA_CODE_SENT.format(
@@ -119,7 +124,7 @@ async def login(request: web.Request):
                 },
                 status=web.HTTPAccepted.status_code,
             )
-            return rsp
+            return response
 
         except Exception as e:
             error_code = create_error_code(e)
@@ -143,10 +148,15 @@ async def login_2fa(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="2FA login is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
     email = body.email
     code = body.code
-
-    assert settings.LOGIN_2FA_REQUIRED  # nosec
+    validate_email(email)
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed
@@ -157,14 +167,14 @@ async def login_2fa(request: web.Request):
 
     # FIXME: ask to register if user not found!!
     user = await db.get_user({"email": email})
-
+    # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
-    # dispose since used
+    # dispose since code was used
     await delete_2fa_code(request.app, email)
 
-    rsp = await login_granted_response(request, user=user, cfg=cfg)
-    return rsp
+    response = await login_granted_response(request, user=user, cfg=cfg)
+    return response
 
 
 @routes.post("/v0/auth/logout", name="auth_logout")

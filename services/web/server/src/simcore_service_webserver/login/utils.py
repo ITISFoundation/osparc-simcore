@@ -41,7 +41,7 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 )
 
 
-def validate_user_status(user: dict, cfg: LoginOptions, support_email: str):
+def validate_user_status(*, user: dict, support_email: str, cfg: LoginOptions):
     user_status: str = user["status"]
 
     if user_status == BANNED or user["role"] == ANONYMOUS:
@@ -105,17 +105,17 @@ def get_client_ip(request: web.Request) -> str:
 def flash_response(
     message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
-    rsp = envelope_response(
+    response = envelope_response(
         attr.asdict(LogMessageType(message, level)),
         status=status,
     )
-    return rsp
+    return response
 
 
 def envelope_response(
     data: Any, *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
-    rsp = web.json_response(
+    response = web.json_response(
         {
             "data": data,
             "error": None,
@@ -123,4 +123,4 @@ def envelope_response(
         dumps=json_dumps,
         status=status,
     )
-    return rsp
+    return response
