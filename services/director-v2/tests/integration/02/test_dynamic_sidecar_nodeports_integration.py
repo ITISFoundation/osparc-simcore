@@ -36,6 +36,13 @@ from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from servicelib.fastapi.long_running_tasks.client import (
+    Client,
+    ProgressMessage,
+    ProgressPercent,
+    TaskId,
+    periodic_task_result,
+)
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from shared_comp_utils import (
@@ -55,7 +62,6 @@ from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -456,6 +462,10 @@ async def _assert_port_values(
     mapped: dict[str, InputsOutputs],
     services_node_uuids: ServicesNodeUUIDs,
 ):
+    # NOTE: if this function fails it's because data did not
+    # have enough time to be copied from the inputs to the outputs
+    # check _USER_SERVICE_SYNC_BUFFER
+
     print("Nodeport mapped values")
     for node_uuid, inputs_outputs in mapped.items():
         print("Port values for", node_uuid)
@@ -468,14 +478,14 @@ async def _assert_port_values(
 
     # integer values
     sleeper_out_2 = await mapped[services_node_uuids.sleeper].outputs["out_2"].get()
-    dy_integer_intput = (
+    dy_integer_input = (
         await mapped[services_node_uuids.dy].inputs["integer_input"].get()
     )
     dy_integer_output = (
         await mapped[services_node_uuids.dy].outputs["integer_output"].get()
     )
 
-    dy_compose_spec_integer_intput = (
+    dy_compose_spec_integer_input = (
         await mapped[services_node_uuids.dy_compose_spec].inputs["integer_input"].get()
     )
     dy_compose_spec_integer_output = (
@@ -486,15 +496,15 @@ async def _assert_port_values(
 
     _print_values_to_assert(
         sleeper_out_2=sleeper_out_2,
-        dy_integer_intput=dy_integer_intput,
+        dy_integer_input=dy_integer_input,
         dy_integer_output=dy_integer_output,
-        dy_compose_spec_integer_intput=dy_compose_spec_integer_intput,
+        dy_compose_spec_integer_input=dy_compose_spec_integer_input,
         dy_compose_spec_integer_output=dy_compose_spec_integer_output,
     )
 
-    assert sleeper_out_2 == dy_integer_intput
+    assert sleeper_out_2 == dy_integer_input
     assert sleeper_out_2 == dy_integer_output
-    assert sleeper_out_2 == dy_compose_spec_integer_intput
+    assert sleeper_out_2 == dy_compose_spec_integer_input
     assert sleeper_out_2 == dy_compose_spec_integer_output
 
     # files
@@ -734,39 +744,40 @@ def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     }
 
 
-async def _print_dynamic_sidecars_containers_logs_and_get_containers(
-    dynamic_services_urls: dict[str, str]
-) -> list[str]:
-    containers_names: list[str] = []
-    for node_uuid, url in dynamic_services_urls.items():
-        print(f"Containers logs for service {node_uuid} @ {url}")
-        async with httpx.AsyncClient(base_url=f"{url}/v1") as client:
-            containers_inspect_response = await client.get("/containers")
-            assert (
-                containers_inspect_response.status_code == status.HTTP_200_OK
-            ), containers_inspect_response.text
-            containers_inspect = containers_inspect_response.json()
-
-            # pylint: disable=unnecessary-comprehension
-            service_containers_names = [x for x in containers_inspect]
-            print("Containers:", service_containers_names)
-            for container_name in service_containers_names:
-                containers_names.append(container_name)
-                print(f"Fetching logs for {container_name}")
-                container_logs_response = await client.get(
-                    f"/containers/{container_name}/logs", timeout=60
-                )
-                assert container_logs_response.status_code == status.HTTP_200_OK
-                logs = "".join(container_logs_response.json())
-                print(f"Container {container_name} logs:\n{logs}")
-
-    assert len(containers_names) == 3
-    return containers_names
-
-
 _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
     "TEST: test_nodeports_integration DO NOT REMOVE"
 )
+
+
+async def _assert_push_non_file_outputs(
+    initialized_app: FastAPI, director_v2_client: httpx.AsyncClient, service_uuid: str
+) -> None:
+    result = await director_v2_client.post(
+        f"/v2/dynamic_scheduler/services/{service_uuid}/outputs:push"
+    )
+    assert result.status_code == httpx.codes.ACCEPTED
+    task_id: TaskId = result.json()
+
+    logger.debug("Going to poll task %s", task_id)
+
+    async def _debug_progress_callback(
+        message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+    ) -> None:
+        logger.debug("%s: %.2f %s", task_id, percent, message)
+
+    async with periodic_task_result(
+        Client(
+            app=initialized_app,
+            async_client=director_v2_client,
+            base_url=director_v2_client.base_url,
+        ),
+        task_id,
+        task_timeout=60,
+        status_poll_interval=1,
+        progress_callback=_debug_progress_callback,
+    ) as result:
+        logger.debug("Task %s finished", task_id)
+        return result
 
 
 async def _assert_retrieve_completed(
@@ -809,6 +820,7 @@ async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
+    initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
@@ -910,16 +922,32 @@ async def test_nodeports_integration(
     # Since there is no webserver monitoring postgres notifications
     # trigger the call manually
 
-    # dump logs form started containers before retrieve
-    await _print_dynamic_sidecars_containers_logs_and_get_containers(
-        dynamic_services_urls
-    )
-
+    # NOTE: avoiding flaky test results, adding some buffer to allow
+    # the services to have time to copy the the data from the inputs to the
+    # outputs (this is what they do internally), usually it's an immediate
+    # operation, but sometimes it takes loner causing the test to fail
+    _USER_SERVICE_SYNC_BUFFER = 5
     for service_uuid in (services_node_uuids.dy, services_node_uuids.dy_compose_spec):
+        # when retrieving inputs, only file output ports will be uploaded
         await _assert_retrieve_completed(
             director_v2_client=async_client,
             service_uuid=service_uuid,
             dynamic_services_urls=dynamic_services_urls,
+        )
+        await sleep_for(
+            _USER_SERVICE_SYNC_BUFFER,
+            f"Waiting file ports to propagate {services_endpoint}",
+        )
+
+        # this will cause non files to upload
+        await _assert_push_non_file_outputs(
+            initialized_app=initialized_app,
+            director_v2_client=async_client,
+            service_uuid=service_uuid,
+        )
+        await sleep_for(
+            _USER_SERVICE_SYNC_BUFFER,
+            f"Waiting for non file ports to propagate {services_endpoint}",
         )
 
     # STEP 3
