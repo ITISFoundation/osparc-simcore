@@ -14,7 +14,7 @@ from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
 from .models import Resources
-from .rabbitmq import post_cluster_state_message
+from .rabbitmq import send_message
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
     )
-    await post_cluster_state_message(
+    await send_message(
         app,
         _create_rabbit_message(
             app,

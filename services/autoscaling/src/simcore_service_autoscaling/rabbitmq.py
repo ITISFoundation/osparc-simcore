@@ -1,9 +1,12 @@
 import contextlib
 import logging
-from typing import Optional, cast
+from typing import Optional, Union, cast
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import RabbitAutoscalingMessage
+from models_library.rabbitmq_messages import (
+    LoggerRabbitMessage,
+    RabbitAutoscalingMessage,
+)
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
@@ -42,8 +45,8 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-async def post_cluster_state_message(
-    app: FastAPI, state_msg: RabbitAutoscalingMessage
+async def send_message(
+    app: FastAPI, state_msg: Union[RabbitAutoscalingMessage, LoggerRabbitMessage]
 ) -> None:
     with log_catch(logger, reraise=False), contextlib.suppress(ConfigurationError):
         # NOTE: if rabbitmq was not initialized the error does not need to flood the logs
