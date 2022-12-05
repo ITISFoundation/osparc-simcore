@@ -19,7 +19,7 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.errors import ConfigurationError
-from simcore_service_autoscaling.rabbitmq import get_rabbitmq_client, send_message
+from simcore_service_autoscaling.rabbitmq import get_rabbitmq_client, post_message
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -92,7 +92,7 @@ def test_rabbitmq_initializes(
     assert get_rabbitmq_client(initialized_app) == initialized_app.state.rabbitmq_client
 
 
-async def test_send_message(
+async def test_post_message(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     initialized_app: FastAPI,
@@ -102,7 +102,7 @@ async def test_send_message(
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     await rabbit_client.subscribe(rabbit_message.channel_name, mocked_message_handler)
-    await send_message(initialized_app, message=rabbit_message)
+    await post_message(initialized_app, message=rabbit_message)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -115,12 +115,12 @@ async def test_send_message(
             print("... message received")
 
 
-async def test_send_message_with_disabled_rabbit_does_not_raise(
+async def test_post_message_with_disabled_rabbit_does_not_raise(
     disabled_rabbitmq: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
 ):
-    await send_message(initialized_app, message=rabbit_message)
+    await post_message(initialized_app, message=rabbit_message)
 
 
 async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) -> None:
@@ -151,7 +151,7 @@ async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) 
     await asyncio.gather(*(_check_service_task_gone(s) for s in rabbit_services))
 
 
-async def test_send_message_when_rabbit_disconnected(
+async def test_post_message_when_rabbit_disconnected(
     enabled_rabbitmq: RabbitSettings,
     initialized_app: FastAPI,
     rabbit_autoscaling_message: RabbitAutoscalingMessage,
@@ -160,4 +160,4 @@ async def test_send_message_when_rabbit_disconnected(
     await _switch_off_rabbit_mq_instance(async_docker_client)
 
     # now posting should not raise out
-    await send_message(initialized_app, message=rabbit_autoscaling_message)
+    await post_message(initialized_app, message=rabbit_autoscaling_message)
