@@ -131,6 +131,7 @@ async def validate_registration(
 
                 # FIXME: deleting confirmation and user will delete associated projects!?
                 # FIXME: Can a unconfirmed user be authorized to start projects or not?
+                # FIXME: instead create new confirmation and resend ???
 
                 # FIXME: make atomic delete. Otherwise we might have unconfirmed users without
                 # associated confirmation
