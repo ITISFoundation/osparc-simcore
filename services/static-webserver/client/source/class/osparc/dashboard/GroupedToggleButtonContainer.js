@@ -108,7 +108,8 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       if (expanded) {
         contentContainer = new osparc.dashboard.ToggleButtonContainer();
       } else {
-        contentContainer = new osparc.component.widget.SlideBar();
+        const spacing = osparc.dashboard.GridButtonBase.SPACING;
+        contentContainer = new osparc.component.widget.SlideBar(spacing);
         contentContainer.setButtonsWidth(30);
       }
       contentContainer.set({
