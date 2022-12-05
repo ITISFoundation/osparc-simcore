@@ -629,36 +629,44 @@ class TutorialBase {
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('mode-button-modeling', s4lIframe);
     await this.waitAndClick('tree-model', s4lIframe);
+    await this.waitFor(2000, 'Model Mode clicked');
+    await this.takeScreenshot("Model");
     const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
     console.log("N items in model tree:", modelItems.length/2); // there are 2 trees
 
     await this.waitAndClick('mode-button-simulation', s4lIframe);
     await this.waitFor(2000, 'Simulation Mode clicked');
+    await this.takeScreenshot("Simulation");
 
     // click on simulation root element
     const simulationsItems = await s4lIframe.$$('.MuiTreeItem-label');
     simulationsItems[0].click();
     await this.waitFor(2000, '1st item in Simulation Tree clicked');
-
     await this.waitAndClick('toolbar-tool-UpdateGrid', s4lIframe);
-    await this.waitFor(4000, 'Updating grid...');
+    await this.waitFor(2000, 'Updating grid...');
     await this.waitAndClick('toolbar-tool-CreateVoxels', s4lIframe);
-    await this.waitFor(4000, 'Creating voxels...');
+    await this.waitFor(2000, 'Creating voxels...');
+    await this.takeScreenshot("Creating voxels");
+    const runButtons1 = await s4lIframe.$$('[osparc-test-id="toolbar-tool-Run"');
+    await runButtons1[0].click();
+    const runButtons2 = await s4lIframe.$$('[osparc-test-id="toolbar-tool-Run"');
+    await runButtons2[1].click();
+    await this.waitFor(2000, 'Running simulation...');
+    await this.takeScreenshot("Running simulation");
 
-    // open context menu and run
-    simulationsItems[0].click('[osparc-test-id="tree-simulation"]', {
-      button: 'right'
-    });
-    await this.waitAndClick('context-menu-item-Run', s4lIframe);
-
+    // HACK: we need to switch modes to trigger the load of the postpro tree item
     const simulationPostproSwitchTries = 100;
     for (let i=0; i<simulationPostproSwitchTries; i++) {
       await this.waitFor(2000, 'Waiting for results');
       await this.waitAndClick('mode-button-postro', s4lIframe);
-      if (await s4lIframe.$('[osparc-test-id="tree-postpro"]')) {
+      await this.takeScreenshot("Postpro");
+      const treeAlgItems = await utils.getVisibleChildrenIDs(s4lIframe, '[osparc-test-id="tree-algorithm');
+      if (treeAlgItems.length) {
+        await this.waitFor(2000, 'Results found');
+        await this.takeScreenshot("Results found");
         break;
       }
-      await this.waitAndClick('mode-button-modeling', s4lIframe);
+      await this.waitAndClick('mode-button-simulation', s4lIframe);
     }
   }
 
