@@ -15,13 +15,23 @@ from models_library.rabbitmq_messages import (
     RabbitAutoscalingMessage,
     RabbitMessageBase,
 )
+from pytest_mock.plugin import MockerFixture
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.errors import ConfigurationError
 from simcore_service_autoscaling.rabbitmq import get_rabbitmq_client, send_message
 from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+_TENACITY_RETRY_PARAMS = dict(
+    reraise=True,
+    retry=retry_if_exception_type(AssertionError),
+    stop=stop_after_delay(30),
+    wait=wait_fixed(0.5),
+)
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
@@ -83,11 +93,26 @@ def test_rabbitmq_initializes(
 
 
 async def test_send_message(
+    disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
+    rabbit_client: RabbitMQClient,
+    mocker: MockerFixture,
 ):
+    mocked_message_handler = mocker.AsyncMock(return_value=True)
+    await rabbit_client.subscribe(rabbit_message.channel_name, mocked_message_handler)
     await send_message(initialized_app, message=rabbit_message)
+
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            print(
+                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
+            )
+            mocked_message_handler.assert_called_once_with(
+                rabbit_message.json().encode()
+            )
+            print("... message received")
 
 
 async def test_send_message_with_disabled_rabbit_does_not_raise(
@@ -109,12 +134,7 @@ async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) 
         *(async_docker_client.services.delete(s["ID"]) for s in rabbit_services)
     )
 
-    @retry(
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-        wait=wait_fixed(0.5),
-        stop=stop_after_delay(30),
-    )
+    @retry(**_TENACITY_RETRY_PARAMS)
     async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
         print(
             f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."

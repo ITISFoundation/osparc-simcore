@@ -32,6 +32,7 @@ from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize, PositiveInt
 from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
@@ -102,6 +103,21 @@ def app_environment(
         },
     )
     return mock_env_devel_environment | envs
+
+
+@pytest.fixture
+def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[None]:
+    mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
+        autospec=True,
+    )
+
+    yield
 
 
 @pytest.fixture
