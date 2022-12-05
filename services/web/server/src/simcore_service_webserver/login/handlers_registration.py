@@ -61,11 +61,12 @@ async def register(request: web.Request):
     product: Product = get_current_product(request)
 
     email = body.email
-    username = _get_user_name(email)
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
-    expires_at = None
+    await validate_registration(email, password, confirm, db=db, cfg=cfg)
+
+    expires_at = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         # Only requests with INVITATION can register user
         # to either a permanent or to a trial account
@@ -81,9 +82,8 @@ async def register(request: web.Request):
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
-    await validate_registration(email, password, confirm, db=db, cfg=cfg)
-
     # TODO: context that drops user if something goes wrong -> atomic!
+    username = _get_user_name(email)
     user: dict = await db.create_user(
         {
             "name": username,
@@ -103,23 +103,14 @@ async def register(request: web.Request):
     # FIXME: SAN, should this go here or when user is actually logged in?
     await auto_add_user_to_groups(request.app, user["id"])
 
-    if not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
-        assert not settings.LOGIN_2FA_REQUIRED  # nosec
-        # No confirmation required: login
-        #
-
-        response = await authorize_login(request=request, user=user, cfg=cfg)
-        return response
-    else:
-        assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+    if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
-        #
-        confirmation_: ConfirmationTokenDict = await db.create_confirmation(
+        _confirmation: ConfirmationTokenDict = await db.create_confirmation(
             user["id"], REGISTRATION
         )
 
         try:
-            email_confirmation_url = make_confirmation_link(request, confirmation_)
+            email_confirmation_url = make_confirmation_link(request, _confirmation)
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
             )
@@ -140,13 +131,13 @@ async def register(request: web.Request):
             log.exception(
                 "Failed while sending confirmation email to %s, %s [%s]",
                 f"{user=}",
-                f"{confirmation_=}",
+                f"{_confirmation=}",
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
 
             # FIXME: these two operations need to be atomic and no-throw
-            await db.delete_confirmation(confirmation_)
+            await db.delete_confirmation(_confirmation)
             await db.delete_user(user)
 
             raise web.HTTPServiceUnavailable(
@@ -160,6 +151,13 @@ async def register(request: web.Request):
                 "INFO",
             )
             return response
+    else:
+        # No confirmation required: authorize login
+        assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+        assert not settings.LOGIN_2FA_REQUIRED  # nosec
+
+        response = await authorize_login(request=request, user=user, cfg=cfg)
+        return response
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)

@@ -110,29 +110,38 @@ async def validate_registration(
     #
 
     if user := await db.get_user({"email": email}):
-        # FIXME: see logic here!????
 
-        # Resets pending confirmation if re-registers?
         if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
             _confirmation: ConfirmationTokenDict = await db.get_confirmation(
                 {"user": user, "action": ConfirmationAction.REGISTRATION.value}
             )
 
             if is_confirmation_expired(cfg, _confirmation):
+                # Confirmation has expired and therefore we treat this
+                # request as a new registration. For that reason we need to
+                # delete the user entry so it can be re-created.
+                #
+
+                # FIXME: deleting confirmation and user will delete associated projects!?
+                # FIXME: Can a unconfirmed user be authorized to start projects or not?
+
+                # FIXME: make atomic delete. Otherwise we might have unconfirmed users without
+                # associated confirmation
                 await db.delete_confirmation(_confirmation)
                 await db.delete_user(user)
+
                 log.warning(
-                    "Time to confirm a registration is overdue. Used expired token [%s]."
-                    "Deleted token from confirmations table and %s from users table.",
-                    _confirmation,
+                    "Re-registration of %s with expired %s"
+                    "Deleting user and proceeding to a new registration",
                     f"{user=}",
+                    f"{_confirmation=}",
                 )
                 return
 
-        # If the email is already taken, return a 409 - HTTPConflict
+        # The email is already taken !!
         raise web.HTTPConflict(
             reason=cfg.MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        )  # https://developer.mozilla.org/en-US/docs/web/http/status/409
 
     log.debug("Registration data validated")
 

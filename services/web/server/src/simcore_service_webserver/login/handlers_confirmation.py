@@ -55,20 +55,23 @@ async def email_confirmation(request: web.Request):
     code = params["code"]
 
     confirmation: Optional[ConfirmationTokenDict] = await validate_confirmation_code(
-        code, db, cfg
+        code, db=db, cfg=cfg
     )
-    redirect_url = URL(cfg.LOGIN_REDIRECT)
 
+    redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
     if confirmation and (action := confirmation["action"]):
         if action == REGISTRATION:
             user = await db.get_user({"id": confirmation["user_id"]})
+            # FIXME: update+delete have to be atomic!
             await db.update_user(user, {"status": ACTIVE})
             await db.delete_confirmation(confirmation)
-            redirect_url = redirect_url.with_fragment("?registered=true")
+            redirect_to_login_url = redirect_to_login_url.with_fragment(
+                "?registered=true"
+            )
             log.debug(
                 "%s registered -> %s",
                 f"{user=}",
-                f"{redirect_url=}",
+                f"{redirect_to_login_url=}",
             )
 
         elif action == CHANGE_EMAIL:
@@ -76,8 +79,14 @@ async def email_confirmation(request: web.Request):
             # TODO: compose error and send to front-end using fragments in the redirection
             # But first we need to implement this refactoring https://github.com/ITISFoundation/osparc-simcore/issues/1975
             #
+
+            # FIXME: ERROR HANDLING
+            # notice that this is a redirection from an email, meaning that the
+            # response has to be TXT!!!
+
             user_update = {"email": parse_obj_as(EmailStr, confirmation["data"])}
             user = await db.get_user({"id": confirmation["user_id"]})
+            # FIXME: update+delete have to be atomic!
             await db.update_user(user, user_update)
             await db.delete_confirmation(confirmation)
             log.debug(
@@ -88,14 +97,16 @@ async def email_confirmation(request: web.Request):
 
         elif action == RESET_PASSWORD:
             # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
-            redirect_url = redirect_url.with_fragment("reset-password?code=%s" % code)
+            redirect_to_login_url = redirect_to_login_url.with_fragment(
+                "reset-password?code=%s" % code
+            )
             log.debug(
                 "Reset password requested %s. %s",
                 f"{confirmation=}",
-                f"{redirect_url=}",
+                f"{redirect_to_login_url=}",
             )
 
-    raise web.HTTPFound(location=redirect_url)
+    raise web.HTTPFound(location=redirect_to_login_url)
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
