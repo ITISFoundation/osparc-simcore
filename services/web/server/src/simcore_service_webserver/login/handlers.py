@@ -12,11 +12,11 @@ from simcore_postgres_database.models.users import UserRole
 from ..products import Product, get_current_product
 from ..security_api import check_password, forget
 from ._2fa import (
+    create_2fa_code,
     delete_2fa_code,
     get_2fa_code,
     mask_phone_number,
     send_sms_code,
-    set_2fa_code,
 )
 from ._security import authorize_login
 from .decorators import RQT_USERID_KEY, login_required
@@ -98,7 +98,7 @@ async def login(request: web.Request):
         assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
 
         try:
-            code = await set_2fa_code(request.app, user["email"])
+            code = await create_2fa_code(request.app, user["email"])
             await send_sms_code(
                 phone_number=user["phone"],
                 code=code,

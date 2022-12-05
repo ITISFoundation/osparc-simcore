@@ -74,6 +74,19 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
 }
 
 
+# TODO: use models in api/specs/webserver/scripts/openapi_auth.py  to validate and connect reponses in the OAS
+
+
+def validate_email(email):
+    try:
+        parse_obj_as(EmailStr, email)
+    except ValidationError as err:
+        raise web.HTTPUnprocessableEntity(
+            reason="Invalid email", content_type=MIMETYPE_APPLICATION_JSON
+        ) from err
+        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
+
+
 async def validate_registration(
     email: str,
     password: str,
@@ -95,13 +108,7 @@ async def validate_registration(
             reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
         )  # https://developer.mozilla.org/en-US/docs/web/http/status/409
 
-    try:
-        parse_obj_as(EmailStr, email)
-    except ValidationError as err:
-        raise web.HTTPUnprocessableEntity(
-            reason="Invalid email", content_type=MIMETYPE_APPLICATION_JSON
-        ) from err
-        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
+    validate_email(email)
 
     #
     # NOTE: Extra requirements on passwords

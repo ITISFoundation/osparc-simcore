@@ -12,9 +12,13 @@ from ..products import Product, get_current_product
 from ..security_api import encrypt_password
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
-from ._2fa import mask_phone_number, send_sms_code, set_2fa_code
+from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
-from ._registration import check_and_consume_invitation, validate_registration
+from ._registration import (
+    check_and_consume_invitation,
+    validate_email,
+    validate_registration,
+)
 from ._security import authorize_login
 from .settings import (
     LoginOptions,
@@ -53,13 +57,12 @@ async def register(request: web.Request):
 
     An email with a link to 'email_confirmation' is sent to complete registration
     """
-    _, _, body = await extract_and_validate(request)
-
     settings: LoginSettings = get_plugin_settings(request.app)
+    product: Product = get_current_product(request)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    product: Product = get_current_product(request)
 
+    _, _, body = await extract_and_validate(request)
     email = body.email
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
@@ -168,14 +171,10 @@ async def register_phone(request: web.Request):
     - sends a code
     - registration is completed requesting to 'phone_confirmation' route with the code received
     """
-    _, _, body = await extract_and_validate(request)
-
     settings: LoginSettings = get_plugin_settings(request.app)
+    product: Product = get_current_product(request)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-
-    email = body.email
-    phone = body.phone
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -183,8 +182,12 @@ async def register_phone(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
+    _, _, body = await extract_and_validate(request)
+    email = body.email
+    phone = body.phone
+    validate_email(email=email)
+
     try:
-        product: Product = get_current_product(request)
         assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
         if not product.twilio_messaging_sid:
             raise ValueError(
@@ -198,7 +201,7 @@ async def register_phone(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
-        code = await set_2fa_code(request.app, email)
+        code = await create_2fa_code(request.app, email)
 
         await send_sms_code(
             phone_number=phone,
@@ -218,15 +221,16 @@ async def register_phone(request: web.Request):
     except web.HTTPException:
         raise
 
-    except Exception as e:  # Unexpected errors -> 503
-        error_code = create_error_code(e)
+    except Exception as err:  # pylint: disable=broad-except
+        # Unhandled errors -> 503
+        error_code = create_error_code(err)
         log.exception(
-            "Phone registration unexpectedly failed [%s]",
+            "Phone registration failed [%s]",
             f"{error_code}",
             extra={"error_code": error_code},
         )
 
         raise web.HTTPServiceUnavailable(
-            reason=f"Currently our system cannot register phone numbers ({error_code})",
+            reason=f"Currently we cannot register phone numbers ({error_code})",
             content_type=MIMETYPE_APPLICATION_JSON,
-        ) from e
+        ) from err

@@ -39,7 +39,7 @@ def _generage_2fa_code() -> str:
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def set_2fa_code(
+async def create_2fa_code(
     app: web.Application,
     user_email: str,
     *,

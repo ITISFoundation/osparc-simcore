@@ -18,9 +18,9 @@ from pytest_simcore.helpers.utils_login import parse_link
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
+    create_2fa_code,
     delete_2fa_code,
     get_2fa_code,
-    set_2fa_code,
 )
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
@@ -112,13 +112,13 @@ async def test_2fa_code_operations(
 
     # set/get/delete
     email = "foo@bar.com"
-    code = await set_2fa_code(client.app, email)
+    code = await create_2fa_code(client.app, email)
     assert await get_2fa_code(client.app, email) == code
     await delete_2fa_code(client.app, email)
 
     # expired
     email = "expired@bar.com"
-    code = await set_2fa_code(client.app, email, expiration_time=1)
+    code = await create_2fa_code(client.app, email, expiration_time=1)
     await asyncio.sleep(1.5)
     assert await get_2fa_code(client.app, email) is None
 
