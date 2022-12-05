@@ -73,7 +73,7 @@
         }
       }
     },
-    "request_dns": "osparc-master.speag.com",
+    "request_dns": "master.com",
     "request_scheme": "https",
     "proxy_service_name": "dy-proxy_12fb3055-db35-4a34-a9c0-bff1267aa859"
   },
@@ -191,7 +191,7 @@
         }
       }
     },
-    "request_dns": "light.s4l-master.speag.com",
+    "request_dns": "master.com",
     "request_scheme": "https",
     "proxy_service_name": "dy-proxy_d14bf3ea-abcf-52f2-8146-fc244b70f307"
   }
