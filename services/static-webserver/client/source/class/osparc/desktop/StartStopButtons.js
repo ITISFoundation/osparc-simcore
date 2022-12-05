@@ -36,7 +36,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__initDefault();
+    this.__buildLayout();
+
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -65,14 +67,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __startButton: null,
     __stopButton: null,
 
-    nodeSelectionChanged: function(selectedNodeIds) {
-      const selectedNodes = [];
-      selectedNodeIds.forEach(selectedNodeId => {
-        if (this.getStudy()) {
-          selectedNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
-        }
-      });
+    __attachEventHandlers: function() {
+      qx.event.message.Bus.subscribe("changeNodeSelection", e => {
+        const selectedNodes = e.getData();
+        this.__nodeSelectionChanged(selectedNodes);
+      }, this);
+    },
 
+    __nodeSelectionChanged: function(selectedNodes) {
       // computationals
       if (!this.__runButton.isFetching()) {
         const isSelectionRunnable = selectedNodes.length && selectedNodes.some(node => node && (node.isComputational() || node.isIterator()));
@@ -107,7 +109,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       ];
     },
 
-    __initDefault: function() {
+    __buildLayout: function() {
       const clustersSelectBox = this.__createClustersLayout();
       this._add(clustersSelectBox);
 

@@ -402,7 +402,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __itemStartedMoving: function() {
-      this.getSelectedNodes().forEach(selectedNodeUI => {
+      this.__selectedNodeUIs.forEach(selectedNodeUI => {
         selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
       });
       this.getSelectedAnnotations().forEach(selectedAnnotation => {
@@ -411,7 +411,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __itemMoving: function(itemId, xDiff, yDiff) {
-      this.getSelectedNodes().forEach(selectedNodeUI => {
+      this.__selectedNodeUIs.forEach(selectedNodeUI => {
         if (itemId !== selectedNodeUI.getNodeId()) {
           const selectedNode = selectedNodeUI.getNode();
           selectedNode.setPosition({
@@ -433,7 +433,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __itemStoppedMoving: function() {
-      this.getSelectedNodes().forEach(selectedNodeUI => {
+      this.__selectedNodeUIs.forEach(selectedNodeUI => {
         delete selectedNodeUI["initPos"];
       });
       this.getSelectedAnnotations().forEach(selectedAnnotation => {
@@ -498,17 +498,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return this._currentModel;
     },
 
-    getSelectedNodes: function() {
-      return this.__selectedNodeUIs;
-    },
-
     getSelectedAnnotations: function() {
       return this.__selectedAnnotations;
     },
 
     getSelectedNodeIDs: function() {
       const selectedNodeIDs = [];
-      this.getSelectedNodes().forEach(nodeUI => {
+      this.__selectedNodeUIs.forEach(nodeUI => {
         selectedNodeIDs.push(nodeUI.getNodeId());
       });
       return selectedNodeIDs;
@@ -521,14 +517,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __setSelectedNodes: function(selectedNodeUIs) {
-      this.getSelectedNodes().forEach(node => {
+      this.__selectedNodeUIs.forEach(node => {
         if (!selectedNodeUIs.includes(node)) {
           node.removeState("selected");
         }
       });
       selectedNodeUIs.forEach(selectedNode => selectedNode.addState("selected"));
       this.__selectedNodeUIs = selectedNodeUIs;
-      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", selectedNodeUIs.map(selected => selected.getNode()));
+
+      qx.event.message.Bus.dispatchByName("changeNodeSelection", this.__selectedNodeUIs.map(selectedNodeUI => selectedNodeUI.getNode()));
     },
 
     __setSelectedAnnotations: function(selectedAnnotations) {
@@ -569,19 +566,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
       if (isControlPressed) {
-        const index = this.getSelectedNodes().indexOf(activeNodeUI);
+        const index = this.__selectedNodeUIs.indexOf(activeNodeUI);
         if (index > -1) {
           activeNodeUI.removeState("selected");
-          this.getSelectedNodes().splice(index, 1);
+          this.__selectedNodeUIs.splice(index, 1);
         } else {
           activeNodeUI.addState("selected");
-          this.getSelectedNodes().push(activeNodeUI);
+          this.__selectedNodeUIs.push(activeNodeUI);
           this.__selectedItemChanged(activeNodeUI.getNodeId());
         }
       } else {
         this.__setSelectedNodes([activeNodeUI]);
         this.__selectedItemChanged(activeNodeUI.getNodeId());
       }
+
+      qx.event.message.Bus.dispatchByName("changeNodeSelection", this.__selectedNodeUIs.map(selectedNodeUI => selectedNodeUI.getNode()));
     },
 
     _createNodeUI: function(nodeId) {

@@ -18,12 +18,6 @@
 qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   extend: osparc.desktop.Toolbar,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__attachEventHandlers();
-  },
-
   events: {
     "startPipeline": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Event",
@@ -118,17 +112,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     getStartStopButtons: function() {
       return this.__startStopBtns;
-    },
-
-    __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
-        const selectedNodes = e.getData();
-        const selectedNodeIds = [];
-        selectedNodes.forEach(selectedNode => {
-          selectedNodeIds.push(selectedNode.getNodeId());
-        });
-        this.getStartStopButtons().nodeSelectionChanged(selectedNodeIds);
-      }, this);
     }
   }
 });
