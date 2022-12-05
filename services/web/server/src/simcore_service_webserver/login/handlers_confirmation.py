@@ -5,16 +5,16 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from pydantic import EmailStr, parse_obj_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
-from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..security_api import encrypt_password, remember
+from ..security_api import encrypt_password
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
+from ._security import authorize_login
 from .settings import (
     LoginOptions,
     LoginSettings,
@@ -118,20 +118,21 @@ async def phone_confirmation(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    email = body.email
-    phone = body.phone
-    code = body.code
-
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
+    email = body.email
+    phone = body.phone
+    code = body.code
+
     if (expected := await get_2fa_code(request.app, email)) and code == expected:
+        # consumes code
         await delete_2fa_code(request.app, email)
 
-        # db
+        # updates confirmed phone number
         try:
             user = await db.get_user({"email": email})
             await db.update_user(user, {"phone": phone})
@@ -142,23 +143,12 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        # login
-        with log_context(
-            log,
-            logging.INFO,
-            "login after phone_confirmation of user_id=%s with %s",
-            f"{user.get('id')}",
-            f"{email=}",
-        ):
-            identity = user["email"]
-            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-            await remember(request, response, identity)
-            return response
-
-    # unauthorized
-    raise web.HTTPUnauthorized(
-        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
-    )
+        response = await authorize_login(request, user=user, cfg=cfg)
+        return response
+    else:
+        raise web.HTTPUnauthorized(
+            reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
+        )
 
 
 @routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")
