@@ -124,7 +124,6 @@ async def test_engine_when_idle_for_some_time():
     )
     engine = await create_pg_engine(dsn, minsize=1, maxsize=1)
     init_pg_tables(dsn, metadata)
-    # import pdb; pdb.set_trace()
     assert not engine.closed  # does not mean anything!!!
     # pylint: disable=no-value-for-parameter
     async with engine.acquire() as conn:

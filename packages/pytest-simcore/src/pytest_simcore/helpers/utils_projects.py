@@ -129,7 +129,7 @@ class NewProject:
                 "UNDER DEVELOPMENT: Currently can only delete all projects "
             )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> ProjectDict:
         assert self.app  # nosec
 
         self.prj = await create_project(

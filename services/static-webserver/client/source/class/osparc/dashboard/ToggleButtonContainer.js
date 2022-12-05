@@ -6,22 +6,17 @@
  */
 
 /**
- * Container for GridButtonItems or any other ToggleButtons, with some convenient methods.
+ * Container for GridButtonItems and ListButtonItems (ToggleButtons), with some convenient methods.
  */
-qx.Class.define("osparc.component.form.ToggleButtonContainer", {
+qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function(layout) {
-    this.base(arguments, layout);
-  },
-
-  properties: {
-    mode: {
-      check: ["grid", "list"],
-      init: "grid",
-      nullable: false,
-      event: "changeMode"
+    if (layout === undefined) {
+      const spacing = osparc.dashboard.GridButtonBase.SPACING;
+      layout = new qx.ui.layout.Flow(spacing, spacing);
     }
+    this.base(arguments, layout);
   },
 
   events: {
@@ -37,11 +32,7 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
       if (child instanceof qx.ui.form.ToggleButton) {
         this.base(arguments, child, options);
         child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
-        child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.getVisibles()), this);
-        if (this.getMode() === "list") {
-          const width = this.getBounds().width - 15;
-          child.setWidth(width);
-        }
+        child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
@@ -66,7 +57,7 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
     /**
      * Returns an array that contains all visible buttons.
      */
-    getVisibles: function() {
+    __getVisibles: function() {
       return this.getChildren().filter(button => button.isVisible());
     },
 
@@ -100,6 +91,32 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
 
     setLastSelectedItem: function(item) {
       this.setLastSelectedIndex(this.getIndex(item));
+    },
+
+    areMoreResourcesRequired: function(loadingResourcesBtn) {
+      // OM check this
+      /*
+      if (this.nextRequest !== null && loadingResourcesBtn &&
+        (this.__getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn))
+      ) {
+        return true;
+      }
+      */
+      if (this.nextRequest !== null && loadingResourcesBtn && osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn)) {
+        return true;
+      }
+      return false;
+    },
+
+    removeCard: function(key) {
+      const cards = this.getChildren();
+      for (let i=0; i<cards.length; i++) {
+        const card = cards[i];
+        if (card.isPropertyInitialized("uuid") && key === card.getUuid()) {
+          this.remove(card);
+        }
+      }
     }
   }
 });
