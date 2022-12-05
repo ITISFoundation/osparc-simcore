@@ -1,0 +1,198 @@
+[
+  {
+    "paths_mapping": {
+      "inputs_path": "/www/inputs",
+      "outputs_path": "/www/outputs",
+      "state_paths": [
+        "/workdir/generated-data"
+      ],
+      "state_exclude": null
+    },
+    "compose_spec": "null",
+    "container_http_entry": null,
+    "restart_policy": "no-restart",
+    "key": "simcore/services/dynamic/dy-static-file-server-dynamic-sidecar",
+    "version": "2.0.3",
+    "user_id": 530,
+    "project_id": "87ecb1e8-724e-11ed-8d73-02420a2d06c7",
+    "node_uuid": "12fb3055-db35-4a34-a9c0-bff1267aa859",
+    "service_name": "dy-sidecar_12fb3055-db35-4a34-a9c0-bff1267aa859",
+    "run_id": "028f2154-8153-44d2-adb9-6dc9b5154668",
+    "hostname": "dy-sidecar_12fb3055-db35-4a34-a9c0-bff1267aa859",
+    "port": 8000,
+    "dynamic_sidecar": {
+      "status": {
+        "current": "failing",
+        "info": "Upss! This service (dy-sidecar_12fb3055-db35-4a34-a9c0-bff1267aa859) unexpectedly failed [OEC:140347588843264]"
+      },
+      "is_ready": true,
+      "was_compose_spec_submitted": true,
+      "containers_inspect": [
+        {
+          "status": "running",
+          "name": "/dy-sidecar-12fb3055-db35-4a34-a9c0-bff1267aa859-0-container",
+          "id": "dddbc3c10cd074e4cce0fbb6c49258e82befa003c2714159aef6214750646dc8"
+        }
+      ],
+      "was_dynamic_sidecar_started": true,
+      "is_healthy": true,
+      "were_containers_created": true,
+      "is_project_network_attached": true,
+      "is_service_environment_ready": true,
+      "service_removal_state": {
+        "can_remove": true,
+        "can_save": true,
+        "was_removed": false
+      },
+      "wait_for_manual_intervention_after_error": true,
+      "were_state_and_outputs_saved": false,
+      "dynamic_sidecar_id": "mw8tkm5eg7wli8oxc4p6kpk5g",
+      "dynamic_sidecar_network_id": "kkgzgoc7afxvcyo9rhrl6heit",
+      "swarm_network_id": "s3klppeez5k3nuhzie9wluauk",
+      "swarm_network_name": "master-simcore_interactive_services_subnet",
+      "docker_node_id": "49tje9wel8fvztrjgx6o0d8br",
+      "inspect_error_handler": {
+        "delay_for": 60.0
+      }
+    },
+    "dynamic_sidecar_network_name": "dy-sidecar_12fb3055-db35-4a34-a9c0-bff1267aa859",
+    "simcore_traefik_zone": "dy-sidecar_12fb3055-db35-4a34-a9c0-bff1267aa859",
+    "service_port": 8080,
+    "service_resources": {
+      "container": {
+        "image": "simcore/services/dynamic/dy-static-file-server-dynamic-sidecar:2.0.3",
+        "resources": {
+          "CPU": {
+            "limit": 0.1,
+            "reservation": 0.1
+          },
+          "RAM": {
+            "limit": 2147483648,
+            "reservation": 2147483648
+          }
+        }
+      }
+    },
+    "request_dns": "osparc-master.speag.com",
+    "request_scheme": "https",
+    "proxy_service_name": "dy-proxy_12fb3055-db35-4a34-a9c0-bff1267aa859"
+  },
+  {
+    "paths_mapping": {
+      "inputs_path": "/home/smu/work/inputs",
+      "outputs_path": "/home/smu/work/outputs",
+      "state_paths": [
+        "/home/smu/work/workspace"
+      ],
+      "state_exclude": null
+    },
+    "compose_spec": "{\"version\": \"2.3\", \"services\": {\"rt-web-dy\": {\"image\": \"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life-dy:${SERVICE_VERSION}\", \"init\": true, \"depends_on\": [\"s4l-core\"], \"networks\": [\"dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307\"], \"environment\": [\"DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs\", \"DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs\", \"DY_SIDECAR_STATE_PATHS=[\\\"/home/smu/work/workspace\\\"]\", \"SIMCORE_NANO_CPUS_LIMIT=1000000000\", \"SIMCORE_MEMORY_BYTES_LIMIT=2147483648\"], \"mem_limit\": \"2147483648\", \"mem_reservation\": \"2147483648\", \"cpus\": 1.0}, \"s4l-core\": {\"image\": \"${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core-dy:${SERVICE_VERSION}\", \"runtime\": \"nvidia\", \"init\": true, \"environment\": [\"DISPLAY=\", \"DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs\", \"DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs\", \"DY_SIDECAR_STATE_PATHS=[\\\"/home/smu/work/workspace\\\"]\", \"SIMCORE_NANO_CPUS_LIMIT=4000000000\", \"SIMCORE_MEMORY_BYTES_LIMIT=17179869184\"], \"volumes\": [\"/tmp/.X11-unix:/tmp/.X11-unix\"], \"cap_add\": [\"SYS_PTRACE\"], \"mem_limit\": \"17179869184\", \"mem_reservation\": \"536870912\", \"cpus\": 4.0}, \"sym-server\": {\"image\": \"${SIMCORE_REGISTRY}/simcore/services/dynamic/sym-server-dy:${SERVICE_VERSION}\", \"init\": true, \"environment\": [\"DY_SIDECAR_PATH_INPUTS=/home/smu/work/inputs\", \"DY_SIDECAR_PATH_OUTPUTS=/home/smu/work/outputs\", \"DY_SIDECAR_STATE_PATHS=[\\\"/home/smu/work/workspace\\\"]\", \"SIMCORE_NANO_CPUS_LIMIT=1000000000\", \"SIMCORE_MEMORY_BYTES_LIMIT=2147483648\"], \"mem_limit\": \"2147483648\", \"mem_reservation\": \"2147483648\", \"cpus\": 1.0}}, \"networks\": {\"dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307\": {\"external\": {\"name\": \"dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307\"}, \"driver\": \"overlay\"}}}",
+    "container_http_entry": "rt-web-dy",
+    "restart_policy": "no-restart",
+    "key": "simcore/services/dynamic/sim4life-dy",
+    "version": "2.0.72",
+    "user_id": 4,
+    "project_id": "5a183732-7489-11ed-953f-02420a2d06da",
+    "node_uuid": "d14bf3ea-abcf-52f2-8146-fc244b70f307",
+    "service_name": "dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307",
+    "run_id": "5ef5dbb4-600e-4ab8-990f-1ce4a7961b67",
+    "hostname": "dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307",
+    "port": 8000,
+    "dynamic_sidecar": {
+      "status": {
+        "current": "ok",
+        "info": ""
+      },
+      "is_ready": true,
+      "was_compose_spec_submitted": true,
+      "containers_inspect": [
+        {
+          "status": "running",
+          "name": "/dy-sidecar-d14bf3ea-abcf-52f2-8146-fc244b70f307-0-rt-web-dy",
+          "id": "eb076666d7da05ac69e60a211ff500d6b8d8dd6a823e0d0cc362d3421b6f37d7"
+        },
+        {
+          "status": "running",
+          "name": "/dy-sidecar-d14bf3ea-abcf-52f2-8146-fc244b70f307-1-s4l-core",
+          "id": "3a0a443dd2732ae147b9e2d56f8ce44a72e7ca0b20886092c0b49d3cf5073dd9"
+        },
+        {
+          "status": "running",
+          "name": "/dy-sidecar-d14bf3ea-abcf-52f2-8146-fc244b70f307-2-sym-server",
+          "id": "454858d71c4eed4e62723cf55dbdc72a97c41073a5b4cf6bbffd79a04df2f80a"
+        }
+      ],
+      "was_dynamic_sidecar_started": true,
+      "is_healthy": true,
+      "were_containers_created": true,
+      "is_project_network_attached": true,
+      "is_service_environment_ready": true,
+      "service_removal_state": {
+        "can_remove": false,
+        "can_save": null,
+        "was_removed": false
+      },
+      "wait_for_manual_intervention_after_error": false,
+      "were_state_and_outputs_saved": false,
+      "dynamic_sidecar_id": "hcd6k61yycs57qfbtg1wgkle2",
+      "dynamic_sidecar_network_id": "jhub4sb1sgb6pcnd9rbhtd8li",
+      "swarm_network_id": "s3klppeez5k3nuhzie9wluauk",
+      "swarm_network_name": "master-simcore_interactive_services_subnet",
+      "docker_node_id": "a3jvo9ys3j4rd4a42r9w23b7c",
+      "inspect_error_handler": {
+        "delay_for": 60.0
+      }
+    },
+    "dynamic_sidecar_network_name": "dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307",
+    "simcore_traefik_zone": "dy-sidecar_d14bf3ea-abcf-52f2-8146-fc244b70f307",
+    "service_port": 80,
+    "service_resources": {
+      "rt-web-dy": {
+        "image": "simcore/services/dynamic/sim4life-dy:2.0.72",
+        "resources": {
+          "CPU": {
+            "limit": 1.0,
+            "reservation": 1.0
+          },
+          "RAM": {
+            "limit": 2147483648,
+            "reservation": 2147483648
+          }
+        }
+      },
+      "s4l-core": {
+        "image": "simcore/services/dynamic/s4l-core-dy:2.0.72",
+        "resources": {
+          "CPU": {
+            "limit": 4.0,
+            "reservation": 0.1
+          },
+          "RAM": {
+            "limit": 17179869184,
+            "reservation": 536870912
+          },
+          "VRAM": {
+            "limit": 1,
+            "reservation": 1
+          }
+        }
+      },
+      "sym-server": {
+        "image": "simcore/services/dynamic/sym-server-dy:2.0.72",
+        "resources": {
+          "CPU": {
+            "limit": 1.0,
+            "reservation": 1.0
+          },
+          "RAM": {
+            "limit": 2147483648,
+            "reservation": 2147483648
+          }
+        }
+      }
+    },
+    "request_dns": "light.s4l-master.speag.com",
+    "request_scheme": "https",
+    "proxy_service_name": "dy-proxy_d14bf3ea-abcf-52f2-8146-fc244b70f307"
+  }
+]
