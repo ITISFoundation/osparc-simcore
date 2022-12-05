@@ -173,11 +173,11 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     removeCard: function(key) {
-      const cards = this.getChildren();
+      const cards = this.getCards();
       for (let i=0; i<cards.length; i++) {
         const card = cards[i];
         if (card.getUuid && key === card.getUuid()) {
-          this.remove(card);
+          this.getContentContainer().remove(card);
           return;
         }
       }

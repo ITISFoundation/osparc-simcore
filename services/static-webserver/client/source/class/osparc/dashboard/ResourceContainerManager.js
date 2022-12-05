@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       if (card instanceof qx.ui.form.ToggleButton) {
         if (this.getGroupBy()) {
           const noGroupContainer = this.__getGroupContainer("no-group");
-          noGroupContainer.remove(card);
+          noGroupContainer.getContentContainer().remove(card);
         } else {
           this.__flatList.remove(card);
         }
