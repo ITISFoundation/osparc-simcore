@@ -124,6 +124,10 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       atom.getChildControl("icon").setTextColor(color);
     },
 
+    getContentContainer: function() {
+      return this.getChildControl("content-container");
+    },
+
     // overridden
     add: function(child, idx) {
       if (child instanceof qx.ui.form.ToggleButton) {

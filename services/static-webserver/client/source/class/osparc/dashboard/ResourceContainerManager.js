@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           // it will always go to the no-group group
           const noGroupContainer = this.__getGroupContainer("no-group");
           noGroupContainer.add(card);
-          this.self().sortList(noGroupContainer.getChildControl("content-container"));
+          this.self().sortList(noGroupContainer.getContentContainer());
         } else {
           this.__flatList.add(card);
           this.self().sortList(this.__flatList);
@@ -197,7 +197,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       if (this.__flatList) {
         this.__flatList.removeAll();
       }
-      this.__groupedContainers.forEach(groupedContainer => groupedContainer.getChildControl("content-container").removeAll());
+      this.__groupedContainers.forEach(groupedContainer => groupedContainer.getContentContainer().removeAll());
       this.__groupedContainers = [];
       this._removeAll();
     },
@@ -251,7 +251,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           let noGroupContainer = this.__getGroupContainer("no-group");
           const card = this.__createCard(resourceData, tags);
           noGroupContainer.add(card);
-          this.self().sortList(noGroupContainer.getChildControl("content-container"));
+          this.self().sortList(noGroupContainer.getContentContainer());
           cards.push(card);
         } else {
           tags.forEach(tag => {
@@ -264,7 +264,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             }
             const card = this.__createCard(resourceData, tags);
             groupContainer.add(card);
-            this.self().sortList(groupContainer.getChildControl("content-container"));
+            this.self().sortList(groupContainer.getContentContainer());
             cards.push(card);
           });
         }
