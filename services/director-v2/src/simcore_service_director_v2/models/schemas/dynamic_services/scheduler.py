@@ -16,7 +16,15 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    constr,
+    parse_obj_as,
+    root_validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -106,6 +114,16 @@ class DockerContainerInspect(BaseModel):
             name=container["Name"],
             id=container["Id"],
         )
+
+    @root_validator(pre=True)
+    @classmethod
+    def _ensure_legacy_format_compatibility(cls, values):
+        # Once below PR is released in production, this can be removed
+        # https://github.com/ITISFoundation/osparc-simcore/pull/3610
+        status: Optional[str] = values.get("status")
+        if status:
+            values["container_state"] = {"Status": status}
+        return values
 
     class Config:
         keep_untouched = (cached_property,)
