@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import AutoscalingStatus
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -12,8 +11,7 @@ from . import utils_aws, utils_docker
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
-from .rabbitmq import post_message
-from .utils.rabbitmq import create_rabbit_message
+from .utils import rabbitmq
 
 logger = logging.getLogger(__name__)
 
@@ -49,28 +47,17 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
     )
-    await post_message(
+    await rabbitmq.post_state_message(
         app,
-        create_rabbit_message(
-            app,
-            monitored_nodes,
-            cluster_total_resources,
-            cluster_used_resources,
-            pending_tasks,
-            status=AutoscalingStatus.SCALING_UP
-            if pending_tasks
-            else AutoscalingStatus.IDLE,
-        ),
+        monitored_nodes,
+        cluster_total_resources,
+        cluster_used_resources,
+        pending_tasks,
     )
+
     if not pending_tasks:
         logger.debug("no pending tasks with insufficient resources at the moment")
         return
-
-    logger.info(
-        "%s service task(s) with %s label(s) are pending due to insufficient resources",
-        f"{len(pending_tasks)}",
-        f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS}",
-    )
 
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -79,6 +66,12 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     )
 
     for task in pending_tasks:
+        await rabbitmq.post_log_message(
+            app,
+            task,
+            "service is pending due to insufficient resources, scaling up cluster please wait...",
+            logging.INFO,
+        )
         try:
             ec2_instances_needed = [
                 utils_aws.find_best_fitting_ec2_instance(
@@ -98,22 +91,19 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                     InstanceTypeType, ec2_instances_needed[0].name
                 ),
                 tags={
-                    "io.osparc.autoscaling.created": f"{datetime.utcnow()}",
-                    "io.osparc.autoscaling.version": f"{VERSION}",
-                    "io.osparc.autoscaling.monitored_nodes_labels": json.dumps(
+                    "io.simcore.autoscaling.created": f"{datetime.utcnow()}",
+                    "io.simcore.autoscaling.version": f"{VERSION}",
+                    "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
                         app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
                     ),
-                    "io.osparc.autoscaling.monitored_services_labels": json.dumps(
+                    "io.simcore.autoscaling.monitored_services_labels": json.dumps(
                         app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
                     ),
                 },
                 startup_script=await utils_docker.get_docker_swarm_join_bash_command(),
             )
-            logger.info(
-                "a new instance was created with %s", f"{new_instance_dns_name=}"
-            )
-            # NOTE: new_instance_dns_name is of type ip-123-23-23-3.ec2.internal and we need only the first part
 
+            # NOTE: new_instance_dns_name is of type ip-123-23-23-3.ec2.internal and we need only the first part
             if match := re.match(_EC2_INTERNAL_DNS_RE, new_instance_dns_name):
                 new_instance_dns_name = match.group(1)
                 new_node = await utils_docker.wait_for_node(new_instance_dns_name)
@@ -128,6 +118,12 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                         for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
                     },
                     available=True,
+                )
+                await rabbitmq.post_log_message(
+                    app,
+                    task,
+                    "cluster was scaled up and is now ready to run service",
+                    logging.INFO,
                 )
             # NOTE: in this first trial we start one instance at a time
             # In the next iteration, some tasks might already run with that instance

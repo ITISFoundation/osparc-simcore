@@ -38,6 +38,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
+from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.utils_aws import EC2Client
 from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
 from tenacity import retry
@@ -537,3 +538,12 @@ def host_cpu_count() -> int:
 @pytest.fixture
 def host_memory_total() -> ByteSize:
     return ByteSize(psutil.virtual_memory().total)
+
+
+@pytest.fixture
+def osparc_docker_label_keys(
+    faker: Faker,
+) -> SimcoreServiceDockerLabelKeys:
+    return SimcoreServiceDockerLabelKeys.parse_obj(
+        dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+    )
