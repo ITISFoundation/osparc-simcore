@@ -128,7 +128,7 @@ class _EventHandlerProcess:
         while True:
             outputs_port_keys: Optional[
                 set[str]
-            ] = self.outputs_context.port_keys_updates_queue.get()
+            ] = self.outputs_context.file_type_port_keys_updates_queue.get()
             print("outputs_port_keys", outputs_port_keys)
 
             if outputs_port_keys is None:
@@ -185,7 +185,7 @@ class _EventHandlerProcess:
             observer.stop()
 
             # stop created thread
-            self.outputs_context.port_keys_updates_queue.put(None)
+            self.outputs_context.file_type_port_keys_updates_queue.put(None)
             thread_update_outputs_port_keys.join()
 
             logger.warning("%s exited", _EventHandlerProcess.__name__)
@@ -246,7 +246,7 @@ class EventHandlerObserver:
                         "WatcherProcess health is no longer responsive. "
                         "%s will be uploaded when closing."
                     ),
-                    self.outputs_context.port_keys,
+                    self.outputs_context.file_type_port_keys,
                 )
                 # signal the health was degraded and
                 # that all the ports should be uploaded when closing

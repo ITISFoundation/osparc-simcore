@@ -73,7 +73,7 @@ async def outputs_context(
     mounted_volumes: MountedVolumes, port_keys: list[str]
 ) -> OutputsContext:
     outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
-    await outputs_context.set_port_keys(port_keys)
+    await outputs_context.set_file_type_port_keys(port_keys)
     return outputs_context
 
 

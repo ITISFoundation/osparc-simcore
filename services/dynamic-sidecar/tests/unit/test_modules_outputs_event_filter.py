@@ -39,7 +39,7 @@ def port_keys(outputs_path: Path, port_key_1: str) -> list[str]:
 @pytest.fixture
 async def outputs_context(outputs_path: Path, port_keys: list[str]) -> OutputsContext:
     outputs_context = OutputsContext(outputs_path)
-    await outputs_context.set_port_keys(port_keys)
+    await outputs_context.set_file_type_port_keys(port_keys)
     return outputs_context
 
 

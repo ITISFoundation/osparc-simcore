@@ -104,14 +104,16 @@ def outputs_path(tmp_path: Path) -> Path:
 
 
 def _assert_ports_uploaded(
-    mock_upload_outputs: AsyncMock, port_keys: list[str]
+    mock_upload_outputs: AsyncMock,
+    port_keys: list[str],
+    non_file_type_port_keys: list[str],
 ) -> None:
     uploaded_port_keys = []
     assert len(mock_upload_outputs.call_args_list) > 0
     for call_arts in mock_upload_outputs.call_args_list:
         uploaded_port_keys.extend(call_arts.kwargs["port_keys"])
 
-    assert set(uploaded_port_keys) == set(port_keys)
+    assert set(uploaded_port_keys) == set(port_keys) | set(non_file_type_port_keys)
 
 
 @pytest.fixture
@@ -128,10 +130,23 @@ async def port_key_tracker_with_ports(
     return port_key_tracker
 
 
+@pytest.fixture(
+    params=(
+        [],
+        ["non_file_port_1", "non_file_port_2"],
+    )
+)
+def non_file_type_port_keys(request) -> list[str]:
+    return request.param
+
+
 @pytest.fixture
-async def outputs_context(outputs_path: Path, port_keys: list[str]) -> OutputsContext:
+async def outputs_context(
+    outputs_path: Path, port_keys: list[str], non_file_type_port_keys: list[str]
+) -> OutputsContext:
     outputs_context = OutputsContext(outputs_path=outputs_path)
-    await outputs_context.set_port_keys(port_keys)
+    await outputs_context.set_file_type_port_keys(port_keys)
+    outputs_context.non_file_type_port_keys = non_file_type_port_keys
     return outputs_context
 
 
@@ -156,6 +171,7 @@ async def test_upload_port_wait_sequential(
     mock_upload_outputs: AsyncMock,
     outputs_manager: OutputsManager,
     port_keys: list[str],
+    non_file_type_port_keys: list[str],
     outputs_path: Path,
 ):
     for port_key in port_keys:
@@ -165,13 +181,14 @@ async def test_upload_port_wait_sequential(
     await outputs_manager.wait_for_all_uploads_to_finish()
     assert await outputs_manager._port_key_tracker.no_tracked_ports() is True
 
-    _assert_ports_uploaded(mock_upload_outputs, port_keys)
+    _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
 
 
 async def test_upload_port_wait_parallel_parallel(
     mock_upload_outputs: AsyncMock,
     outputs_manager: OutputsManager,
     port_keys: list[str],
+    non_file_type_port_keys: list[str],
     outputs_path: Path,
     wait_upload_finished: PositiveFloat,
 ):
@@ -183,13 +200,14 @@ async def test_upload_port_wait_parallel_parallel(
     await asyncio.gather(*upload_tasks)
     await outputs_manager.wait_for_all_uploads_to_finish()
 
-    _assert_ports_uploaded(mock_upload_outputs, port_keys)
+    _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
 
 
 async def test_recovers_after_raising_error(
     mock_upload_outputs_raises_error: ToggleErrorRaising,
     outputs_manager: OutputsManager,
     port_keys: list[str],
+    non_file_type_port_keys: list[str],
     mock_error: _MockError,
 ):
     # expect to raise error the first time uploading
@@ -201,7 +219,9 @@ async def test_recovers_after_raising_error(
     with pytest.raises(UploadPortsFailed) as exec_info:
         await outputs_manager.wait_for_all_uploads_to_finish()
 
-    assert set(exec_info.value.failures.keys()) == set(port_keys)
+    assert set(exec_info.value.failures.keys()) == set(port_keys) | set(
+        non_file_type_port_keys
+    )
 
     def _assert_same_exceptions(
         first: list[Exception], second: list[Exception]

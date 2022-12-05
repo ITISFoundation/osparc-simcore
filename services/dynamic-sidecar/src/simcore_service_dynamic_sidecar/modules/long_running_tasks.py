@@ -292,12 +292,12 @@ async def task_ports_outputs_push(
 
     await post_sidecar_log_message(
         app,
-        f"Waiting for outputs {outputs_manager.outputs_context.port_keys} to be pushed",
+        f"waiting for outputs {outputs_manager.outputs_context.file_type_port_keys} to be pushed",
     )
 
     await outputs_manager.wait_for_all_uploads_to_finish()
 
-    await post_sidecar_log_message(app, "Finished pulling outputs")
+    await post_sidecar_log_message(app, "finished outputs pushing")
 
     progress.update(message="finished outputs pushing", percent=0.99)
 

@@ -421,7 +421,7 @@ async def test_outputs_watcher_disabling(
     async def _create_file_in_random_dir_in_inputs() -> int:
         random_subdir = f"{uuid4()}"
 
-        await outputs_context.set_port_keys([random_subdir])
+        await outputs_context.set_file_type_port_keys([random_subdir])
         await asyncio.sleep(WAIT_FOR_EVENTS)
 
         dir_name = outputs_context.outputs_path / random_subdir

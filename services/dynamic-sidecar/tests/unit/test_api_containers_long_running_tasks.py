@@ -236,7 +236,7 @@ async def mock_port_keys(
 ) -> Optional[list[str]]:
     outputs_context: OutputsContext = client.app.state.outputs_context
     if request.param is not None:
-        await outputs_context.set_port_keys(request.param)
+        await outputs_context.set_file_type_port_keys(request.param)
     return request.param
 
 

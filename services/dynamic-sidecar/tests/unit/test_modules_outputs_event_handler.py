@@ -33,7 +33,7 @@ async def outputs_context(
     path_to_observe: Path, outputs_port_keys: list[str]
 ) -> OutputsContext:
     outputs_context = OutputsContext(path_to_observe)
-    await outputs_context.set_port_keys(outputs_port_keys)
+    await outputs_context.set_file_type_port_keys(outputs_port_keys)
     return outputs_context
 
 

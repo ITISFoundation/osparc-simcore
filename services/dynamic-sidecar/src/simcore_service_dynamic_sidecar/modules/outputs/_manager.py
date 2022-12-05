@@ -131,15 +131,16 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         port_keys = await self._port_key_tracker.get_uploading()
         assert len(port_keys) > 0  # nosec
 
+        async def _upload_ports() -> None:
+            with log_context(logger, logging.INFO, f"Uploading port keys: {port_keys}"):
+                await upload_outputs(
+                    outputs_path=self.outputs_context.outputs_path,
+                    port_keys=port_keys,
+                    io_log_redirect_cb=self.io_log_redirect_cb,
+                )
+
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
-        self._task_uploading = create_task(
-            upload_outputs(
-                outputs_path=self.outputs_context.outputs_path,
-                port_keys=port_keys,
-                io_log_redirect_cb=self.io_log_redirect_cb,
-            ),
-            name=task_name,
-        )
+        self._task_uploading = create_task(_upload_ports(), name=task_name)
 
         def _remove_downloads(future: Future) -> None:
             # pylint: disable=protected-access
@@ -202,9 +203,19 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
     async def wait_for_all_uploads_to_finish(self) -> None:
         """
-        if there are no pending port uploads return immediately
+        Waits for all ports to finish uploads. If there are also
+        non file based output ports, schedule them for upload at this time.
+
+        If there are no pending port uploads return immediately
         otherwise wait for all of them to finish
         """
+
+        # always scheduling non file based ports for upload
+        # there is no auto detection when these change
+        for non_file_port_key in self.outputs_context.non_file_type_port_keys:
+            logger.info("Adding non file port key %s", non_file_port_key)
+            await self.port_key_content_changed(non_file_port_key)
+
         # NOTE: the file system watchdog was found unhealthy and to make
         # sure we are not uploading a partially updated state we mark all
         # ports changed.
@@ -217,11 +228,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 "This is a safety measure to make sure no data is lost. ",
                 self.outputs_context.outputs_path,
             )
-            for port_key in self.outputs_context.port_keys:
-                await self.port_key_content_changed(port_key)
+            for file_port_key in self.outputs_context.file_type_port_keys:
+                await self.port_key_content_changed(file_port_key)
 
+        logger.info("Port status before waiting %s", f"{self._port_key_tracker}")
         while not await self._port_key_tracker.no_tracked_ports():
             await asyncio.sleep(self.task_monitor_interval_s)
+        logger.info("Port status after waiting %s", f"{self._port_key_tracker}")
 
         # NOTE: checking if there were any errors during the last port upload,
         # for each port. If any error is detected this will raise.

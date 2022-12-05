@@ -15,19 +15,26 @@ class OutputsContext:
     # _PortKeysEventHandler (generates) -> EventFilter (receives)
     port_key_events_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
 
-    _port_keys: list[str] = field(default_factory=list)
     # OutputsContext (generates) -> _EventHandlerProcess(receives)
-    port_keys_updates_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
+    file_type_port_keys_updates_queue: AioQueue = field(
+        default_factory=aioprocessing.AioQueue
+    )
 
-    async def set_port_keys(self, port_keys: list[str]) -> None:
-        self._port_keys = port_keys
-        await self.port_keys_updates_queue.coro_put(  # pylint:disable=no-member
-            self.port_keys
+    # non_file_type_port_keys
+    non_file_type_port_keys: list[str] = field(default_factory=list)
+
+    # file_type_port_keys
+    _file_type_port_keys: list[str] = field(default_factory=list)
+
+    async def set_file_type_port_keys(self, file_type_port_keys: list[str]) -> None:
+        self._file_type_port_keys = file_type_port_keys
+        await self.file_type_port_keys_updates_queue.coro_put(  # pylint:disable=no-member
+            self._file_type_port_keys
         )
 
     @property
-    def port_keys(self) -> list[str]:
-        return self._port_keys
+    def file_type_port_keys(self) -> list[str]:
+        return self._file_type_port_keys
 
 
 def setup_outputs_context(app: FastAPI) -> None:
