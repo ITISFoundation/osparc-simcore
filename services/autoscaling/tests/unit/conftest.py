@@ -222,6 +222,11 @@ async def create_service(
         task_template: dict[str, Any], labels: Optional[dict[str, str]] = None
     ) -> Mapping[str, Any]:
         service_name = f"pytest_{faker.pystr()}"
+        if labels:
+            task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
+                "Labels", {}
+            )
+            task_labels |= labels
         service = await async_docker_client.services.create(
             task_template=task_template,
             name=service_name,
@@ -232,6 +237,8 @@ async def create_service(
         print(
             f"--> created docker service {service['ID']} with {service['Spec']['Name']}"
         )
+        assert "Labels" in service["Spec"]
+        assert service["Spec"]["Labels"] == (labels or {})
 
         created_services.append(service)
         # get more info on that service
