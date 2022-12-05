@@ -9,7 +9,12 @@ import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import AutoscalingStatus, RabbitAutoscalingMessage
+from models_library.rabbitmq_messages import (
+    AutoscalingStatus,
+    LoggerRabbitMessage,
+    RabbitAutoscalingMessage,
+    RabbitMessageBase,
+)
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.errors import ConfigurationError
 from simcore_service_autoscaling.rabbitmq import get_rabbitmq_client, send_message
@@ -38,6 +43,28 @@ def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingMessage:
     )
 
 
+@pytest.fixture
+def rabbit_log_message(faker: Faker) -> LoggerRabbitMessage:
+    return LoggerRabbitMessage(
+        user_id=faker.pyint(min_value=1),
+        project_id=faker.uuid4(),
+        node_id=faker.uuid4(),
+        messages=faker.pylist(allowed_types=(str,)),
+    )
+
+
+@pytest.fixture(params=["rabbit_autoscaling_message", "rabbit_log_message"])
+def rabbit_message(
+    request: pytest.FixtureRequest,
+    rabbit_autoscaling_message: RabbitAutoscalingMessage,
+    rabbit_log_message: LoggerRabbitMessage,
+) -> RabbitMessageBase:
+    return {
+        "rabbit_autoscaling_message": rabbit_autoscaling_message,
+        "rabbit_log_message": rabbit_log_message,
+    }[request.param]
+
+
 def test_rabbitmq_does_not_initialize_if_deactivated(
     disabled_rabbitmq, initialized_app: FastAPI
 ):
@@ -58,17 +85,17 @@ def test_rabbitmq_initializes(
 async def test_send_message(
     enabled_rabbitmq: RabbitSettings,
     initialized_app: FastAPI,
-    rabbit_autoscaling_message: RabbitAutoscalingMessage,
+    rabbit_message: RabbitMessageBase,
 ):
-    await send_message(initialized_app, state_msg=rabbit_autoscaling_message)
+    await send_message(initialized_app, message=rabbit_message)
 
 
 async def test_send_message_with_disabled_rabbit_does_not_raise(
     disabled_rabbitmq: None,
     initialized_app: FastAPI,
-    rabbit_autoscaling_message: RabbitAutoscalingMessage,
+    rabbit_message: RabbitMessageBase,
 ):
-    await send_message(initialized_app, state_msg=rabbit_autoscaling_message)
+    await send_message(initialized_app, message=rabbit_message)
 
 
 async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) -> None:
@@ -85,7 +112,7 @@ async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) 
     @retry(
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
-        wait=wait_fixed(1),
+        wait=wait_fixed(0.5),
         stop=stop_after_delay(30),
     )
     async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
@@ -113,4 +140,4 @@ async def test_send_message_when_rabbit_disconnected(
     await _switch_off_rabbit_mq_instance(async_docker_client)
 
     # now posting should not raise out
-    await send_message(initialized_app, state_msg=rabbit_autoscaling_message)
+    await send_message(initialized_app, message=rabbit_autoscaling_message)
