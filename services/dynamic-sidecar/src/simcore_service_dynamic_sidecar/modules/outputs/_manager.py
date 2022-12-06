@@ -1,8 +1,6 @@
 import asyncio
 import logging
-from asyncio import CancelledError, Future, Lock, Task
-from asyncio import TimeoutError as AsyncioTimeoutError
-from asyncio import create_task, wait_for
+from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from functools import partial
 from typing import Optional
@@ -10,7 +8,7 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 from ...core.rabbitmq import post_log_message
@@ -24,17 +22,8 @@ logger = logging.getLogger(__name__)
 async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -> None:
     task.cancel()
     with suppress(CancelledError):
-        try:
-
-            async def __await_task(task: Task) -> None:
-                try:
-                    await task
-                except Exception:  # pylint:disable=broad-except
-                    pass
-
-            await wait_for(__await_task(task), timeout=task_cancellation_timeout_s)
-        except AsyncioTimeoutError:
-            logger.warning("Timed out while cancelling '%s'", task.get_name())
+        with log_catch(logger, reraise=False):
+            await wait(task, timeout=task_cancellation_timeout_s)
 
 
 class UploadPortsFailed(PydanticErrorMixin, Exception):
