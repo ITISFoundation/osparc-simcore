@@ -9,6 +9,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
 import asyncio
 import sys
 import textwrap
@@ -48,6 +49,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.login.settings import LoginOptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -542,7 +544,7 @@ async def all_group(client, logged_user) -> dict[str, str]:
 
 def _patch_compose_mail(monkeypatch):
     async def print_mail_to_stdout(
-        app: web.Application, *, sender: str, recipient: str, subject: str, body: str
+        fg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
     ):
         print(
             f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
