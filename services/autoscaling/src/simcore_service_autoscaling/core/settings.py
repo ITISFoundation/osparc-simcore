@@ -86,7 +86,7 @@ class NodesMonitoringSettings(BaseCustomSettings):
     )
 
     NODES_MONITORING_NEW_NODES_LABELS: list[DockerLabelKey] = Field(
-        default=["io.osparc.autoscaled-node"],
+        default=["io.simcore.autoscaled-node"],
         description="autoscaling will add these labels to any new node it creates (additional to the ones in NODES_MONITORING_NODE_LABELS",
     )
 

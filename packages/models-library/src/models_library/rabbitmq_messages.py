@@ -61,7 +61,7 @@ class AutoscalingStatus(str, Enum):
 
 
 class RabbitAutoscalingMessage(RabbitMessageBase):
-    channel_name: Literal["io.osparc.autoscaling"] = "io.osparc.autoscaling"
+    channel_name: Literal["io.simcore.autoscaling"] = "io.simcore.autoscaling"
     origin: str
     number_monitored_nodes: int
     cluster_total_resources: dict[str, Any]
