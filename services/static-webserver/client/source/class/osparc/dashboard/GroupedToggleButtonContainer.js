@@ -22,6 +22,20 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
+
+    const showAllButton = this.__showAllButton = new qx.ui.form.Button().set({
+      margin: 10,
+      marginBottom: 5
+    });
+    const headerBar = this.getChildControl("header-bar");
+    headerBar.addAt(showAllButton, 1);
+
+    this.__contentContainer = this.__createContentContainer();
+
+    this.bind("expanded", showAllButton, "label", {
+      converter: expanded => expanded ? this.tr("Show less") : this.tr("Show all")
+    });
+    showAllButton.addListener("execute", () => this.setExpanded(!this.isExpanded()));
   },
 
   properties: {
@@ -44,14 +58,29 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     headerColor: {
       check: "String",
       apply: "__updateHeaderColor"
+    },
+
+    expanded: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeExpanded",
+      apply: "__applyExpanded"
     }
   },
 
   members: {
+    __showAllButton: null,
+    __contentContainer: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "header":
+        case "header-bar":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._addAt(control, 0);
+          break;
+        case "header": {
           control = new qx.ui.basic.Atom().set({
             font: "title-14",
             gap: 10,
@@ -64,21 +93,45 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"
           });
-          this._addAt(control, 0);
+          const headerBar = this.getChildControl("header-bar");
+          headerBar.addAt(control, 0);
           break;
-        case "content-container":
-          control = new osparc.component.widget.SlideBar().set({
-            padding: 5,
-            allowGrowX: false,
-            backgroundColor: "background-main-1"
-          });
-          control.setButtonsWidth(30);
-          this._addAt(control, 1, {
-            flex: 1
-          });
-          break;
+        }
       }
       return control || this.base(arguments, id);
+    },
+
+    __createContentContainer: function() {
+      let contentContainer = null;
+      const expanded = this.isExpanded();
+      const showAllBtn = this.__showAllButton;
+      if (expanded) {
+        contentContainer = new osparc.dashboard.ToggleButtonContainer();
+        showAllBtn.show();
+      } else {
+        const spacing = osparc.dashboard.GridButtonBase.SPACING;
+        contentContainer = new osparc.component.widget.SlideBar(spacing);
+        contentContainer.setButtonsWidth(30);
+
+        // show showAllBtn only if slidebar is full
+        const buttonBackward = contentContainer.getChildControl("button-backward");
+        const buttonForward = contentContainer.getChildControl("button-forward");
+        buttonBackward.bind("visibility", showAllBtn, "visibility", {
+          converter: visibility => (visibility === "visible" || buttonForward.isVisible()) ? "visible" : "excluded"
+        });
+        buttonForward.bind("visibility", showAllBtn, "visibility", {
+          converter: visibility => (visibility === "visible" || buttonBackward.isVisible()) ? "visible" : "excluded"
+        });
+      }
+      contentContainer.set({
+        padding: 5,
+        allowGrowX: false,
+        backgroundColor: "background-main-1"
+      });
+      this._addAt(contentContainer, 1, {
+        flex: 1
+      });
+      return contentContainer;
     },
 
     __updateHeaderLabel: function(label) {
@@ -96,11 +149,25 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       atom.getChildControl("icon").setTextColor(color);
     },
 
+    __applyExpanded: function() {
+      const children = this.__contentContainer.getChildren();
+      this._remove(this.__contentContainer);
+
+      this.__contentContainer = this.__createContentContainer();
+      for (let i=children.length-1; i>=0; i--) {
+        this.add(children[i], 0);
+      }
+    },
+
+    getContentContainer: function() {
+      return this.__contentContainer;
+    },
+
     // overridden
     add: function(child, idx) {
       if (child instanceof qx.ui.form.ToggleButton) {
         child.addListener("changeVisibility", () => this.__childVisibilityChanged(), this);
-        const container = this.getChildControl("content-container");
+        const container = this.getContentContainer();
         if (idx === undefined) {
           container.add(child);
         } else {
@@ -113,15 +180,15 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     },
 
     getCards: function() {
-      return this.getChildControl("content-container").getChildren();
+      return this.__contentContainer.getChildren();
     },
 
     removeCard: function(key) {
-      const cards = this.getChildren();
+      const cards = this.getCards();
       for (let i=0; i<cards.length; i++) {
         const card = cards[i];
         if (card.getUuid && key === card.getUuid()) {
-          this.remove(card);
+          this.getContentContainer().remove(card);
           return;
         }
       }

@@ -23,10 +23,11 @@
 qx.Class.define("osparc.component.widget.SlideBar", {
   extend: qx.ui.container.SlideBar,
 
-  construct: function() {
+  construct: function(spacing) {
     this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.HBox(5));
+    const layout = new qx.ui.layout.HBox(spacing? spacing : 5);
+    this.setLayout(layout);
 
     this.__pimpLayout();
   },
