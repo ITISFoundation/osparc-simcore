@@ -1219,6 +1219,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           "text": "\uf014", // trash
           "action": () => nodeUI.fireDataEvent("removeNode", nodeUI.getNodeId())
         },
+        startDynService: {
+          "text": "\uf04b", // play
+          "action": () => nodeUI.getNode().requestStartNode()
+        },
+        stopDynService: {
+          "text": "\uf04d", // stop
+          "action": () => nodeUI.getNode().requestStopNode()
+        },
         addRemoveMarker: {
           "text": "\uf097", // marker
           "action": () => nodeUI.getNode().toggleMarker()
@@ -1250,15 +1258,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           "action": () => {}
         }
       };
-      let buttons = null;
+      let buttons = [];
       if (nodeUI) {
         const node = nodeUI.getNode();
-        buttons = [
-          actions.addRemoveMarker,
+        if (node.isDynamic()) {
+          const status = node.getStatus().getInteractive();
+          if (["idle", "failed"].includes(status)) {
+            buttons.push(actions.startDynService);
+          } else if (["ready"].includes(status)) {
+            buttons.push(actions.stopDynService);
+          }
+        }
+        if (buttons.length === 0) {
+          buttons.push(actions.addRemoveMarker);
+        }
+        buttons = buttons.concat([
           node.hasOutputs() ? actions.addServiceOutput : actions.noAction,
           actions.removeNode,
           node.hasInputs() ? actions.addServiceInput : actions.noAction
-        ];
+        ]);
       } else {
         buttons = [
           actions.addService,
