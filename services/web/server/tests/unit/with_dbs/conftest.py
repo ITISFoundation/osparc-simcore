@@ -544,7 +544,7 @@ async def all_group(client, logged_user) -> dict[str, str]:
 
 def _patch_compose_mail(monkeypatch):
     async def print_mail_to_stdout(
-        fg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
+        cfg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
     ):
         print(
             f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
