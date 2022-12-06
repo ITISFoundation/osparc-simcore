@@ -194,7 +194,7 @@ class DaskScheduler(BaseCompScheduler):
                 project_id=task.project_id,
                 node_id=task.node_id,
                 service_uuid=task.node_id,
-                service_type=f"{NodeClass.COMPUTATIONAL}",
+                service_type=NodeClass.COMPUTATIONAL.value,
                 service_key=service_key,
                 service_tag=service_version,
                 result=task_final_state,
@@ -222,7 +222,7 @@ class DaskScheduler(BaseCompScheduler):
                 project_id=project_id,
                 node_id=node_id,
                 service_uuid=node_id,
-                service_type=f"{NodeClass.COMPUTATIONAL}",
+                service_type=NodeClass.COMPUTATIONAL.value,
                 service_key=service_key,
                 service_tag=service_version,
             )
