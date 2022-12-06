@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import datetime
 import logging
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Optional
 
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
@@ -29,7 +29,7 @@ async def _periodic_scheduled_task(
             ), log_catch(logger):
                 await task(**task_kwargs)
 
-            raise TryAgain
+            raise TryAgain()
 
 
 async def start_periodic_task(
@@ -53,11 +53,17 @@ async def start_periodic_task(
         )
 
 
-async def stop_periodic_task(asyncio_task: asyncio.Task) -> None:
+async def stop_periodic_task(
+    asyncio_task: asyncio.Task, *, timeout: Optional[datetime.timedelta] = None
+) -> None:
     with log_context(
         logger,
         logging.INFO,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ), contextlib.suppress(asyncio.CancelledError):
         asyncio_task.cancel()
-        await asyncio_task
+        with log_catch(logger, reraise=False):
+            if timeout:
+                await asyncio.wait(asyncio_task, timeout=timeout.total_seconds())
+            else:
+                await asyncio_task
