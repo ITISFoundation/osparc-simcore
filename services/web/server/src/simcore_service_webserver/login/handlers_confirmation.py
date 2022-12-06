@@ -14,7 +14,7 @@ from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
-from ._security import authorize_login
+from ._security import login_granted_response
 from .settings import (
     LoginOptions,
     LoginSettings,
@@ -143,7 +143,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        response = await authorize_login(request, user=user, cfg=cfg)
+        response = await login_granted_response(request, user=user, cfg=cfg)
         return response
     else:
         raise web.HTTPUnauthorized(
