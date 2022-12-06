@@ -215,20 +215,18 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __createStartServicesButton: function() {
-      const startServicesButton = this.__startServicesButton = new qx.ui.form.Button().set({
+      const startServicesButton = this.__startServicesButton = new qx.ui.toolbar.Button().set({
         label: this.tr("Start"),
-        icon: "@FontAwesome5Solid/play/14",
-        allowGrowY: false
+        icon: "@FontAwesome5Solid/play/14"
       });
       startServicesButton.addListener("execute", () => this.fireEvent("startServices"), this);
       return startServicesButton;
     },
 
     __createStopServicesButton: function() {
-      const stopServicesButton = this.__stopServicesButton = new qx.ui.form.Button().set({
+      const stopServicesButton = this.__stopServicesButton = new qx.ui.toolbar.Button().set({
         label: this.tr("Stop"),
-        icon: "@FontAwesome5Solid/stop/14",
-        allowGrowY: false
+        icon: "@FontAwesome5Solid/stop/14"
       });
       stopServicesButton.addListener("execute", () => this.fireEvent("stopServices"), this);
       return stopServicesButton;
