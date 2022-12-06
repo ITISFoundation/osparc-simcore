@@ -48,6 +48,7 @@ help: ## this colorful help
 	pip-compile $(UPGRADE_OPTION) \
 		--build-isolation \
 		--strip-extras \
+		--resolver=backtracking \
 		--output-file requirements/$@ requirements/$<
 
 _test.txt: _base.txt
