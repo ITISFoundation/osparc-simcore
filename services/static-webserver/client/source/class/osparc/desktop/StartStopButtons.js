@@ -62,8 +62,10 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __clustersLayout: null,
     __clustersSelectBox: null,
     __clusterMiniView: null,
+    __dynamicsLayout: null,
     __startServicesButton: null,
     __stopServicesButton: null,
+    __computationsLayout: null,
     __runButton: null,
     __runSelectionButton: null,
     __runAllButton: null,
@@ -77,12 +79,11 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __nodeSelectionChanged: function(selectedNodes) {
+      const allDynamics = selectedNodes.length && selectedNodes.every(selectedNode => selectedNode.isDynamic());
+      this.__dynamicsLayout.setVisibility(allDynamics ? "visible" : "excluded");
+      this.__computationsLayout.setVisibility(allDynamics ? "excluded" : "visible");
+
       // dynamics
-      if (selectedNodes.length === 1 && selectedNodes[0].isDynamic()) {
-        this.__startServicesButton.show();
-      } else {
-        this.__startServicesButton.exclude();
-      }
 
       // computationals
       if (!this.__runButton.isFetching()) {
@@ -112,32 +113,16 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __buildLayout: function() {
-      const clustersSelectBox = this.__createClustersLayout();
-      this._add(clustersSelectBox);
+      const clustersLayout = this.__createClustersLayout();
+      this._add(clustersLayout);
 
-      // dynamics
-      const startServicesButton = this.__createStartServicesButton().set({
+      const dynamicsLayout = this.__createDynamicsLayout().set({
         visibility: "excluded"
       });
-      this._add(startServicesButton);
+      this._add(dynamicsLayout);
 
-      const stopServicesButton = this.__createStopServicesButton().set({
-        visibility: "excluded"
-      });
-      this._add(stopServicesButton);
-
-      // computationals
-      const runButton = this.__createRunButton();
-      this._add(runButton);
-
-      const runSplitButton = this.__createRunSplitButton().set({
-        visibility: "excluded"
-      });
-      this._add(runSplitButton);
-
-      const stopButton = this.__createStopButton();
-      stopButton.setEnabled(false);
-      this._add(stopButton);
+      const computationalsLayout = this.__createComputationalsLayout();
+      this._add(computationalsLayout);
     },
 
     __createClustersLayout: function() {
@@ -163,6 +148,40 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       clustersLayout.add(clusterMiniView);
 
       return clustersLayout;
+    },
+
+    __createDynamicsLayout: function() {
+      const dynamicsLayout = this.__dynamicsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+
+      const startServicesButton = this.__createStartServicesButton();
+      dynamicsLayout.add(startServicesButton);
+
+      const stopServicesButton = this.__createStopServicesButton();
+      dynamicsLayout.add(stopServicesButton);
+
+      return dynamicsLayout;
+    },
+
+    __createComputationalsLayout: function() {
+      const computationsLayout = this.__computationsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+
+      const runButton = this.__createRunButton();
+      computationsLayout.add(runButton);
+
+      const runSplitButton = this.__createRunSplitButton().set({
+        visibility: "excluded"
+      });
+      computationsLayout.add(runSplitButton);
+
+      const stopButton = this.__createStopButton();
+      stopButton.setEnabled(false);
+      computationsLayout.add(stopButton);
+
+      return computationsLayout;
     },
 
     __populateClustersSelectBox: function() {
@@ -196,13 +215,21 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __createStartServicesButton: function() {
-      const startServicesButton = this.__startServicesButton = new qx.ui.form.Button(this.tr("Start"), "@FontAwesome5Solid/play/14");
+      const startServicesButton = this.__startServicesButton = new qx.ui.form.Button().set({
+        label: this.tr("Start"),
+        icon: "@FontAwesome5Solid/play/14",
+        allowGrowY: false
+      });
       startServicesButton.addListener("execute", () => this.fireEvent("startServices"), this);
       return startServicesButton;
     },
 
     __createStopServicesButton: function() {
-      const stopServicesButton = this.__stopServicesButton = new qx.ui.form.Button(this.tr("Stop"), "@FontAwesome5Solid/stop/14");
+      const stopServicesButton = this.__stopServicesButton = new qx.ui.form.Button().set({
+        label: this.tr("Stop"),
+        icon: "@FontAwesome5Solid/stop/14",
+        allowGrowY: false
+      });
       stopServicesButton.addListener("execute", () => this.fireEvent("stopServices"), this);
       return stopServicesButton;
     },
