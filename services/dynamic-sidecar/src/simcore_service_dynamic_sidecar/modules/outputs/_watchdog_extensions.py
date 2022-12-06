@@ -1,4 +1,5 @@
 import logging
+import operator
 import os
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -12,7 +13,7 @@ from watchdog.utils import BaseThread
 from watchdog.utils.delayed_queue import DelayedQueue
 
 _EVENTS_TO_WATCH = reduce(
-    lambda x, y: x | y,
+    operator.or_,
     [
         InotifyConstants.IN_MODIFY,
         InotifyConstants.IN_MOVED_FROM,
@@ -30,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 class _ExtendedInotifyBuffer(InotifyBuffer):
     def __init__(self, path, recursive=False):  # pylint:disable=super-init-not-called
+        # below call to `BaseThread.__init__` is correct since we want to
+        # overwrite the `InotifyBuffer.__init__` method
         BaseThread.__init__(self)  # pylint:disable=non-parent-init-called
         self._queue = DelayedQueue(self.delay)
         self._inotify = Inotify(path, recursive, _EVENTS_TO_WATCH)
