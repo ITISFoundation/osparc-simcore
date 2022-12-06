@@ -41,8 +41,11 @@ class AsyncpgStorage:
         self.user_tbl = user_table_name
         self.confirm_tbl = confirmation_table_name
 
+    #
+    # CRUD user
+    #
+
     async def get_user(self, with_data) -> asyncpg.Record:
-        # FIXME: these can throw!!!!
         async with self.pool.acquire() as conn:
             data = await _sql.find_one(conn, self.user_tbl, with_data)
             return data
@@ -63,6 +66,9 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
 
+    #
+    # CRUD confirmation
+    #
     async def create_confirmation(
         self, user_id, action: ActionLiteralStr, data=None
     ) -> ConfirmationTokenDict:
@@ -97,7 +103,12 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
 
-    async def delete_user_registration_data(
+    #
+    # Transactions that guarantee atomicity. This avoids
+    # inconsistent states of confirmation and users rows
+    #
+
+    async def delete_confirmation_and_user(
         self, user, confirmation: ConfirmationTokenDict
     ):
         async with self.pool.acquire() as conn:
@@ -106,6 +117,16 @@ class AsyncpgStorage:
                     conn, self.confirm_tbl, {"code": confirmation["code"]}
                 )
                 await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
+
+    async def delete_confirmation_and_update_user(
+        self, user_id, updates, confirmation: ConfirmationTokenDict
+    ):
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                await _sql.delete(
+                    conn, self.confirm_tbl, {"code": confirmation["code"]}
+                )
+                await _sql.update(conn, self.user_tbl, {"id": user_id}, updates)
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:

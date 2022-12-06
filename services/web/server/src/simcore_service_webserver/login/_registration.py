@@ -133,10 +133,9 @@ async def validate_registration(
                 # FIXME: Can a unconfirmed user be authorized to start projects or not?
                 # FIXME: instead create new confirmation and resend ???
 
-                # FIXME: make atomic delete. Otherwise we might have unconfirmed users without
-                # associated confirmation
-                await db.delete_confirmation(_confirmation)
-                await db.delete_user(user)
+                await db.delete_confirmation_and_user(
+                    user=user, confirmation=_confirmation
+                )
 
                 log.warning(
                     "Re-registration of %s with expired %s"

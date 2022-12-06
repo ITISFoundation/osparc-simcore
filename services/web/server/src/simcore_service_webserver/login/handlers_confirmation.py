@@ -5,12 +5,14 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from pydantic import EmailStr, parse_obj_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
 from ..security_api import encrypt_password
 from ..utils import MINUTE
+from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
@@ -60,51 +62,59 @@ async def email_confirmation(request: web.Request):
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
     if confirmation and (action := confirmation["action"]):
-        if action == REGISTRATION:
-            user = await db.get_user({"id": confirmation["user_id"]})
-            # FIXME: update+delete have to be atomic!
-            await db.update_user(user, {"status": ACTIVE})
-            await db.delete_confirmation(confirmation)
-            redirect_to_login_url = redirect_to_login_url.with_fragment(
-                "?registered=true"
-            )
+        try:
+            user_id = confirmation["user_id"]
+            if action == REGISTRATION:
+                # activate user and consume confirmation token
+                await db.delete_confirmation_and_update_user(
+                    user_id=user_id,
+                    updates={"status": ACTIVE},
+                    confirmation=confirmation,
+                )
+
+                redirect_to_login_url = redirect_to_login_url.with_fragment(
+                    "?registered=true"
+                )
+
+            elif action == CHANGE_EMAIL:
+                # update and consume confirmation token
+                await db.delete_confirmation_and_update_user(
+                    user_id=user_id,
+                    updates={"email": parse_obj_as(EmailStr, confirmation["data"])},
+                    confirmation=confirmation,
+                )
+
+            elif action == RESET_PASSWORD:
+                #
+                # NOTE: By using fragments (instead of queries or path parameters),
+                # the browser does NOT reloads page
+                #
+                redirect_to_login_url = redirect_to_login_url.with_fragment(
+                    "reset-password?code=%s" % code
+                )
+
             log.debug(
-                "%s registered -> %s",
-                f"{user=}",
-                f"{redirect_to_login_url=}",
-            )
-
-        elif action == CHANGE_EMAIL:
-            #
-            # TODO: compose error and send to front-end using fragments in the redirection
-            # But first we need to implement this refactoring https://github.com/ITISFoundation/osparc-simcore/issues/1975
-            #
-
-            # FIXME: ERROR HANDLING
-            # notice that this is a redirection from an email, meaning that the
-            # response has to be TXT!!!
-
-            user_update = {"email": parse_obj_as(EmailStr, confirmation["data"])}
-            user = await db.get_user({"id": confirmation["user_id"]})
-            # FIXME: update+delete have to be atomic!
-            await db.update_user(user, user_update)
-            await db.delete_confirmation(confirmation)
-            log.debug(
-                "%s updated %s",
-                f"{user=}",
-                f"{user_update}",
-            )
-
-        elif action == RESET_PASSWORD:
-            # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
-            redirect_to_login_url = redirect_to_login_url.with_fragment(
-                "reset-password?code=%s" % code
-            )
-            log.debug(
-                "Reset password requested %s. %s",
+                "Confirms %s of %s with %s -> %s",
+                action,
+                f"{user_id=}",
                 f"{confirmation=}",
                 f"{redirect_to_login_url=}",
             )
+
+        except Exception as err:  # pylint: disable=broad-except
+            error_code = create_error_code(err)
+            log.exception(
+                "Failed during email_confirmation [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise create_redirect_response(
+                request.app,
+                page="error",
+                message=f"Sorry, we cannot confirm your {action}."
+                "Please try again in a few moments ({error_code})",
+                status_code=web.HTTPServiceUnavailable.status_code,
+            ) from err
 
     raise web.HTTPFound(location=redirect_to_login_url)
 

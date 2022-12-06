@@ -93,7 +93,7 @@ async def login(request: web.Request):
                 "reason": "To login, please register first a phone number",
                 "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
             },
-            status=web.HTTPAccepted.status_code,  # FIXME: error instead?? front-end needs to show a reg
+            status=web.HTTPAccepted.status_code,
         )
         return response
 

@@ -6,9 +6,7 @@ from aiohttp.web import RouteTableDef
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.utils import fire_and_forget_task
 
-from .._constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
 from ..security_api import encrypt_password
@@ -141,13 +139,7 @@ async def register(request: web.Request):
                 extra={"error_code": error_code},
             )
 
-            fire_and_forget_task(
-                db.delete_user_registration_data(user, _confirmation),
-                task_suffix_name=f"{__name__}.register.delete_user_registration_data",
-                fire_and_forget_tasks_collection=request.app[
-                    APP_FIRE_AND_FORGET_TASKS_KEY
-                ],
-            )
+            await db.delete_confirmation_and_user(user, _confirmation)
 
             raise web.HTTPServiceUnavailable(
                 reason=f"{cfg.MSG_CANT_SEND_MAIL} [{error_code}]"
