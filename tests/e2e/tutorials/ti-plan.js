@@ -137,7 +137,7 @@ async function runTutorial() {
     }
   }
   catch (err) {
-    tutorial.setTutorialFailed(true);
+    tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }
