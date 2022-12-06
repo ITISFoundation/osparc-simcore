@@ -7,29 +7,12 @@ from pathlib import Path
 
 import pytest
 import requests
+from fastapi import status
 from pydantic import parse_file_as
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from tenacity import Retrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-
-
-@dataclass
-class DeprecatedPRInfo:
-    pr_number: int
-
-    @property
-    def issue_match(self) -> str:
-        return f"#{self.pr_number}"
-
-    @property
-    def pr_deprecation_message(self) -> str:
-        return (
-            "Please search for all occurrences of "
-            f"https://github.com/ITISFoundation/osparc-simcore/pull/{self.pr_number} "
-            "and follow the instructions on how to remove deprecated code. "
-            "Also remember to remove the related `DeprecatedPRInfo` entry."
-        )
 
 
 @pytest.fixture
@@ -61,6 +44,24 @@ def test_ensure_legacy_format_compatibility(legacy_scheduler_data_format: Path):
     assert parse_file_as(list[SchedulerData], legacy_scheduler_data_format)
 
 
+@dataclass
+class DeprecatedPRInfo:
+    pr_number: int
+
+    @property
+    def issue_match(self) -> str:
+        return f"#{self.pr_number}"
+
+    @property
+    def pr_deprecation_message(self) -> str:
+        return (
+            "Please search for all occurrences of "
+            f"https://github.com/ITISFoundation/osparc-simcore/pull/{self.pr_number} "
+            "and follow the instructions on how to remove deprecated code. "
+            "Also remember to remove the related `DeprecatedPRInfo` entry."
+        )
+
+
 @pytest.mark.parametrize(
     "deprecated_pr_info",
     [
@@ -79,7 +80,7 @@ async def test_fail_if_code_is_released_to_production(
                 params=dict(per_page=_RELEASE_ENTRIES),
                 timeout=10,
             )
-            assert result.status_code == 200
+            assert result.status_code == status.HTTP_200_OK
             releases_data: list[dict] = json.loads(result.text)
 
     production_releases = [
