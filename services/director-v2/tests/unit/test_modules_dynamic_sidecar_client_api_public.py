@@ -208,7 +208,7 @@ async def test_containers_docker_status_api_error(
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == {}
 
 
-async def test_service_disable_outputs_watcher(
+async def test_disable_service_outputs_watcher(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
 ) -> None:
@@ -217,12 +217,12 @@ async def test_service_disable_outputs_watcher(
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
-            await client.service_disable_outputs_watcher(dynamic_sidecar_endpoint)
+            await client.disable_service_outputs_watcher(dynamic_sidecar_endpoint)
             is None
         )
 
 
-async def test_service_enable_outputs_watcher(
+async def test_enable_service_outputs_watcher(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
 ) -> None:
@@ -231,7 +231,7 @@ async def test_service_enable_outputs_watcher(
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
-            await client.service_enable_outputs_watcher(dynamic_sidecar_endpoint)
+            await client.enable_service_outputs_watcher(dynamic_sidecar_endpoint)
             is None
         )
 

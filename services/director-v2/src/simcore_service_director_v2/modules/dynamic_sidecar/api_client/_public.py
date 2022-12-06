@@ -91,7 +91,7 @@ class DynamicSidecarClient:
             return {}
 
     @log_decorator(logger=logger)
-    async def service_disable_outputs_watcher(
+    async def disable_service_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
         await self._thin_client.patch_containers_outputs_watcher(
@@ -99,7 +99,7 @@ class DynamicSidecarClient:
         )
 
     @log_decorator(logger=logger)
-    async def service_enable_outputs_watcher(
+    async def enable_service_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
         await self._thin_client.patch_containers_outputs_watcher(

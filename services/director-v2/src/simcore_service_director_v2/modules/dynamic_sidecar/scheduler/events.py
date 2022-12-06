@@ -363,7 +363,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         async def _pull_outputs_and_state():
             # while outputs are being disallow the watcher from generating
             # upload events
-            await dynamic_sidecar_client.service_disable_outputs_watcher(
+            await dynamic_sidecar_client.disable_service_outputs_watcher(
                 dynamic_sidecar_endpoint
             )
 
@@ -485,7 +485,7 @@ class CreateUserServices(DynamicSchedulerEvent):
 
         # after the proxy is created the user could already generate
         # events in the outputs, enabling them back
-        await dynamic_sidecar_client.service_enable_outputs_watcher(
+        await dynamic_sidecar_client.enable_service_outputs_watcher(
             dynamic_sidecar_endpoint
         )
 
