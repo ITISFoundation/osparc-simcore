@@ -213,7 +213,13 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
-                "Labels": {"mem_limit": "8589934592", "nano_cpus_limit": "4000000000"},
+                "Labels": {
+                    "mem_limit": "8589934592",
+                    "nano_cpus_limit": "4000000000",
+                    "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "user_id": "234",
+                    "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                },
                 "Mounts": [
                     {
                         "Source": "/var/run/docker.sock",

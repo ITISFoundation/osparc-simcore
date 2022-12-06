@@ -87,6 +87,12 @@ class RabbitMQClient:
             channel.close_callbacks.add(_channel_close_callback)
             return channel
 
+    async def ping(self) -> bool:
+        assert self._connection_pool  # nosec
+        async with self._connection_pool.acquire() as connection:
+            connection: aio_pika.RobustConnection
+            return connection.connected.is_set()
+
     async def subscribe(
         self, exchange_name: str, message_handler: MessageHandler
     ) -> None:

@@ -32,7 +32,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
-      - default
+      - autoscaling_subnet
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     volumes:
@@ -392,6 +392,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
+      - autoscaling_subnet
     healthcheck:
       # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
       test: rabbitmq-diagnostics -q status
@@ -567,6 +568,8 @@ networks:
   default:
     attachable: true
   storage_subnet:
+    attachable: true
+  autoscaling_subnet:
     attachable: true
   interactive_services_subnet:
     driver: overlay

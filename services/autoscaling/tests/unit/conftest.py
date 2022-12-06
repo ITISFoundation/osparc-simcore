@@ -32,10 +32,13 @@ from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize, PositiveInt
 from pytest import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
+from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.utils_aws import EC2Client
 from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
 from tenacity import retry
@@ -46,9 +49,13 @@ from tenacity.wait import wait_fixed
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 
@@ -97,6 +104,35 @@ def app_environment(
         },
     )
     return mock_env_devel_environment | envs
+
+
+@pytest.fixture
+def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[None]:
+    mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
+        autospec=True,
+    )
+
+    yield
+
+
+@pytest.fixture
+def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("RABBIT_HOST")
+    monkeypatch.delenv("RABBIT_USER")
+    monkeypatch.delenv("RABBIT_PASSWORD")
+
+
+@pytest.fixture
+def enabled_rabbitmq(
+    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+) -> RabbitSettings:
+    return rabbit_service
 
 
 @pytest.fixture
@@ -187,6 +223,11 @@ async def create_service(
         task_template: dict[str, Any], labels: Optional[dict[str, str]] = None
     ) -> Mapping[str, Any]:
         service_name = f"pytest_{faker.pystr()}"
+        if labels:
+            task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
+                "Labels", {}
+            )
+            task_labels |= labels
         service = await async_docker_client.services.create(
             task_template=task_template,
             name=service_name,
@@ -197,6 +238,8 @@ async def create_service(
         print(
             f"--> created docker service {service['ID']} with {service['Spec']['Name']}"
         )
+        assert "Labels" in service["Spec"]
+        assert service["Spec"]["Labels"] == (labels or {})
 
         created_services.append(service)
         # get more info on that service
@@ -237,8 +280,8 @@ async def create_service(
     @retry(
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
-        wait=wait_fixed(0.5),
-        stop=stop_after_delay(10),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
     )
     async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
         print(
@@ -495,3 +538,12 @@ def host_cpu_count() -> int:
 @pytest.fixture
 def host_memory_total() -> ByteSize:
     return ByteSize(psutil.virtual_memory().total)
+
+
+@pytest.fixture
+def osparc_docker_label_keys(
+    faker: Faker,
+) -> SimcoreServiceDockerLabelKeys:
+    return SimcoreServiceDockerLabelKeys.parse_obj(
+        dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+    )
