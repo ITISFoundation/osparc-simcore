@@ -48,5 +48,3 @@ def setup_email(app: web.Application):
         and settings.SC_BOOT_MODE.is_devel_mode(),
     )
     assert env  # nosec
-
-    return env is not None

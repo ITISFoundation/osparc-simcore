@@ -65,7 +65,10 @@ class LoginSettings(BaseCustomSettings):
 
 
 class LoginOptions(BaseModel):
-    """These options are NOT directly exposed to the env vars due to security reasons."""
+    """These options are NOT directly exposed to the env vars due to security reasons.
+
+    NOTE: This is legacy from first version and should not be extended anymore
+    """
 
     PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
