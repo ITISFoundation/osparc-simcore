@@ -118,7 +118,8 @@ class DockerContainerInspect(BaseModel):
     @root_validator(pre=True)
     @classmethod
     def _ensure_legacy_format_compatibility(cls, values):
-        # Once below PR is released in production, this can be removed
+        # Once below PR is released in production, this validator
+        # can be removed
         # https://github.com/ITISFoundation/osparc-simcore/pull/3610
         status: Optional[str] = values.get("status")
         if status:
