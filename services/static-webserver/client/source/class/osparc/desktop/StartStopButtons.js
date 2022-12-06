@@ -82,8 +82,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this.__computationsLayout.setVisibility(isDynamic ? "excluded" : "visible");
 
       // dynamics
-      this.__startServiceButton.removeHandlersToStartButton();
-      this.__stopServiceButton.removeHandlersToStopButton();
       if (isDynamic) {
         selectedNodes[0].attachHandlersToStartButton(this.__startServiceButton);
         selectedNodes[0].attachHandlersToStopButton(this.__stopServiceButton);

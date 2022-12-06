@@ -1377,22 +1377,20 @@ qx.Class.define("osparc.data.model.Node", {
       this.getStatus().bind("interactive", startButton, "enabled", {
         converter: state => ["idle", "failed"].includes(state)
       });
+      if (startButton.hasListener("execute")) {
+        startButton.removeListener("execute", this.requestStartNode);
+      }
       startButton.addListener("execute", this.requestStartNode);
-    },
-
-    removeHandlersToStartButton: function(startButton) {
-      startButton.removeListener("execute", this.requestStartNode);
     },
 
     attachHandlersToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
+      if (stopButton.hasListener("execute")) {
+        stopButton.removeListener("execute", this.requestStopNode);
+      }
       stopButton.addListener("execute", this.requestStopNode);
-    },
-
-    removeHandlersToStopButton: function(stopButton) {
-      stopButton.removeListener("execute", this.requestStopNode);
     },
 
     removeNode: function() {
