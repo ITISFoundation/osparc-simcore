@@ -26,7 +26,7 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
             await wait(task, timeout=task_cancellation_timeout_s)
 
 
-class UploadPortsFailed(PydanticErrorMixin, Exception):
+class UploadPortsFailed(PydanticErrorMixin, RuntimeError):
     code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"
     msg_template: str = "Failed while uploading: failures={failures}"
 
