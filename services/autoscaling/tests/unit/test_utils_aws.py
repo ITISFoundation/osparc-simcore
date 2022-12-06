@@ -11,7 +11,7 @@ from faker import Faker
 from pydantic import ByteSize
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_autoscaling.core.errors import (
-    AutoscalingConfigurationError,
+    ConfigurationError,
     Ec2InstanceNotFoundError,
     Ec2TooManyInstancesError,
 )
@@ -85,7 +85,7 @@ async def test_get_ec2_instance_capabilities(
 
 async def test_find_best_fitting_ec2_instance_with_no_instances_raises():
     # this shall raise as there are no available instances
-    with pytest.raises(AutoscalingConfigurationError):
+    with pytest.raises(ConfigurationError):
         find_best_fitting_ec2_instance(
             allowed_ec2_instances=[],
             resources=Resources(cpus=0, ram=ByteSize(0)),

@@ -23,6 +23,9 @@ def mock_environment(
     mock_environment: None,
 ) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")
+    monkeypatch.setenv("RABBIT_HOST", "mocked_host")
+    monkeypatch.setenv("RABBIT_USER", "mocked_user")
+    monkeypatch.setenv("RABBIT_PASSWORD", "mocked_password")
 
 
 @pytest.fixture

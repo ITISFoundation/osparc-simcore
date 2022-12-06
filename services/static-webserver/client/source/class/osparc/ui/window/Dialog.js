@@ -25,7 +25,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
       layout: new qx.ui.layout.VBox(),
       showMinimize: false,
       showMaximize: false,
-      contentPadding: 20, // same as caption
+      contentPadding: 15,
       maxWidth: 350,
       resizable: false,
       modal: true

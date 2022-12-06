@@ -77,10 +77,11 @@ async function runTutorial() {
     await tutorial.waitForStudyDone(studyId, 240000);
     await tutorial.takeScreenshot("optimizer_after");
     await tutorial.waitAndClick("preparingInputsCloseBtn");
-    await tutorial.waitFor(5000, "Optimizer Finished");
+    await tutorial.waitFor(2000, "Optimizer Finished");
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
+    await tutorial.waitFor(6000, "Load iframe");
     const postProIframe = await tutorial.getIframe(tiId);
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
@@ -137,7 +138,7 @@ async function runTutorial() {
     }
   }
   catch (err) {
-    tutorial.setTutorialFailed(true);
+    tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }

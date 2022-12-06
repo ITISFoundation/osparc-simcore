@@ -6,11 +6,12 @@ import keyword
 # pylint:disable=protected-access
 import re
 from datetime import datetime
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Pattern, Sequence, Union
 
 import pytest
 from models_library.basic_regex import (
     DATE_RE,
+    DOCKER_LABEL_KEY_REGEX,
     PUBLIC_VARIABLE_NAME_RE,
     SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS,
     SEMANTIC_VERSION_RE_W_NAMED_GROUPS,
@@ -26,18 +27,18 @@ NOT_CAPTURED = ()
 
 
 def assert_match_and_get_capture(
-    regex_str: str,
+    regex_or_str: Union[str, Pattern[str]],
     test_str: str,
     expected: Any,
     *,
     group_names: Optional[tuple[str]] = None,
 ) -> Optional[Sequence]:
-    match = re.match(regex_str, test_str)
+    match = re.match(regex_or_str, test_str)
     if expected is INVALID:
         assert match is None
     elif expected is VALID:
         assert match is not None
-        print(regex_str, "captured:", match.group(), "->", match.groups())
+        print(regex_or_str, "captured:", match.group(), "->", match.groups())
     else:
         assert match
         captured = match.groups()
@@ -270,3 +271,69 @@ def test_TWILIO_ALPHANUMERIC_SENDER_ID_RE(sample, expected):
     #   the digits 0 through 9, and the space character.
 
     assert_match_and_get_capture(TWILIO_ALPHANUMERIC_SENDER_ID_RE, sample, expected)
+
+
+@pytest.mark.parametrize(
+    "sample, expected",
+    [
+        ("com.docker.*", INVALID),  # reserved
+        ("io.docker.*", INVALID),  # reserved
+        ("org.dockerproject.*", INVALID),  # reserved
+        ("com.example.some-label", VALID),  # valid
+        (
+            "0sadfjh.sadf-dskhj",
+            INVALID,
+        ),  # starts with digit
+        (
+            "sadfjh.sadf-dskhj",
+            VALID,
+        ),  # only allow lowercasealphanumeric, being and end with letter, no consecutive -, .
+        (
+            "sadfjh.sadf-dskhj0",
+            INVALID,
+        ),  # ends with digit
+        (
+            "sadfjh.sadf-ds0khj",
+            VALID,
+        ),  # only allow lowercasealphanumeric, being and end with letter, no consecutive -, .
+        (
+            "sadfjh.EAGsadf-ds0khj",
+            INVALID,
+        ),  # upper case
+        (
+            "sadfjh..sadf-ds0khj",
+            INVALID,
+        ),  # double dot
+        (
+            "sadfjh.sadf--ds0khj",
+            INVALID,
+        ),  # double dash
+        (
+            "io.simcore.some234.cool.label",
+            VALID,
+        ),  # only allow lowercasealphanumeric, being and end with letter, no consecutive -, .
+        (
+            ".io.simcore.some234.cool",
+            INVALID,
+        ),  # starts with dot
+        (
+            "io.simcore.some234.cool.",
+            INVALID,
+        ),  # ends with dot
+        (
+            "-io.simcore.some234.cool",
+            INVALID,
+        ),  # starts with dash
+        (
+            "io.simcore.some234.cool-",
+            INVALID,
+        ),  # ends with dash
+        (
+            "io.simcore.so_me234.cool",
+            INVALID,
+        ),  # contains invalid character
+    ],
+    ids=lambda d: f"{d if isinstance(d, str) else ('INVALID' if d is INVALID else 'VALID')}",
+)
+def test_DOCKER_LABEL_KEY_REGEX(sample, expected):
+    assert_match_and_get_capture(DOCKER_LABEL_KEY_REGEX, sample, expected)

@@ -19,21 +19,6 @@ from simcore_service_autoscaling.utils_aws import EC2Client
 
 
 @pytest.fixture
-def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[None]:
-    mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
-        autospec=True,
-    )
-
-    mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
-        autospec=True,
-    )
-
-    yield
-
-
-@pytest.fixture
 def aws_instance_private_dns() -> str:
     return "ip-10-23-40-12.ec2.internal"
 
@@ -71,6 +56,7 @@ def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
 @pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
+    disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
     aws_subnet_id: str,
     aws_security_group_id: str,
