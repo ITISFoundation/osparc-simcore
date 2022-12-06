@@ -2,12 +2,14 @@ import asyncio
 import logging
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
+from datetime import timedelta
 from functools import partial
 from typing import Optional
 
 from fastapi import FastAPI
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
@@ -108,7 +110,6 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self.task_monitor_interval_s = task_monitor_interval_s
 
         self._port_key_tracker = _PortKeyTracker()
-        self._keep_running = True
         self._task_uploading: Optional[Task] = None
         self._task_scheduler_worker: Optional[Task] = None
         self._schedule_all_ports_for_upload: bool = False
@@ -159,32 +160,32 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await self._port_key_tracker.move_all_uploading_to_pending()
 
     async def _scheduler_worker(self) -> None:
-        while self._keep_running:
-            if await self._port_key_tracker.are_pending_ports_uploading():
-                await self._uploading_task_cancel()
-                await self._port_key_tracker.move_all_uploading_to_pending()
+        if await self._port_key_tracker.are_pending_ports_uploading():
+            await self._uploading_task_cancel()
+            await self._port_key_tracker.move_all_uploading_to_pending()
 
-            if await self._port_key_tracker.can_schedule_ports_to_upload():
-                await self._port_key_tracker.move_all_ports_to_uploading()
+        if await self._port_key_tracker.can_schedule_ports_to_upload():
+            await self._port_key_tracker.move_all_ports_to_uploading()
 
-                await self._uploading_task_start()
-
-            await asyncio.sleep(self.task_monitor_interval_s)
+            await self._uploading_task_start()
 
     def set_all_ports_for_upload(self) -> None:
         self._schedule_all_ports_for_upload = True
 
     async def start(self) -> None:
-        self._task_scheduler_worker = create_task(
-            self._scheduler_worker(), name="outputs_manager_scheduler_worker"
+        self._task_scheduler_worker = await start_periodic_task(
+            self._scheduler_worker,
+            interval=timedelta(seconds=self.task_monitor_interval_s),
+            task_name="outputs_manager_scheduler_worker",
         )
 
     async def shutdown(self) -> None:
         with log_context(logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
-                await _cancel_task(
-                    self._task_scheduler_worker, self.task_cancellation_timeout_s
+                await stop_periodic_task(
+                    self._task_scheduler_worker,
+                    timeout=timedelta(seconds=self.task_monitor_interval_s),
                 )
 
     async def port_key_content_changed(self, port_key: str) -> None:
