@@ -70,8 +70,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
 
     const startStopButtons = workbenchView.getStartStopButtons();
-    startStopButtons.addListener("startServices", () => this.__startServices(), this); // TODO
-    startStopButtons.addListener("stopServices", () => this.__stopServices(), this); // TODO
     startStopButtons.addListener("startPipeline", () => this.__startPipeline([]), this);
     startStopButtons.addListener("startPartialPipeline", () => {
       const partialPipeline = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
