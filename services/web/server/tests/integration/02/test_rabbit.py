@@ -5,7 +5,6 @@
 import asyncio
 import json
 import logging
-from asyncio import sleep
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
@@ -29,6 +28,7 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -185,9 +185,10 @@ async def _publish_in_rabbit(
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_config: dict[str, Any],  ## waits until swarm with *_services are up
-    rabbit_service: RabbitSettings,  ## waits until rabbit is responsive and set env vars
+    app_config: dict[str, Any],
+    rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
+    redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
 ):
     app_config["storage"]["enabled"] = False
@@ -257,7 +258,7 @@ async def socketio_subscriber_handlers(
     socketio_client_factory: Callable,
     client_session_id: UUIDStr,
     mocker: MockerFixture,
-) -> SocketIoHandlers:
+) -> AsyncIterator[SocketIoHandlers]:
 
     """socketio SUBSCRIBER
 
@@ -282,7 +283,7 @@ async def socketio_subscriber_handlers(
     # called on event
     mock_event_handler = mocker.Mock()
     sio.on(SOCKET_IO_EVENT, handler=mock_event_handler)
-    return SocketIoHandlers(
+    yield SocketIoHandlers(
         mock_log_handler, mock_node_update_handler, mock_event_handler
     )
 
@@ -315,7 +316,7 @@ def user_role() -> UserRole:
     return UserRole.USER
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def rabbit_exchanges(
     rabbit_settings: RabbitSettings,
     rabbit_channel: aio_pika.Channel,
@@ -372,10 +373,9 @@ async def rabbit_exchanges(
 #   to them
 #
 
-POLLING_TIME = 0.2
 TIMEOUT_S = 10
 RETRY_POLICY = dict(
-    wait=wait_fixed(POLLING_TIME),
+    wait=wait_fixed(0.2),
     stop=stop_after_delay(TIMEOUT_S),
     before_sleep=before_sleep_log(logger, log_level=logging.WARNING),
     retry=retry_if_exception_type(AssertionError),
@@ -389,7 +389,6 @@ USER_ROLES = [
 ]
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_other_user(
     not_logged_user_id: UserID,
@@ -410,14 +409,13 @@ async def test_publish_to_other_user(
         not_in_project_node_uuid,
         NUMBER_OF_MESSAGES,
     )
-    await sleep(TIMEOUT_S)
 
+    await asyncio.sleep(TIMEOUT_S)
     socketio_subscriber_handlers.mock_log.assert_not_called()
     socketio_subscriber_handlers.mock_node_updated.assert_not_called()
     socketio_subscriber_handlers.mock_event.assert_not_called()
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_user(
     logged_user: UserInfoDict,
@@ -444,21 +442,22 @@ async def test_publish_to_user(
                 NUMBER_OF_MESSAGES
             )
 
-    for mock_call, expected_message in zip(
-        socketio_subscriber_handlers.mock_log.mock_log_handler.call_args_list,
-        log_messages,
-    ):
-        value = mock_call[0]
-        deserialized_value = json.loads(value[0])
-        assert deserialized_value == json.loads(
-            expected_message.json(exclude={"user_id"})
-        )
-    socketio_subscriber_handlers.mock_node_updated.assert_not_called()
-    socketio_subscriber_handlers.mock_event.assert_called_once()
+    async for attempt in AsyncRetrying(**RETRY_POLICY):
+        with attempt:
+            for mock_call, expected_message in zip(
+                socketio_subscriber_handlers.mock_log.mock_log_handler.call_args_list,
+                log_messages,
+            ):
+                value = mock_call[0]
+                deserialized_value = json.loads(value[0])
+                assert deserialized_value == json.loads(
+                    expected_message.json(exclude={"user_id"})
+                )
+            socketio_subscriber_handlers.mock_node_updated.assert_not_called()
+            socketio_subscriber_handlers.mock_event.assert_called_once()
 
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
-@pytest.mark.flaky(max_runs=3)
 async def test_publish_about_users_project(
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
@@ -484,19 +483,20 @@ async def test_publish_about_users_project(
                 NUMBER_OF_MESSAGES
             )
 
-    for mock_call, expected_message in zip(
-        socketio_subscriber_handlers.mock_log.call_args_list, log_messages
-    ):
-        value = mock_call[0]
-        deserialized_value = json.loads(value[0])
-        assert deserialized_value == json.loads(
-            expected_message.json(exclude={"user_id"})
-        )
-    socketio_subscriber_handlers.mock_node_updated.assert_not_called()
-    socketio_subscriber_handlers.mock_event.assert_called_once()
+    async for attempt in AsyncRetrying(**RETRY_POLICY):
+        with attempt:
+            for mock_call, expected_message in zip(
+                socketio_subscriber_handlers.mock_log.call_args_list, log_messages
+            ):
+                value = mock_call[0]
+                deserialized_value = json.loads(value[0])
+                assert deserialized_value == json.loads(
+                    expected_message.json(exclude={"user_id"})
+                )
+            socketio_subscriber_handlers.mock_node_updated.assert_not_called()
+            socketio_subscriber_handlers.mock_event.assert_called_once()
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_about_users_projects_node(
     logged_user: UserInfoDict,
@@ -535,9 +535,11 @@ async def test_publish_about_users_projects_node(
             expected_message.json(exclude={"user_id"})
         )
 
-    # mock_log_handler.assert_has_calls(log_calls, any_order=True)
-    socketio_subscriber_handlers.mock_node_updated.assert_called()
-    assert socketio_subscriber_handlers.mock_node_updated.call_count == (
-        NUMBER_OF_MESSAGES
-    )
-    socketio_subscriber_handlers.mock_event.assert_called_once()
+    async for attempt in AsyncRetrying(**RETRY_POLICY):
+        with attempt:
+            # mock_log_handler.assert_has_calls(log_calls, any_order=True)
+            socketio_subscriber_handlers.mock_node_updated.assert_called()
+            assert socketio_subscriber_handlers.mock_node_updated.call_count == (
+                NUMBER_OF_MESSAGES
+            )
+            socketio_subscriber_handlers.mock_event.assert_called_once()
