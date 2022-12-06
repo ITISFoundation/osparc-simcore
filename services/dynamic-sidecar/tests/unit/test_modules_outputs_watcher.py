@@ -31,7 +31,7 @@ from simcore_service_dynamic_sidecar.modules.outputs import (
 )
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
-    get_dir_size,
+    get_directory_total_size,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
@@ -342,7 +342,7 @@ async def test_port_key_sequential_event_generation(
         )
         wait_interval_for_port.append(
             outputs_watcher._event_filter.delay_policy.get_wait_interval(
-                get_dir_size(port_dir)
+                get_directory_total_size(port_dir)
             )
         )
 

@@ -84,9 +84,9 @@ def mock_delay_policy() -> BaseDelayPolicy:
 
 
 @pytest.fixture
-def mock_get_dir_size(mocker: MockerFixture) -> Iterator[AsyncMock]:
+def mock_get_directory_total_size(mocker: MockerFixture) -> Iterator[AsyncMock]:
     yield mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.outputs._event_filter.get_dir_size",
+        "simcore_service_dynamic_sidecar.modules.outputs._event_filter.get_directory_total_size",
         return_value=1,
     )
 
@@ -147,7 +147,7 @@ async def test_trigger_once_after_event_chain(
 
 
 async def test_always_trigger_after_delay(
-    mock_get_dir_size: AsyncMock,
+    mock_get_directory_total_size: AsyncMock,
     event_filter: EventFilter,
     port_key_1: str,
     mocked_port_key_content_changed: AsyncMock,
@@ -167,8 +167,8 @@ async def test_always_trigger_after_delay(
     assert mocked_port_key_content_changed.call_count == 2
 
 
-async def test_minimum_amount_of_get_dir_size_calls(
-    mock_get_dir_size: AsyncMock,
+async def test_minimum_amount_of_get_directory_total_size_calls(
+    mock_get_directory_total_size: AsyncMock,
     event_filter: EventFilter,
     port_key_1: str,
     mocked_port_key_content_changed: AsyncMock,
@@ -177,17 +177,17 @@ async def test_minimum_amount_of_get_dir_size_calls(
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
-    assert mock_get_dir_size.call_count == 1
+    assert mock_get_directory_total_size.call_count == 1
     assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
     await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mock_get_dir_size.call_count == 2
+    assert mock_get_directory_total_size.call_count == 2
     assert mocked_port_key_content_changed.call_count == 1
 
 
-async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
-    mock_get_dir_size: AsyncMock,
+async def test_minimum_amount_of_get_directory_total_size_calls_with_continuous_changes(
+    mock_get_directory_total_size: AsyncMock,
     event_filter: EventFilter,
     port_key_1: str,
     mocked_port_key_content_changed: AsyncMock,
@@ -196,7 +196,7 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
-    assert mock_get_dir_size.call_count == 1
+    assert mock_get_directory_total_size.call_count == 1
     assert mocked_port_key_content_changed.call_count == 0
 
     # while changes keep piling up, keep extending the duration
@@ -206,12 +206,12 @@ async def test_minimum_amount_of_get_dir_size_calls_with_continuous_changes(
     for _ in range(VERY_LONG_EVENT_CHAIN):
         await event_filter.enqueue(port_key_1)
         await _wait_for_event_to_trigger(event_filter)
-        assert mock_get_dir_size.call_count == 1
+        assert mock_get_directory_total_size.call_count == 1
         assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
     await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mock_get_dir_size.call_count == 2
+    assert mock_get_directory_total_size.call_count == 2
     assert mocked_port_key_content_changed.call_count == 1
 
 
