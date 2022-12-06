@@ -381,14 +381,6 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    hasChildren: function() {
-      const innerNodes = this.getInnerNodes();
-      if (innerNodes) {
-        return Object.keys(innerNodes).length > 0;
-      }
-      return false;
-    },
-
     getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
@@ -402,32 +394,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
-    },
-
-    removeInnerNode: function(innerNodeId) {
-      delete this.__innerNodes[innerNodeId];
-    },
-
-    isInnerNode: function(inputNodeId) {
-      return (inputNodeId in this.__innerNodes);
-    },
-
-    getExposedInnerNodes: function() {
-      const workbench = this.getWorkbench();
-
-      let outputNodes = [];
-      for (let i = 0; i < this.__exposedNodes.length; i++) {
-        const outputNode = workbench.getNode(this.__exposedNodes[i]);
-        outputNodes.push(outputNode);
-      }
-      const uniqueNodes = [...new Set(outputNodes)];
-      return uniqueNodes;
-    },
-
-    getExposedNodeIDs: function() {
-      const exposedInnerNodes = this.getExposedInnerNodes();
-      const exposedNodeIDs = exposedInnerNodes.map(exposedInnerNode => exposedInnerNode.getNodeId());
-      return exposedNodeIDs;
     },
 
     populateWithMetadata: function() {
@@ -1411,37 +1377,21 @@ qx.Class.define("osparc.data.model.Node", {
       this.getStatus().bind("interactive", startButton, "enabled", {
         converter: state => ["idle", "failed"].includes(state)
       });
-      startButton.addListener("execute", () => this.requestStartNode());
+      const executeListenerId = startButton.addListener("execute", this.requestStartNode, this);
+      startButton.executeListenerId = executeListenerId;
     },
 
     attachHandlersToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-      stopButton.addListener("execute", () => this.requestStopNode());
-    },
-
-    __removeInnerNodes: function() {
-      const innerNodes = Object.values(this.getInnerNodes());
-      for (let i = 0; i < innerNodes.length; i++) {
-        innerNodes[i].removeNode();
-      }
-    },
-
-    __detachFromParent: function() {
-      const parentNodeId = this.getParentNodeId();
-      if (parentNodeId) {
-        const parentNode = this.getWorkbench().getNode(parentNodeId);
-        parentNode.removeInnerNode(this.getNodeId());
-        parentNode.removeOutputNode(this.getNodeId());
-      }
+      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
+      stopButton.executeListenerId = executeListenerId;
     },
 
     removeNode: function() {
       this.__deleteInBackend();
       this.removeIFrame();
-      this.__removeInnerNodes();
-      this.__detachFromParent();
     },
 
     stopRequestingStatus: function() {

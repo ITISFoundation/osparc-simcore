@@ -18,16 +18,7 @@
 qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   extend: osparc.desktop.Toolbar,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__attachEventHandlers();
-  },
-
   events: {
-    "startPipeline": "qx.event.type.Event",
-    "startPartialPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event",
     "zoomIn": "qx.event.type.Event",
     "zoomOut": "qx.event.type.Event",
     "zoomReset": "qx.event.type.Event"
@@ -52,20 +43,10 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           break;
         }
-        case "start-stop-btns": {
+        case "start-stop-btns":
           control = new osparc.desktop.StartStopButtons();
-          [
-            "startPipeline",
-            "startPartialPipeline",
-            "stopPipeline"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => {
-              this.fireEvent(signalName);
-            }, this);
-          });
           this._add(control);
           break;
-        }
         case "zoom-btns": {
           control = new osparc.desktop.ZoomButtons();
           [
@@ -118,17 +99,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     getStartStopButtons: function() {
       return this.__startStopBtns;
-    },
-
-    __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
-        const selectedNodes = e.getData();
-        const selectedNodeIds = [];
-        selectedNodes.forEach(selectedNode => {
-          selectedNodeIds.push(selectedNode.getNodeId());
-        });
-        this.getStartStopButtons().nodeSelectionChanged(selectedNodeIds);
-      }, this);
     }
   }
 });

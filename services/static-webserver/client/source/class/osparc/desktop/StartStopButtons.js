@@ -36,7 +36,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__initDefault();
+    this.__buildLayout();
+
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -58,59 +60,84 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __clustersLayout: null,
     __clustersSelectBox: null,
     __clusterMiniView: null,
-    __startButton: null,
-    __startSelectionButton: null,
-    __startAllButton: null,
+    __dynamicsLayout: null,
+    __startServiceButton: null,
+    __stopServiceButton: null,
+    __computationsLayout: null,
+    __runButton: null,
+    __runSelectionButton: null,
+    __runAllButton: null,
     __stopButton: null,
 
-    __setRunning: function(running) {
-      this.__getStartButtons().forEach(startBtn => startBtn.setFetching(running));
-
-      this.__stopButton.setEnabled(running);
+    __attachEventHandlers: function() {
+      qx.event.message.Bus.subscribe("changeNodeSelection", e => {
+        const selectedNodes = e.getData();
+        this.__nodeSelectionChanged(selectedNodes);
+      }, this);
     },
 
-    nodeSelectionChanged: function(selectedNodeIds) {
-      if (!this.__startButton.isFetching()) {
-        const runnableNodes = [];
-        selectedNodeIds.forEach(selectedNodeId => {
-          if (this.getStudy()) {
-            runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
-          }
-        });
-        const isSelectionRunnable = runnableNodes.length && runnableNodes.some(node => node && (node.isComputational() || node.isIterator()));
+    __nodeSelectionChanged: function(selectedNodes) {
+      const isDynamic = selectedNodes.length === 1 && selectedNodes[0].isDynamic();
+      this.__dynamicsLayout.setVisibility(isDynamic ? "visible" : "excluded");
+      this.__computationsLayout.setVisibility(isDynamic ? "excluded" : "visible");
+
+      // dynamics
+      if (isDynamic) {
+        const node = selectedNodes[0];
+
+        const startButton = this.__startServiceButton;
+        startButton.removeAllBindings();
+        if ("executeListenerId" in startButton) {
+          startButton.removeListenerById(startButton.executeListenerId);
+        }
+        node.attachHandlersToStartButton(startButton);
+
+        const stopButton = this.__stopServiceButton;
+        stopButton.removeAllBindings();
+        if ("executeListenerId" in stopButton) {
+          stopButton.removeListenerById(stopButton.executeListenerId);
+        }
+        node.attachHandlersToStopButton(stopButton);
+      }
+
+      // computationals
+      if (!this.__runButton.isFetching()) {
+        const isSelectionRunnable = selectedNodes.length && selectedNodes.some(node => node && (node.isComputational() || node.isIterator()));
         if (isSelectionRunnable) {
-          this.__startButton.exclude();
-          this.__startSelectionButton.show();
+          this.__runButton.exclude();
+          this.__runSelectionButton.show();
         } else {
-          this.__startButton.show();
-          this.__startSelectionButton.exclude();
+          this.__runButton.show();
+          this.__runSelectionButton.exclude();
         }
       }
     },
 
-    __getStartButtons: function() {
+    __setRunning: function(running) {
+      this.__getRunButtons().forEach(runBtn => runBtn.setFetching(running));
+
+      this.__stopButton.setEnabled(running);
+    },
+
+    __getRunButtons: function() {
       return [
-        this.__startButton,
-        this.__startSelectionButton.getChildControl("button"),
-        this.__startAllButton
+        this.__runButton,
+        this.__runSelectionButton.getChildControl("button"),
+        this.__runAllButton
       ];
     },
 
-    __initDefault: function() {
-      const clustersSelectBox = this.__createClustersLayout();
-      this._add(clustersSelectBox);
+    __buildLayout: function() {
+      const clustersLayout = this.__createClustersLayout();
+      this._add(clustersLayout);
 
-      const startButton = this.__createStartButton();
-      this._add(startButton);
-
-      const startSplitButton = this.__createStartSplitButton().set({
+      const dynamicsLayout = this.__createDynamicsLayout().set({
         visibility: "excluded"
       });
-      this._add(startSplitButton);
+      this._add(dynamicsLayout);
 
-      const stopButton = this.__createStopButton();
-      stopButton.setEnabled(false);
-      this._add(stopButton);
+      const computationalsLayout = this.__createComputationalsLayout();
+      this._add(computationalsLayout);
     },
 
     __createClustersLayout: function() {
@@ -136,6 +163,40 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       clustersLayout.add(clusterMiniView);
 
       return clustersLayout;
+    },
+
+    __createDynamicsLayout: function() {
+      const dynamicsLayout = this.__dynamicsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+
+      const startServiceButton = this.__createStartServiceButton();
+      dynamicsLayout.add(startServiceButton);
+
+      const stopServiceButton = this.__createStopServiceButton();
+      dynamicsLayout.add(stopServiceButton);
+
+      return dynamicsLayout;
+    },
+
+    __createComputationalsLayout: function() {
+      const computationsLayout = this.__computationsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+
+      const runButton = this.__createRunButton();
+      computationsLayout.add(runButton);
+
+      const runSplitButton = this.__createRunSplitButton().set({
+        visibility: "excluded"
+      });
+      computationsLayout.add(runSplitButton);
+
+      const stopButton = this.__createStopButton();
+      stopButton.setEnabled(false);
+      computationsLayout.add(stopButton);
+
+      return computationsLayout;
     },
 
     __populateClustersSelectBox: function() {
@@ -168,29 +229,40 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       return this.__clusterMiniView;
     },
 
-    __createStartButton: function() {
-      const startButton = this.__startButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
-      osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
-      startButton.addListener("execute", () => this.fireEvent("startPipeline"), this);
-      return startButton;
+    __createStartServiceButton: function() {
+      const startServiceButton = this.__startServiceButton = new qx.ui.toolbar.Button().set({
+        label: this.tr("Start"),
+        icon: "@FontAwesome5Solid/play/14"
+      });
+      return startServiceButton;
     },
 
-    __createStartSplitButton: function() {
-      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
-      startSelectionButton.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
-      const splitButtonMenu = this.__createSplitButtonMenu();
-      startSelectionButton.setMenu(splitButtonMenu);
-      return startSelectionButton;
+    __createStopServiceButton: function() {
+      const stopServiceButton = this.__stopServiceButton = new qx.ui.toolbar.Button().set({
+        label: this.tr("Stop"),
+        icon: "@FontAwesome5Solid/stop/14"
+      });
+      return stopServiceButton;
     },
 
-    __createSplitButtonMenu: function() {
+    __createRunButton: function() {
+      const runButton = this.__runButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
+      osparc.utils.Utils.setIdToWidget(runButton, "runStudyBtn");
+      runButton.addListener("execute", () => this.fireEvent("startPipeline"), this);
+      return runButton;
+    },
+
+    __createRunSplitButton: function() {
+      const runSelectionButton = this.__runSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
+      runSelectionButton.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
+
+      const runtAllButton = this.__runAllButton = new osparc.ui.menu.FetchButton(this.tr("Run All"));
+      runtAllButton.addListener("execute", () => this.fireEvent("startPipeline"), this);
       const splitButtonMenu = new qx.ui.menu.Menu();
+      splitButtonMenu.add(runtAllButton);
+      runSelectionButton.setMenu(splitButtonMenu);
 
-      const startAllButton = this.__startAllButton = new osparc.ui.menu.FetchButton(this.tr("Run All"));
-      startAllButton.addListener("execute", () => this.fireEvent("startPipeline"), this);
-      splitButtonMenu.add(startAllButton);
-
-      return splitButtonMenu;
+      return runSelectionButton;
     },
 
     __createStopButton: function() {
@@ -211,9 +283,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __checkButtonsVisible: function() {
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       const isRunnable = Object.values(allNodes).some(node => (node.isComputational() || node.isIterator()));
-      this.__getStartButtons().forEach(startBtn => {
-        if (!startBtn.isFetching()) {
-          startBtn.setEnabled(isRunnable);
+      this.__getRunButtons().forEach(runBtn => {
+        if (!runBtn.isFetching()) {
+          runBtn.setEnabled(isRunnable);
         }
       }, this);
 
