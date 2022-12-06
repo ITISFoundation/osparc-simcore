@@ -14,8 +14,11 @@ from aiohttp_jinja2 import render_string
 from faker import Faker
 from json2html import json2html
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver._constants import RQ_PRODUCT_KEY
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.email import setup_email
+from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.utils_email import (
     AttachmentTuple,
     get_template_path,
@@ -27,9 +30,9 @@ from simcore_service_webserver.statics_constants import FRONTEND_APPS_AVAILABLE
 
 @pytest.fixture
 def mocked_send_email(mocker: MockerFixture) -> MagicMock:
-    async def print_mail(app, msg):
+    async def print_mail(cfg, message):
         print("EMAIL----------")
-        print(msg)
+        print(message)
         print("---------------")
 
     return mocker.patch(
@@ -40,9 +43,14 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
 
 
 @pytest.fixture
-def app() -> web.Application:
+def app(app_environment: EnvVarsDict) -> web.Application:
     app_ = web.Application()
-    assert setup_email(app_)
+
+    assert setup_settings(app_)
+    assert setup_login(app_)  # builds LoginOptions needed for _compose_email
+    assert not setup_email(
+        app_
+    )  # NOTE: it is already init by setup_login, therefore 'setup_email' returns False
     return app_
 
 
@@ -76,7 +84,7 @@ async def test_render_and_send_mail_for_registration(
     )
 
     assert mocked_send_email.called
-    mimetext = mocked_send_email.call_args[0][1]
+    mimetext = mocked_send_email.call_args[1]["message"]
     assert mimetext["Subject"]
     assert mimetext["To"] == email
 

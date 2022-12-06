@@ -31,6 +31,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
@@ -106,7 +107,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 def app_environment(
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
-) -> dict[str, str]:
+) -> EnvVarsDict:
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -125,7 +126,7 @@ def app_environment(
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
-    app_environment: dict[str, str],
+    app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
