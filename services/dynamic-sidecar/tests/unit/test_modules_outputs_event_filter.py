@@ -127,8 +127,6 @@ async def test_event_triggers_once(
     await _wait_for_event_to_trigger(event_filter)
     assert mocked_port_key_content_changed.call_count == 1
 
-    await _wait_for_event_to_trigger(event_filter)
-
     # event triggers a second time
     await event_filter.enqueue(port_key_1)
     await _wait_for_event_to_trigger(event_filter)
