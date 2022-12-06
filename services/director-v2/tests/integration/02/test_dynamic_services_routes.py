@@ -67,6 +67,13 @@ def minimal_configuration(
 
 
 @pytest.fixture
+def mock_env(mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    monkeypatch.setenv("RABBIT_USER", "admin")
+    monkeypatch.setenv("RABBIT_PASSWORD", "adminadmin")
+    return mock_env | {"RABBIT_USER": "admin", "RABBIT_PASSWORD": "adminadmin"}
+
+
+@pytest.fixture
 def user_db(registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
     user = registered_user()
     return user
