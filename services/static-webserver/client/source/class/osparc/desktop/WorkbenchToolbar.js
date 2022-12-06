@@ -19,9 +19,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   extend: osparc.desktop.Toolbar,
 
   events: {
-    "startPipeline": "qx.event.type.Event",
-    "startPartialPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event",
     "zoomIn": "qx.event.type.Event",
     "zoomOut": "qx.event.type.Event",
     "zoomReset": "qx.event.type.Event"
@@ -46,20 +43,10 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           break;
         }
-        case "start-stop-btns": {
+        case "start-stop-btns":
           control = new osparc.desktop.StartStopButtons();
-          [
-            "startPipeline",
-            "startPartialPipeline",
-            "stopPipeline"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => {
-              this.fireEvent(signalName);
-            }, this);
-          });
           this._add(control);
           break;
-        }
         case "zoom-btns": {
           control = new osparc.desktop.ZoomButtons();
           [

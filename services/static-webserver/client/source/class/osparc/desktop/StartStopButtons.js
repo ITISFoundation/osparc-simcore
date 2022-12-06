@@ -51,9 +51,10 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   },
 
   events: {
+    "startServices": "qx.event.type.Event",
+    "stopServices": "qx.event.type.Event",
     "startPipeline": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Event",
-    "startService": "qx.event.type.Event",
     "stopPipeline": "qx.event.type.Event"
   },
 
@@ -61,10 +62,11 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __clustersLayout: null,
     __clustersSelectBox: null,
     __clusterMiniView: null,
+    __startServicesButton: null,
+    __stopServicesButton: null,
     __runButton: null,
     __runSelectionButton: null,
     __runAllButton: null,
-    __startButton: null,
     __stopButton: null,
 
     __attachEventHandlers: function() {
@@ -75,6 +77,13 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __nodeSelectionChanged: function(selectedNodes) {
+      // dynamics
+      if (selectedNodes.length === 1 && selectedNodes[0].isDynamic()) {
+        this.__startServicesButton.show();
+      } else {
+        this.__startServicesButton.exclude();
+      }
+
       // computationals
       if (!this.__runButton.isFetching()) {
         const isSelectionRunnable = selectedNodes.length && selectedNodes.some(node => node && (node.isComputational() || node.isIterator()));
@@ -85,13 +94,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
           this.__runButton.show();
           this.__runSelectionButton.exclude();
         }
-      }
-
-      // dynamics
-      if (selectedNodes.length === 1 && selectedNodes[0].isDynamic()) {
-        this.__startButton.show();
-      } else {
-        this.__startButton.exclude();
       }
     },
 
@@ -113,6 +115,18 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       const clustersSelectBox = this.__createClustersLayout();
       this._add(clustersSelectBox);
 
+      // dynamics
+      const startServicesButton = this.__createStartServicesButton().set({
+        visibility: "excluded"
+      });
+      this._add(startServicesButton);
+
+      const stopServicesButton = this.__createStopServicesButton().set({
+        visibility: "excluded"
+      });
+      this._add(stopServicesButton);
+
+      // computationals
       const runButton = this.__createRunButton();
       this._add(runButton);
 
@@ -120,11 +134,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         visibility: "excluded"
       });
       this._add(runSplitButton);
-
-      const startButton = this.__createStartButton().set({
-        visibility: "excluded"
-      });
-      this._add(startButton);
 
       const stopButton = this.__createStopButton();
       stopButton.setEnabled(false);
@@ -186,6 +195,18 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       return this.__clusterMiniView;
     },
 
+    __createStartServicesButton: function() {
+      const startServicesButton = this.__startServicesButton = new qx.ui.form.Button(this.tr("Start"), "@FontAwesome5Solid/play/14");
+      startServicesButton.addListener("execute", () => this.fireEvent("startServices"), this);
+      return startServicesButton;
+    },
+
+    __createStopServicesButton: function() {
+      const stopServicesButton = this.__stopServicesButton = new qx.ui.form.Button(this.tr("Stop"), "@FontAwesome5Solid/stop/14");
+      stopServicesButton.addListener("execute", () => this.fireEvent("stopServices"), this);
+      return stopServicesButton;
+    },
+
     __createRunButton: function() {
       const runButton = this.__runButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
       osparc.utils.Utils.setIdToWidget(runButton, "runStudyBtn");
@@ -204,12 +225,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       runSelectionButton.setMenu(splitButtonMenu);
 
       return runSelectionButton;
-    },
-
-    __createStartButton: function() {
-      const startButton = this.__startButton = new osparc.ui.toolbar.FetchButton(this.tr("Start"), "@FontAwesome5Solid/play/14");
-      startButton.addListener("execute", () => this.fireEvent("startService"), this);
-      return startButton;
     },
 
     __createStopButton: function() {
