@@ -523,18 +523,6 @@ async def ec2_client(
 
 
 @pytest.fixture
-def mocked_ec2_server_with_client(
-    mocked_aws_server_envs: None,
-    aws_vpc_id: str,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    ec2_client: EC2Client,
-) -> Iterator[EC2Client]:
-    yield ec2_client
-
-
-@pytest.fixture
 def host_cpu_count() -> int:
     return psutil.cpu_count()
 

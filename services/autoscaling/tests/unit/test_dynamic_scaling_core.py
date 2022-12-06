@@ -15,6 +15,7 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
+from simcore_service_autoscaling.modules.ec2 import get_ec2_client
 from simcore_service_autoscaling.utils_aws import EC2Client
 
 
@@ -133,7 +134,7 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
 
     await check_dynamic_resources(initialized_app)
     mock_start_aws_instance.assert_called_once_with(
-        app_settings.AUTOSCALING_EC2_ACCESS,
+        get_ec2_client(initialized_app),
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type="r5n.4xlarge",
         tags=mock.ANY,

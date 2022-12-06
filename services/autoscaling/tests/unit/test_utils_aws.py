@@ -38,11 +38,12 @@ async def test_get_ec2_instance_capabilities(
     mocked_aws_server_envs: None,
     aws_allowed_ec2_instance_type_names: list[str],
     app_settings: ApplicationSettings,
+    ec2_client: EC2Client,
 ):
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     instance_types = await get_ec2_instance_capabilities(
-        app_settings.AUTOSCALING_EC2_ACCESS, app_settings.AUTOSCALING_EC2_INSTANCES
+        ec2_client, app_settings.AUTOSCALING_EC2_INSTANCES
     )
     assert instance_types
     assert len(instance_types) == len(
@@ -128,21 +129,26 @@ def test_compose_user_data(faker: Faker):
 
 
 async def test_start_aws_instance(
-    faker: Faker,
-    mocked_ec2_server_with_client: EC2Client,
+    mocked_aws_server_envs: None,
+    aws_vpc_id: str,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    ec2_client: EC2Client,
     app_settings: ApplicationSettings,
+    faker: Faker,
 ):
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
-    all_instances = await mocked_ec2_server_with_client.describe_instances()
+    all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
     await start_aws_instance(
-        app_settings.AUTOSCALING_EC2_ACCESS,
+        ec2_client,
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
         tags=tags,
@@ -150,7 +156,7 @@ async def test_start_aws_instance(
     )
 
     # check we have that now in ec2
-    all_instances = await mocked_ec2_server_with_client.describe_instances()
+    all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == 1
     running_instance = all_instances["Reservations"][0]
     assert "Instances" in running_instance
@@ -165,14 +171,19 @@ async def test_start_aws_instance(
 
 
 async def test_start_aws_instance_is_limited_in_number_of_instances(
-    mocked_ec2_server_with_client: EC2Client,
+    mocked_aws_server_envs: None,
+    aws_vpc_id: str,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    ec2_client: EC2Client,
     app_settings: ApplicationSettings,
     faker: Faker,
 ):
     assert app_settings.AUTOSCALING_EC2_ACCESS
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
-    all_instances = await mocked_ec2_server_with_client.describe_instances()
+    all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # create as many instances as we can
@@ -180,7 +191,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     startup_script = faker.pystr()
     for _ in range(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES):
         await start_aws_instance(
-            app_settings.AUTOSCALING_EC2_ACCESS,
+            ec2_client,
             app_settings.AUTOSCALING_EC2_INSTANCES,
             faker.pystr(),
             tags=tags,
@@ -190,7 +201,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     # now creating one more shall fail
     with pytest.raises(Ec2TooManyInstancesError):
         await start_aws_instance(
-            app_settings.AUTOSCALING_EC2_ACCESS,
+            ec2_client,
             app_settings.AUTOSCALING_EC2_INSTANCES,
             faker.pystr(),
             tags=tags,

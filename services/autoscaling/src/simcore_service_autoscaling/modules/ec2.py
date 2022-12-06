@@ -44,7 +44,8 @@ class AutoscalingEC2:
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
-        settings: Optional[EC2Settings] = app.state.settings.EC2Settings
+        settings: Optional[EC2Settings] = app.state.settings.AUTOSCALING_EC2_ACCESS
+
         if not settings:
             logger.warning("EC2 client is de-activated in the settings")
             return
