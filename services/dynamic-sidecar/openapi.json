@@ -638,7 +638,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Waits for outputs to be pushed",
+        "summary": "Push output ports data",
         "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
         "responses": {
           "202": {

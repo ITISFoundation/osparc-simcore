@@ -269,7 +269,7 @@ async def ports_outputs_pull_task(
 
 @router.post(
     "/containers/ports/outputs:push",
-    summary="Waits for outputs to be pushed",
+    summary="Push output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
     responses={
