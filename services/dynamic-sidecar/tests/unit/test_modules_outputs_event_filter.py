@@ -150,19 +150,11 @@ async def test_always_trigger_after_delay(
     port_key_1: str,
     mocked_port_key_content_changed: AsyncMock,
 ):
-    # event triggers once
-    await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 0
-
-    # ensure event is drained
-    await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mocked_port_key_content_changed.call_count == 1
-
-    # trigger once more and see if it triggers after expected interval
-    await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mocked_port_key_content_changed.call_count == 2
+    # event trigger after correct interval delay correctly
+    for expected_call_count in range(1, 10):
+        await event_filter.enqueue(port_key_1)
+        await _wait_for_event_to_trigger_big_directory(event_filter)
+        assert mocked_port_key_content_changed.call_count == expected_call_count
 
 
 async def test_minimum_amount_of_get_directory_total_size_calls(
