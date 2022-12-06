@@ -19,7 +19,7 @@ from pydantic import (
 from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
-from ._directory_utils import get_dir_size
+from ._directory_utils import get_directory_total_size
 from ._manager import OutputsManager
 
 PortEvent = Optional[str]
@@ -133,7 +133,7 @@ class EventFilter:
                         self.outputs_manager.outputs_context.outputs_path / port_key
                     )
                     total_wait_for = self.delay_policy.get_wait_interval(
-                        get_dir_size(port_key_dir_path)
+                        get_directory_total_size(port_key_dir_path)
                     )
                     tracked_event.wait_interval = total_wait_for
 

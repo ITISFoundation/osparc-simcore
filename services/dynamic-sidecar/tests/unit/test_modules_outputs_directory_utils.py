@@ -11,7 +11,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from pydantic import NonNegativeInt, PositiveInt
 from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
-    get_dir_size,
+    get_directory_total_size,
 )
 
 
@@ -55,10 +55,10 @@ def dir_with_files(
     return directory, expected_size
 
 
-def test_get_dir_size(dir_with_files: tuple[Path, PositiveInt]):
+def test_get_directory_total_size(dir_with_files: tuple[Path, PositiveInt]):
     path, expected_size = dir_with_files
     start = time.time()
-    dir_size = get_dir_size(path)
+    dir_size = get_directory_total_size(path)
     runtime = time.time() - start
 
     print(f"{expected_size=} bytes, {dir_size=} bytes")
