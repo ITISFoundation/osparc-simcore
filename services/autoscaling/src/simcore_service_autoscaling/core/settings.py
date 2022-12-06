@@ -11,6 +11,7 @@ from models_library.basic_types import (
 from models_library.docker import DockerLabelKey
 from pydantic import Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -85,7 +86,7 @@ class NodesMonitoringSettings(BaseCustomSettings):
     )
 
     NODES_MONITORING_NEW_NODES_LABELS: list[DockerLabelKey] = Field(
-        default=["io.osparc.autoscaled-node"],
+        default=["io.simcore.autoscaled-node"],
         description="autoscaling will add these labels to any new node it creates (additional to the ones in NODES_MONITORING_NODE_LABELS",
     )
 
@@ -138,6 +139,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=datetime.timedelta(seconds=10),
         description="interval between each resource check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
+
+    AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
