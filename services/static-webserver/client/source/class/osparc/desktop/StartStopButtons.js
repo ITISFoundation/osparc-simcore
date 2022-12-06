@@ -83,8 +83,21 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
       // dynamics
       if (isDynamic) {
-        selectedNodes[0].attachHandlersToStartButton(this.__startServiceButton);
-        selectedNodes[0].attachHandlersToStopButton(this.__stopServiceButton);
+        const node = selectedNodes[0];
+
+        const startButton = this.__startServiceButton;
+        startButton.removeAllBindings();
+        if ("executeListenerId" in startButton) {
+          startButton.removeListenerById(startButton.executeListenerId);
+        }
+        node.attachHandlersToStartButton(startButton);
+
+        const stopButton = this.__stopServiceButton;
+        stopButton.removeAllBindings();
+        if ("executeListenerId" in stopButton) {
+          stopButton.removeListenerById(stopButton.executeListenerId);
+        }
+        node.attachHandlersToStopButton(stopButton);
       }
 
       // computationals
