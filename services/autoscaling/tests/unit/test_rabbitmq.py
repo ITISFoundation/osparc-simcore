@@ -19,7 +19,10 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.errors import ConfigurationError
-from simcore_service_autoscaling.rabbitmq import get_rabbitmq_client, post_message
+from simcore_service_autoscaling.modules.rabbitmq import (
+    get_rabbitmq_client,
+    post_message,
+)
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

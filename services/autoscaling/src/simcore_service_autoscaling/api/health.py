@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from ..rabbitmq import get_rabbitmq_client
+from ..modules.rabbitmq import get_rabbitmq_client
 from .dependencies.application import get_app
 
 router = APIRouter()

@@ -11,7 +11,7 @@ from .._meta import (
 )
 from ..api.routes import setup_api_routes
 from ..dynamic_scaling import setup as setup_background_task
-from ..rabbitmq import setup as setup_rabbitmq
+from ..modules.rabbitmq import setup as setup_rabbitmq
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
