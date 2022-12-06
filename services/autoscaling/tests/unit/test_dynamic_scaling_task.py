@@ -18,7 +18,9 @@ _FAST_POLL_INTERVAL = 1
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    app_environment: EnvVarsDict,
+    disabled_rabbitmq: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # fast interval
     monkeypatch.setenv("AUTOSCALING_POLL_INTERVAL", f"{_FAST_POLL_INTERVAL}")
