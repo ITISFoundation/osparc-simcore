@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from functools import reduce
 
+from servicelib.logging_utils import log_catch
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT, BaseObserver
 from watchdog.observers.inotify import InotifyBuffer, InotifyEmitter
@@ -65,26 +66,20 @@ class SafeFileSystemEventHandler(ABC, FileSystemEventHandler):
     working, no further events will be emitted.
     """
 
-    def on_any_event_raised_error(self, event: FileSystemEvent) -> None:
-        """allow the user to take action when an event raises an error"""
-
     @abstractmethod
-    def safe_event_handler(self, event: FileSystemEvent) -> None:
+    def event_handler(self, event: FileSystemEvent) -> None:
         """
         User code for handling the event.
         If this raises an error it will not stop future events.
         """
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        """overwrite and use `safe_event_handler`"""
+        """overwrite and use `event_handler`"""
         super().on_any_event(event)
 
-        try:
-            self.safe_event_handler(event)
-        except Exception:  # pylint: disable=broad-except
-            # NOTE: if an exception is raised by this handler
-            # which is running in the context of the
-            # ExtendedInotifyObserver will cause the
-            # observer to stop working.
-            logger.exception("Unexpected exception raised by event %s", event)
-            self.on_any_event_raised_error(event)
+        # NOTE: if an exception is raised by this handler
+        # which is running in the context of the
+        # ExtendedInotifyObserver will cause the
+        # observer to stop working.
+        with log_catch(logger, reraise=False):
+            self.event_handler(event)

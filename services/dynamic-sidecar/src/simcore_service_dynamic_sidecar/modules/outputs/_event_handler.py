@@ -40,7 +40,7 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
     def set_outputs_port_keys(self, outputs_port_keys: set[str]) -> None:
         self._outputs_port_keys = outputs_port_keys
 
-    def safe_event_handler(self, event: FileSystemEvent) -> None:
+    def event_handler(self, event: FileSystemEvent) -> None:
         # NOTE: ignoring all events which are not relative to modifying
         # the contents of the `port_key` folders from the outputs directory
 

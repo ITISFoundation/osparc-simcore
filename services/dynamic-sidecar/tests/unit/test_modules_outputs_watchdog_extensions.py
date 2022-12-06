@@ -73,16 +73,9 @@ async def test_safe_file_system_event_handler(
     mocked_file_system_event: FileSystemEvent, user_code_raises_error: bool
 ):
     class MockedEventHandler(SafeFileSystemEventHandler):
-        on_any_event_raised_error = AsyncMock()
-
-        def safe_event_handler(self, _: FileSystemEvent) -> None:
+        def event_handler(self, _: FileSystemEvent) -> None:
             if user_code_raises_error:
                 raise RuntimeError("error was raised")
 
     mocked_handler = MockedEventHandler()
     mocked_handler.on_any_event(mocked_file_system_event)
-
-    if user_code_raises_error:
-        assert mocked_handler.on_any_event_raised_error.call_count == 1
-    else:
-        assert mocked_handler.on_any_event_raised_error.call_count == 0
