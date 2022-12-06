@@ -20,10 +20,10 @@ class OutputsContext:
         default_factory=aioprocessing.AioQueue
     )
 
-    # non_file_type_port_keys
+    # contains port types such as int, str, bool
     non_file_type_port_keys: list[str] = field(default_factory=list)
 
-    # file_type_port_keys
+    # port types can contain one or more files and directories
     _file_type_port_keys: list[str] = field(default_factory=list)
 
     async def set_file_type_port_keys(self, file_type_port_keys: list[str]) -> None:
