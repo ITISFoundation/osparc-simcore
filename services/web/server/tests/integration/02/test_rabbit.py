@@ -131,7 +131,7 @@ async def _publish_in_rabbit(
         project_id=project_id,
         node_id=node_uuid,
         service_uuid=node_uuid,
-        service_type=NodeClass.COMPUTATIONAL,
+        service_type=NodeClass.COMPUTATIONAL.value,
         service_key="some/service/awesome/key",
         service_tag="some-awesome-tag",
     )

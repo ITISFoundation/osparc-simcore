@@ -13,7 +13,7 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const serviceName = "sim4life-dy";
+const serviceName = "sim4life";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, enableDemoMode);

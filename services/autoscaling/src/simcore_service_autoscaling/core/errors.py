@@ -5,7 +5,7 @@ class AutoscalingRuntimeError(PydanticErrorMixin, RuntimeError):
     ...
 
 
-class AutoscalingConfigurationError(AutoscalingRuntimeError):
+class ConfigurationError(AutoscalingRuntimeError):
     code = "autoscaling.configuration_error"
     msg_template: str = "Application misconfiguration: {msg}"
 

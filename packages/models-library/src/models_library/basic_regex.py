@@ -11,7 +11,8 @@
 #
 
 # Universally unique Identifier. Pattern taken from https://stackoverflow.com/questions/136505/searching-for-uuids-in-text-with-regex
-
+import re
+from typing import Final
 
 UUID_RE_BASE = (
     r"[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
@@ -60,3 +61,12 @@ TWILIO_ALPHANUMERIC_SENDER_ID_RE = r"(?!^\d+$)^[a-zA-Z0-9\s]{2,11}$"
 #   the digits 0 through 9, and the space character.
 #   They may not be only numerals.
 # SEE # https://www.twilio.com/docs/glossary/what-alphanumeric-sender-id
+
+
+# Docker
+DOCKER_LABEL_KEY_REGEX: Final[re.Pattern] = re.compile(
+    # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
+    r"^(?!(\.|\-|com.docker\.|io.docker\.|org.dockerproject\.|\d))(?!.*(--|\.\.))[a-z0-9\.-]+(?<![\d\.\-])$"
+)
+DOCKER_IMAGE_KEY_RE = r"[\w/-]+"
+DOCKER_IMAGE_VERSION_RE = r"[\w/.]+"

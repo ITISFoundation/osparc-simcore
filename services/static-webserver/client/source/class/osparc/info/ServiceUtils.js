@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.servicecard.Utils", {
+qx.Class.define("osparc.info.ServiceUtils", {
   type: "static",
 
   statics: {
@@ -46,25 +46,25 @@ qx.Class.define("osparc.servicecard.Utils", {
     },
 
     /**
-      * @param serviceData {Object} Serialized Service Object
+      * @param serviceKey {String} Service key
       */
-    createKey: function(serviceData) {
+    createKey: function(serviceKey) {
       const key = new qx.ui.basic.Label().set({
         maxWidth: 220
       });
       key.set({
-        value: serviceData["key"],
-        toolTipText: serviceData["key"]
+        value: serviceKey,
+        toolTipText: serviceKey
       });
       return key;
     },
 
     /**
-      * @param serviceData {Object} Serialized Service Object
+      * @param serviceVersion {String} Service version
       */
-    createVersion: function(serviceData) {
+    createVersion: function(serviceVersion) {
       const key = new qx.ui.basic.Label().set({
-        value: serviceData["version"],
+        value: serviceVersion,
         maxWidth: 150
       });
       return key;

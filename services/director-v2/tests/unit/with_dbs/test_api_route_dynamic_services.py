@@ -97,6 +97,10 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
+    monkeypatch.setenv("RABBIT_HOST", "mocked_host")
+    monkeypatch.setenv("RABBIT_USER", "mocked_user")
+    monkeypatch.setenv("RABBIT_PASSWORD", "mocked_password")
+
     monkeypatch.setenv("REGISTRY_AUTH", "false")
     monkeypatch.setenv("REGISTRY_USER", "test")
     monkeypatch.setenv("REGISTRY_PW", "test")

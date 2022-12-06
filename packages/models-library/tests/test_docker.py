@@ -24,7 +24,7 @@ from pydantic import ValidationError, parse_obj_as
         ("Node.labels.standard_worker", False),
         ("Node.labels.standardworker", False),
         ("node.labels.standardworker", True),
-        ("io.osparc.auto-scaler", True),
+        ("io.simcore.auto-scaler", True),
     ),
 )
 def test_docker_label_key(label_key: str, valid: bool):
