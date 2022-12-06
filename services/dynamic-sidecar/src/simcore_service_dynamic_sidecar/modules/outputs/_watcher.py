@@ -104,8 +104,8 @@ def enable_outputs_watcher(app: FastAPI) -> None:
 
 @contextmanager
 def outputs_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
-    disable_outputs_watcher(app)
     try:
+        disable_outputs_watcher(app)
         yield None
     finally:
         enable_outputs_watcher(app)
