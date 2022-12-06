@@ -1,5 +1,6 @@
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
 import hashlib
@@ -9,7 +10,16 @@ import os
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
-from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Iterator, cast
+from typing import (
+    Any,
+    AsyncIterable,
+    Awaitable,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    cast,
+)
 from uuid import uuid4
 
 import aioboto3
@@ -64,7 +74,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from utils import (
     assert_all_services_running,
@@ -459,12 +469,17 @@ def _print_values_to_assert(**kwargs) -> None:
 
 
 async def _assert_port_values(
-    mapped: dict[str, InputsOutputs],
+    user_id: UserID,
+    current_study: ProjectAtDB,
+    db_manager: DBManager,
     services_node_uuids: ServicesNodeUUIDs,
+    *,
+    only_files: bool,
+    include_dy_compose_spec: bool,
 ):
-    # NOTE: if this function fails it's because data did not
-    # have enough time to be copied from the inputs to the outputs
-    # check _USER_SERVICE_SYNC_BUFFER
+    mapped = await _get_mapped_nodeports_values(
+        user_id, f"{current_study.uuid}", current_study.workbench, db_manager
+    )
 
     print("Nodeport mapped values")
     for node_uuid, inputs_outputs in mapped.items():
@@ -476,43 +491,13 @@ async def _assert_port_values(
         for value in inputs_outputs.outputs.values():
             print(value.key, value)
 
-    # integer values
-    sleeper_out_2 = await mapped[services_node_uuids.sleeper].outputs["out_2"].get()
-    dy_integer_input = (
-        await mapped[services_node_uuids.dy].inputs["integer_input"].get()
-    )
-    dy_integer_output = (
-        await mapped[services_node_uuids.dy].outputs["integer_output"].get()
-    )
-
-    dy_compose_spec_integer_input = (
-        await mapped[services_node_uuids.dy_compose_spec].inputs["integer_input"].get()
-    )
-    dy_compose_spec_integer_output = (
-        await mapped[services_node_uuids.dy_compose_spec]
-        .outputs["integer_output"]
-        .get()
-    )
-
-    _print_values_to_assert(
-        sleeper_out_2=sleeper_out_2,
-        dy_integer_input=dy_integer_input,
-        dy_integer_output=dy_integer_output,
-        dy_compose_spec_integer_input=dy_compose_spec_integer_input,
-        dy_compose_spec_integer_output=dy_compose_spec_integer_output,
-    )
-
-    assert sleeper_out_2 == dy_integer_input
-    assert sleeper_out_2 == dy_integer_output
-    assert sleeper_out_2 == dy_compose_spec_integer_input
-    assert sleeper_out_2 == dy_compose_spec_integer_output
-
     # files
 
-    async def _int_value_port(port: Port) -> int:
-        file_path: Path = cast(Path, await port.get())
-        int_value = int(file_path.read_text())
-        return int_value
+    async def _int_value_port(port: Port) -> Optional[int]:
+        file_path = cast(Optional[Path], await port.get())
+        if file_path is None:
+            return None
+        return int(file_path.read_text())
 
     sleeper_out_1 = await _int_value_port(
         mapped[services_node_uuids.sleeper].outputs["out_1"]
@@ -542,8 +527,44 @@ async def _assert_port_values(
 
     assert sleeper_out_1 == dy_file_input
     assert sleeper_out_1 == dy_file_output
-    assert sleeper_out_1 == dy_compose_spec_file_input
-    assert sleeper_out_1 == dy_compose_spec_file_output
+    if include_dy_compose_spec:
+        assert sleeper_out_1 == dy_compose_spec_file_input
+        assert sleeper_out_1 == dy_compose_spec_file_output
+
+    if only_files:
+        return
+
+    # integer values
+    sleeper_out_2 = await mapped[services_node_uuids.sleeper].outputs["out_2"].get()
+    dy_integer_input = (
+        await mapped[services_node_uuids.dy].inputs["integer_input"].get()
+    )
+    dy_integer_output = (
+        await mapped[services_node_uuids.dy].outputs["integer_output"].get()
+    )
+
+    dy_compose_spec_integer_input = (
+        await mapped[services_node_uuids.dy_compose_spec].inputs["integer_input"].get()
+    )
+    dy_compose_spec_integer_output = (
+        await mapped[services_node_uuids.dy_compose_spec]
+        .outputs["integer_output"]
+        .get()
+    )
+
+    _print_values_to_assert(
+        sleeper_out_2=sleeper_out_2,
+        dy_integer_input=dy_integer_input,
+        dy_integer_output=dy_integer_output,
+        dy_compose_spec_integer_input=dy_compose_spec_integer_input,
+        dy_compose_spec_integer_output=dy_compose_spec_integer_output,
+    )
+
+    assert sleeper_out_2 == dy_integer_input
+    assert sleeper_out_2 == dy_integer_output
+    if include_dy_compose_spec:
+        assert sleeper_out_2 == dy_compose_spec_integer_input
+        assert sleeper_out_2 == dy_compose_spec_integer_output
 
 
 async def _container_id_via_services(service_uuid: str) -> str:
@@ -917,16 +938,15 @@ async def test_nodeports_integration(
     )
     update_project_workbench_with_comp_tasks(str(current_study.uuid))
 
-    # Trigger inputs pulling & outputs pushing on dynamic services
+    # STEP 3
 
+    # Trigger inputs pulling & outputs pushing on dynamic services
     # Since there is no webserver monitoring postgres notifications
     # trigger the call manually
 
-    # NOTE: avoiding flaky test results, adding some buffer to allow
-    # the services to have time to copy the the data from the inputs to the
-    # outputs (this is what they do internally), usually it's an immediate
-    # operation, but sometimes it takes loner causing the test to fail
-    _USER_SERVICE_SYNC_BUFFER = 5
+    # NOTE: the order of these services is important since
+    # the outputs for `services_node_uuids.dy` needs to end up in
+    # the inputs for `services_node_uuids.dy_compose_spec`
     for service_uuid in (services_node_uuids.dy, services_node_uuids.dy_compose_spec):
         # when retrieving inputs, only file output ports will be uploaded
         await _assert_retrieve_completed(
@@ -934,10 +954,21 @@ async def test_nodeports_integration(
             service_uuid=service_uuid,
             dynamic_services_urls=dynamic_services_urls,
         )
-        await sleep_for(
-            _USER_SERVICE_SYNC_BUFFER,
-            f"Waiting file ports to propagate {services_endpoint}",
-        )
+
+        # Wait for file ports to propagate
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(5), wait=wait_fixed(1)
+        ):
+            with attempt:
+                await _assert_port_values(
+                    current_user["id"],
+                    current_study,
+                    db_manager,
+                    services_node_uuids,
+                    only_files=True,
+                    include_dy_compose_spec=service_uuid
+                    == services_node_uuids.dy_compose_spec,
+                )
 
         # this will cause non files to upload
         await _assert_push_non_file_outputs(
@@ -945,25 +976,24 @@ async def test_nodeports_integration(
             director_v2_client=async_client,
             service_uuid=service_uuid,
         )
-        await sleep_for(
-            _USER_SERVICE_SYNC_BUFFER,
-            f"Waiting for non file ports to propagate {services_endpoint}",
-        )
 
-    # STEP 3
-    # pull data via nodeports
-
-    mapped_nodeports_values = await _get_mapped_nodeports_values(
-        current_user["id"],
-        str(current_study.uuid),
-        current_study.workbench,
-        db_manager,
-    )
-    await _assert_port_values(mapped_nodeports_values, services_node_uuids)
+        # Waiting for NON file ports to propagate
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(5), wait=wait_fixed(1)
+        ):
+            with attempt:
+                await _assert_port_values(
+                    current_user["id"],
+                    current_study,
+                    db_manager,
+                    services_node_uuids,
+                    only_files=False,
+                    include_dy_compose_spec=service_uuid
+                    == services_node_uuids.dy_compose_spec,
+                )
 
     # STEP 4
 
-    # pylint: disable=protected-access
     app_settings: AppSettings = async_client._transport.app.state.settings
     r_clone_settings: RCloneSettings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
