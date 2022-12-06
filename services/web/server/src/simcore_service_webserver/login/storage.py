@@ -97,6 +97,16 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             await _sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
 
+    async def delete_user_registration_data(
+        self, user, confirmation: ConfirmationTokenDict
+    ):
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                await _sql.delete(
+                    conn, self.confirm_tbl, {"code": confirmation["code"]}
+                )
+                await _sql.delete(conn, self.user_tbl, {"id": user["id"]})
+
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
     storage = app.get(APP_LOGIN_STORAGE_KEY)
