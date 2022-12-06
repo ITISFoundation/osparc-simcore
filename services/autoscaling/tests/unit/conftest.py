@@ -39,8 +39,8 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
+from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2
 from simcore_service_autoscaling.utils_aws import EC2Client
-from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -512,10 +512,14 @@ async def aws_ami_id(
 
 
 @pytest.fixture
-async def ec2_client() -> AsyncIterator[EC2Client]:
+async def ec2_client(
+    app_environment: EnvVarsDict,
+) -> AsyncIterator[EC2Client]:
     settings = EC2Settings.create_from_envs()
-    async with autoscaling_ec2_client(settings) as client:
-        yield client
+    ec2 = await AutoscalingEC2.create(settings)
+    assert ec2
+    yield ec2.client
+    await ec2.close()
 
 
 @pytest.fixture

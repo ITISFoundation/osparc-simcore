@@ -5,7 +5,6 @@
 
 import random
 
-import botocore.exceptions
 import pytest
 from faker import Faker
 from pydantic import ByteSize
@@ -22,7 +21,6 @@ from simcore_service_autoscaling.utils_aws import (
     EC2Instance,
     _compose_user_data,
     closest_instance_policy,
-    ec2_client,
     find_best_fitting_ec2_instance,
     get_ec2_instance_capabilities,
     start_aws_instance,
@@ -34,27 +32,6 @@ def app_settings(
     app_environment: EnvVarsDict,
 ) -> ApplicationSettings:
     return ApplicationSettings.create_from_envs()
-
-
-async def test_ec2_client(app_settings: ApplicationSettings):
-    assert app_settings.AUTOSCALING_EC2_ACCESS
-    async with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
-        ...
-
-    with pytest.raises(
-        botocore.exceptions.ClientError, match=r".+ AWS was not able to validate .+"
-    ):
-        async with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
-            await client.describe_account_attributes(DryRun=True)
-
-
-async def test_ec2_client_with_mock_server(
-    mocked_aws_server_envs: None, app_settings: ApplicationSettings
-):
-    # passes without exception
-    assert app_settings.AUTOSCALING_EC2_ACCESS
-    async with ec2_client(app_settings.AUTOSCALING_EC2_ACCESS) as client:
-        await client.describe_account_attributes(DryRun=True)
 
 
 async def test_get_ec2_instance_capabilities(

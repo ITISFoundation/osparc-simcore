@@ -11,6 +11,7 @@ from . import utils_aws, utils_docker
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
+from .modules.ec2 import get_ec2_client
 from .utils import rabbitmq
 
 logger = logging.getLogger(__name__)
@@ -61,8 +62,9 @@ async def check_dynamic_resources(app: FastAPI) -> None:
 
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    ec2_client = get_ec2_client(app)
     list_of_ec2_instances = await utils_aws.get_ec2_instance_capabilities(
-        app_settings.AUTOSCALING_EC2_ACCESS, app_settings.AUTOSCALING_EC2_INSTANCES
+        ec2_client, app_settings.AUTOSCALING_EC2_INSTANCES
     )
 
     for task in pending_tasks:
@@ -85,7 +87,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
             new_instance_dns_name = await utils_aws.start_aws_instance(
-                app_settings.AUTOSCALING_EC2_ACCESS,
+                ec2_client,
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(
                     InstanceTypeType, ec2_instances_needed[0].name

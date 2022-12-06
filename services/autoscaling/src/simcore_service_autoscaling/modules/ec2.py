@@ -15,19 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AutoscalingEC2Client:
-    session: aioboto3.Session
+class AutoscalingEC2:
     client: EC2Client
+    session: aioboto3.Session
+    exit_stack: contextlib.AsyncExitStack
 
-
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.state.ec2_client = None
-        settings: Optional[EC2Settings] = app.state.settings.EC2Settings
-        if not settings:
-            logger.warning("EC2 client is de-activated in the settings")
-            return
-
+    @classmethod
+    async def create(cls, settings: EC2Settings) -> "AutoscalingEC2":
         session = aioboto3.Session()
         session_client = session.client(
             "ec2",
@@ -41,20 +35,33 @@ def setup(app: FastAPI) -> None:
         ec2_client = cast(
             EC2Client, await exit_stack.enter_async_context(session_client)
         )
+        return cls(ec2_client, session, exit_stack)
 
-        app.state.ec2_client = ec2_client
+    async def close(self) -> None:
+        await self.exit_stack.aclose()
+
+
+def setup(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        app.state.ec2_client = None
+        settings: Optional[EC2Settings] = app.state.settings.EC2Settings
+        if not settings:
+            logger.warning("EC2 client is de-activated in the settings")
+            return
+
+        app.state.ec2_client = await AutoscalingEC2.create(settings)
 
     async def on_shutdown() -> None:
         if app.state.ec2_client:
-            await app.state.ec2_client.close()
+            await cast(AutoscalingEC2, app.state.ec2_client).close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_ec2_client(app: FastAPI) -> RabbitMQClient:
+def get_ec2_client(app: FastAPI) -> EC2Client:
     if not app.state.ec2_client:
         raise ConfigurationError(
             msg="EC2 client is not available. Please check the configuration."
         )
-    return cast(RabbitMQClient, app.state.ec2_client)
+    return cast(AutoscalingEC2, app.state.ec2_client).client
