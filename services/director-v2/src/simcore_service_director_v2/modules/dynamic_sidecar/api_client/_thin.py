@@ -93,7 +93,7 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def patch_containers_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/outputs-watcher")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/directory-watcher")
         return await self.client.patch(url, json=dict(is_enabled=is_enabled))
 
     @retry_on_errors

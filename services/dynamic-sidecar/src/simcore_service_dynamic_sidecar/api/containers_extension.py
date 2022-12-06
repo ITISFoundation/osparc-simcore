@@ -47,7 +47,7 @@ router = APIRouter()
 
 
 @router.patch(
-    "/containers/outputs-watcher",
+    "/containers/directory-watcher",
     summary="Enable/disable outputs-watcher event propagation",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,

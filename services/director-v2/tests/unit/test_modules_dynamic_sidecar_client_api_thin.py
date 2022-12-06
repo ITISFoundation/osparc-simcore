@@ -134,7 +134,7 @@ async def test_post_patch_containers_outputs_watcher(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PATCH",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/outputs-watcher",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/directory-watcher",
         mock_response,
         None,
     )

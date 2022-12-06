@@ -304,13 +304,13 @@
         }
       }
     },
-    "/v1/containers/outputs-watcher": {
+    "/v1/containers/directory-watcher": {
       "patch": {
         "tags": [
           "containers"
         ],
         "summary": "Enable/disable outputs-watcher event propagation",
-        "operationId": "toggle_outputs_watcher_v1_containers_outputs_watcher_patch",
+        "operationId": "toggle_outputs_watcher_v1_containers_directory_watcher_patch",
         "requestBody": {
           "content": {
             "application/json": {

@@ -52,7 +52,7 @@ def _create_network_aliases(network_name: str) -> list[str]:
 
 async def _assert_enable_outputs_watcher(test_client: TestClient) -> None:
     response = await test_client.patch(
-        f"/{API_VTAG}/containers/outputs-watcher", json=dict(is_enabled=True)
+        f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
@@ -60,7 +60,7 @@ async def _assert_enable_outputs_watcher(test_client: TestClient) -> None:
 
 async def _assert_disable_outputs_watcher(test_client: TestClient) -> None:
     response = await test_client.patch(
-        f"/{API_VTAG}/containers/outputs-watcher", json=dict(is_enabled=False)
+        f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
