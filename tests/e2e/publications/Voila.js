@@ -27,14 +27,14 @@ async function runTutorial () {
     const voilaIdViewer = workbenchData["nodeIds"][0];
     await tutorial.waitForServices(workbenchData["studyId"], [voilaIdViewer], startTimeout);
 
-    await tutorial.waitFor(40000, 'Some time for starting the service');
+    await tutorial.waitFor(40000, 'Some time for starting the iframe');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     const iframe = await tutorial.getIframe(voilaIdViewer);
-
-    // <div id="rendered_cells">
-
-    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame1');
+    // look for rendered_cells
+    const rendered_cells = iframe.querySelector('#rendered_cells');
+    console.log(rendered_cells);
+    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame');
   }
   catch(err) {
     await tutorial.setTutorialFailed(true);
