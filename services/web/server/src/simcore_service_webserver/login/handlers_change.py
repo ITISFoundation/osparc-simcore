@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
-class ResetPasswordRequest(InputSchema):
+class ResetPasswordBody(InputSchema):
     email: str
 
 
@@ -54,7 +54,7 @@ async def reset_password(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    request_body = await parse_request_body_as(ResetPasswordRequest, request)
+    request_body = await parse_request_body_as(ResetPasswordBody, request)
 
     user = await db.get_user({"email": request_body.email})
     try:
@@ -121,7 +121,7 @@ async def reset_password(request: web.Request):
     return response
 
 
-class ChangeEmailForm(InputSchema):
+class ChangeEmailBody(InputSchema):
     email: EmailStr
 
 
@@ -132,7 +132,7 @@ async def change_email(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    request_body = await parse_request_body_as(ChangeEmailForm, request)
+    request_body = await parse_request_body_as(ChangeEmailBody, request)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
@@ -174,7 +174,7 @@ async def change_email(request: web.Request):
     return response
 
 
-class ChangePasswordForm(InputSchema):
+class ChangePasswordBody(InputSchema):
     current: SecretStr
     new: SecretStr
     confirm: SecretStr
@@ -190,7 +190,7 @@ async def change_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
-    passwords = await parse_request_body_as(ChangePasswordForm, request)
+    passwords = await parse_request_body_as(ChangePasswordBody, request)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec

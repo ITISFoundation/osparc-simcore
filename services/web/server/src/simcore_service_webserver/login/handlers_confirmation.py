@@ -125,7 +125,7 @@ async def email_confirmation(request: web.Request):
     raise web.HTTPFound(location=redirect_to_login_url)
 
 
-class Validate2FAPhone(InputSchema):
+class PhoneConfirmationBody(InputSchema):
     email: EmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
@@ -146,7 +146,7 @@ async def phone_confirmation(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    request_body = await parse_request_body_as(Validate2FAPhone, request)
+    request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
     if (
         expected := await get_2fa_code(request.app, request_body.email)
@@ -174,7 +174,7 @@ async def phone_confirmation(request: web.Request):
     )
 
 
-class ResetPasswordForm(InputSchema):
+class ResetPasswordConfirmation(InputSchema):
     password: SecretStr
     confirm: SecretStr
 
@@ -190,7 +190,7 @@ async def reset_password_allowed(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
-    request_body = await parse_request_body_as(ResetPasswordForm, request)
+    request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
     confirmation = await validate_confirmation_code(path_params.code, db, cfg)
 

@@ -15,23 +15,19 @@ from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
-from simcore_service_webserver.login.handlers import (
-    Login2FAForm,
-    LoginForm,
-    LogoutRequest,
-)
+from simcore_service_webserver.login.handlers import Login2FABody, LoginBody, LogoutBody
 from simcore_service_webserver.login.handlers_change import (
-    ChangeEmailForm,
-    ChangePasswordForm,
-    ResetPasswordRequest,
+    ChangeEmailBody,
+    ChangePasswordBody,
+    ResetPasswordBody,
 )
 from simcore_service_webserver.login.handlers_confirmation import (
-    ResetPasswordForm,
-    Validate2FAPhone,
+    PhoneConfirmationBody,
+    ResetPasswordConfirmation,
 )
 from simcore_service_webserver.login.handlers_registration import (
-    RegisterCreate,
-    RegisterPhoneCreate,
+    RegisterBody,
+    RegisterPhoneBody,
 )
 
 app = FastAPI(redoc_url=None)
@@ -47,7 +43,7 @@ TAGS: list[Union[str, Enum]] = [
     tags=TAGS,
     operation_id="auth_register",
 )
-async def register(registration: RegisterCreate):
+async def register(registration: RegisterBody):
     """User registration"""
 
 
@@ -57,7 +53,7 @@ async def register(registration: RegisterCreate):
     tags=TAGS,
     operation_id="auth_verify_2fa_phone",
 )
-async def register_phone(registration: RegisterPhoneCreate):
+async def register_phone(registration: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
 
 
@@ -67,7 +63,7 @@ async def register_phone(registration: RegisterPhoneCreate):
     tags=TAGS,
     operation_id="auth_validate_2fa_register",
 )
-async def phone_confirmation(confirmation: Validate2FAPhone):
+async def phone_confirmation(confirmation: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""
 
 
@@ -77,7 +73,7 @@ async def phone_confirmation(confirmation: Validate2FAPhone):
     tags=TAGS,
     operation_id="auth_login",
 )
-async def login(authentication: LoginForm):
+async def login(authentication: LoginBody):
     """user logs in"""
 
 
@@ -87,7 +83,7 @@ async def login(authentication: LoginForm):
     tags=TAGS,
     operation_id="auth_login_2fa",
 )
-async def login_2fa(authentication: Login2FAForm):
+async def login_2fa(authentication: Login2FABody):
     """user enters 2 Factor Authentication code when login in"""
 
 
@@ -97,7 +93,7 @@ async def login_2fa(authentication: Login2FAForm):
     tags=TAGS,
     operation_id="auth_logout",
 )
-async def logout(data: LogoutRequest):
+async def logout(data: LogoutBody):
     """user logout"""
 
 
@@ -108,7 +104,7 @@ async def logout(data: LogoutRequest):
     operation_id="auth_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Envelope[Error]}},
 )
-async def reset_password(data: ResetPasswordRequest):
+async def reset_password(data: ResetPasswordBody):
     """a non logged-in user requests a password reset"""
 
 
@@ -124,7 +120,7 @@ async def reset_password(data: ResetPasswordRequest):
         }
     },
 )
-async def reset_password_allowed(code: str, data: ResetPasswordForm):
+async def reset_password_allowed(code: str, data: ResetPasswordConfirmation):
     """changes password using a token code without being logged in"""
 
 
@@ -144,7 +140,7 @@ async def reset_password_allowed(code: str, data: ResetPasswordForm):
         },
     },
 )
-async def change_email(data: ChangeEmailForm):
+async def change_email(data: ChangeEmailBody):
     """logged in user changes email"""
 
 
@@ -179,7 +175,7 @@ class PasswordCheckSchema(BaseModel):
         },
     },
 )
-async def change_password(data: ChangePasswordForm):
+async def change_password(data: ChangePasswordBody):
     """logged in user changes password"""
 
 

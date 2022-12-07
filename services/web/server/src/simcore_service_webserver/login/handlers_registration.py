@@ -47,7 +47,7 @@ def _get_user_name(email: str) -> str:
 routes = RouteTableDef()
 
 
-class RegisterCreate(InputSchema):
+class RegisterBody(InputSchema):
     email: EmailStr
     password: SecretStr
     confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
@@ -83,7 +83,7 @@ async def register(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    registration = await parse_request_body_as(RegisterCreate, request)
+    registration = await parse_request_body_as(RegisterBody, request)
 
     await validate_registration(email=registration.email, db=db, cfg=cfg)
 
@@ -177,7 +177,7 @@ async def register(request: web.Request):
         return response
 
 
-class RegisterPhoneCreate(InputSchema):
+class RegisterPhoneBody(InputSchema):
     email: EmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
@@ -203,7 +203,7 @@ async def register_phone(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    registration = await parse_request_body_as(RegisterPhoneCreate, request)
+    registration = await parse_request_body_as(RegisterPhoneBody, request)
 
     try:
         assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec

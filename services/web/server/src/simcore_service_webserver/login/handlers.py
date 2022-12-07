@@ -49,7 +49,7 @@ _PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
 _SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 
 
-class LoginForm(InputSchema):
+class LoginBody(InputSchema):
     email: EmailStr
     password: SecretStr
 
@@ -61,7 +61,7 @@ async def login(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    login_ = await parse_request_body_as(LoginForm, request)
+    login_ = await parse_request_body_as(LoginBody, request)
 
     user = await db.get_user({"email": login_.email})
     if not user:
@@ -143,7 +143,7 @@ async def login(request: web.Request):
         ) from e
 
 
-class Login2FAForm(InputSchema):
+class Login2FABody(InputSchema):
     email: EmailStr
     code: SecretStr
 
@@ -162,7 +162,7 @@ async def login_2fa(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    login_ = await parse_request_body_as(Login2FAForm, request)
+    login_ = await parse_request_body_as(Login2FABody, request)
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed
@@ -183,7 +183,7 @@ async def login_2fa(request: web.Request):
     return response
 
 
-class LogoutRequest(InputSchema):
+class LogoutBody(InputSchema):
     client_session_id: Optional[str] = Field(
         None, example="5ac57685-c40f-448f-8711-70be1936fd63"
     )
@@ -195,7 +195,7 @@ async def logout(request: web.Request) -> web.Response:
     cfg: LoginOptions = get_plugin_options(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    logout_ = await parse_request_body_as(LogoutRequest, request)
+    logout_ = await parse_request_body_as(LogoutBody, request)
 
     # Keep log message: https://github.com/ITISFoundation/osparc-simcore/issues/3200
     with log_context(
