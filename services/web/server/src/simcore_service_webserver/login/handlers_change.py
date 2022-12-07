@@ -2,9 +2,8 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr
+from pydantic import EmailStr, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products import Product, get_current_product
@@ -12,7 +11,7 @@ from ..security_api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
-from ._models import InputSchema
+from ._models import InputSchema, create_password_match_validator
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import LoginOptions, get_plugin_options
 from .storage import AsyncpgStorage, get_plugin_storage
@@ -175,33 +174,35 @@ async def change_email(request: web.Request):
     return response
 
 
+class ChangePasswordForm(InputSchema):
+    current: SecretStr
+    new: SecretStr
+    confirm: SecretStr
+
+    _password_confirm_match = validator("confirm", allow_reuse=True)(
+        create_password_match_validator(reference_field="new")
+    )
+
+
 @routes.post("/v0/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    passwords = await parse_request_body_as(ChangePasswordForm, request)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
 
-    _, _, body = await extract_and_validate(request)
-
-    cur_password = body.current
-    new_password = body.new
-    confirm = body.confirm
-
-    if not check_password(cur_password, user["password_hash"]):
+    if not check_password(passwords.current.get_secret_value(), user["password_hash"]):
         raise web.HTTPUnprocessableEntity(
             reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
-    if new_password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 409
-
-    await db.update_user(user, {"password_hash": encrypt_password(new_password)})
+    await db.update_user(
+        user, {"password_hash": encrypt_password(passwords.new.get_secret_value())}
+    )
 
     response = flash_response(cfg.MSG_PASSWORD_CHANGED)
     return response

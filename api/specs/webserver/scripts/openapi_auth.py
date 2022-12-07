@@ -22,6 +22,7 @@ from simcore_service_webserver.login.handlers import (
 )
 from simcore_service_webserver.login.handlers_change import (
     ChangeEmailForm,
+    ChangePasswordForm,
     ResetPasswordRequest,
 )
 from simcore_service_webserver.login.handlers_confirmation import ResetPasswordForm
@@ -150,12 +151,6 @@ async def reset_password_allowed(code: str, data: ResetPasswordForm):
 )
 async def change_email(data: ChangeEmailForm):
     """logged in user changes email"""
-
-
-class ChangePasswordForm(BaseModel):
-    current: str
-    new: str
-    confirm: str
 
 
 class PasswordCheckSchema(BaseModel):
