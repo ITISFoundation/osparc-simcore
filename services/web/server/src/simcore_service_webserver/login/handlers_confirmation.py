@@ -155,10 +155,11 @@ async def phone_confirmation(request: web.Request):
 
         response = await login_granted_response(request, user=user, cfg=cfg)
         return response
-    else:
-        raise web.HTTPUnauthorized(
-            reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
-        )
+
+    # fails because of invalid or no code
+    raise web.HTTPUnauthorized(
+        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
+    )
 
 
 @routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")

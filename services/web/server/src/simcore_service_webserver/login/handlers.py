@@ -86,7 +86,7 @@ async def login(request: web.Request):
         response = await login_granted_response(request, user=user, cfg=cfg)
         return response
 
-    elif not user["phone"]:
+    if not user["phone"]:
         response = envelope_response(
             {
                 "code": _PHONE_NUMBER_REQUIRED,
