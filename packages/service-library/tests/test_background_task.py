@@ -6,7 +6,6 @@
 
 import asyncio
 import datetime
-from datetime import timedelta
 from typing import AsyncIterator, Awaitable, Callable, Optional
 from unittest import mock
 
@@ -30,14 +29,14 @@ def task_interval() -> datetime.timedelta:
     return datetime.timedelta(seconds=_FAST_POLL_INTERVAL)
 
 
-@pytest.fixture(params=[None, timedelta(seconds=1)])
-def stop_task_timeout(request: FixtureRequest) -> Optional[timedelta]:
+@pytest.fixture(params=[None, 1])
+def stop_task_timeout(request: FixtureRequest) -> Optional[float]:
     return request.param
 
 
 @pytest.fixture
 async def create_background_task(
-    faker: Faker, stop_task_timeout: Optional[timedelta]
+    faker: Faker, stop_task_timeout: Optional[float]
 ) -> AsyncIterator[Callable[[datetime.timedelta, Callable], Awaitable[asyncio.Task]]]:
     created_tasks = []
 

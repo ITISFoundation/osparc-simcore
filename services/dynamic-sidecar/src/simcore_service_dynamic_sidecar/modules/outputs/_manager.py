@@ -184,8 +184,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
                 await stop_periodic_task(
-                    self._task_scheduler_worker,
-                    timeout=timedelta(seconds=self.task_monitor_interval_s),
+                    self._task_scheduler_worker, timeout=self.task_monitor_interval_s
                 )
 
     async def port_key_content_changed(self, port_key: str) -> None:

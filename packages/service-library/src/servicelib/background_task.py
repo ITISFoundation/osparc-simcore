@@ -54,7 +54,7 @@ async def start_periodic_task(
 
 
 async def stop_periodic_task(
-    asyncio_task: asyncio.Task, *, timeout: Optional[datetime.timedelta] = None
+    asyncio_task: asyncio.Task, *, timeout: Optional[float] = None
 ) -> None:
     with log_context(
         logger,
@@ -63,7 +63,4 @@ async def stop_periodic_task(
     ), contextlib.suppress(asyncio.CancelledError):
         asyncio_task.cancel()
         with log_catch(logger, reraise=False):
-            if timeout:
-                await asyncio.wait_for(asyncio_task, timeout=timeout.total_seconds())
-            else:
-                await asyncio_task
+            await asyncio.wait((asyncio_task,), timeout=timeout)
