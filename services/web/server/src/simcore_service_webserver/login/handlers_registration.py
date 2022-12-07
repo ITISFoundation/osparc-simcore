@@ -4,7 +4,7 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, Extra, Field, SecretStr, validator
+from pydantic import EmailStr, Field, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -17,6 +17,7 @@ from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import MSG_PASSWORD_MISMATCH
+from ._models import InputSchema
 from ._registration import check_and_consume_invitation, validate_registration
 from ._security import login_granted_response
 from .settings import (
@@ -47,14 +48,7 @@ def _get_user_name(email: str) -> str:
 routes = RouteTableDef()
 
 
-class _InputSchema(BaseModel):
-    class Config:
-        allow_population_by_field_name = False
-        extra = Extra.forbid
-        allow_mutations = False
-
-
-class RegistrationCreate(_InputSchema):
+class RegisterCreate(InputSchema):
     email: EmailStr
     password: SecretStr
     confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
@@ -97,7 +91,7 @@ async def register(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    registration = await parse_request_body_as(RegistrationCreate, request)
+    registration = await parse_request_body_as(RegisterCreate, request)
 
     await validate_registration(email=registration.email, db=db, cfg=cfg)
 
@@ -191,7 +185,7 @@ async def register(request: web.Request):
         return response
 
 
-class Verify2FAPhone(_InputSchema):
+class RegisterPhoneCreate(InputSchema):
     email: EmailStr
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
@@ -217,7 +211,7 @@ async def register_phone(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    registration = await parse_request_body_as(Verify2FAPhone, request)
+    registration = await parse_request_body_as(RegisterPhoneCreate, request)
 
     try:
         assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
