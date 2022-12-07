@@ -111,6 +111,17 @@ function getDomain(url) {
   return url;
 }
 
+async function getChildrenElements(element) {
+  const children = await element.$$(':scope > *');
+  return children;
+}
+
+async function getChildrenElementsBySelector(page, selector) {
+  const parent = await page.$(selector);
+  const children = await getChildrenElements(parent);
+  return children;
+}
+
 async function getNodeTreeItemIDs(page) {
   const childrenIDs = await page.evaluate((selector) => {
     const children = [];
@@ -139,19 +150,6 @@ async function getFileTreeItemIDs(page, rootName) {
     }
     return children;
   }, '[osparc-test-id="fileTreeItem_' + rootName + '"]');
-  return childrenIDs;
-}
-
-async function getElementChildren(page, selector) {
-  const childrenIDs = await page.evaluate((selector) => {
-    const children = [];
-    const treeRoot = document.querySelector(selector);
-    if (treeRoot.parentElement) {
-      const tree = treeRoot.parentElement;
-      return tree.children;
-    }
-    return children;
-  }, selector);
   return childrenIDs;
 }
 
@@ -540,9 +538,10 @@ module.exports = {
   makeRequest,
   getUserAndPass,
   getDomain,
+  getChildrenElements,
+  getChildrenElementsBySelector,
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
-  getElementChildren,
   getVisibleChildrenIDs,
   getDashboardCardLabel,
   getStyle,

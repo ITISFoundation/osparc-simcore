@@ -81,7 +81,7 @@ async function runTutorial() {
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
-    await tutorial.waitFor(6000, "Load iframe");
+    await tutorial.waitFor(10000, "Load iframe");
     const postProIframe = await tutorial.getIframe(tiId);
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
@@ -111,7 +111,7 @@ async function runTutorial() {
     await tutorial.takeScreenshot("postpro_export_report");
 
     const outFiles = [
-      "temp_ti_field.cache",
+      "output_1.zip",
       "TIP_report.pdf",
       "results.csv"
     ];
@@ -124,13 +124,22 @@ async function runTutorial() {
     const s4lIframe = await tutorial.getIframe(ppId);
     await tutorial.waitAndClick('mode-button-postro', s4lIframe);
     await tutorial.takeScreenshot("Postpro");
-    const postProItems = await utils.getElementChildren(s4lIframe, '[osparc-test-id="tree-algorithm');
-    const nLabels = postProItems.length;
-    if (nLabels > 1) {
-      postProItems[0].click();
+
+    const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
+    console.log(algorithmTrees);
+    if (algorithmTrees.length !== 1) {
+      throw("Post Pro tree missing");
+    }
+
+    const children = await utils.getChildrenElements(algorithmTrees[0]);
+    console.log(children);
+    await tutorial.waitFor(120000, "OM");
+    const nItems = children.length;
+    if (nItems > 1) {
+      children[0].click();
       await tutorial.waitFor(2000, 'Importer clicked');
       await tutorial.takeScreenshot('ImporterClicked');
-      postProItems[1].click();
+      children[1].click();
       await tutorial.waitFor(2000, 'Algorithm clicked');
       await tutorial.takeScreenshot('AlgorithmClicked');
     }
