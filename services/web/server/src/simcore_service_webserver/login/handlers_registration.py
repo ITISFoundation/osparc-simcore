@@ -71,7 +71,7 @@ class RegistrationCreate(_InputSchema):
         if (
             v is not None
             and "password" in values
-            and v != values["password"].get_secret_value()
+            and v.get_secret_value() != values["password"].get_secret_value()
         ):
             raise ValueError(MSG_PASSWORD_MISMATCH)
         return v
@@ -81,7 +81,7 @@ class RegistrationCreate(_InputSchema):
             "examples": [
                 {
                     "email": "foo@mymail.com",
-                    "password": "my secret",
+                    "password": "my secret",  # NOSONAR
                     "confirm": "my secret",  # optional
                     "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",  # optional only active
                 }
