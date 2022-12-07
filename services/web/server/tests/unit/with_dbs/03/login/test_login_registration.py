@@ -21,11 +21,7 @@ from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
 )
-from simcore_service_webserver.login.settings import (
-    LoginOptions,
-    LoginSettings,
-    get_plugin_options,
-)
+from simcore_service_webserver.login.settings import LoginOptions, LoginSettings
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.users_models import ProfileGet
 
@@ -39,14 +35,6 @@ def client(
 ) -> TestClient:
     client_ = event_loop.run_until_complete(aiohttp_client(web_server))
     return client_
-
-
-@pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
-    assert client.app
-    cfg = get_plugin_options(client.app)
-    assert cfg
-    return cfg
 
 
 async def test_regitration_availibility(

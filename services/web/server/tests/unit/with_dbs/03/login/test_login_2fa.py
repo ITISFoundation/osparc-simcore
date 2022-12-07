@@ -25,7 +25,6 @@ from simcore_service_webserver.login._2fa import (
     get_2fa_code,
     send_email_code,
 )
-from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage
 
 
@@ -70,14 +69,6 @@ def postgres_db(postgres_db: sa.engine.Engine):
     )
     postgres_db.execute(stmt)
     return postgres_db
-
-
-@pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
-    assert client.app
-    cfg = get_plugin_options(client.app)
-    assert cfg
-    return cfg
 
 
 @pytest.fixture

@@ -11,7 +11,7 @@ from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
-from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
+from simcore_service_webserver.login.settings import LoginOptions
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.login.utils import get_random_string
 from yarl import URL
@@ -35,14 +35,6 @@ def client(
 ) -> TestClient:
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
-
-
-@pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
-    assert client.app
-    cfg = get_plugin_options(client.app)
-    assert cfg
-    return cfg
 
 
 async def test_unknown_email(

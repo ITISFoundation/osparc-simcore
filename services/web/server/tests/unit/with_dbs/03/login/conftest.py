@@ -34,6 +34,7 @@ def fake_user_password(faker: Faker) -> str:
 
 @pytest.fixture
 def db(client: TestClient) -> AsyncpgStorage:
+    """login database repository instance"""
     assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
@@ -42,6 +43,7 @@ def db(client: TestClient) -> AsyncpgStorage:
 
 @pytest.fixture
 def cfg(client: TestClient) -> LoginOptions:
+    """app's login options"""
     assert client.app
     cfg = get_plugin_options(client.app)
     assert cfg
