@@ -2,8 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
 import pytest
+from aiohttp.test_utils import TestClient
 from faker import Faker
+from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
 
 @pytest.fixture
@@ -26,3 +29,11 @@ def fake_user_password(faker: Faker) -> str:
     return faker.password(
         length=12, special_chars=True, digits=True, upper_case=True, lower_case=True
     )
+
+
+@pytest.fixture
+def db(client: TestClient) -> AsyncpgStorage:
+    assert client.app
+    db: AsyncpgStorage = get_plugin_storage(client.app)
+    assert db
+    return db

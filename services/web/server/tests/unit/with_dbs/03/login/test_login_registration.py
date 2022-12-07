@@ -26,7 +26,7 @@ from simcore_service_webserver.login.settings import (
     LoginSettings,
     get_plugin_options,
 )
-from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.users_models import ProfileGet
 
 
@@ -47,14 +47,6 @@ def cfg(client: TestClient) -> LoginOptions:
     cfg = get_plugin_options(client.app)
     assert cfg
     return cfg
-
-
-@pytest.fixture
-def db(client: TestClient) -> AsyncpgStorage:
-    assert client.app
-    db: AsyncpgStorage = get_plugin_storage(client.app)
-    assert db
-    return db
 
 
 async def test_regitration_availibility(

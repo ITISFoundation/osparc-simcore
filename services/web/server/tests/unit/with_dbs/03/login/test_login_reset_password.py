@@ -7,15 +7,14 @@ import asyncio
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
-from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.login.utils import get_random_string
 from yarl import URL
-
-EMAIL, PASSWORD = "tester@test.com", "password"
 
 #
 # NOTE: theses tests are hitting a 'global_rate_limit_route' decorated entrypoint: 'auth_reset_password'
@@ -46,18 +45,11 @@ def cfg(client: TestClient) -> LoginOptions:
     return cfg
 
 
-@pytest.fixture
-def db(client: TestClient) -> AsyncpgStorage:
-    assert client.app
-    db: AsyncpgStorage = get_plugin_storage(client.app)
-    assert db
-    return db
-
-
 async def test_unknown_email(
     client: TestClient,
     cfg: LoginOptions,
-    capsys,
+    capsys: CaptureFixture,
+    fake_user_email: str,
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
@@ -65,13 +57,15 @@ async def test_unknown_email(
     rp = await client.post(
         f"{reset_url}",
         json={
-            "email": EMAIL,
+            "email": fake_user_email,
         },
     )
     payload = await rp.text()
 
     assert rp.url.path == reset_url.path
-    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(email=EMAIL))
+    await assert_status(
+        rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(email=fake_user_email)
+    )
 
     out, err = capsys.readouterr()
     assert parse_test_marks(out)["reason"] == cfg.MSG_UNKNOWN_EMAIL
@@ -79,7 +73,10 @@ async def test_unknown_email(
 
 @pytest.mark.parametrize("user_status", (UserStatus.BANNED, UserStatus.EXPIRED))
 async def test_blocked_user(
-    client: TestClient, cfg: LoginOptions, capsys, user_status: UserStatus
+    client: TestClient,
+    cfg: LoginOptions,
+    capsys: CaptureFixture,
+    user_status: UserStatus,
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
@@ -102,7 +99,9 @@ async def test_blocked_user(
     assert expected_msg[:-20] in parse_test_marks(out)["reason"]
 
 
-async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
+async def test_inactive_user(
+    client: TestClient, cfg: LoginOptions, capsys: CaptureFixture
+):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
@@ -124,7 +123,7 @@ async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
 
 
 async def test_too_often(
-    client: TestClient, cfg: LoginOptions, db: AsyncpgStorage, capsys
+    client: TestClient, cfg: LoginOptions, db: AsyncpgStorage, capsys: CaptureFixture
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
@@ -148,7 +147,9 @@ async def test_too_often(
     assert parse_test_marks(out)["reason"] == cfg.MSG_OFTEN_RESET_PASSWORD
 
 
-async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
+async def test_reset_and_confirm(
+    client: TestClient, cfg: LoginOptions, capsys: CaptureFixture
+):
     assert client.app
 
     async with NewUser(app=client.app) as user:
