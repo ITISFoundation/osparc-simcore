@@ -1,10 +1,8 @@
 # pylint:disable=redefined-outer-name
 
-import shutil
 import time
 from pathlib import Path
 from random import randbytes
-from typing import Iterable
 from uuid import uuid4
 
 import pytest
@@ -26,12 +24,6 @@ def _create_files(path: Path, files: NonNegativeInt) -> PositiveInt:
     return total
 
 
-@pytest.fixture
-def directory(tmp_path: Path) -> Iterable[Path]:
-    yield tmp_path
-    shutil.rmtree(tmp_path)
-
-
 @pytest.fixture(params=[10, 100, 1000])
 def files_per_directory(request: FixtureRequest) -> NonNegativeInt:
     return request.param
@@ -44,15 +36,15 @@ def subdirs_per_directory(request: FixtureRequest) -> NonNegativeInt:
 
 @pytest.fixture
 def dir_with_files(
-    directory: Path,
+    tmp_path: Path,
     files_per_directory: NonNegativeInt,
     subdirs_per_directory: NonNegativeInt,
 ) -> tuple[Path, PositiveInt]:
     expected_size = 0
     for i in range(subdirs_per_directory):
-        expected_size += _create_files(directory / f"d{i}", files_per_directory)
+        expected_size += _create_files(tmp_path / f"d{i}", files_per_directory)
 
-    return directory, expected_size
+    return tmp_path, expected_size
 
 
 def test_get_directory_total_size(dir_with_files: tuple[Path, PositiveInt]):
