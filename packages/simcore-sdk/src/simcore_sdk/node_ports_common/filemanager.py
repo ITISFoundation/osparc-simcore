@@ -261,14 +261,8 @@ async def download_file_from_link(
 
 
 async def _abort_upload(
-    session: ClientSession,
-    upload_links: Optional[FileUploadSchema],
-    *,
-    reraise_exceptions: bool,
+    session: ClientSession, upload_links: FileUploadSchema, *, reraise_exceptions: bool
 ) -> None:
-    if not upload_links:
-        return
-
     # abort the upload correctly, so it can revert back to last version
     try:
         async with session.post(upload_links.links.abort_upload) as resp:
@@ -360,10 +354,12 @@ async def upload_file(
             )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             log.error("The upload failed with an unexpected error:", exc_info=True)
-            await _abort_upload(session, upload_links, reraise_exceptions=False)
+            if upload_links:
+                await _abort_upload(session, upload_links, reraise_exceptions=False)
             raise exceptions.S3TransferError from exc
         except CancelledError:
-            await _abort_upload(session, upload_links, reraise_exceptions=False)
+            if upload_links:
+                await _abort_upload(session, upload_links, reraise_exceptions=False)
             raise
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {file_to_upload} complete.")
