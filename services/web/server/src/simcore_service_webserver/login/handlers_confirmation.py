@@ -166,7 +166,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        response = await login_granted_response(request, user=user, cfg=cfg)
+        response = await login_granted_response(request, user=user)
         return response
 
     # fails because of invalid or no code

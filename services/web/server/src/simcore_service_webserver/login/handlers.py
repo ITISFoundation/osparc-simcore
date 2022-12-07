@@ -89,7 +89,7 @@ async def login(request: web.Request):
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
-        response = await login_granted_response(request, user=user, cfg=cfg)
+        response = await login_granted_response(request, user=user)
         return response
 
     # no phone
@@ -184,7 +184,7 @@ async def login_2fa(request: web.Request):
     # dispose since code was used
     await delete_2fa_code(request.app, login_2fa_.email)
 
-    response = await login_granted_response(request, user=user, cfg=cfg)
+    response = await login_granted_response(request, user=user)
     return response
 
 
@@ -197,7 +197,6 @@ class LogoutBody(InputSchema):
 @routes.post("/v0/auth/logout", name="auth_logout")
 @login_required
 async def logout(request: web.Request) -> web.Response:
-    cfg: LoginOptions = get_plugin_options(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
     logout_ = await parse_request_body_as(LogoutBody, request)

@@ -174,7 +174,7 @@ async def register(request: web.Request):
         assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
         assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
-        response = await login_granted_response(request=request, user=user, cfg=cfg)
+        response = await login_granted_response(request=request, user=user)
         return response
 
 
@@ -196,7 +196,6 @@ async def register_phone(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     product: Product = get_current_product(request)
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(

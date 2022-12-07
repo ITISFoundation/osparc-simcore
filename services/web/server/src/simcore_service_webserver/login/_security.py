@@ -9,14 +9,13 @@ from servicelib.logging_utils import log_context
 
 from ..security_api import remember
 from ._constants import MSG_LOGGED_IN
-from .settings import LoginOptions
 from .utils import flash_response
 
 log = logging.getLogger(__name__)
 
 
 async def login_granted_response(
-    request: web.Request, *, user: dict[str, Any], cfg: LoginOptions
+    request: web.Request, *, user: dict[str, Any]
 ) -> web.Response:
     """
     Grants authorization for user creating a responses with an auth cookie
