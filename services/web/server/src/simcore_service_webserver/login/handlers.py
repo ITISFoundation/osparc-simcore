@@ -143,7 +143,7 @@ async def login(request: web.Request):
         ) from e
 
 
-class Login2FABody(InputSchema):
+class Login2faBody(InputSchema):
     email: EmailStr
     code: SecretStr
 
@@ -162,7 +162,7 @@ async def login_2fa(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    login_2fa_ = await parse_request_body_as(Login2FABody, request)
+    login_2fa_ = await parse_request_body_as(Login2faBody, request)
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed

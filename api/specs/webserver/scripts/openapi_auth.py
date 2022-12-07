@@ -15,7 +15,7 @@ from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
-from simcore_service_webserver.login.handlers import Login2FABody, LoginBody, LogoutBody
+from simcore_service_webserver.login.handlers import Login2faBody, LoginBody, LogoutBody
 from simcore_service_webserver.login.handlers_change import (
     ChangeEmailBody,
     ChangePasswordBody,
@@ -83,7 +83,7 @@ async def login(authentication: LoginBody):
     tags=TAGS,
     operation_id="auth_login_2fa",
 )
-async def login_2fa(authentication: Login2FABody):
+async def login_2fa(authentication: Login2faBody):
     """user enters 2 Factor Authentication code when login in"""
 
 
