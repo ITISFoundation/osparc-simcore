@@ -309,13 +309,13 @@
         "tags": [
           "containers"
         ],
-        "summary": "Enable/disable outputs-watcher event propagation",
-        "operationId": "toggle_outputs_watcher_v1_containers_directory_watcher_patch",
+        "summary": "Enable/disable directory-watcher event propagation",
+        "operationId": "toggle_directory_watcher_v1_containers_directory_watcher_patch",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PatchOutputsWatcherItem"
+                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
               }
             }
           },
@@ -779,8 +779,8 @@
           }
         }
       },
-      "PatchOutputsWatcherItem": {
-        "title": "PatchOutputsWatcherItem",
+      "PatchDirectoryWatcherItem": {
+        "title": "PatchDirectoryWatcherItem",
         "required": [
           "is_enabled"
         ],
