@@ -142,10 +142,14 @@ async def parse_request_body_as(
         resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
-        try:
-            body = await request.json()
-        except json.decoder.JSONDecodeError as err:
-            raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}")
+        if not request.has_body:
+            # requests w/o body e.g. when model-schema is fully optional
+            body = {}
+        else:
+            try:
+                body = await request.json()
+            except json.decoder.JSONDecodeError as err:
+                raise web.HTTPBadRequest(reason=f"Invalid json in body: {err}")
 
         if hasattr(model_schema, "parse_obj"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
