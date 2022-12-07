@@ -45,7 +45,11 @@ help: ## this colorful help
 #
 %.txt: %.in
 	cd ..; \
-	pip-compile $(UPGRADE_OPTION) --build-isolation --strip-extras --output-file requirements/$@ requirements/$<
+	pip-compile $(UPGRADE_OPTION) \
+		--build-isolation \
+		--strip-extras \
+		--resolver=backtracking \
+		--output-file requirements/$@ requirements/$<
 
 _test.txt: _base.txt
 
