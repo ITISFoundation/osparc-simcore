@@ -613,14 +613,20 @@ class TutorialBase {
     await this.waitFor(20000, 'Wait for the splash screen to disappear');
 
     const s4lIframe = await this.getIframe(s4lNodeId);
-    await this.waitAndClick('tree-model', s4lIframe);
-    const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
-    const nLabels = modelItems.length;
-    if (nLabels > 1) {
-      modelItems[0].click();
+    await this.waitAndClick('mode-button-modeling', s4lIframe);
+    await this.takeScreenshot("Modeling");
+    const modelTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-model');
+    if (modelTrees.length !== 1) {
+      throw("Model tree missing");
+    }
+
+    const children = await utils.getChildrenElements(modelTrees[0]);
+    const nItems = children.length;
+    if (nItems > 1) {
+      children[0].click();
       await this.waitFor(2000, 'Model clicked');
       await this.takeScreenshot('ModelClicked');
-      modelItems[1].click();
+      children[1].click();
       await this.waitFor(2000, 'Grid clicked');
       await this.takeScreenshot('GridlClicked');
     }
