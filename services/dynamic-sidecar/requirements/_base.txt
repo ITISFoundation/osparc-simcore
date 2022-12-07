@@ -5,7 +5,11 @@
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
 aio-pika==8.2.4
-    # via -r requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiocache==0.11.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
@@ -39,6 +43,8 @@ aiohttp==3.8.3
     #   aiodocker
 aiopg==1.3.3
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+aioprocessing==2.0.1
+    # via -r requirements/_base.in
 aiormq==6.4.2
     # via aio-pika
 aiosignal==1.2.0

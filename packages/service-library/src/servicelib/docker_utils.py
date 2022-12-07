@@ -3,7 +3,6 @@ from datetime import datetime
 _DOCKER_TIMESTAMP_LENGTH = len("2020-10-09T12:28:14.771034")
 
 
-
 def to_datetime(docker_timestamp: str) -> datetime:
     # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
     #  - The T separates the date portion from the time-of-day portion
