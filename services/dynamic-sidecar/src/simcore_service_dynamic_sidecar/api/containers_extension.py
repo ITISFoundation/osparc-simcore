@@ -24,7 +24,7 @@ class CreateDirsRequestItem(BaseModel):
     outputs_labels: dict[str, ServiceOutput]
 
 
-class PatchOutputsWatcherItem(BaseModel):
+class PatchDirectoryWatcherItem(BaseModel):
     is_enabled: bool
 
 
@@ -48,15 +48,15 @@ router = APIRouter()
 
 @router.patch(
     "/containers/directory-watcher",
-    summary="Enable/disable outputs-watcher event propagation",
+    summary="Enable/disable directory-watcher event propagation",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def toggle_outputs_watcher(
-    patch_outputs_watcher_item: PatchOutputsWatcherItem,
+async def toggle_directory_watcher(
+    patch_directory_watcher_item: PatchDirectoryWatcherItem,
     app: FastAPI = Depends(get_application),
 ) -> None:
-    if patch_outputs_watcher_item.is_enabled:
+    if patch_directory_watcher_item.is_enabled:
         enable_outputs_watcher(app)
     else:
         disable_outputs_watcher(app)
