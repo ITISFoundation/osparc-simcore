@@ -162,22 +162,24 @@ async def login_2fa(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    login_ = await parse_request_body_as(Login2FABody, request)
+    login_2fa_ = await parse_request_body_as(Login2FABody, request)
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed
-    if login_.code != await get_2fa_code(request.app, login_.email):
+    if login_2fa_.code.get_secret_value() != await get_2fa_code(
+        request.app, login_2fa_.email
+    ):
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     # FIXME: ask to register if user not found!!
-    user = await db.get_user({"email": login_.email})
+    user = await db.get_user({"email": login_2fa_.email})
     # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since code was used
-    await delete_2fa_code(request.app, login_.email)
+    await delete_2fa_code(request.app, login_2fa_.email)
 
     response = await login_granted_response(request, user=user, cfg=cfg)
     return response

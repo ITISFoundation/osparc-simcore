@@ -70,8 +70,10 @@ async def test_wrong_confirm_pass(
             },
         )
         assert rsp.url.path == url.path
-        assert rsp.status == 409
-        await assert_status(rsp, web.HTTPConflict, login_options.MSG_PASSWORD_MISMATCH)
+        assert rsp.status == web.HTTPUnprocessableEntity.status_code
+        await assert_status(
+            rsp, web.HTTPUnprocessableEntity, login_options.MSG_PASSWORD_MISMATCH
+        )
 
 
 async def test_success(
