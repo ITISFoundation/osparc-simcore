@@ -139,6 +139,7 @@ async function runTutorial() {
   }
   catch (err) {
     // if it fails because the optimizer times out, close the "Preparing Inputs" view first
+    const page = tutorial.getPage();
     const id = '[osparc-test-id=preparingInputsCloseBtn]';
     await page.waitForSelector(id, {
       timeout: 1000
