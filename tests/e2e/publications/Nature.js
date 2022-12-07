@@ -30,12 +30,12 @@ async function runTutorial () {
     await tutorial.waitFor(40000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    const frame = await tutorial.getIframe(voilaIdViewer);
+    const iframe = await tutorial.getIframe(voilaIdViewer);
 
     // check title says "VISUALIZATION"
     const titleSelector = '#VISUALIZATION';
-    const element = await frame.$(titleSelector);
-    const titleText = await frame.evaluate(el => el.innerText, element);
+    const element = await iframe.$(titleSelector);
+    const titleText = await iframe.evaluate(el => el.innerText, element);
     console.log("titleText", titleText);
     if (titleText !== "VISUALIZATION") {
       throw new Error("Voila page title doesn't match the expected");

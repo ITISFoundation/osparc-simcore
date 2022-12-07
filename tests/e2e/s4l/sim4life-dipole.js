@@ -13,10 +13,10 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const studyName = "Dipole Antenna";
+const tutorialName = "Dipole Antenna";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, tutorialName, user, pass, newUser, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();
