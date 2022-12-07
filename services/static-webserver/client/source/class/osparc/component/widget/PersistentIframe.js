@@ -96,6 +96,8 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       appRoot.add(iframe, {
         top: this.self().HIDDEN_TOP
       });
+      iframeEl = this._getIframeElement()
+      iframeEl.setAttribute('allow', 'clipboard-write')
       const restartButton = this.__restartButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/redo-alt/14").set({
         zIndex: 20,
         paddingLeft: 8,
