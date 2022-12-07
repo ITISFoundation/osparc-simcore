@@ -1,7 +1,7 @@
 // node sim4life-light.js [url] [user] [password] [timeout] [--demo]
 
 const utils = require('../utils/utils');
-const tutorialBase = require('./tutorialBase');
+const tutorialBase = require('../tutorials/tutorialBase');
 
 const args = process.argv.slice(2);
 const {

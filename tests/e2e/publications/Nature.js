@@ -12,7 +12,7 @@ const {
 } = utils.parseCommandLineArgumentsTemplate(args);
 
 const anonURL = urlPrefix + templateUuid;
-const screenshotPrefix = "Voila_";
+const screenshotPrefix = "Nature_";
 
 
 async function runTutorial () {

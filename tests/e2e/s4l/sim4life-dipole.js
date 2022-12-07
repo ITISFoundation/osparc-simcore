@@ -1,7 +1,7 @@
-// node sim4life.js [url] [user] [password] [timeout] [--demo]
+// node sim4life-dipole.js [url] [user] [password] [timeout] [--demo]
 
 const utils = require('../utils/utils');
-const tutorialBase = require('./tutorialBase');
+const tutorialBase = require('../tutorials/tutorialBase');
 
 const args = process.argv.slice(2);
 const {
@@ -13,16 +13,25 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const serviceName = "sim4life";
+const studyName = "Dipole Antenna";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, serviceName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();
 
-    // start sim4life-dy service
-    const studyData = await tutorial.openService(1000);
+    // make sure only sim4life-dy is available
+    const services = tutorial.getReceivedServices();
+    if (services.length && services.every(service => service.key === "simcore/services/dynamic/sim4life-dy")) {
+      console.log("Expected services received");
+    }
+    else {
+      throw "Check exposed services";
+    }
+
+    // start Sim4Life Lite
+    const studyData = await tutorial.openTemplate();
     studyId = studyData["data"]["uuid"];
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
@@ -35,11 +44,12 @@ async function runTutorial() {
       false
     );
 
-    await tutorial.testS4L(s4lNodeId);
+    await tutorial.testS4LDipole(s4lNodeId);
   }
   catch (err) {
-    await tutorial.setTutorialFailed(true);
+    tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
+    throw "Tutorial Failed";
   }
   finally {
     await tutorial.leave(studyId);
