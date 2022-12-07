@@ -3,6 +3,8 @@ from typing import Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from pydantic import EmailStr, SecretStr
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -18,6 +20,7 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
+from ._models import InputSchema
 from ._registration import validate_email
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
@@ -48,19 +51,25 @@ _PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
 _SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 
 
+class LoginForm(InputSchema):
+    email: EmailStr
+    password: SecretStr
+
+
+class Login2FAForm(LoginForm):
+    ...
+
+
 @routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    email = body.email
-    password = body.password
+    login_ = await parse_request_body_as(LoginForm, request)
 
-    user = await db.get_user({"email": email})
+    user = await db.get_user({"email": login_.email})
     if not user:
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
@@ -72,13 +81,13 @@ async def login(request: web.Request):
         cfg=cfg,
     )
 
-    if not check_password(password, user["password_hash"]):
+    if not check_password(login_.password.get_secret_value(), user["password_hash"]):
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
-    assert user["email"] == email, "db corrupted. Invalid email"  # nosec
+    assert user["email"] == login_.email, "db corrupted. Invalid email"  # nosec
 
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])

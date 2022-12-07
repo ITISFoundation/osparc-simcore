@@ -15,9 +15,10 @@ from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
+from simcore_service_webserver.login.handlers import Login2FAForm, LoginForm
 from simcore_service_webserver.login.handlers_registration import (
-    RegistrationCreate,
-    Verify2FAPhone,
+    RegisterCreate,
+    RegisterPhoneCreate,
 )
 
 app = FastAPI(redoc_url=None)
@@ -33,7 +34,7 @@ TAGS: list[Union[str, Enum]] = [
     tags=TAGS,
     operation_id="auth_register",
 )
-async def register(registration: RegistrationCreate):
+async def register(registration: RegisterCreate):
     """User registration"""
 
 
@@ -43,7 +44,7 @@ async def register(registration: RegistrationCreate):
     tags=TAGS,
     operation_id="auth_verify_2fa_phone",
 )
-async def register_phone(registration: Verify2FAPhone):
+async def register_phone(registration: RegisterPhoneCreate):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
 
 
@@ -63,16 +64,6 @@ class Validate2FAPhone(BaseModel):
 )
 async def phone_confirmation(confirmation: Validate2FAPhone):
     """user enters 2 Factor Authentication code when registering"""
-
-
-class LoginForm(BaseModel):
-    email: Optional[str] = None
-    password: Optional[str] = None
-
-
-class Login2FAForm(BaseModel):
-    email: str
-    code: str
 
 
 class LogoutRequest(BaseModel):

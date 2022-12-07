@@ -200,7 +200,6 @@ async def test_workflow_register_and_login_with_2fa(
         json={
             "email": fake_user_email,
             "password": fake_user_password,
-            "confirm": fake_user_password,
         },
     )
     data, _ = await assert_status(rsp, web.HTTPAccepted)
