@@ -122,8 +122,9 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Starting s4l");
     await tutorial.takeScreenshot("s4l");
     const s4lIframe = await tutorial.getIframe(ppId);
-    const postProTree = await s4lIframe.$('.algorithm-tree');
-    const postProItems = await postProTree.$$('.MuiTreeItem-label');
+    await tutorial.waitAndClick('mode-button-postro', s4lIframe);
+    await tutorial.takeScreenshot("Postpro");
+    const postProItems = await utils.getVisibleChildrenIDs(s4lIframe, '[osparc-test-id="tree-algorithm');
     const nLabels = postProItems.length;
     if (nLabels > 1) {
       postProItems[0].click();
