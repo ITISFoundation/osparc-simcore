@@ -170,7 +170,7 @@ async def start_aws_instance(
         await waiter.wait(InstanceIds=[instance_id])
         logger.info("instance %s is now running", instance_id)
 
-        # NOTE: this is currently disactivated as this makes starting an instance
+        # NOTE: this is currently deactivated as this makes starting an instance
         # take between 2-4 minutes more and it seems to be responsive much before
         # nevertheless if we get weird errors, this should be activated again!
 
