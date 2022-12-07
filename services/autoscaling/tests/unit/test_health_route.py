@@ -18,7 +18,7 @@ pytest_simcore_ops_services_selection = []
 def app_environment(
     app_environment: EnvVarsDict,
     enabled_rabbitmq: None,
-    monkeypatch: pytest.MonkeyPatch,
+    mocked_aws_server_envs: None,
 ) -> EnvVarsDict:
     return app_environment
 
@@ -31,7 +31,8 @@ async def test_healthcheck(async_client: httpx.AsyncClient):
 
 
 async def test_status_no_rabbit(
-    disabled_rabbitmq: None, async_client: httpx.AsyncClient
+    disabled_rabbitmq: None,
+    async_client: httpx.AsyncClient,
 ):
     response = await async_client.get("/status")
     response.raise_for_status()
@@ -43,8 +44,16 @@ async def test_status_no_rabbit(
     assert rabbitmq_status["initialized"] is False
     assert rabbitmq_status["connection_state"] is False
 
+    assert "ec2" in status_response
+    ec2_status = status_response["ec2"]
+    assert "initialized" in ec2_status
+    assert ec2_status["initialized"] is True
+    assert ec2_status["connection_state"] is True
 
-async def test_status(async_client: httpx.AsyncClient):
+
+async def test_status(
+    async_client: httpx.AsyncClient,
+):
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
@@ -54,3 +63,9 @@ async def test_status(async_client: httpx.AsyncClient):
     assert "initialized" in rabbitmq_status
     assert rabbitmq_status["initialized"] is True
     assert rabbitmq_status["connection_state"] is True
+
+    assert "ec2" in status_response
+    ec2_status = status_response["ec2"]
+    assert "initialized" in ec2_status
+    assert ec2_status["initialized"] is True
+    assert ec2_status["connection_state"] is True

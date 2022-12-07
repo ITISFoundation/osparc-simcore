@@ -40,6 +40,13 @@ class AutoscalingEC2:
     async def close(self) -> None:
         await self.exit_stack.aclose()
 
+    async def ping(self) -> bool:
+        try:
+            await self.client.describe_account_attributes(DryRun=True)
+            return True
+        except Exception:  # pylint: disable=broad-except
+            return False
+
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
