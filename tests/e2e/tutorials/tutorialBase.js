@@ -57,6 +57,10 @@ class TutorialBase {
     return this.__page;
   }
 
+  getPage() {
+    return this.__page;
+  }
+
   async __goTo() {
     console.log("Opening", this.__url);
     // Try to reach the website
