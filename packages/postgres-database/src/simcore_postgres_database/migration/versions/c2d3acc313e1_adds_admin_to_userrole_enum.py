@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE userrole ADD VALUE 'ADMIN'")
+        op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'ADMIN'")
 
 
 def downgrade():
