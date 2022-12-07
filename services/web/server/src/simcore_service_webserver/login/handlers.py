@@ -86,6 +86,7 @@ async def login(request: web.Request):
         response = await login_granted_response(request, user=user, cfg=cfg)
         return response
 
+    # no phone
     if not user["phone"]:
         response = envelope_response(
             {
@@ -97,46 +98,46 @@ async def login(request: web.Request):
         )
         return response
 
-    else:
-        assert user["phone"]  # nosec
-        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
-        assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
+    # create 2FA
+    assert user["phone"]  # nosec
+    assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+    assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
 
-        try:
-            code = await create_2fa_code(request.app, user["email"])
-            await send_sms_code(
-                phone_number=user["phone"],
-                code=code,
-                twilo_auth=settings.LOGIN_TWILIO,
-                twilio_messaging_sid=product.twilio_messaging_sid,
-                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-                user_name=user["name"],
-            )
+    try:
+        code = await create_2fa_code(request.app, user["email"])
+        await send_sms_code(
+            phone_number=user["phone"],
+            code=code,
+            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_messaging_sid=product.twilio_messaging_sid,
+            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+            user_name=user["name"],
+        )
 
-            # TODO: send "continuation token" needed to enter login_2fa only
-            response = envelope_response(
-                {
-                    "code": _SMS_CODE_REQUIRED,
-                    "reason": cfg.MSG_2FA_CODE_SENT.format(
-                        phone_number=mask_phone_number(user["phone"])
-                    ),
-                    "next_url": f"{request.app.router['auth_login_2fa'].url_for()}",
-                },
-                status=web.HTTPAccepted.status_code,
-            )
-            return response
+        # TODO: send "continuation token" needed to enter login_2fa only
+        response = envelope_response(
+            {
+                "code": _SMS_CODE_REQUIRED,
+                "reason": cfg.MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(user["phone"])
+                ),
+                "next_url": f"{request.app.router['auth_login_2fa'].url_for()}",
+            },
+            status=web.HTTPAccepted.status_code,
+        )
+        return response
 
-        except Exception as e:
-            error_code = create_error_code(e)
-            log.exception(
-                "Unexpectedly failed while setting up 2FA code and sending SMS[%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
-            )
-            raise web.HTTPServiceUnavailable(
-                reason=f"Currently we cannot use 2FA, please try again later ({error_code})",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            ) from e
+    except Exception as e:
+        error_code = create_error_code(e)
+        log.exception(
+            "Unexpectedly failed while setting up 2FA code and sending SMS[%s]",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+        raise web.HTTPServiceUnavailable(
+            reason=f"Currently we cannot use 2FA, please try again later ({error_code})",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from e
 
 
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
@@ -156,6 +157,7 @@ async def login_2fa(request: web.Request):
 
     email = body.email
     code = body.code
+
     validate_email(email)
 
     # NOTE that the 2fa code is not generated until the email/password of
@@ -181,10 +183,9 @@ async def login_2fa(request: web.Request):
 @login_required
 async def logout(request: web.Request) -> web.Response:
     cfg: LoginOptions = get_plugin_options(request.app)
-
-    response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     user_id = request.get(RQT_USERID_KEY, -1)
     client_session_id = None
+
     if request.can_read_body:
         body = await request.json()
         client_session_id = body.get("client_session_id", None)
@@ -193,7 +194,8 @@ async def logout(request: web.Request) -> web.Response:
     with log_context(
         log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
     ):
+        response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
         await notify_user_logout(request.app, user_id, client_session_id)
         await forget(request, response)
 
-    return response
+        return response
