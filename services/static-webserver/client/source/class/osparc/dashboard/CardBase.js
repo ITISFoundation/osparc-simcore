@@ -98,8 +98,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     cardKey: {
       check: "String",
-      nullable: true,
-      init: null
+      nullable: true
     },
 
     resourceData: {
