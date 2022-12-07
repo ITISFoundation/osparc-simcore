@@ -10,6 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from pytest import CaptureFixture
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
@@ -28,8 +29,6 @@ from simcore_service_webserver.login.settings import (
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 from simcore_service_webserver.users_models import ProfileGet
 
-EMAIL, PASSWORD = "tester@test.com", "password"
-
 
 @pytest.fixture
 def client(
@@ -38,8 +37,8 @@ def client(
     web_server: TestServer,
     mock_orphaned_services,
 ) -> TestClient:
-    cli = event_loop.run_until_complete(aiohttp_client(web_server))
-    return cli
+    client_ = event_loop.run_until_complete(aiohttp_client(web_server))
+    return client_
 
 
 @pytest.fixture
@@ -58,15 +57,17 @@ def db(client: TestClient) -> AsyncpgStorage:
     return db
 
 
-async def test_regitration_availibility(client: TestClient):
+async def test_regitration_availibility(
+    client: TestClient, fake_user_email: str, fake_user_password: str
+):
     assert client.app
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
-            "password": PASSWORD,
-            "confirm": PASSWORD,
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "confirm": fake_user_password,
         },
     )
 
@@ -167,6 +168,8 @@ async def test_registration_without_confirmation(
     cfg: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
+    fake_user_email: str,
+    fake_user_password: str,
 ):
     assert client.app
     mocker.patch(
@@ -181,14 +184,19 @@ async def test_registration_without_confirmation(
 
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        f"{url}", json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "confirm": fake_user_password,
+        },
     )
     data, error = unwrap_envelope(await r.json())
 
     assert r.status == 200, (data, error)
     assert cfg.MSG_LOGGED_IN in data["message"]
 
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": fake_user_email})
     assert user
     await db.delete_user(user)
 
@@ -197,8 +205,10 @@ async def test_registration_with_confirmation(
     client: TestClient,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    capsys,
-    mocker,
+    capsys: CaptureFixture,
+    mocker: MockerFixture,
+    fake_user_email: str,
+    fake_user_password: str,
 ):
     assert client.app
     mocker.patch(
@@ -213,12 +223,17 @@ async def test_registration_with_confirmation(
 
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
-        f"{url}", json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "confirm": fake_user_password,
+        },
     )
     data, error = unwrap_envelope(await r.json())
     assert r.status == 200, (data, error)
 
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.CONFIRMATION_PENDING.name
 
     assert "verification link" in data["message"]
@@ -237,7 +252,7 @@ async def test_registration_with_confirmation(
     assert resp.status == 200
 
     # user is active
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
 
     # cleanup
@@ -261,6 +276,8 @@ async def test_registration_with_invitation(
     has_valid_invitation: bool,
     expected_response: type[web.HTTPError],
     mocker: MockerFixture,
+    fake_user_email: str,
+    fake_user_password: str,
 ):
     assert client.app
     mocker.patch(
@@ -290,9 +307,9 @@ async def test_registration_with_invitation(
         r = await client.post(
             f"{url}",
             json={
-                "email": EMAIL,
-                "password": PASSWORD,
-                "confirm": PASSWORD,
+                "email": fake_user_email,
+                "password": fake_user_password,
+                "confirm": fake_user_password,
                 "invitation": confirmation["code"]
                 if has_valid_invitation
                 else "WRONG_CODE",
@@ -303,7 +320,11 @@ async def test_registration_with_invitation(
         # check optional fields in body
         if not has_valid_invitation and not is_invitation_required:
             r = await client.post(
-                f"{url}", json={"email": "new-user" + EMAIL, "password": PASSWORD}
+                f"{url}",
+                json={
+                    "email": "new-user" + fake_user_email,
+                    "password": fake_user_password,
+                },
             )
             await assert_status(r, expected_response)
 
@@ -316,6 +337,8 @@ async def test_registraton_with_invitation_for_trial_account(
     cfg: LoginOptions,
     faker: Faker,
     mocker: MockerFixture,
+    fake_user_email: str,
+    fake_user_password: str,
 ):
     assert client.app
     mocker.patch(
@@ -360,9 +383,9 @@ async def test_registraton_with_invitation_for_trial_account(
         r = await client.post(
             f"{url}",
             json={
-                "email": EMAIL,
-                "password": PASSWORD,
-                "confirm": PASSWORD,
+                "email": fake_user_email,
+                "password": fake_user_password,
+                "confirm": fake_user_password,
                 "invitation": invitation.confirmation["code"],
             },
         )
@@ -373,8 +396,8 @@ async def test_registraton_with_invitation_for_trial_account(
         r = await client.post(
             f"{url}",
             json={
-                "email": EMAIL,
-                "password": PASSWORD,
+                "email": fake_user_email,
+                "password": fake_user_password,
             },
         )
         await assert_status(r, web.HTTPOk)
