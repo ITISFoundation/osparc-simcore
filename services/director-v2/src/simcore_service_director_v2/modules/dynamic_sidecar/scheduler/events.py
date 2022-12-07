@@ -59,7 +59,6 @@ from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
     attempt_pod_removal_and_data_saving,
-    disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
     parse_containers_inspect,
@@ -362,46 +361,43 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         )
 
         async def _pull_outputs_and_state():
-            async with disabled_directory_watcher(
-                dynamic_sidecar_client, dynamic_sidecar_endpoint
-            ):
-                tasks = [
-                    dynamic_sidecar_client.pull_service_output_ports(
+            tasks = [
+                dynamic_sidecar_client.pull_service_output_ports(
+                    dynamic_sidecar_endpoint
+                )
+            ]
+            # When enabled no longer downloads state via nodeports
+            # S3 is used to store state paths
+            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+                tasks.append(
+                    dynamic_sidecar_client.restore_service_state(
                         dynamic_sidecar_endpoint
                     )
-                ]
-                # When enabled no longer downloads state via nodeports
-                # S3 is used to store state paths
-                if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                    tasks.append(
-                        dynamic_sidecar_client.restore_service_state(
-                            dynamic_sidecar_endpoint
-                        )
-                    )
+                )
 
-                await logged_gather(*tasks, max_concurrency=2)
+            await logged_gather(*tasks, max_concurrency=2)
 
-                # inside this directory create the missing dirs, fetch those form the labels
-                director_v0_client: DirectorV0Client = get_director_v0_client(app)
-                simcore_service_labels: SimcoreServiceLabels = (
-                    await director_v0_client.get_service_labels(
-                        service=ServiceKeyVersion(
-                            key=scheduler_data.key, version=scheduler_data.version
-                        )
+            # inside this directory create the missing dirs, fetch those form the labels
+            director_v0_client: DirectorV0Client = get_director_v0_client(app)
+            simcore_service_labels: SimcoreServiceLabels = (
+                await director_v0_client.get_service_labels(
+                    service=ServiceKeyVersion(
+                        key=scheduler_data.key, version=scheduler_data.version
                     )
                 )
-                service_outputs_labels = json.loads(
-                    simcore_service_labels.dict().get("io.simcore.outputs", "{}")
-                ).get("outputs", {})
-                logger.debug(
-                    "Creating dirs from service outputs labels: %s",
-                    service_outputs_labels,
-                )
-                await dynamic_sidecar_client.service_outputs_create_dirs(
-                    dynamic_sidecar_endpoint, service_outputs_labels
-                )
+            )
+            service_outputs_labels = json.loads(
+                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+            ).get("outputs", {})
+            logger.debug(
+                "Creating dirs from service outputs labels: %s",
+                service_outputs_labels,
+            )
+            await dynamic_sidecar_client.service_outputs_create_dirs(
+                dynamic_sidecar_endpoint, service_outputs_labels
+            )
 
-                scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+            scheduler_data.dynamic_sidecar.is_service_environment_ready = True
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
@@ -479,6 +475,10 @@ class CreateUserServices(DynamicSchedulerEvent):
 
         await dynamic_sidecar_client.create_containers(
             dynamic_sidecar_endpoint, compose_spec, progress_create_containers
+        )
+
+        await dynamic_sidecar_client.enable_service_outputs_watcher(
+            dynamic_sidecar_endpoint
         )
 
         # Starts PROXY -----------------------------------------------
