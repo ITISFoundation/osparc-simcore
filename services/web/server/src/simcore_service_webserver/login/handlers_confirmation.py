@@ -3,12 +3,11 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import BaseModel, EmailStr, SecretStr, parse_obj_as, validator
+from pydantic import BaseModel, EmailStr, Field, SecretStr, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
@@ -126,11 +125,17 @@ async def email_confirmation(request: web.Request):
     raise web.HTTPFound(location=redirect_to_login_url)
 
 
+class Validate2FAPhone(InputSchema):
+    email: EmailStr
+    phone: str = Field(
+        ..., description="Phone number E.164, needed on the deployments with 2FA"
+    )
+    code: str
+
+
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @routes.post("/auth/validate-code-register", name="auth_validate_2fa_register")
 async def phone_confirmation(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
@@ -141,18 +146,18 @@ async def phone_confirmation(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    email = body.email
-    phone = body.phone
-    code = body.code
+    request_body = await parse_request_body_as(Validate2FAPhone, request)
 
-    if (expected := await get_2fa_code(request.app, email)) and code == expected:
+    if (
+        expected := await get_2fa_code(request.app, request_body.email)
+    ) and request_body.code == expected:
         # consumes code
-        await delete_2fa_code(request.app, email)
+        await delete_2fa_code(request.app, request_body.email)
 
         # updates confirmed phone number
         try:
-            user = await db.get_user({"email": email})
-            await db.update_user(user, {"phone": phone})
+            user = await db.get_user({"email": request_body.email})
+            await db.update_user(user, {"phone": request_body.phone})
 
         except UniqueViolation as err:
             raise web.HTTPUnauthorized(

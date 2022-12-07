@@ -25,7 +25,10 @@ from simcore_service_webserver.login.handlers_change import (
     ChangePasswordForm,
     ResetPasswordRequest,
 )
-from simcore_service_webserver.login.handlers_confirmation import ResetPasswordForm
+from simcore_service_webserver.login.handlers_confirmation import (
+    ResetPasswordForm,
+    Validate2FAPhone,
+)
 from simcore_service_webserver.login.handlers_registration import (
     RegisterCreate,
     RegisterPhoneCreate,
@@ -56,14 +59,6 @@ async def register(registration: RegisterCreate):
 )
 async def register_phone(registration: RegisterPhoneCreate):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
-
-
-class Validate2FAPhone(BaseModel):
-    email: str
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
-    code: str
 
 
 @app.post(
