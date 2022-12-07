@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -10,6 +11,7 @@ from ..security_api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._models import InputSchema
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import LoginOptions, get_plugin_options
 from .storage import AsyncpgStorage, get_plugin_storage
@@ -28,6 +30,10 @@ log = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
+class ResetPasswordRequest(InputSchema):
+    email: str
+
+
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 @routes.post("/v0/auth/reset-password", name="auth_reset_password")
 async def reset_password(request: web.Request):
@@ -43,15 +49,14 @@ async def reset_password(request: web.Request):
      - Support contact information
      - Who requested the reset?
     """
-    _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    email = body.email
+    request_body = await parse_request_body_as(ResetPasswordRequest, request)
 
-    user = await db.get_user({"email": email})
+    user = await db.get_user({"email": request_body.email})
     try:
         if not user:
             raise web.HTTPUnprocessableEntity(
@@ -61,7 +66,7 @@ async def reset_password(request: web.Request):
         validate_user_status(user=user, support_email=product.support_email, cfg=cfg)
 
         assert user["status"] == ACTIVE  # nosec
-        assert user["email"] == email  # nosec
+        assert user["email"] == request_body.email  # nosec
 
         if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(
@@ -74,7 +79,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 from_=product.support_email,
-                to=email,
+                to=request_body.email,
                 template=await get_template_path(
                     request, "reset_password_email_failed.jinja2"
                 ),
@@ -96,7 +101,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 from_=product.support_email,
-                to=email,
+                to=request_body.email,
                 template=await get_template_path(
                     request, "reset_password_email.jinja2"
                 ),
@@ -110,7 +115,9 @@ async def reset_password(request: web.Request):
             await db.delete_confirmation(confirmation)
             raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(cfg.MSG_EMAIL_SENT.format(email=email), "INFO")
+    response = flash_response(
+        cfg.MSG_EMAIL_SENT.format(email=request_body.email), "INFO"
+    )
     return response
 
 

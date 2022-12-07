@@ -16,8 +16,7 @@ from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
-from ._constants import MSG_PASSWORD_MISMATCH
-from ._models import InputSchema
+from ._models import InputSchema, check_confirm_password_match
 from ._registration import check_and_consume_invitation, validate_registration
 from ._security import login_granted_response
 from .settings import (
@@ -54,16 +53,9 @@ class RegisterCreate(InputSchema):
     confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
     invitation: Optional[str] = Field(None, description="Invitation code")
 
-    @validator("confirm")
-    @classmethod
-    def check_password_match(cls, v, values):
-        if (
-            v is not None
-            and "password" in values
-            and v.get_secret_value() != values["password"].get_secret_value()
-        ):
-            raise ValueError(MSG_PASSWORD_MISMATCH)
-        return v
+    _password_confirm_match = validator("confirm", allow_reuse=True)(
+        check_confirm_password_match
+    )
 
     class Config:
         schema_extra = {

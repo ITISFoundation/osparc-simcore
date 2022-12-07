@@ -3,7 +3,11 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, parse_obj_as
+from pydantic import BaseModel, EmailStr, SecretStr, parse_obj_as, validator
+from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -16,6 +20,7 @@ from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
+from ._models import InputSchema, check_confirm_password_match
 from ._security import login_granted_response
 from .settings import (
     LoginOptions,
@@ -162,30 +167,42 @@ async def phone_confirmation(request: web.Request):
     )
 
 
+class _PathParam(BaseModel):
+    code: str
+
+
+class ResetPasswordForm(InputSchema):
+    password: SecretStr
+    confirm: SecretStr
+
+    _password_confirm_match = validator("confirm", allow_reuse=True)(
+        check_confirm_password_match
+    )
+
+
 @routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")
 async def reset_password_allowed(request: web.Request):
     """Changes password using a token code without being logged in"""
-    params, _, body = await extract_and_validate(request)
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    code = params["code"]
-    password = body.password
-    confirm = body.confirm
+    path_params = parse_request_path_parameters_as(_PathParam, request)
+    request_body = await parse_request_body_as(ResetPasswordForm, request)
 
-    if password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 409
-
-    confirmation = await validate_confirmation_code(code, db, cfg)
+    confirmation = await validate_confirmation_code(path_params.code, db, cfg)
 
     if confirmation:
         user = await db.get_user({"id": confirmation["user_id"]})
         assert user  # nosec
 
-        await db.update_user(user, {"password_hash": encrypt_password(password)})
+        await db.update_user(
+            user,
+            {
+                "password_hash": encrypt_password(
+                    request_body.password.get_secret_value()
+                )
+            },
+        )
         await db.delete_confirmation(confirmation)
 
         response = flash_response(cfg.MSG_PASSWORD_CHANGED)
