@@ -42,9 +42,9 @@ def db(client: TestClient) -> AsyncpgStorage:
 
 
 @pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
+def login_options(client: TestClient) -> LoginOptions:
     """app's login options"""
     assert client.app
-    cfg = get_plugin_options(client.app)
+    cfg: LoginOptions = get_plugin_options(client.app)
     assert cfg
     return cfg

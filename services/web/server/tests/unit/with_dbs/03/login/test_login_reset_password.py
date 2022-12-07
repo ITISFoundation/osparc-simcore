@@ -39,7 +39,7 @@ def client(
 
 async def test_unknown_email(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     capsys: CaptureFixture,
     fake_user_email: str,
 ):
@@ -56,24 +56,24 @@ async def test_unknown_email(
 
     assert rp.url.path == reset_url.path
     await assert_status(
-        rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(email=fake_user_email)
+        rp, web.HTTPOk, login_options.MSG_EMAIL_SENT.format(email=fake_user_email)
     )
 
     out, err = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == cfg.MSG_UNKNOWN_EMAIL
+    assert parse_test_marks(out)["reason"] == login_options.MSG_UNKNOWN_EMAIL
 
 
 @pytest.mark.parametrize("user_status", (UserStatus.BANNED, UserStatus.EXPIRED))
 async def test_blocked_user(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     capsys: CaptureFixture,
     user_status: UserStatus,
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
-    expected_msg: str = getattr(cfg, f"MSG_USER_{user_status.name.upper()}")
+    expected_msg: str = getattr(login_options, f"MSG_USER_{user_status.name.upper()}")
 
     async with NewUser({"status": user_status.name}, app=client.app) as user:
         rp = await client.post(
@@ -84,7 +84,7 @@ async def test_blocked_user(
         )
 
     assert rp.url.path == reset_url.path
-    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
+    await assert_status(rp, web.HTTPOk, login_options.MSG_EMAIL_SENT.format(**user))
 
     out, _ = capsys.readouterr()
     # expected_msg contains {support_email} at the end of the string
@@ -92,7 +92,7 @@ async def test_blocked_user(
 
 
 async def test_inactive_user(
-    client: TestClient, cfg: LoginOptions, capsys: CaptureFixture
+    client: TestClient, login_options: LoginOptions, capsys: CaptureFixture
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
@@ -108,14 +108,17 @@ async def test_inactive_user(
         )
 
     assert rp.url.path == reset_url.path
-    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
+    await assert_status(rp, web.HTTPOk, login_options.MSG_EMAIL_SENT.format(**user))
 
     out, err = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == cfg.MSG_ACTIVATION_REQUIRED
+    assert parse_test_marks(out)["reason"] == login_options.MSG_ACTIVATION_REQUIRED
 
 
 async def test_too_often(
-    client: TestClient, cfg: LoginOptions, db: AsyncpgStorage, capsys: CaptureFixture
+    client: TestClient,
+    login_options: LoginOptions,
+    db: AsyncpgStorage,
+    capsys: CaptureFixture,
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
@@ -133,14 +136,14 @@ async def test_too_often(
         await db.delete_confirmation(confirmation)
 
     assert rp.url.path == reset_url.path
-    await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
+    await assert_status(rp, web.HTTPOk, login_options.MSG_EMAIL_SENT.format(**user))
 
     out, err = capsys.readouterr()
-    assert parse_test_marks(out)["reason"] == cfg.MSG_OFTEN_RESET_PASSWORD
+    assert parse_test_marks(out)["reason"] == login_options.MSG_OFTEN_RESET_PASSWORD
 
 
 async def test_reset_and_confirm(
-    client: TestClient, cfg: LoginOptions, capsys: CaptureFixture
+    client: TestClient, login_options: LoginOptions, capsys: CaptureFixture
 ):
     assert client.app
 
@@ -153,7 +156,7 @@ async def test_reset_and_confirm(
             },
         )
         assert rp.url.path == reset_url.path
-        await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
+        await assert_status(rp, web.HTTPOk, login_options.MSG_EMAIL_SENT.format(**user))
 
         out, err = capsys.readouterr()
         confirmation_url = parse_link(out)
@@ -164,7 +167,7 @@ async def test_reset_and_confirm(
         assert rp.status == 200
         assert (
             rp.url.path_qs
-            == URL(cfg.LOGIN_REDIRECT)
+            == URL(login_options.LOGIN_REDIRECT)
             .with_fragment("reset-password?code=%s" % code)
             .path_qs
         )
@@ -184,7 +187,7 @@ async def test_reset_and_confirm(
         payload = await rp.json()
         assert rp.status == 200, payload
         assert rp.url.path == reset_allowed_url.path
-        await assert_status(rp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
+        await assert_status(rp, web.HTTPOk, login_options.MSG_PASSWORD_CHANGED)
         # TODO: multiple flash messages
 
         # Try new password
@@ -202,4 +205,4 @@ async def test_reset_and_confirm(
             },
         )
         assert rp.url.path == login_url.path
-        await assert_status(rp, web.HTTPOk, cfg.MSG_LOGGED_IN)
+        await assert_status(rp, web.HTTPOk, login_options.MSG_LOGGED_IN)

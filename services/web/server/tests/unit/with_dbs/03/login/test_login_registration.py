@@ -61,7 +61,9 @@ async def test_regitration_is_not_get(client: TestClient):
     await assert_error(r, web.HTTPMethodNotAllowed)
 
 
-async def test_registration_with_existing_email(client: TestClient, cfg: LoginOptions):
+async def test_registration_with_existing_email(
+    client: TestClient, login_options: LoginOptions
+):
     assert client.app
     url = client.app.router["auth_register"].url_for()
     async with NewUser(app=client.app) as user:
@@ -73,13 +75,13 @@ async def test_registration_with_existing_email(client: TestClient, cfg: LoginOp
                 "confirm": user["raw_password"],
             },
         )
-    await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
+    await assert_error(r, web.HTTPConflict, login_options.MSG_EMAIL_EXISTS)
 
 
 @pytest.mark.skip("TODO: Feature still not implemented")
 async def test_registration_with_expired_confirmation(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
 ):
@@ -110,12 +112,12 @@ async def test_registration_with_expired_confirmation(
         )
         await db.delete_confirmation(confirmation)
 
-    await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
+    await assert_error(r, web.HTTPConflict, login_options.MSG_EMAIL_EXISTS)
 
 
 async def test_registration_with_invalid_confirmation_code(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
 ):
@@ -139,13 +141,13 @@ async def test_registration_with_invalid_confirmation_code(
     # Invalid code redirect to root without any error to the login page
     #
     assert r.ok
-    assert f"{r.url.relative()}" == cfg.LOGIN_REDIRECT
+    assert f"{r.url.relative()}" == login_options.LOGIN_REDIRECT
     assert r.history[0].status == web.HTTPFound.status_code
 
 
 async def test_registration_without_confirmation(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
     fake_user_email: str,
@@ -174,7 +176,7 @@ async def test_registration_without_confirmation(
     data, error = unwrap_envelope(await r.json())
 
     assert r.status == 200, (data, error)
-    assert cfg.MSG_LOGGED_IN in data["message"]
+    assert login_options.MSG_LOGGED_IN in data["message"]
 
     user = await db.get_user({"email": fake_user_email})
     assert user
@@ -183,7 +185,7 @@ async def test_registration_without_confirmation(
 
 async def test_registration_with_confirmation(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     db: AsyncpgStorage,
     capsys: CaptureFixture,
     mocker: MockerFixture,
@@ -250,7 +252,7 @@ async def test_registration_with_confirmation(
 )
 async def test_registration_with_invitation(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     db: AsyncpgStorage,
     is_invitation_required: bool,
     has_valid_invitation: bool,
@@ -280,7 +282,7 @@ async def test_registration_with_invitation(
         confirmation = f.confirmation
         assert confirmation
 
-        print(get_confirmation_info(cfg, confirmation))
+        print(get_confirmation_info(login_options, confirmation))
 
         url = client.app.router["auth_register"].url_for()
 
@@ -314,7 +316,7 @@ async def test_registration_with_invitation(
 
 async def test_registraton_with_invitation_for_trial_account(
     client: TestClient,
-    cfg: LoginOptions,
+    login_options: LoginOptions,
     faker: Faker,
     mocker: MockerFixture,
     fake_user_email: str,
@@ -353,7 +355,7 @@ async def test_registraton_with_invitation_for_trial_account(
         assert invitation.confirmation
 
         # checks that invitation is correct
-        info = get_confirmation_info(cfg, invitation.confirmation)
+        info = get_confirmation_info(login_options, invitation.confirmation)
         print(info)
         assert info["data"]
         assert isinstance(info["data"], InvitationData)

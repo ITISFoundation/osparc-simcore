@@ -14,15 +14,8 @@ from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.db_models import UserStatus
-from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
+from simcore_service_webserver.login.settings import LoginOptions
 from simcore_service_webserver.session_settings import get_plugin_settings
-
-
-@pytest.fixture
-def login_options(client: TestClient) -> LoginOptions:
-    assert client.app
-    options: LoginOptions = get_plugin_options(client.app)
-    return options
 
 
 def test_login_plugin_setup_succeeded(client: TestClient):

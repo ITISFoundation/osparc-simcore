@@ -49,7 +49,10 @@ async def test_change_to_existing_email(client: TestClient):
 
 
 async def test_change_and_confirm(
-    client: TestClient, cfg: LoginOptions, capsys: CaptureFixture, new_email: str
+    client: TestClient,
+    login_options: LoginOptions,
+    capsys: CaptureFixture,
+    new_email: str,
 ):
     assert client.app
 
@@ -58,7 +61,7 @@ async def test_change_and_confirm(
     login_url = client.app.router["auth_login"].url_for()
     logout_url = client.app.router["auth_logout"].url_for()
 
-    assert index_url.path == URL(cfg.LOGIN_REDIRECT).path
+    assert index_url.path == URL(login_options.LOGIN_REDIRECT).path
 
     async with LoggedUser(client) as user:
         # request change email
@@ -69,7 +72,7 @@ async def test_change_and_confirm(
             },
         )
         assert rsp.url.path == url.path
-        await assert_status(rsp, web.HTTPOk, cfg.MSG_CHANGE_EMAIL_REQUESTED)
+        await assert_status(rsp, web.HTTPOk, login_options.MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
         out, err = capsys.readouterr()
@@ -78,7 +81,7 @@ async def test_change_and_confirm(
         # try new email but logout first
         rsp = await client.post(f"{logout_url}")
         assert rsp.url.path == logout_url.path
-        await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
+        await assert_status(rsp, web.HTTPOk, login_options.MSG_LOGGED_OUT)
 
         # click email's link
         rsp = await client.get(link)
@@ -99,4 +102,4 @@ async def test_change_and_confirm(
         )
         payload = await rsp.json()
         assert rsp.url.path == login_url.path
-        await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)
+        await assert_status(rsp, web.HTTPOk, login_options.MSG_LOGGED_IN)
