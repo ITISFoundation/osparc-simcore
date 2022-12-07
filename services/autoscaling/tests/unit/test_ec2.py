@@ -44,11 +44,6 @@ async def test_ec2_client_with_mock_server(
     await ec2_client.describe_account_attributes(DryRun=True)
 
 
-@pytest.fixture
-def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("EC2_ACCESS_KEY_ID")
-
-
 async def test_ec2_does_not_initialize_if_deactivated(
     disabled_rabbitmq: None, disabled_ec2: None, initialized_app: FastAPI
 ):

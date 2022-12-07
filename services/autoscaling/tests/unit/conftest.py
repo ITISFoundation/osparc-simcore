@@ -129,6 +129,11 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 
 @pytest.fixture
+def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("EC2_ACCESS_KEY_ID")
+
+
+@pytest.fixture
 def enabled_rabbitmq(
     app_environment: EnvVarsDict, rabbit_service: RabbitSettings
 ) -> RabbitSettings:

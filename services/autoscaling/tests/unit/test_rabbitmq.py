@@ -79,7 +79,7 @@ def rabbit_message(
 
 
 def test_rabbitmq_does_not_initialize_if_deactivated(
-    disabled_rabbitmq, initialized_app: FastAPI
+    disabled_rabbitmq: None, disabled_ec2: None, initialized_app: FastAPI
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client == None
@@ -88,7 +88,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 
 
 def test_rabbitmq_initializes(
-    enabled_rabbitmq: RabbitSettings, initialized_app: FastAPI
+    enabled_rabbitmq: RabbitSettings, disabled_ec2: None, initialized_app: FastAPI
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is not None
@@ -98,6 +98,7 @@ def test_rabbitmq_initializes(
 async def test_post_message(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
     rabbit_client: RabbitMQClient,
@@ -120,6 +121,7 @@ async def test_post_message(
 
 async def test_post_message_with_disabled_rabbit_does_not_raise(
     disabled_rabbitmq: None,
+    disabled_ec2: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
 ):
@@ -156,6 +158,7 @@ async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) 
 
 async def test_post_message_when_rabbit_disconnected(
     enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
     initialized_app: FastAPI,
     rabbit_autoscaling_message: RabbitAutoscalingMessage,
     async_docker_client: aiodocker.Docker,

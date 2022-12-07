@@ -10,6 +10,11 @@ class ConfigurationError(AutoscalingRuntimeError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
+class Ec2NotConnectedError(AutoscalingRuntimeError):
+    code = "autoscaling.ec2_not_connected_error"
+    msg_template: str = "Cannot connect with ec2 server"
+
+
 class Ec2InstanceNotFoundError(AutoscalingRuntimeError):
     code = "autoscaling.ec2_instance_not_found_error"
     msg_template: str = "Needed instance was not found"

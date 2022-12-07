@@ -6,9 +6,13 @@ from typing import Optional, cast
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 
-from ..core.errors import ConfigurationError
+from ..core.errors import ConfigurationError, Ec2NotConnectedError
 from ..core.settings import EC2Settings
 
 logger = logging.getLogger(__name__)
@@ -57,7 +61,18 @@ def setup(app: FastAPI) -> None:
             logger.warning("EC2 client is de-activated in the settings")
             return
 
-        app.state.ec2_client = await AutoscalingEC2.create(settings)
+        app.state.ec2_client = client = await AutoscalingEC2.create(settings)
+
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_delay(120),
+            wait=wait_random_exponential(max=30),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+        ):
+            with attempt:
+                connected = await client.ping()
+                if not connected:
+                    raise Ec2NotConnectedError()
 
     async def on_shutdown() -> None:
         if app.state.ec2_client:

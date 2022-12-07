@@ -4,6 +4,7 @@
 
 import httpx
 import pytest
+from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from starlette import status
 
@@ -52,8 +53,31 @@ async def test_status_no_rabbit(
 
 
 async def test_status(
+    mocked_aws_server: ThreadedMotoServer,
     async_client: httpx.AsyncClient,
 ):
+    # stop the aws server...
+    mocked_aws_server.stop()
+
+    response = await async_client.get("/status")
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_200_OK
+    status_response = response.json()
+    assert "rabbitmq" in status_response
+    rabbitmq_status = status_response["rabbitmq"]
+    assert "initialized" in rabbitmq_status
+    assert rabbitmq_status["initialized"] is True
+    assert rabbitmq_status["connection_state"] is True
+
+    assert "ec2" in status_response
+    ec2_status = status_response["ec2"]
+    assert "initialized" in ec2_status
+    assert ec2_status["initialized"] is True
+    assert ec2_status["connection_state"] is False
+
+    # restart the server
+    mocked_aws_server.start()
+
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
