@@ -28,8 +28,6 @@ from simcore_service_webserver.login._2fa import (
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
-EMAIL, PASSWORD, PHONE = "tester@test.com", "password", "+12345678912"
-
 
 @pytest.fixture
 def app_cfg(
@@ -130,7 +128,10 @@ async def test_2fa_code_operations(
 async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
     db: AsyncpgStorage,
-    capsys,
+    capsys: CaptureFixture,
+    fake_user_email: str,
+    fake_user_password: str,
+    fake_user_phone_number: str,
     mocked_twilio_service: dict[str, Mock],
 ):
     assert client.app
@@ -142,9 +143,9 @@ async def test_workflow_register_and_login_with_2fa(
     rsp = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
-            "password": PASSWORD,
-            "confirm": PASSWORD,
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "confirm": fake_user_password,
         },
     )
     await assert_status(rsp, web.HTTPOk)
@@ -163,7 +164,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert rsp.status == web.HTTPOk.status_code
 
     # check email+password registered
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
@@ -174,8 +175,8 @@ async def test_workflow_register_and_login_with_2fa(
     rsp = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
-            "phone": PHONE,
+            "email": fake_user_email,
+            "phone": fake_user_phone_number,
         },
     )
     await assert_status(rsp, web.HTTPAccepted)
@@ -184,10 +185,10 @@ async def test_workflow_register_and_login_with_2fa(
     assert mocked_twilio_service["send_sms_code_for_registration"].called
     kwargs = mocked_twilio_service["send_sms_code_for_registration"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
-    assert phone == PHONE
+    assert phone == fake_user_phone_number
 
     # check phone still NOT in db (TODO: should be in database and unconfirmed)
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
@@ -196,16 +197,16 @@ async def test_workflow_register_and_login_with_2fa(
     rsp = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
-            "phone": PHONE,
+            "email": fake_user_email,
+            "phone": fake_user_phone_number,
             "code": received_code,
         },
     )
     await assert_status(rsp, web.HTTPOk)
     # check user has phone confirmed
-    user = await db.get_user({"email": EMAIL})
+    user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
-    assert user["phone"] == PHONE
+    assert user["phone"] == fake_user_phone_number
 
     # login ---------------------------------------------------------
 
@@ -214,9 +215,9 @@ async def test_workflow_register_and_login_with_2fa(
     rsp = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
-            "password": PASSWORD,
-            "confirm": PASSWORD,
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "confirm": fake_user_password,
         },
     )
     data, _ = await assert_status(rsp, web.HTTPAccepted)
@@ -226,29 +227,31 @@ async def test_workflow_register_and_login_with_2fa(
     # assert SMS was sent
     kwargs = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs
     phone, received_code = kwargs["phone_number"], kwargs["code"]
-    assert phone == PHONE
+    assert phone == fake_user_phone_number
 
     # 2. check SMS code
     url = client.app.router["auth_login_2fa"].url_for()
     rsp = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
+            "email": fake_user_email,
             "code": received_code,
         },
     )
     await assert_status(rsp, web.HTTPOk)
 
     # assert users is successfully registered
-    user = await db.get_user({"email": EMAIL})
-    assert user["email"] == EMAIL
-    assert user["phone"] == PHONE
+    user = await db.get_user({"email": fake_user_email})
+    assert user["email"] == fake_user_email
+    assert user["phone"] == fake_user_phone_number
     assert user["status"] == UserStatus.ACTIVE.value
 
 
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
     db: AsyncpgStorage,
+    fake_user_email: str,
+    fake_user_phone_number: str,
 ):
     """
     Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
@@ -256,7 +259,7 @@ async def test_register_phone_fails_with_used_number(
     assert client.app
 
     # some user ALREADY registered with the same phone
-    await utils_login.create_fake_user(db, data={"phone": PHONE})
+    await utils_login.create_fake_user(db, data={"phone": fake_user_phone_number})
 
     # new registration with same phone
     # 1. submit
@@ -264,8 +267,8 @@ async def test_register_phone_fails_with_used_number(
     rsp = await client.post(
         f"{url}",
         json={
-            "email": EMAIL,
-            "phone": PHONE,
+            "email": fake_user_email,
+            "phone": fake_user_phone_number,
         },
     )
     _, error = await assert_status(rsp, web.HTTPUnauthorized)
@@ -293,5 +296,5 @@ async def test_send_email_code(
     out, _ = capsys.readouterr()
     parsed_context = parse_test_marks(out)
     assert parsed_context["code"] == f"{code}"
-    assert parsed_context["name"] == user_name
+    assert parsed_context["name"] == user_name.capitalize()
     assert parsed_context["support_email"] == support_email

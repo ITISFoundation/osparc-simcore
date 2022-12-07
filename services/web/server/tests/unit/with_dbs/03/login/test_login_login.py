@@ -17,8 +17,6 @@ from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.session_settings import get_plugin_settings
 
-EMAIL, PASSWORD = "tester@test.com", "password"
-
 
 @pytest.fixture
 def login_options(client: TestClient) -> LoginOptions:
@@ -136,7 +134,7 @@ async def test_login_successfully(client: TestClient, login_options: LoginOption
     "cookie_enabled,expected", [(True, web.HTTPOk), (False, web.HTTPUnauthorized)]
 )
 async def test_proxy_login(
-    client: TestClient, cookie_enabled: bool, expected: web.HTTPException
+    client: TestClient, cookie_enabled: bool, expected: type[web.HTTPException]
 ):
     assert client.app
     restricted_url = client.app.router["get_my_profile"].url_for()
