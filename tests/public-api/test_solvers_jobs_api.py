@@ -289,7 +289,7 @@ def test_run_job(
         # NOTE: https://github.com/itisfoundation/osparc-simcore/issues/3569 shows
         # that this test might not have the logs ready in time and returns a 404 (not found)
         # for that reason we do a few retries before giving up
-        for attempt in Retrying(_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND):
+        for attempt in Retrying(**_RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND):
             with attempt:
                 try:
                     logfile: str = solvers_api.get_job_output_logfile(
