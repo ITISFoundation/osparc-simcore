@@ -49,3 +49,8 @@ done
 
 It would also be possible to upgrade them simultaneously by using ``--upgrade`` multiple times as ``pip-compile --upgrade X --upgrade Y ...``
 but we prefer to do it one by one and commit changes so that any issue can be tracked to the library upgrade
+
+
+TIP: Check the **Repo-wide overview of libraries** table in the report. Observe the libraries with multiple version in ``version-*`` columns. Note that we can use the script to unifyunify:
+  - Those with no ``version-base`` and multiple in ``version-test``
+  - Thos with multiple in ``version-base`` and non in ``version-test``
