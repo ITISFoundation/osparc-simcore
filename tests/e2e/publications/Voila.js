@@ -28,18 +28,29 @@ async function runTutorial () {
     await tutorial.waitForServices(
       workbenchData["studyId"],
       [voilaIdViewer],
-      startTimeout,
-      false
+      startTimeout
     );
 
-    await tutorial.waitFor(40000, 'Some time for starting the iframe');
+    await tutorial.waitFor(2000, 'Service started');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    const iframe = await tutorial.getIframe(voilaIdViewer);
+    const voilaTimeout = 240000;
+    const checkFrequency = 5000;
+    // wait for iframe to be ready, it might take a while in Voila
+    let iframe = null;
+    for (let i=0; i<voilaTimeout; i+=checkFrequency) {
+      iframe = await tutorial.getIframe(voilaIdViewer);
+      if (iframe) {
+        break;
+      }
+      await tutorial.waitFor(checkFrequency, `iframe not ready yet: ${i/1000}s`);
+    }
+
+    // Voila says: "Ok, voila is still executing...". At this point we can only wait
+    await tutorial.waitFor(50000, "Load iframe");
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame');
 
     // look for "rendered_cells" which is the root div of a Voila document
-    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame');
     await iframe.waitForSelector('#rendered_cells', {
       timeout: 5000
     })
