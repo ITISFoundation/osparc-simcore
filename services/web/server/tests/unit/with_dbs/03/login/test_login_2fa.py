@@ -123,7 +123,7 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 1. submit
     url = client.app.router["auth_register"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
@@ -131,7 +131,7 @@ async def test_workflow_register_and_login_with_2fa(
             "confirm": fake_user_password,
         },
     )
-    await assert_status(rsp, web.HTTPOk)
+    await assert_status(response, web.HTTPOk)
 
     # check email was sent
     def _get_confirmation_link_from_email():
@@ -143,8 +143,8 @@ async def test_workflow_register_and_login_with_2fa(
     url = _get_confirmation_link_from_email()
 
     # 2. confirmation
-    rsp = await client.get(url)
-    assert rsp.status == web.HTTPOk.status_code
+    response = await client.get(url)
+    assert response.status == web.HTTPOk.status_code
 
     # check email+password registered
     user = await db.get_user({"email": fake_user_email})
@@ -155,14 +155,14 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
             "phone": fake_user_phone_number,
         },
     )
-    await assert_status(rsp, web.HTTPAccepted)
+    await assert_status(response, web.HTTPAccepted)
 
     # check code generated and SMS sent
     assert mocked_twilio_service["send_sms_code_for_registration"].called
@@ -177,7 +177,7 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 2. confirmation
     url = client.app.router["auth_validate_2fa_register"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
@@ -185,7 +185,7 @@ async def test_workflow_register_and_login_with_2fa(
             "code": received_code,
         },
     )
-    await assert_status(rsp, web.HTTPOk)
+    await assert_status(response, web.HTTPOk)
     # check user has phone confirmed
     user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
@@ -195,14 +195,14 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 1. check email/password then send SMS
     url = client.app.router["auth_login"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
             "password": fake_user_password,
         },
     )
-    data, _ = await assert_status(rsp, web.HTTPAccepted)
+    data, _ = await assert_status(response, web.HTTPAccepted)
 
     assert data["code"] == "SMS_CODE_REQUIRED"
 
@@ -213,14 +213,14 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 2. check SMS code
     url = client.app.router["auth_login_2fa"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
             "code": received_code,
         },
     )
-    await assert_status(rsp, web.HTTPOk)
+    await assert_status(response, web.HTTPOk)
 
     # assert users is successfully registered
     user = await db.get_user({"email": fake_user_email})
@@ -246,14 +246,14 @@ async def test_register_phone_fails_with_used_number(
     # new registration with same phone
     # 1. submit
     url = client.app.router["auth_verify_2fa_phone"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
             "phone": fake_user_phone_number,
         },
     )
-    _, error = await assert_status(rsp, web.HTTPUnauthorized)
+    _, error = await assert_status(response, web.HTTPUnauthorized)
     assert "phone" in error["message"]
 
 

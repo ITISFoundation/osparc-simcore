@@ -18,18 +18,18 @@ async def test_logout(client: TestClient, db: AsyncpgStorage):
     async with LoggedUser(client) as user:
 
         # try to access protected page
-        r = await client.post(f"{protected_url}", json={"email": user["email"]})
-        assert r.url.path == protected_url.path
-        await assert_status(r, web.HTTPOk)
+        response = await client.post(f"{protected_url}", json={"email": user["email"]})
+        assert response.url.path == protected_url.path
+        await assert_status(response, web.HTTPOk)
 
         # logout
-        r = await client.post(f"{logout_url}")
-        assert r.url.path == logout_url.path
-        await assert_status(r, web.HTTPOk)
+        response = await client.post(f"{logout_url}")
+        assert response.url.path == logout_url.path
+        await assert_status(response, web.HTTPOk)
 
         # and try again
-        r = await client.post(f"{protected_url}")
-        assert r.url.path == protected_url.path
-        await assert_status(r, web.HTTPUnauthorized)
+        response = await client.post(f"{protected_url}")
+        assert response.url.path == protected_url.path
+        await assert_status(response, web.HTTPUnauthorized)
 
     await db.delete_user(user)

@@ -195,12 +195,12 @@ def test_render_string_from_tmp_file(
 
     expected_page = render_string(
         template_name=f"{template_path}",
-        http_request=http_request,
+        request=http_request,
         context=context,
     )
     got_page = render_string(
         template_name=f"{copy_path}",
-        http_request=http_request,
+        request=http_request,
         context=context,
     )
 

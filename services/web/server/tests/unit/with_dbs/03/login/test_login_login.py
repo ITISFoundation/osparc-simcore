@@ -18,9 +18,10 @@ from simcore_service_webserver.login._constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_LOGGED_IN,
     MSG_UNKNOWN_EMAIL,
+    MSG_USER_BANNED,
+    MSG_USER_EXPIRED,
     MSG_WRONG_PASSWORD,
 )
-from simcore_service_webserver.login.settings import LoginOptions
 from simcore_service_webserver.session_settings import get_plugin_settings
 
 
@@ -69,12 +70,13 @@ async def test_login_with_wrong_password(client: TestClient):
     assert MSG_WRONG_PASSWORD in await r.text()
 
 
-@pytest.mark.parametrize("user_status", (UserStatus.BANNED, UserStatus.EXPIRED))
+@pytest.mark.parametrize(
+    "user_status,expected_msg",
+    ((UserStatus.BANNED, MSG_USER_BANNED), (UserStatus.EXPIRED, MSG_USER_EXPIRED)),
+)
 async def test_login_blocked_user(
-    client: TestClient, login_options: LoginOptions, user_status: UserStatus
+    client: TestClient, user_status: UserStatus, expected_msg: str
 ):
-    expected_msg: str = getattr(login_options, f"MSG_USER_{user_status.name.upper()}")
-
     assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(f"{url}")

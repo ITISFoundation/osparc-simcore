@@ -142,7 +142,7 @@ async def parse_request_body_as(
         resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
-        if not request.has_body:
+        if not request.can_read_body:
             # requests w/o body e.g. when model-schema is fully optional
             body = {}
         else:

@@ -5,8 +5,8 @@ from typing import Optional, TypedDict
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from simcore_service_webserver.db_models import UserRole, UserStatus
+from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._registration import create_invitation_token
-from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 from yarl import URL
 
@@ -71,7 +71,6 @@ async def log_client_in(
     # creates user directly in db
     assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
-    cfg: LoginOptions = get_plugin_options(client.app)
 
     user = await create_fake_user(db, user_data)
 
@@ -86,7 +85,7 @@ async def log_client_in(
     )
 
     if enable_check:
-        await assert_status(r, web.HTTPOk, cfg.MSG_LOGGED_IN)
+        await assert_status(r, web.HTTPOk, MSG_LOGGED_IN)
 
     return user
 

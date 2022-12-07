@@ -26,14 +26,14 @@ def new_email(fake_user_email: str) -> str:
 async def test_unauthorized_to_change_email(client: TestClient, new_email: str):
     assert client.app
     url = client.app.router["auth_change_email"].url_for()
-    rsp = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": new_email,
         },
     )
-    assert rsp.status == 401
-    await assert_status(rsp, web.HTTPUnauthorized)
+    assert response.status == 401
+    await assert_status(response, web.HTTPUnauthorized)
 
 
 async def test_change_to_existing_email(client: TestClient):
@@ -42,14 +42,14 @@ async def test_change_to_existing_email(client: TestClient):
 
     async with LoggedUser(client) as user:
         async with NewUser(app=client.app) as other:
-            rsp = await client.post(
+            response = await client.post(
                 f"{url}",
                 json={
                     "email": other["email"],
                 },
             )
             await assert_status(
-                rsp, web.HTTPUnprocessableEntity, "This email cannot be used"
+                response, web.HTTPUnprocessableEntity, "This email cannot be used"
             )
 
 
@@ -70,41 +70,41 @@ async def test_change_and_confirm(
 
     async with LoggedUser(client) as user:
         # request change email
-        rsp = await client.post(
+        response = await client.post(
             f"{url}",
             json={
                 "email": new_email,
             },
         )
-        assert rsp.url.path == url.path
-        await assert_status(rsp, web.HTTPOk, MSG_CHANGE_EMAIL_REQUESTED)
+        assert response.url.path == url.path
+        await assert_status(response, web.HTTPOk, MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
         out, err = capsys.readouterr()
         link = parse_link(out)
 
         # try new email but logout first
-        rsp = await client.post(f"{logout_url}")
-        assert rsp.url.path == logout_url.path
-        await assert_status(rsp, web.HTTPOk, MSG_LOGGED_OUT)
+        response = await client.post(f"{logout_url}")
+        assert response.url.path == logout_url.path
+        await assert_status(response, web.HTTPOk, MSG_LOGGED_OUT)
 
         # click email's link
-        rsp = await client.get(link)
-        txt = await rsp.text()
+        response = await client.get(link)
+        txt = await response.text()
 
-        assert rsp.url.path == index_url.path
+        assert response.url.path == index_url.path
         assert (
             "This is a result of disable_static_webserver fixture for product OSPARC"
             in txt
         )
 
-        rsp = await client.post(
+        response = await client.post(
             f"{login_url}",
             json={
                 "email": new_email,
                 "password": user["raw_password"],
             },
         )
-        payload = await rsp.json()
-        assert rsp.url.path == login_url.path
-        await assert_status(rsp, web.HTTPOk, MSG_LOGGED_IN)
+        payload = await response.json()
+        assert response.url.path == login_url.path
+        await assert_status(response, web.HTTPOk, MSG_LOGGED_IN)
