@@ -124,7 +124,7 @@ async function runTutorial() {
     const s4lIframe = await tutorial.getIframe(ppId);
     await tutorial.waitAndClick('mode-button-postro', s4lIframe);
     await tutorial.takeScreenshot("Postpro");
-    const postProItems = await utils.getVisibleChildrenIDs(s4lIframe, '[osparc-test-id="tree-algorithm');
+    const postProItems = await utils.getElementChildren(s4lIframe, '[osparc-test-id="tree-algorithm');
     const nLabels = postProItems.length;
     if (nLabels > 1) {
       postProItems[0].click();

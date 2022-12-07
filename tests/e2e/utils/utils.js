@@ -142,6 +142,19 @@ async function getFileTreeItemIDs(page, rootName) {
   return childrenIDs;
 }
 
+async function getElementChildren(page, selector) {
+  const childrenIDs = await page.evaluate((selector) => {
+    const children = [];
+    const treeRoot = document.querySelector(selector);
+    if (treeRoot.parentElement) {
+      const tree = treeRoot.parentElement;
+      return tree.children;
+    }
+    return children;
+  }, selector);
+  return childrenIDs;
+}
+
 async function getVisibleChildrenIDs(page, parentSelector) {
   const childrenIDs = await page.evaluate((selector) => {
     const parentNode = document.querySelector(selector);
@@ -529,6 +542,7 @@ module.exports = {
   getDomain,
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
+  getElementChildren,
   getVisibleChildrenIDs,
   getDashboardCardLabel,
   getStyle,
