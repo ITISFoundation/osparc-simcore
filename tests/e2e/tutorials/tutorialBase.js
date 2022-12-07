@@ -634,7 +634,6 @@ class TutorialBase {
     await this.waitAndClick('mode-button-postro', s4lIframe);
     await this.takeScreenshot("Postpro");
     const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
-    console.log(algorithmTrees);
     if (algorithmTrees.length !== 1) {
       throw("Post Pro tree missing");
     }
