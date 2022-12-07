@@ -650,7 +650,7 @@ class TutorialBase {
       await this.takeScreenshot('AlgorithmClicked');
     }
     else {
-      throw("Post Pro tree missing");
+      throw("Post Pro tree items missing");
     }
   }
 

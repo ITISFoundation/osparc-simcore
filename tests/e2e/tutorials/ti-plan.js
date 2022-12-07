@@ -44,7 +44,7 @@ async function runTutorial() {
     // wait for the three services, except the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [esId, tiId, ppId],
+      [esId],
       startTimeout,
       false
     );
@@ -81,7 +81,7 @@ async function runTutorial() {
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
-    await tutorial.waitFor(10000, "Load iframe");
+    await tutorial.waitFor(20000, "Load iframe");
     const postProIframe = await tutorial.getIframe(tiId);
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
@@ -119,7 +119,7 @@ async function runTutorial() {
 
     // Check s4l
     await tutorial.waitAndClick("AppMode_NextBtn");
-    await tutorial.testS4LTIPostPro();
+    await tutorial.testS4LTIPostPro(ppId);
   }
   catch (err) {
     // if it fails because the optimizer times out, close the "Preparing Inputs" view first
