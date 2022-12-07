@@ -7,6 +7,7 @@ from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
 from servicelib.json_serialization import json_dumps
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
 from ._constants import INDEX_RESOURCE_NAME
@@ -61,9 +62,7 @@ def create_url_for_function(request: web.Request) -> Callable:
 def envelope_json_response(
     obj: Any, status_cls: type[HTTPException] = web.HTTPOk
 ) -> web.Response:
-    # TODO: replace all envelope functionality form packages/service-library/src/servicelib/aiohttp/rest_responses.py
-    # TODO: Remove middleware to envelope handler responses at packages/service-library/src/servicelib/aiohttp/rest_middlewares.py: envelope_middleware_factory and use instead this
-    # TODO: review error_middleware_factory
+    # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3646
     if issubclass(status_cls, HTTPError):
         enveloped = Envelope[Any](error=obj)
     else:
@@ -71,7 +70,7 @@ def envelope_json_response(
 
     return web.Response(
         text=json_dumps(enveloped.dict(**RESPONSE_MODEL_POLICY)),
-        content_type="application/json",
+        content_type=MIMETYPE_APPLICATION_JSON,
         status=status_cls.status_code,
     )
 
@@ -93,12 +92,12 @@ def create_redirect_response(
 
     Front-end can then render this data either in an error or a view page
     """
-    # TODO: Uniform encoding in front-end fragments  https://github.com/ITISFoundation/osparc-simcore/issues/1975
     log.debug("page: '%s' parameters: '%s'", page, parameters)
-
-    page = page.strip(" /")
     assert page in ("view", "error")  # nosec
-    fragment_path = str(URL.build(path=f"/{page}").with_query(parameters))
+
+    # NOTE: uniform encoding in front-end using url fragments
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1975
+    fragment_path = f"{URL.build(path=f'/{page}').with_query(parameters)}"
     redirect_url = (
         app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
     )
