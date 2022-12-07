@@ -96,6 +96,10 @@ async def validate_registration(
 ) -> None:
     # email : required & formats
     # password: required & secure[min length, ...]
+    #
+    # NOTE: Extra requirements on passwords
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
+    #
 
     if email is None or password is None:
         raise web.HTTPBadRequest(
@@ -110,47 +114,37 @@ async def validate_registration(
 
     validate_email(email)
 
-    #
-    # NOTE: Extra requirements on passwords
-    #
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
-    #
-
+    # The email is already taken
     if user := await db.get_user({"email": email}):
-
-        if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
-            _confirmation: ConfirmationTokenDict = await db.get_confirmation(
-                {"user": user, "action": ConfirmationAction.REGISTRATION.value}
+        if (
+            user["status"] == UserStatus.CONFIRMATION_PENDING.value
+            and (
+                _confirmation := await db.get_confirmation(
+                    filter_dict={
+                        "user": user,
+                        "action": ConfirmationAction.REGISTRATION.value,
+                    }
+                )
             )
+            and is_confirmation_expired(cfg, _confirmation)
+        ):
+            #
+            # An unconfirmed account with an expired confirmation
+            # will get deleted and the email is associated to this new registration
+            #
+            await db.delete_confirmation_and_user(user=user, confirmation=_confirmation)
 
-            if is_confirmation_expired(cfg, _confirmation):
-                # Confirmation has expired and therefore we treat this
-                # request as a new registration. For that reason we need to
-                # delete the user entry so it can be re-created.
-                #
+            log.warning(
+                "Re-registration of %s with expired %s"
+                "Deleting user and proceeding to a new registration",
+                f"{user=}",
+                f"{_confirmation=}",
+            )
+            return
 
-                # FIXME: deleting confirmation and user will delete associated projects!?
-                # FIXME: Can a unconfirmed user be authorized to start projects or not?
-                # FIXME: instead create new confirmation and resend ???
-
-                await db.delete_confirmation_and_user(
-                    user=user, confirmation=_confirmation
-                )
-
-                log.warning(
-                    "Re-registration of %s with expired %s"
-                    "Deleting user and proceeding to a new registration",
-                    f"{user=}",
-                    f"{_confirmation=}",
-                )
-                return
-
-        # The email is already taken !!
         raise web.HTTPConflict(
             reason=cfg.MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
-        )  # https://developer.mozilla.org/en-US/docs/web/http/status/409
-
-    log.debug("Registration data validated")
+        )
 
 
 async def create_invitation_token(
