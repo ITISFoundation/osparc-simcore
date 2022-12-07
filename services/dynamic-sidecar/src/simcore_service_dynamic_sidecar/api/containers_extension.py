@@ -9,9 +9,13 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..modules import directory_watcher
 from ..modules.mounted_fs import MountedVolumes
-from ._dependencies import get_application, get_mounted_volumes
+from ..modules.outputs import (
+    OutputsContext,
+    disable_outputs_watcher,
+    enable_outputs_watcher,
+)
+from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +57,9 @@ async def toggle_directory_watcher(
     app: FastAPI = Depends(get_application),
 ) -> None:
     if patch_directory_watcher_item.is_enabled:
-        directory_watcher.enable_directory_watcher(app)
+        enable_outputs_watcher(app)
     else:
-        directory_watcher.disable_directory_watcher(app)
+        disable_outputs_watcher(app)
 
 
 @router.post(
@@ -72,12 +76,23 @@ async def toggle_directory_watcher(
 async def create_output_dirs(
     request_mode: CreateDirsRequestItem,
     mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    outputs_context: OutputsContext = Depends(get_outputs_context),
 ) -> None:
     outputs_path = mounted_volumes.disk_outputs_path
+    file_type_port_keys = []
+    non_file_port_keys = []
     for port_key, service_output in request_mode.outputs_labels.items():
+        logger.debug("Parsing output labels, detected: %s", f"{port_key=}")
         if is_file_type(service_output.property_type):
             dir_to_create = outputs_path / port_key
             dir_to_create.mkdir(parents=True, exist_ok=True)
+            file_type_port_keys.append(port_key)
+        else:
+            non_file_port_keys.append(port_key)
+
+    logger.debug("Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}")
+    await outputs_context.set_file_type_port_keys(file_type_port_keys)
+    outputs_context.non_file_type_port_keys = non_file_port_keys
 
 
 @router.post(
