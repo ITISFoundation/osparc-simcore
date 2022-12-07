@@ -18,13 +18,6 @@
 --requirement ../../../../packages/service-library/requirements/_aiohttp.in
 
 
-# web-sockets
-# From 5.0.0, https://github.com/miguelgrinberg/python-socketio/blob/main/CHANGES.md
-# test_resource_manager.py::test_websocket_resource_management fails because
-# socket_id saved in redis does not correspond to client's sio
-python-socketio
-
-
 
 aio-pika # RabbitMQ client
 aiodebug # asyncio debug
@@ -51,6 +44,7 @@ passlib
 pint # units
 pydantic[email] # models
 python-magic # excel
+python-socketio # web-sockets
 redis
 tenacity
 twilio
