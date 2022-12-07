@@ -166,8 +166,11 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
     // overridden
     add: function(child, idx) {
       if (child instanceof qx.ui.form.ToggleButton) {
-        child.addListener("changeVisibility", () => this.__childVisibilityChanged(), this);
         const container = this.getContentContainer();
+        if (osparc.dashboard.ResourceContainerManager.cardExists(container, child)) {
+          return;
+        }
+        child.addListener("changeVisibility", () => this.__childVisibilityChanged(), this);
         if (idx === undefined) {
           container.add(child);
         } else {
