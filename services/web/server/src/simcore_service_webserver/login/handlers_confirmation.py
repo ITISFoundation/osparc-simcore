@@ -37,7 +37,7 @@ routes = RouteTableDef()
 
 
 class _PathParam(BaseModel):
-    code: str
+    code: SecretStr
 
 
 @routes.get("/auth/confirmation/{code}", name="auth_confirmation")
@@ -63,7 +63,7 @@ async def email_confirmation(request: web.Request):
     path_params = parse_request_path_parameters_as(_PathParam, request)
 
     confirmation: Optional[ConfirmationTokenDict] = await validate_confirmation_code(
-        path_params.code, db=db, cfg=cfg
+        path_params.code.get_secret_value(), db=db, cfg=cfg
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -130,7 +130,7 @@ class PhoneConfirmationBody(InputSchema):
     phone: str = Field(
         ..., description="Phone number E.164, needed on the deployments with 2FA"
     )
-    code: str
+    code: SecretStr
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
@@ -150,7 +150,7 @@ async def phone_confirmation(request: web.Request):
 
     if (
         expected := await get_2fa_code(request.app, request_body.email)
-    ) and request_body.code == expected:
+    ) and request_body.code.get_secret_value() == expected:
         # consumes code
         await delete_2fa_code(request.app, request_body.email)
 
@@ -192,7 +192,9 @@ async def reset_password_allowed(request: web.Request):
     path_params = parse_request_path_parameters_as(_PathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    confirmation = await validate_confirmation_code(path_params.code, db, cfg)
+    confirmation = await validate_confirmation_code(
+        path_params.code.get_secret_value(), db, cfg
+    )
 
     if confirmation:
         user = await db.get_user({"id": confirmation["user_id"]})
