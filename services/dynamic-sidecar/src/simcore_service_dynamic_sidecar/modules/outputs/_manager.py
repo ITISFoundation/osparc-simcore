@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from asyncio import CancelledError, Future, Lock, Task, create_task, wait_for
+from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from datetime import timedelta
 from functools import partial
@@ -25,7 +25,7 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
     task.cancel()
     with suppress(CancelledError):
         with log_catch(logger, reraise=False):
-            await wait_for(task, timeout=task_cancellation_timeout_s)
+            await wait((task,), timeout=task_cancellation_timeout_s)
 
 
 class UploadPortsFailed(PydanticErrorMixin, RuntimeError):
