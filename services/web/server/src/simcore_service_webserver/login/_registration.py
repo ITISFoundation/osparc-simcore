@@ -74,9 +74,6 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
 }
 
 
-# TODO: use models in api/specs/webserver/scripts/openapi_auth.py  to validate and connect reponses in the OAS
-
-
 def validate_email(email):
     try:
         parse_obj_as(EmailStr, email)
@@ -89,8 +86,6 @@ def validate_email(email):
 
 async def validate_registration(
     email: str,
-    password: str,
-    confirm: Optional[str],
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
@@ -100,19 +95,6 @@ async def validate_registration(
     # NOTE: Extra requirements on passwords
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
     #
-
-    if email is None or password is None:
-        raise web.HTTPBadRequest(
-            reason="Both email and password are required",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )  # https://developer.mozilla.org/en-US/docs/web/http/status/400
-
-    if confirm and password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )  # https://developer.mozilla.org/en-US/docs/web/http/status/409
-
-    validate_email(email)
 
     # The email is already taken
     if user := await db.get_user({"email": email}):

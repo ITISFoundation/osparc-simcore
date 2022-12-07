@@ -1,8 +1,11 @@
 import logging
 from datetime import datetime, timedelta
+from typing import Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from pydantic import BaseModel, EmailStr, Extra, Field, SecretStr, validator
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -14,6 +17,7 @@ from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
+from ._constants import MSG_PASSWORD_MISMATCH
 from ._registration import (
     check_and_consume_invitation,
     validate_email,
@@ -48,6 +52,43 @@ def _get_user_name(email: str) -> str:
 routes = RouteTableDef()
 
 
+class _InputSchema(BaseModel):
+    class Config:
+        allow_population_by_field_name = False
+        extra = Extra.forbid
+        allow_mutations = False
+
+
+class RegistrationCreate(_InputSchema):
+    email: EmailStr
+    password: SecretStr
+    confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
+    invitation: Optional[str] = Field(None, description="Invitation code")
+
+    @validator("confirm")
+    @classmethod
+    def check_password_match(cls, v, values):
+        if (
+            v is not None
+            and "password" in values
+            and v != values["password"].get_secret_value()
+        ):
+            raise ValueError(MSG_PASSWORD_MISMATCH)
+        return v
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                {
+                    "email": "foo@mymail.com",
+                    "password": "my secret",
+                    "confirm": "my secret",  # optional
+                    "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",  # optional only active
+                }
+            ]
+        }
+
+
 @routes.post("/v0/auth/register", name="auth_register")
 async def register(request: web.Request):
     """
@@ -61,35 +102,31 @@ async def register(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    _, _, body = await extract_and_validate(request)
-    email = body.email
-    password = body.password
-    confirm = body.confirm if hasattr(body, "confirm") else None
+    registration = await parse_request_body_as(RegistrationCreate, request)
 
-    await validate_registration(email, password, confirm, db=db, cfg=cfg)
+    await validate_registration(email=registration.email, db=db, cfg=cfg)
 
     expires_at = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         # Only requests with INVITATION can register user
         # to either a permanent or to a trial account
-        try:
-            invitation_code = body.invitation
-        except AttributeError as e:
+        invitation_code = registration.invitation
+        if invitation_code is None:
             raise web.HTTPBadRequest(
                 reason="invitation field is required",
                 content_type=MIMETYPE_APPLICATION_JSON,
-            ) from e
+            )
 
         invitation = await check_and_consume_invitation(invitation_code, db=db, cfg=cfg)
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
-    username = _get_user_name(email)
+    username = _get_user_name(registration.email)
     user: dict = await db.create_user(
         {
             "name": username,
-            "email": email,
-            "password_hash": encrypt_password(password),
+            "email": registration.email,
+            "password_hash": encrypt_password(registration.password.get_secret_value()),
             "status": (
                 CONFIRMATION_PENDING
                 if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
@@ -118,7 +155,7 @@ async def register(request: web.Request):
             await render_and_send_mail(
                 request,
                 from_=product.support_email,
-                to=email,
+                to=registration.email,
                 template=email_template_path,
                 context={
                     "host": request.host,
@@ -146,7 +183,7 @@ async def register(request: web.Request):
         else:
             response = flash_response(
                 "You are registered successfully! To activate your account, please, "
-                f"click on the verification link in the email we sent you to {email}.",
+                f"click on the verification link in the email we sent you to {registration.email}.",
                 "INFO",
             )
             return response

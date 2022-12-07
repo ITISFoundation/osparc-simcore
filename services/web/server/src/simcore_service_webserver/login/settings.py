@@ -113,7 +113,6 @@ class LoginOptions(BaseModel):
     )
 
     MSG_CANT_SEND_MAIL: str = "Can't send email, try a little later"
-    MSG_PASSWORDS_NOT_MATCH: str = "Passwords must match"
     MSG_PASSWORD_CHANGED: str = "Your password is changed"
     MSG_CHANGE_EMAIL_REQUESTED: str = (
         "Please, click on the verification link we sent to your new email address"

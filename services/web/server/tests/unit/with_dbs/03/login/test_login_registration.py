@@ -17,6 +17,7 @@ from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_lin
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
+from simcore_service_webserver.login._constants import MSG_PASSWORD_MISMATCH
 from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
@@ -37,12 +38,12 @@ def client(
     return client_
 
 
-async def test_regitration_availibility(
+async def test_regiter_entrypoint(
     client: TestClient, fake_user_email: str, fake_user_password: str
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
-    r = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
@@ -51,7 +52,44 @@ async def test_regitration_availibility(
         },
     )
 
-    await assert_status(r, web.HTTPOk)
+    data, _ = await assert_status(response, web.HTTPOk)
+    assert fake_user_email in data["message"]
+
+
+async def test_register_body_validation(client: TestClient, fake_user_password: str):
+    assert client.app
+    url = client.app.router["auth_register"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": "not-an-email",
+            "password": fake_user_password,
+            "confirm": fake_user_password.upper(),
+        },
+    )
+
+    assert response.status == web.HTTPUnprocessableEntity.status_code
+    body = await response.json()
+    data, error = unwrap_envelope(body)
+
+    assert data is None
+    assert error == {
+        "status": 422,
+        "errors": [
+            {
+                "code": "value_error.email",
+                "message": "value is not a valid email address",
+                "resource": "/v0/auth/register",
+                "field": "email",
+            },
+            {
+                "code": "value_error",
+                "message": MSG_PASSWORD_MISMATCH,
+                "resource": "/v0/auth/register",
+                "field": "confirm",
+            },
+        ],
+    }
 
 
 async def test_regitration_is_not_get(client: TestClient):

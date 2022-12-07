@@ -13,33 +13,15 @@ from typing import Any, Optional, Union
 from _common import Error, Log
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
-from pydantic import BaseModel, EmailStr, Field, SecretStr, confloat
+from pydantic import BaseModel, EmailStr, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
+from simcore_service_webserver.login.handlers_registration import RegistrationCreate
 
 app = FastAPI(redoc_url=None)
 
 TAGS: list[Union[str, Enum]] = [
     "authentication",
 ]
-
-
-class RegistrationCreate(BaseModel):
-    email: EmailStr
-    password: SecretStr
-    confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
-    invitation: Optional[str] = Field(None, description="Invitation code")
-
-    class Config:
-        schema_extra = {
-            "examples": [
-                {
-                    "email": "foo@mymail.com",
-                    "password": "my secret",
-                    "confirm": "my secret",
-                    "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",
-                }
-            ]
-        }
 
 
 @app.post(
