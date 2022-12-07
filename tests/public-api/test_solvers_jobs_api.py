@@ -182,9 +182,12 @@ def test_create_job(
 _RETRY_POLICY_IF_LOGFILE_404_NOT_FOUND = dict(
     # NOTE: Only 404s https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
     # are retried, the rest are failures
+    #
+    # CURRENT CONSTRAINT: Log-file should be ready in AT MOST 5 secs
+    #
     retry=retry_if_exception_type(TryAgain),
     wait=wait_fixed(1),
-    stop=stop_after_attempt(3),
+    stop=stop_after_attempt(5),
     after=after_log(logger, logging.WARNING),
     reraise=True,
 )
