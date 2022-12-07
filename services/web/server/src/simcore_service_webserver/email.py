@@ -25,9 +25,5 @@ def setup_email(app: web.Application):
         )
 
     # SEE https://github.com/aio-libs/aiohttp-jinja2
-    env = aiohttp_jinja2.setup(
-        app,
-        loader=jinja_app_loader.Loader(),  # jinja2.FileSystemLoader(templates_dir)
-        auto_reload=app.debug,
-    )
+    env = aiohttp_jinja2.setup(app, loader=jinja_app_loader.Loader())
     assert env  # nosec
