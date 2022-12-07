@@ -8,33 +8,33 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
-from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
-
-NEW_PASSWORD = "NewPassword1*&^"
+from simcore_service_webserver.login.settings import LoginOptions
 
 
 @pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
-    cfg = get_plugin_options(client.app)
-    assert cfg
-    return cfg
+def new_password(fake_user_password: str) -> str:
+    return fake_user_password
 
 
-async def test_unauthorized_to_change_password(client: TestClient):
+async def test_unauthorized_to_change_password(client: TestClient, new_password: str):
+    assert client.app
     url = client.app.router["auth_change_password"].url_for()
     rsp = await client.post(
         f"{url}",
         json={
             "current": " fake",
-            "new": NEW_PASSWORD,
-            "confirm": NEW_PASSWORD,
+            "new": new_password,
+            "confirm": new_password,
         },
     )
     assert rsp.status == 401
     await assert_status(rsp, web.HTTPUnauthorized)
 
 
-async def test_wrong_current_password(client: TestClient, cfg: LoginOptions):
+async def test_wrong_current_password(
+    client: TestClient, cfg: LoginOptions, new_password: str
+):
+    assert client.app
     url = client.app.router["auth_change_password"].url_for()
 
     async with LoggedUser(client):
@@ -42,8 +42,8 @@ async def test_wrong_current_password(client: TestClient, cfg: LoginOptions):
             f"{url}",
             json={
                 "current": "wrongpassword",
-                "new": NEW_PASSWORD,
-                "confirm": NEW_PASSWORD,
+                "new": new_password,
+                "confirm": new_password,
             },
         )
         assert rsp.url.path == url.path
@@ -52,7 +52,10 @@ async def test_wrong_current_password(client: TestClient, cfg: LoginOptions):
         await assert_status(rsp, web.HTTPUnprocessableEntity, cfg.MSG_WRONG_PASSWORD)
 
 
-async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
+async def test_wrong_confirm_pass(
+    client: TestClient, cfg: LoginOptions, new_password: str
+):
+    assert client.app
     url = client.app.router["auth_change_password"].url_for()
 
     async with LoggedUser(client) as user:
@@ -60,8 +63,8 @@ async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
             f"{url}",
             json={
                 "current": user["raw_password"],
-                "new": NEW_PASSWORD,
-                "confirm": NEW_PASSWORD.upper(),
+                "new": new_password,
+                "confirm": new_password.upper(),
             },
         )
         assert rsp.url.path == url.path
@@ -69,7 +72,8 @@ async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
         await assert_status(rsp, web.HTTPConflict, cfg.MSG_PASSWORD_MISMATCH)
 
 
-async def test_success(client: TestClient, cfg: LoginOptions):
+async def test_success(client: TestClient, cfg: LoginOptions, new_password: str):
+    assert client.app
     url_change_password = client.app.router["auth_change_password"].url_for()
     url_login = client.app.router["auth_login"].url_for()
     url_logout = client.app.router["auth_logout"].url_for()
@@ -80,8 +84,8 @@ async def test_success(client: TestClient, cfg: LoginOptions):
             f"{url_change_password}",
             json={
                 "current": user["raw_password"],
-                "new": NEW_PASSWORD,
-                "confirm": NEW_PASSWORD,
+                "new": new_password,
+                "confirm": new_password,
             },
         )
         assert rsp.url.path == url_change_password.path
@@ -99,7 +103,7 @@ async def test_success(client: TestClient, cfg: LoginOptions):
             f"{url_login}",
             json={
                 "email": user["email"],
-                "password": NEW_PASSWORD,
+                "password": new_password,
             },
         )
         assert rsp.status == 200

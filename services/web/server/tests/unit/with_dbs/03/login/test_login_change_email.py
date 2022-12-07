@@ -5,28 +5,26 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
-from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
+from simcore_service_webserver.login.settings import LoginOptions
 from yarl import URL
-
-NEW_EMAIL = "new@mail.com"
 
 
 @pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
-    cfg = get_plugin_options(client.app)
-    assert cfg
-    return cfg
+def new_email(fake_user_email: str) -> str:
+    return fake_user_email
 
 
-async def test_unauthorized_to_change_email(client: TestClient):
+async def test_unauthorized_to_change_email(client: TestClient, new_email: str):
+    assert client.app
     url = client.app.router["auth_change_email"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
-            "email": NEW_EMAIL,
+            "email": new_email,
         },
     )
     assert rsp.status == 401
@@ -34,12 +32,13 @@ async def test_unauthorized_to_change_email(client: TestClient):
 
 
 async def test_change_to_existing_email(client: TestClient):
+    assert client.app
     url = client.app.router["auth_change_email"].url_for()
 
     async with LoggedUser(client) as user:
         async with NewUser(app=client.app) as other:
             rsp = await client.post(
-                url,
+                f"{url}",
                 json={
                     "email": other["email"],
                 },
@@ -49,7 +48,10 @@ async def test_change_to_existing_email(client: TestClient):
             )
 
 
-async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
+async def test_change_and_confirm(
+    client: TestClient, cfg: LoginOptions, capsys: CaptureFixture, new_email: str
+):
+    assert client.app
 
     url = client.app.router["auth_change_email"].url_for()
     index_url = client.app.router[INDEX_RESOURCE_NAME].url_for()
@@ -61,9 +63,9 @@ async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys)
     async with LoggedUser(client) as user:
         # request change email
         rsp = await client.post(
-            url,
+            f"{url}",
             json={
-                "email": NEW_EMAIL,
+                "email": new_email,
             },
         )
         assert rsp.url.path == url.path
@@ -74,7 +76,7 @@ async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys)
         link = parse_link(out)
 
         # try new email but logout first
-        rsp = await client.post(logout_url)
+        rsp = await client.post(f"{logout_url}")
         assert rsp.url.path == logout_url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_OUT)
 
@@ -89,9 +91,9 @@ async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys)
         )
 
         rsp = await client.post(
-            login_url,
+            f"{login_url}",
             json={
-                "email": NEW_EMAIL,
+                "email": new_email,
                 "password": user["raw_password"],
             },
         )

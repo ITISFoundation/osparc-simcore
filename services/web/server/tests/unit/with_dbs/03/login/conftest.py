@@ -6,6 +6,7 @@
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
 
@@ -37,3 +38,11 @@ def db(client: TestClient) -> AsyncpgStorage:
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
     return db
+
+
+@pytest.fixture
+def cfg(client: TestClient) -> LoginOptions:
+    assert client.app
+    cfg = get_plugin_options(client.app)
+    assert cfg
+    return cfg
