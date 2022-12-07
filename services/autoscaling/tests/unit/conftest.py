@@ -40,12 +40,12 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2
-from simcore_service_autoscaling.utils_aws import EC2Client
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
@@ -517,14 +517,21 @@ async def aws_ami_id(
 
 
 @pytest.fixture
-async def ec2_client(
+async def autoscaling_ec2(
     app_environment: EnvVarsDict,
-) -> AsyncIterator[EC2Client]:
+) -> AsyncIterator[AutoscalingEC2]:
     settings = EC2Settings.create_from_envs()
     ec2 = await AutoscalingEC2.create(settings)
     assert ec2
-    yield ec2.client
+    yield ec2
     await ec2.close()
+
+
+@pytest.fixture
+async def ec2_client(
+    autoscaling_ec2: AutoscalingEC2,
+) -> AsyncIterator[EC2Client]:
+    yield autoscaling_ec2.client
 
 
 @pytest.fixture
