@@ -1,9 +1,9 @@
 import logging
-from typing import Final
+from typing import Final, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, SecretStr
+from pydantic import EmailStr, Field, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -183,23 +183,30 @@ async def login_2fa(request: web.Request):
     return response
 
 
+class LogoutRequest(InputSchema):
+    client_session_id: Optional[str] = Field(
+        None, example="5ac57685-c40f-448f-8711-70be1936fd63"
+    )
+
+
 @routes.post("/v0/auth/logout", name="auth_logout")
 @login_required
 async def logout(request: web.Request) -> web.Response:
     cfg: LoginOptions = get_plugin_options(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
-    client_session_id = None
 
-    if request.can_read_body:
-        body = await request.json()
-        client_session_id = body.get("client_session_id", None)
+    logout_ = await parse_request_body_as(LogoutRequest, request)
 
     # Keep log message: https://github.com/ITISFoundation/osparc-simcore/issues/3200
     with log_context(
-        log, logging.INFO, "logout of %s for %s", f"{user_id=}", f"{client_session_id=}"
+        log,
+        logging.INFO,
+        "logout of %s for %s",
+        f"{user_id=}",
+        f"{logout_.client_session_id=}",
     ):
         response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
-        await notify_user_logout(request.app, user_id, client_session_id)
+        await notify_user_logout(request.app, user_id, logout_.client_session_id)
         await forget(request, response)
 
         return response

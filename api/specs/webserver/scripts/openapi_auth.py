@@ -15,7 +15,11 @@ from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
-from simcore_service_webserver.login.handlers import Login2FAForm, LoginForm
+from simcore_service_webserver.login.handlers import (
+    Login2FAForm,
+    LoginForm,
+    LogoutRequest,
+)
 from simcore_service_webserver.login.handlers_registration import (
     RegisterCreate,
     RegisterPhoneCreate,
@@ -64,12 +68,6 @@ class Validate2FAPhone(BaseModel):
 )
 async def phone_confirmation(confirmation: Validate2FAPhone):
     """user enters 2 Factor Authentication code when registering"""
-
-
-class LogoutRequest(BaseModel):
-    client_session_id: Optional[str] = Field(
-        None, example="5ac57685-c40f-448f-8711-70be1936fd63"
-    )
 
 
 @app.post(
