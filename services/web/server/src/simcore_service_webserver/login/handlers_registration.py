@@ -42,7 +42,6 @@ log = logging.getLogger(__name__)
 
 def _get_user_name(email: str) -> str:
     username = email.split("@")[0]
-    # TODO: this has to be unique and add this in user registration!
     return username
 
 
@@ -85,7 +84,6 @@ async def register(request: web.Request):
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
 
-    # TODO: context that drops user if something goes wrong -> atomic!
     username = _get_user_name(email)
     user: dict = await db.create_user(
         {
@@ -99,11 +97,11 @@ async def register(request: web.Request):
             ),
             "role": USER,
             "expires_at": expires_at,
-            "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
+            "created_ip": get_client_ip(request),
         }
     )
 
-    # FIXME: SAN, should this go here or when user is actually logged in?
+    # NOTE: PC->SAN: should this go here or when user is actually logged in?
     await auto_add_user_to_groups(request.app, user["id"])
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
