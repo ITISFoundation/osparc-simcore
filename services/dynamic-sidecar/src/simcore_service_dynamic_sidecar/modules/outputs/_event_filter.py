@@ -188,22 +188,20 @@ class EventFilter:
             )
 
     async def shutdown(self) -> None:
-        with log_context(logger, logging.INFO, f"{EventFilter.__name__} shutdown"):
+        async def _cancel_task(task: Optional[Task]) -> None:
+            if task is None:
+                return
 
+            task.cancel()
+            with suppress(CancelledError):
+                await task
+
+        with log_context(logger, logging.INFO, f"{EventFilter.__name__} shutdown"):
             await self._incoming_events_queue.put(None)
-            if self._task_incoming_event_ingestion is not None:
-                self._task_incoming_event_ingestion.cancel()
-                with suppress(CancelledError):
-                    await self._task_incoming_event_ingestion
+            await _cancel_task(self._task_incoming_event_ingestion)
 
             self._keep_event_emitter_running = False
-            if self._task_event_emitter is not None:
-                self._task_event_emitter.cancel()
-                with suppress(CancelledError):
-                    await self._task_event_emitter
+            await _cancel_task(self._task_event_emitter)
 
             await self._upload_events_queue.put(None)
-            if self._task_upload_events is not None:
-                self._task_upload_events.cancel()
-                with suppress(CancelledError):
-                    await self._task_upload_events
+            await _cancel_task(self._task_upload_events)
