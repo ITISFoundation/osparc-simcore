@@ -5,7 +5,6 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from pydantic import EmailStr, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -21,7 +20,6 @@ from ._2fa import (
     send_sms_code,
 )
 from ._models import InputSchema
-from ._registration import validate_email
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import (
@@ -54,10 +52,6 @@ _SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 class LoginForm(InputSchema):
     email: EmailStr
     password: SecretStr
-
-
-class Login2FAForm(LoginForm):
-    ...
 
 
 @routes.post("/v0/auth/login", name="auth_login")
@@ -149,10 +143,14 @@ async def login(request: web.Request):
         ) from e
 
 
+class Login2FAForm(InputSchema):
+    email: EmailStr
+    code: SecretStr
+
+
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """2FA login (from-end requests after login -> LOGIN_CODE_SMS_CODE_REQUIRED )"""
-    _, _, body = await extract_and_validate(request)
 
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -164,25 +162,22 @@ async def login_2fa(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    email = body.email
-    code = body.code
-
-    validate_email(email)
+    login_ = await parse_request_body_as(Login2FAForm, request)
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed
-    if code != await get_2fa_code(request.app, email):
+    if login_.code != await get_2fa_code(request.app, login_.email):
         raise web.HTTPUnauthorized(
             reason=cfg.MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     # FIXME: ask to register if user not found!!
-    user = await db.get_user({"email": email})
+    user = await db.get_user({"email": login_.email})
     # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since code was used
-    await delete_2fa_code(request.app, email)
+    await delete_2fa_code(request.app, login_.email)
 
     response = await login_granted_response(request, user=user, cfg=cfg)
     return response
