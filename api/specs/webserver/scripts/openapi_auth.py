@@ -13,9 +13,12 @@ from typing import Any, Optional, Union
 from _common import Error, Log
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
-from pydantic import BaseModel, EmailStr, Field, confloat
+from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
-from simcore_service_webserver.login.handlers_registration import RegistrationCreate
+from simcore_service_webserver.login.handlers_registration import (
+    RegistrationCreate,
+    Verify2FAPhone,
+)
 
 app = FastAPI(redoc_url=None)
 
@@ -32,13 +35,6 @@ TAGS: list[Union[str, Enum]] = [
 )
 async def register(registration: RegistrationCreate):
     """User registration"""
-
-
-class Verify2FAPhone(BaseModel):
-    email: EmailStr
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
 
 
 @app.post(

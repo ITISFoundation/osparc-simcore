@@ -6,7 +6,6 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from pydantic import BaseModel, EmailStr, Extra, Field, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -18,11 +17,7 @@ from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import MSG_PASSWORD_MISMATCH
-from ._registration import (
-    check_and_consume_invitation,
-    validate_email,
-    validate_registration,
-)
+from ._registration import check_and_consume_invitation, validate_registration
 from ._security import login_granted_response
 from .settings import (
     LoginOptions,
@@ -196,6 +191,13 @@ async def register(request: web.Request):
         return response
 
 
+class Verify2FAPhone(_InputSchema):
+    email: EmailStr
+    phone: str = Field(
+        ..., description="Phone number E.164, needed on the deployments with 2FA"
+    )
+
+
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @routes.post("/auth/verify-phone-number", name="auth_verify_2fa_phone")
 async def register_phone(request: web.Request):
@@ -215,10 +217,7 @@ async def register_phone(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    _, _, body = await extract_and_validate(request)
-    email = body.email
-    phone = body.phone
-    validate_email(email=email)
+    registration = await parse_request_body_as(Verify2FAPhone, request)
 
     try:
         assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
@@ -228,25 +227,27 @@ async def register_phone(request: web.Request):
                 "Update product's twilio_messaging_sid in database."
             )
 
-        if await db.get_user({"phone": phone}):
+        if await db.get_user({"phone": registration.phone}):
             raise web.HTTPUnauthorized(
                 reason="Cannot register this phone number because it is already assigned to an active user",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
-        code = await create_2fa_code(request.app, email)
+        code = await create_2fa_code(request.app, registration.email)
 
         await send_sms_code(
-            phone_number=phone,
+            phone_number=registration.phone,
             code=code,
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            user_name=_get_user_name(email),
+            user_name=_get_user_name(registration.email),
         )
 
         response = flash_response(
-            cfg.MSG_2FA_CODE_SENT.format(phone_number=mask_phone_number(phone)),
+            cfg.MSG_2FA_CODE_SENT.format(
+                phone_number=mask_phone_number(registration.phone)
+            ),
             status=web.HTTPAccepted.status_code,
         )
         return response
