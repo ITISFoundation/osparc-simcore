@@ -20,7 +20,10 @@ from simcore_service_webserver.login.handlers import (
     LoginForm,
     LogoutRequest,
 )
-from simcore_service_webserver.login.handlers_change import ResetPasswordRequest
+from simcore_service_webserver.login.handlers_change import (
+    ChangeEmailForm,
+    ResetPasswordRequest,
+)
 from simcore_service_webserver.login.handlers_confirmation import ResetPasswordForm
 from simcore_service_webserver.login.handlers_registration import (
     RegisterCreate,
@@ -127,10 +130,6 @@ async def reset_password(data: ResetPasswordRequest):
 )
 async def reset_password_allowed(code: str, data: ResetPasswordForm):
     """changes password using a token code without being logged in"""
-
-
-class ChangeEmailForm(BaseModel):
-    email: str
 
 
 @app.post(

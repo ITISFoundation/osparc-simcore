@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from pydantic import EmailStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -121,24 +122,26 @@ async def reset_password(request: web.Request):
     return response
 
 
+class ChangeEmailForm(InputSchema):
+    email: EmailStr
+
+
 @routes.post("/v0/auth/change-email", name="auth_change_email")
 @login_required
 async def change_email(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    email = body.email
+    request_body = await parse_request_body_as(ChangeEmailForm, request)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
 
-    if user["email"] == email:
+    if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    other = await db.get_user({"email": email})
+    other = await db.get_user({"email": request_body.email})
     if other:
         raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
 
@@ -148,13 +151,15 @@ async def change_email(request: web.Request):
         await db.delete_confirmation(confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(user["id"], CHANGE_EMAIL, email)
+    confirmation = await db.create_confirmation(
+        user["id"], CHANGE_EMAIL, request_body.email
+    )
     link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(
             request,
             from_=product.support_email,
-            to=email,
+            to=request_body.email,
             template=await get_template_path(request, "change_email_email.jinja2"),
             context={
                 "host": request.host,

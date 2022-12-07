@@ -37,6 +37,10 @@ log = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
+class _PathParam(BaseModel):
+    code: str
+
+
 @routes.get("/auth/confirmation/{code}", name="auth_confirmation")
 async def email_confirmation(request: web.Request):
     """Handles email confirmation by checking a code passed as query parameter
@@ -54,15 +58,13 @@ async def email_confirmation(request: web.Request):
             - show the reset-password page
             - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
     """
-    params, _, _ = await extract_and_validate(request)
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    code = params["code"]
+    path_params = parse_request_path_parameters_as(_PathParam, request)
 
     confirmation: Optional[ConfirmationTokenDict] = await validate_confirmation_code(
-        code, db=db, cfg=cfg
+        path_params.code, db=db, cfg=cfg
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
@@ -95,7 +97,7 @@ async def email_confirmation(request: web.Request):
                 # the browser does NOT reloads page
                 #
                 redirect_to_login_url = redirect_to_login_url.with_fragment(
-                    "reset-password?code=%s" % code
+                    f"reset-password?code={path_params.code}"
                 )
 
             log.debug(
@@ -165,10 +167,6 @@ async def phone_confirmation(request: web.Request):
     raise web.HTTPUnauthorized(
         reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
-
-
-class _PathParam(BaseModel):
-    code: str
 
 
 class ResetPasswordForm(InputSchema):
