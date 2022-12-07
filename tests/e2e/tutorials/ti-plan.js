@@ -74,7 +74,7 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Running Optimizer");
     await tutorial.takeScreenshot("optimizer_before");
     // one permutation should take less than 180"
-    await tutorial.waitForStudyDone(studyId, 240000);
+    await tutorial.waitForStudyDone(studyId, 480000);
     await tutorial.takeScreenshot("optimizer_after");
     await tutorial.waitAndClick("preparingInputsCloseBtn");
     await tutorial.waitFor(2000, "Optimizer Finished");
@@ -138,6 +138,14 @@ async function runTutorial() {
     }
   }
   catch (err) {
+    // if it fails because the optimizer times out, close the "Preparing Inputs" view first
+    const id = '[osparc-test-id=preparingInputsCloseBtn]';
+    await page.waitForSelector(id, {
+      timeout: 1000
+    })
+      .then(() => page.click(id))
+      .catch(() => console.log("Preparing Inputs window not found"));
+
     tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
