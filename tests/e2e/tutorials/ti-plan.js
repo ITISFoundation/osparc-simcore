@@ -119,33 +119,7 @@ async function runTutorial() {
 
     // Check s4l
     await tutorial.waitAndClick("AppMode_NextBtn");
-    await tutorial.waitFor(5000, "Starting s4l");
-    await tutorial.takeScreenshot("s4l");
-    const s4lIframe = await tutorial.getIframe(ppId);
-    await tutorial.waitAndClick('mode-button-postro', s4lIframe);
-    await tutorial.takeScreenshot("Postpro");
-
-    const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
-    console.log(algorithmTrees);
-    if (algorithmTrees.length !== 1) {
-      throw("Post Pro tree missing");
-    }
-
-    const children = await utils.getChildrenElements(algorithmTrees[0]);
-    console.log(children);
-    await tutorial.waitFor(120000, "OM");
-    const nItems = children.length;
-    if (nItems > 1) {
-      children[0].click();
-      await tutorial.waitFor(2000, 'Importer clicked');
-      await tutorial.takeScreenshot('ImporterClicked');
-      children[1].click();
-      await tutorial.waitFor(2000, 'Algorithm clicked');
-      await tutorial.takeScreenshot('AlgorithmClicked');
-    }
-    else {
-      throw("Post Pro tree missing");
-    }
+    await tutorial.testS4LTIPostPro();
   }
   catch (err) {
     // if it fails because the optimizer times out, close the "Preparing Inputs" view first

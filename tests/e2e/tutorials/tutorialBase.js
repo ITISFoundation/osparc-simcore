@@ -612,7 +612,6 @@ class TutorialBase {
   async testS4L(s4lNodeId) {
     await this.waitFor(20000, 'Wait for the splash screen to disappear');
 
-    // do some basic interaction
     const s4lIframe = await this.getIframe(s4lNodeId);
     await this.waitAndClick('tree-model', s4lIframe);
     const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
@@ -624,6 +623,34 @@ class TutorialBase {
       modelItems[1].click();
       await this.waitFor(2000, 'Grid clicked');
       await this.takeScreenshot('GridlClicked');
+    }
+  }
+
+  async testS4LTIPostPro(s4lNodeId) {
+    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+    await this.takeScreenshot("s4l");
+
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    await this.waitAndClick('mode-button-postro', s4lIframe);
+    await this.takeScreenshot("Postpro");
+    const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
+    console.log(algorithmTrees);
+    if (algorithmTrees.length !== 1) {
+      throw("Post Pro tree missing");
+    }
+
+    const children = await utils.getChildrenElements(algorithmTrees[0]);
+    const nItems = children.length;
+    if (nItems > 1) {
+      children[0].click();
+      await this.waitFor(2000, 'Importer clicked');
+      await this.takeScreenshot('ImporterClicked');
+      children[1].click();
+      await this.waitFor(2000, 'Algorithm clicked');
+      await this.takeScreenshot('AlgorithmClicked');
+    }
+    else {
+      throw("Post Pro tree missing");
     }
   }
 
