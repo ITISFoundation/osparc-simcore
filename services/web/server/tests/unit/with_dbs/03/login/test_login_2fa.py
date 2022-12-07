@@ -8,19 +8,22 @@ from unittest.mock import Mock
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-from aiohttp.test_utils import TestClient
-from pytest import MonkeyPatch
+from aiohttp.test_utils import TestClient, make_mocked_request
+from faker import Faker
+from pytest import CaptureFixture, MonkeyPatch
 from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import parse_link
+from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
+    _generage_2fa_code,
     create_2fa_code,
     delete_2fa_code,
     get_2fa_code,
+    send_email_code,
 )
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
@@ -267,3 +270,28 @@ async def test_register_phone_fails_with_used_number(
     )
     _, error = await assert_status(rsp, web.HTTPUnauthorized)
     assert "phone" in error["message"]
+
+
+async def test_send_email_code(
+    client: TestClient, faker: Faker, capsys: CaptureFixture
+):
+    request = make_mocked_request("GET", "/dummy", app=client.app)
+
+    user_email = faker.email()
+    support_email = faker.email()
+    code = _generage_2fa_code()
+    user_name = faker.user_name()
+
+    await send_email_code(
+        request,
+        user_email=user_email,
+        support_email=support_email,
+        code=code,
+        user_name=user_name,
+    )
+
+    out, _ = capsys.readouterr()
+    parsed_context = parse_test_marks(out)
+    assert parsed_context["code"] == f"{code}"
+    assert parsed_context["name"] == user_name
+    assert parsed_context["support_email"] == support_email
