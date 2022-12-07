@@ -8,6 +8,12 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
+from simcore_service_webserver.login._constants import (
+    MSG_LOGGED_IN,
+    MSG_PASSWORD_CHANGED,
+    MSG_PASSWORD_MISMATCH,
+    MSG_WRONG_PASSWORD,
+)
 from simcore_service_webserver.login.settings import LoginOptions
 
 
@@ -48,15 +54,11 @@ async def test_wrong_current_password(
         )
         assert rsp.url.path == url.path
         assert rsp.status == 422
-        assert login_options.MSG_WRONG_PASSWORD in await rsp.text()
-        await assert_status(
-            rsp, web.HTTPUnprocessableEntity, login_options.MSG_WRONG_PASSWORD
-        )
+        assert MSG_WRONG_PASSWORD in await rsp.text()
+        await assert_status(rsp, web.HTTPUnprocessableEntity, MSG_WRONG_PASSWORD)
 
 
-async def test_wrong_confirm_pass(
-    client: TestClient, login_options: LoginOptions, new_password: str
-):
+async def test_wrong_confirm_pass(client: TestClient, new_password: str):
     assert client.app
     url = client.app.router["auth_change_password"].url_for()
 
@@ -71,14 +73,10 @@ async def test_wrong_confirm_pass(
         )
         assert rsp.url.path == url.path
         assert rsp.status == web.HTTPUnprocessableEntity.status_code
-        await assert_status(
-            rsp, web.HTTPUnprocessableEntity, login_options.MSG_PASSWORD_MISMATCH
-        )
+        await assert_status(rsp, web.HTTPUnprocessableEntity, MSG_PASSWORD_MISMATCH)
 
 
-async def test_success(
-    client: TestClient, login_options: LoginOptions, new_password: str
-):
+async def test_success(client: TestClient, new_password: str):
     assert client.app
     url_change_password = client.app.router["auth_change_password"].url_for()
     url_login = client.app.router["auth_login"].url_for()
@@ -96,8 +94,8 @@ async def test_success(
         )
         assert rsp.url.path == url_change_password.path
         assert rsp.status == 200
-        assert login_options.MSG_PASSWORD_CHANGED in await rsp.text()
-        await assert_status(rsp, web.HTTPOk, login_options.MSG_PASSWORD_CHANGED)
+        assert MSG_PASSWORD_CHANGED in await rsp.text()
+        await assert_status(rsp, web.HTTPOk, MSG_PASSWORD_CHANGED)
 
         # logout
         rsp = await client.post(f"{url_logout}")
@@ -114,4 +112,4 @@ async def test_success(
         )
         assert rsp.status == 200
         assert rsp.url.path == url_login.path
-        await assert_status(rsp, web.HTTPOk, login_options.MSG_LOGGED_IN)
+        await assert_status(rsp, web.HTTPOk, MSG_LOGGED_IN)

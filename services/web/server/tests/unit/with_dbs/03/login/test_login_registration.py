@@ -17,7 +17,11 @@ from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_lin
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
-from simcore_service_webserver.login._constants import MSG_PASSWORD_MISMATCH
+from simcore_service_webserver.login._constants import (
+    MSG_EMAIL_EXISTS,
+    MSG_LOGGED_IN,
+    MSG_PASSWORD_MISMATCH,
+)
 from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
@@ -113,7 +117,7 @@ async def test_registration_with_existing_email(
                 "confirm": user["raw_password"],
             },
         )
-    await assert_error(r, web.HTTPConflict, login_options.MSG_EMAIL_EXISTS)
+    await assert_error(r, web.HTTPConflict, MSG_EMAIL_EXISTS)
 
 
 @pytest.mark.skip("TODO: Feature still not implemented")
@@ -150,7 +154,7 @@ async def test_registration_with_expired_confirmation(
         )
         await db.delete_confirmation(confirmation)
 
-    await assert_error(r, web.HTTPConflict, login_options.MSG_EMAIL_EXISTS)
+    await assert_error(r, web.HTTPConflict, MSG_EMAIL_EXISTS)
 
 
 async def test_registration_with_invalid_confirmation_code(
@@ -214,7 +218,7 @@ async def test_registration_without_confirmation(
     data, error = unwrap_envelope(await r.json())
 
     assert r.status == 200, (data, error)
-    assert login_options.MSG_LOGGED_IN in data["message"]
+    assert MSG_LOGGED_IN in data["message"]
 
     user = await db.get_user({"email": fake_user_email})
     assert user

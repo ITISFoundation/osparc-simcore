@@ -8,6 +8,7 @@ from aiohttp import web
 from servicelib.logging_utils import log_context
 
 from ..security_api import remember
+from ._constants import MSG_LOGGED_IN
 from .settings import LoginOptions
 from .utils import flash_response
 
@@ -32,7 +33,7 @@ async def login_granted_response(
         f"{user.get('id')}",
         f"{email=}",
     ):
-        response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
+        response = flash_response(MSG_LOGGED_IN, "INFO")
         await remember(
             request=request,
             response=response,

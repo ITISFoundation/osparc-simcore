@@ -9,6 +9,11 @@ from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.login._constants import (
+    MSG_CHANGE_EMAIL_REQUESTED,
+    MSG_LOGGED_IN,
+    MSG_LOGGED_OUT,
+)
 from simcore_service_webserver.login.settings import LoginOptions
 from yarl import URL
 
@@ -72,7 +77,7 @@ async def test_change_and_confirm(
             },
         )
         assert rsp.url.path == url.path
-        await assert_status(rsp, web.HTTPOk, login_options.MSG_CHANGE_EMAIL_REQUESTED)
+        await assert_status(rsp, web.HTTPOk, MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
         out, err = capsys.readouterr()
@@ -81,7 +86,7 @@ async def test_change_and_confirm(
         # try new email but logout first
         rsp = await client.post(f"{logout_url}")
         assert rsp.url.path == logout_url.path
-        await assert_status(rsp, web.HTTPOk, login_options.MSG_LOGGED_OUT)
+        await assert_status(rsp, web.HTTPOk, MSG_LOGGED_OUT)
 
         # click email's link
         rsp = await client.get(link)
@@ -102,4 +107,4 @@ async def test_change_and_confirm(
         )
         payload = await rsp.json()
         assert rsp.url.path == login_url.path
-        await assert_status(rsp, web.HTTPOk, login_options.MSG_LOGGED_IN)
+        await assert_status(rsp, web.HTTPOk, MSG_LOGGED_IN)

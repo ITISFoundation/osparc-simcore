@@ -16,6 +16,7 @@ from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
+from ._constants import MSG_2FA_CODE_SENT, MSG_CANT_SEND_MAIL
 from ._models import InputSchema, check_confirm_password_match
 from ._registration import check_and_consume_invitation, validate_registration
 from ._security import login_granted_response
@@ -158,7 +159,7 @@ async def register(request: web.Request):
             await db.delete_confirmation_and_user(user, _confirmation)
 
             raise web.HTTPServiceUnavailable(
-                reason=f"{cfg.MSG_CANT_SEND_MAIL} [{error_code}]"
+                reason=f"{MSG_CANT_SEND_MAIL} [{error_code}]"
             ) from err
 
         else:
@@ -231,7 +232,7 @@ async def register_phone(request: web.Request):
         )
 
         response = flash_response(
-            cfg.MSG_2FA_CODE_SENT.format(
+            MSG_2FA_CODE_SENT.format(
                 phone_number=mask_phone_number(registration.phone)
             ),
             status=web.HTTPAccepted.status_code,

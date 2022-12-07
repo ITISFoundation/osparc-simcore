@@ -19,6 +19,7 @@ from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
+from ._constants import MSG_PASSWORD_CHANGED
 from ._models import InputSchema, check_confirm_password_match
 from ._security import login_granted_response
 from .settings import (
@@ -210,7 +211,7 @@ async def reset_password_allowed(request: web.Request):
         )
         await db.delete_confirmation(confirmation)
 
-        response = flash_response(cfg.MSG_PASSWORD_CHANGED)
+        response = flash_response(MSG_PASSWORD_CHANGED)
         return response
 
     raise web.HTTPUnauthorized(

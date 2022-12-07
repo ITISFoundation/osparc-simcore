@@ -19,6 +19,13 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
+from ._constants import (
+    MSG_2FA_CODE_SENT,
+    MSG_LOGGED_OUT,
+    MSG_UNKNOWN_EMAIL,
+    MSG_WRONG_2FA_CODE,
+    MSG_WRONG_PASSWORD,
+)
 from ._models import InputSchema
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
@@ -66,18 +73,14 @@ async def login(request: web.Request):
     user = await db.get_user({"email": login_.email})
     if not user:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    validate_user_status(
-        user=user,
-        support_email=product.support_email,
-        cfg=cfg,
-    )
+    validate_user_status(user=user, support_email=product.support_email)
 
     if not check_password(login_.password.get_secret_value(), user["password_hash"]):
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     assert user["status"] == ACTIVE, "db corrupted. Invalid status"  # nosec
@@ -121,7 +124,7 @@ async def login(request: web.Request):
         response = envelope_response(
             {
                 "code": _SMS_CODE_REQUIRED,
-                "reason": cfg.MSG_2FA_CODE_SENT.format(
+                "reason": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(user["phone"])
                 ),
                 "next_url": f"{request.app.router['auth_login_2fa'].url_for()}",
@@ -170,7 +173,7 @@ async def login_2fa(request: web.Request):
         request.app, login_2fa_.email
     ):
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     # FIXME: ask to register if user not found!!
@@ -207,7 +210,7 @@ async def logout(request: web.Request) -> web.Response:
         f"{user_id=}",
         f"{logout_.client_session_id=}",
     ):
-        response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
+        response = flash_response(MSG_LOGGED_OUT, "INFO")
         await notify_user_logout(request.app, user_id, logout_.client_session_id)
         await forget(request, response)
 

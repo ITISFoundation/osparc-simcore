@@ -31,6 +31,7 @@ from ._confirmation import (
     is_confirmation_expired,
     validate_confirmation_code,
 )
+from ._constants import MSG_EMAIL_EXISTS
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
 
@@ -125,7 +126,7 @@ async def validate_registration(
             return
 
         raise web.HTTPConflict(
-            reason=cfg.MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
         )
 
 

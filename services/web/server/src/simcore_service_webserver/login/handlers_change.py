@@ -11,6 +11,15 @@ from ..security_api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._constants import (
+    MSG_CANT_SEND_MAIL,
+    MSG_CHANGE_EMAIL_REQUESTED,
+    MSG_EMAIL_SENT,
+    MSG_OFTEN_RESET_PASSWORD,
+    MSG_PASSWORD_CHANGED,
+    MSG_UNKNOWN_EMAIL,
+    MSG_WRONG_PASSWORD,
+)
 from ._models import InputSchema, create_password_match_validator
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import LoginOptions, get_plugin_options
@@ -60,17 +69,17 @@ async def reset_password(request: web.Request):
     try:
         if not user:
             raise web.HTTPUnprocessableEntity(
-                reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+                reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        validate_user_status(user=user, support_email=product.support_email, cfg=cfg)
+        validate_user_status(user=user, support_email=product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == request_body.email  # nosec
 
         if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_OFTEN_RESET_PASSWORD,
+                reason=MSG_OFTEN_RESET_PASSWORD,
                 content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
 
@@ -90,9 +99,7 @@ async def reset_password(request: web.Request):
             )
         except Exception as err_mail:  # pylint: disable=broad-except
             log.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(
-                reason=cfg.MSG_CANT_SEND_MAIL
-            ) from err_mail
+            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err_mail
     else:
         confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
@@ -113,11 +120,9 @@ async def reset_password(request: web.Request):
         except Exception as err:  # pylint: disable=broad-except
             log.exception("Can not send email")
             await db.delete_confirmation(confirmation)
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(
-        cfg.MSG_EMAIL_SENT.format(email=request_body.email), "INFO"
-    )
+    response = flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
     return response
 
 
@@ -168,9 +173,9 @@ async def change_email(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         log.error("Can not send email")
         await db.delete_confirmation(confirmation)
-        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+        raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(cfg.MSG_CHANGE_EMAIL_REQUESTED)
+    response = flash_response(MSG_CHANGE_EMAIL_REQUESTED)
     return response
 
 
@@ -197,12 +202,12 @@ async def change_password(request: web.Request):
 
     if not check_password(passwords.current.get_secret_value(), user["password_hash"]):
         raise web.HTTPUnprocessableEntity(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     await db.update_user(
         user, {"password_hash": encrypt_password(passwords.new.get_secret_value())}
     )
 
-    response = flash_response(cfg.MSG_PASSWORD_CHANGED)
+    response = flash_response(MSG_PASSWORD_CHANGED)
     return response
