@@ -17,22 +17,22 @@ from pydantic import (
     Json,
     PositiveInt,
     ValidationError,
-    parse_obj_as,
     parse_raw_as,
     validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
-from ..db_models import UserStatus
 from ._confirmation import (
     ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
     validate_confirmation_code,
 )
+from ._constants import MSG_EMAIL_EXISTS
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
+from .utils import CONFIRMATION_PENDING
 
 log = logging.getLogger(__name__)
 
@@ -74,61 +74,48 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
 }
 
 
-async def check_registration(
+async def check_other_registrations(
     email: str,
-    password: str,
-    confirm: Optional[str],
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-    # email : required & formats
-    # password: required & secure[min length, ...]
-
-    if email is None or password is None:
-        raise web.HTTPBadRequest(
-            reason="Both email and password are required",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    if confirm and password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )
-
-    try:
-        parse_obj_as(EmailStr, email)
-    except ValidationError as err:
-        raise web.HTTPUnprocessableEntity(
-            reason="Invalid email", content_type=MIMETYPE_APPLICATION_JSON
-        ) from err
-
-    # NOTE: Extra requirements on passwords
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
 
     if user := await db.get_user({"email": email}):
-        # Resets pending confirmation if re-registers?
-        if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
-            _confirmation: ConfirmationTokenDict = await db.get_confirmation(
-                {"user": user, "action": ConfirmationAction.REGISTRATION.value}
+        # An account already registered with this email
+        #
+        #  RULE 'drop_previous_registration': any unconfirmed account w/o confirmation or
+        #  w/ an expired confirmation will get deleted and its account (i.e. email)
+        #  can be overtaken by this new registration
+        #
+        if user["status"] == CONFIRMATION_PENDING:
+            _confirmation = await db.get_confirmation(
+                filter_dict={
+                    "user": user,
+                    "action": ConfirmationAction.REGISTRATION.value,
+                }
             )
+            drop_previous_registration = not _confirmation or is_confirmation_expired(
+                cfg, _confirmation
+            )
+            if drop_previous_registration:
+                if not _confirmation:
+                    await db.delete_user(user=user)
+                else:
+                    await db.delete_confirmation_and_user(
+                        user=user, confirmation=_confirmation
+                    )
 
-            if is_confirmation_expired(cfg, _confirmation):
-                await db.delete_confirmation(_confirmation)
-                await db.delete_user(user)
                 log.warning(
-                    "Time to confirm a registration is overdue. Used expired token [%s]."
-                    "Deleted token from confirmations table and %s from users table.",
-                    _confirmation,
+                    "Re-registration of %s with expired %s"
+                    "Deleting user and proceeding to a new registration",
                     f"{user=}",
+                    f"{_confirmation=}",
                 )
                 return
 
-        # If the email is already taken, return a 409 - HTTPConflict
         raise web.HTTPConflict(
-            reason=cfg.MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON
         )
-
-    log.debug("Registration data validated")
 
 
 async def create_invitation_token(

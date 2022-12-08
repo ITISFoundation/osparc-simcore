@@ -7,11 +7,12 @@ from fastapi import FastAPI
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from . import utils_aws, utils_docker
+from . import utils_docker
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
-from .utils import rabbitmq
+from .modules.ec2 import get_ec2_client
+from .utils import ec2, rabbitmq
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +62,10 @@ async def check_dynamic_resources(app: FastAPI) -> None:
 
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    list_of_ec2_instances = await utils_aws.get_ec2_instance_capabilities(
-        app_settings.AUTOSCALING_EC2_ACCESS, app_settings.AUTOSCALING_EC2_INSTANCES
+    ec2_client = get_ec2_client(app)
+    list_of_ec2_instances = await ec2_client.get_ec2_instance_capabilities(
+        app_settings.AUTOSCALING_EC2_INSTANCES
     )
-
     for task in pending_tasks:
         await rabbitmq.post_log_message(
             app,
@@ -74,18 +75,17 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         )
         try:
             ec2_instances_needed = [
-                utils_aws.find_best_fitting_ec2_instance(
+                ec2.find_best_fitting_ec2_instance(
                     list_of_ec2_instances,
                     utils_docker.get_max_resources_from_docker_task(task),
-                    score_type=utils_aws.closest_instance_policy,
+                    score_type=ec2.closest_instance_policy,
                 )
             ]
             assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
             assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            new_instance_dns_name = await utils_aws.start_aws_instance(
-                app_settings.AUTOSCALING_EC2_ACCESS,
+            new_instance_dns_name = await ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(
                     InstanceTypeType, ec2_instances_needed[0].name

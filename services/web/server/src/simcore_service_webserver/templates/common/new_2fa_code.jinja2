@@ -1,0 +1,21 @@
+{{ code }} is your security code for {{ host }}
+<!--
+TEST host:{{ host }}
+TEST code:{{ code }}
+TEST name:{{ name }}
+TEST support_email:{{ support_email }}
+-->
+<h1>Your security code for {{ host }}</h1>
+
+<p>
+  Hi {{ name }} <br><br>
+  Sign in to {{ host }} with this one-time security code:
+</p>
+
+<p>
+  <b> {{ code }} </b>
+</p>
+
+<p>
+  If you did not sign in, please contact {{ support_email }}.
+</p>
