@@ -79,14 +79,13 @@ async def check_other_registrations(
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-    user = await db.get_user({"email": email})
-    if not user:
-        # The email is already taken
 
-        # RULE: drop_previous_registration
-        #  An unconfirmed account w/o confirmation or w/ an expired confirmation
-        #  will get deleted and the email can be overtaken by
-        #  this new registration
+    if user := await db.get_user({"email": email}):
+        # An account already registered with this email
+        #
+        #  RULE 'drop_previous_registration': any unconfirmed account w/o confirmation or
+        #  w/ an expired confirmation will get deleted and its account (i.e. email)
+        #  can be overtaken by this new registration
         #
         if user["status"] == CONFIRMATION_PENDING:
             _confirmation = await db.get_confirmation(
