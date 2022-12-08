@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 from unittest.mock import Mock
 
 import pytest
@@ -32,18 +31,13 @@ from simcore_service_webserver.login.storage import AsyncpgStorage
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    return setenvs_from_dict(
+    setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",
+            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-            # LOGIN_TWILIO
-            "TWILIO_ACCOUNT_SID": "fake-account",
-            "TWILIO_AUTH_TOKEN": "fake-token",
-            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": json.dumps(["41"]),
         },
     )
 

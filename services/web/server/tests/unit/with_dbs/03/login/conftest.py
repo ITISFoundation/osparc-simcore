@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 
 
+import json
+
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -15,16 +17,11 @@ from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_s
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    return setenvs_from_dict(
+
+    # Plugins
+    setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
-            "LOGIN_2FA_REQUIRED": "1",
-            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-            "LOGIN_TWILIO": "null",
-            # ---------------
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_CLUSTERS": "null",
             "WEBSERVER_COMPUTATION": "null",
@@ -43,6 +40,26 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
+        },
+    )
+
+    monkeypatch.delenv("WEBSERVER_LOGIN", raising=False)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
+            "LOGIN_2FA_REQUIRED": "0",  # <--- disabled by default
+            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
+        },
+    )
+    monkeypatch.delenv("LOGIN_TWILIO", raising=False)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "TWILIO_ACCOUNT_SID": "fake-twilio-account",
+            "TWILIO_AUTH_TOKEN": "fake-twilio-token",
+            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": json.dumps(["41"]),
         },
     )
 

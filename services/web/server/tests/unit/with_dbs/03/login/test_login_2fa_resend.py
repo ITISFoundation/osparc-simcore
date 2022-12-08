@@ -3,8 +3,6 @@
 # pylint: disable=unused-variable
 
 
-import json
-
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
@@ -20,18 +18,13 @@ from simcore_service_webserver.login.handlers import _SMS_CODE_REQUIRED
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    return setenvs_from_dict(
+    setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",
+            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-            # LOGIN_TWILIO
-            "TWILIO_ACCOUNT_SID": "fake-account",
-            "TWILIO_AUTH_TOKEN": "fake-token",
-            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": json.dumps(["41"]),
         },
     )
 
