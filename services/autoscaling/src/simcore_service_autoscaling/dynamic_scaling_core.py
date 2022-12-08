@@ -213,7 +213,6 @@ async def check_dynamic_resources(app: FastAPI) -> None:
 
     if not pending_tasks:
         logger.debug("no pending tasks with insufficient resources at the moment")
-        await _scale_down_cluster(app)
-        return
-
-    await _scale_up_cluster(app, pending_tasks)
+        await _scale_down_cluster(app, monitored_nodes)
+    else:
+        await _scale_up_cluster(app, pending_tasks)
