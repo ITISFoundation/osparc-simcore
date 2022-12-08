@@ -46,6 +46,10 @@ class LoginSettings(BaseCustomSettings):
         description="Enforces two-factor-authentication for all user's during login",
     )
 
+    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
+        default=60.0, description="Expiration time for code [sec]"
+    )
+
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def login_2fa_needs_email_registration(cls, v, values):

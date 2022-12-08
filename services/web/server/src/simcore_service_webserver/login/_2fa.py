@@ -19,6 +19,7 @@ from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
+from .settings import LoginSettings, get_plugin_settings
 from .utils_email import get_template_path, render_and_send_mail
 
 log = logging.getLogger(__name__)
@@ -40,16 +41,29 @@ def _generage_2fa_code() -> str:
 
 
 @log_decorator(log, level=logging.DEBUG)
+async def _do_create_2fa_code(
+    redis_client,
+    user_email: str,
+    *,
+    expiration_seconds: int,
+) -> str:
+    hash_key, code = user_email, _generage_2fa_code()
+    await redis_client.set(hash_key, value=code, ex=expiration_seconds)
+    return code
+
+
 async def create_2fa_code(
     app: web.Application,
     user_email: str,
-    *,
-    expiration_time: int = 60,
 ) -> str:
     """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
+    settings: LoginSettings = get_plugin_settings(app)
     redis_client = get_redis_validation_code_client(app)
-    hash_key, code = user_email, _generage_2fa_code()
-    await redis_client.set(hash_key, value=code, ex=expiration_time)
+    code = await _do_create_2fa_code(
+        redis_client=redis_client,
+        user_email=user_email,
+        expiration_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+    )
     return code
 
 
