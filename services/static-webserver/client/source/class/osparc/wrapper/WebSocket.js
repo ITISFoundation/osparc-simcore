@@ -18,7 +18,7 @@
 /* global io */
 
 /**
- * @asset(socketio/socket.io.js)
+ * @asset(socketio/socket.io.min.js)
  * @ignore(io)
  */
 
@@ -29,12 +29,11 @@
 
 qx.Class.define("osparc.wrapper.WebSocket", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   statics: {
     NAME: "socket.io",
-    VERSION: "2.2.0",
+    VERSION: "4.5.4",
     URL: "https://github.com/socketio/socket.io"
   },
 
@@ -147,7 +146,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
      */
     connect: function() {
       // initialize the script loading
-      let socketIOPath = "socketio/socket.io.js";
+      let socketIOPath = "socketio/socket.io.min.js";
       let dynLoader = new qx.util.DynamicScriptLoader([
         socketIOPath
       ]);
@@ -166,12 +165,12 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           dir += ":" + this.getPort();
         }
         console.log("socket in", dir);
-        let mySocket = io.connect(dir, {
-          "reconnect": this.getReconnect(),
-          "connect timeout": this.getConnectTimeout(),
-          "reconnection delay": this.getReconnectionDelay(),
-          "max reconnection attempts": this.getMaxReconnectionAttemps(),
-          "force new connection": true,
+        let mySocket = io(dir, {
+          "reconnection": this.getReconnect(),
+          "timeout": this.getConnectTimeout(),
+          "reconnectionDelay": this.getReconnectionDelay(),
+          "reconnectionAttempts": this.getMaxReconnectionAttemps(),
+          "forceNew": true,
           "query": "client_session_id="+osparc.utils.Utils.getClientSessionID()
         });
         this.setSocket(mySocket);
