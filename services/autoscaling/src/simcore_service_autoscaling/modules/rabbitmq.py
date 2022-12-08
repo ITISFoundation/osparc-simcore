@@ -9,7 +9,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
-from .core.errors import ConfigurationError
+from ..core.errors import ConfigurationError
 
 logger = logging.getLogger(__name__)
 
