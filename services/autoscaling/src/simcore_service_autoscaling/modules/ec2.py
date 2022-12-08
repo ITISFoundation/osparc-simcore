@@ -227,6 +227,17 @@ class AutoscalingEC2:
             type=instance["InstanceType"],
         )
 
+    async def terminate_instance(self, instance_data: EC2InstanceData) -> None:
+        await self.client.terminate_instances(InstanceIds=[instance_data.id])
+        # shall we wait here?
+        # waiter = self.client.get_waiter("instance_terminated")
+        # await waiter.wait(
+        #     InstanceIds=[
+        #         instance["InstanceId"]
+        #         for instance in terminating_instances["TerminatingInstances"]
+        #     ]
+        # )
+
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:

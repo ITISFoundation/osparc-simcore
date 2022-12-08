@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Availability, Node, Task
@@ -68,7 +68,21 @@ async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None
             ["io.simcore.autoscaling.created", "io.simcore.autoscaling.version"],
             node.Description.Hostname,
         )
-        # if (datetime.utcnow() - ec2_instance_data.launch_time).
+        time_since_instance_was_launched = (
+            datetime.utcnow() - ec2_instance_data.launch_time
+        )
+        minutes_since_full_hour = time_since_instance_was_launched % timedelta(hours=1)
+        if minutes_since_full_hour > timedelta(minutes=55):
+            # let's terminate that one
+            terminateable_nodes.append((node, ec2_instance_data))
+
+    if terminateable_nodes:
+        await asyncio.gather(
+            *(
+                get_ec2_client(app).terminate_instance(ec2_instance_data)
+                for _, ec2_instance_data in terminateable_nodes
+            )
+        )
 
     # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
     # 4.
