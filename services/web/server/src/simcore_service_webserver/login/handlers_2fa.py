@@ -27,17 +27,6 @@ from .utils import envelope_response
 log = logging.getLogger(__name__)
 
 
-def check_login_2fa_settings(request: web.Request):
-    settings: LoginSettings = get_plugin_settings(request.app)
-
-    if not settings.LOGIN_2FA_REQUIRED:
-        raise web.HTTPServiceUnavailable(
-            reason="2FA login is not available",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-    return settings
-
-
 @contextmanager
 def handling_send_errors(user: dict[str, Any]):
     try:
@@ -78,7 +67,13 @@ async def resend_2fa_code(request: web.Request):
     - Protected by on-time access [ONE_TIME_ACCESS_TO_RESEND_2FA_KEY]
     -
     """
-    settings: LoginSettings = check_login_2fa_settings(request)
+    settings: LoginSettings = get_plugin_settings(request.app)
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="2FA login is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)

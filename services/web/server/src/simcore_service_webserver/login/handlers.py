@@ -33,7 +33,7 @@ from ._security import (
     login_granted_response,
 )
 from .decorators import RQT_USERID_KEY, login_required
-from .handlers_2fa import check_login_2fa_settings, resend_2fa_code
+from .handlers_2fa import resend_2fa_code
 from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -165,7 +165,13 @@ async def login_2fa(request: web.Request):
 
     """
     # validates input context
-    check_login_2fa_settings(request.app)
+    settings: LoginSettings = get_plugin_settings(request.app)
+    if not settings.LOGIN_2FA_REQUIRED:
+        raise web.HTTPServiceUnavailable(
+            reason="2FA login is not available",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
     # validates input params
