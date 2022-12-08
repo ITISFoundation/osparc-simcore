@@ -114,7 +114,6 @@ async def login(request: web.Request):
             user_name=user["name"],
         )
 
-        # TODO: send "continuation token" needed to enter login_2fa only
         response = envelope_response(
             {
                 "code": _SMS_CODE_REQUIRED,
@@ -169,8 +168,8 @@ async def login_2fa(request: web.Request):
             reason=MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    # FIXME: ask to register if user not found!!
     user = await db.get_user({"email": login_2fa_.email})
+
     # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
 

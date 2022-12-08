@@ -44,7 +44,6 @@ def setup_session(app: web.Application):
     - data sessions stored in encripted cookies.
         - client tx/rx session's data everytime (middleware?)
         - This way, we can scale in theory server-side w/o issues
-        - TODO: test and demo statement above
     - based in aiotthp_session library : http://aiohttp-session.readthedocs.io/en/latest/
 
     """

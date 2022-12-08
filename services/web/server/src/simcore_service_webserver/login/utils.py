@@ -21,7 +21,6 @@ log = logging.getLogger(__name__)
 
 def _to_names(enum_cls, names):
     """ensures names are in enum be retrieving each of them"""
-    # FIXME: with asyncpg need to user NAMES
     return [getattr(enum_cls, att).name for att in names.split()]
 
 
@@ -78,9 +77,7 @@ async def notify_user_logout(
 
 
 def encrypt_password(password: str) -> str:
-    # TODO: add settings sha256_crypt.using(**settings).hash(secret)
-    # see https://passlib.readthedocs.io/en/stable/lib/passlib.hash.sha256_crypt.html
-    #
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3375
     return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
 
 

@@ -26,7 +26,7 @@ MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
 
 async def _setup_login_storage_ctx(app: web.Application):
-    # TODO: ensure pool only init once!
+    assert APP_LOGIN_STORAGE_KEY not in app
     settings: PostgresSettings = get_db_plugin_settings(app)
 
     pool: asyncpg.pool.Pool = await asyncpg.create_pool(
