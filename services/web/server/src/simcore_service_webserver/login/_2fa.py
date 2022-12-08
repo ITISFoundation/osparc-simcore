@@ -19,6 +19,7 @@ from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
+from .utils_email import get_template_path, render_and_send_mail
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def _generage_2fa_code() -> str:
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def set_2fa_code(
+async def create_2fa_code(
     app: web.Application,
     user_email: str,
     *,
@@ -108,6 +109,34 @@ async def send_sms_code(
         )
 
     await asyncio.get_event_loop().run_in_executor(None, _sender)
+
+
+#
+# EMAIL
+#
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def send_email_code(
+    request: web.Request,
+    user_email: str,
+    support_email: str,
+    code: str,
+    user_name: str = "user",
+):
+    email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
+    await render_and_send_mail(
+        request,
+        from_=support_email,
+        to=user_email,
+        template=email_template_path,
+        context={
+            "host": request.host,
+            "code": code,
+            "name": user_name.capitalize(),
+            "support_email": support_email,
+        },
+    )
 
 
 #
