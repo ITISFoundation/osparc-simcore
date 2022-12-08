@@ -3,16 +3,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 from datetime import timedelta
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import CaptureFixture
+from pytest import CaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
@@ -32,14 +32,27 @@ from simcore_service_webserver.users_models import ProfileGet
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client,
-    web_server: TestServer,
-    mock_orphaned_services,
-) -> TestClient:
-    client_ = event_loop.run_until_complete(aiohttp_client(web_server))
-    return client_
+def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",  # <--- Enabled
+            "LOGIN_2FA_REQUIRED": "0",
+            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
+        },
+    )
+
+
+# @pytest.fixture
+# def client(
+#     event_loop: asyncio.AbstractEventLoop,
+#     aiohttp_client,
+#     web_server: TestServer,
+#     mock_orphaned_services,
+# ) -> TestClient:
+#     client_ = event_loop.run_until_complete(aiohttp_client(web_server))
+#     return client_
 
 
 async def test_regiter_entrypoint(

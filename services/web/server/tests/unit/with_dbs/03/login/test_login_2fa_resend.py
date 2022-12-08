@@ -83,7 +83,7 @@ async def test_it(
     mock_get_2fa_code = mocker.patch(
         "simcore_service_webserver.login.handlers_2fa.get_2fa_code",
         autospec=True,
-        return_value=None,
+        return_value=None,  # <-- avoids
     )
 
     # login

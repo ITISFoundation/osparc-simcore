@@ -34,7 +34,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
-            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_SOCKETIO": "1",  # for login notifications
             "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
             "WEBSERVER_TAGS": "1",
             "WEBSERVER_TRACING": "null",
