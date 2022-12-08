@@ -44,7 +44,7 @@ async function runTutorial() {
     // wait for the three services, except the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [esId, tiId, ppId],
+      [esId],
       startTimeout,
       false
     );
@@ -81,7 +81,7 @@ async function runTutorial() {
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
-    await tutorial.waitFor(6000, "Load iframe");
+    await tutorial.waitFor(20000, "Load iframe");
     const postProIframe = await tutorial.getIframe(tiId);
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
@@ -111,7 +111,7 @@ async function runTutorial() {
     await tutorial.takeScreenshot("postpro_export_report");
 
     const outFiles = [
-      "temp_ti_field.cache",
+      "output_1.zip",
       "TIP_report.pdf",
       "results.csv"
     ];
@@ -119,24 +119,7 @@ async function runTutorial() {
 
     // Check s4l
     await tutorial.waitAndClick("AppMode_NextBtn");
-    await tutorial.waitFor(5000, "Starting s4l");
-    await tutorial.takeScreenshot("s4l");
-    const s4lIframe = await tutorial.getIframe(ppId);
-    await tutorial.waitAndClick('mode-button-postro', s4lIframe);
-    await tutorial.takeScreenshot("Postpro");
-    const postProItems = await utils.getVisibleChildrenIDs(s4lIframe, '[osparc-test-id="tree-algorithm');
-    const nLabels = postProItems.length;
-    if (nLabels > 1) {
-      postProItems[0].click();
-      await tutorial.waitFor(2000, 'Importer clicked');
-      await tutorial.takeScreenshot('ImporterClicked');
-      postProItems[1].click();
-      await tutorial.waitFor(2000, 'Algorithm clicked');
-      await tutorial.takeScreenshot('AlgorithmClicked');
-    }
-    else {
-      throw("Post Pro tree missing");
-    }
+    await tutorial.testS4LTIPostPro(ppId);
   }
   catch (err) {
     // if it fails because the optimizer times out, close the "Preparing Inputs" view first
