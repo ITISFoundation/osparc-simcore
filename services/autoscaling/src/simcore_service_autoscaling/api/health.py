@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from ..modules.docker import get_docker_client
 from ..modules.rabbitmq import get_rabbitmq_client
 from .dependencies.application import get_app
 
@@ -51,8 +52,6 @@ async def get_status(app: FastAPI = Depends(get_app)) -> _StatusGet:
         ),
         docker=_ComponentStatus(
             is_enabled=bool(app.state.docker_client),
-            is_responsive=await app.state.docker_client.ping()
-            if app.state.docker_client
-            else False,
+            is_responsive=await get_docker_client(app).ping(),
         ),
     )
