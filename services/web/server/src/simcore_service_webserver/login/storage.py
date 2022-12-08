@@ -95,9 +95,7 @@ class AsyncpgStorage:
             filter_dict["user_id"] = filter_dict.pop("user")["id"]
         async with self.pool.acquire() as conn:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
-            return (
-                ConfirmationTokenDict(**confirmation) if confirmation else confirmation
-            )
+            return ConfirmationTokenDict(**confirmation) if confirmation else None
 
     async def delete_confirmation(self, confirmation: ConfirmationTokenDict):
         async with self.pool.acquire() as conn:

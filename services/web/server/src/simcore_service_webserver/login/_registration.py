@@ -17,14 +17,12 @@ from pydantic import (
     Json,
     PositiveInt,
     ValidationError,
-    parse_obj_as,
     parse_raw_as,
     validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
-from ..db_models import UserStatus
 from ._confirmation import (
     ConfirmationAction,
     get_expiration_date,
@@ -34,6 +32,7 @@ from ._confirmation import (
 from ._constants import MSG_EMAIL_EXISTS
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
+from .utils import CONFIRMATION_PENDING
 
 log = logging.getLogger(__name__)
 
@@ -75,55 +74,45 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, Optional[type]] = {
 }
 
 
-def validate_email(email):
-    try:
-        parse_obj_as(EmailStr, email)
-    except ValidationError as err:
-        raise web.HTTPUnprocessableEntity(
-            reason="Invalid email", content_type=MIMETYPE_APPLICATION_JSON
-        ) from err
-        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
-
-
-async def validate_registration(
+async def check_other_registrations(
     email: str,
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-    # email : required & formats
-    # password: required & secure[min length, ...]
-    #
-    # NOTE: Extra requirements on passwords
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2480
-    #
+    user = await db.get_user({"email": email})
+    if not user:
+        # The email is already taken
 
-    # The email is already taken
-    if user := await db.get_user({"email": email}):
-        if (
-            user["status"] == UserStatus.CONFIRMATION_PENDING.value
-            and (
-                _confirmation := await db.get_confirmation(
-                    filter_dict={
-                        "user": user,
-                        "action": ConfirmationAction.REGISTRATION.value,
-                    }
+        # RULE: drop_previous_registration
+        #  An unconfirmed account w/o confirmation or w/ an expired confirmation
+        #  will get deleted and the email can be overtaken by
+        #  this new registration
+        #
+        if user["status"] == CONFIRMATION_PENDING:
+            _confirmation = await db.get_confirmation(
+                filter_dict={
+                    "user": user,
+                    "action": ConfirmationAction.REGISTRATION.value,
+                }
+            )
+            drop_previous_registration = not _confirmation or is_confirmation_expired(
+                cfg, _confirmation
+            )
+            if drop_previous_registration:
+                if not _confirmation:
+                    await db.delete_user(user=user)
+                else:
+                    await db.delete_confirmation_and_user(
+                        user=user, confirmation=_confirmation
+                    )
+
+                log.warning(
+                    "Re-registration of %s with expired %s"
+                    "Deleting user and proceeding to a new registration",
+                    f"{user=}",
+                    f"{_confirmation=}",
                 )
-            )
-            and is_confirmation_expired(cfg, _confirmation)
-        ):
-            #
-            # An unconfirmed account with an expired confirmation
-            # will get deleted and the email is associated to this new registration
-            #
-            await db.delete_confirmation_and_user(user=user, confirmation=_confirmation)
-
-            log.warning(
-                "Re-registration of %s with expired %s"
-                "Deleting user and proceeding to a new registration",
-                f"{user=}",
-                f"{_confirmation=}",
-            )
-            return
+                return
 
         raise web.HTTPConflict(
             reason=MSG_EMAIL_EXISTS, content_type=MIMETYPE_APPLICATION_JSON

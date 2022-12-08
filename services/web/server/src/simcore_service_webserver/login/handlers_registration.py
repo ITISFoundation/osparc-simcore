@@ -18,7 +18,7 @@ from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import MSG_2FA_CODE_SENT, MSG_CANT_SEND_MAIL
 from ._models import InputSchema, check_confirm_password_match
-from ._registration import check_and_consume_invitation, validate_registration
+from ._registration import check_and_consume_invitation, check_other_registrations
 from ._security import login_granted_response
 from .settings import (
     LoginOptions,
@@ -86,7 +86,7 @@ async def register(request: web.Request):
 
     registration = await parse_request_body_as(RegisterBody, request)
 
-    await validate_registration(email=registration.email, db=db, cfg=cfg)
+    await check_other_registrations(email=registration.email, db=db, cfg=cfg)
 
     expires_at = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
