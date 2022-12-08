@@ -107,6 +107,31 @@ async def test_2fa_code_operations(
     assert await get_2fa_code(client.app, email) is None
 
 
+# test_resend_2fa
+async def test_it(
+    client: TestClient,
+    db: AsyncpgStorage,
+    capsys: CaptureFixture,
+    fake_user_email: str,
+    fake_user_password: str,
+    fake_user_phone_number: str,
+    mocked_twilio_service: dict[str, Mock],
+):
+    assert client.app
+
+    url = client.app.router["resend_2fa_code"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "phone": fake_user_phone_number,
+        },
+    )
+
+    # protected
+    assert response.status == web.HTTPUnauthorized.status_code
+
+
 @pytest.mark.acceptance_test
 async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
