@@ -533,12 +533,6 @@ async function getButtonsWithText(page, text) {
   return buttons;
 }
 
-function checkVisible(elm) {
-  var rect = elm.getBoundingClientRect();
-  var viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
-  return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
-}
-
 
 module.exports = {
   makeRequest,
@@ -576,5 +570,4 @@ module.exports = {
   isElementVisible,
   clickLoggerTitle,
   getButtonsWithText,
-  checkVisible,
 }

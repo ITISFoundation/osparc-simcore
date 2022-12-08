@@ -729,8 +729,8 @@ class TutorialBase {
     const checkFrequency = 2000;
     // wait for iframe to be rendered
     for (let i=0; i<voilaRenderTimeout; i+=checkFrequency) {
-      const element = await iframe.$('#rendered_cells');
-      if (element && utils.checkVisible(element)) {
+      if (utils.isElementVisible(iframe, '#rendered_cells')) {
+        console.log("Voila rendered")
         return true;
       }
       await this.waitFor(checkFrequency, `iframe not rendered yet: ${i/1000}s`);
