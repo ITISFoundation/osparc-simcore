@@ -139,7 +139,6 @@ class PhoneConfirmationBody(InputSchema):
 async def phone_confirmation(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(

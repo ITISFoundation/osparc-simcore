@@ -29,12 +29,7 @@ from ._constants import (
 from ._models import InputSchema
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
-from .settings import (
-    LoginOptions,
-    LoginSettings,
-    get_plugin_options,
-    get_plugin_settings,
-)
+from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
     ACTIVE,
@@ -65,7 +60,6 @@ class LoginBody(InputSchema):
 async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
     login_ = await parse_request_body_as(LoginBody, request)
@@ -157,7 +151,6 @@ async def login_2fa(request: web.Request):
 
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
