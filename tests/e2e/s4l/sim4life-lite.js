@@ -1,4 +1,4 @@
-// node sim4life-light.js [url] [user] [password] [timeout] [--demo]
+// node sim4life-lite.js [url] [user] [password] [timeout] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('../tutorials/tutorialBase');
