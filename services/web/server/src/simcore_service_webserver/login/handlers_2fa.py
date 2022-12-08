@@ -27,13 +27,7 @@ from .utils import envelope_response
 log = logging.getLogger(__name__)
 
 
-routes = RouteTableDef()
-
-
-ONE_TIME_ACCESS_TO_RESEND_2FA_KEY = "resend_2fa"
-
-
-def _get_login_settings(request: web.Request):
+def check_login_2fa_settings(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
@@ -69,6 +63,9 @@ def handling_send_errors(user: dict[str, Any]):
         ) from err
 
 
+routes = RouteTableDef()
+
+
 class Resend2faBody(InputSchema):
     email: EmailStr = Field(..., description="User email (identifier)")
     send_as: Literal["SMS", "Email"] = "SMS"
@@ -81,7 +78,7 @@ async def resend_2fa_code(request: web.Request):
     - Protected by on-time access [ONE_TIME_ACCESS_TO_RESEND_2FA_KEY]
     -
     """
-    settings: LoginSettings = _get_login_settings(request)
+    settings: LoginSettings = check_login_2fa_settings(request)
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
@@ -110,7 +107,7 @@ async def resend_2fa_code(request: web.Request):
 
     with handling_send_errors(user):
         # produces
-        code = await create_2fa_code(request.app, user["email"], expiration_time=60)
+        code = await create_2fa_code(request.app, user["email"])
 
         # sends via SMS
         if resend_2fa_.send_as == "SMS":

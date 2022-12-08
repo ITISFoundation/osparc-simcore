@@ -33,7 +33,7 @@ from ._security import (
     login_granted_response,
 )
 from .decorators import RQT_USERID_KEY, login_required
-from .handlers_2fa import resend_2fa_code
+from .handlers_2fa import check_login_2fa_settings, resend_2fa_code
 from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -109,7 +109,7 @@ async def login(request: web.Request):
     assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
 
     try:
-        code = await create_2fa_code(request.app, user["email"])
+        code = await create_2fa_code(app=request.app, user_email=user["email"])
 
         await send_sms_code(
             phone_number=user["phone"],
@@ -159,25 +159,24 @@ class Login2faBody(InputSchema):
 
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
-    """2FA login (from-end requests after login -> LOGIN_CODE_SMS_CODE_REQUIRED )"""
+    """2FA login
 
-    settings: LoginSettings = get_plugin_settings(request.app)
+    - Continuation of login + 2FA code
+
+    """
+    # validates input context
+    check_login_2fa_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
-    if not settings.LOGIN_2FA_REQUIRED:
-        raise web.HTTPServiceUnavailable(
-            reason="2FA login is not available",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
+    # validates input params
     login_2fa_ = await parse_request_body_as(Login2faBody, request)
 
+    # validates access rights
     await check_one_time_access_and_consume(
         request, handler_name=login_2fa.__name__, identity=login_2fa_.email
     )
 
-    # NOTE that the 2fa code is not generated until the email/password of
-    # the standard login (handler above) is not completed
+    # validates code
     if login_2fa_.code.get_secret_value() != await get_2fa_code(
         request.app, login_2fa_.email
     ):
