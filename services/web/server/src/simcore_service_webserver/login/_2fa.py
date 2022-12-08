@@ -74,6 +74,10 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 #
 
 
+class SMSError(RuntimeError):
+    pass
+
+
 @log_decorator(log, level=logging.DEBUG)
 async def send_sms_code(
     phone_number: str,
@@ -97,6 +101,7 @@ async def send_sms_code(
             f"{phone_number=}",
             twilio_alpha_numeric_sender,
         )
+        # TODO: twilio.base.exceptions.TwilioRestException
         #
         # SEE https://www.twilio.com/docs/sms/quickstart/python
         #
@@ -108,12 +113,17 @@ async def send_sms_code(
             f"{message=}",
         )
 
-    await asyncio.get_event_loop().run_in_executor(None, _sender)
+    # FIXME: should raise if twilio fails!?
+    await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
 
 
 #
 # EMAIL
 #
+
+
+class EmailError(RuntimeError):
+    pass
 
 
 @log_decorator(log, level=logging.DEBUG)

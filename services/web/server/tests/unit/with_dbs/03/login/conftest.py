@@ -6,6 +6,7 @@
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
@@ -48,3 +49,24 @@ def login_options(client: TestClient) -> LoginOptions:
     cfg: LoginOptions = get_plugin_options(client.app)
     assert cfg
     return cfg
+
+
+@pytest.fixture
+async def registered_user(
+    fake_user_name: str,
+    fake_user_email: str,
+    fake_user_password: str,
+    fake_user_phone_number: str,
+    client: TestClient,
+) -> UserInfoDict:
+    async with NewUser(
+        params={
+            "name": fake_user_name,
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "phone": fake_user_phone_number,
+            # active user
+        },
+        app=client.app,
+    ) as user:
+        yield user

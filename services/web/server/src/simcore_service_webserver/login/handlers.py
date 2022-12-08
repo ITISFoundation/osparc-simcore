@@ -27,8 +27,13 @@ from ._constants import (
     MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema
-from ._security import login_granted_response
+from ._security import (
+    check_one_time_access_and_consume,
+    grant_one_time_access,
+    login_granted_response,
+)
 from .decorators import RQT_USERID_KEY, login_required
+from .handlers_2fa import resend_2fa_code
 from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -105,6 +110,7 @@ async def login(request: web.Request):
 
     try:
         code = await create_2fa_code(request.app, user["email"])
+
         await send_sms_code(
             phone_number=user["phone"],
             code=code,
@@ -113,6 +119,13 @@ async def login(request: web.Request):
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             user_name=user["name"],
         )
+
+        for name in (resend_2fa_code.__name__, "login_2fa"):
+            await grant_one_time_access(
+                request,
+                handler_name=name,
+                identity=user["email"],
+            )
 
         response = envelope_response(
             {
@@ -158,6 +171,10 @@ async def login_2fa(request: web.Request):
         )
 
     login_2fa_ = await parse_request_body_as(Login2faBody, request)
+
+    await check_one_time_access_and_consume(
+        request, handler_name=login_2fa.__name__, identity=login_2fa_.email
+    )
 
     # NOTE that the 2fa code is not generated until the email/password of
     # the standard login (handler above) is not completed

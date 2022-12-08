@@ -11,11 +11,16 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pytest import CaptureFixture, MonkeyPatch
+from pytest_mock import MockFixture
 from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
+from pytest_simcore.helpers.utils_login import (
+    UserInfoDict,
+    parse_link,
+    parse_test_marks,
+)
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
@@ -25,6 +30,7 @@ from simcore_service_webserver.login._2fa import (
     get_2fa_code,
     send_email_code,
 )
+from simcore_service_webserver.login.handlers import _SMS_CODE_REQUIRED
 from simcore_service_webserver.login.storage import AsyncpgStorage
 
 
@@ -109,11 +115,7 @@ async def test_2fa_code_operations(
 
 async def test_resend_2fa_entrypoint_is_protected(
     client: TestClient,
-    db: AsyncpgStorage,
-    capsys: CaptureFixture,
     fake_user_email: str,
-    fake_user_phone_number: str,
-    mocked_twilio_service: dict[str, Mock],
 ):
     assert client.app
 
@@ -122,12 +124,60 @@ async def test_resend_2fa_entrypoint_is_protected(
         f"{url}",
         json={
             "email": fake_user_email,
-            "phone": fake_user_phone_number,
+            "send_as": "SMS",
         },
     )
 
     # protected
     assert response.status == web.HTTPUnauthorized.status_code
+
+
+@pytest.mark.testit
+async def test_it(
+    client: TestClient,
+    db: AsyncpgStorage,
+    registered_user: UserInfoDict,
+    mocker: MockFixture,
+):
+    assert client.app
+
+    # spy send functions
+    mock_send_sms_code1 = mocker.patch(
+        "simcore_service_webserver.login.handlers_2fa.send_sms_code", autospec=True
+    )
+    mock_send_sms_code2 = mocker.patch(
+        "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
+    )
+
+    mock_send_email_code = mocker.patch(
+        "simcore_service_webserver.login.handlers_2fa.send_email_code", autospec=True
+    )
+    # -----------
+    # login
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": registered_user["email"],
+            "password": registered_user["raw_password"],
+        },
+    )
+    data, _ = await assert_status(response, web.HTTPAccepted)
+
+    assert data["code"] == _SMS_CODE_REQUIRED
+
+    # resend code
+    url = client.app.router["resend_2fa_code"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": registered_user["email"],
+            "send_as": "SMS",
+        },
+    )
+
+    # cannot issue code because it did not expire
+    data, error = await assert_status(response, web.HTTPUnauthorized)
 
 
 @pytest.mark.acceptance_test
