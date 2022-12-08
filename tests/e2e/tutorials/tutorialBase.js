@@ -729,7 +729,7 @@ class TutorialBase {
     const checkFrequency = 2000;
     // wait for iframe to be rendered
     for (let i=0; i<voilaRenderTimeout; i+=checkFrequency) {
-      if (utils.isElementVisible(iframe, '#rendered_cells')) {
+      if (await utils.isElementVisible(iframe, '#rendered_cells')) {
         console.log("Voila rendered")
         return true;
       }
