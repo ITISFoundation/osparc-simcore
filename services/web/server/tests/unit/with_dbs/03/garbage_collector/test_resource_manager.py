@@ -78,13 +78,13 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
     opened_projects = []
 
-    async def open_project(client, project_uuid: str, client_session_id: str) -> None:
+    async def _open_project(client, project_uuid: str, client_session_id: str) -> None:
         url = client.app.router["open_project"].url_for(project_id=project_uuid)
         resp = await client.post(url, json=client_session_id)
         await assert_status(resp, web.HTTPOk)
         opened_projects.append((client, project_uuid, client_session_id))
 
-    yield open_project
+    yield _open_project
     # cleanup, if we cannot close that is because the user_role might not allow it
     await asyncio.gather(
         *(
@@ -353,27 +353,6 @@ _TENACITY_ASSERT_RETRY = dict(
     wait=wait_fixed(0.5),
     stop=stop_after_delay(30),
 )
-
-
-@pytest.mark.skip(
-    reason="this test is here to show warnings when closing "
-    "the socketio server and could be useful as a proof"
-    "see https://github.com/miguelgrinberg/python-socketio/discussions/1092"
-    "and simcore_service_webserver.socketio.server _socketio_server_cleanup_ctx"
-)
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        (UserRole.TESTER),
-    ],
-)
-async def test_asyncio_task_pending_on_close(
-    client: TestClient,
-    logged_user: dict[str, Any],
-    socketio_client_factory: Callable,
-):
-    sio = await socketio_client_factory()
-    # this test generates warnings on its own
 
 
 @pytest.mark.skip(
