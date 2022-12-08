@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 
 from fastapi import FastAPI
+from models_library.generated_models.docker_rest_api import Task
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -19,50 +20,12 @@ logger = logging.getLogger(__name__)
 _EC2_INTERNAL_DNS_RE: re.Pattern = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
 
 
-async def check_dynamic_resources(app: FastAPI) -> None:
-    """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
-    If there are such tasks, this method will allocate new machines in AWS to cope with
-    the additional load.
-    """
+async def _scale_down_cluster(app: FastAPI) -> None:
+    ...
+
+
+async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-
-    # 1. get monitored nodes information and resources
-    docker_client = get_docker_client(app)
-    monitored_nodes = await utils_docker.get_monitored_nodes(
-        docker_client,
-        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
-    )
-
-    cluster_total_resources = await utils_docker.compute_cluster_total_resources(
-        monitored_nodes
-    )
-    logger.info("%s", f"{cluster_total_resources=}")
-    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
-        docker_client, monitored_nodes
-    )
-    logger.info("%s", f"{cluster_used_resources=}")
-
-    # 2. Remove nodes that are gone
-    await utils_docker.remove_monitored_down_nodes(docker_client, monitored_nodes)
-
-    # 3. Scale up nodes if there are pending tasks
-    pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
-        docker_client,
-        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-    )
-    await rabbitmq.post_state_message(
-        app,
-        monitored_nodes,
-        cluster_total_resources,
-        cluster_used_resources,
-        pending_tasks,
-    )
-
-    if not pending_tasks:
-        logger.debug("no pending tasks with insufficient resources at the moment")
-        return
-
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
@@ -110,10 +73,10 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             if match := re.match(_EC2_INTERNAL_DNS_RE, new_instance_dns_name):
                 new_instance_dns_name = match.group(1)
                 new_node = await utils_docker.wait_for_node(
-                    docker_client, new_instance_dns_name
+                    get_docker_client(app), new_instance_dns_name
                 )
                 await utils_docker.tag_node(
-                    docker_client,
+                    get_docker_client(app),
                     new_node,
                     tags={
                         tag_key: "true"
@@ -142,3 +105,51 @@ async def check_dynamic_resources(app: FastAPI) -> None:
                     f"{task.Name if task.Name else 'unknown task name'}:{task.ServiceID if task.ServiceID else 'unknown service ID'}"
                 },
             )
+
+
+async def check_dynamic_resources(app: FastAPI) -> None:
+    """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
+    If there are such tasks, this method will allocate new machines in AWS to cope with
+    the additional load.
+    """
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+
+    # 1. get monitored nodes information and resources
+    docker_client = get_docker_client(app)
+    monitored_nodes = await utils_docker.get_monitored_nodes(
+        docker_client,
+        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
+    )
+
+    cluster_total_resources = await utils_docker.compute_cluster_total_resources(
+        monitored_nodes
+    )
+    logger.info("%s", f"{cluster_total_resources=}")
+    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
+        docker_client, monitored_nodes
+    )
+    logger.info("%s", f"{cluster_used_resources=}")
+
+    # 2. Remove nodes that are gone
+    await utils_docker.remove_monitored_down_nodes(docker_client, monitored_nodes)
+
+    # 3. Scale up nodes if there are pending tasks
+    pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
+        docker_client,
+        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+    )
+    await rabbitmq.post_state_message(
+        app,
+        monitored_nodes,
+        cluster_total_resources,
+        cluster_used_resources,
+        pending_tasks,
+    )
+
+    if not pending_tasks:
+        logger.debug("no pending tasks with insufficient resources at the moment")
+        await _scale_down_cluster(app)
+        return
+
+    await _scale_up_cluster(app, pending_tasks)
