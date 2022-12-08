@@ -10,6 +10,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
+from .modules.docker import get_docker_client
 from .modules.ec2 import get_ec2_client
 from .utils import ec2, rabbitmq, utils_docker
 
@@ -27,8 +28,10 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
     # 1. get monitored nodes information and resources
+    docker_client = get_docker_client(app)
     monitored_nodes = await utils_docker.get_monitored_nodes(
-        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        docker_client,
+        node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
     )
 
     cluster_total_resources = await utils_docker.compute_cluster_total_resources(
@@ -36,16 +39,17 @@ async def check_dynamic_resources(app: FastAPI) -> None:
     )
     logger.info("%s", f"{cluster_total_resources=}")
     cluster_used_resources = await utils_docker.compute_cluster_used_resources(
-        monitored_nodes
+        docker_client, monitored_nodes
     )
     logger.info("%s", f"{cluster_used_resources=}")
 
     # 2. Remove nodes that are gone
-    await utils_docker.remove_monitored_down_nodes(monitored_nodes)
+    await utils_docker.remove_monitored_down_nodes(docker_client, monitored_nodes)
 
     # 3. Scale up nodes if there are pending tasks
     pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
-        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+        docker_client,
+        service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
     )
     await rabbitmq.post_state_message(
         app,
@@ -105,8 +109,11 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             # NOTE: new_instance_dns_name is of type ip-123-23-23-3.ec2.internal and we need only the first part
             if match := re.match(_EC2_INTERNAL_DNS_RE, new_instance_dns_name):
                 new_instance_dns_name = match.group(1)
-                new_node = await utils_docker.wait_for_node(new_instance_dns_name)
+                new_node = await utils_docker.wait_for_node(
+                    docker_client, new_instance_dns_name
+                )
                 await utils_docker.tag_node(
+                    docker_client,
                     new_node,
                     tags={
                         tag_key: "true"
