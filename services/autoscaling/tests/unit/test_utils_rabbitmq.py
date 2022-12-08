@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
 
 
 from typing import Any, Awaitable, Callable, Mapping
@@ -40,6 +41,7 @@ pytest_simcore_ops_services_selection = []
 async def test_post_log_message(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
     initialized_app: FastAPI,
     rabbit_client: RabbitMQClient,
     mocker: MockerFixture,
@@ -93,6 +95,7 @@ async def test_post_log_message(
 async def test_post_log_message_does_not_raise_if_service_has_no_labels(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
     initialized_app: FastAPI,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
