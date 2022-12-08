@@ -76,7 +76,7 @@ async def log_client_in(
 
     # login
     url = client.app.router["auth_login"].url_for()
-    r = await client.post(
+    reponse = await client.post(
         str(url),
         json={
             "email": user["email"],
@@ -85,7 +85,7 @@ async def log_client_in(
     )
 
     if enable_check:
-        await assert_status(r, web.HTTPOk, MSG_LOGGED_IN)
+        await assert_status(reponse, web.HTTPOk, MSG_LOGGED_IN)
 
     return user
 
