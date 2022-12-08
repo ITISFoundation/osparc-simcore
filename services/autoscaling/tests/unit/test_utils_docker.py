@@ -616,6 +616,9 @@ async def test_get_docker_swarm_join_script_bad_return_code_raises(
     mocked_asyncio_process.return_value.returncode = 137
     with pytest.raises(RuntimeError, match=r"unexpected error .+"):
         await get_docker_swarm_join_bash_command()
+    # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
+    # to silence the warnings
+    await asyncio.sleep(2)
 
 
 async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
@@ -633,6 +636,9 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     mocked_asyncio_process.return_value.returncode = 0
     with pytest.raises(RuntimeError, match=r"expected docker .+"):
         await get_docker_swarm_join_bash_command()
+    # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
+    # to silence the warnings
+    await asyncio.sleep(2)
 
 
 async def test_wait_for_node(autoscaling_docker: AutoscalingDocker, host_node: Node):
