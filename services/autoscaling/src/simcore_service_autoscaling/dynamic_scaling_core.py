@@ -138,5 +138,7 @@ async def check_dynamic_resources(app: FastAPI) -> None:
             logger.error(
                 "Task %s needs more resources than any EC2 instance "
                 "can provide with the current configuration. Please check.",
-                {f"{task.Name=}:{task.ServiceID=}"},
+                {
+                    f"{task.Name if task.Name else 'unknown task name'}:{task.ServiceID if task.ServiceID else 'unknown service ID'}"
+                },
             )
