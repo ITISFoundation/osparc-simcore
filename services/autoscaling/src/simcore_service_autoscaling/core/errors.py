@@ -1,14 +1,8 @@
-from models_library.utils.change_case import camel_to_snake
 from pydantic.errors import PydanticErrorMixin
 
 
 class AutoscalingRuntimeError(PydanticErrorMixin, RuntimeError):
     msg_template: str = "Autoscaling unexpected error"
-
-    @classmethod
-    @property
-    def code(cls) -> str:
-        return f"autoscaling.{camel_to_snake(cls.__name__)}"  # <--- code created automatically
 
 
 class ConfigurationError(AutoscalingRuntimeError):
