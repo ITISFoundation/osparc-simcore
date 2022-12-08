@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import logging
 from dataclasses import dataclass
 from typing import Optional, cast
@@ -18,6 +19,7 @@ from types_aiobotocore_ec2.type_defs import ReservationTypeDef
 
 from ..core.errors import (
     ConfigurationError,
+    Ec2InstanceNotFoundError,
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
@@ -35,6 +37,14 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
         instance.get("Instances", [{}])[0].get("State", {}).get("Name", "not_running")
         == "running"
     )
+
+
+@dataclass
+class EC2InstanceData:
+    launch_time: datetime.datetime
+    id: str
+    aws_private_dns: InstancePrivateDNSName
+    type: InstanceTypeType
 
 
 @dataclass
@@ -178,6 +188,44 @@ class AutoscalingEC2:
                 private_dns_name,
             )
             return private_dns_name
+
+    async def get_running_instance(
+        self,
+        instance_settings: EC2InstancesSettings,
+        tag_keys: list[str],
+        instance_host_name: str,
+    ) -> EC2InstanceData:
+        instances = await self.client.describe_instances(
+            Filters=[
+                {
+                    "Name": "key-name",
+                    "Values": instance_settings.EC2_INSTANCES_KEY_NAME,
+                },
+                {"Name": "instance-state-name", "Values": ["running"]},
+                {"Name": "tag-key", "Values": tag_keys},
+                {
+                    "Name": "network-interface.private-dns-name",
+                    "Values": f"{instance_host_name}.ec2.internal",
+                },
+            ]
+        )
+        if not instances["Reservations"]:
+            # NOTE: wrong hostname, or not running, or wrong usage
+            raise Ec2InstanceNotFoundError()
+
+        # NOTE: since the hostname is unique, there is only one instance here
+        assert "Instances" in instances["Reservations"][0]  # nosec
+        instance = instances["Reservations"][0]["Instances"][0]
+        assert "LaunchTime" in instance  # nosec
+        assert "InstanceId" in instance  # nosec
+        assert "PrivateDnsName" in instance  # nosec
+        assert "InstanceType" in instance  # nosec
+        return EC2InstanceData(
+            launch_time=instance["LaunchTime"],
+            id=instance["InstanceId"],
+            aws_private_dns=instance["PrivateDnsName"],
+            type=instance["InstanceType"],
+        )
 
 
 def setup(app: FastAPI) -> None:

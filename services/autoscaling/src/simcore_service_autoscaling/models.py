@@ -9,6 +9,10 @@ class Resources(BaseModel):
     cpus: NonNegativeFloat
     ram: ByteSize
 
+    @classmethod
+    def empty_resources(cls) -> "Resources":
+        return cls(cpus=0, ram=ByteSize(0))
+
 
 class EC2Instance(BaseModel):
     name: str

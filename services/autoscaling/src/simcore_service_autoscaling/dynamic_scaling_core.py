@@ -1,18 +1,20 @@
+import asyncio
 import json
 import logging
 import re
 from datetime import datetime
 
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Task
+from models_library.generated_models.docker_rest_api import Availability, Node, Task
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
+from .models import Resources
 from .modules.docker import get_docker_client
-from .modules.ec2 import get_ec2_client
+from .modules.ec2 import EC2InstanceData, get_ec2_client
 from .utils import ec2, rabbitmq, utils_docker
 
 logger = logging.getLogger(__name__)
@@ -20,8 +22,56 @@ logger = logging.getLogger(__name__)
 _EC2_INTERNAL_DNS_RE: re.Pattern = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
 
 
-async def _scale_down_cluster(app: FastAPI) -> None:
-    ...
+async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None:
+    # NOTE: when do we scale down???
+    app_settings: ApplicationSettings = app.state.settings
+
+    # 1. if a machine has nothing running on it, it should at least be set to drain as a first step (we could undrain it if there is a sudden need)
+    docker_client = get_docker_client(app)
+    active_empty_nodes = [
+        node
+        for node in monitored_nodes
+        if (
+            await utils_docker.compute_node_used_resources(docker_client, node)
+            == Resources.empty_resources()
+        )
+        and (node.Spec is not None)
+        and (node.Spec.Availability == Availability.active)
+    ]
+    await asyncio.gather(
+        *(
+            utils_docker.tag_node(docker_client, node, tags={}, available=False)
+            for node in active_empty_nodes
+        )
+    )
+
+    # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure (parametrize this)
+    # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
+    drained_empty_nodes = [
+        node
+        for node in monitored_nodes
+        if (
+            await utils_docker.compute_node_used_resources(docker_client, node)
+            == Resources.empty_resources()
+        )
+        and (node.Spec is not None)
+        and (node.Spec.Availability == Availability.drain)
+    ]
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    terminateable_nodes: list[tuple[Node, EC2InstanceData]] = []
+    for node in drained_empty_nodes:
+        assert node.Description  # nosec
+        assert node.Description.Hostname  # nosec
+        ec2_instance_data = await get_ec2_client(app).get_running_instance(
+            app_settings.AUTOSCALING_EC2_INSTANCES,
+            ["io.simcore.autoscaling.created", "io.simcore.autoscaling.version"],
+            node.Description.Hostname,
+        )
+        # if (datetime.utcnow() - ec2_instance_data.launch_time).
+
+    # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
+    # 4.
 
 
 async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
