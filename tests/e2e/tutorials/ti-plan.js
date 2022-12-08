@@ -81,8 +81,11 @@ async function runTutorial() {
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
-    await tutorial.waitFor(20000, "Load iframe");
-    const postProIframe = await tutorial.getIframe(tiId);
+    // wait for iframe to be ready, it might take a while in Voila
+    const postProIframe = await tutorial.waitForVoilaIframe(tiId);
+    // wait for iframe to be rendered
+    await tutorial.waitForVoilaRendered(postProIframe);
+
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();
