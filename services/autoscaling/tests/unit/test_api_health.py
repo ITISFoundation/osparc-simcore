@@ -41,15 +41,15 @@ async def test_status_no_rabbit(
     status_response = response.json()
     assert "rabbitmq" in status_response
     rabbitmq_status = status_response["rabbitmq"]
-    assert "initialized" in rabbitmq_status
-    assert rabbitmq_status["initialized"] is False
-    assert rabbitmq_status["connection_state"] is False
+    assert "is_enabled" in rabbitmq_status
+    assert rabbitmq_status["is_enabled"] is False
+    assert rabbitmq_status["is_responsive"] is False
 
     assert "ec2" in status_response
     ec2_status = status_response["ec2"]
-    assert "initialized" in ec2_status
-    assert ec2_status["initialized"] is True
-    assert ec2_status["connection_state"] is True
+    assert "is_enabled" in ec2_status
+    assert ec2_status["is_enabled"] is True
+    assert ec2_status["is_responsive"] is True
 
 
 async def test_status(
@@ -65,15 +65,15 @@ async def test_status(
     status_response = response.json()
     assert "rabbitmq" in status_response
     rabbitmq_status = status_response["rabbitmq"]
-    assert "initialized" in rabbitmq_status
-    assert rabbitmq_status["initialized"] is True
-    assert rabbitmq_status["connection_state"] is True
+    assert "is_enabled" in rabbitmq_status
+    assert rabbitmq_status["is_enabled"] is True
+    assert rabbitmq_status["is_responsive"] is True
 
     assert "ec2" in status_response
     ec2_status = status_response["ec2"]
-    assert "initialized" in ec2_status
-    assert ec2_status["initialized"] is True
-    assert ec2_status["connection_state"] is False
+    assert "is_enabled" in ec2_status
+    assert ec2_status["is_enabled"] is True
+    assert ec2_status["is_responsive"] is False
 
     # restart the server
     mocked_aws_server.start()
@@ -84,12 +84,12 @@ async def test_status(
     status_response = response.json()
     assert "rabbitmq" in status_response
     rabbitmq_status = status_response["rabbitmq"]
-    assert "initialized" in rabbitmq_status
-    assert rabbitmq_status["initialized"] is True
-    assert rabbitmq_status["connection_state"] is True
+    assert "is_enabled" in rabbitmq_status
+    assert rabbitmq_status["is_enabled"] is True
+    assert rabbitmq_status["is_responsive"] is True
 
     assert "ec2" in status_response
     ec2_status = status_response["ec2"]
-    assert "initialized" in ec2_status
-    assert ec2_status["initialized"] is True
-    assert ec2_status["connection_state"] is True
+    assert "is_enabled" in ec2_status
+    assert ec2_status["is_enabled"] is True
+    assert ec2_status["is_responsive"] is True
