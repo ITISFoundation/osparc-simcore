@@ -6,9 +6,45 @@
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+
+
+@pytest.fixture
+def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
+            "LOGIN_2FA_REQUIRED": "1",
+            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
+            "LOGIN_TWILIO": "null",
+            # ---------------
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_COMPUTATION": "null",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_DIRECTOR": "null",
+            "WEBSERVER_EXPORTER": "null",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_GROUPS": "1",
+            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_PRODUCTS": "1",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_REMOTE_DEBUG": "0",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
+            "WEBSERVER_TAGS": "1",
+            "WEBSERVER_TRACING": "null",
+            "WEBSERVER_USERS": "1",
+            "WEBSERVER_VERSION_CONTROL": "0",
+        },
+    )
 
 
 @pytest.fixture
