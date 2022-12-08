@@ -107,13 +107,11 @@ async def test_2fa_code_operations(
     assert await get_2fa_code(client.app, email) is None
 
 
-# test_resend_2fa
-async def test_it(
+async def test_resend_2fa_entrypoint_is_protected(
     client: TestClient,
     db: AsyncpgStorage,
     capsys: CaptureFixture,
     fake_user_email: str,
-    fake_user_password: str,
     fake_user_phone_number: str,
     mocked_twilio_service: dict[str, Mock],
 ):
