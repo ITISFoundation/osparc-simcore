@@ -41,7 +41,11 @@ def setup_socketio_server(app: web.Application):
         # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
         # TODO: ujson to speed up?
         # TODO: client_manager= to socketio.AsyncRedisManager/AsyncAioPikaManager for horizontal scaling (shared sessions)
-        sio = AsyncServer(async_mode="aiohttp", logger=log, engineio_logger=False)
+        sio = AsyncServer(
+            async_mode="aiohttp",
+            logger=log,  # type: ignore
+            engineio_logger=False,
+        )
         sio.attach(app)
 
         app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
