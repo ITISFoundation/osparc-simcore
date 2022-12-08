@@ -67,3 +67,5 @@ def create_openapi_specs(app: FastAPI, file_path: Path):
 
     with file_path.open("wt") as fh:
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
+
+    print("Saved OAS to", file_path)

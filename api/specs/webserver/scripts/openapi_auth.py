@@ -16,6 +16,7 @@ from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
 from simcore_service_webserver.login.handlers import Login2faBody, LoginBody, LogoutBody
+from simcore_service_webserver.login.handlers_2fa import Resend2faBody
 from simcore_service_webserver.login.handlers_change import (
     ChangeEmailBody,
     ChangePasswordBody,
@@ -72,6 +73,12 @@ async def phone_confirmation(confirmation: PhoneConfirmationBody):
     response_model=Envelope[Log],
     tags=TAGS,
     operation_id="auth_login",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
 )
 async def login(authentication: LoginBody):
     """user logs in"""
@@ -82,9 +89,31 @@ async def login(authentication: LoginBody):
     response_model=Envelope[Log],
     tags=TAGS,
     operation_id="auth_login_2fa",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
 )
 async def login_2fa(authentication: Login2faBody):
     """user enters 2 Factor Authentication code when login in"""
+
+
+@app.post(
+    "/auth/tfa:resend",
+    response_model=Envelope[Log],
+    tags=TAGS,
+    operation_id="resend_2fa_code",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
+)
+async def resend_2fa_code(resend: Resend2faBody):
+    """Resends 2FA either via email or sms"""
 
 
 @app.post(
@@ -267,4 +296,4 @@ if __name__ == "__main__":
 
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-auth.ignore.yaml")
+    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-auth.yaml")
