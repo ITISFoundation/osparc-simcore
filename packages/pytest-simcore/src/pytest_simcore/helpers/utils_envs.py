@@ -6,7 +6,7 @@ import os
 from copy import deepcopy
 from io import StringIO
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import dotenv
 from pytest import MonkeyPatch
@@ -17,7 +17,7 @@ from .typing_env import EnvVarsDict
 #
 # monkeypatch using dict
 #
-def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
+def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: dict[str, Any]) -> EnvVarsDict:
     for key, value in envs.items():
         assert value is not None  # None keys cannot be is defined w/o value
         monkeypatch.setenv(key, str(value))
