@@ -7,12 +7,11 @@ from fastapi import FastAPI
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from . import utils_docker
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
 from .modules.ec2 import get_ec2_client
-from .utils import ec2, rabbitmq
+from .utils import ec2, rabbitmq, utils_docker
 
 logger = logging.getLogger(__name__)
 

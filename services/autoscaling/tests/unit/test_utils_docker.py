@@ -19,7 +19,7 @@ from models_library.generated_models.docker_rest_api import (
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.models import Resources
-from simcore_service_autoscaling.utils_docker import (
+from simcore_service_autoscaling.utils.utils_docker import (
     Node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
