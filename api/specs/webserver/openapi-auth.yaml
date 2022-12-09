@@ -75,12 +75,12 @@ paths:
               $ref: "#/components/schemas/LoginBody"
         required: true
       responses:
-        "200":
+        "201":
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
+                $ref: "#/components/schemas/Envelope_LoginNextPage_"
         "401":
           description: unauthorized reset due to invalid token code
           content:
@@ -451,6 +451,23 @@ components:
           format: password
           writeOnly: true
       additionalProperties: false
+    CodePageParams:
+      title: CodePageParams
+      required:
+        - message
+      type: object
+      properties:
+        message:
+          title: Message
+          type: string
+        retry_2fa_after:
+          title: Retry 2Fa After
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        next_url:
+          title: Next Url
+          type: string
     Envelope_Error_:
       title: Envelope[Error]
       type: object
@@ -465,6 +482,14 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Log"
+        error:
+          title: Error
+    Envelope_LoginNextPage_:
+      title: Envelope[LoginNextPage]
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LoginNextPage"
         error:
           title: Error
     Error:
@@ -587,6 +612,37 @@ components:
           format: password
           writeOnly: true
       additionalProperties: false
+    LoginNextPage:
+      title: LoginNextPage
+      required:
+        - name
+        - code
+        - reason
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Code name to the front-end page
+        parameters:
+          $ref: "#/components/schemas/CodePageParams"
+        code:
+          title: Code
+          type: string
+          deprecated: true
+        reason:
+          title: Reason
+          type: string
+          deprecated: true
+      description: "This is the body of a 2XX response to pass the front-end
+
+        what kind of page shall be display next and some information about it
+
+
+        An analogous structure is used in the redirects (see create_redirect_response)
+        but
+
+        using a path+query in the fragment of the URL"
     LogoutBody:
       title: LogoutBody
       type: object
@@ -670,6 +726,7 @@ components:
         email:
           title: Email
           type: string
+          description: User email (identifier)
           format: email
         send_as:
           title: Send As

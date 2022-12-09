@@ -19,6 +19,7 @@ from simcore_service_webserver.login.handlers_2fa import Resend2faBody
 from simcore_service_webserver.login.handlers_auth import (
     Login2faBody,
     LoginBody,
+    LoginNextPage,
     LogoutBody,
 )
 from simcore_service_webserver.login.handlers_change import (
@@ -74,10 +75,12 @@ async def phone_confirmation(confirmation: PhoneConfirmationBody):
 
 @app.post(
     "/auth/login",
-    response_model=Envelope[Log],
+    response_model=Envelope[LoginNextPage],
+    status_code=status.HTTP_201_CREATED,
     tags=TAGS,
     operation_id="auth_login",
     responses={
+        # status.HTTP_503_SERVICE_UNAVAILABLE
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
             "description": "unauthorized reset due to invalid token code",

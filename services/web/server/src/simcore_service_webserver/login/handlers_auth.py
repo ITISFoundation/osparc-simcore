@@ -3,7 +3,7 @@ from typing import Final, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, Field, SecretStr
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -13,6 +13,7 @@ from simcore_postgres_database.models.users import UserRole
 from ..products import Product, get_current_product
 from ..security_api import check_password, forget
 from ..session_access import session_access_constraint, session_access_trace
+from ..utils_aiohttp import NextPage
 from ._2fa import (
     create_2fa_code,
     delete_2fa_code,
@@ -23,6 +24,7 @@ from ._2fa import (
 from ._constants import (
     MSG_2FA_CODE_SENT,
     MSG_LOGGED_OUT,
+    MSG_PHONE_MISSING,
     MSG_UNKNOWN_EMAIL,
     MSG_WRONG_2FA_CODE,
     MSG_WRONG_PASSWORD,
@@ -55,6 +57,17 @@ _SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 class LoginBody(InputSchema):
     email: EmailStr
     password: SecretStr
+
+
+class CodePageParams(BaseModel):
+    message: str
+    retry_2fa_after: Optional[PositiveInt] = None
+    next_url: Optional[str] = None
+
+
+class LoginNextPage(NextPage[CodePageParams]):
+    code: str = Field(deprecated=True)
+    reason: str = Field(deprecated=True)
 
 
 @session_access_trace(route_name="auth_login")
@@ -90,11 +103,18 @@ async def login(request: web.Request):
 
     # no phone
     if not user["phone"]:
+
         response = envelope_response(
+            # LoginNextPage
             {
+                "name": _PHONE_NUMBER_REQUIRED,
+                "parameters": {
+                    "message": MSG_PHONE_MISSING,
+                    "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
+                },
+                # TODO: deprecated: remove in next PR with @odeimaiz
                 "code": _PHONE_NUMBER_REQUIRED,
-                "reason": "To login, please register first a phone number",
-                "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
+                "reason": MSG_PHONE_MISSING,
             },
             status=web.HTTPAccepted.status_code,
         )
@@ -118,12 +138,20 @@ async def login(request: web.Request):
         )
 
         response = envelope_response(
+            # LoginNextPage
             {
+                "name": _SMS_CODE_REQUIRED,
+                "parameters": {
+                    "message": MSG_2FA_CODE_SENT.format(
+                        phone_number=mask_phone_number(user["phone"])
+                    ),
+                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                },
+                # TODO: deprecated: remove in next PR with @odeimaiz
                 "code": _SMS_CODE_REQUIRED,
                 "reason": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(user["phone"])
                 ),
-                "next_url": f"{request.app.router['auth_login_2fa'].url_for()}",
             },
             status=web.HTTPAccepted.status_code,
         )
