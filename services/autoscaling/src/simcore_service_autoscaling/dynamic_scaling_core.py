@@ -145,6 +145,7 @@ async def _activate_drained_nodes(
         # check if there is some node with enough resources
         for node in monitored_nodes:
             assert node.Spec  # nosec
+            assert node.Description  # nosec
             if (node.Spec.Availability == Availability.drain) and (
                 utils_docker.get_node_total_resources(node)
                 >= utils_docker.get_max_resources_from_docker_task(task)
@@ -153,8 +154,11 @@ async def _activate_drained_nodes(
                 await utils_docker.tag_node(
                     docker_client, node, tags=node.Spec.Labels, available=True
                 )
+                logger.info(
+                    "Activated formed drain node '%s'", node.Description.Hostname
+                )
                 return True
-
+    logger.info("There are no available drained node for the pending tasks")
     return False
 
 
