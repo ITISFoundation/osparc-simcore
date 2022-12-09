@@ -8,7 +8,6 @@ import logging
 import re
 from typing import Final
 
-import aiodocker
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Node,
@@ -24,7 +23,8 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .models import Resources
+from ..models import Resources
+from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
 _NANO_CPU: Final[float] = 10**9
@@ -40,18 +40,21 @@ _MINUTE: Final[int] = 60
 _TIMEOUT_WAITING_FOR_NODES_S: Final[int] = 5 * _MINUTE
 
 
-async def get_monitored_nodes(node_labels: list[DockerLabelKey]) -> list[Node]:
-    async with aiodocker.Docker() as docker:
-        nodes = parse_obj_as(
-            list[Node],
-            await docker.nodes.list(
-                filters={"node.label": [f"{label}=true" for label in node_labels]}
-            ),
-        )
+async def get_monitored_nodes(
+    docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
+) -> list[Node]:
+    nodes = parse_obj_as(
+        list[Node],
+        await docker_client.nodes.list(
+            filters={"node.label": [f"{label}=true" for label in node_labels]}
+        ),
+    )
     return nodes
 
 
-async def remove_monitored_down_nodes(nodes: list[Node]) -> list[Node]:
+async def remove_monitored_down_nodes(
+    docker_client: AutoscalingDocker, nodes: list[Node]
+) -> list[Node]:
     """removes docker nodes that are in the down state"""
 
     def _check_if_node_is_removable(node: Node) -> bool:
@@ -69,15 +72,15 @@ async def remove_monitored_down_nodes(nodes: list[Node]) -> list[Node]:
         return False
 
     nodes_that_need_removal = [n for n in nodes if _check_if_node_is_removable(n)]
-    async with aiodocker.Docker() as docker:
-        for node in nodes_that_need_removal:
-            assert node.ID  # nosec
-            with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
-                await docker.nodes.remove(node_id=node.ID)
+    for node in nodes_that_need_removal:
+        assert node.ID  # nosec
+        with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
+            await docker_client.nodes.remove(node_id=node.ID)
     return nodes_that_need_removal
 
 
 async def pending_service_tasks_with_insufficient_resources(
+    docker_client: AutoscalingDocker,
     service_labels: list[DockerLabelKey],
 ) -> list[Task]:
     """
@@ -88,16 +91,15 @@ async def pending_service_tasks_with_insufficient_resources(
     - have an error message with "insufficient resources"
     - are not scheduled on any node
     """
-    async with aiodocker.Docker() as docker:
-        tasks = parse_obj_as(
-            list[Task],
-            await docker.tasks.list(
-                filters={
-                    "desired-state": "running",
-                    "label": service_labels,
-                }
-            ),
-        )
+    tasks = parse_obj_as(
+        list[Task],
+        await docker_client.tasks.list(
+            filters={
+                "desired-state": "running",
+                "label": service_labels,
+            }
+        ),
+    )
 
     def _is_task_waiting_for_resources(task: Task) -> bool:
         # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
@@ -171,36 +173,38 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
     return Resources(cpus=0, ram=ByteSize(0))
 
 
-async def compute_node_used_resources(node: Node) -> Resources:
+async def compute_node_used_resources(
+    docker_client: AutoscalingDocker,
+    node: Node,
+) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
-    async with aiodocker.Docker() as docker:
-        all_tasks_on_node = parse_obj_as(
-            list[Task], await docker.tasks.list(filters={"node": node.ID})
-        )
-        for task in all_tasks_on_node:
-            assert task.Status  # nosec
-            if (
-                task.Status.State in _TASK_STATUS_WITH_ASSIGNED_RESOURCES
-                and task.Spec
-                and task.Spec.Resources
-                and task.Spec.Resources.Reservations
-            ):
-                task_reservations = task.Spec.Resources.Reservations.dict(
-                    exclude_none=True
-                )
-                cluster_resources_counter.update(
-                    {
-                        "ram": task_reservations.get("MemoryBytes", 0),
-                        "cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
-                    }
-                )
+    all_tasks_on_node = parse_obj_as(
+        list[Task], await docker_client.tasks.list(filters={"node": node.ID})
+    )
+    for task in all_tasks_on_node:
+        assert task.Status  # nosec
+        if (
+            task.Status.State in _TASK_STATUS_WITH_ASSIGNED_RESOURCES
+            and task.Spec
+            and task.Spec.Resources
+            and task.Spec.Resources.Reservations
+        ):
+            task_reservations = task.Spec.Resources.Reservations.dict(exclude_none=True)
+            cluster_resources_counter.update(
+                {
+                    "ram": task_reservations.get("MemoryBytes", 0),
+                    "cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
+                }
+            )
     return Resources.parse_obj(dict(cluster_resources_counter))
 
 
-async def compute_cluster_used_resources(nodes: list[Node]) -> Resources:
+async def compute_cluster_used_resources(
+    docker_client: AutoscalingDocker, nodes: list[Node]
+) -> Resources:
     """Returns the total amount of resources (reservations) used on each of the given nodes"""
     list_of_used_resources = await logged_gather(
-        *(compute_node_used_resources(node) for node in nodes)
+        *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
     counter = collections.Counter({k: 0 for k in Resources.__fields__.keys()})
     for result in list_of_used_resources:
@@ -243,32 +247,37 @@ async def get_docker_swarm_join_bash_command() -> str:
     before_sleep=before_sleep_log(logger, logging.WARNING),
     wait=wait_fixed(5),
 )
-async def wait_for_node(node_name: str) -> Node:
-    async with aiodocker.Docker() as docker:
-        list_of_nodes = await docker.nodes.list(filters={"name": node_name})
+async def wait_for_node(
+    docker_client: AutoscalingDocker,
+    node_name: str,
+) -> Node:
+    list_of_nodes = await docker_client.nodes.list(filters={"name": node_name})
     if not list_of_nodes:
         raise TryAgain
     return parse_obj_as(Node, list_of_nodes[0])
 
 
 async def tag_node(
-    node: Node, *, tags: dict[DockerLabelKey, str], available: bool
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    tags: dict[DockerLabelKey, str],
+    available: bool,
 ) -> None:
     with log_context(
         logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
     ):
-        async with aiodocker.Docker() as docker:
-            assert node.ID  # nosec
-            assert node.Version  # nosec
-            assert node.Version.Index  # nosec
-            assert node.Spec  # nosec
-            assert node.Spec.Role  # nosec
-            await docker.nodes.update(
-                node_id=node.ID,
-                version=node.Version.Index,
-                spec={
-                    "Availability": "active" if available else "drain",
-                    "Labels": tags,
-                    "Role": node.Spec.Role.value,
-                },
-            )
+        assert node.ID  # nosec
+        assert node.Version  # nosec
+        assert node.Version.Index  # nosec
+        assert node.Spec  # nosec
+        assert node.Spec.Role  # nosec
+        await docker_client.nodes.update(
+            node_id=node.ID,
+            version=node.Version.Index,
+            spec={
+                "Availability": "active" if available else "drain",
+                "Labels": tags,
+                "Role": node.Spec.Role.value,
+            },
+        )

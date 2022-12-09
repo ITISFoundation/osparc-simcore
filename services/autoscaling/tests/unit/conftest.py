@@ -16,6 +16,7 @@ from typing import (
     Mapping,
     Optional,
     Union,
+    cast,
 )
 
 import aiodocker
@@ -39,6 +40,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
+from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
@@ -163,6 +165,12 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+@pytest.fixture
+async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
+    async with AutoscalingDocker() as docker_client:
+        yield cast(AutoscalingDocker, docker_client)
 
 
 @pytest.fixture
