@@ -65,6 +65,11 @@ class EC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
+    EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=55),
+        description="Defines the time an instance must be empty before the instance termination procedure may begin",
+    )
+
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_intance_names(cls, value):
