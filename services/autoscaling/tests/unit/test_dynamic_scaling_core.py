@@ -10,7 +10,6 @@ from unittest import mock
 
 import aiodocker
 import pytest
-from faker import Faker
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -19,21 +18,6 @@ from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resou
 from simcore_service_autoscaling.modules.docker import get_docker_client
 from simcore_service_autoscaling.modules.ec2 import EC2InstanceData, get_ec2_client
 from types_aiobotocore_ec2.client import EC2Client
-
-
-@pytest.fixture
-def aws_instance_private_dns() -> str:
-    return "ip-10-23-40-12.ec2.internal"
-
-
-@pytest.fixture
-def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2InstanceData:
-    return EC2InstanceData(
-        launch_time=faker.date_time(),
-        id=faker.uuid4(),
-        aws_private_dns=aws_instance_private_dns,
-        type=faker.pystr(),
-    )
 
 
 @pytest.fixture

@@ -41,7 +41,7 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
-from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2
+from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -565,4 +565,19 @@ def osparc_docker_label_keys(
 ) -> SimcoreServiceDockerLabelKeys:
     return SimcoreServiceDockerLabelKeys.parse_obj(
         dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+    )
+
+
+@pytest.fixture
+def aws_instance_private_dns() -> str:
+    return "ip-10-23-40-12.ec2.internal"
+
+
+@pytest.fixture
+def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2InstanceData:
+    return EC2InstanceData(
+        launch_time=faker.date_time(),
+        id=faker.uuid4(),
+        aws_private_dns=aws_instance_private_dns,
+        type=faker.pystr(),
     )

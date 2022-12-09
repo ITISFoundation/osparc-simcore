@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, cast
 
 import aioboto3
+import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
@@ -202,13 +203,13 @@ class AutoscalingEC2:
             Filters=[
                 {
                     "Name": "key-name",
-                    "Values": instance_settings.EC2_INSTANCES_KEY_NAME,
+                    "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
                 },
                 {"Name": "instance-state-name", "Values": ["running"]},
-                {"Name": "tag-key", "Values": tag_keys},
+                {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
                 {
                     "Name": "network-interface.private-dns-name",
-                    "Values": f"{instance_host_name}.ec2.internal",
+                    "Values": [f"{instance_host_name}.ec2.internal"],
                 },
             ]
         )
@@ -231,15 +232,15 @@ class AutoscalingEC2:
         )
 
     async def terminate_instance(self, instance_data: EC2InstanceData) -> None:
-        await self.client.terminate_instances(InstanceIds=[instance_data.id])
-        # shall we wait here?
-        # waiter = self.client.get_waiter("instance_terminated")
-        # await waiter.wait(
-        #     InstanceIds=[
-        #         instance["InstanceId"]
-        #         for instance in terminating_instances["TerminatingInstances"]
-        #     ]
-        # )
+        try:
+            await self.client.terminate_instances(InstanceIds=[instance_data.id])
+        except botocore.exceptions.ClientError as exc:
+            if (
+                exc.response.get("Error", {}).get("Code", "")
+                == "InvalidInstanceID.NotFound"
+            ):
+                raise Ec2InstanceNotFoundError from exc
+            raise
 
 
 def setup(app: FastAPI) -> None:
