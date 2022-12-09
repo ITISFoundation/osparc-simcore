@@ -113,7 +113,7 @@ async def test_it(
             "send_as": "SMS",
         },
     )
-    assert mock_get_2fa_code.call_ount == 1, "Emulates code expired"
+    assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
 
     data, error = await assert_status(response, web.HTTPOk)
     assert data["reason"]

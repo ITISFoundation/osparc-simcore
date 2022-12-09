@@ -14,8 +14,9 @@ class RouteTrace(TypedDict):
     timestamp: int
 
 
-SESSION_CONTRAINT_TRACE_KEY = "session_access_trace.last_visit"
-SESSION_CONTRAINT_COUNT_KEY = "session_access_constraint.count"
+# session keys
+SESSION_CONTRAINT_TRACE_KEY = "SESSION_ACCESS_TRACE.LAST_VISIT"
+SESSION_CONTRAINT_COUNT_KEY = "SESSION_ACCESS_CONSTRAINT.COUNT"
 
 
 def session_access_trace(route_name: str):
