@@ -121,6 +121,17 @@ async def pending_service_tasks_with_insufficient_resources(
     return pending_tasks
 
 
+def get_node_total_resources(node: Node) -> Resources:
+    assert node.Description  # nosec
+    assert node.Description.Resources  # nosec
+    assert node.Description.Resources.NanoCPUs  # nosec
+    assert node.Description.Resources.MemoryBytes  # nosec
+    return Resources(
+        cpus=node.Description.Resources.NanoCPUs / _NANO_CPU,
+        ram=ByteSize(node.Description.Resources.MemoryBytes),
+    )
+
+
 async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
     """
     Returns the nodes total resources.
