@@ -16,86 +16,16 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.tutorial.ti.Slides", {
-  extend: osparc.ui.window.SingletonWindow,
+  extend: osparc.component.tutorial.SlidesBase,
 
   construct: function() {
     this.base(arguments, "ti-slides", this.tr("Quick Start"));
-
-    this.set({
-      layout: new qx.ui.layout.VBox(20),
-      contentPadding: 15,
-      modal: true,
-      width: 800,
-      height: 800,
-      showMaximize: false,
-      showMinimize: false,
-      resizable: false
-    });
-
-    const closeBtn = this.getChildControl("close-button");
-    osparc.utils.Utils.setIdToWidget(closeBtn, "quickStartWindowCloseBtn");
-
-    const arrowsLayout = this.__createArrows();
-    this.add(arrowsLayout);
-
-    const stack = this.__createStack();
-    this.add(stack, {
-      flex: 1
-    });
-
-    const footer = this.__createFooter();
-    this.add(footer);
-
-    this.__setSlideIdx(0);
   },
 
   members: {
-    __currentIdx: null,
-    __prevBtn: null,
-    __nextBtn: null,
-    __stack: null,
-
-    __createArrows: function() {
-      const arrowsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-
-      const prevBtn = this.__prevBtn = new qx.ui.form.Button().set({
-        label: this.tr("Previous"),
-        icon: "@FontAwesome5Solid/arrow-left/20",
-        allowGrowX: true,
-        backgroundColor: "transparent",
-        iconPosition: "left",
-        alignX: "left"
-      });
-      prevBtn.addListener("execute", () => this.__setSlideIdx(this.__currentIdx-1), this);
-      arrowsLayout.add(prevBtn);
-
-      arrowsLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const slideCounter = this.__slideCounter = new qx.ui.basic.Label();
-      arrowsLayout.add(slideCounter);
-
-      arrowsLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
-        label: this.tr("Next"),
-        icon: "@FontAwesome5Solid/arrow-right/20",
-        allowGrowX: true,
-        backgroundColor: "transparent",
-        iconPosition: "right",
-        alignX: "right"
-      });
-      nextBtn.addListener("execute", () => this.__setSlideIdx(this.__currentIdx+1), this);
-      arrowsLayout.add(nextBtn);
-
-      return arrowsLayout;
-    },
-
-    __createStack: function() {
-      const stack = this.__stack = new qx.ui.container.Stack();
+    // overriden
+    _createStack: function() {
+      const stack = new qx.ui.container.Stack();
       [
         new osparc.component.tutorial.ti.Welcome(),
         new osparc.component.tutorial.ti.Dashboard(),
@@ -110,18 +40,8 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       return stack;
     },
 
-    __setSlideIdx: function(idx) {
-      const selectables = this.__stack.getSelectables();
-      if (idx > -1 && idx < selectables.length) {
-        this.__currentIdx = idx;
-        this.__stack.setSelection([selectables[idx]]);
-        this.__prevBtn.setEnabled(idx !== 0);
-        this.__nextBtn.setEnabled(idx !== selectables.length-1);
-      }
-      this.__slideCounter.setValue(`${idx+1}/${selectables.length}`);
-    },
-
-    __createFooter: function() {
+    // overriden
+    _createFooter: function() {
       const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
       const text1 = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
@@ -164,7 +84,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
         value: osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart") === "true",
         allowGrowX: true,
-        textAlign: "center"
+        alignX: "center"
       });
       dontShowCB.addListener("changeValue", e => {
         const dontShow = e.getData();
