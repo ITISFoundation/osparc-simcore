@@ -22,11 +22,11 @@ qx.Class.define("osparc.component.tutorial.Utils", {
     TUTORIALS: {
       "tis": {
         localStorageStr: "tiDontShowQuickStart",
-        tutorial: osparc.component.tutorial.ti.Slides
+        tutorial: () => new osparc.component.tutorial.ti.Slides()
       },
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",
-        tutorial: osparc.component.tutorial.s4llite.Slides
+        tutorial: () => new osparc.component.tutorial.s4llite.Slides()
       }
     },
 
