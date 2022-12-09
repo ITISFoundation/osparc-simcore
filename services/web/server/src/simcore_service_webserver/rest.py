@@ -6,7 +6,6 @@
 
 """
 import logging
-from typing import Tuple
 
 from aiohttp import web
 from aiohttp_swagger import setup_swagger
@@ -23,6 +22,7 @@ from ._meta import API_VTAG, api_version_prefix
 from .rest_healthcheck import HealthCheck
 from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
+from .security import setup_security
 
 log = logging.getLogger(__name__)
 
@@ -30,12 +30,14 @@ log = logging.getLogger(__name__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    depends=["simcore_service_webserver.security"],
     settings_name="WEBSERVER_REST",
     logger=log,
 )
 def setup_rest(app: web.Application):
     settings: RestSettings = get_plugin_settings(app)
+
+    setup_security(app)
+
     is_diagnostics_enabled: bool = (
         app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS is not None
     )
@@ -91,4 +93,4 @@ def setup_rest(app: web.Application):
         )
 
 
-__all__: Tuple[str, ...] = ("setup_rest",)
+__all__: tuple[str, ...] = ("setup_rest",)

@@ -26,7 +26,7 @@ MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
 
 async def _setup_login_storage_ctx(app: web.Application):
-    # TODO: ensure pool only init once!
+    assert APP_LOGIN_STORAGE_KEY not in app  # nosec
     settings: PostgresSettings = get_db_plugin_settings(app)
 
     pool: asyncpg.pool.Pool = await asyncpg.create_pool(
@@ -49,7 +49,7 @@ async def _setup_login_storage_ctx(app: web.Application):
 
 
 def setup_login_storage(app: web.Application):
-    if app.get(APP_LOGIN_STORAGE_KEY) is None:
+    if _setup_login_storage_ctx not in app.cleanup_ctx:
         app.cleanup_ctx.append(_setup_login_storage_ctx)
 
 
@@ -67,7 +67,6 @@ def _setup_login_options(app: web.Application):
     "simcore_service_webserver.login",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LOGIN",
-    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
     logger=log,
 )
 def setup_login(app: web.Application):

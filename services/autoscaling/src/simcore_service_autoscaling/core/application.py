@@ -11,7 +11,8 @@ from .._meta import (
 )
 from ..api.routes import setup_api_routes
 from ..dynamic_scaling import setup as setup_background_task
-from ..rabbitmq import setup as setup_rabbitmq
+from ..modules.ec2 import setup as setup_ec2
+from ..modules.rabbitmq import setup as setup_rabbitmq
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # PLUGINS SETUP
     setup_api_routes(app)
     setup_rabbitmq(app)
+    setup_ec2(app)
     # autoscaler background task
     setup_background_task(app)
 

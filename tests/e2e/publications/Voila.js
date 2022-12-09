@@ -12,7 +12,7 @@ const {
 } = utils.parseCommandLineArgumentsTemplate(args);
 
 const anonURL = urlPrefix + templateUuid;
-const screenshotPrefix = "Voila_";
+const screenshotPrefix = "Voila";
 
 
 async function runTutorial () {
@@ -25,25 +25,23 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log("Workbench Data:", workbenchData);
     const voilaIdViewer = workbenchData["nodeIds"][0];
-    await tutorial.waitForServices(workbenchData["studyId"], [voilaIdViewer], startTimeout);
+    await tutorial.waitForServices(
+      workbenchData["studyId"],
+      [voilaIdViewer],
+      startTimeout
+    );
 
-    await tutorial.waitFor(40000, 'Some time for starting the service');
+    await tutorial.waitFor(2000, 'Service started');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    const frame = await tutorial.getIframe(voilaIdViewer);
+    // wait for iframe to be ready, it might take a while in Voila
+    const iframe = await tutorial.waitForVoilaIframe(voilaIdViewer);
 
-    // check title says "VISUALIZATION"
-    const titleSelector = '#VISUALIZATION';
-    const element = await frame.$(titleSelector);
-    const titleText = await frame.evaluate(el => el.innerText, element);
-    console.log("titleText", titleText);
-    if (titleText !== "VISUALIZATION") {
-      throw new Error("Voila page title doesn't match the expected");
-    }
-    await utils.takeScreenshot(page, screenshotPrefix + 'iFrame1');
+    // wait for iframe to be rendered
+    await tutorial.waitForVoilaRendered(iframe);
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
   }
   finally {

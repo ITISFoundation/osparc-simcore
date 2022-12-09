@@ -9,6 +9,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
 import asyncio
 import sys
 import textwrap
@@ -30,6 +31,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
@@ -48,6 +50,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.login.settings import LoginOptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -104,7 +107,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 def app_environment(
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
-) -> dict[str, str]:
+) -> EnvVarsDict:
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -123,7 +126,7 @@ def app_environment(
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
-    app_environment: dict[str, str],
+    app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
@@ -542,7 +545,7 @@ async def all_group(client, logged_user) -> dict[str, str]:
 
 def _patch_compose_mail(monkeypatch):
     async def print_mail_to_stdout(
-        app: web.Application, *, sender: str, recipient: str, subject: str, body: str
+        cfg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
     ):
         print(
             f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"

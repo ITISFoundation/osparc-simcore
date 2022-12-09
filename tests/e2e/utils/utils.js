@@ -111,6 +111,17 @@ function getDomain(url) {
   return url;
 }
 
+async function getChildrenElements(element) {
+  const children = await element.$$(':scope > *');
+  return children;
+}
+
+async function getChildrenElementsBySelector(page, selector) {
+  const parent = await page.$(selector);
+  const children = await getChildrenElements(parent);
+  return children;
+}
+
 async function getNodeTreeItemIDs(page) {
   const childrenIDs = await page.evaluate((selector) => {
     const children = [];
@@ -527,6 +538,8 @@ module.exports = {
   makeRequest,
   getUserAndPass,
   getDomain,
+  getChildrenElements,
+  getChildrenElementsBySelector,
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,

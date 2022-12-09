@@ -42,8 +42,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
       if ("label" in instance) {
         this.setInstanceLabel(instance["label"]);
       }
-      if ("study" in instance) {
-        this.setStudy(instance["study"]);
+      if ("studyId" in instance) {
+        this.setStudyId(instance["studyId"]);
       }
     }
 
@@ -82,8 +82,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
       nullable: true
     },
 
-    study: {
-      check: "osparc.data.model.Study",
+    studyId: {
+      check: "String",
       init: null,
       nullable: true
     },
@@ -335,7 +335,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       if (this.getNodeId()) {
         const params = {
           url: {
-            studyId: this.getStudy().getUuid(),
+            studyId: this.getStudyId(),
             nodeId: this.getNodeId()
           }
         };

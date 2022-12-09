@@ -1,7 +1,9 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.rest_utils import extract_and_validate
+from aiohttp.web import RouteTableDef
+from pydantic import EmailStr, SecretStr, validator
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products import Product, get_current_product
@@ -9,6 +11,16 @@ from ..security_api import check_password, encrypt_password
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
+from ._constants import (
+    MSG_CANT_SEND_MAIL,
+    MSG_CHANGE_EMAIL_REQUESTED,
+    MSG_EMAIL_SENT,
+    MSG_OFTEN_RESET_PASSWORD,
+    MSG_PASSWORD_CHANGED,
+    MSG_UNKNOWN_EMAIL,
+    MSG_WRONG_PASSWORD,
+)
+from ._models import InputSchema, create_password_match_validator
 from .decorators import RQT_USERID_KEY, login_required
 from .settings import LoginOptions, get_plugin_options
 from .storage import AsyncpgStorage, get_plugin_storage
@@ -24,7 +36,15 @@ from .utils_email import get_template_path, render_and_send_mail
 log = logging.getLogger(__name__)
 
 
+routes = RouteTableDef()
+
+
+class ResetPasswordBody(InputSchema):
+    email: str
+
+
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+@routes.post("/v0/auth/reset-password", name="auth_reset_password")
 async def reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -38,29 +58,28 @@ async def reset_password(request: web.Request):
      - Support contact information
      - Who requested the reset?
     """
-    _, _, body = await extract_and_validate(request)
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    email = body.email
+    request_body = await parse_request_body_as(ResetPasswordBody, request)
 
-    user = await db.get_user({"email": email})
+    user = await db.get_user({"email": request_body.email})
     try:
         if not user:
             raise web.HTTPUnprocessableEntity(
-                reason=cfg.MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+                reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
             )  # 422
 
-        validate_user_status(user, cfg, product.support_email)
+        validate_user_status(user=user, support_email=product.support_email)
 
         assert user["status"] == ACTIVE  # nosec
-        assert user["email"] == email  # nosec
+        assert user["email"] == request_body.email  # nosec
 
         if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(
-                reason=cfg.MSG_OFTEN_RESET_PASSWORD,
+                reason=MSG_OFTEN_RESET_PASSWORD,
                 content_type=MIMETYPE_APPLICATION_JSON,
             )  # 401
 
@@ -69,7 +88,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 from_=product.support_email,
-                to=email,
+                to=request_body.email,
                 template=await get_template_path(
                     request, "reset_password_email_failed.jinja2"
                 ),
@@ -80,9 +99,7 @@ async def reset_password(request: web.Request):
             )
         except Exception as err_mail:  # pylint: disable=broad-except
             log.exception("Cannot send email")
-            raise web.HTTPServiceUnavailable(
-                reason=cfg.MSG_CANT_SEND_MAIL
-            ) from err_mail
+            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err_mail
     else:
         confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
         link = make_confirmation_link(request, confirmation)
@@ -91,7 +108,7 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 from_=product.support_email,
-                to=email,
+                to=request_body.email,
                 template=await get_template_path(
                     request, "reset_password_email.jinja2"
                 ),
@@ -103,29 +120,31 @@ async def reset_password(request: web.Request):
         except Exception as err:  # pylint: disable=broad-except
             log.exception("Can not send email")
             await db.delete_confirmation(confirmation)
-            raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(cfg.MSG_EMAIL_SENT.format(email=email), "INFO")
+    response = flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
     return response
 
 
+class ChangeEmailBody(InputSchema):
+    email: EmailStr
+
+
+@routes.post("/v0/auth/change-email", name="auth_change_email")
 @login_required
 async def change_email(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = get_current_product(request)
 
-    email = body.email
+    request_body = await parse_request_body_as(ChangeEmailBody, request)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
 
-    if user["email"] == email:
+    if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    other = await db.get_user({"email": email})
+    other = await db.get_user({"email": request_body.email})
     if other:
         raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
 
@@ -135,13 +154,15 @@ async def change_email(request: web.Request):
         await db.delete_confirmation(confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(user["id"], CHANGE_EMAIL, email)
+    confirmation = await db.create_confirmation(
+        user["id"], CHANGE_EMAIL, request_body.email
+    )
     link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(
             request,
             from_=product.support_email,
-            to=email,
+            to=request_body.email,
             template=await get_template_path(request, "change_email_email.jinja2"),
             context={
                 "host": request.host,
@@ -151,38 +172,40 @@ async def change_email(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         log.error("Can not send email")
         await db.delete_confirmation(confirmation)
-        raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
+        raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(cfg.MSG_CHANGE_EMAIL_REQUESTED)
+    response = flash_response(MSG_CHANGE_EMAIL_REQUESTED)
     return response
 
 
+class ChangePasswordBody(InputSchema):
+    current: SecretStr
+    new: SecretStr
+    confirm: SecretStr
+
+    _password_confirm_match = validator("confirm", allow_reuse=True)(
+        create_password_match_validator(reference_field="new")
+    )
+
+
+@routes.post("/v0/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
+    passwords = await parse_request_body_as(ChangePasswordBody, request)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
 
-    _, _, body = await extract_and_validate(request)
-
-    cur_password = body.current
-    new_password = body.new
-    confirm = body.confirm
-
-    if not check_password(cur_password, user["password_hash"]):
+    if not check_password(passwords.current.get_secret_value(), user["password_hash"]):
         raise web.HTTPUnprocessableEntity(
-            reason=cfg.MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
-    if new_password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 409
+    await db.update_user(
+        user, {"password_hash": encrypt_password(passwords.new.get_secret_value())}
+    )
 
-    await db.update_user(user, {"password_hash": encrypt_password(new_password)})
-
-    response = flash_response(cfg.MSG_PASSWORD_CHANGED)
+    response = flash_response(MSG_PASSWORD_CHANGED)
     return response
