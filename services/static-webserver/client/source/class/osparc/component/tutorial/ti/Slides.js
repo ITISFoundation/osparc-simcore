@@ -27,7 +27,6 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       modal: true,
       width: 800,
       height: 800,
-      showClose: true,
       showMaximize: false,
       showMinimize: false,
       resizable: false

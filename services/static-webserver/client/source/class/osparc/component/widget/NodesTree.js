@@ -247,7 +247,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
             nodeId,
             label: node.getLabel(),
-            study
+            studyId: study.getUuid()
           });
           const title = this.tr("Service information");
           const width = 600;

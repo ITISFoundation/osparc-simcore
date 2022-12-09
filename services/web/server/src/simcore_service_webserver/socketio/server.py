@@ -49,6 +49,7 @@ def setup_socketio_server(app: web.Application):
         sio.attach(app)
 
         app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
-        app.cleanup_ctx.append(_socketio_server_cleanup_ctx)
+        if _socketio_server_cleanup_ctx not in app.cleanup_ctx:
+            app.cleanup_ctx.append(_socketio_server_cleanup_ctx)
 
     return get_socket_server(app)

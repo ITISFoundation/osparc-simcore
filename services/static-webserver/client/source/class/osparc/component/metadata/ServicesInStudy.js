@@ -146,6 +146,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
           const serviceDetails = new osparc.info.ServiceLarge(metadata, {
             nodeId,
+            studyId: this._studyData["uuid"],
             label: node["label"]
           });
           const title = this.tr("Service information");

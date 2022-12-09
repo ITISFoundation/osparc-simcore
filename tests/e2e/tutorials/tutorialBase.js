@@ -706,6 +706,38 @@ class TutorialBase {
     }
   }
 
+  async waitForVoilaIframe(voilaNodeId) {
+    const voilaTimeout = 240000;
+    const checkFrequency = 5000;
+    // wait for iframe to be ready, it might take a while in Voila
+    let iframe = null;
+    for (let i=0; i<voilaTimeout; i+=checkFrequency) {
+      iframe = await this.getIframe(voilaNodeId);
+      if (iframe) {
+        break;
+      }
+      await this.waitFor(checkFrequency, `iframe not ready yet: ${i/1000}s`);
+    }
+    return iframe;
+  }
+
+  async waitForVoilaRendered(iframe) {
+    // Voila says: "Ok, voila is still executing..."
+    await this.waitFor(10000);
+
+    const voilaRenderTimeout = 120000;
+    const checkFrequency = 2000;
+    // wait for iframe to be rendered
+    for (let i=0; i<voilaRenderTimeout; i+=checkFrequency) {
+      if (await utils.isElementVisible(iframe, '#rendered_cells')) {
+        console.log("Voila rendered")
+        return true;
+      }
+      await this.waitFor(checkFrequency, `iframe not rendered yet: ${i/1000}s`);
+    }
+    return false;
+  }
+
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
