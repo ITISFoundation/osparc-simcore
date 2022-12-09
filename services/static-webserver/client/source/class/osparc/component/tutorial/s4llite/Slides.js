@@ -27,7 +27,8 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
       return [
         new osparc.component.tutorial.s4llite.Welcome(),
         new osparc.component.tutorial.s4llite.Dashboard(),
-        new osparc.component.tutorial.s4llite.S4LLite()
+        new osparc.component.tutorial.s4llite.S4LLiteSpecs(),
+        new osparc.component.tutorial.s4llite.S4LLiteUI()
       ];
     },
     // overriden
