@@ -13,6 +13,9 @@ class Resources(BaseModel):
     def empty_resources(cls) -> "Resources":
         return cls(cpus=0, ram=ByteSize(0))
 
+    def __ge__(self, other: "Resources") -> bool:
+        return self.cpus >= other.cpus and self.ram >= other.ram
+
 
 class EC2Instance(BaseModel):
     name: str
