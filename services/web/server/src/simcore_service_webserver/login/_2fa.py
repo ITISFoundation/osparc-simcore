@@ -115,7 +115,6 @@ async def send_sms_code(
             f"{phone_number=}",
             twilio_alpha_numeric_sender,
         )
-        # TODO: twilio.base.exceptions.TwilioRestException
         #
         # SEE https://www.twilio.com/docs/sms/quickstart/python
         #
@@ -127,7 +126,6 @@ async def send_sms_code(
             f"{message=}",
         )
 
-    # FIXME: should raise if twilio fails!?
     await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
 
 

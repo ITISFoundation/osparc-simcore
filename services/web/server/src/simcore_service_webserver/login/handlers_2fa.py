@@ -74,8 +74,8 @@ async def resend_2fa_code(request: web.Request):
             reason="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
+    product: Product = get_current_product(request)
 
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
 
@@ -85,9 +85,6 @@ async def resend_2fa_code(request: web.Request):
         raise web.HTTPUnauthorized(
             reason="Cannot issue a new code until previous code has expired or was consumed"
         )
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     user = await db.get_user({"email": resend_2fa_.email})
     if not user:
