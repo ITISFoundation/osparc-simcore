@@ -14,7 +14,10 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.login.handlers_auth import _SMS_CODE_REQUIRED
+from simcore_service_webserver.login.handlers_auth import (
+    _SMS_CODE_REQUIRED,
+    LoginNextPage,
+)
 
 
 @pytest.fixture
@@ -66,7 +69,7 @@ async def test_resend_2fa_entrypoint_is_protected(
 
 
 @pytest.mark.testit
-async def test_it(
+async def test_resend_2fa_workflow(
     client: TestClient,
     registered_user: UserInfoDict,
     mocker: MockFixture,
@@ -101,12 +104,9 @@ async def test_it(
         },
     )
     data, _ = await assert_status(response, web.HTTPAccepted)
-
-    assert data["message"]
-    assert data["code"] == _SMS_CODE_REQUIRED
-    # TODO: change to this
-    assert data["page"] == "view"
-    assert data["page_parameters"] == {"code": _SMS_CODE_REQUIRED}
+    next_page = LoginNextPage.parse_obj(data)
+    assert next_page.name == _SMS_CODE_REQUIRED
+    assert next_page.parameters.retry_2fa_after > 0
 
     # resend code via SMS
     url = client.app.router["resend_2fa_code"].url_for()
@@ -114,7 +114,7 @@ async def test_it(
         f"{url}",
         json={
             "email": registered_user["email"],
-            "send_as": "SMS",
+            "send": "SMS",
         },
     )
     assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
@@ -122,16 +122,19 @@ async def test_it(
     data, error = await assert_status(response, web.HTTPOk)
     assert data["reason"]
     assert not error
-    assert mock_send_sms_code2.call_count == 1
+    assert mock_send_sms_code2.call_count == 1, "SMS was not sent??"
 
     # resend code via email
-    # response = await client.post(
-    #     f"{url}",
-    #     json={
-    #         "email": registered_user["email"],
-    #         "send_as": "Email",
-    #     },
-    # )
-    # assert mock_get_2fa_code.call_ount == 1, "Emulates code expired"
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": registered_user["email"],
+            "send": "Email",
+        },
+    )
+    assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
 
-    #
+    data, error = await assert_status(response, web.HTTPOk)
+    assert data["reason"]
+    assert not error
+    assert mock_send_email_code.call_count == 1, "Email was not sent??"
