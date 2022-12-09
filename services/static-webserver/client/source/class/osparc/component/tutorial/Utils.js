@@ -49,6 +49,19 @@ qx.Class.define("osparc.component.tutorial.Utils", {
         label.setValue(text);
       }
       return label;
+    },
+
+    createDontShowAgain: function(localStorageStr) {
+      const dontShowCB = new qx.ui.form.CheckBox(qx.locale.Manager.tr("Don't show again")).set({
+        value: osparc.utils.Utils.localCache.getLocalStorageItem(localStorageStr) === "true",
+        allowGrowX: true,
+        alignX: "center"
+      });
+      dontShowCB.addListener("changeValue", e => {
+        const dontShow = e.getData();
+        osparc.utils.Utils.localCache.setLocalStorageItem(localStorageStr, Boolean(dontShow));
+      });
+      return dontShowCB;
     }
   }
 });

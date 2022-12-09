@@ -66,13 +66,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
         });
       footerItems.push(licenseLink);
 
-      const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
-        value: osparc.utils.Utils.localCache.getLocalStorageItem("s4lliteDontShowQuickStart") === "true"
-      });
-      dontShowCB.addListener("changeValue", e => {
-        const dontShow = e.getData();
-        osparc.utils.Utils.localCache.setLocalStorageItem("s4lliteDontShowQuickStart", Boolean(dontShow));
-      });
+      const dontShowCB = osparc.component.tutorial.Utils.createDontShowAgain("s4lliteDontShowQuickStart");
       footerItems.push(dontShowCB);
 
       return footerItems;

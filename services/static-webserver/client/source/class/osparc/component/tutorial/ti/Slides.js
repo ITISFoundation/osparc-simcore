@@ -69,15 +69,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       });
       footerItems.push(licenseLabel);
 
-      const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
-        value: osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart") === "true",
-        allowGrowX: true,
-        alignX: "center"
-      });
-      dontShowCB.addListener("changeValue", e => {
-        const dontShow = e.getData();
-        osparc.utils.Utils.localCache.setLocalStorageItem("tiDontShowQuickStart", Boolean(dontShow));
-      });
+      const dontShowCB = osparc.component.tutorial.Utils.createDontShowAgain("tiDontShowQuickStart");
       footerItems.push(dontShowCB);
 
       return footerItems;
