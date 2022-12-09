@@ -147,7 +147,9 @@ class Login2faBody(InputSchema):
     code: SecretStr
 
 
-@session_access_constraint(allow_access_after=["auth_login"], max_number_of_access=1)
+@session_access_constraint(
+    allow_access_after=["auth_login", "resend_2fa_code"], max_number_of_access=1
+)
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """2FA login

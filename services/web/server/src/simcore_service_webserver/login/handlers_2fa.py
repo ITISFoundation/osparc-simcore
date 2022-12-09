@@ -10,6 +10,7 @@ from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products import Product, get_current_product
+from ..session_access import session_access_constraint
 from ._2fa import (
     create_2fa_code,
     get_2fa_code,
@@ -19,7 +20,6 @@ from ._2fa import (
 )
 from ._constants import MSG_2FA_CODE_SENT, MSG_EMAIL_SENT, MSG_UNKNOWN_EMAIL
 from ._models import InputSchema
-from ._security import check_one_time_access_and_consume
 from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import envelope_response
@@ -61,6 +61,7 @@ class Resend2faBody(InputSchema):
 
 
 @routes.post("/v0/auth/twofa:resend", name="resend_2fa_code")
+@session_access_constraint(allow_access_after=["auth_login"], max_number_of_access=5)
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email
 
@@ -77,12 +78,6 @@ async def resend_2fa_code(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
-
-    await check_one_time_access_and_consume(
-        request,
-        handler_name=resend_2fa_code.__name__,
-        identity=resend_2fa_.email,
-    )
 
     # Already a code?
     previous_code = await get_2fa_code(request.app, user_email=resend_2fa_.email)
