@@ -5,11 +5,12 @@
     - Every product has a front-end with exactly the same name
 """
 
+import json
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 
 from .base import metadata
 from .groups import groups
@@ -22,6 +23,8 @@ from .jinja2_templates import jinja2_templates
 #
 # Layout of the data in the JSONB columns
 #
+
+
 class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
@@ -74,6 +77,16 @@ class Forum(TypedDict, total=True):
     kind: Literal["forum"]
     label: str
     url: str
+
+
+class Login(TypedDict, total=True):
+    registration_invitation_required: bool
+    two_factor_auth_required: bool
+
+
+_LOGIN_DEFAULT = Login(
+    registration_invitation_required=True, two_factor_auth_required=False
+)
 
 
 #
@@ -142,6 +155,13 @@ products = sa.Table(
         JSONB,
         nullable=True,
         doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
+    ),
+    sa.Column(
+        "login",
+        JSONB,
+        nullable=False,
+        server_default=text(f"'{json.dumps(_LOGIN_DEFAULT)}'::jsonb"),
+        doc="Login/registration settings: Login",
     ),
     sa.Column(
         "registration_email_template",
