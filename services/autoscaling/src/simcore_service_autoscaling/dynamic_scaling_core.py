@@ -22,11 +22,9 @@ logger = logging.getLogger(__name__)
 _EC2_INTERNAL_DNS_RE: re.Pattern = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
 
 
-async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None:
-    # NOTE: when do we scale down???
-    app_settings: ApplicationSettings = app.state.settings
-
-    # 1. if a machine has nothing running on it, it should at least be set to drain as a first step (we could undrain it if there is a sudden need)
+async def _mark_empty_active_nodes_to_drain(
+    app: FastAPI, monitored_nodes: list[Node]
+) -> None:
     docker_client = get_docker_client(app)
     active_empty_nodes = [
         node
@@ -40,13 +38,28 @@ async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None
     ]
     await asyncio.gather(
         *(
-            utils_docker.tag_node(docker_client, node, tags={}, available=False)
+            utils_docker.tag_node(
+                docker_client,
+                node,
+                tags=node.Spec.Labels,
+                available=False,
+            )
             for node in active_empty_nodes
+            if (node.Spec) and (node.Spec.Labels)
         )
     )
+    logger.info(
+        "The following nodes set to drain: '%s'",
+        f"{node.Description.Hostname for node in active_empty_nodes}",
+    )
 
-    # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure (parametrize this)
-    # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
+
+async def _find_terminateable_nodes(
+    app: FastAPI, monitored_nodes: list[Node]
+) -> list[tuple[Node, EC2InstanceData]]:
+    app_settings: ApplicationSettings = app.state.settings
+    docker_client = get_docker_client(app)
+
     drained_empty_nodes = [
         node
         for node in monitored_nodes
@@ -59,29 +72,60 @@ async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None
     ]
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
+    # get the corresponding ec2 instance data
+    ec2_client = get_ec2_client(app)
+    drained_empty_ec2_instances = await asyncio.gather(
+        *(
+            ec2_client.get_running_instance(
+                app_settings.AUTOSCALING_EC2_INSTANCES,
+                tag_keys=[
+                    "io.simcore.autoscaling.created",
+                    "io.simcore.autoscaling.version",
+                ],
+                instance_host_name=node.Description.Hostname,
+            )
+            for node in drained_empty_nodes
+            if node.Description and node.Description.Hostname
+        )
+    )
+
     terminateable_nodes: list[tuple[Node, EC2InstanceData]] = []
-    for node in drained_empty_nodes:
-        assert node.Description  # nosec
-        assert node.Description.Hostname  # nosec
-        ec2_instance_data = await get_ec2_client(app).get_running_instance(
-            app_settings.AUTOSCALING_EC2_INSTANCES,
-            ["io.simcore.autoscaling.created", "io.simcore.autoscaling.version"],
-            node.Description.Hostname,
-        )
-        time_since_instance_was_launched = (
-            datetime.utcnow() - ec2_instance_data.launch_time
-        )
-        minutes_since_full_hour = time_since_instance_was_launched % timedelta(hours=1)
-        if minutes_since_full_hour > timedelta(minutes=55):
+    for node, ec2_instance_data in zip(
+        drained_empty_nodes, drained_empty_ec2_instances
+    ):
+        # NOTE: AWS price is hourly based (e.g. same price for a machine used 2 minutes or 1 hour, so we wait until 55 minutes)
+        elapsed_time_since_launched = datetime.utcnow() - ec2_instance_data.launch_time
+        elapsed_minutes = elapsed_time_since_launched % timedelta(hours=1)
+        if (
+            elapsed_minutes
+            >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        ):
             # let's terminate that one
             terminateable_nodes.append((node, ec2_instance_data))
+    logger.info(
+        "the following nodes were found to be terminateable: '%s'",
+        f"{node.Description.Hostname for node,_ in terminateable_nodes}",
+    )
+    return terminateable_nodes
 
-    if terminateable_nodes:
+
+async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None:
+    # NOTE: when do we scale down???
+    # 1. if a machine has nothing running on it, it should at least be set to drain as a first step (we could undrain it if there is a sudden need)
+    await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
+
+    # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure (parametrize this)
+    # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
+    if terminateable_nodes := await _find_terminateable_nodes(app, monitored_nodes):
         await asyncio.gather(
             *(
                 get_ec2_client(app).terminate_instance(ec2_instance_data)
                 for _, ec2_instance_data in terminateable_nodes
             )
+        )
+        logger.info(
+            "terminated the following machines: '%s'",
+            f"{node.Description.Hostname for node,_ in terminateable_nodes}",
         )
 
     # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
