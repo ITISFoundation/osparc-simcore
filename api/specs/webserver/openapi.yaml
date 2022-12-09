@@ -78,8 +78,8 @@ paths:
   /auth/register:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1register"
 
-  /auth/twofa:resend:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1twofa:resend"
+  /auth/two_factor:resend:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1two_factor:resend"
 
   /auth/verify-phone-number:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1verify-phone-number"

@@ -112,7 +112,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Error_'
-  /auth/twofa:resend:
+  /auth/two_factor:resend:
     post:
       tags:
       - authentication

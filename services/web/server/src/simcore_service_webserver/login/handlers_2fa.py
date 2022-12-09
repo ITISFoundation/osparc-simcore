@@ -61,7 +61,7 @@ class Resend2faBody(InputSchema):
 
 
 @session_access_constraint(allow_access_after=["auth_login"], max_number_of_access=5)
-@routes.post("/v0/auth/twofa:resend", name="resend_2fa_code")
+@routes.post("/v0/auth/two_factor:resend", name="resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email
 
