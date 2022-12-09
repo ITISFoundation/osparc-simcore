@@ -226,6 +226,9 @@ def create_task_limits() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
 async def create_service(
     async_docker_client: aiodocker.Docker,
     docker_swarm: None,
+    assert_for_service_state: Callable[
+        [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
+    ],
     faker: Faker,
 ) -> AsyncIterator[
     Callable[[dict[str, Any], Optional[dict[str, str]]], Awaitable[Mapping[str, Any]]]
@@ -233,7 +236,9 @@ async def create_service(
     created_services = []
 
     async def _creator(
-        task_template: dict[str, Any], labels: Optional[dict[str, str]] = None
+        task_template: dict[str, Any],
+        labels: Optional[dict[str, str]] = None,
+        wait_for_service_state="running",
     ) -> Mapping[str, Any]:
         service_name = f"pytest_{faker.pystr()}"
         if labels:
@@ -281,7 +286,9 @@ async def create_service(
         )
         assert not diff, f"{diff}"
         assert service["Spec"]["Labels"] == (labels or {})
-
+        await assert_for_service_state(
+            async_docker_client, service, [wait_for_service_state]
+        )
         return service
 
     yield _creator

@@ -47,7 +47,7 @@ async def test_post_log_message(
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
-        [dict[str, Any], dict[str, str]], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[str, str], str], Awaitable[Mapping[str, Any]]
     ],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
@@ -59,8 +59,7 @@ async def test_post_log_message(
     )
 
     service_with_labels = await create_service(
-        task_template,
-        osparc_docker_label_keys.to_docker_labels(),
+        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
     )
     service_tasks = parse_obj_as(
         list[Task],
@@ -98,11 +97,13 @@ async def test_post_log_message_does_not_raise_if_service_has_no_labels(
     disabled_ec2: None,
     initialized_app: FastAPI,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    create_service: Callable[
+        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+    ],
     task_template: dict[str, Any],
     faker: Faker,
 ):
-    service_without_labels = await create_service(task_template)
+    service_without_labels = await create_service(task_template, {}, "running")
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(

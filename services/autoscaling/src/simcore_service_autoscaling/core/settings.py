@@ -40,7 +40,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
     )
     EC2_INSTANCES_MAX_INSTANCES: int = Field(
-        10,
+        default=10,
         description="Defines the maximum number of instances the autoscaling app may create",
     )
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
