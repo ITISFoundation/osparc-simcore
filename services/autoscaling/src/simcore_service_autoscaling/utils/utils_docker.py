@@ -6,7 +6,7 @@ import asyncio
 import collections
 import logging
 import re
-from typing import Final
+from typing import Final, Optional
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
@@ -187,10 +187,15 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
 async def compute_node_used_resources(
     docker_client: AutoscalingDocker,
     node: Node,
+    service_labels: Optional[list[DockerLabelKey]] = None,
 ) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
+    task_filters = {"node": node.ID}
+    if service_labels:
+        task_filters |= {"label": service_labels}
     all_tasks_on_node = parse_obj_as(
-        list[Task], await docker_client.tasks.list(filters={"node": node.ID})
+        list[Task],
+        await docker_client.tasks.list(filters=task_filters),
     )
     for task in all_tasks_on_node:
         assert task.Status  # nosec
