@@ -73,7 +73,7 @@ async def test_it(
         "simcore_service_webserver.login.handlers_2fa.send_sms_code", autospec=True
     )
     mock_send_sms_code2 = mocker.patch(
-        "simcore_service_webserver.login.handlers.send_sms_code", autospec=True
+        "simcore_service_webserver.login.handlers_auth.send_sms_code", autospec=True
     )
 
     mock_send_email_code = mocker.patch(

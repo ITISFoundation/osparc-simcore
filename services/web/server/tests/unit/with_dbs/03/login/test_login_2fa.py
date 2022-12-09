@@ -62,7 +62,7 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
             autospec=True,
         ),
         "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login.handlers.send_sms_code",
+            "simcore_service_webserver.login.handlers_auth.send_sms_code",
             autospec=True,
         ),
     }
