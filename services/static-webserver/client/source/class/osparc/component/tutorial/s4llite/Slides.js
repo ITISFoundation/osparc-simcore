@@ -19,7 +19,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "ti-slides", this.tr("Quick Start"));
+    this.base(arguments, "s4llite-slides", this.tr("Quick Start"));
 
     this.set({
       layout: new qx.ui.layout.VBox(20),
@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
     const arrowsLayout = this.__createArrows();
     this.add(arrowsLayout);
 
-    const stack = this.__createStack();
+    const stack = this._createStack();
     this.add(stack, {
       flex: 1
     });
@@ -108,7 +108,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
       return arrowsLayout;
     },
 
-    __createStack: function() {
+    _createStack: function() {
       const stack = this.__stack = new qx.ui.container.Stack();
       [
         new osparc.component.tutorial.s4llite.Welcome(),
@@ -165,7 +165,9 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
       });
 
       const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
-        value: osparc.utils.Utils.localCache.getLocalStorageItem("s4lliteDontShowQuickStart") === "true"
+        value: osparc.utils.Utils.localCache.getLocalStorageItem("s4lliteDontShowQuickStart") === "true",
+        allowGrowX: true,
+        textAlign: "center"
       });
       dontShowCB.addListener("changeValue", e => {
         const dontShow = e.getData();
