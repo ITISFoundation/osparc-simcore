@@ -110,7 +110,7 @@ class AutoscalingEC2:
         instance_type: InstanceTypeType,
         tags: dict[str, str],
         startup_script: str,
-    ) -> InstancePrivateDNSName:
+    ) -> EC2InstanceData:
         with log_context(
             logger,
             logging.INFO,
@@ -179,15 +179,18 @@ class AutoscalingEC2:
 
             # get the private IP
             instances = await self.client.describe_instances(InstanceIds=[instance_id])
-            private_dns_name: str = instances["Reservations"][0]["Instances"][0][
-                "PrivateDnsName"
-            ]
-            logger.info(
-                "instance %s is available on %s, happy computing!!",
-                instance_id,
-                private_dns_name,
+            instance = instances["Reservations"][0]["Instances"][0]
+            instance_data = EC2InstanceData(
+                launch_time=instance["LaunchTime"],
+                id=instance["InstanceId"],
+                aws_private_dns=instance["PrivateDnsName"],
+                type=instance["InstanceType"],
             )
-            return private_dns_name
+            logger.info(
+                "%s is available, happy computing!!",
+                f"{instance_data=}",
+            )
+            return instance_data
 
     async def get_running_instance(
         self,

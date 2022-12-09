@@ -159,7 +159,7 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
             assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
             logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            new_instance_dns_name = await ec2_client.start_aws_instance(
+            new_instance_data = await ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(
                     InstanceTypeType, ec2_instances_needed[0].name
@@ -178,7 +178,9 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
             )
 
             # NOTE: new_instance_dns_name is of type ip-123-23-23-3.ec2.internal and we need only the first part
-            if match := re.match(_EC2_INTERNAL_DNS_RE, new_instance_dns_name):
+            if match := re.match(
+                _EC2_INTERNAL_DNS_RE, new_instance_data.aws_private_dns
+            ):
                 new_instance_dns_name = match.group(1)
                 new_node = await utils_docker.wait_for_node(
                     get_docker_client(app), new_instance_dns_name

@@ -203,6 +203,7 @@ async def test_get_running_instance(
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
+    # create some instance there
 
 
 async def test_terminate_instance():

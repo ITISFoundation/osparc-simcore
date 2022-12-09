@@ -10,13 +10,14 @@ from unittest import mock
 
 import aiodocker
 import pytest
+from faker import Faker
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
 from simcore_service_autoscaling.modules.docker import get_docker_client
-from simcore_service_autoscaling.modules.ec2 import get_ec2_client
+from simcore_service_autoscaling.modules.ec2 import EC2InstanceData, get_ec2_client
 from types_aiobotocore_ec2.client import EC2Client
 
 
@@ -26,14 +27,23 @@ def aws_instance_private_dns() -> str:
 
 
 @pytest.fixture
+def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2InstanceData:
+    return EC2InstanceData(
+        launch_time=faker.date_time(),
+        id=faker.uuid4(),
+        aws_private_dns=aws_instance_private_dns,
+        type=faker.pystr(),
+    )
+
+
+@pytest.fixture
 def mock_start_aws_instance(
-    mocker: MockerFixture,
-    aws_instance_private_dns: str,
+    mocker: MockerFixture, ec2_instance_data: EC2InstanceData
 ) -> Iterator[mock.Mock]:
     mocked_start_aws_instance = mocker.patch(
         "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.start_aws_instance",
         autospec=True,
-        return_value=aws_instance_private_dns,
+        return_value=ec2_instance_data,
     )
     yield mocked_start_aws_instance
 
