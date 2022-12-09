@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Availability, Node, Task
@@ -23,14 +23,21 @@ _EC2_INTERNAL_DNS_RE: re.Pattern = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
 
 
 async def _mark_empty_active_nodes_to_drain(
-    app: FastAPI, monitored_nodes: list[Node]
+    app: FastAPI,
+    monitored_nodes: list[Node],
 ) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     docker_client = get_docker_client(app)
     active_empty_nodes = [
         node
         for node in monitored_nodes
         if (
-            await utils_docker.compute_node_used_resources(docker_client, node)
+            await utils_docker.compute_node_used_resources(
+                docker_client,
+                node,
+                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+            )
             == Resources.empty_resources()
         )
         and (node.Spec is not None)
@@ -51,7 +58,7 @@ async def _mark_empty_active_nodes_to_drain(
     if active_empty_nodes:
         logger.info(
             "The following nodes set to drain: '%s'",
-            f"{node.Description.Hostname for node in active_empty_nodes}",
+            f"{(node.Description.Hostname for node in active_empty_nodes if node.Description)}",
         )
 
 
@@ -59,13 +66,19 @@ async def _find_terminateable_nodes(
     app: FastAPI, monitored_nodes: list[Node]
 ) -> list[tuple[Node, EC2InstanceData]]:
     app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     docker_client = get_docker_client(app)
 
+    # NOTE: we want the drained nodes where no monitored service is running anymore
     drained_empty_nodes = [
         node
         for node in monitored_nodes
         if (
-            await utils_docker.compute_node_used_resources(docker_client, node)
+            await utils_docker.compute_node_used_resources(
+                docker_client,
+                node,
+                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+            )
             == Resources.empty_resources()
         )
         and (node.Spec is not None)
@@ -74,6 +87,7 @@ async def _find_terminateable_nodes(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     # get the corresponding ec2 instance data
+    # NOTE: some might be in the process of terminating and will not be found
     ec2_client = get_ec2_client(app)
     drained_empty_ec2_instances = await asyncio.gather(
         *(
@@ -87,15 +101,22 @@ async def _find_terminateable_nodes(
             )
             for node in drained_empty_nodes
             if node.Description and node.Description.Hostname
-        )
+        ),
+        return_exceptions=True,
     )
 
     terminateable_nodes: list[tuple[Node, EC2InstanceData]] = []
     for node, ec2_instance_data in zip(
         drained_empty_nodes, drained_empty_ec2_instances
     ):
+        if isinstance(ec2_instance_data, Ec2InstanceNotFoundError):
+            # skip if already terminating
+            continue
         # NOTE: AWS price is hourly based (e.g. same price for a machine used 2 minutes or 1 hour, so we wait until 55 minutes)
-        elapsed_time_since_launched = datetime.utcnow() - ec2_instance_data.launch_time
+        elapsed_time_since_launched = (
+            datetime.utcnow().replace(tzinfo=timezone.utc)
+            - ec2_instance_data.launch_time
+        )
         elapsed_minutes = elapsed_time_since_launched % timedelta(hours=1)
         if (
             elapsed_minutes
@@ -106,7 +127,7 @@ async def _find_terminateable_nodes(
     if terminateable_nodes:
         logger.info(
             "the following nodes were found to be terminateable: '%s'",
-            f"{node.Description.Hostname for node,_ in terminateable_nodes}",
+            f"{[node.Description.Hostname for node,_ in terminateable_nodes if node.Description]}",
         )
     return terminateable_nodes
 
@@ -127,7 +148,7 @@ async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None
         )
         logger.info(
             "terminated the following machines: '%s'",
-            f"{node.Description.Hostname for node,_ in terminateable_nodes}",
+            f"{(node.Description.Hostname for node,_ in terminateable_nodes if node.Description)}",
         )
 
     # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
