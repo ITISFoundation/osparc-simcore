@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   statics: {
-    getSortingValue: function(node) {
+    __getSortingValue: function(node) {
       if (node.isFilePicker()) {
         return osparc.utils.Services.getSorting("file");
       } else if (node.isParameter()) {
@@ -86,7 +86,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         const nodeInTree = {
           label: node.getLabel(),
           children: [],
-          sortingValue: this.self().getSortingValue(node),
+          sortingValue: this.__getSortingValue(node),
           statusColor: null,
           id: node.getNodeId(),
           node
