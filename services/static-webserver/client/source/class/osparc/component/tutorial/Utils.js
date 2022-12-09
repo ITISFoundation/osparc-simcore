@@ -53,9 +53,7 @@ qx.Class.define("osparc.component.tutorial.Utils", {
 
     createDontShowAgain: function(localStorageStr) {
       const dontShowCB = new qx.ui.form.CheckBox(qx.locale.Manager.tr("Don't show again")).set({
-        value: osparc.utils.Utils.localCache.getLocalStorageItem(localStorageStr) === "true",
-        allowGrowX: true,
-        alignX: "center"
+        value: osparc.utils.Utils.localCache.getLocalStorageItem(localStorageStr) === "true"
       });
       dontShowCB.addListener("changeValue", e => {
         const dontShow = e.getData();

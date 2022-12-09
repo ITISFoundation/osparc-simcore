@@ -40,7 +40,6 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
 
       const videoText = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
       const videoLabel = new qx.ui.basic.Label(videoText).set({
-        allowGrowX: true,
         textAlign: "center",
         rich : true
       });
@@ -48,7 +47,6 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
 
       const manualsLabel = new qx.ui.basic.Label().set({
         visibility: "excluded",
-        allowGrowX: true,
         textAlign: "center",
         rich : true
       });

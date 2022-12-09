@@ -76,6 +76,7 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
       });
 
       const slideCounter = this.__slideCounter = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+        alignY: "middle",
         maxWidth: 160,
         maxHeight: 10
       });
@@ -129,12 +130,20 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
     },
 
     __createFooter: function() {
-      const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        alignX: "center"
+      });
 
-      this._getFooterItems().forEach(footerItem => {
-        footer.add(footerItem, {
-          flex: 1
-        });
+      const footerItems = this._getFooterItems();
+      footerItems.forEach((footerItem, idx) => {
+        footer.add(footerItem);
+        if (idx !== footerItems.length-1) {
+          footer.add(new qx.ui.core.Widget().set({
+            maxHeight: 15
+          }), {
+            flex: 1
+          });
+        }
       });
 
       return footer;

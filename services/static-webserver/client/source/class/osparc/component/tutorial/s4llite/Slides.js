@@ -37,7 +37,6 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
 
       const docLink = new qx.ui.basic.Label().set({
         visibility: "excluded",
-        allowGrowX: true,
         textAlign: "center",
         rich : true
       });
@@ -53,7 +52,6 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
 
       const licenseLink = new qx.ui.basic.Label().set({
         visibility: "excluded",
-        allowGrowX: true,
         textAlign: "center",
         rich : true
       });
