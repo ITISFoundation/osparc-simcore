@@ -112,7 +112,8 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
       const stack = this.__stack = new qx.ui.container.Stack();
       [
         new osparc.component.tutorial.s4llite.Welcome(),
-        new osparc.component.tutorial.s4llite.Dashboard(),
+        new osparc.component.tutorial.s4llite.Projects(),
+        new osparc.component.tutorial.s4llite.Tutorials(),
         new osparc.component.tutorial.s4llite.S4LLite()
       ].forEach(slide => {
         const slideContainer = new qx.ui.container.Scroll();

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
+qx.Class.define("osparc.component.tutorial.s4llite.Tutorials", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
