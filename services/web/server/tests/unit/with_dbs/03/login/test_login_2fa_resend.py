@@ -13,7 +13,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.products import products
-from simcore_service_webserver.login.handlers import _SMS_CODE_REQUIRED
+from simcore_service_webserver.login.handlers_auth import _SMS_CODE_REQUIRED
 
 
 @pytest.fixture

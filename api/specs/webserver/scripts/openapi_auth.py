@@ -15,8 +15,12 @@ from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
-from simcore_service_webserver.login.handlers import Login2faBody, LoginBody, LogoutBody
 from simcore_service_webserver.login.handlers_2fa import Resend2faBody
+from simcore_service_webserver.login.handlers_auth import (
+    Login2faBody,
+    LoginBody,
+    LogoutBody,
+)
 from simcore_service_webserver.login.handlers_change import (
     ChangeEmailBody,
     ChangePasswordBody,

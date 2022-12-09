@@ -13,9 +13,8 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from . import api_keys_handlers
-from . import handlers as login_handlers
-from . import handlers_2fa
+from . import api_keys_handlers, handlers_2fa
+from . import handlers_auth as login_handlers
 from . import handlers_change as change_handlers
 from . import handlers_confirmation as confirmation_handlers
 from . import handlers_registration as register_handlers
