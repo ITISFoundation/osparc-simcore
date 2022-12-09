@@ -35,11 +35,11 @@ qx.Class.define("osparc.component.tutorial.s4llite.Welcome", {
 
       const intro = new qx.ui.basic.Label().set({
         value: this.tr("\
-          This quick tutorial gives a basic overview of how the Sim4Life Lite works and how to navigate through the interface.<br>\
+          This quick tutorial gives a basic overview of how Sim4Life Lite works and how to navigate through the interface.<br>\
           We will focus on two main aspects, how to:<br>\
-          - Use the platform<br>\
           - Get started with a New Porject<br>\
           - Get started from a Tutorial<br>\
+          - Sim4Life Lite, the application, by ZMT<br>\
         "),
         rich: true,
         wrap: true,

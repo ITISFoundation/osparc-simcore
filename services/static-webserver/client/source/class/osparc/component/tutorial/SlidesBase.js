@@ -75,7 +75,10 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
         flex: 1
       });
 
-      const slideCounter = this.__slideCounter = new qx.ui.basic.Label();
+      const slideCounter = this.__slideCounter = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+        maxWidth: 160,
+        maxHeight: 10
+      });
       arrowsLayout.add(slideCounter);
 
       arrowsLayout.add(new qx.ui.core.Spacer(), {
@@ -104,7 +107,15 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
         this.__prevBtn.setEnabled(idx !== 0);
         this.__nextBtn.setEnabled(idx !== selectables.length-1);
       }
-      this.__slideCounter.setValue(`${idx+1}/${selectables.length}`);
+      this.__slideCounter.removeAll();
+      for (let i=0; i<selectables.length; i++) {
+        const widget = new qx.ui.core.Widget().set({
+          backgroundColor: idx === i ? "strong-main" : "text"
+        });
+        this.__slideCounter.add(widget, {
+          flex: 1
+        });
+      }
     },
 
     __createStack: function() {
