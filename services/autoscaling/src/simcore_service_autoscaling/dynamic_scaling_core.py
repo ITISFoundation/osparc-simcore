@@ -48,10 +48,11 @@ async def _mark_empty_active_nodes_to_drain(
             if (node.Spec) and (node.Spec.Labels)
         )
     )
-    logger.info(
-        "The following nodes set to drain: '%s'",
-        f"{node.Description.Hostname for node in active_empty_nodes}",
-    )
+    if active_empty_nodes:
+        logger.info(
+            "The following nodes set to drain: '%s'",
+            f"{node.Description.Hostname for node in active_empty_nodes}",
+        )
 
 
 async def _find_terminateable_nodes(
@@ -102,10 +103,11 @@ async def _find_terminateable_nodes(
         ):
             # let's terminate that one
             terminateable_nodes.append((node, ec2_instance_data))
-    logger.info(
-        "the following nodes were found to be terminateable: '%s'",
-        f"{node.Description.Hostname for node,_ in terminateable_nodes}",
-    )
+    if terminateable_nodes:
+        logger.info(
+            "the following nodes were found to be terminateable: '%s'",
+            f"{node.Description.Hostname for node,_ in terminateable_nodes}",
+        )
     return terminateable_nodes
 
 

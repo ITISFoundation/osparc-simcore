@@ -76,7 +76,7 @@ class AutoscalingEC2:
 
     async def ping(self) -> bool:
         try:
-            await self.client.describe_account_attributes(DryRun=True)
+            await self.client.describe_account_attributes()
             return True
         except Exception:  # pylint: disable=broad-except
             return False
