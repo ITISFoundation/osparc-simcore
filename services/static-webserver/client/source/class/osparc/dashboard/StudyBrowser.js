@@ -150,7 +150,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
             if ("_meta" in resp && resp["_meta"]["total"] === 0) {
               // there are no studies
-              const tutorialWindow = new osparc.component.tutorial.Slides();
+              const tutorialWindow = new osparc.component.tutorial.ti.Slides();
               tutorialWindow.center();
               tutorialWindow.open();
             }

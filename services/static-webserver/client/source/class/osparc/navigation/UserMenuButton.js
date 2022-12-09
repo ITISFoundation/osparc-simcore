@@ -92,7 +92,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         case "quick-start":
           control = new qx.ui.menu.Button(this.tr("Quick Start"));
           control.addListener("execute", () => {
-            const tutorialWindow = new osparc.component.tutorial.Slides();
+            const tutorialWindow = new osparc.component.tutorial.ti.Slides();
             tutorialWindow.center();
             tutorialWindow.open();
           });

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.Slides", {
+qx.Class.define("osparc.component.tutorial.ti.Slides", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
@@ -47,20 +47,6 @@ qx.Class.define("osparc.component.tutorial.Slides", {
     this.add(footer);
 
     this.__setSlideIdx(0);
-  },
-
-  statics: {
-    createLabel: function(text) {
-      const label = new qx.ui.basic.Label().set({
-        rich: true,
-        wrap: true,
-        font: "text-14"
-      });
-      if (text) {
-        label.setValue(text);
-      }
-      return label;
-    }
   },
 
   members: {

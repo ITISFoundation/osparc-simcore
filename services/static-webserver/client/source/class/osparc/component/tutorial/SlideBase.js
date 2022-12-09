@@ -37,6 +37,20 @@ qx.Class.define("osparc.component.tutorial.SlideBase", {
     this._populateCard();
   },
 
+  statics: {
+    createLabel: function(text) {
+      const label = new qx.ui.basic.Label().set({
+        rich: true,
+        wrap: true,
+        font: "text-14"
+      });
+      if (text) {
+        label.setValue(text);
+      }
+      return label;
+    }
+  },
+
   members: {
     /**
       * @abstract
