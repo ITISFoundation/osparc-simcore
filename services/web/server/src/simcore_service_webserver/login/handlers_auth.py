@@ -12,6 +12,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from ..products import Product, get_current_product
 from ..security_api import check_password, forget
+from ..session_access import session_access_constraint, session_access_trace
 from ._2fa import (
     create_2fa_code,
     delete_2fa_code,
@@ -27,13 +28,8 @@ from ._constants import (
     MSG_WRONG_PASSWORD,
 )
 from ._models import InputSchema
-from ._security import (
-    check_one_time_access_and_consume,
-    grant_one_time_access,
-    login_granted_response,
-)
+from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
-from .handlers_2fa import resend_2fa_code
 from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -61,6 +57,7 @@ class LoginBody(InputSchema):
     password: SecretStr
 
 
+@session_access_trace(route_name="auth_login")
 @routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
@@ -120,13 +117,6 @@ async def login(request: web.Request):
             user_name=user["name"],
         )
 
-        for name in (resend_2fa_code.__name__, "login_2fa"):
-            await grant_one_time_access(
-                request,
-                handler_name=name,
-                identity=user["email"],
-            )
-
         response = envelope_response(
             {
                 "code": _SMS_CODE_REQUIRED,
@@ -157,6 +147,7 @@ class Login2faBody(InputSchema):
     code: SecretStr
 
 
+@session_access_constraint(allow_access_after=["auth_login"], max_number_of_access=1)
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """2FA login
@@ -176,11 +167,6 @@ async def login_2fa(request: web.Request):
 
     # validates input params
     login_2fa_ = await parse_request_body_as(Login2faBody, request)
-
-    # validates access rights
-    await check_one_time_access_and_consume(
-        request, handler_name=login_2fa.__name__, identity=login_2fa_.email
-    )
 
     # validates code
     if login_2fa_.code.get_secret_value() != await get_2fa_code(

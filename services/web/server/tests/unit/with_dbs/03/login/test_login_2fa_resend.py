@@ -102,7 +102,11 @@ async def test_it(
     )
     data, _ = await assert_status(response, web.HTTPAccepted)
 
+    assert data["message"]
     assert data["code"] == _SMS_CODE_REQUIRED
+    # TODO: change to this
+    assert data["page"] == "view"
+    assert data["page_parameters"] == {"code": _SMS_CODE_REQUIRED}
 
     # resend code via SMS
     url = client.app.router["resend_2fa_code"].url_for()
@@ -129,3 +133,5 @@ async def test_it(
     #     },
     # )
     # assert mock_get_2fa_code.call_ount == 1, "Emulates code expired"
+
+    #
