@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.Welcome", {
+qx.Class.define("osparc.component.tutorial.s4llite.Welcome", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {

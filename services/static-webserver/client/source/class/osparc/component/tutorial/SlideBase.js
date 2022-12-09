@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.SlideBase", {
+qx.Class.define("osparc.component.tutorial.SlideBase", {
   extend: qx.ui.core.Widget,
   type: "abstract",
 

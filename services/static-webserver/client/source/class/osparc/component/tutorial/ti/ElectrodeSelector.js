@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
-  extend: osparc.component.tutorial.ti.SlideBase,
+  extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
     const title = this.tr("Electrode Selector");
@@ -28,14 +28,14 @@ qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
       const text1 = this.tr("\
         After pressing New Plan, three panels will be shown.\
       ");
-      const label1 = osparc.component.tutorial.ti.Slides.createLabel(text1);
+      const label1 = osparc.component.tutorial.Slides.createLabel(text1);
       this._add(label1);
 
       const text2 = this.tr("\
         In a first step, the relevant species, stimulation target, electrode shapes, electrode dimensions and \
         potential electrode locations (currently required to narrow down the huge exposure configuration search space) are selected.\
       ");
-      const label2 = osparc.component.tutorial.ti.Slides.createLabel(text2);
+      const label2 = osparc.component.tutorial.Slides.createLabel(text2);
       this._add(label2);
 
       const image = new qx.ui.basic.Image("https://itisfoundation.github.io/ti-planning-tool-manual/assets/quickguide/electrode_selector.gif").set({
@@ -49,13 +49,13 @@ qx.Class.define("osparc.component.tutorial.ti.ElectrodeSelector", {
       const text4 = this.tr("\
         After finishing the set up, the big button on the top right will turn blue and by clicking on it you will submit the configuration.\
       ");
-      const label4 = osparc.component.tutorial.ti.Slides.createLabel(text4);
+      const label4 = osparc.component.tutorial.Slides.createLabel(text4);
       this._add(label4);
 
       const text5 = this.tr("\
         Now the Arrow that says 'Next' can be pushed and the optimization will inmediatly start.\
       ");
-      const label5 = osparc.component.tutorial.ti.Slides.createLabel(text5);
+      const label5 = osparc.component.tutorial.Slides.createLabel(text5);
       this._add(label5);
     }
   }
