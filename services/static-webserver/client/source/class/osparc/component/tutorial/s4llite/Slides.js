@@ -111,11 +111,9 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
     __createStack: function() {
       const stack = this.__stack = new qx.ui.container.Stack();
       [
-        new osparc.component.tutorial.ti.Welcome(),
-        new osparc.component.tutorial.ti.Dashboard(),
-        new osparc.component.tutorial.ti.ElectrodeSelector(),
-        new osparc.component.tutorial.ti.PostPro(),
-        new osparc.component.tutorial.ti.S4LPostPro()
+        new osparc.component.tutorial.s4llite.Welcome(),
+        new osparc.component.tutorial.s4llite.Dashboard(),
+        new osparc.component.tutorial.s4llite.S4LLite()
       ].forEach(slide => {
         const slideContainer = new qx.ui.container.Scroll();
         slideContainer.add(slide);
@@ -137,16 +135,6 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
 
     __createFooter: function() {
       const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-      const text1 = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
-      const link1 = new qx.ui.basic.Label(text1).set({
-        allowGrowX: true,
-        textAlign: "center",
-        rich : true
-      });
-      footer.add(link1, {
-        flex: 1
-      });
 
       const link2 = new qx.ui.basic.Label().set({
         visibility: "excluded",
@@ -176,11 +164,11 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
       });
 
       const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
-        value: osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart") === "true"
+        value: osparc.utils.Utils.localCache.getLocalStorageItem("s4lliteDontShowQuickStart") === "true"
       });
       dontShowCB.addListener("changeValue", e => {
         const dontShow = e.getData();
-        osparc.utils.Utils.localCache.setLocalStorageItem("tiDontShowQuickStart", Boolean(dontShow));
+        osparc.utils.Utils.localCache.setLocalStorageItem("s4lliteDontShowQuickStart", Boolean(dontShow));
       });
       footer.add(dontShowCB, {
         flex: 1

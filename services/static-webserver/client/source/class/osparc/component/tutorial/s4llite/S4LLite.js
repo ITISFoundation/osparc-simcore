@@ -15,11 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.S4LPostPro", {
+qx.Class.define("osparc.component.tutorial.s4llite.S4LLite", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
-    const title = this.tr("Sim4Life Post Processing");
+    const title = this.tr("Sim4Life-Lite");
     this.base(arguments, title);
   },
 

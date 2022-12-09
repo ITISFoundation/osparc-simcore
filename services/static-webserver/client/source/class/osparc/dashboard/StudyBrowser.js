@@ -143,14 +143,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addResourcesToList(resources);
 
-          if (osparc.utils.Utils.isProduct("tis")) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
+          const tutorials = osparc.component.tutorial.Utils.TUTORIALS;
+          const pName = osparc.utils.Utils.getProductName();
+          if (Object.keys(tutorials).includes(pName)) {
+            const tutorial = tutorials[pName];
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
               return;
             }
             if ("_meta" in resp && resp["_meta"]["total"] === 0) {
               // there are no studies
-              const tutorialWindow = new osparc.component.tutorial.ti.Slides();
+              const tutorialWindow = tutorial.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
             }
