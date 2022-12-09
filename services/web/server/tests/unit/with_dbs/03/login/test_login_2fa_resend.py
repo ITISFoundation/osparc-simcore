@@ -13,12 +13,13 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.products import products
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login.handlers_auth import _SMS_CODE_REQUIRED
 
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    setenvs_from_dict(
+    envs_login = setenvs_from_dict(
         monkeypatch,
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
@@ -27,6 +28,10 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
+
+    print(ApplicationSettings.create_from_envs().json(indent=2))
+
+    return {**app_environment, **envs_login}
 
 
 @pytest.fixture
