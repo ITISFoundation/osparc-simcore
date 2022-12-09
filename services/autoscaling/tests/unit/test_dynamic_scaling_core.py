@@ -15,6 +15,8 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
+from simcore_service_autoscaling.modules.docker import get_docker_client
+from simcore_service_autoscaling.modules.ec2 import get_ec2_client
 from types_aiobotocore_ec2.client import EC2Client
 
 
@@ -134,14 +136,15 @@ async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge
 
     await check_dynamic_resources(initialized_app)
     mock_start_aws_instance.assert_called_once_with(
-        mock.ANY,
+        get_ec2_client(initialized_app),
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type="r5n.4xlarge",
         tags=mock.ANY,
         startup_script=mock.ANY,
     )
     mock_wait_for_node.assert_called_once_with(
-        aws_instance_private_dns[: aws_instance_private_dns.find(".")]
+        get_docker_client(initialized_app),
+        aws_instance_private_dns[: aws_instance_private_dns.find(".")],
     )
     mock_tag_node.assert_called_once()
 
@@ -192,6 +195,7 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     assert instance_private_dns_name.endswith(".ec2.internal")
 
     mock_wait_for_node.assert_called_once_with(
-        instance_private_dns_name[: instance_private_dns_name.find(".")]
+        get_docker_client(initialized_app),
+        instance_private_dns_name[: instance_private_dns_name.find(".")],
     )
     mock_tag_node.assert_called_once()
