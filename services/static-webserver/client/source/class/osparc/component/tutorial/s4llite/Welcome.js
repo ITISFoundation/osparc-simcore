@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.tutorial.ti.Welcome", {
+qx.Class.define("osparc.component.tutorial.s4llite.Welcome", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
@@ -35,10 +35,11 @@ qx.Class.define("osparc.component.tutorial.ti.Welcome", {
 
       const intro = new qx.ui.basic.Label().set({
         value: this.tr("\
-          This quick tutorial gives a basic overview of how the TI Planning Tool works and how to navigate through the interface.<br>\
+          This quick tutorial gives a basic overview of how Sim4Life Lite works and how to navigate through the interface.<br>\
           We will focus on two main aspects, how to:<br>\
-          - Use the platform<br>\
-          - Get started with a New Plan<br>\
+          - Get started with a New Porject<br>\
+          - Get started from a Tutorial<br>\
+          - Sim4Life Lite, the application, by ZMT<br>\
         "),
         rich: true,
         wrap: true,
