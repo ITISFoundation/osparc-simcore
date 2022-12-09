@@ -57,11 +57,11 @@ routes = RouteTableDef()
 
 class Resend2faBody(InputSchema):
     email: EmailStr = Field(..., description="User email (identifier)")
-    send_as: Literal["SMS", "Email"] = "SMS"
+    via: Literal["SMS", "Email"] = "SMS"
 
 
-@routes.post("/v0/auth/twofa:resend", name="resend_2fa_code")
 @session_access_constraint(allow_access_after=["auth_login"], max_number_of_access=5)
+@routes.post("/v0/auth/twofa:resend", name="resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email
 
@@ -100,7 +100,7 @@ async def resend_2fa_code(request: web.Request):
         code = await create_2fa_code(request.app, user["email"])
 
         # sends via SMS
-        if resend_2fa_.send_as == "SMS":
+        if resend_2fa_.via == "SMS":
             await send_sms_code(
                 phone_number=user["phone"],
                 code=code,
@@ -121,7 +121,7 @@ async def resend_2fa_code(request: web.Request):
 
         # sends via Email
         else:
-            assert resend_2fa_.send_as == "Email"  # nosec
+            assert resend_2fa_.via == "Email"  # nosec
             await send_email_code(
                 request,
                 user_email=user["email"],
