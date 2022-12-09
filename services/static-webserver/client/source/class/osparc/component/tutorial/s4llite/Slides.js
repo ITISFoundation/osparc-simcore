@@ -26,8 +26,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
     _getSlides: function() {
       return [
         new osparc.component.tutorial.s4llite.Welcome(),
-        new osparc.component.tutorial.s4llite.Projects(),
-        new osparc.component.tutorial.s4llite.Tutorials(),
+        new osparc.component.tutorial.s4llite.Dashboard(),
         new osparc.component.tutorial.s4llite.S4LLite()
       ];
     },
