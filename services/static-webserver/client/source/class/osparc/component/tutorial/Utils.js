@@ -30,6 +30,15 @@ qx.Class.define("osparc.component.tutorial.Utils", {
       }
     },
 
+    getTutorial: function() {
+      const tutorials = osparc.component.tutorial.Utils.TUTORIALS;
+      const pName = osparc.utils.Utils.getProductName();
+      if (Object.keys(tutorials).includes(pName)) {
+        return tutorials[pName];
+      }
+      return null;
+    },
+
     createLabel: function(text) {
       const label = new qx.ui.basic.Label().set({
         rich: true,

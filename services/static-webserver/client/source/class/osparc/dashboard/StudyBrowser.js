@@ -143,10 +143,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addResourcesToList(resources);
 
-          const tutorials = osparc.component.tutorial.Utils.TUTORIALS;
-          const pName = osparc.utils.Utils.getProductName();
-          if (Object.keys(tutorials).includes(pName)) {
-            const tutorial = tutorials[pName];
+          const tutorial = osparc.component.tutorial.Utils.getTutorial();
+          if (tutorial) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
               return;
