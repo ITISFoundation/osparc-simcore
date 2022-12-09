@@ -60,7 +60,7 @@ class Resend2faBody(InputSchema):
     send_as: Literal["SMS", "Email"] = "SMS"
 
 
-@routes.post("/v0/auth/tfa:resend", name="resend_2fa_code")
+@routes.post("/v0/auth/twofa:resend", name="resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email
 

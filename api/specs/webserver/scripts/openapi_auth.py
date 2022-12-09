@@ -105,7 +105,7 @@ async def login_2fa(authentication: Login2faBody):
 
 
 @app.post(
-    "/auth/tfa:resend",
+    "/auth/twofa:resend",
     response_model=Envelope[Log],
     tags=TAGS,
     operation_id="resend_2fa_code",

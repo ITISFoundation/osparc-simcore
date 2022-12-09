@@ -212,7 +212,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/paths/~1auth~1login/post/responses/200/content/application~1json/schema"
-  "/auth/tfa:resend":
+  "/auth/twofa:resend":
     post:
       tags:
         - authentication
