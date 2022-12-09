@@ -146,25 +146,25 @@ services:
     ports:
       - "6379"
 
-  traefik:
-    ports:
-      - target: 80
-        published: 9081
-      - target: 10081
-        published: 10081
-      - target: 8080
-        published: 8080
-    deploy:
-      labels:
-        # traefik dashboard UI accessible through http://127.0.0.1:8080/dashboard/
-        # traefik REST API accessible through for example http://127.0.0.1:8080/api/http/routers
-        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
-        - traefik.enable=true
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@docker
-        - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
+  # traefik:
+  #   ports:
+  #     - target: 80
+  #       published: 9081
+  #     - target: 10081
+  #       published: 10081
+  #     - target: 8080
+  #       published: 8080
+  #   deploy:
+  #     labels:
+  #       # traefik dashboard UI accessible through http://127.0.0.1:8080/dashboard/
+  #       # traefik REST API accessible through for example http://127.0.0.1:8080/api/http/routers
+  #       - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+  #       - traefik.enable=true
+  #       - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
+  #       - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+  #       - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
+  #       - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@docker
+  #       - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
 
   whoami:
     image: "containous/whoami"
