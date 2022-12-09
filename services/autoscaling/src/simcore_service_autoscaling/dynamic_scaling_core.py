@@ -132,6 +132,32 @@ async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None
     # 4.
 
 
+async def _activate_drained_nodes(
+    app: FastAPI,
+    monitored_nodes: list[Node],
+    pending_tasks: list[Task],
+) -> bool:
+    docker_client = get_docker_client(app)
+    for task in pending_tasks:
+        # NOTE: currently we go one by one and break, next iteration
+        # will take care of next tasks if there are any
+
+        # check if there is some node with enough resources
+        for node in monitored_nodes:
+            assert node.Spec  # nosec
+            if (node.Spec.Availability == Availability.drain) and (
+                utils_docker.get_node_total_resources(node)
+                >= utils_docker.get_max_resources_from_docker_task(task)
+            ):
+                # let's make that node available again
+                await utils_docker.tag_node(
+                    docker_client, node, tags=node.Spec.Labels, available=True
+                )
+                return True
+
+    return False
+
+
 async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
@@ -257,8 +283,14 @@ async def check_dynamic_resources(app: FastAPI) -> None:
         pending_tasks,
     )
 
-    if not pending_tasks:
-        logger.debug("no pending tasks with insufficient resources at the moment")
-        await _scale_down_cluster(app, monitored_nodes)
+    logger.debug(
+        "%s pending tasks with insufficient resources at the moment", len(pending_tasks)
+    )
+
+    if pending_tasks:
+        # check if we do have some available drain nodes first
+        if not await _activate_drained_nodes(app, monitored_nodes, pending_tasks):
+            # no? then scale up
+            await _scale_up_cluster(app, pending_tasks)
     else:
-        await _scale_up_cluster(app, pending_tasks)
+        await _scale_down_cluster(app, monitored_nodes)
