@@ -81,7 +81,7 @@ async def resend_2fa_code(request: web.Request):
 
     # Already a code?
     previous_code = await get_2fa_code(request.app, user_email=resend_2fa_.email)
-    if previous_code:
+    if previous_code is not None:
         raise web.HTTPUnauthorized(
             reason="Cannot issue a new code until previous code has expired or was consumed"
         )

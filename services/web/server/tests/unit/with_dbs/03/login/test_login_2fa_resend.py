@@ -114,14 +114,15 @@ async def test_resend_2fa_workflow(
         f"{url}",
         json={
             "email": registered_user["email"],
-            "send": "SMS",
+            "via": "SMS",
         },
     )
-    assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
 
     data, error = await assert_status(response, web.HTTPOk)
     assert data["reason"]
     assert not error
+
+    assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
     assert mock_send_sms_code2.call_count == 1, "SMS was not sent??"
 
     # resend code via email
@@ -129,12 +130,13 @@ async def test_resend_2fa_workflow(
         f"{url}",
         json={
             "email": registered_user["email"],
-            "send": "Email",
+            "via": "Email",
         },
     )
-    assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
 
     data, error = await assert_status(response, web.HTTPOk)
     assert data["reason"]
     assert not error
+
+    assert mock_get_2fa_code.call_count == 2, "Emulates code expired"
     assert mock_send_email_code.call_count == 1, "Email was not sent??"
