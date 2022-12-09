@@ -185,3 +185,25 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
             tags=tags,
             startup_script=startup_script,
         )
+
+
+async def test_get_running_instance(
+    mocked_aws_server_envs: None,
+    aws_vpc_id: str,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    ec2_client: EC2Client,
+    autoscaling_ec2: AutoscalingEC2,
+    app_settings: ApplicationSettings,
+    faker: Faker,
+):
+    assert app_settings.AUTOSCALING_EC2_ACCESS
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    # we have nothing running now in ec2
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+
+async def test_terminate_instance():
+    ...
