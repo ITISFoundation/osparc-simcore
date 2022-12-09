@@ -39,12 +39,12 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
     const arrowsLayout = this.__createArrows();
     this.add(arrowsLayout);
 
-    const stack = this.__stack = this._createStack();
+    const stack = this.__stack = this.__createStack();
     this.add(stack, {
       flex: 1
     });
 
-    const footer = this._createFooter();
+    const footer = this.__createFooter();
     this.add(footer);
 
     this.__setSlideIdx(0);
@@ -107,11 +107,33 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
       this.__slideCounter.setValue(`${idx+1}/${selectables.length}`);
     },
 
-    _createStack: function() {
+    __createStack: function() {
+      const stack = new qx.ui.container.Stack();
+      this._getSlides().forEach(slide => {
+        const slideContainer = new qx.ui.container.Scroll();
+        slideContainer.add(slide);
+        stack.add(slideContainer);
+      });
+      return stack;
+    },
+
+    __createFooter: function() {
+      const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      this._getFooterItems().forEach(footerItem => {
+        footer.add(footerItem, {
+          flex: 1
+        });
+      });
+
+      return footer;
+    },
+
+    _getSlides: function() {
       throw new Error("Abstract method called!");
     },
 
-    _createFooter: function() {
+    _getFooterItems: function() {
       throw new Error("Abstract method called!");
     }
   }

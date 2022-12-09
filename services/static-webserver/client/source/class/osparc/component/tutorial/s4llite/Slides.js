@@ -23,25 +23,17 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
   },
 
   members: {
-    _createStack: function() {
-      const stack = new qx.ui.container.Stack();
-      [
+    _getSlides: function() {
+      return [
         new osparc.component.tutorial.s4llite.Welcome(),
         new osparc.component.tutorial.s4llite.Projects(),
         new osparc.component.tutorial.s4llite.Tutorials(),
         new osparc.component.tutorial.s4llite.S4LLite()
-      ].forEach(slide => {
-        const slideContainer = new qx.ui.container.Scroll();
-        slideContainer.add(slide);
-        stack.add(slideContainer);
-      });
-      return stack;
+      ];
     },
-
-    _createFooter: function() {
-      const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignX: "center"
-      }));
+    // overriden
+    _getFooterItems: function() {
+      const footerItems = [];
 
       const docLink = new qx.ui.basic.Label().set({
         visibility: "excluded",
@@ -57,9 +49,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
           }
           docLink.show();
         });
-      footer.add(docLink, {
-        flex: 1
-      });
+      footerItems.push(docLink);
 
       const licenseLink = new qx.ui.basic.Label().set({
         visibility: "excluded",
@@ -74,9 +64,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
           licenseLink.setValue(textLink);
           licenseLink.show();
         });
-      footer.add(licenseLink, {
-        flex: 1
-      });
+      footerItems.push(licenseLink);
 
       const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
         value: osparc.utils.Utils.localCache.getLocalStorageItem("s4lliteDontShowQuickStart") === "true"
@@ -85,11 +73,9 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
         const dontShow = e.getData();
         osparc.utils.Utils.localCache.setLocalStorageItem("s4lliteDontShowQuickStart", Boolean(dontShow));
       });
-      footer.add(dontShowCB, {
-        flex: 1
-      });
+      footerItems.push(dontShowCB);
 
-      return footer;
+      return footerItems;
     }
   }
 });

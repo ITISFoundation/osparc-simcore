@@ -24,37 +24,29 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
 
   members: {
     // overriden
-    _createStack: function() {
-      const stack = new qx.ui.container.Stack();
-      [
+    _getSlides: function() {
+      return [
         new osparc.component.tutorial.ti.Welcome(),
         new osparc.component.tutorial.ti.Dashboard(),
         new osparc.component.tutorial.ti.ElectrodeSelector(),
         new osparc.component.tutorial.ti.PostPro(),
         new osparc.component.tutorial.ti.S4LPostPro()
-      ].forEach(slide => {
-        const slideContainer = new qx.ui.container.Scroll();
-        slideContainer.add(slide);
-        stack.add(slideContainer);
-      });
-      return stack;
+      ];
     },
 
     // overriden
-    _createFooter: function() {
-      const footer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    _getFooterItems: function() {
+      const footerItems = [];
 
-      const text1 = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
-      const link1 = new qx.ui.basic.Label(text1).set({
+      const videoText = "<a href=https://youtu.be/-ZE6yOJ3ipw style='color: white' target='_blank'>TIP video</a>";
+      const videoLabel = new qx.ui.basic.Label(videoText).set({
         allowGrowX: true,
         textAlign: "center",
         rich : true
       });
-      footer.add(link1, {
-        flex: 1
-      });
+      footerItems.push(videoLabel);
 
-      const link2 = new qx.ui.basic.Label().set({
+      const manualsLabel = new qx.ui.basic.Label().set({
         visibility: "excluded",
         allowGrowX: true,
         textAlign: "center",
@@ -63,23 +55,19 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
       osparc.navigation.Manuals.getManuals()
         .then(manuals => {
           if (manuals.length > 0) {
-            link2.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
+            manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);
           }
-          link2.show();
+          manualsLabel.show();
         });
-      footer.add(link2, {
-        flex: 1
-      });
+      footerItems.push(manualsLabel);
 
-      const text3 = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";
-      const link3 = new qx.ui.basic.Label(text3).set({
+      const licenseText = "<a href=https://itis.swiss/meta-navigation/privacy-policy/ style='color: white' target='_blank'>Privacy Policy</a>";
+      const licenseLabel = new qx.ui.basic.Label(licenseText).set({
         allowGrowX: true,
         textAlign: "center",
         rich : true
       });
-      footer.add(link3, {
-        flex: 1
-      });
+      footerItems.push(licenseLabel);
 
       const dontShowCB = new qx.ui.form.CheckBox(this.tr("Don't show again")).set({
         value: osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart") === "true",
@@ -90,11 +78,9 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         const dontShow = e.getData();
         osparc.utils.Utils.localCache.setLocalStorageItem("tiDontShowQuickStart", Boolean(dontShow));
       });
-      footer.add(dontShowCB, {
-        flex: 1
-      });
+      footerItems.push(dontShowCB);
 
-      return footer;
+      return footerItems;
     }
   }
 });
