@@ -42,6 +42,8 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     )
 
     monkeypatch.delenv("WEBSERVER_LOGIN", raising=False)
+    app_environment.pop("WEBSERVER_LOGIN", None)
+
     envs_login = setenvs_from_dict(
         monkeypatch,
         {
@@ -53,6 +55,8 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     )
 
     monkeypatch.delenv("LOGIN_TWILIO", raising=False)
+    app_environment.pop("LOGIN_TWILIO", None)
+
     envs_twilio = setenvs_from_dict(
         monkeypatch,
         {
@@ -62,7 +66,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         },
     )
 
-    return {**envs_plugins, **envs_login, **envs_twilio}
+    return {**app_environment, **envs_plugins, **envs_login, **envs_twilio}
 
 
 @pytest.fixture
