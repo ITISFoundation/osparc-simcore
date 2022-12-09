@@ -23,7 +23,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled
+            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled 2FA
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
@@ -83,7 +83,7 @@ async def test_it(
     mock_get_2fa_code = mocker.patch(
         "simcore_service_webserver.login.handlers_2fa.get_2fa_code",
         autospec=True,
-        return_value=None,  # <-- avoids
+        return_value=None,  # <-- Emulates code expired
     )
 
     # login
@@ -108,8 +108,19 @@ async def test_it(
             "send_as": "SMS",
         },
     )
+    assert mock_get_2fa_code.call_ount == 1, "Emulates code expired"
 
     data, error = await assert_status(response, web.HTTPOk)
     assert data["reason"]
     assert not error
     assert mock_send_sms_code2.call_count == 1
+
+    # resend code via email
+    # response = await client.post(
+    #     f"{url}",
+    #     json={
+    #         "email": registered_user["email"],
+    #         "send_as": "Email",
+    #     },
+    # )
+    # assert mock_get_2fa_code.call_ount == 1, "Emulates code expired"

@@ -17,9 +17,7 @@ from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_s
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-
-    # Plugins
-    setenvs_from_dict(
+    envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
@@ -44,7 +42,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     )
 
     monkeypatch.delenv("WEBSERVER_LOGIN", raising=False)
-    setenvs_from_dict(
+    envs_login = setenvs_from_dict(
         monkeypatch,
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
@@ -53,8 +51,9 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
+
     monkeypatch.delenv("LOGIN_TWILIO", raising=False)
-    setenvs_from_dict(
+    envs_twilio = setenvs_from_dict(
         monkeypatch,
         {
             "TWILIO_ACCOUNT_SID": "fake-twilio-account",
@@ -62,6 +61,8 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": json.dumps(["41"]),
         },
     )
+
+    return {**envs_plugins, **envs_login, **envs_twilio}
 
 
 @pytest.fixture
