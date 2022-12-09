@@ -52,6 +52,7 @@ qx.Class.define("osparc.component.tutorial.SlidesBase", {
 
   members: {
     __currentIdx: null,
+    __slideCounter: null,
     __prevBtn: null,
     __nextBtn: null,
     __stack: null,
