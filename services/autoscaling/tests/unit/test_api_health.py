@@ -6,6 +6,7 @@ import httpx
 import pytest
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from simcore_service_autoscaling.api.health import _StatusGet
 from starlette import status
 
 pytest_simcore_core_services_selection = [
@@ -38,18 +39,17 @@ async def test_status_no_rabbit(
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
-    status_response = response.json()
-    assert "rabbitmq" in status_response
-    rabbitmq_status = status_response["rabbitmq"]
-    assert "is_enabled" in rabbitmq_status
-    assert rabbitmq_status["is_enabled"] is False
-    assert rabbitmq_status["is_responsive"] is False
+    status_response = _StatusGet.parse_obj(response.json())
+    assert status_response
 
-    assert "ec2" in status_response
-    ec2_status = status_response["ec2"]
-    assert "is_enabled" in ec2_status
-    assert ec2_status["is_enabled"] is True
-    assert ec2_status["is_responsive"] is True
+    assert status_response.rabbitmq.is_enabled is False
+    assert status_response.rabbitmq.is_responsive is False
+
+    assert status_response.ec2.is_enabled is True
+    assert status_response.ec2.is_responsive is True
+
+    assert status_response.docker.is_enabled is True
+    assert status_response.docker.is_responsive is True
 
 
 async def test_status(
@@ -62,34 +62,31 @@ async def test_status(
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
-    status_response = response.json()
-    assert "rabbitmq" in status_response
-    rabbitmq_status = status_response["rabbitmq"]
-    assert "is_enabled" in rabbitmq_status
-    assert rabbitmq_status["is_enabled"] is True
-    assert rabbitmq_status["is_responsive"] is True
+    status_response = _StatusGet.parse_obj(response.json())
+    assert status_response
 
-    assert "ec2" in status_response
-    ec2_status = status_response["ec2"]
-    assert "is_enabled" in ec2_status
-    assert ec2_status["is_enabled"] is True
-    assert ec2_status["is_responsive"] is False
+    assert status_response.rabbitmq.is_enabled is True
+    assert status_response.rabbitmq.is_responsive is True
 
+    assert status_response.ec2.is_enabled is True
+    assert status_response.ec2.is_responsive is False
+
+    assert status_response.docker.is_enabled is True
+    assert status_response.docker.is_responsive is True
     # restart the server
     mocked_aws_server.start()
 
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
-    status_response = response.json()
-    assert "rabbitmq" in status_response
-    rabbitmq_status = status_response["rabbitmq"]
-    assert "is_enabled" in rabbitmq_status
-    assert rabbitmq_status["is_enabled"] is True
-    assert rabbitmq_status["is_responsive"] is True
+    status_response = _StatusGet.parse_obj(response.json())
+    assert status_response
 
-    assert "ec2" in status_response
-    ec2_status = status_response["ec2"]
-    assert "is_enabled" in ec2_status
-    assert ec2_status["is_enabled"] is True
-    assert ec2_status["is_responsive"] is True
+    assert status_response.rabbitmq.is_enabled is True
+    assert status_response.rabbitmq.is_responsive is True
+
+    assert status_response.ec2.is_enabled is True
+    assert status_response.ec2.is_responsive is True
+
+    assert status_response.docker.is_enabled is True
+    assert status_response.docker.is_responsive is True
