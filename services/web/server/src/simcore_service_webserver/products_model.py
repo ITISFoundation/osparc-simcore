@@ -12,6 +12,7 @@ from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
     IssueTracker,
+    Login,
     Manual,
     Vendor,
     WebFeedback,
@@ -70,6 +71,8 @@ class Product(BaseModel):
 
     support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = None
 
+    login: Login = Field(..., description="Login/registrations options")
+
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
     )
@@ -114,6 +117,10 @@ class Product(BaseModel):
                     "host_regex": r"([\.-]{0,1}osparc[\.-])",
                     "twilio_messaging_sid": "1" * 34,
                     "registration_email_template": "osparc_registration_email",
+                    "login": {
+                        "registration_invitation_required": True,
+                        "two_factor_auth_required": False,
+                    },
                     # defaults from sqlalchemy table
                     **{
                         c.name: c.server_default.arg
@@ -132,6 +139,10 @@ class Product(BaseModel):
                     "issues_login_url": None,
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
+                    "login": {
+                        "registration_invitation_required": True,
+                        "two_factor_auth_required": False,
+                    },
                 },
                 # full example
                 {
@@ -179,6 +190,10 @@ class Product(BaseModel):
                             "label": "web-form",
                         },
                     ],
+                    "login": {
+                        "registration_invitation_required": True,
+                        "two_factor_auth_required": False,
+                    },
                 },
             ]
         }
