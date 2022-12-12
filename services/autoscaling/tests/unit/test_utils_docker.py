@@ -28,6 +28,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
+    get_node_total_resources,
     pending_service_tasks_with_insufficient_resources,
     remove_monitored_down_nodes,
     tag_node,
@@ -316,6 +317,15 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         },
     )
     assert not diff, f"{diff}"
+
+
+def test_get_node_total_resources(host_node: Node):
+    resources = get_node_total_resources(host_node)
+    assert host_node.Description
+    assert host_node.Description.Resources
+    assert host_node.Description.Resources.NanoCPUs
+    assert resources.cpus == (host_node.Description.Resources.NanoCPUs / 10**9)
+    assert resources.ram == host_node.Description.Resources.MemoryBytes
 
 
 async def test_compute_cluster_total_resources_with_no_nodes_returns_0(
