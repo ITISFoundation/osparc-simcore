@@ -89,15 +89,19 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
-        case "quick-start":
+        case "quick-start": {
           control = new qx.ui.menu.Button(this.tr("Quick Start"));
-          control.addListener("execute", () => {
-            const tutorialWindow = new osparc.component.tutorial.ti.Slides();
-            tutorialWindow.center();
-            tutorialWindow.open();
-          });
-          this.getMenu().add(control);
+          const tutorial = osparc.component.tutorial.Utils.getTutorial();
+          if (tutorial) {
+            control.addListener("execute", () => {
+              const tutorialWindow = tutorial.tutorial();
+              tutorialWindow.center();
+              tutorialWindow.open();
+            });
+            this.getMenu().add(control);
+          }
           break;
+        }
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
           osparc.navigation.Manuals.getLicenseURL()
@@ -123,7 +127,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     populateSimpleMenu: function() {
       this.getChildControl("preferences");
       this.getChildControl("clusters");
-      if (osparc.utils.Utils.isProduct("tis")) {
+      if (osparc.component.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
         this.getChildControl("quick-start");
       }
@@ -144,7 +148,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getMenu().addSeparator();
           this.__addManualsToMenu();
           this.__addFeedbacksToMenu();
-          if (osparc.utils.Utils.isProduct("tis")) {
+          if (osparc.component.tutorial.Utils.getTutorial()) {
             this.getChildControl("quick-start");
           }
           this.getMenu().addSeparator();
