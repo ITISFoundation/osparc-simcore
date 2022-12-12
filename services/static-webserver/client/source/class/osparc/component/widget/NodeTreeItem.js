@@ -80,6 +80,14 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       init: null,
       nullable: false,
       event: "changeId"
+    },
+
+    iconColor: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeIconColor",
+      apply: "__applyIconColor"
     }
   },
 
@@ -101,17 +109,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
     __applyNode: function(node) {
       osparc.utils.Utils.setMoreToWidget(this, node.getNodeId());
-
-      // "bind" running/interactive status to icon color
-      if (node.isDynamic()) {
-        node.getStatus().bind("interactive", this.getChildControl("icon"), "textColor", {
-          converter: status => osparc.utils.StatusUI.getColor(status)
-        });
-      } else if (node.isComputational()) {
-        node.getStatus().bind("running", this.getChildControl("icon"), "textColor", {
-          converter: status => osparc.utils.StatusUI.getColor(status)
-        });
-      }
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();
@@ -140,6 +137,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+    },
+
+    __applyIconColor: function(textColor) {
+      this.getChildControl("icon").set({
+        textColor
+      });
     },
 
     _createChildControlImpl: function(id) {

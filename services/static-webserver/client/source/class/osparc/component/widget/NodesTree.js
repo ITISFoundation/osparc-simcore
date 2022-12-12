@@ -104,6 +104,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         label: "Study",
         children: [],
         icon: "@FontAwesome5Solid/home/14",
+        iconColor: "text",
         sortingValue: 0,
         study
       };
@@ -118,11 +119,21 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         label: "Node",
         children: [],
         icon: this.__getIcon(node),
+        iconColor: "text",
         sortingValue: this.__getSortingValue(node),
         node
       };
       const nodeModel = qx.data.marshal.Json.createModel(nodeData, true);
       node.bind("label", nodeModel, "label");
+      if (node.isDynamic()) {
+        node.getStatus().bind("interactive", nodeModel, "iconColor", {
+          converter: status => osparc.utils.StatusUI.getColor(status)
+        });
+      } else if (node.isComputational()) {
+        node.getStatus().bind("running", nodeModel, "iconColor", {
+          converter: status => osparc.utils.StatusUI.getColor(status)
+        });
+      }
       return nodeModel;
     }
   },
@@ -174,6 +185,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           c.bindProperty("study", "study", null, item, id);
           c.bindProperty("node", "node", null, item, id);
           c.bindProperty("icon", "icon", null, item, id);
+          c.bindProperty("iconColor", "iconColor", null, item, id);
           const node = study.getWorkbench().getNode(item.getModel().getId());
           if (item.getModel().getId() === study.getUuid()) {
             item.getChildControl("delete-button").exclude();
