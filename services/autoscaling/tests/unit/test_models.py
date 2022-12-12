@@ -48,6 +48,27 @@ def test_resources_ge_operator(
     assert (a >= b) is a_greater_or_equal_than_b
 
 
+@pytest.mark.parametrize(
+    "a,b,result",
+    [
+        (
+            Resources(cpus=0, ram=0),
+            Resources(cpus=1, ram=34),
+            Resources(cpus=1, ram=34),
+        ),
+        (
+            Resources(cpus=0.1, ram=-1),
+            Resources(cpus=1, ram=34),
+            Resources(cpus=1.1, ram=33),
+        ),
+    ],
+)
+def test_resources_add(a: Resources, b: Resources, result: Resources):
+    assert a + b == result
+    a += b
+    assert a == result
+
+
 async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_raises(
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
