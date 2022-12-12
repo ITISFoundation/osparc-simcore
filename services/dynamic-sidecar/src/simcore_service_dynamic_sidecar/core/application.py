@@ -17,8 +17,8 @@ from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
 from ..api import main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
-from ..modules.directory_watcher import setup_directory_watcher
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from ..modules.outputs import setup_outputs
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
@@ -152,7 +152,7 @@ def create_app():
 
     # also sets up mounted_volumes
     setup_mounted_fs(app)
-    setup_directory_watcher(app)
+    setup_outputs(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)

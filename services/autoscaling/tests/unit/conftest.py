@@ -16,6 +16,7 @@ from typing import (
     Mapping,
     Optional,
     Union,
+    cast,
 )
 
 import aiodocker
@@ -39,13 +40,14 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
-from simcore_service_autoscaling.utils_aws import EC2Client
-from simcore_service_autoscaling.utils_aws import ec2_client as autoscaling_ec2_client
+from simcore_service_autoscaling.modules.docker import AutoscalingDocker
+from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
@@ -129,6 +131,11 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 
 @pytest.fixture
+def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("EC2_ACCESS_KEY_ID")
+
+
+@pytest.fixture
 def enabled_rabbitmq(
     app_environment: EnvVarsDict, rabbit_service: RabbitSettings
 ) -> RabbitSettings:
@@ -158,6 +165,12 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
+
+
+@pytest.fixture
+async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
+    async with AutoscalingDocker() as docker_client:
+        yield cast(AutoscalingDocker, docker_client)
 
 
 @pytest.fixture
@@ -512,22 +525,21 @@ async def aws_ami_id(
 
 
 @pytest.fixture
-async def ec2_client() -> AsyncIterator[EC2Client]:
+async def autoscaling_ec2(
+    app_environment: EnvVarsDict,
+) -> AsyncIterator[AutoscalingEC2]:
     settings = EC2Settings.create_from_envs()
-    async with autoscaling_ec2_client(settings) as client:
-        yield client
+    ec2 = await AutoscalingEC2.create(settings)
+    assert ec2
+    yield ec2
+    await ec2.close()
 
 
 @pytest.fixture
-def mocked_ec2_server_with_client(
-    mocked_aws_server_envs: None,
-    aws_vpc_id: str,
-    aws_subnet_id: str,
-    aws_security_group_id: str,
-    aws_ami_id: str,
-    ec2_client: EC2Client,
-) -> Iterator[EC2Client]:
-    yield ec2_client
+async def ec2_client(
+    autoscaling_ec2: AutoscalingEC2,
+) -> AsyncIterator[EC2Client]:
+    yield autoscaling_ec2.client
 
 
 @pytest.fixture

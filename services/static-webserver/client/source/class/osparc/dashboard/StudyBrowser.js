@@ -143,14 +143,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addResourcesToList(resources);
 
-          if (osparc.utils.Utils.isProduct("tis")) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
+          const tutorial = osparc.component.tutorial.Utils.getTutorial();
+          if (tutorial) {
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
               return;
             }
             if ("_meta" in resp && resp["_meta"]["total"] === 0) {
               // there are no studies
-              const tutorialWindow = new osparc.component.tutorial.ti.Slides();
+              const tutorialWindow = tutorial.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
             }
@@ -197,12 +198,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cards = this._resourcesContainer.reloadCards("studiesList");
       this.__configureCards(cards);
       this.__addNewStudyButtons();
-      const newLoadMoreBtn = this.__createLoadMoreButton();
-      newLoadMoreBtn.set({
+      const loadMoreBtn = this.__createLoadMoreButton();
+      loadMoreBtn.set({
         fetching,
         visibility
       });
-      this._resourcesContainer.addNonResourceCard(newLoadMoreBtn);
+      this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
@@ -353,6 +354,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyButton: function() {
       const mode = this._resourcesContainer.getMode();
       const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      newStudyBtn.setCardKey("new-study");
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__newStudyBtnClicked(newStudyBtn));
@@ -373,6 +375,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const title = this.tr("New Plan");
             const desc = this.tr("Start a new plan");
             const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+            newPlanButton.setCardKey("new-plan");
             osparc.utils.Utils.setIdToWidget(newPlanButton, "newPlanButton");
             newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(newPlanButton, templateData));
             if (this._resourcesContainer.getMode() === "list") {
@@ -392,6 +395,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const title = newButtonInfo.title;
         const desc = newButtonInfo.decription;
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+        newStudyFromServiceButton.setCardKey("new-"+serviceKey);
         osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
         newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1]));
         if (this._resourcesContainer.getMode() === "list") {
@@ -457,8 +461,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__addNewStudyButtons();
 
-      const loadingStudiesBtn = this.__createLoadMoreButton("studiesLoading");
-      this._resourcesContainer.addNonResourceCard(loadingStudiesBtn);
+      const loadMoreBtn = this.__createLoadMoreButton("studiesLoading");
+      this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       this.addListener("changeMultiSelection", e => {
         const multiEnabled = e.getData();
@@ -486,9 +490,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createLoadMoreButton: function() {
       const mode = this._resourcesContainer.getMode();
-      const loadingMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
-      osparc.utils.Utils.setIdToWidget(loadingMoreBtn, "studiesLoading");
-      return loadingMoreBtn;
+      const loadMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
+      loadMoreBtn.setCardKey("load-more");
+      osparc.utils.Utils.setIdToWidget(loadMoreBtn, "studiesLoading");
+      return loadMoreBtn;
     },
 
     __createImportButton: function() {
@@ -796,8 +801,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         null,
         true
       );
-      duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
-      this._resourcesContainer.addNonResourceCard(duplicatingStudyCard);
       return duplicatingStudyCard;
     },
 
@@ -844,12 +847,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __importStudy: function(file) {
+      const uploadingLabel = this.tr("Uploading file");
       const importTask = new osparc.component.task.Import();
       importTask.start();
+      importTask.setSubtitle(uploadingLabel);
+
       const text = this.tr("Importing process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-      const uploadingLabel = this.tr("Uploading file");
       const isGrid = this._resourcesContainer.getMode() === "grid";
       const importingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       importingStudyCard.buildLayout(
@@ -860,7 +865,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       );
       importingStudyCard.subscribeToFilterGroup("searchBarFilter");
       this._resourcesContainer.addNonResourceCard(importingStudyCard);
-      importTask.setSubtitle(uploadingLabel);
 
       const body = new FormData();
       body.append("fileName", file);
@@ -1004,6 +1008,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       duplicateTaskUI.start();
       const duplicatingStudyCard = this.__createDuplicateCard(studyName);
       duplicatingStudyCard.setTask(task);
+      duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
+      this._resourcesContainer.addNonResourceCard(duplicatingStudyCard);
       this.__attachDuplicateEventHandler(task, duplicateTaskUI, duplicatingStudyCard);
     },
 

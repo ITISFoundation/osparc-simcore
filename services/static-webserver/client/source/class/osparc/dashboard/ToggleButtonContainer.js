@@ -30,6 +30,9 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     // overridden
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
+        if (osparc.dashboard.ResourceContainerManager.cardExists(this, child)) {
+          return;
+        }
         this.base(arguments, child, options);
         child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);

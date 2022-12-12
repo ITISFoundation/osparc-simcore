@@ -1,7 +1,6 @@
 import logging
 from collections import deque
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Final, Optional
+from typing import Any, Deque, Final, Optional
 
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
@@ -45,29 +44,6 @@ logger = logging.getLogger(__name__)
 # - study is being opened (state and outputs are pulled)
 # - study is being closed (state and outputs are saved)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
-
-
-@asynccontextmanager
-async def disabled_directory_watcher(
-    dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> AsyncIterator[None]:
-    """
-    The following will happen when using this context manager:
-    - Disables file system event watcher while writing
-        to the outputs directory to avoid data being pushed
-        via nodeports upon change.
-    - Enables file system event watcher so data from outputs
-        can be again synced via nodeports upon change.
-    """
-    try:
-        await dynamic_sidecar_client.service_disable_dir_watcher(
-            dynamic_sidecar_endpoint
-        )
-        yield
-    finally:
-        await dynamic_sidecar_client.service_enable_dir_watcher(
-            dynamic_sidecar_endpoint
-        )
 
 
 def get_repository(app: FastAPI, repo_type: type[BaseRepository]) -> BaseRepository:

@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from ..rabbitmq import get_rabbitmq_client
+from ..modules.docker import get_docker_client
+from ..modules.rabbitmq import get_rabbitmq_client
 from .dependencies.application import get_app
 
 router = APIRouter()
@@ -22,23 +23,35 @@ async def health_check():
     return f"{__name__}.health_check@{datetime.utcnow().isoformat()}"
 
 
-class _RabbitMQStatus(BaseModel):
-    initialized: bool
-    connection_state: bool
+class _ComponentStatus(BaseModel):
+    is_enabled: bool
+    is_responsive: bool
 
 
 class _StatusGet(BaseModel):
-    rabbitmq: _RabbitMQStatus
+    rabbitmq: _ComponentStatus
+    ec2: _ComponentStatus
+    docker: _ComponentStatus
 
 
 @router.get("/status", include_in_schema=True, response_model=_StatusGet)
 async def get_status(app: FastAPI = Depends(get_app)) -> _StatusGet:
 
     return _StatusGet(
-        rabbitmq=_RabbitMQStatus(
-            initialized=bool(app.state.rabbitmq_client),
-            connection_state=await get_rabbitmq_client(app).ping()
+        rabbitmq=_ComponentStatus(
+            is_enabled=bool(app.state.rabbitmq_client),
+            is_responsive=await get_rabbitmq_client(app).ping()
             if app.state.rabbitmq_client
             else False,
-        )
+        ),
+        ec2=_ComponentStatus(
+            is_enabled=bool(app.state.ec2_client),
+            is_responsive=await app.state.ec2_client.ping()
+            if app.state.ec2_client
+            else False,
+        ),
+        docker=_ComponentStatus(
+            is_enabled=bool(app.state.docker_client),
+            is_responsive=await get_docker_client(app).ping(),
+        ),
     )

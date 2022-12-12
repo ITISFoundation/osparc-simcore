@@ -107,7 +107,9 @@ async def _wait_for_service(service_name: str) -> None:
                 services = await docker_client.services.list(
                     filters={"name": service_name}
                 )
-                assert len(services) == 1, f"Docker service {service_name=} is missing"
+                assert (
+                    len(services) == 1
+                ), f"Docker service {service_name=} is missing, {services=}"
                 print(
                     f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})"
                 )

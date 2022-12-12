@@ -57,6 +57,10 @@ class TutorialBase {
     return this.__page;
   }
 
+  getPage() {
+    return this.__page;
+  }
+
   async __goTo() {
     console.log("Opening", this.__url);
     // Try to reach the website
@@ -608,18 +612,50 @@ class TutorialBase {
   async testS4L(s4lNodeId) {
     await this.waitFor(20000, 'Wait for the splash screen to disappear');
 
-    // do some basic interaction
     const s4lIframe = await this.getIframe(s4lNodeId);
-    await this.waitAndClick('tree-model', s4lIframe);
-    const modelItems = await s4lIframe.$$('.MuiTreeItem-label');
-    const nLabels = modelItems.length;
-    if (nLabels > 1) {
-      modelItems[0].click();
+    await this.waitAndClick('mode-button-modeling', s4lIframe);
+    await this.takeScreenshot("Modeling");
+    const modelTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-model');
+    if (modelTrees.length !== 1) {
+      throw("Model tree missing");
+    }
+
+    const children = await utils.getChildrenElements(modelTrees[0]);
+    const nItems = children.length;
+    if (nItems > 1) {
+      children[0].click();
       await this.waitFor(2000, 'Model clicked');
       await this.takeScreenshot('ModelClicked');
-      modelItems[1].click();
+      children[1].click();
       await this.waitFor(2000, 'Grid clicked');
       await this.takeScreenshot('GridlClicked');
+    }
+  }
+
+  async testS4LTIPostPro(s4lNodeId) {
+    await this.waitFor(20000, 'Wait for the splash screen to disappear');
+    await this.takeScreenshot("s4l");
+
+    const s4lIframe = await this.getIframe(s4lNodeId);
+    await this.waitAndClick('mode-button-postro', s4lIframe);
+    await this.takeScreenshot("Postpro");
+    const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
+    if (algorithmTrees.length !== 1) {
+      throw("Post Pro tree missing");
+    }
+
+    const children = await utils.getChildrenElements(algorithmTrees[0]);
+    const nItems = children.length;
+    if (nItems > 1) {
+      children[0].click();
+      await this.waitFor(2000, 'Importer clicked');
+      await this.takeScreenshot('ImporterClicked');
+      children[1].click();
+      await this.waitFor(2000, 'Algorithm clicked');
+      await this.takeScreenshot('AlgorithmClicked');
+    }
+    else {
+      throw("Post Pro tree items missing");
     }
   }
 
@@ -668,6 +704,38 @@ class TutorialBase {
       }
       await this.waitAndClick('mode-button-simulation', s4lIframe);
     }
+  }
+
+  async waitForVoilaIframe(voilaNodeId) {
+    const voilaTimeout = 240000;
+    const checkFrequency = 5000;
+    // wait for iframe to be ready, it might take a while in Voila
+    let iframe = null;
+    for (let i=0; i<voilaTimeout; i+=checkFrequency) {
+      iframe = await this.getIframe(voilaNodeId);
+      if (iframe) {
+        break;
+      }
+      await this.waitFor(checkFrequency, `iframe not ready yet: ${i/1000}s`);
+    }
+    return iframe;
+  }
+
+  async waitForVoilaRendered(iframe) {
+    // Voila says: "Ok, voila is still executing..."
+    await this.waitFor(10000);
+
+    const voilaRenderTimeout = 120000;
+    const checkFrequency = 2000;
+    // wait for iframe to be rendered
+    for (let i=0; i<voilaRenderTimeout; i+=checkFrequency) {
+      if (await utils.isElementVisible(iframe, '#rendered_cells')) {
+        console.log("Voila rendered")
+        return true;
+      }
+      await this.waitFor(checkFrequency, `iframe not rendered yet: ${i/1000}s`);
+    }
+    return false;
   }
 
   async takeScreenshot(screenshotTitle) {

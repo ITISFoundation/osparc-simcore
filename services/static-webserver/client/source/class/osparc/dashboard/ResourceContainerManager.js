@@ -67,6 +67,17 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         }
         return sortingValue;
       });
+    },
+
+    cardExists: function(container, newCard) {
+      const cardKey = newCard.isPropertyInitialized("cardKey") ? newCard.getCardKey() : null;
+      if (cardKey) {
+        const idx = container.getChildren().findIndex(card => card.isPropertyInitialized("cardKey") && newCard.getCardKey() === card.getCardKey());
+        if (idx > -1) {
+          return true;
+        }
+      }
+      return false;
     }
   },
 

@@ -10,7 +10,7 @@ from models_library.rabbitmq_messages import (
 from servicelib.logging_utils import log_catch
 
 from ..models import Resources, SimcoreServiceDockerLabelKeys
-from ..rabbitmq import post_message
+from ..modules.rabbitmq import post_message
 
 logger = logging.getLogger(__name__)
 

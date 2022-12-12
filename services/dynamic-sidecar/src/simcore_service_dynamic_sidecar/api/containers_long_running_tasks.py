@@ -27,10 +27,12 @@ from ..modules.long_running_tasks import (
     task_save_state,
 )
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.outputs import OutputsManager
 from ._dependencies import (
     get_application,
     get_application_health,
     get_mounted_volumes,
+    get_outputs_manager,
     get_settings,
     get_shared_store,
 )
@@ -279,10 +281,9 @@ async def ports_outputs_pull_task(
 @cancel_on_disconnect
 async def ports_outputs_push_task(
     request: Request,
-    port_keys: Optional[list[str]] = None,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
+    outputs_manager: OutputsManager = Depends(get_outputs_manager),
     app: FastAPI = Depends(get_application),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
 ) -> TaskId:
     assert request  # nosec
 
@@ -291,8 +292,7 @@ async def ports_outputs_push_task(
             tasks_manager,
             task=task_ports_outputs_push,
             unique=True,
-            port_keys=port_keys,
-            mounted_volumes=mounted_volumes,
+            outputs_manager=outputs_manager,
             app=app,
         )
         return task_id

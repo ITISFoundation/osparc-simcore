@@ -96,6 +96,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       init : "pb-listitem"
     },
 
+    cardKey: {
+      check: "String",
+      nullable: true
+    },
+
     resourceData: {
       check: "Object",
       nullable: false,
@@ -288,6 +293,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
+
+      this.setCardKey(value);
     },
 
     _applyIcon: function(value, old) {

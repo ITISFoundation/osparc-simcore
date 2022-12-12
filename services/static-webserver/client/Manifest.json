@@ -22,7 +22,7 @@
   },
   "externalResources": {
     "script": [
-      "socketio/socket.io.js",
+      "socketio/socket.io.min.js",
       "osparc/pacemaker.js",
       "svg/svg.js",
       "svg/svg.path.js",
