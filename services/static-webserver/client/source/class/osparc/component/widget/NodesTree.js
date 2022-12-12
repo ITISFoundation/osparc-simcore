@@ -79,18 +79,23 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return osparc.utils.Services.getSorting(node.getMetaData().type);
     },
 
+    nodeToModel: function(node) {
+      const nodeInTree = {
+        label: node.getLabel(),
+        children: [],
+        sortingValue: this.__getSortingValue(node),
+        statusColor: null,
+        id: node.getNodeId(),
+        node
+      };
+      return nodeInTree;
+    },
+
     nodesToModel: function(nodes) {
       const children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
-        const nodeInTree = {
-          label: node.getLabel(),
-          children: [],
-          sortingValue: this.__getSortingValue(node),
-          statusColor: null,
-          id: node.getNodeId(),
-          node
-        };
+        const nodeInTree = this.nodeToModel(node);
         children.push(nodeInTree);
       }
       return children;
@@ -112,16 +117,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.populateTree();
     },
 
-    populateTree: function() {
-      const data = this.__getNodesModelData();
-      const newModel = qx.data.marshal.Json.createModel(data, true);
-      this.setModel(newModel);
-      const study = this.getStudy();
-      this.setDelegate(this._getDelegate(study));
-      const nChildren = newModel.getChildren().length;
-      this.setHeight(nChildren*21 + 12);
-    },
-
     __getNodesModelData: function() {
       const study = this.getStudy();
       const nodes = study.getWorkbench().getNodes();
@@ -132,6 +127,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         id: study.getUuid()
       };
       return data;
+    },
+
+    populateTree: function() {
+      const data = this.__getNodesModelData();
+      const newModel = qx.data.marshal.Json.createModel(data, true);
+      this.setModel(newModel);
+      const study = this.getStudy();
+      this.setDelegate(this._getDelegate(study));
+      const nChildren = newModel.getChildren().length;
+      this.setHeight(nChildren*21 + 12);
     },
 
     _getDelegate: function(study) {
