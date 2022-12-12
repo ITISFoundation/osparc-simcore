@@ -79,26 +79,51 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return osparc.utils.Services.getSorting(node.getMetaData().type);
     },
 
-    nodeToModel: function(node) {
-      const nodeInTree = {
-        label: node.getLabel(),
-        children: [],
-        sortingValue: this.__getSortingValue(node),
-        statusColor: null,
-        id: node.getNodeId(),
-        node
-      };
-      return nodeInTree;
+    __getIcon: function(node) {
+      let icon = null;
+      if (node.isFilePicker()) {
+        icon = osparc.utils.Services.getIcon("file");
+      } else if (node.isParameter()) {
+        icon = osparc.utils.Services.getIcon("parameter");
+      } else if (node.isIterator()) {
+        icon = osparc.utils.Services.getIcon("iterator");
+      } else if (node.isProbe()) {
+        icon = osparc.utils.Services.getIcon("probe");
+      } else {
+        icon = osparc.utils.Services.getIcon(node.getMetaData().type);
+      }
+      if (icon) {
+        icon += "14";
+      }
+      return icon;
     },
 
-    nodesToModel: function(nodes) {
-      const children = [];
-      for (let nodeId in nodes) {
-        const node = nodes[nodeId];
-        const nodeInTree = this.nodeToModel(node);
-        children.push(nodeInTree);
-      }
-      return children;
+    createStudyModel: function(study) {
+      const studyData = {
+        id: study.getUuid(),
+        label: "Study",
+        children: [],
+        icon: "@FontAwesome5Solid/home/14",
+        sortingValue: 0,
+        study
+      };
+      const studyModel = qx.data.marshal.Json.createModel(studyData, true);
+      study.bind("name", studyModel, "label");
+      return studyModel;
+    },
+
+    nodeToModel: function(node) {
+      const nodeData = {
+        id: node.getNodeId(),
+        label: "Node",
+        children: [],
+        icon: this.__getIcon(node),
+        sortingValue: this.__getSortingValue(node),
+        node
+      };
+      const nodeModel = qx.data.marshal.Json.createModel(nodeData, true);
+      node.bind("label", nodeModel, "label");
+      return nodeModel;
     }
   },
 
@@ -117,25 +142,18 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       this.populateTree();
     },
 
-    __getNodesModelData: function() {
-      const study = this.getStudy();
-      const nodes = study.getWorkbench().getNodes();
-      const data = {
-        label: "Study",
-        children: this.self().nodesToModel(nodes),
-        sortingValue: 0,
-        id: study.getUuid()
-      };
-      return data;
-    },
-
     populateTree: function() {
-      const data = this.__getNodesModelData();
-      const newModel = qx.data.marshal.Json.createModel(data, true);
-      this.setModel(newModel);
       const study = this.getStudy();
+      const rootModel = this.self().createStudyModel(study);
+      this.setModel(rootModel);
+      const nodes = study.getWorkbench().getNodes();
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        const nodeInTree = this.self().nodeToModel(node);
+        rootModel.getChildren().push(nodeInTree);
+      }
       this.setDelegate(this._getDelegate(study));
-      const nChildren = newModel.getChildren().length;
+      const nChildren = rootModel.getChildren().length;
       this.setHeight(nChildren*21 + 12);
     },
 
@@ -155,6 +173,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           c.bindProperty("id", "id", null, item, id);
           c.bindProperty("study", "study", null, item, id);
           c.bindProperty("node", "node", null, item, id);
+          c.bindProperty("icon", "icon", null, item, id);
           const node = study.getWorkbench().getNode(item.getModel().getId());
           if (item.getModel().getId() === study.getUuid()) {
             item.getChildControl("delete-button").exclude();
