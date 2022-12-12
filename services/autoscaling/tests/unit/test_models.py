@@ -52,14 +52,14 @@ def test_resources_ge_operator(
     "a,b,result",
     [
         (
-            Resources(cpus=0, ram=0),
-            Resources(cpus=1, ram=34),
-            Resources(cpus=1, ram=34),
+            Resources(cpus=0, ram=ByteSize(0)),
+            Resources(cpus=1, ram=ByteSize(34)),
+            Resources(cpus=1, ram=ByteSize(34)),
         ),
         (
-            Resources(cpus=0.1, ram=-1),
-            Resources(cpus=1, ram=34),
-            Resources(cpus=1.1, ram=33),
+            Resources(cpus=0.1, ram=ByteSize(-1)),
+            Resources(cpus=1, ram=ByteSize(34)),
+            Resources(cpus=1.1, ram=ByteSize(33)),
         ),
     ],
 )
