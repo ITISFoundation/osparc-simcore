@@ -4,6 +4,7 @@
 
 import asyncio
 import itertools
+import random
 from copy import deepcopy
 from typing import Any, AsyncIterator, Awaitable, Callable, Mapping, Optional
 
@@ -440,6 +441,7 @@ async def test_compute_node_used_resources_with_service(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
+    faker: Faker,
 ):
     # 1. if we have services with no defined reservations, then we cannot know what they use...
     service_with_no_resources = await create_service(task_template, {}, "running")
@@ -452,18 +454,39 @@ async def test_compute_node_used_resources_with_service(
     task_template_with_manageable_resources = task_template | create_task_reservations(
         1, 0
     )
+    service_labels = faker.pydict(allowed_types=(str,))
     await asyncio.gather(
         *(
-            create_service(task_template_with_manageable_resources, {}, "running")
+            create_service(
+                task_template_with_manageable_resources, service_labels, "running"
+            )
             for cpu in range(host_cpu_count)
         )
     )
     node_used_resources = await compute_node_used_resources(
-        autoscaling_docker, host_node
+        autoscaling_docker, host_node, service_labels=None
     )
     assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
-    # 3. if we have services that need more resources than available,
+    # 3. if we look for services with some other label, they should then become invisible again
+    node_used_resources = await compute_node_used_resources(
+        autoscaling_docker, host_node, service_labels=[faker.pystr()]
+    )
+    assert node_used_resources == Resources(cpus=0, ram=ByteSize(0))
+    # 4. if we look for services with 1 correct label, they should then become visible again
+    node_used_resources = await compute_node_used_resources(
+        autoscaling_docker,
+        host_node,
+        service_labels=[random.choice(list(service_labels.keys()))],
+    )
+    assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
+    # 4. if we look for services with all the correct labels, they should then become visible again
+    node_used_resources = await compute_node_used_resources(
+        autoscaling_docker, host_node, service_labels=list(service_labels.keys())
+    )
+    assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
+
+    # 5. if we have services that need more resources than available,
     # they should not change what is currently used as they will not run
     task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
