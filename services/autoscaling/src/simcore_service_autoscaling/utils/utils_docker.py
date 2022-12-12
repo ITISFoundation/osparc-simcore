@@ -52,10 +52,10 @@ async def get_monitored_nodes(
     return nodes
 
 
-async def remove_monitored_down_nodes(
-    docker_client: AutoscalingDocker, nodes: list[Node]
+async def remove_nodes(
+    docker_client: AutoscalingDocker, nodes: list[Node], force: bool = False
 ) -> list[Node]:
-    """removes docker nodes that are in the down state"""
+    """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 
     def _check_if_node_is_removable(node: Node) -> bool:
         if node.Status and node.Status.State:
@@ -71,7 +71,9 @@ async def remove_monitored_down_nodes(
         # we do not remove a node that has a weird state, let it be done by someone smarter.
         return False
 
-    nodes_that_need_removal = [n for n in nodes if _check_if_node_is_removable(n)]
+    nodes_that_need_removal = [
+        n for n in nodes if (force is True) or _check_if_node_is_removable(n)
+    ]
     for node in nodes_that_need_removal:
         assert node.ID  # nosec
         with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
