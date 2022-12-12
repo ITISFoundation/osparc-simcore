@@ -132,11 +132,7 @@ async def _find_terminateable_nodes(
     return terminateable_nodes
 
 
-async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None:
-    # NOTE: when do we scale down???
-    # 1. if a machine has nothing running on it, it should at least be set to drain as a first step (we could undrain it if there is a sudden need)
-    await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
-
+async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None:
     # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure (parametrize this)
     # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
     if terminateable_nodes := await _find_terminateable_nodes(app, monitored_nodes):
@@ -150,12 +146,18 @@ async def _scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None
             "terminated the following machines: '%s'",
             f"{(node.Description.Hostname for node,_ in terminateable_nodes if node.Description)}",
         )
+        # since these nodes are being terminated, remove them from the swarm
+        await utils_docker.remove_nodes(
+            get_docker_client(app),
+            [(node for node, _ in terminateable_nodes)],
+            force=True,
+        )
 
     # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
     # 4.
 
 
-async def _activate_drained_nodes(
+async def _try_scale_up_with_drained_nodes(
     app: FastAPI,
     monitored_nodes: list[Node],
     pending_tasks: list[Task],
@@ -280,44 +282,35 @@ async def check_dynamic_resources(app: FastAPI) -> None:
 
     # 1. get monitored nodes information and resources
     docker_client = get_docker_client(app)
+
     monitored_nodes = await utils_docker.get_monitored_nodes(
         docker_client,
         node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
     )
-
     cluster_total_resources = await utils_docker.compute_cluster_total_resources(
         monitored_nodes
     )
-    logger.info("%s", f"{cluster_total_resources=}")
     cluster_used_resources = await utils_docker.compute_cluster_used_resources(
         docker_client, monitored_nodes
     )
-    logger.info("%s", f"{cluster_used_resources=}")
+    logger.info("Monitored nodes total resources: %s", f"{cluster_total_resources}")
+    logger.info(
+        "Monitored nodes current used resources: %s", f"{cluster_used_resources}"
+    )
 
-    # 2. Remove nodes that are gone
-    await utils_docker.remove_monitored_down_nodes(docker_client, monitored_nodes)
+    # 2. Cleanup nodes that are gone
+    await utils_docker.remove_nodes(docker_client, monitored_nodes)
 
-    # 3. Scale up nodes if there are pending tasks
-    pending_tasks = await utils_docker.pending_service_tasks_with_insufficient_resources(
+    # 3. Scale up the cluster if there are pending tasks, else see if we shall scale down
+    if pending_tasks := await utils_docker.pending_service_tasks_with_insufficient_resources(
         docker_client,
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-    )
-    await rabbitmq.post_state_message(
-        app,
-        monitored_nodes,
-        cluster_total_resources,
-        cluster_used_resources,
-        pending_tasks,
-    )
-
-    logger.debug(
-        "%s pending tasks with insufficient resources at the moment", len(pending_tasks)
-    )
-
-    if pending_tasks:
-        # check if we do have some available drain nodes first
-        if not await _activate_drained_nodes(app, monitored_nodes, pending_tasks):
+    ):
+        if not await _try_scale_up_with_drained_nodes(
+            app, monitored_nodes, pending_tasks
+        ):
             # no? then scale up
             await _scale_up_cluster(app, pending_tasks)
     else:
-        await _scale_down_cluster(app, monitored_nodes)
+        await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
+        await _try_scale_down_cluster(app, monitored_nodes)
