@@ -155,11 +155,14 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       dontGroup.addListener("execute", () => this._groupByChanged(null));
       const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
       tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+      const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
 
       const groupOptions = new qx.ui.form.RadioGroup();
       [
         dontGroup,
-        tagByGroup
+        tagByGroup,
+        groupByShared
       ].forEach(btn => {
         groupByMenu.add(btn);
         groupOptions.add(btn);

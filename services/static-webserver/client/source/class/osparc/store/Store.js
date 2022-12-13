@@ -369,14 +369,12 @@ qx.Class.define("osparc.store.Store", {
     },
 
     __getGroups: function(group) {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         osparc.data.Resources.getOne("profile")
           .then(profile => {
             resolve(profile["groups"][group]);
           })
-          .catch(err => {
-            console.error(err);
-          });
+          .catch(err => console.error(err));
       });
     },
 
@@ -392,7 +390,7 @@ qx.Class.define("osparc.store.Store", {
       return this.__getGroups("all");
     },
 
-    getAllGroups: function() {
+    __getAllGroups: function() {
       return new Promise(resolve => {
         const promises = [];
         promises.push(this.getGroupsMe());
@@ -401,10 +399,30 @@ qx.Class.define("osparc.store.Store", {
         Promise.all(promises)
           .then(values => {
             const groups = [];
-            groups.push(values[0]);
-            values[1].forEach(org => groups.push(org));
-            groups.push(values[2]);
+            const groupMe = values[0];
+            groupMe["groupType"] = 2;
+            groups.push(groupMe);
+            values[1].forEach(org => {
+              org["groupType"] = 1;
+              groups.push(org);
+            });
+            const groupEveryone = values[2];
+            groupEveryone["groupType"] = 0;
+            groups.push(groupEveryone);
             resolve(groups);
+          });
+      });
+    },
+
+    getOrganization: function(orgId) {
+      return new Promise(resolve => {
+        this.__getAllGroups()
+          .then(orgs => {
+            const idx = orgs.findIndex(org => org.gid === parseInt(orgId));
+            if (idx > -1) {
+              resolve(orgs[idx]);
+            }
+            resolve(null);
           });
       });
     },

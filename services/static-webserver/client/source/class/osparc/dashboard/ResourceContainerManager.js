@@ -47,7 +47,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     groupBy: {
-      check: [null, "tags"],
+      check: [null, "tags", "shared"],
       init: null,
       nullable: true
     }
@@ -127,11 +127,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return this.__flatList;
     },
 
-    __createGroupContainer: function(groupId, headerLabel, headerColor) {
+    __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
       const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
         groupId: groupId.toString(),
         headerLabel,
-        headerIcon: "@FontAwesome5Solid/tag/24",
+        headerIcon: "",
         headerColor,
         visibility: "excluded"
       });
@@ -215,7 +215,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadCards: function(listId) {
       this.__cleanAll();
-      if (this.getGroupBy() === "tags") {
+      if (this.getGroupBy()) {
         const noGroupContainer = this.__createEmptyGroupContainer();
         this._add(noGroupContainer);
       } else {
@@ -269,8 +269,49 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             let groupContainer = this.__getGroupContainer(tag.id);
             if (groupContainer === null) {
               groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
-              const noGroupContainer = this.__getGroupContainer("no-group");
-              const idx = this._getChildren().findIndex(grpContainer => grpContainer === noGroupContainer);
+              groupContainer.setHedaerIcon("@FontAwesome5Solid/tag/24");
+              const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
+              this._addAt(groupContainer, idx);
+            }
+            const card = this.__createCard(resourceData, tags);
+            groupContainer.add(card);
+            this.self().sortList(groupContainer.getContentContainer());
+            cards.push(card);
+          });
+        }
+      } else if (this.getGroupBy() === "shared") {
+        const orgIds = resourceData.accessRights ? Object.keys(resourceData.accessRights) : [];
+        if (orgIds.length === 0) {
+          let noGroupContainer = this.__getGroupContainer("no-group");
+          const card = this.__createCard(resourceData, tags);
+          noGroupContainer.add(card);
+          this.self().sortList(noGroupContainer.getContentContainer());
+          cards.push(card);
+        } else {
+          orgIds.forEach(orgId => {
+            let groupContainer = this.__getGroupContainer(orgId);
+            if (groupContainer === null) {
+              groupContainer = this.__createGroupContainer(orgId, "loading-label");
+              osparc.store.Store.getInstance().getOrganization(orgId)
+                .then(org => {
+                  if (org) {
+                    let icon = "";
+                    if (org.thumbnail) {
+                      icon = org.thumbnail;
+                    } else if (org["groupType"] === 0) {
+                      icon = "@FontAwesome5Solid/globe/24";
+                    } else if (org["groupType"] === 1) {
+                      icon = "@FontAwesome5Solid/users/24";
+                    } else if (org["groupType"] === 2) {
+                      icon = "@FontAwesome5Solid/user/24";
+                    }
+                    groupContainer.set({
+                      headerIcon: icon,
+                      headerLabel: org.label
+                    });
+                  }
+                });
+              const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
               this._addAt(groupContainer, idx);
             }
             const card = this.__createCard(resourceData, tags);
