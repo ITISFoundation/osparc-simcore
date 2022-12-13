@@ -6,7 +6,7 @@ import os
 from copy import deepcopy
 from io import StringIO
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
 import dotenv
 from pytest import MonkeyPatch
@@ -17,10 +17,15 @@ from .typing_env import EnvVarsDict
 #
 # monkeypatch using dict
 #
-def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: dict[str, Any]) -> EnvVarsDict:
+def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
     for key, value in envs.items():
+        assert isinstance(key, str)
         assert value is not None  # None keys cannot be is defined w/o value
-        monkeypatch.setenv(key, str(value))
+        assert isinstance(
+            value, str
+        ), "client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values"
+
+        monkeypatch.setenv(key, value)
     return deepcopy(envs)
 
 
