@@ -29,10 +29,9 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
   members: {
     // override
     populateTree: function() {
-      const data = this.__getStudyModelData();
-      const newModel = qx.data.marshal.Json.createModel(data, true);
-      this.setModel(newModel);
       const study = this.getStudy();
+      const newModel = osparc.component.widget.NodesTree.createStudyModel(study);
+      this.setModel(newModel);
       this.setDelegate({
         ...this._getDelegate(study),
         createItem: () => {
@@ -42,18 +41,6 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
           return studyTreeItem;
         }
       });
-    },
-
-    __getStudyModelData: function() {
-      const study = this.getStudy();
-      const data = {
-        label: study.getName(),
-        children: [],
-        sortingValue: 0,
-        id: study.getUuid(),
-        study
-      };
-      return data;
     },
 
     __openStudyInfo: function() {
