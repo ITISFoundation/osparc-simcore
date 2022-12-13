@@ -13,7 +13,7 @@ class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
         schema_extra = {
             "example": {
                 # ServiceAccessRights
-                "access_rights": {
+                "accessRights": {
                     1: {
                         "execute_access": False,
                         "write_access": False,
@@ -66,6 +66,7 @@ class ServiceGet(
     owner: Optional[EmailStr]
 
     class Config:
+        allow_population_by_field_name = True
         extra = Extra.ignore
         schema_extra = {
             "example": {
@@ -74,7 +75,7 @@ class ServiceGet(
                 "description": "File Picker",
                 "classifiers": [],
                 "quality": {},
-                "access_rights": {
+                "accessRights": {
                     "1": {"execute_access": True, "write_access": False},
                     "4": {"execute_access": True, "write_access": True},
                 },
