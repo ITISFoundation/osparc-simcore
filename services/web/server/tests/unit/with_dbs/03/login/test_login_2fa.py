@@ -203,6 +203,8 @@ async def test_workflow_register_and_login_with_2fa(
             "code": received_code,
         },
     )
+    # WARNING: while debugging, breakpoints can add too much delay
+    # and make 2fa TTL expire resulting in this validation fail
     await assert_status(response, web.HTTPOk)
 
     # assert users is successfully registered
