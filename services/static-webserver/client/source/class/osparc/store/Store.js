@@ -327,10 +327,17 @@ qx.Class.define("osparc.store.Store", {
           })
           .catch(err => console.error("getServices failed", err))
           .finally(() => {
-            console.log("getAllServices", allServices);
-            const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
-            osparc.utils.Services.servicesToCache(servicesObj, true);
-            resolve(osparc.utils.Services.servicesCached);
+            if (includeDeprecated) {
+              const nonDepServices = allServices.filter(service => !osparc.utils.Services.isDeprecated(service));
+              const servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
+              osparc.utils.Services.addTSRInfo(servicesObj);
+              resolve(servicesObj);
+            } else {
+              const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
+              osparc.utils.Services.addTSRInfo(servicesObj);
+              osparc.utils.Services.servicesCached = servicesObj;
+              resolve(servicesObj);
+            }
           });
       });
     },
