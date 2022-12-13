@@ -6,15 +6,17 @@ import asyncio
 import itertools
 import random
 from copy import deepcopy
-from typing import Any, AsyncIterator, Awaitable, Callable, Mapping, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
 import pytest
 from deepdiff import DeepDiff
 from faker import Faker
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Availability,
     NodeState,
+    Service,
     Task,
 )
 from pydantic import ByteSize, parse_obj_as
@@ -189,13 +191,13 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
 ):
     # a service with no reservation is not "using" resource for docker, therefore we should not find it
-    _service_with_no_resources = await create_service(task_template, {}, "running")
+    await create_service(task_template, {}, "running")
     assert (
         await pending_service_tasks_with_insufficient_resources(
             autoscaling_docker, service_labels=[]
@@ -210,11 +212,12 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource, {}, "pending"
     )
+    assert service_with_too_many_resources.Spec
 
     service_tasks = parse_obj_as(
         list[Task],
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_too_many_resources["Spec"]["Name"]}
+            filters={"service": service_with_too_many_resources.Spec.Name}
         ),
     )
     assert service_tasks
@@ -243,21 +246,19 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
     create_service: Callable[
-        [dict[str, Any], Optional[dict[str, str]], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     faker: Faker,
 ):
-    service_labels: dict[str, str] = faker.pydict(allowed_types=(str,))
+    service_labels: dict[DockerLabelKey, str] = faker.pydict(allowed_types=(str,))
     task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
     )
 
     # start a service without labels, we should not find it
-    _service_with_no_labels = await create_service(
-        task_template_with_too_many_resource, None, "pending"
-    )
+    await create_service(task_template_with_too_many_resource, {}, "pending")
     assert (
         await pending_service_tasks_with_insufficient_resources(
             autoscaling_docker, service_labels=list(service_labels)
@@ -281,6 +282,7 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     service_with_labels = await create_service(
         task_template_with_too_many_resource, service_labels, "pending"
     )
+    assert service_with_labels.Spec
     pending_tasks = await pending_service_tasks_with_insufficient_resources(
         autoscaling_docker, service_labels=list(service_labels)
     )
@@ -288,7 +290,7 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     service_tasks = parse_obj_as(
         list[Task],
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_labels["Spec"]["Name"]}
+            filters={"service": service_with_labels.Spec.Name}
         ),
     )
     assert service_tasks
@@ -334,15 +336,16 @@ async def test_compute_cluster_total_resources_returns_host_resources(
 async def test_get_resources_from_docker_task_with_no_reservation_returns_0(
     autoscaling_docker: AutoscalingDocker,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
+    assert service_with_no_resources.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_resources["Spec"]["Name"]}
+            filters={"service": service_with_no_resources.Spec.Name}
         ),
     )
     assert service_tasks
@@ -356,7 +359,7 @@ async def test_get_resources_from_docker_task_with_no_reservation_returns_0(
 async def test_get_resources_from_docker_task_with_reservations(
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -367,11 +370,10 @@ async def test_get_resources_from_docker_task_with_reservations(
         NUM_CPUS, 0
     )
     service = await create_service(task_template_with_reservations, {}, "running")
+    assert service.Spec
     service_tasks = parse_obj_as(
         list[Task],
-        await async_docker_client.tasks.list(
-            filters={"service": service["Spec"]["Name"]}
-        ),
+        await async_docker_client.tasks.list(filters={"service": service.Spec.Name}),
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -384,7 +386,7 @@ async def test_get_resources_from_docker_task_with_reservations(
 async def test_get_resources_from_docker_task_with_reservations_and_limits_returns_the_biggest(
     async_docker_client: aiodocker.Docker,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -399,11 +401,10 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
         host_cpu_count, parse_obj_as(ByteSize, "100Mib")
     )["Resources"]
     service = await create_service(task_template_with_reservations, {}, "running")
+    assert service.Spec
     service_tasks = parse_obj_as(
         list[Task],
-        await async_docker_client.tasks.list(
-            filters={"service": service["Spec"]["Name"]}
-        ),
+        await async_docker_client.tasks.list(filters={"service": service.Spec.Name}),
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -424,7 +425,7 @@ async def test_compute_node_used_resources_with_service(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -513,7 +514,7 @@ async def test_compute_cluster_used_resources_with_services_running(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],

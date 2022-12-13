@@ -6,7 +6,7 @@
 
 
 import datetime
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, Mapping
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
 import aiodocker
@@ -14,7 +14,12 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import Node, ObjectVersion, Task
+from models_library.generated_models.docker_rest_api import (
+    Node,
+    ObjectVersion,
+    Service,
+    Task,
+)
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -133,7 +138,7 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
     service_monitored_labels: dict[DockerLabelKey, str],
     initialized_app: FastAPI,
     create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -143,7 +148,7 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
     task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
     )
-    service_with_too_many_resources = await create_service(
+    await create_service(
         task_template_with_too_many_resource,
         service_monitored_labels,
         "pending",
@@ -160,7 +165,7 @@ async def test_check_dynamic_resources_with_pending_resources_starts_new_instanc
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -252,7 +257,7 @@ async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missi
     host_node: Node,
     mock_tag_node: mock.Mock,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -279,7 +284,7 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     host_node: Node,
     mock_tag_node: mock.Mock,
     create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -444,7 +449,7 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
     host_node: Node,
     mock_tag_node: mock.Mock,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -457,10 +462,11 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
     service_with_no_reservations = await create_service(
         task_template_that_runs, {}, "running"
     )
+    assert service_with_no_reservations.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_reservations["Spec"]["Name"]}
+            filters={"service": service_with_no_reservations.Spec.Name}
         ),
     )
     assert service_tasks
@@ -530,7 +536,7 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
     drained_host_node: Node,
     mock_tag_node: mock.Mock,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -543,10 +549,11 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
     service_with_no_reservations = await create_service(
         task_template_that_runs, {}, "pending"
     )
+    assert service_with_no_reservations.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_reservations["Spec"]["Name"]}
+            filters={"service": service_with_no_reservations.Spec.Name}
         ),
     )
     assert service_tasks
