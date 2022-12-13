@@ -40,7 +40,7 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class EC2InstanceData:
     launch_time: datetime.datetime
     id: str
@@ -48,7 +48,7 @@ class EC2InstanceData:
     type: InstanceTypeType
 
 
-@dataclass
+@dataclass(frozen=True)
 class AutoscalingEC2:
     client: EC2Client
     session: aioboto3.Session
