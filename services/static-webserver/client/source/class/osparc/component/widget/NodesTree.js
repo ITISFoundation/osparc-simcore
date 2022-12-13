@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   statics: {
-    getSortingValue: function(node) {
+    __getSortingValue: function(node) {
       if (node.isFilePicker()) {
         return osparc.utils.Services.getSorting("file");
       } else if (node.isParameter()) {
@@ -79,21 +79,62 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return osparc.utils.Services.getSorting(node.getMetaData().type);
     },
 
-    nodesToModel: function(nodes) {
-      const children = [];
-      for (let nodeId in nodes) {
-        const node = nodes[nodeId];
-        const nodeInTree = {
-          label: node.getLabel(),
-          children: [],
-          sortingValue: this.self().getSortingValue(node),
-          statusColor: null,
-          id: node.getNodeId(),
-          node
-        };
-        children.push(nodeInTree);
+    __getIcon: function(node) {
+      let icon = null;
+      if (node.isFilePicker()) {
+        icon = osparc.utils.Services.getIcon("file");
+      } else if (node.isParameter()) {
+        icon = osparc.utils.Services.getIcon("parameter");
+      } else if (node.isIterator()) {
+        icon = osparc.utils.Services.getIcon("iterator");
+      } else if (node.isProbe()) {
+        icon = osparc.utils.Services.getIcon("probe");
+      } else {
+        icon = osparc.utils.Services.getIcon(node.getMetaData().type);
       }
-      return children;
+      if (icon) {
+        icon += "14";
+      }
+      return icon;
+    },
+
+    createStudyModel: function(study) {
+      const studyData = {
+        id: study.getUuid(),
+        label: "Study",
+        children: [],
+        icon: "@FontAwesome5Solid/home/14",
+        iconColor: "text",
+        sortingValue: 0,
+        study
+      };
+      const studyModel = qx.data.marshal.Json.createModel(studyData, true);
+      study.bind("name", studyModel, "label");
+      return studyModel;
+    },
+
+    nodeToModel: function(node) {
+      const nodeData = {
+        id: node.getNodeId(),
+        label: "Node",
+        children: [],
+        icon: this.__getIcon(node),
+        iconColor: "text",
+        sortingValue: this.__getSortingValue(node),
+        node
+      };
+      const nodeModel = qx.data.marshal.Json.createModel(nodeData, true);
+      node.bind("label", nodeModel, "label");
+      if (node.isDynamic()) {
+        node.getStatus().bind("interactive", nodeModel, "iconColor", {
+          converter: status => osparc.utils.StatusUI.getColor(status)
+        });
+      } else if (node.isComputational()) {
+        node.getStatus().bind("running", nodeModel, "iconColor", {
+          converter: status => osparc.utils.StatusUI.getColor(status)
+        });
+      }
+      return nodeModel;
     }
   },
 
@@ -113,25 +154,18 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     populateTree: function() {
-      const data = this.__getNodesModelData();
-      const newModel = qx.data.marshal.Json.createModel(data, true);
-      this.setModel(newModel);
       const study = this.getStudy();
-      this.setDelegate(this._getDelegate(study));
-      const nChildren = newModel.getChildren().length;
-      this.setHeight(nChildren*21 + 12);
-    },
-
-    __getNodesModelData: function() {
-      const study = this.getStudy();
+      const rootModel = this.self().createStudyModel(study);
+      this.setModel(rootModel);
       const nodes = study.getWorkbench().getNodes();
-      const data = {
-        label: "Study",
-        children: this.self().nodesToModel(nodes),
-        sortingValue: 0,
-        id: study.getUuid()
-      };
-      return data;
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        const nodeInTree = this.self().nodeToModel(node);
+        rootModel.getChildren().push(nodeInTree);
+      }
+      this.setDelegate(this._getDelegate(study));
+      const nChildren = rootModel.getChildren().length;
+      this.setHeight(nChildren*21 + 12);
     },
 
     _getDelegate: function(study) {
@@ -150,6 +184,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           c.bindProperty("id", "id", null, item, id);
           c.bindProperty("study", "study", null, item, id);
           c.bindProperty("node", "node", null, item, id);
+          c.bindProperty("icon", "icon", null, item, id);
+          c.bindProperty("iconColor", "iconColor", null, item, id);
           const node = study.getWorkbench().getNode(item.getModel().getId());
           if (item.getModel().getId() === study.getUuid()) {
             item.getChildControl("delete-button").exclude();
