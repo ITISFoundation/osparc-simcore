@@ -45,10 +45,9 @@ async def _mark_empty_active_nodes_to_drain(
     ]
     await asyncio.gather(
         *(
-            utils_docker.tag_node(
+            utils_docker.set_node_availability(
                 docker_client,
                 node,
-                tags=node.Spec.Labels,
                 available=False,
             )
             for node in active_empty_nodes
@@ -162,6 +161,8 @@ async def _try_scale_up_with_drained_nodes(
     pending_tasks: list[Task],
 ) -> bool:
     docker_client = get_docker_client(app)
+    if not pending_tasks:
+        return True
     for task in pending_tasks:
         # NOTE: currently we go one by one and break, next iteration
         # will take care of next tasks if there are any
@@ -175,11 +176,11 @@ async def _try_scale_up_with_drained_nodes(
                 >= utils_docker.get_max_resources_from_docker_task(task)
             ):
                 # let's make that node available again
-                await utils_docker.tag_node(
-                    docker_client, node, tags=node.Spec.Labels, available=True
+                await utils_docker.set_node_availability(
+                    docker_client, node, available=True
                 )
                 logger.info(
-                    "Activated formed drain node '%s'", node.Description.Hostname
+                    "Activated former drained node '%s'", node.Description.Hostname
                 )
                 return True
     logger.info("There are no available drained node for the pending tasks")

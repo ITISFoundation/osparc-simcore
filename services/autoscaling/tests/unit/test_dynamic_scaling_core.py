@@ -5,22 +5,27 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, Awaitable, Callable, Iterator, Mapping
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, Mapping
 from unittest import mock
 
+import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Node, ObjectVersion
+from models_library.generated_models.docker_rest_api import Node, ObjectVersion, Task
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import (
     _mark_empty_active_nodes_to_drain,
+    _try_scale_up_with_drained_nodes,
     check_dynamic_resources,
 )
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
-from simcore_service_autoscaling.modules.docker import get_docker_client
+from simcore_service_autoscaling.modules.docker import (
+    AutoscalingDocker,
+    get_docker_client,
+)
 from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from types_aiobotocore_ec2.client import EC2Client
 
@@ -227,10 +232,11 @@ async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missi
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
+    host_cpu_count: int,
 ):
     # create a service that runs without task labels
     task_template_that_runs = task_template | create_task_reservations(
-        1, parse_obj_as(ByteSize, "124MiB")
+        int(host_cpu_count / 2 + 1), 0
     )
     await create_service(
         task_template_that_runs,
@@ -253,10 +259,11 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
+    host_cpu_count: int,
 ):
     # create a service that runs without task labels
     task_template_that_runs = task_template | create_task_reservations(
-        1, parse_obj_as(ByteSize, "124MiB")
+        int(host_cpu_count / 2 + 1), 0
     )
     assert app_settings.AUTOSCALING_NODES_MONITORING
     await create_service(
@@ -271,3 +278,138 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     # since we have no service running, we expect the passed node to be set to drain
     await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
     mock_tag_node.assert_not_called()
+
+
+async def test__try_scale_up_with_drained_nodes_with_no_tasks(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    host_node: Node,
+    mock_tag_node: mock.Mock,
+):
+    # no tasks, does nothing and returns True
+    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) is True
+    assert (
+        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) is True
+    )
+    mock_tag_node.assert_not_called()
+
+
+async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
+    minimal_configuration: None,
+    autoscaling_docker: AutoscalingDocker,
+    initialized_app: FastAPI,
+    host_node: Node,
+    mock_tag_node: mock.Mock,
+    create_service: Callable[
+        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    host_cpu_count: int,
+):
+    # task with no drain nodes returns False
+    task_template_that_runs = task_template | create_task_reservations(
+        int(host_cpu_count / 2 + 1), 0
+    )
+    service_with_no_reservations = await create_service(
+        task_template_that_runs, {}, "running"
+    )
+    service_tasks = parse_obj_as(
+        list[Task],
+        await autoscaling_docker.tasks.list(
+            filters={"service": service_with_no_reservations["Spec"]["Name"]}
+        ),
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+    assert (
+        await _try_scale_up_with_drained_nodes(
+            initialized_app, [host_node], service_tasks
+        )
+        is False
+    )
+    mock_tag_node.assert_not_called()
+
+
+@pytest.fixture
+async def drained_host_node(
+    host_node: Node, async_docker_client: aiodocker.Docker
+) -> AsyncIterator[Node]:
+
+    assert host_node.ID
+    assert host_node.Version
+    assert host_node.Version.Index
+    assert host_node.Spec
+    assert host_node.Spec.Availability
+    assert host_node.Spec.Role
+
+    old_availability = host_node.Spec.Availability
+    await async_docker_client.nodes.update(
+        node_id=host_node.ID,
+        version=host_node.Version.Index,
+        spec={
+            "Availability": "drain",
+            "Labels": host_node.Spec.Labels,
+            "Role": host_node.Spec.Role.value,
+        },
+    )
+    drained_node = parse_obj_as(
+        Node, await async_docker_client.nodes.inspect(node_id=host_node.ID)
+    )
+    yield drained_node
+    # revert
+    assert drained_node.ID
+    assert drained_node.Version
+    assert drained_node.Version.Index
+    assert drained_node.Spec
+    assert drained_node.Spec.Role
+    reverted_node = (
+        await async_docker_client.nodes.update(
+            node_id=drained_node.ID,
+            version=drained_node.Version.Index,
+            spec={
+                "Availability": old_availability.value,
+                "Labels": drained_node.Spec.Labels,
+                "Role": drained_node.Spec.Role.value,
+            },
+        ),
+    )
+
+
+async def test__try_scale_up_with_drained_nodes_with_drained_node(
+    minimal_configuration: None,
+    autoscaling_docker: AutoscalingDocker,
+    initialized_app: FastAPI,
+    drained_host_node: Node,
+    mock_tag_node: mock.Mock,
+    create_service: Callable[
+        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    host_cpu_count: int,
+):
+    # task with no drain nodes returns False
+    task_template_that_runs = task_template | create_task_reservations(
+        int(host_cpu_count / 2 + 1), 0
+    )
+    service_with_no_reservations = await create_service(
+        task_template_that_runs, {}, "pending"
+    )
+    service_tasks = parse_obj_as(
+        list[Task],
+        await autoscaling_docker.tasks.list(
+            filters={"service": service_with_no_reservations["Spec"]["Name"]}
+        ),
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+    assert (
+        await _try_scale_up_with_drained_nodes(
+            initialized_app, [drained_host_node], service_tasks
+        )
+        is True
+    )
+    mock_tag_node.assert_called_once_with(
+        mock.ANY, drained_host_node, tags={}, available=True
+    )

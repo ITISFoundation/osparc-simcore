@@ -299,3 +299,12 @@ async def tag_node(
                 "Role": node.Spec.Role.value,
             },
         )
+
+
+async def set_node_availability(
+    docker_client: AutoscalingDocker, node: Node, *, available: bool
+) -> None:
+    assert node.Spec  # nosec
+    return await tag_node(
+        docker_client, node, tags=node.Spec.Labels, available=available
+    )
