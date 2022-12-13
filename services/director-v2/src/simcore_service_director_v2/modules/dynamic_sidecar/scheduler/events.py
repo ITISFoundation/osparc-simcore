@@ -98,6 +98,21 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+
+        # instrumentation
+        message = InstrumentationRabbitMessage(
+            metrics="service_started",
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            service_uuid=scheduler_data.node_uuid,
+            service_type=NodeClass.INTERACTIVE.value,
+            service_key=scheduler_data.key,
+            service_tag=scheduler_data.version,
+        )
+        rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+        await rabbitmq_client.publish(message.channel_name, message.json())
+
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -208,20 +223,6 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
             dynamic_sidecar_service_final_spec
         )
-
-        # instrumentation
-        message = InstrumentationRabbitMessage(
-            metrics="service_started",
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-            service_uuid=scheduler_data.node_uuid,
-            service_type=NodeClass.INTERACTIVE.value,
-            service_key=scheduler_data.key,
-            service_tag=scheduler_data.version,
-        )
-        rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
-        await rabbitmq_client.publish(message.channel_name, message.json())
 
         # finally mark services created
         scheduler_data.dynamic_sidecar.dynamic_sidecar_id = dynamic_sidecar_id
