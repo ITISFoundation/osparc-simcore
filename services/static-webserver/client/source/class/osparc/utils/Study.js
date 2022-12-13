@@ -37,7 +37,7 @@ qx.Class.define("osparc.utils.Study", {
     getUnaccessibleServices: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesOnly(false)
+        store.getAllServices()
           .then(allServices => {
             const unaccessibleServices = [];
             const services = new Set(this.extractServices(workbench));
@@ -58,7 +58,7 @@ qx.Class.define("osparc.utils.Study", {
     isWorkbenchUpdatable: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesOnly(false)
+        store.getAllServices()
           .then(allServices => {
             const services = new Set(this.extractServices(workbench));
             const filtered = [];
@@ -126,7 +126,7 @@ qx.Class.define("osparc.utils.Study", {
     createStudyFromService: function(key, version) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesOnly()
+        store.getAllServices()
           .then(services => {
             if (key in services) {
               const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);

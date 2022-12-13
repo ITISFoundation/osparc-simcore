@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesList = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getServicesOnly());
+      preResourcePromises.push(store.getAllServices());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }

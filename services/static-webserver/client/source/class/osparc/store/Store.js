@@ -318,7 +318,7 @@ qx.Class.define("osparc.store.Store", {
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload
      */
-    getServicesOnly: function(reload = false) {
+    getAllServices: function(reload = false, includeDeprecated = false) {
       return new Promise(resolve => {
         let allServices = [];
         osparc.data.Resources.get("services", null, !reload)
@@ -327,6 +327,7 @@ qx.Class.define("osparc.store.Store", {
           })
           .catch(err => console.error("getServices failed", err))
           .finally(() => {
+            console.log("getAllServices", allServices);
             const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
             osparc.utils.Services.servicesToCache(servicesObj, true);
             resolve(osparc.utils.Services.servicesCached);
@@ -348,7 +349,7 @@ qx.Class.define("osparc.store.Store", {
             });
           }
         });
-        this.getServicesOnly()
+        this.getAllServices()
           .then(services => {
             nodes.forEach(node => {
               if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {
