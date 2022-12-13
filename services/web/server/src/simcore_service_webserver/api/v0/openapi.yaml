@@ -473,7 +473,7 @@ paths:
         content:
           application/json:
             schema:
-              title: Login2faBody
+              title: LoginTwoFactorAuthBody
               required:
                 - email
                 - code

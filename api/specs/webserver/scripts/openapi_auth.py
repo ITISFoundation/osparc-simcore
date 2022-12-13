@@ -17,9 +17,9 @@ from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
 from simcore_service_webserver.login.handlers_2fa import Resend2faBody
 from simcore_service_webserver.login.handlers_auth import (
-    Login2faBody,
     LoginBody,
     LoginNextPage,
+    LoginTwoFactorAuthBody,
     LogoutBody,
 )
 from simcore_service_webserver.login.handlers_change import (
@@ -103,7 +103,7 @@ async def login(authentication: LoginBody):
         }
     },
 )
-async def login_2fa(authentication: Login2faBody):
+async def login_2fa(authentication: LoginTwoFactorAuthBody):
     """user enters 2 Factor Authentication code when login in"""
 
 

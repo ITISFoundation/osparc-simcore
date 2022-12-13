@@ -97,7 +97,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Login2faBody'
+              $ref: '#/components/schemas/LoginTwoFactorAuthBody'
         required: true
       responses:
         '200':
@@ -575,23 +575,6 @@ components:
       - ERROR
       type: string
       description: An enumeration.
-    Login2faBody:
-      title: Login2faBody
-      required:
-      - email
-      - code
-      type: object
-      properties:
-        email:
-          title: Email
-          type: string
-          format: email
-        code:
-          title: Code
-          type: string
-          format: password
-          writeOnly: true
-      additionalProperties: false
     LoginBody:
       title: LoginBody
       required:
@@ -640,6 +623,23 @@ components:
         but
 
         using a path+query in the fragment of the URL'
+    LoginTwoFactorAuthBody:
+      title: LoginTwoFactorAuthBody
+      required:
+      - email
+      - code
+      type: object
+      properties:
+        email:
+          title: Email
+          type: string
+          format: email
+        code:
+          title: Code
+          type: string
+          format: password
+          writeOnly: true
+      additionalProperties: false
     LogoutBody:
       title: LogoutBody
       type: object

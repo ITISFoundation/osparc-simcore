@@ -170,7 +170,7 @@ async def login(request: web.Request):
         ) from e
 
 
-class Login2faBody(InputSchema):
+class LoginTwoFactorAuthBody(InputSchema):
     email: EmailStr
     code: SecretStr
 
@@ -196,7 +196,7 @@ async def login_2fa(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
     # validates input params
-    login_2fa_ = await parse_request_body_as(Login2faBody, request)
+    login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
     if login_2fa_.code.get_secret_value() != await get_2fa_code(
