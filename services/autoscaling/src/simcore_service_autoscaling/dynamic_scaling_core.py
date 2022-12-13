@@ -185,6 +185,12 @@ async def _try_scale_up_with_drained_nodes(
                 logger.info(
                     "Activated former drained node '%s'", node.Description.Hostname
                 )
+                await rabbitmq.post_log_message(
+                    app,
+                    task,
+                    "cluster was scaled up and is now ready to run service",
+                    logging.INFO,
+                )
                 return True
     logger.info("There are no available drained node for the pending tasks")
     return False
