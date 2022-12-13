@@ -61,7 +61,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __reloadServices: function() {
       const store = osparc.store.Store.getInstance();
-      store.getAllServices()
+      store.getAllServices(false, false)
         .then(services => {
           this.__servicesAll = services;
           const favServices = osparc.utils.Utils.localCache.getFavServices();
