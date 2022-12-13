@@ -80,6 +80,14 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       init: null,
       nullable: false,
       event: "changeId"
+    },
+
+    iconColor: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeIconColor",
+      apply: "__applyIconColor"
     }
   },
 
@@ -93,48 +101,14 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   members: {
     __optionsMenu: null,
 
-    __applyStudy: function(study) {
+    __applyStudy: function() {
       osparc.utils.Utils.setMoreToWidget(this, "root");
 
-      this.setIcon("@FontAwesome5Solid/home/14");
-      study.bind("name", this, "label");
       this.getChildControl("delete-button").exclude();
     },
 
     __applyNode: function(node) {
       osparc.utils.Utils.setMoreToWidget(this, node.getNodeId());
-
-      if (node.isFilePicker()) {
-        const icon = osparc.utils.Services.getIcon("file");
-        this.setIcon(icon+"14");
-      } else if (node.isParameter()) {
-        const icon = osparc.utils.Services.getIcon("parameter");
-        this.setIcon(icon+"14");
-      } else if (node.isIterator()) {
-        const icon = osparc.utils.Services.getIcon("iterator");
-        this.setIcon(icon+"14");
-      } else if (node.isProbe()) {
-        const icon = osparc.utils.Services.getIcon("probe");
-        this.setIcon(icon+"14");
-      } else {
-        const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
-        if (icon) {
-          this.setIcon(icon+"14");
-        }
-      }
-
-      // "bind" running/interactive status to icon color
-      if (node.isDynamic()) {
-        node.getStatus().bind("interactive", this.getChildControl("icon"), "textColor", {
-          converter: status => osparc.utils.StatusUI.getColor(status)
-        });
-      } else if (node.isComputational()) {
-        node.getStatus().bind("running", this.getChildControl("icon"), "textColor", {
-          converter: status => osparc.utils.StatusUI.getColor(status)
-        });
-      }
-
-      node.bind("label", this, "label");
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();
@@ -163,6 +137,12 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+    },
+
+    __applyIconColor: function(textColor) {
+      this.getChildControl("icon").set({
+        textColor
+      });
     },
 
     _createChildControlImpl: function(id) {
