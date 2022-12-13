@@ -104,6 +104,13 @@ def app_environment(
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "EC2_INSTANCES_AMI_ID": faker.pystr(),
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
+            "NODES_MONITORING_SERVICE_LABELS": json.dumps(
+                ["pytest.fake-service-label"]
+            ),
+            "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
+                ["pytest.fake-new-node-label"]
+            ),
         },
     )
     return mock_env_devel_environment | envs
