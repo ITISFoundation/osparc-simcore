@@ -214,10 +214,12 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
+@pytest.mark.testit
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
     db: AsyncpgStorage,
     fake_user_email: str,
+    fake_user_password: str,
     fake_user_phone_number: str,
 ):
     """
@@ -228,8 +230,24 @@ async def test_register_phone_fails_with_used_number(
     # some user ALREADY registered with the same phone
     await utils_login.create_fake_user(db, data={"phone": fake_user_phone_number})
 
-    # new registration with same phone
-    # 1. submit
+    # some registered user w/o phone
+    await utils_login.create_fake_user(
+        db,
+        data={"email": fake_user_email, "password": fake_user_password, "phone": None},
+    )
+
+    # 1. login
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+        },
+    )
+    await assert_status(response, web.HTTPAccepted)
+
+    # 2. register existing phone
     url = client.app.router["auth_verify_2fa_phone"].url_for()
     response = await client.post(
         f"{url}",
