@@ -333,7 +333,7 @@ qx.Class.define("osparc.store.Store", {
               osparc.utils.Services.servicesCached = servicesObj;
               resolve(servicesObj);
             } else {
-              const nonDepServices = allServices.filter(service => !osparc.utils.Services.isRetired(service));
+              const nonDepServices = allServices.filter(service => !(osparc.utils.Services.isRetired(service) || osparc.utils.Services.isDeprecated(service)));
               const servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
               osparc.utils.Services.addTSRInfo(servicesObj);
               resolve(servicesObj);
