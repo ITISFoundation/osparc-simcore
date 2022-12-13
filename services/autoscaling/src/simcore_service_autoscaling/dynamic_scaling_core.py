@@ -52,13 +52,13 @@ async def _mark_empty_active_nodes_to_drain(
                 available=False,
             )
             for node in active_empty_nodes
-            if (node.Spec) and (node.Spec.Labels)
+            if (node.Spec) and (node.Spec.Labels is not None)
         )
     )
     if active_empty_nodes:
         logger.info(
             "The following nodes set to drain: '%s'",
-            f"{(node.Description.Hostname for node in active_empty_nodes if node.Description)}",
+            f"{[node.Description.Hostname for node in active_empty_nodes if node.Description]}",
         )
 
 
@@ -144,7 +144,7 @@ async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> 
         )
         logger.info(
             "terminated the following machines: '%s'",
-            f"{(node.Description.Hostname for node,_ in terminateable_nodes if node.Description)}",
+            f"{[node.Description.Hostname for node,_ in terminateable_nodes if node.Description]}",
         )
         # since these nodes are being terminated, remove them from the swarm
         await utils_docker.remove_nodes(

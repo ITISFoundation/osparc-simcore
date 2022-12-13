@@ -8,7 +8,6 @@
 from typing import Any, Awaitable, Callable, Iterator, Mapping
 from unittest import mock
 
-import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -16,9 +15,13 @@ from models_library.generated_models.docker_rest_api import Node, ObjectVersion
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
-from simcore_service_autoscaling.dynamic_scaling_core import check_dynamic_resources
+from simcore_service_autoscaling.dynamic_scaling_core import (
+    _mark_empty_active_nodes_to_drain,
+    check_dynamic_resources,
+)
+from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.modules.docker import get_docker_client
-from simcore_service_autoscaling.modules.ec2 import EC2InstanceData, get_ec2_client
+from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from types_aiobotocore_ec2.client import EC2Client
 
 
@@ -66,7 +69,7 @@ def mock_wait_for_node(mocker: MockerFixture, fake_node: Node) -> Iterator[mock.
 @pytest.fixture
 def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mocked_tag_node = mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.tag_node",
+        "simcore_service_autoscaling.utils.utils_docker.tag_node",
         autospec=True,
     )
     yield mocked_tag_node
@@ -98,7 +101,7 @@ async def test_check_dynamic_resources_with_no_services_does_nothing(
 
 async def test_check_dynamic_resources_with_service_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
-    async_docker_client: aiodocker.Docker,
+    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     initialized_app: FastAPI,
     create_service: Callable[
         [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
@@ -112,7 +115,9 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
         1000, 0
     )
     service_with_too_many_resources = await create_service(
-        task_template_with_too_many_resource, {}, "pending"
+        task_template_with_too_many_resource,
+        osparc_docker_label_keys.to_docker_labels(),
+        "pending",
     )
 
     await check_dynamic_resources(initialized_app)
@@ -120,57 +125,10 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
     mock_terminate_aws_instance.assert_not_called()
 
 
-async def test_check_dynamic_resources_with_pending_resources_starts_r5n_4xlarge_instance(
+async def test_check_dynamic_resources_with_pending_resources_starts_new_instances(
     minimal_configuration: None,
+    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     app_settings: ApplicationSettings,
-    async_docker_client: aiodocker.Docker,
-    initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
-    ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
-    mock_start_aws_instance: mock.Mock,
-    mock_terminate_aws_instance: mock.Mock,
-    mock_wait_for_node: mock.Mock,
-    mock_tag_node: mock.Mock,
-    aws_instance_private_dns: str,
-    fake_node: Node,
-):
-    """In this test we start on the host (1 node), start a service that needs
-    resources that can be covered by a r5n_4x_large ec2 instance"""
-    task_template_for_r5n_4x_large_with_256Gib = (
-        task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB"))
-    )
-    service_with_too_many_resources = await create_service(
-        task_template_for_r5n_4x_large_with_256Gib, {}, "pending"
-    )
-
-    await check_dynamic_resources(initialized_app)
-    # we expect a new instance to be started
-    mock_start_aws_instance.assert_called_once_with(
-        get_ec2_client(initialized_app),
-        app_settings.AUTOSCALING_EC2_INSTANCES,
-        instance_type="r5n.4xlarge",
-        tags=mock.ANY,
-        startup_script=mock.ANY,
-    )
-    # after the instance has booted, then we wait for the node to appear in the swarm
-    mock_wait_for_node.assert_called_once_with(
-        get_docker_client(initialized_app),
-        aws_instance_private_dns[: aws_instance_private_dns.find(".")],
-    )
-    # once the instance is in the swarm it shall be tagged as such
-    mock_tag_node.assert_called_once_with(
-        get_docker_client(initialized_app), fake_node, tags=mock.ANY, available=True
-    )
-    # there shall be no termination
-    mock_terminate_aws_instance.assert_not_called()
-
-
-async def test_check_dynamic_resources_with_pending_resources_actually_starts_new_instances(
-    minimal_configuration: None,
-    async_docker_client: aiodocker.Docker,
     initialized_app: FastAPI,
     create_service: Callable[
         [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
@@ -182,21 +140,24 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     mock_tag_node: mock.Mock,
     fake_node: Node,
 ):
-    """same test as above but with moto mocked server"""
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
+    # create a task that needs more power
     task_template_for_r5n_8x_large_with_256Gib = (
         task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB"))
     )
     _service_with_too_many_resources = await create_service(
-        task_template_for_r5n_8x_large_with_256Gib, {}, "pending"
+        task_template_for_r5n_8x_large_with_256Gib,
+        osparc_docker_label_keys.to_docker_labels(),
+        "pending",
     )
 
+    # run the code
     await check_dynamic_resources(initialized_app)
 
-    # check that the instances are really started
+    # check the instance was started and we have exactly 1
     all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == 1
     running_instance = all_instances["Reservations"][0]
@@ -205,14 +166,108 @@ async def test_check_dynamic_resources_with_pending_resources_actually_starts_ne
     running_instance = running_instance["Instances"][0]
     assert "InstanceType" in running_instance
     assert running_instance["InstanceType"] == "r5n.4xlarge"
+    assert "Tags" in running_instance
+    assert running_instance["Tags"]
+    expected_tag_keys = [
+        "io.simcore.autoscaling.version",
+        "io.simcore.autoscaling.monitored_nodes_labels",
+        "io.simcore.autoscaling.monitored_services_labels",
+    ]
+    for tag_dict in running_instance["Tags"]:
+        assert "Key" in tag_dict
+        assert "Value" in tag_dict
+
+        assert tag_dict["Key"] in expected_tag_keys
+
     assert "PrivateDnsName" in running_instance
     instance_private_dns_name = running_instance["PrivateDnsName"]
     assert instance_private_dns_name.endswith(".ec2.internal")
 
+    # expect to wait for the node to appear
     mock_wait_for_node.assert_called_once_with(
         get_docker_client(initialized_app),
         instance_private_dns_name[: instance_private_dns_name.find(".")],
     )
+
+    # expect to tag the node with the expected labels, and also to make it active
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    expected_docker_node_tags = {
+        tag_key: "true"
+        for tag_key in (
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        )
+    }
     mock_tag_node.assert_called_once_with(
-        get_docker_client(initialized_app), fake_node, tags=mock.ANY, available=True
+        get_docker_client(initialized_app),
+        fake_node,
+        tags=expected_docker_node_tags,
+        available=True,
     )
+
+
+async def test__mark_empty_active_nodes_to_drain(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    host_node: Node,
+    mock_tag_node: mock.Mock,
+):
+    # since we have no service running, we expect the passed node to be set to drain
+    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    mock_tag_node.assert_called_once_with(mock.ANY, host_node, tags={}, available=False)
+
+
+async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missing_labels(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    host_node: Node,
+    mock_tag_node: mock.Mock,
+    create_service: Callable[
+        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+):
+    # create a service that runs without task labels
+    task_template_that_runs = task_template | create_task_reservations(
+        1, parse_obj_as(ByteSize, "124MiB")
+    )
+    await create_service(
+        task_template_that_runs,
+        {},
+        "running",
+    )
+
+    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    mock_tag_node.assert_called_once_with(mock.ANY, host_node, tags={}, available=False)
+
+
+async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_running_with_correct_labels(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    host_node: Node,
+    mock_tag_node: mock.Mock,
+    create_service: Callable[
+        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+):
+    # create a service that runs without task labels
+    task_template_that_runs = task_template | create_task_reservations(
+        1, parse_obj_as(ByteSize, "124MiB")
+    )
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    await create_service(
+        task_template_that_runs,
+        {
+            key: "true"
+            for key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+        },
+        "running",
+    )
+
+    # since we have no service running, we expect the passed node to be set to drain
+    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    mock_tag_node.assert_not_called()
