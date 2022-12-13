@@ -6,7 +6,7 @@
 
 import asyncio
 import logging
-from typing import Any, List, MutableMapping, Optional
+from typing import Any, MutableMapping
 
 from aiohttp import ClientSession, client_exceptions
 from pydantic import ValidationError
@@ -125,11 +125,16 @@ class SciCrunch:
             # NOTE: replaces former call to API.
             # Resolver entrypoint does NOT require authentication
             # and has an associated website
-            resolved: Optional[ResolvedItem] = await resolve_rrid(
+            resolved_items: list[ResolvedItem] = await resolve_rrid(
                 rrid, self.client, self.settings
             )
-            if not resolved:
+            if not resolved_items:
                 raise InvalidRRID(f".Could not resolve {rrid}")
+
+            # WARNING: currently we only take the first, but it might
+            # have multiple hits. Nonetheless, test_scicrunch_resolves_all_valid_rrids
+            # checks them all
+            resolved = resolved_items[0]
 
             return ResearchResource(
                 rrid=rrid,
@@ -154,7 +159,7 @@ class SciCrunch:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
             raise ScicrunchServiceError("Failed to connect scicrunch service") from err
 
-    async def search_resource(self, name_as: str) -> List[ResourceHit]:
+    async def search_resource(self, name_as: str) -> list[ResourceHit]:
         # Safe: returns empty string if fails!
         # Might be slow and timeout!
         # Might be good to know that scicrunch.org is not reachable and cannot perform search now?
