@@ -89,6 +89,15 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
             allowGrowX: false,
             backgroundColor: "background-main-1"
           });
+          control.getChildControl("icon").set({
+            scale: true,
+            allowGrowX: true,
+            allowGrowY: true,
+            allowShrinkX: true,
+            allowShrinkY: true,
+            maxWidth: 32,
+            maxHeight: 32
+          });
           control.getContentElement().setStyles({
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"
