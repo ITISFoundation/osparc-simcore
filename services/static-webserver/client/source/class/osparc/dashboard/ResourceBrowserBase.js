@@ -177,6 +177,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         viewByMenu.add(btn);
         groupOptions.add(btn);
       });
+
+      this._secondaryBar.add(this.__viewMenuButton);
     },
 
     /**
