@@ -6,9 +6,7 @@
 import pytest
 from aiohttp import ClientSession
 from aiohttp.client import ClientTimeout
-
-# FIXME: PC check the CELL_LINE_CITATIONS test please
-from pytest_simcore.helpers.utils_scrunch_citations import (  # CELL_LINE_CITATIONS,
+from pytest_simcore.helpers.utils_scrunch_citations import (
     ANTIBODY_CITATIONS,
     ORGANISM_CITATIONS,
     PLAMID_CITATIONS,
@@ -20,8 +18,7 @@ from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 @pytest.mark.parametrize(
     "name,rrid",
-    TOOL_CITATIONS + ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS
-    # + CELL_LINE_CITATIONS, PC: this one fails
+    TOOL_CITATIONS + ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS,
 )
 async def test_scicrunch_resolves_all_valid_rrids(
     name: str, rrid: str, settings: SciCrunchSettings
@@ -32,21 +29,27 @@ async def test_scicrunch_resolves_all_valid_rrids(
     # This tests checks some of the structure "deduced" from the responses so far.
 
     async with ClientSession(timeout=ClientTimeout(total=30)) as client:
-        resolved = await resolve_rrid(identifier=rrid, client=client, settings=settings)
+        resolved_items: list[ResolvedItem] = await resolve_rrid(
+            identifier=rrid, client=client, settings=settings
+        )
 
-        assert resolved
-        assert isinstance(resolved, ResolvedItem)
+        for resolved in resolved_items:
+            assert resolved
+            assert isinstance(resolved, ResolvedItem)
 
-        if resolved.is_unique and name:
-            assert name in resolved.proper_citation
+            if resolved.is_unique and name:
+                assert name in resolved.proper_citation
 
-        assert rrid in resolved.proper_citation
+            assert rrid in resolved.proper_citation
 
         # NOTE: proper_citation does not seem to have a standard format.
         # So far I found four different formats!! :-o
         if not name:
             # only rrid with a prefix
-            assert resolved.proper_citation == f"RRID:{rrid}"
+            assert any(
+                resolved.proper_citation == f"RRID:{rrid}"
+                for resolved in resolved_items
+            )
         else:
             # proper_citation includes both 'name' and 'rrid' but in different formats!
 
@@ -58,8 +61,12 @@ async def test_scicrunch_resolves_all_valid_rrids(
             #   of the reference in CELL_LINE_CITATIONS
             #
 
-            assert resolved.proper_citation in (
-                f"({name}, RRID:{rrid})",
-                f"({name},RRID:{rrid})",
-                f"{name} (RRID:{rrid})",
+            assert any(
+                resolved.proper_citation
+                in (
+                    f"({name}, RRID:{rrid})",
+                    f"({name},RRID:{rrid})",
+                    f"{name} (RRID:{rrid})",
+                )
+                for resolved in resolved_items
             )

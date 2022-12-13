@@ -6,10 +6,10 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from aiohttp import ClientSession
-from pydantic import Field
+from pydantic import Field, ValidationError
 from pydantic.main import BaseModel
 from pydantic.types import NonNegativeInt
 
@@ -39,7 +39,7 @@ class HitSource(BaseModel):
     item: ItemInfo
     rrid: RRIDInfo
 
-    def flatten_dict(self) -> Dict[str, Any]:
+    def flatten_dict(self) -> dict[str, Any]:
         """Used as an output"""
         return {**self.item.dict(), **self.rrid.dict()}
 
@@ -50,7 +50,7 @@ class HitDetail(BaseModel):
 
 class Hits(BaseModel):
     total: NonNegativeInt
-    hits: List[HitDetail]
+    hits: list[HitDetail]
 
 
 class ResolverInfo(BaseModel):
@@ -77,10 +77,12 @@ class ResolvedItem(BaseModel):
 
 
 async def resolve_rrid(
-    identifier: str, client: ClientSession, settings: SciCrunchSettings
-) -> Optional[ResolvedItem]:
+    identifier: str,
+    client: ClientSession,
+    settings: SciCrunchSettings,
+) -> list[ResolvedItem]:
     """
-    Provides a API to access to results as provided by this web https://scicrunch.org/resolver
+    API to access to results of https://scicrunch.org/resolver
 
     """
     # Example https://scicrunch.org/resolver/RRID:AB_90755.json
@@ -95,25 +97,24 @@ async def resolve_rrid(
     if resolved.hits.total == 0:
         return None
 
-    #  FIXME: Not sure why the same RRID can have multiple hits.
+    #  WARNING: Not sure why the same RRID can have multiple hits.
     #  We have experience that the order of hits is not preserve and
     #  therefore selecting the first hit is not the right way to go ...
     #
-    #  WARNING: Since Sep.2021, hits returned by resolver does not guarantee order.
+    #  WARNING: scicrunch API has been changing:
+    #  - Since Sep.2021, hits returned by resolver DOES NOT guarantee order.
     #  For instance, https://scicrunch.org/resolver/RRID:CVCL_0033.json changes
     #  the order every call and the first hit flips between
     #  '(BCRJ Cat# 0226, RRID:CVCL_0033)' and '(ATCC Cat# HTB-30, RRID:CVCL_0033)'
+    #  - Since Dec.2022 hits returned by https://scicrunch.org/resolver/RRID:AB_90755.json
+    #  also changed order '(Sigma-Aldrich Cat# AB1542, RRID:AB_90755)' and
+    #  '(Millipore Cat# AB1542, RRID:AB_90755)'. Decided to return all hits.
     #
-    hit = resolved.hits.hits[0].source
+    items = []
+    for hit in resolved.hits.hits:
+        try:
+            items.append(ResolvedItem.parse_obj(hit.source.flatten_dict()))
+        except ValidationError as err:
+            logger.warning("Skipping unexpected response %s: %s", url, err)
 
-    if resolved.hits.total > 1:
-        logger.warning(
-            "Multiple hits (%d) for '%s'. Returning first",
-            resolved.hits.total,
-            identifier,
-        )
-    else:
-        assert resolved.hits.total == 1  # nosec
-
-    output = ResolvedItem.parse_obj(hit.flatten_dict())
-    return output
+    return items
