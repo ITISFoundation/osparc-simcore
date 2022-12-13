@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import datetime
 import logging
-from typing import Awaitable, Callable, Optional
+from typing import AsyncIterator, Awaitable, Callable, Optional
 
 from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
@@ -64,3 +64,22 @@ async def stop_periodic_task(
         asyncio_task.cancel()
         with log_catch(logger, reraise=False):
             await asyncio.wait((asyncio_task,), timeout=timeout)
+
+
+@contextlib.asynccontextmanager
+async def periodic_task(
+    task: Callable[..., Awaitable[None]],
+    *,
+    interval: datetime.timedelta,
+    task_name: str,
+    **kwargs,
+) -> AsyncIterator[None]:
+    asyncio_task = None
+    try:
+        asyncio_task = await start_periodic_task(
+            task, interval=interval, task_name=task_name, **kwargs
+        )
+        yield
+    finally:
+        if asyncio_task is not None:
+            await stop_periodic_task(asyncio_task)
