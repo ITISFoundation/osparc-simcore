@@ -280,7 +280,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           });
         }
       } else if (this.getGroupBy() === "shared") {
-        const orgIds = resourceData.accessRights ? Object.keys(resourceData.accessRights) : [];
+        let orgIds = [];
+        if ("accessRights" in resourceData) {
+          // study or templates
+          orgIds = Object.keys(resourceData["accessRights"]);
+        } else if ("access_rights" in resourceData) {
+          // services
+          orgIds = Object.keys(resourceData["access_rights"]);
+        }
         if (orgIds.length === 0) {
           let noGroupContainer = this.__getGroupContainer("no-group");
           const card = this.__createCard(resourceData, tags);
