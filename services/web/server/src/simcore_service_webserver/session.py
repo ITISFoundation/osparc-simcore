@@ -3,6 +3,7 @@
 """
 import base64
 import logging
+from typing import Union
 
 import aiohttp_session
 from aiohttp import web
@@ -20,6 +21,17 @@ def generate_fernet_secret_key() -> bytes:
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)
     return secret_key
+
+
+def _setup_encrypted_cookie_sessions(
+    *, app: web.Application, secret_key: Union[str, bytes]
+):
+    # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
+    encrypted_cookie_sessions = EncryptedCookieStorage(
+        secret_key=secret_key,
+        cookie_name="osparc.WEBAPI_SESSION",
+    )
+    aiohttp_session.setup(app=app, storage=encrypted_cookie_sessions)
 
 
 # alias
@@ -49,13 +61,9 @@ def setup_session(app: web.Application):
     """
     settings: SessionSettings = get_plugin_settings(app)
 
-    # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
-    encrypted_cookie_sessions = EncryptedCookieStorage(
-        secret_key=settings.SESSION_SECRET_KEY.get_secret_value(),
-        cookie_name="osparc.WEBAPI_SESSION",
+    _setup_encrypted_cookie_sessions(
+        app=app, secret_key=settings.SESSION_SECRET_KEY.get_secret_value()
     )
-
-    aiohttp_session.setup(app=app, storage=encrypted_cookie_sessions)
 
 
 __all__: tuple[str, ...] = (

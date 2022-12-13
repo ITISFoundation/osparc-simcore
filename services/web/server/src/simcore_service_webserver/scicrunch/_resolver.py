@@ -95,7 +95,7 @@ async def resolve_rrid(
     # process and simplify response
     resolved = ResolverResponseBody.parse_obj(body)
     if resolved.hits.total == 0:
-        return None
+        return []
 
     #  WARNING: Not sure why the same RRID can have multiple hits.
     #  We have experience that the order of hits is not preserve and

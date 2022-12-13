@@ -3,7 +3,7 @@ from typing import Final, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, Field, SecretStr
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_context
@@ -12,6 +12,8 @@ from simcore_postgres_database.models.users import UserRole
 
 from ..products import Product, get_current_product
 from ..security_api import check_password, forget
+from ..session_access import session_access_constraint, session_access_trace
+from ..utils_aiohttp import NextPage
 from ._2fa import (
     create_2fa_code,
     delete_2fa_code,
@@ -22,6 +24,7 @@ from ._2fa import (
 from ._constants import (
     MSG_2FA_CODE_SENT,
     MSG_LOGGED_OUT,
+    MSG_PHONE_MISSING,
     MSG_UNKNOWN_EMAIL,
     MSG_WRONG_2FA_CODE,
     MSG_WRONG_PASSWORD,
@@ -56,6 +59,18 @@ class LoginBody(InputSchema):
     password: SecretStr
 
 
+class CodePageParams(BaseModel):
+    message: str
+    retry_2fa_after: Optional[PositiveInt] = None
+    next_url: Optional[str] = None
+
+
+class LoginNextPage(NextPage[CodePageParams]):
+    code: str = Field(deprecated=True)
+    reason: str = Field(deprecated=True)
+
+
+@session_access_trace(route_name="auth_login")
 @routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
@@ -88,11 +103,18 @@ async def login(request: web.Request):
 
     # no phone
     if not user["phone"]:
+
         response = envelope_response(
+            # LoginNextPage
             {
+                "name": _PHONE_NUMBER_REQUIRED,
+                "parameters": {
+                    "message": MSG_PHONE_MISSING,
+                    "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
+                },
+                # TODO: deprecated: remove in next PR with @odeimaiz
                 "code": _PHONE_NUMBER_REQUIRED,
-                "reason": "To login, please register first a phone number",
-                "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
+                "reason": MSG_PHONE_MISSING,
             },
             status=web.HTTPAccepted.status_code,
         )
@@ -104,7 +126,8 @@ async def login(request: web.Request):
     assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
 
     try:
-        code = await create_2fa_code(request.app, user["email"])
+        code = await create_2fa_code(app=request.app, user_email=user["email"])
+
         await send_sms_code(
             phone_number=user["phone"],
             code=code,
@@ -115,12 +138,20 @@ async def login(request: web.Request):
         )
 
         response = envelope_response(
+            # LoginNextPage
             {
+                "name": _SMS_CODE_REQUIRED,
+                "parameters": {
+                    "message": MSG_2FA_CODE_SENT.format(
+                        phone_number=mask_phone_number(user["phone"])
+                    ),
+                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                },
+                # TODO: deprecated: remove in next PR with @odeimaiz
                 "code": _SMS_CODE_REQUIRED,
                 "reason": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(user["phone"])
                 ),
-                "next_url": f"{request.app.router['auth_login_2fa'].url_for()}",
             },
             status=web.HTTPAccepted.status_code,
         )
@@ -139,28 +170,35 @@ async def login(request: web.Request):
         ) from e
 
 
-class Login2faBody(InputSchema):
+class LoginTwoFactorAuthBody(InputSchema):
     email: EmailStr
     code: SecretStr
 
 
+@session_access_constraint(
+    allow_access_after=["auth_login", "resend_2fa_code"], max_number_of_access=1
+)
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
-    """2FA login (from-end requests after login -> LOGIN_CODE_SMS_CODE_REQUIRED )"""
+    """2FA login
 
+    - Continuation of login + 2FA code
+
+    """
+    # validates input context
     settings: LoginSettings = get_plugin_settings(request.app)
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    login_2fa_ = await parse_request_body_as(Login2faBody, request)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
 
-    # NOTE that the 2fa code is not generated until the email/password of
-    # the standard login (handler above) is not completed
+    # validates input params
+    login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
+
+    # validates code
     if login_2fa_.code.get_secret_value() != await get_2fa_code(
         request.app, login_2fa_.email
     ):
