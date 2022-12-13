@@ -30,8 +30,9 @@ from asgi_lifespan import LifespanManager
 from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
+from models_library.generated_models.docker_rest_api import Node
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, PositiveInt
+from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -177,6 +178,16 @@ async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
 async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+async def host_node(
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+) -> Node:
+    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
+    assert len(nodes) == 1
+    return nodes[0]
 
 
 @pytest.fixture

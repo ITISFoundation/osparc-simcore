@@ -38,16 +38,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
 
 
 @pytest.fixture
-async def host_node(
-    docker_swarm: None,
-    async_docker_client: aiodocker.Docker,
-) -> Node:
-    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
-    assert len(nodes) == 1
-    return nodes[0]
-
-
-@pytest.fixture
 async def create_node_labels(
     host_node: Node,
     async_docker_client: aiodocker.Docker,
