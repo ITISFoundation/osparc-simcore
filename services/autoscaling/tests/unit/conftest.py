@@ -14,7 +14,6 @@ from typing import (
     Callable,
     Final,
     Iterator,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -309,7 +308,7 @@ async def create_service(
                 )
         diff = DeepDiff(
             task_template,
-            service.Spec.TaskTemplate,
+            service.Spec.TaskTemplate.dict(exclude_unset=True),
             exclude_paths=excluded_paths,
         )
         assert not diff, f"{diff}"
@@ -322,7 +321,7 @@ async def create_service(
     yield _creator
 
     await asyncio.gather(
-        *(async_docker_client.services.delete(s["ID"]) for s in created_services)
+        *(async_docker_client.services.delete(s.ID) for s in created_services)
     )
     # wait until all tasks are gone
     @retry(
@@ -331,17 +330,18 @@ async def create_service(
         wait=wait_fixed(1),
         stop=stop_after_delay(30),
     )
-    async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
+    async def _check_service_task_gone(service: Service) -> None:
+        assert service.Spec
         print(
-            f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
+            f"--> checking if service {service.ID}:{service.Spec.Name} is really gone..."
         )
         assert not await async_docker_client.containers.list(
             all=True,
             filters={
-                "label": [f"com.docker.swarm.service.id={service['ID']}"],
+                "label": [f"com.docker.swarm.service.id={service.ID}"],
             },
         )
-        print(f"<-- service {service['ID']}:{service['Spec']['Name']} is gone.")
+        print(f"<-- service {service.ID}:{service.Spec.Name} is gone.")
 
     await asyncio.gather(*(_check_service_task_gone(s) for s in created_services))
     await asyncio.sleep(0)

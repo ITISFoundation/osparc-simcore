@@ -4,7 +4,7 @@
 # pylint:disable=too-many-arguments
 
 
-from typing import Any, Awaitable, Callable, Mapping
+from typing import Any, Awaitable, Callable
 
 import aiodocker
 from faker import Faker
@@ -47,9 +47,7 @@ async def test_post_log_message(
     rabbit_client: RabbitMQClient,
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[str, str], str], Awaitable[Mapping[str, Any]]
-    ],
+    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     faker: Faker,
@@ -62,10 +60,11 @@ async def test_post_log_message(
     service_with_labels = await create_service(
         task_template, osparc_docker_label_keys.to_docker_labels(), "running"
     )
+    assert service_with_labels.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels["Spec"]["Name"]}
+            filters={"service": service_with_labels.Spec.Name}
         ),
     )
     assert service_tasks
