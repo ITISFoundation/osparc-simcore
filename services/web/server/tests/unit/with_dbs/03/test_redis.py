@@ -7,17 +7,19 @@ import asyncio
 import pytest
 import redis
 import redis.asyncio as aioredis
+from faker import Faker
 
 
-async def test_aioredis(redis_client: aioredis.Redis):
-    await redis_client.set("my-key", "value")
-    val = await redis_client.get("my-key")
-    assert val == "value"
+async def test_aioredis(redis_client: aioredis.Redis, faker: Faker):
+    key = faker.pystr()
+    value = faker.pystr()
+    await redis_client.set(key, value)
+    val = await redis_client.get(key)
+    assert val == value
 
 
-async def test_redlocks_features(redis_client: aioredis.Redis):
-    # Check wether a resourece acquired by any other redlock instance:
-    lock = redis_client.lock("resource_name")
+async def test_lock_acquisition(redis_client: aioredis.Redis, faker: Faker):
+    lock = redis_client.lock(faker.pystr())
     assert not await lock.locked()
 
     # Try to acquire the lock:
@@ -27,7 +29,12 @@ async def test_redlocks_features(redis_client: aioredis.Redis):
     assert not await lock.locked()
     assert not await lock.owned()
 
-    # use as context manager
+
+async def test_lock_context_manager(redis_client: aioredis.Redis, faker: Faker):
+    lock_name = faker.pystr()
+    lock = redis_client.lock(lock_name)
+    assert not await lock.locked()
+
     async with lock:
         assert await lock.locked()
         assert await lock.owned()
@@ -35,7 +42,7 @@ async def test_redlocks_features(redis_client: aioredis.Redis):
         with pytest.raises(redis.exceptions.LockError):
             await lock.extend(2)
         # try to acquire the lock a second time
-        same_lock = redis_client.lock("resource_name", blocking_timeout=1)
+        same_lock = redis_client.lock(lock_name, blocking_timeout=1)
         assert await same_lock.locked()
         assert not await same_lock.owned()
         assert await same_lock.acquire() == False
@@ -44,9 +51,11 @@ async def test_redlocks_features(redis_client: aioredis.Redis):
                 ...
     assert not await lock.locked()
 
-    # now create a lock with a ttl
-    ttl_lock = redis_client.lock("ttl_resource", timeout=2, blocking_timeout=1)
+
+async def test_lock_with_ttl(redis_client: aioredis.Redis, faker: Faker):
+    ttl_lock = redis_client.lock(faker.pystr(), timeout=2, blocking_timeout=1)
     assert not await ttl_lock.locked()
+
     with pytest.raises(redis.exceptions.LockNotOwnedError):
         # this raises as the lock is lost
         async with ttl_lock:
