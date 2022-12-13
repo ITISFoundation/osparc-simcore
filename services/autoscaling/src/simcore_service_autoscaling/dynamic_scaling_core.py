@@ -150,7 +150,7 @@ async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> 
         # since these nodes are being terminated, remove them from the swarm
         await utils_docker.remove_nodes(
             get_docker_client(app),
-            [(node for node, _ in terminateable_nodes)],
+            [node for node, _ in terminateable_nodes],
             force=True,
         )
 
