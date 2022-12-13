@@ -1,5 +1,6 @@
 import json
 import logging
+import warnings
 from enum import Enum
 from functools import cached_property
 from typing import Any, Mapping, Optional
@@ -118,9 +119,14 @@ class DockerContainerInspect(BaseModel):
     @root_validator(pre=True)
     @classmethod
     def _ensure_legacy_format_compatibility(cls, values):
-        # Once below PR is released in production, this validator
-        # can be removed
-        # https://github.com/ITISFoundation/osparc-simcore/pull/3610
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3610 "
+                "reaches production the entire root_validator can be removed"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         status: Optional[str] = values.get("status")
         if status:
             values["container_state"] = {"Status": status}
