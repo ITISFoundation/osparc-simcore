@@ -388,28 +388,22 @@ qx.Class.define("osparc.store.Store", {
       return this.__getGroups("organizations");
     },
 
-    getGroupsAll: function() {
+    getGroupEveryone: function() {
       return this.__getGroups("all");
     },
 
-    getGroups: function(withMySelf = true) {
-      return new Promise((resolve, reject) => {
+    getAllGroups: function() {
+      return new Promise(resolve => {
         const promises = [];
+        promises.push(this.getGroupsMe());
         promises.push(this.getGroupsOrganizations());
-        promises.push(this.getGroupsAll());
-        if (withMySelf) {
-          promises.push(this.getGroupsMe());
-        }
+        promises.push(this.getGroupEveryone());
         Promise.all(promises)
           .then(values => {
             const groups = [];
-            values[0].forEach(value => {
-              groups.push(value);
-            });
-            groups.push(values[1]);
-            if (withMySelf) {
-              groups.push(values[2]);
-            }
+            groups.push(values[0]);
+            values[1].forEach(org => groups.push(org));
+            groups.push(values[2]);
             resolve(groups);
           });
       });
