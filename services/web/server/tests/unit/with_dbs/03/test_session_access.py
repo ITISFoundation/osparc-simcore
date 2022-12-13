@@ -82,6 +82,22 @@ async def test_c_grants_access_after_b(client: TestClient):
     assert response.ok
 
 
+async def test_c_grants_access_after_b_and_then_ba(client: TestClient):
+    response = await client.get("/b")  # produces
+    assert response.ok
+
+    response = await client.get("/c")  # consumes
+    assert response.ok
+
+    response = await client.get("/b")  # produces
+    assert response.ok
+    response = await client.get("/a")  # produces
+    assert response.ok
+
+    response = await client.get("/c")  # consumes
+    assert response.ok
+
+
 async def test_c_grants_access_after_b_and_non_traced(client: TestClient):
     response = await client.get("/b")  # produces
     assert response.ok

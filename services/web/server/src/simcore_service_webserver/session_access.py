@@ -16,7 +16,7 @@ class RouteTrace(TypedDict):
 
 # session keys
 SESSION_CONTRAINT_TRACE_KEY = "SESSION_ACCESS_TRACE.LAST_VISIT"
-SESSION_CONTRAINT_COUNT_KEY = "SESSION_ACCESS_CONSTRAINT.COUNT"
+SESSION_CONTRAINT_COUNT_KEY = "SESSION_ACCESS_CONSTRAINT.COUNT.{name}"
 
 
 def session_access_trace(route_name: str):
@@ -53,23 +53,35 @@ def session_access_constraint(
         raise ValueError("max_count >=1")
 
     def _decorator(handler: Handler):
+        # NOTE: session[SESSION_CALLS_COUNTS_KEY] counts the number of calls
+        # on THIS handler on a GIVEN session
+        SESSION_CALLS_COUNTS_KEY = SESSION_CONTRAINT_COUNT_KEY.format(
+            name=handler.__name__
+        )
+
         @functools.wraps(handler)
         async def _wrapper(request: web.Request):
             session = await get_session(request)
 
             # get & check trace
-            trace: Optional[RouteTrace] = session.get(SESSION_CONTRAINT_TRACE_KEY)
-            if not trace or trace["route_name"] not in allow_access_after:
+            previous_route_info: Optional[RouteTrace] = session.get(
+                SESSION_CONTRAINT_TRACE_KEY
+            )
+            if (
+                not previous_route_info
+                or previous_route_info["route_name"] not in allow_access_after
+            ):
                 raise web.HTTPUnauthorized(reason=unauthorized_reason)
 
-            # check hit counts
-            session.setdefault(SESSION_CONTRAINT_COUNT_KEY, max_number_of_access)
-            if session[SESSION_CONTRAINT_COUNT_KEY] <= 0:
+            # check call counts
+            session.setdefault(SESSION_CALLS_COUNTS_KEY, max_number_of_access)
+
+            # account for access
+            session[SESSION_CALLS_COUNTS_KEY] -= 1
+            if session[SESSION_CALLS_COUNTS_KEY] == 0:
+                # consumes  trace to avoid subsequent accesses
                 del session[SESSION_CONTRAINT_TRACE_KEY]
-                del session[SESSION_CONTRAINT_COUNT_KEY]
-                raise web.HTTPUnauthorized(reason=unauthorized_reason)
-
-            session[SESSION_CONTRAINT_COUNT_KEY] -= 1
+                del session[SESSION_CALLS_COUNTS_KEY]
 
             response = await handler(request)
             return response
