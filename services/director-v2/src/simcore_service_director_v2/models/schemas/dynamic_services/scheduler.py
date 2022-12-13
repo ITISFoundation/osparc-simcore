@@ -122,7 +122,9 @@ class DockerContainerInspect(BaseModel):
         warnings.warn(
             (
                 "Once https://github.com/ITISFoundation/osparc-simcore/pull/3610 "
-                "reaches production the entire root_validator can be removed"
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check the "
+                "https://github.com/ITISFoundation/osparc-simcore/releases"
             ),
             DeprecationWarning,
             stacklevel=2,
