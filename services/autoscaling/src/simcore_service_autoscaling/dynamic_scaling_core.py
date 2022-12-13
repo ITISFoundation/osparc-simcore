@@ -118,9 +118,9 @@ async def _find_terminateable_nodes(
             datetime.utcnow().replace(tzinfo=timezone.utc)
             - ec2_instance_data.launch_time
         )
-        elapsed_minutes = elapsed_time_since_launched % timedelta(hours=1)
+        elapsed_time_since_full_hour = elapsed_time_since_launched % timedelta(hours=1)
         if (
-            elapsed_minutes
+            elapsed_time_since_full_hour
             >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         ):
             # let's terminate that one

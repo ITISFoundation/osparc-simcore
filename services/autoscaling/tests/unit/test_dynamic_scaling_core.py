@@ -21,6 +21,7 @@ from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import (
     _find_terminateable_nodes,
     _mark_empty_active_nodes_to_drain,
+    _try_scale_down_cluster,
     _try_scale_up_with_drained_nodes,
     check_dynamic_resources,
 )
@@ -89,6 +90,15 @@ def mock_wait_for_node(mocker: MockerFixture, fake_node: Node) -> Iterator[mock.
 def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mocked_tag_node = mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.tag_node",
+        autospec=True,
+    )
+    yield mocked_tag_node
+
+
+@pytest.fixture
+def mock_remove_nodes(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_tag_node = mocker.patch(
+        "simcore_service_autoscaling.utils.utils_docker.remove_nodes",
         autospec=True,
     )
     yield mocked_tag_node
@@ -322,7 +332,7 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     assert (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         > datetime.timedelta(seconds=10)
-    ), "this tests relies on the fact that the time before termination is above 5 seconds"
+    ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
     # if the instance started just about now, then it should not be terminateable
     ec2_instance_data.launch_time = datetime.datetime.utcnow().replace(
@@ -337,11 +347,12 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     )
     mock_get_running_instance.reset_mock()
 
-    # if the instance started just before the termination time, it is not terminateable
+    # if the instance started just after the termination time, even on several days, it is not terminateable
     ec2_instance_data.launch_time = (
         datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        + datetime.timedelta(days=21, seconds=10)
+        - datetime.timedelta(days=21)
+        + datetime.timedelta(seconds=10)
     )
 
     assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
@@ -353,11 +364,12 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     )
     mock_get_running_instance.reset_mock()
 
-    # if the instance started just about now, then it should not be terminateable
+    # if the instance started just before the termination time, even on several days, it is terminateable
     ec2_instance_data.launch_time = (
         datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        - datetime.timedelta(days=21, seconds=10)
+        - datetime.timedelta(days=21)
+        - datetime.timedelta(seconds=10)
     )
 
     assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == [
@@ -369,6 +381,46 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
         tag_keys=["io.simcore.autoscaling.version"],
         instance_host_name=mock.ANY,
     )
+
+
+async def test__try_scale_down_cluster_with_no_nodes(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    mock_get_running_instance: mock.Mock,
+    mock_remove_nodes: mock.Mock,
+):
+    # this shall work as is
+    await _try_scale_down_cluster(initialized_app, [])
+    mock_get_running_instance.assert_not_called()
+    mock_remove_nodes.assert_not_called()
+
+
+async def test__try_scale_down_cluster(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    drained_host_node: Node,
+    mock_get_running_instance: mock.Mock,
+    mock_terminate_instance: mock.Mock,
+    mock_remove_nodes: mock.Mock,
+    ec2_instance_data: EC2InstanceData,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        > datetime.timedelta(seconds=10)
+    ), "this tests relies on the fact that the time before termination is above 10 seconds"
+
+    ec2_instance_data.launch_time = (
+        datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        - datetime.timedelta(days=21)
+        - datetime.timedelta(seconds=10)
+    )
+    await _try_scale_down_cluster(initialized_app, [drained_host_node])
+    mock_get_running_instance.assert_called_once()
+    mock_terminate_instance.assert_called_once()
+    mock_remove_nodes.assert_called_once()
 
 
 async def test__try_scale_up_with_drained_nodes_with_no_tasks(
