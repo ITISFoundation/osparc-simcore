@@ -73,13 +73,13 @@ async def periodic_task(
     interval: datetime.timedelta,
     task_name: str,
     **kwargs,
-) -> AsyncIterator[None]:
+) -> AsyncIterator[asyncio.Task]:
     asyncio_task = None
     try:
         asyncio_task = await start_periodic_task(
             task, interval=interval, task_name=task_name, **kwargs
         )
-        yield
+        yield asyncio_task
     finally:
         if asyncio_task is not None:
             await stop_periodic_task(asyncio_task)
