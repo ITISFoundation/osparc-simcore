@@ -6,6 +6,7 @@
 
 
 import datetime
+from dataclasses import replace
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
@@ -340,8 +341,9 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
     # if the instance started just about now, then it should not be terminateable
-    ec2_instance_data.launch_time = datetime.datetime.utcnow().replace(
-        tzinfo=datetime.timezone.utc
+    mock_get_running_instance.return_value = replace(
+        ec2_instance_data,
+        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc),
     )
     assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
     mock_get_running_instance.assert_called_once_with(
@@ -353,11 +355,12 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     mock_get_running_instance.reset_mock()
 
     # if the instance started just after the termination time, even on several days, it is not terminateable
-    ec2_instance_data.launch_time = (
-        datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    mock_get_running_instance.return_value = replace(
+        ec2_instance_data,
+        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(days=21)
-        + datetime.timedelta(seconds=10)
+        + datetime.timedelta(seconds=10),
     )
 
     assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
@@ -370,15 +373,16 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     mock_get_running_instance.reset_mock()
 
     # if the instance started just before the termination time, even on several days, it is terminateable
-    ec2_instance_data.launch_time = (
-        datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    mock_get_running_instance.return_value = terminataeble_ec2_instance_data = replace(
+        ec2_instance_data,
+        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(days=21)
-        - datetime.timedelta(seconds=10)
+        - datetime.timedelta(seconds=10),
     )
 
     assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == [
-        (drained_host_node, ec2_instance_data)
+        (drained_host_node, terminataeble_ec2_instance_data)
     ]
     mock_get_running_instance.assert_called_once_with(
         mock.ANY,
@@ -416,11 +420,12 @@ async def test__try_scale_down_cluster(
         > datetime.timedelta(seconds=10)
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
-    ec2_instance_data.launch_time = (
-        datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    mock_get_running_instance.return_value = replace(
+        ec2_instance_data,
+        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(days=21)
-        - datetime.timedelta(seconds=10)
+        - datetime.timedelta(seconds=10),
     )
     await _try_scale_down_cluster(initialized_app, [drained_host_node])
     mock_get_running_instance.assert_called_once()
