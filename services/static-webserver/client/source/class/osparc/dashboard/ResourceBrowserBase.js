@@ -161,6 +161,38 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._reloadCards();
     },
 
+    _addGroupByButton: function() {
+      const groupByMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
+      osparc.utils.Utils.setIdToWidget(groupByButton, "groupByButton");
+
+      const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
+      osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
+      dontGroup.addListener("execute", () => this._groupByChanged(null));
+      const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
+      tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+      const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+      [
+        dontGroup,
+        tagByGroup,
+        groupByShared
+      ].forEach(btn => {
+        groupByMenu.add(btn);
+        groupOptions.add(btn);
+      });
+
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        tagByGroup.execute();
+      }
+
+      this._secondaryBar.add(groupByButton);
+    },
+
     _addViewModeButton: function() {
       const viewByMenu = this.__viewMenuButton.getMenu();
 
@@ -177,6 +209,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         viewByMenu.add(btn);
         groupOptions.add(btn);
       });
+
+      this._secondaryBar.add(this.__viewMenuButton);
     },
 
     /**

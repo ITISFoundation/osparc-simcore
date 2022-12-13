@@ -156,6 +156,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         flex: 1
       });
       this.__addSortingButtons();
+      this._addGroupByButton();
       this._addViewModeButton();
 
       return this._resourcesContainer;
