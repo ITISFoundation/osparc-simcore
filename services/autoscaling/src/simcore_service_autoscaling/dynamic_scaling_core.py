@@ -220,7 +220,6 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
                     InstanceTypeType, ec2_instances_needed[0].name
                 ),
                 tags={
-                    "io.simcore.autoscaling.created": f"{datetime.utcnow()}",
                     "io.simcore.autoscaling.version": f"{VERSION}",
                     "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
                         app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
