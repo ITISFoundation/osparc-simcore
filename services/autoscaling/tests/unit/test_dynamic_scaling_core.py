@@ -5,6 +5,7 @@
 # pylint: disable=too-many-arguments
 
 
+import datetime
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, Mapping
 from unittest import mock
 
@@ -12,16 +13,17 @@ import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, ObjectVersion, Task
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import (
+    _find_terminateable_nodes,
     _mark_empty_active_nodes_to_drain,
     _try_scale_up_with_drained_nodes,
     check_dynamic_resources,
 )
-from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
@@ -31,7 +33,7 @@ from types_aiobotocore_ec2.client import EC2Client
 
 
 @pytest.fixture
-def mock_terminate_aws_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_terminate_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mocked_terminate_instance = mocker.patch(
         "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instance",
         autospec=True,
@@ -45,6 +47,18 @@ def mock_start_aws_instance(
 ) -> Iterator[mock.Mock]:
     mocked_start_aws_instance = mocker.patch(
         "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.start_aws_instance",
+        autospec=True,
+        return_value=ec2_instance_data,
+    )
+    yield mocked_start_aws_instance
+
+
+@pytest.fixture
+def mock_get_running_instance(
+    mocker: MockerFixture, ec2_instance_data: EC2InstanceData
+) -> Iterator[mock.Mock]:
+    mocked_start_aws_instance = mocker.patch(
+        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.get_running_instance",
         autospec=True,
         return_value=ec2_instance_data,
     )
@@ -97,46 +111,46 @@ async def test_check_dynamic_resources_with_no_services_does_nothing(
     minimal_configuration: None,
     initialized_app: FastAPI,
     mock_start_aws_instance: mock.Mock,
-    mock_terminate_aws_instance: mock.Mock,
+    mock_terminate_instance: mock.Mock,
 ):
     await check_dynamic_resources(initialized_app)
     mock_start_aws_instance.assert_not_called()
-    mock_terminate_aws_instance.assert_not_called()
+    mock_terminate_instance.assert_not_called()
 
 
 async def test_check_dynamic_resources_with_service_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    service_monitored_labels: dict[DockerLabelKey, str],
     initialized_app: FastAPI,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Mapping[str, Any]]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     mock_start_aws_instance: mock.Mock,
-    mock_terminate_aws_instance: mock.Mock,
+    mock_terminate_instance: mock.Mock,
 ):
     task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
     )
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource,
-        osparc_docker_label_keys.to_docker_labels(),
+        service_monitored_labels,
         "pending",
     )
 
     await check_dynamic_resources(initialized_app)
     mock_start_aws_instance.assert_not_called()
-    mock_terminate_aws_instance.assert_not_called()
+    mock_terminate_instance.assert_not_called()
 
 
 async def test_check_dynamic_resources_with_pending_resources_starts_new_instances(
     minimal_configuration: None,
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Mapping[str, Any]]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
@@ -153,9 +167,9 @@ async def test_check_dynamic_resources_with_pending_resources_starts_new_instanc
     task_template_for_r5n_8x_large_with_256Gib = (
         task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB"))
     )
-    _service_with_too_many_resources = await create_service(
+    await create_service(
         task_template_for_r5n_8x_large_with_256Gib,
-        osparc_docker_label_keys.to_docker_labels(),
+        service_monitored_labels,
         "pending",
     )
 
@@ -255,10 +269,11 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     host_node: Node,
     mock_tag_node: mock.Mock,
     create_service: Callable[
-        [dict[str, Any], dict[str, Any], str], Awaitable[Mapping[str, Any]]
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Mapping[str, Any]]
     ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
+    service_monitored_labels: dict[DockerLabelKey, str],
     host_cpu_count: int,
 ):
     # create a service that runs without task labels
@@ -268,16 +283,92 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     assert app_settings.AUTOSCALING_NODES_MONITORING
     await create_service(
         task_template_that_runs,
-        {
-            key: "true"
-            for key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-        },
+        service_monitored_labels,
         "running",
     )
 
     # since we have no service running, we expect the passed node to be set to drain
     await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
     mock_tag_node.assert_not_called()
+
+
+async def test__find_terminateable_nodes_with_no_hosts(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    host_node: Node,
+):
+    # there is no node to terminate, since the host is not an EC2 instance and is not drained
+    assert await _find_terminateable_nodes(initialized_app, [host_node]) == []
+
+
+async def test__find_terminateable_nodes_with_drained_host_but_not_in_ec2(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    drained_host_node: Node,
+):
+    # there is no node to terminate, since the host is not an EC2 instance
+    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+
+
+async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    drained_host_node: Node,
+    mock_get_running_instance: mock.Mock,
+    ec2_instance_data: EC2InstanceData,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        > datetime.timedelta(seconds=10)
+    ), "this tests relies on the fact that the time before termination is above 5 seconds"
+
+    # if the instance started just about now, then it should not be terminateable
+    ec2_instance_data.launch_time = datetime.datetime.utcnow().replace(
+        tzinfo=datetime.timezone.utc
+    )
+    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+    mock_get_running_instance.assert_called_once_with(
+        mock.ANY,
+        app_settings.AUTOSCALING_EC2_INSTANCES,
+        tag_keys=["io.simcore.autoscaling.version"],
+        instance_host_name=mock.ANY,
+    )
+    mock_get_running_instance.reset_mock()
+
+    # if the instance started just before the termination time, it is not terminateable
+    ec2_instance_data.launch_time = (
+        datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        + datetime.timedelta(days=21, seconds=10)
+    )
+
+    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+    mock_get_running_instance.assert_called_once_with(
+        mock.ANY,
+        app_settings.AUTOSCALING_EC2_INSTANCES,
+        tag_keys=["io.simcore.autoscaling.version"],
+        instance_host_name=mock.ANY,
+    )
+    mock_get_running_instance.reset_mock()
+
+    # if the instance started just about now, then it should not be terminateable
+    ec2_instance_data.launch_time = (
+        datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        - datetime.timedelta(days=21, seconds=10)
+    )
+
+    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == [
+        (drained_host_node, ec2_instance_data)
+    ]
+    mock_get_running_instance.assert_called_once_with(
+        mock.ANY,
+        app_settings.AUTOSCALING_EC2_INSTANCES,
+        tag_keys=["io.simcore.autoscaling.version"],
+        instance_host_name=mock.ANY,
+    )
 
 
 async def test__try_scale_up_with_drained_nodes_with_no_tasks(
@@ -358,6 +449,10 @@ async def drained_host_node(
     )
     yield drained_node
     # revert
+    # NOTE: getting the node again as the version might have changed
+    drained_node = parse_obj_as(
+        Node, await async_docker_client.nodes.inspect(node_id=host_node.ID)
+    )
     assert drained_node.ID
     assert drained_node.Version
     assert drained_node.Version.Index

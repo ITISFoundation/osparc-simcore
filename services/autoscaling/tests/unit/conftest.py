@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import datetime
 import json
 import random
 from pathlib import Path
@@ -30,6 +31,7 @@ from asgi_lifespan import LifespanManager
 from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize, PositiveInt, parse_obj_as
@@ -162,6 +164,17 @@ async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI
 def app_settings(initialized_app: FastAPI) -> ApplicationSettings:
     assert initialized_app.state.settings
     return initialized_app.state.settings
+
+
+@pytest.fixture
+def service_monitored_labels(
+    app_settings: ApplicationSettings,
+) -> dict[DockerLabelKey, str]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    return {
+        key: "true"
+        for key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+    }
 
 
 @pytest.fixture
@@ -594,7 +607,7 @@ def aws_instance_private_dns() -> str:
 @pytest.fixture
 def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2InstanceData:
     return EC2InstanceData(
-        launch_time=faker.date_time(),
+        launch_time=faker.date_time(tzinfo=datetime.timezone.utc),
         id=faker.uuid4(),
         aws_private_dns=aws_instance_private_dns,
         type=faker.pystr(),

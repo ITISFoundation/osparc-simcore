@@ -84,6 +84,9 @@ async def _find_terminateable_nodes(
         and (node.Spec.Availability == Availability.drain)
     ]
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    if not drained_empty_nodes:
+        # there is nothing to terminate here
+        return []
 
     # get the corresponding ec2 instance data
     # NOTE: some might be in the process of terminating and will not be found
