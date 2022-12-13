@@ -94,7 +94,6 @@ async def _find_terminateable_nodes(
             ec2_client.get_running_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 tag_keys=[
-                    "io.simcore.autoscaling.created",
                     "io.simcore.autoscaling.version",
                 ],
                 instance_host_name=node.Description.Hostname,
