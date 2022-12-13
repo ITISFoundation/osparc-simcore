@@ -38,7 +38,7 @@ async def _mark_empty_active_nodes_to_drain(
                 node,
                 service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
             )
-            == Resources.empty_resources()
+            == Resources.create_as_empty()
         )
         and (node.Spec is not None)
         and (node.Spec.Availability == Availability.active)
@@ -78,7 +78,7 @@ async def _find_terminateable_nodes(
                 node,
                 service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
             )
-            == Resources.empty_resources()
+            == Resources.create_as_empty()
         )
         and (node.Spec is not None)
         and (node.Spec.Availability == Availability.drain)

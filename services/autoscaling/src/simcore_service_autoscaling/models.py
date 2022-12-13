@@ -10,7 +10,7 @@ class Resources(BaseModel):
     ram: ByteSize
 
     @classmethod
-    def empty_resources(cls) -> "Resources":
+    def create_as_empty(cls) -> "Resources":
         return cls(cpus=0, ram=ByteSize(0))
 
     def __ge__(self, other: "Resources") -> bool:
