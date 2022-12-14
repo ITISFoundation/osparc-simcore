@@ -138,9 +138,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       login.addListener("to2FAValidationCode", e => {
-        const {
-          msg
-        } = e.getData();
+        const msg = e.getData();
         let userPhoneNumber = null;
         if (msg) {
           const startIdx = msg.indexOf("+");
