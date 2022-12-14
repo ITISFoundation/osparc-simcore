@@ -40,7 +40,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     "toRegister": "qx.event.type.Event",
     "toReset": "qx.event.type.Event",
     "toVerifyPhone": "qx.event.type.Data",
-    "toSMSCode": "qx.event.type.Data"
+    "to2FAValidationCode": "qx.event.type.Data"
   },
 
   /*
@@ -185,7 +185,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const twoFactorAuthCbk = log => {
         this.__loginBtn.setFetching(false);
         osparc.component.message.FlashMessenger.getInstance().logAs(log, "INFO");
-        this.fireDataEvent("toSMSCode", log);
+        this.fireDataEvent("to2FAValidationCode", log);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
         this._formElement.dispose();

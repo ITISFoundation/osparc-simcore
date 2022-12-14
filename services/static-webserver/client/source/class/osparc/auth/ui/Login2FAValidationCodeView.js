@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.auth.ui.LoginSMSCodeView", {
+qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
   extend: osparc.auth.core.BaseAuthPage,
 
   properties: {

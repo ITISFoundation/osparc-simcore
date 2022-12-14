@@ -100,6 +100,26 @@ qx.Class.define("osparc.auth.Manager", {
         .catch(err => failCbk.call(context, err.message));
     },
 
+    requestCodeViaSMS: function(email) {
+      const params = {
+        data: {
+          email,
+          via: "SMS"
+        }
+      };
+      return osparc.data.Resources.fetch("auth", "resendCode", params);
+    },
+
+    resendCodeViaEmail: function(email) {
+      const params = {
+        data: {
+          email,
+          via: "Email"
+        }
+      };
+      return osparc.data.Resources.fetch("auth", "resendCode", params);
+    },
+
     isLoggedIn: function() {
       // TODO: how to store this localy?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
       // TODO: check if expired??
