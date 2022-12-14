@@ -100,7 +100,7 @@ qx.Class.define("osparc.auth.Manager", {
         .catch(err => failCbk.call(context, err.message));
     },
 
-    requestCodeViaSMS: function(email) {
+    resendCodeViaSMS: function(email) {
       const params = {
         data: {
           email,

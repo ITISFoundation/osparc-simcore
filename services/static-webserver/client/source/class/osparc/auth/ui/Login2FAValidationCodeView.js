@@ -41,12 +41,12 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     __resendCodeEmailBtn: null,
 
     _buildPage: function() {
-      const smsCodeDesc = new qx.ui.basic.Label();
+      const introText = new qx.ui.basic.Label();
       const justSentText = this.tr("We just sent a 4-digit code to ");
-      this.bind("userPhoneNumber", smsCodeDesc, "value", {
+      this.bind("userPhoneNumber", introText, "value", {
         converter: pNumber => justSentText + (pNumber ? pNumber : this.getUserEmail())
       });
-      this.add(smsCodeDesc);
+      this.add(introText);
 
       const validateCodeTF = this.__validateCodeTF = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type code"),
@@ -90,10 +90,10 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         flex: 1
       });
       resendCodeSMSBtn.addListener("execute", () => {
-        osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserPhoneNumber())
+        osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserEmail())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
-            smsCodeDesc.setValue(justSentText + this.getUserPhoneNumber());
+            introText.setValue(justSentText + this.getUserPhoneNumber());
             this.__restartTimers();
           })
           .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
@@ -110,7 +110,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
-            smsCodeDesc.setValue(justSentText + this.getUserEmail());
+            introText.setValue(justSentText + this.getUserEmail());
             this.__restartTimers();
           })
           .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
