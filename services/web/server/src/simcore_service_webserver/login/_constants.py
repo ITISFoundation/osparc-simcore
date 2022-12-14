@@ -23,6 +23,7 @@ MSG_OFTEN_RESET_PASSWORD: Final[str] = (
 )
 MSG_PASSWORD_CHANGED: Final[str] = "Your password is changed"
 MSG_PASSWORD_MISMATCH: Final[str] = "Password and confirmation do not match"
+MSG_PHONE_MISSING: Final[str] = "No phone was registered for this user"
 MSG_UNKNOWN_EMAIL: Final[str] = "This email is not registered"
 MSG_USER_BANNED: Final[
     str

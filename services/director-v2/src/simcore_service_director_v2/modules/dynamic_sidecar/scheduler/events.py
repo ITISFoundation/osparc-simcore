@@ -31,6 +31,10 @@ from tenacity.wait import wait_fixed
 from ....core.errors import NodeRightsAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
+from ....models.schemas.dynamic_services.scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+)
 from ....modules.director_v0 import DirectorV0Client
 from ....modules.rabbitmq import RabbitMQClient
 from ...catalog import CatalogClient
@@ -57,7 +61,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import EntrypointContainerNotFoundError
+from ..errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
@@ -79,6 +83,8 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["task_template", "ContainerSpec", "Env"],
     ["task_template", "Resources", "Reservation", "GenericResources"],
 )
+
+_EXPECTED_STATUSES: set[DockerStatus] = {DockerStatus.created, DockerStatus.running}
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -346,10 +352,19 @@ class GetStatus(DynamicSchedulerEvent):
             containers_inspect
         )
 
-        # TODO: ANE using `were_service_containers_detected_before` together with
-        # how many containers to expect, it can be detected if containers
-        # died and these can be restarted. Best way to go about it is
-        # to have a different handler trigger in this case registered for idling!
+        # NOTE: All containers are expected to be either created or running.
+        # Extra containers (utilities like forward proxies) can also be present here,
+        # these also are expected to be created or running.
+
+        containers_with_error: list[DockerContainerInspect] = []
+        for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect:
+            if container_inspect.status not in _EXPECTED_STATUSES:
+                containers_with_error.append(container_inspect)
+
+        if len(containers_with_error) > 0:
+            raise UnexpectedContainerStatusError(
+                containers_with_error=containers_with_error
+            )
 
 
 class PrepareServicesEnvironment(DynamicSchedulerEvent):

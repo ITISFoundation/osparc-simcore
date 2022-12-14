@@ -12,6 +12,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..groups_api import auto_add_user_to_groups
 from ..products import Product, get_current_product
 from ..security_api import encrypt_password
+from ..session_access import session_access_constraint, session_access_trace
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
@@ -71,6 +72,7 @@ class RegisterBody(InputSchema):
         }
 
 
+@session_access_trace(route_name="auth_register")
 @routes.post("/v0/auth/register", name="auth_register")
 async def register(request: web.Request):
     """
@@ -186,6 +188,9 @@ class RegisterPhoneBody(InputSchema):
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+@session_access_constraint(
+    allow_access_after=["auth_register", "auth_login"], max_number_of_access=1
+)
 @routes.post("/auth/verify-phone-number", name="auth_verify_2fa_phone")
 async def register_phone(request: web.Request):
     """

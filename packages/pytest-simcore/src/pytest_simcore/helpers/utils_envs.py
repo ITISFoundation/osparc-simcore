@@ -19,8 +19,13 @@ from .typing_env import EnvVarsDict
 #
 def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
     for key, value in envs.items():
+        assert isinstance(key, str)
         assert value is not None  # None keys cannot be is defined w/o value
-        monkeypatch.setenv(key, str(value))
+        assert isinstance(
+            value, str
+        ), "client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values"
+
+        monkeypatch.setenv(key, value)
     return deepcopy(envs)
 
 

@@ -40,11 +40,7 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
     ServiceName,
 )
-from ..api_client import (
-    ClientHttpError,
-    DynamicSidecarClient,
-    get_dynamic_sidecar_client,
-)
+from ..api_client import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
@@ -52,7 +48,7 @@ from ..docker_api import (
     remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
-from ..docker_states import ServiceState, extract_containers_minimim_statuses
+from ..docker_states import ServiceState, extract_containers_minimum_statuses
 from ..errors import (
     DockerServiceNotFoundError,
     DynamicSidecarError,
@@ -272,27 +268,11 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 service_message=sidecar_message,
             )
 
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
-        )
-
-        try:
-            user_services_docker_statuses: Optional[
-                dict[str, dict[str, str]]
-            ] = await dynamic_sidecar_client.containers_docker_status(
-                dynamic_sidecar_endpoint=scheduler_data.endpoint
-            )
-        except ClientHttpError:
-            # error fetching docker_statues, probably someone should check
-            return RunningDynamicServiceDetails.from_scheduler_data(
-                node_uuid=node_uuid,
-                scheduler_data=scheduler_data,
-                service_state=ServiceState.STARTING,
-                service_message="There was an error while trying to fetch the stautes form the contianers",
-            )
+        # NOTE: This will be repeatedly called until the
+        # user services are effectively started
 
         # wait for containers to start
-        if len(user_services_docker_statuses) == 0:
+        if len(scheduler_data.dynamic_sidecar.containers_inspect) == 0:
             # marks status as waiting for containers
             return RunningDynamicServiceDetails.from_scheduler_data(
                 node_uuid=node_uuid,
@@ -302,8 +282,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             )
 
         # compute composed containers states
-        container_state, container_message = extract_containers_minimim_statuses(
-            user_services_docker_statuses
+        container_state, container_message = extract_containers_minimum_statuses(
+            scheduler_data.dynamic_sidecar.containers_inspect
         )
         return RunningDynamicServiceDetails.from_scheduler_data(
             node_uuid=node_uuid,

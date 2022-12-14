@@ -7,10 +7,9 @@ import logging
 import re
 import urllib.parse
 from contextlib import asynccontextmanager, contextmanager
-from typing import AsyncGenerator, Awaitable, Callable, Iterator, Union
+from typing import AsyncGenerator, Awaitable, Callable, Iterator
 from unittest.mock import AsyncMock
 
-import httpx
 import pytest
 import respx
 from fastapi import FastAPI
@@ -25,6 +24,9 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
     SchedulerData,
     ServiceState,
+)
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    DockerContainerInspect,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -43,7 +45,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
 
 # running scheduler at a hight rate to stress out the system
 # and ensure faster tests
-TEST_SCHEDULER_INTERVAL_SECONDS = 0.01
+TEST_SCHEDULER_INTERVAL_SECONDS = 0.1
 
 log = logging.getLogger(__name__)
 
@@ -60,23 +62,9 @@ def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
 @contextmanager
 def _mock_containers_docker_status(
     scheduler_data: SchedulerData,
-    expected_response: Union[httpx.Response, httpx.HTTPError],
 ) -> Iterator[MockRouter]:
-    mocked_params = {}
-    if isinstance(expected_response, httpx.Response):
-        mocked_params["return_value"] = expected_response
-    else:
-        mocked_params["side_effect"] = expected_response
-
     service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
-        mock.get(
-            re.compile(
-                rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"
-            ),
-            name="containers_docker_status",
-        ).mock(**mocked_params)
-
         mock.get(
             re.compile(
                 rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/health"
@@ -96,10 +84,16 @@ async def _assert_get_dynamic_services_mocked(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
-    expected_response: Union[httpx.Response, httpx.HTTPError],
+    expected_status: str,
 ) -> AsyncGenerator[RunningDynamicServiceDetails, None]:
-    with _mock_containers_docker_status(scheduler_data, expected_response):
+    with _mock_containers_docker_status(scheduler_data):
         await scheduler.add_service(scheduler_data)
+        # put mocked data
+        scheduler_data.dynamic_sidecar.containers_inspect = [
+            DockerContainerInspect.from_container(
+                dict(State=dict(Status=expected_status), Name="", Id="")
+            )
+        ]
 
         stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
         assert mock_service_running.called
@@ -409,28 +403,6 @@ async def test_get_stack_status_failing_sidecar(
     )
 
 
-async def test_get_stack_status_report_missing_statuses(
-    scheduler: DynamicSidecarsScheduler,
-    scheduler_data: SchedulerData,
-    mock_service_running: AsyncMock,
-    mocked_dynamic_scheduler_events: None,
-    mock_update_label: None,
-    mock_docker_api: None,
-) -> None:
-    async with _assert_get_dynamic_services_mocked(
-        scheduler,
-        scheduler_data,
-        mock_service_running,
-        expected_response=httpx.HTTPError("Mock raised error"),
-    ) as stack_status:
-        assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
-            node_uuid=scheduler_data.node_uuid,
-            scheduler_data=scheduler_data,
-            service_state=ServiceState.STARTING,
-            service_message="There was an error while trying to fetch the stautes form the contianers",
-        )
-
-
 async def test_get_stack_status_containers_are_starting(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -440,10 +412,7 @@ async def test_get_stack_status_containers_are_starting(
     mock_docker_api: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
-        scheduler,
-        scheduler_data,
-        mock_service_running,
-        expected_response=httpx.Response(200, json={}),
+        scheduler, scheduler_data, mock_service_running, expected_status="created"
     ) as stack_status:
         assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
@@ -462,12 +431,7 @@ async def test_get_stack_status_ok(
     mock_docker_api: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
-        scheduler,
-        scheduler_data,
-        mock_service_running,
-        expected_response=httpx.Response(
-            200, json={"fake_entry": {"Status": "running"}}
-        ),
+        scheduler, scheduler_data, mock_service_running, expected_status="running"
     ) as stack_status:
         assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,

@@ -76,7 +76,7 @@ def are_all_user_services_containers_running(
     containers_inspect: list[DockerContainerInspect],
 ) -> bool:
     return len(containers_inspect) > 0 and all(
-        x.status == DockerStatus.RUNNING for x in containers_inspect
+        x.status == DockerStatus.running for x in containers_inspect
     )
 
 

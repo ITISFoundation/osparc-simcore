@@ -3,16 +3,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 from datetime import timedelta
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import CaptureFixture
+from pytest import CaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
@@ -32,17 +32,19 @@ from simcore_service_webserver.users_models import ProfileGet
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client,
-    web_server: TestServer,
-    mock_orphaned_services,
-) -> TestClient:
-    client_ = event_loop.run_until_complete(aiohttp_client(web_server))
-    return client_
+def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_2FA_REQUIRED": "0",
+            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
+        },
+    )
 
 
-async def test_regiter_entrypoint(
+async def test_register_entrypoint(
     client: TestClient, fake_user_email: str, fake_user_password: str
 ):
     assert client.app
@@ -99,17 +101,17 @@ async def test_register_body_validation(client: TestClient, fake_user_password: 
 async def test_regitration_is_not_get(client: TestClient):
     assert client.app
     url = client.app.router["auth_register"].url_for()
-    r = await client.get(f"{url}")
-    await assert_error(r, web.HTTPMethodNotAllowed)
+    response = await client.get(f"{url}")
+    await assert_error(response, web.HTTPMethodNotAllowed)
 
 
-async def test_registration_with_existing_email(
-    client: TestClient, login_options: LoginOptions
-):
+async def test_registration_with_existing_email(client: TestClient):
     assert client.app
-    url = client.app.router["auth_register"].url_for()
+
     async with NewUser(app=client.app) as user:
-        r = await client.post(
+        # register
+        url = client.app.router["auth_register"].url_for()
+        response = await client.post(
             f"{url}",
             json={
                 "email": user["email"],
@@ -117,13 +119,12 @@ async def test_registration_with_existing_email(
                 "confirm": user["raw_password"],
             },
         )
-    await assert_error(r, web.HTTPConflict, MSG_EMAIL_EXISTS)
+    await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
 
 
 @pytest.mark.skip("TODO: Feature still not implemented")
 async def test_registration_with_expired_confirmation(
     client: TestClient,
-    login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
 ):
@@ -133,18 +134,20 @@ async def test_registration_with_expired_confirmation(
         autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <----- invitation REQUIRED
             LOGIN_TWILIO=None,
         ),
     )
 
-    url = client.app.router["auth_register"].url_for()
-
+    # a user pending confirmation
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
         confirmation = await db.create_confirmation(
             user["id"], ConfirmationAction.REGISTRATION.name
         )
-        r = await client.post(
+
+        # register
+        url = client.app.router["auth_register"].url_for()
+        response = await client.post(
             f"{url}",
             json={
                 "email": user["email"],
@@ -154,7 +157,7 @@ async def test_registration_with_expired_confirmation(
         )
         await db.delete_confirmation(confirmation)
 
-    await assert_error(r, web.HTTPConflict, MSG_EMAIL_EXISTS)
+    await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
 
 
 async def test_registration_with_invalid_confirmation_code(
@@ -170,7 +173,7 @@ async def test_registration_with_invalid_confirmation_code(
         autospec=True,
         return_value=LoginSettings(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
             LOGIN_TWILIO=None,
         ),
     )
@@ -178,18 +181,16 @@ async def test_registration_with_invalid_confirmation_code(
     confirmation_link = _url_for_confirmation(
         client.app, code="INVALID_CONFIRMATION_CODE"
     )
-    r = await client.get(f"{confirmation_link}")
+    response = await client.get(f"{confirmation_link}")
 
     # Invalid code redirect to root without any error to the login page
-    #
-    assert r.ok
-    assert f"{r.url.relative()}" == login_options.LOGIN_REDIRECT
-    assert r.history[0].status == web.HTTPFound.status_code
+    assert response.ok
+    assert f"{response.url.relative()}" == login_options.LOGIN_REDIRECT
+    assert response.history[0].status == web.HTTPFound.status_code
 
 
 async def test_registration_without_confirmation(
     client: TestClient,
-    login_options: LoginOptions,
     db: AsyncpgStorage,
     mocker: MockerFixture,
     fake_user_email: str,
@@ -207,7 +208,7 @@ async def test_registration_without_confirmation(
     )
 
     url = client.app.router["auth_register"].url_for()
-    r = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
@@ -215,9 +216,9 @@ async def test_registration_without_confirmation(
             "confirm": fake_user_password,
         },
     )
-    data, error = unwrap_envelope(await r.json())
+    data, error = unwrap_envelope(await response.json())
 
-    assert r.status == 200, (data, error)
+    assert response.status == 200, (data, error)
     assert MSG_LOGGED_IN in data["message"]
 
     user = await db.get_user({"email": fake_user_email})
@@ -227,7 +228,6 @@ async def test_registration_without_confirmation(
 
 async def test_registration_with_confirmation(
     client: TestClient,
-    login_options: LoginOptions,
     db: AsyncpgStorage,
     capsys: CaptureFixture,
     mocker: MockerFixture,
@@ -245,8 +245,9 @@ async def test_registration_with_confirmation(
         ),
     )
 
+    # login
     url = client.app.router["auth_register"].url_for()
-    r = await client.post(
+    response = await client.post(
         f"{url}",
         json={
             "email": fake_user_email,
@@ -254,8 +255,8 @@ async def test_registration_with_confirmation(
             "confirm": fake_user_password,
         },
     )
-    data, error = unwrap_envelope(await r.json())
-    assert r.status == 200, (data, error)
+    data, error = unwrap_envelope(await response.json())
+    assert response.status == 200, (data, error)
 
     user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.CONFIRMATION_PENDING.name
@@ -266,14 +267,14 @@ async def test_registration_with_confirmation(
     out, _ = capsys.readouterr()
     confirmation_url = parse_link(out)
     assert "/auth/confirmation/" in str(confirmation_url)
-    resp = await client.get(confirmation_url)
-    text = await resp.text()
+    response = await client.get(confirmation_url)
+    text = await response.text()
 
     assert (
         "This is a result of disable_static_webserver fixture for product OSPARC"
         in text
     )
-    assert resp.status == 200
+    assert response.status == 200
 
     # user is active
     user = await db.get_user({"email": fake_user_email})
@@ -328,7 +329,7 @@ async def test_registration_with_invitation(
 
         url = client.app.router["auth_register"].url_for()
 
-        r = await client.post(
+        response = await client.post(
             f"{url}",
             json={
                 "email": fake_user_email,
@@ -339,18 +340,18 @@ async def test_registration_with_invitation(
                 else "WRONG_CODE",
             },
         )
-        await assert_status(r, expected_response)
+        await assert_status(response, expected_response)
 
         # check optional fields in body
         if not has_valid_invitation and not is_invitation_required:
-            r = await client.post(
+            response = await client.post(
                 f"{url}",
                 json={
                     "email": "new-user" + fake_user_email,
                     "password": fake_user_password,
                 },
             )
-            await assert_status(r, expected_response)
+            await assert_status(response, expected_response)
 
         if is_invitation_required and has_valid_invitation:
             assert not await db.get_confirmation(confirmation)
@@ -404,7 +405,7 @@ async def test_registraton_with_invitation_for_trial_account(
 
         # (3) use register using the invitation code
         url = client.app.router["auth_register"].url_for()
-        r = await client.post(
+        response = await client.post(
             f"{url}",
             json={
                 "email": fake_user_email,
@@ -413,23 +414,23 @@ async def test_registraton_with_invitation_for_trial_account(
                 "invitation": invitation.confirmation["code"],
             },
         )
-        await assert_status(r, web.HTTPOk)
+        await assert_status(response, web.HTTPOk)
 
         # (4) login
         url = client.app.router["auth_login"].url_for()
-        r = await client.post(
+        response = await client.post(
             f"{url}",
             json={
                 "email": fake_user_email,
                 "password": fake_user_password,
             },
         )
-        await assert_status(r, web.HTTPOk)
+        await assert_status(response, web.HTTPOk)
 
         # (5) get profile
         url = client.app.router["get_my_profile"].url_for()
-        r = await client.get(f"{url}")
-        data, _ = await assert_status(r, web.HTTPOk)
+        response = await client.get(f"{url}")
+        data, _ = await assert_status(response, web.HTTPOk)
         profile = ProfileGet.parse_obj(data)
 
         expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)
