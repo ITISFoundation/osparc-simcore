@@ -142,7 +142,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         };
         const promises = [
           osparc.data.Resources.getOne("studies", params),
-          osparc.store.Store.getInstance().getServicesOnly()
+          osparc.store.Store.getInstance().getAllServices()
         ];
         Promise.all(promises)
           .then(values => {

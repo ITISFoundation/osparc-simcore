@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     const servicesInStudy = osparc.utils.Study.extractServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const store = osparc.store.Store.getInstance();
-      store.getServicesOnly()
+      store.getAllServices()
         .then(services => {
           this._services = services;
           this._populateLayout();
