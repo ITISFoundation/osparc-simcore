@@ -35,7 +35,10 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
-from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
+from simcore_service_dynamic_sidecar.modules.outputs._watcher import (
+    _TEST_MARK,
+    OutputsWatcher,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -444,7 +447,7 @@ async def test_outputs_watcher_disabling(
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 assert (
-                    caplog_info_debug.text.count(f"TEST_MARK {random_subdir}")
+                    caplog_info_debug.text.count(f"{_TEST_MARK} {random_subdir}")
                     == CALLS_RECEIVED_BY_EVENT_FILTER
                 )
 
@@ -472,6 +475,11 @@ async def test_outputs_watcher_disabling(
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
     await _create_port_key_events()
     assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
+
+    assert (
+        caplog_info_debug.text.count(f"{_TEST_MARK} ")
+        == 4 * CALLS_RECEIVED_BY_EVENT_FILTER
+    )
 
 
 async def test_container_create_outputs_dirs(

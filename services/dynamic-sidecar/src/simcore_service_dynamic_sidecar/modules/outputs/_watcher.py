@@ -1,7 +1,7 @@
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import contextmanager, suppress
-from typing import Generator, Optional
+from typing import Final, Generator, Optional
 
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
@@ -11,6 +11,8 @@ from ._context import OutputsContext
 from ._event_filter import EventFilter
 from ._event_handler import EventHandlerObserver
 from ._manager import OutputsManager
+
+_TEST_MARK: Final[str] = "TEST_MARK_DO_NOT_REMOVE"
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ class OutputsWatcher:
             if event is None:
                 break
 
-            logger.debug("TEST_MARK %s", event)
+            logger.debug("%s %s", _TEST_MARK, event)
             if self._allow_event_propagation:
                 await self._event_filter.enqueue(event)
 
