@@ -586,6 +586,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _filterText: function(text) {
       const checks = [
+        this.getUuid(),
         this.getTitle(),
         this.getDescription(),
         this.getOwner()

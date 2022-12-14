@@ -318,7 +318,7 @@ qx.Class.define("osparc.store.Store", {
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload
      */
-    getServicesOnly: function(reload = false) {
+    getAllServices: function(reload = false, includeRetired = true) {
       return new Promise(resolve => {
         let allServices = [];
         osparc.data.Resources.get("services", null, !reload)
@@ -327,9 +327,17 @@ qx.Class.define("osparc.store.Store", {
           })
           .catch(err => console.error("getServices failed", err))
           .finally(() => {
-            const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
-            osparc.utils.Services.servicesToCache(servicesObj, true);
-            resolve(osparc.utils.Services.servicesCached);
+            if (includeRetired) {
+              const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
+              osparc.utils.Services.addTSRInfo(servicesObj);
+              osparc.utils.Services.servicesCached = servicesObj;
+              resolve(servicesObj);
+            } else {
+              const nonDepServices = allServices.filter(service => !(osparc.utils.Services.isRetired(service) || osparc.utils.Services.isDeprecated(service)));
+              const servicesObj = osparc.utils.Services.convertArrayToObject(nonDepServices);
+              osparc.utils.Services.addTSRInfo(servicesObj);
+              resolve(servicesObj);
+            }
           });
       });
     },
@@ -348,7 +356,7 @@ qx.Class.define("osparc.store.Store", {
             });
           }
         });
-        this.getServicesOnly()
+        this.getAllServices()
           .then(services => {
             nodes.forEach(node => {
               if (osparc.utils.Services.getFromObject(services, node.key, node.version)) {

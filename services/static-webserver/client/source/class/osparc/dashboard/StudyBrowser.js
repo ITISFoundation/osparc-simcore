@@ -79,7 +79,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
-      preResourcePromises.push(store.getServicesOnly());
+      preResourcePromises.push(store.getAllServices());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
@@ -408,7 +408,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addNewS4LServiceButtons: function() {
       const store = osparc.store.Store.getInstance();
-      store.getServicesOnly(false)
+      store.getAllServices()
         .then(services => {
           // add new plus buttons if key services exists
           const newButtonsInfo = this.self().EXPECTED_S4L_SERVICE_KEYS;
@@ -420,7 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __addNewS4LLiteServiceButtons: function() {
       const store = osparc.store.Store.getInstance();
-      store.getServicesOnly(false)
+      store.getAllServices()
         .then(services => {
           // add new plus buttons if key services exists
           const newButtonsInfo = this.self().EXPECTED_S4L_LIGHT_SERVICE_KEYS;
