@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     },
 
     removeCollaborator: function(serializedData, gid) {
-      return delete serializedData["access_rights"][gid];
+      return delete serializedData["accessRights"][gid];
     },
 
     getEveryoneObj: function() {
@@ -90,7 +90,7 @@ qx.Class.define("osparc.component.permissions.Service", {
   members: {
     _isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this._serializedData["access_rights"];
+      const aceessRights = this._serializedData["accessRights"];
       if (myGid in aceessRights) {
         return aceessRights[myGid]["write_access"];
       }
@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.permissions.Service", {
         return;
       }
       gids.forEach(gid => {
-        this._serializedData["access_rights"][gid] = this.self().getCollaboratorAccessRight();
+        this._serializedData["accessRights"][gid] = this.self().getCollaboratorAccessRight();
       });
       const params = {
         url: osparc.data.Resources.getServiceUrl(
@@ -152,7 +152,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     },
 
     _makeOwner: function(collaborator) {
-      this._serializedData["access_rights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
+      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: osparc.data.Resources.getServiceUrl(
           this._serializedData["key"],
