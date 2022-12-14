@@ -42,8 +42,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
 
     _buildPage: function() {
       const smsCodeDesc = new qx.ui.basic.Label();
+      const justSentText = this.tr("We just sent a 4-digit code to ");
       this.bind("userPhoneNumber", smsCodeDesc, "value", {
-        converter: pNumber => this.tr("We just sent a 4-digit code to ") + (pNumber ? pNumber : this.getUserEmail())
+        converter: pNumber => justSentText + (pNumber ? pNumber : this.getUserEmail())
       });
       this.add(smsCodeDesc);
 
@@ -78,23 +79,26 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       }));
       resendLayout.add(resendBtnsLayout);
 
-      if (this.getUserPhoneNumber()) {
-        const resendCodeSMSBtn = this.__resendCodeSMSBtn = new qx.ui.form.Button().set({
-          label: this.tr("Via SMS") + ` (60)`,
-          enabled: false
-        });
-        resendBtnsLayout.add(resendCodeSMSBtn, {
-          flex: 1
-        });
-        resendCodeSMSBtn.addListener("execute", () => {
-          osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserPhoneNumber())
-            .then(data => {
-              osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
-              this.__restartTimers();
-            })
-            .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
-        }, this);
-      }
+      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new qx.ui.form.Button().set({
+        label: this.tr("Via SMS") + ` (60)`,
+        enabled: false
+      });
+      this.bind("userPhoneNumber", resendCodeSMSBtn, "visibility", {
+        converter: pNumber => pNumber ? "visible" : "excluded"
+      });
+      resendBtnsLayout.add(resendCodeSMSBtn, {
+        flex: 1
+      });
+      resendCodeSMSBtn.addListener("execute", () => {
+        osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserPhoneNumber())
+          .then(data => {
+            osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
+            smsCodeDesc.setValue(justSentText + this.getUserPhoneNumber());
+            this.__restartTimers();
+          })
+          .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
+      }, this);
+
       const resendCodeEmailBtn = this.__resendCodeEmailBtn = new qx.ui.form.Button().set({
         label: this.tr("Via email") + ` (60)`,
         enabled: false
@@ -106,6 +110,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
+            smsCodeDesc.setValue(justSentText + this.getUserEmail());
             this.__restartTimers();
           })
           .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
