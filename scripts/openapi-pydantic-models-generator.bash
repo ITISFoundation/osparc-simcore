@@ -6,7 +6,7 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-PYTHON_VERSION=3.9.12
+PYTHON_VERSION=3.9
 IMAGE_NAME="local/datamodel-code-generator:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
@@ -29,6 +29,7 @@ ENTRYPOINT ["datamodel-codegen", \
           "--reuse-model", \
           "--set-default-enum-member", \
           "--use-title-as-name", \
+          "--use-subclass-enum", \
           "--target-python-version=${PYTHON_VERSION}", \
           "--validation"]
 EOF

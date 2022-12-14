@@ -13,6 +13,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    ContainerState,
     DockerContainerInspect,
     DockerStatus,
 )
@@ -75,7 +76,9 @@ def mock_dynamic_sidecar_client_stops_failing(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def docker_container_inspect() -> DockerContainerInspect:
-    return DockerContainerInspect(status=DockerStatus.DEAD, name="", id="")
+    return DockerContainerInspect(
+        status=DockerStatus.dead, container_state=ContainerState(**{}), name="", id=""
+    )
 
 
 @pytest.fixture
