@@ -17,7 +17,7 @@ attrs==22.1.0
     #   aiohttp
     #   jsonschema
     #   pytest
-certifi==2022.9.24
+certifi==2022.12.7
     # via
     #   httpcore
     #   httpx
