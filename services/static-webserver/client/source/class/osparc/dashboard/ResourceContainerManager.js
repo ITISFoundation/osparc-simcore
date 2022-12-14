@@ -269,7 +269,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             let groupContainer = this.__getGroupContainer(tag.id);
             if (groupContainer === null) {
               groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
-              groupContainer.setHedaerIcon("@FontAwesome5Solid/tag/24");
+              groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
               const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
               this._addAt(groupContainer, idx);
             }
