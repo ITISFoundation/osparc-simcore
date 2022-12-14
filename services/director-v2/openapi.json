@@ -740,7 +740,7 @@
           "dynamic services"
         ],
         "summary": "returns a list of running interactive services filtered by user_id and/or project_idboth legacy (director-v0) and modern (director-v2)",
-        "operationId": "list_running_dynamic_services_v2_dynamic_services_get",
+        "operationId": "list_tracked_dynamic_services_v2_dynamic_services_get",
         "parameters": [
           {
             "required": false,
@@ -770,7 +770,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Running Dynamic Services V2 Dynamic Services Get",
+                  "title": "Response List Tracked Dynamic Services V2 Dynamic Services Get",
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/RunningDynamicServiceDetails"
@@ -1546,13 +1546,59 @@
         }
       }
     },
-    "/v2/dynamic_scheduler/{node_uuid}/containers": {
+    "/v2/dynamic_scheduler/services/{node_uuid}/observation": {
+      "patch": {
+        "tags": [
+          "dynamic scheduler"
+        ],
+        "summary": "Enable/disable observation of the service",
+        "operationId": "update_service_observation_v2_dynamic_scheduler_services__node_uuid__observation_patch",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Node Uuid",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "node_uuid",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/dynamic_scheduler/services/{node_uuid}/containers": {
       "delete": {
         "tags": [
           "dynamic scheduler"
         ],
-        "summary": "Remove Service Containers",
-        "operationId": "remove_service_containers_v2_dynamic_scheduler__node_uuid__containers_delete",
+        "summary": "Removes the service's user services",
+        "operationId": "delete_service_containers_v2_dynamic_scheduler_services__node_uuid__containers_delete",
         "parameters": [
           {
             "required": true,
@@ -1571,7 +1617,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Remove Service Containers V2 Dynamic Scheduler  Node Uuid  Containers Delete",
+                  "title": "Response Delete Service Containers V2 Dynamic Scheduler Services  Node Uuid  Containers Delete",
                   "type": "string"
                 }
               }
@@ -1593,13 +1639,13 @@
         }
       }
     },
-    "/v2/dynamic_scheduler/{node_uuid}/state:save": {
+    "/v2/dynamic_scheduler/services/{node_uuid}/state:save": {
       "post": {
         "tags": [
           "dynamic scheduler"
         ],
-        "summary": "Save Service State",
-        "operationId": "save_service_state_v2_dynamic_scheduler__node_uuid__state_save_post",
+        "summary": "Starts the saving of the state for the service",
+        "operationId": "save_service_state_v2_dynamic_scheduler_services__node_uuid__state_save_post",
         "parameters": [
           {
             "required": true,
@@ -1618,7 +1664,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Save Service State V2 Dynamic Scheduler  Node Uuid  State Save Post",
+                  "title": "Response Save Service State V2 Dynamic Scheduler Services  Node Uuid  State Save Post",
                   "type": "string"
                 }
               }
@@ -1640,13 +1686,13 @@
         }
       }
     },
-    "/v2/dynamic_scheduler/{node_uuid}/outputs:push": {
+    "/v2/dynamic_scheduler/services/{node_uuid}/outputs:push": {
       "post": {
         "tags": [
           "dynamic scheduler"
         ],
-        "summary": "Push Service Outputs",
-        "operationId": "push_service_outputs_v2_dynamic_scheduler__node_uuid__outputs_push_post",
+        "summary": "Starts the pushing of the outputs for the service",
+        "operationId": "push_service_outputs_v2_dynamic_scheduler_services__node_uuid__outputs_push_post",
         "parameters": [
           {
             "required": true,
@@ -1665,7 +1711,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Push Service Outputs V2 Dynamic Scheduler  Node Uuid  Outputs Push Post",
+                  "title": "Response Push Service Outputs V2 Dynamic Scheduler Services  Node Uuid  Outputs Push Post",
                   "type": "string"
                 }
               }
@@ -1687,13 +1733,13 @@
         }
       }
     },
-    "/v2/dynamic_scheduler/{node_uuid}/docker-resources": {
+    "/v2/dynamic_scheduler/services/{node_uuid}/docker-resources": {
       "delete": {
         "tags": [
           "dynamic scheduler"
         ],
-        "summary": "Cleanup Service Docker Resources",
-        "operationId": "cleanup_service_docker_resources_v2_dynamic_scheduler__node_uuid__docker_resources_delete",
+        "summary": "Removes the service's sidecar, proxy and docker networks & volumes",
+        "operationId": "delete_service_docker_resources_v2_dynamic_scheduler_services__node_uuid__docker_resources_delete",
         "parameters": [
           {
             "required": true,
@@ -1712,7 +1758,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Cleanup Service Docker Resources V2 Dynamic Scheduler  Node Uuid  Docker Resources Delete",
+                  "title": "Response Delete Service Docker Resources V2 Dynamic Scheduler Services  Node Uuid  Docker Resources Delete",
                   "type": "string"
                 }
               }
@@ -2631,6 +2677,19 @@
         },
         "additionalProperties": false
       },
+      "ObservationItem": {
+        "title": "ObservationItem",
+        "required": [
+          "is_disabled"
+        ],
+        "type": "object",
+        "properties": {
+          "is_disabled": {
+            "title": "Is Disabled",
+            "type": "boolean"
+          }
+        }
+      },
       "PipelineDetails": {
         "title": "PipelineDetails",
         "required": [
@@ -2926,7 +2985,7 @@
                 "$ref": "#/components/schemas/ServiceState"
               }
             ],
-            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start"
+            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start * 'stopping' - The service is stopping"
           },
           "service_message": {
             "title": "Service Message",
@@ -3315,7 +3374,8 @@
           "starting",
           "running",
           "complete",
-          "failed"
+          "failed",
+          "stopping"
         ],
         "description": "An enumeration."
       },

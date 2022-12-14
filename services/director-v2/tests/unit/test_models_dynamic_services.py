@@ -1,5 +1,4 @@
 # pylint: disable=redefined-outer-name
-import random
 import string
 from collections import namedtuple
 
@@ -10,9 +9,12 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceBootType,
     ServiceState,
 )
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    DockerContainerInspect,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
-    CONTAINER_STATUSES_FAILED,
-    extract_containers_minimim_statuses,
+    CONTAINER_STATUSES_UNEXPECTED,
+    extract_containers_minimum_statuses,
 )
 
 # the following is the predefined expected ordering, change below test only if
@@ -72,20 +74,19 @@ def mock_containers_statuses() -> dict[str, dict[str, str]]:
 # UTILS
 
 
-def _random_string(length: int = 4) -> str:
-    return "".join(random.choices(RANDOM_STRING_DATASET, k=length))
-
-
-def _make_status_dict(status: str) -> dict[str, str]:
+def _make_status_dict(status: str) -> DockerContainerInspect:
     assert status in ALL_CONTAINER_STATUSES
     status_dict = {"Status": status}
-    if status in CONTAINER_STATUSES_FAILED:
+    if status in CONTAINER_STATUSES_UNEXPECTED:
         status_dict["Error"] = "failed state here"
-    return status_dict
+
+    return DockerContainerInspect.from_container(
+        {"State": status_dict, "Name": "", "Id": ""}
+    )
 
 
-def containers_statues(*args: str) -> dict[str, dict[str, str]]:
-    return {_random_string(): _make_status_dict(x) for x in args}
+def get_containers_inspect(*args: str) -> list[DockerContainerInspect]:
+    return [_make_status_dict(x) for x in args]
 
 
 def _all_states() -> set[ServiceState]:
@@ -94,24 +95,26 @@ def _all_states() -> set[ServiceState]:
 
 SAMPLE_EXPECTED_STATUSES: list[ExpectedStatus] = [
     ExpectedStatus(
-        containers_statuses=containers_statues(
-            CNT_STS_RESTARTING, CNT_STS_RUNNING, CNT_STS_EXITED
+        containers_statuses=get_containers_inspect(
+            CNT_STS_RESTARTING, CNT_STS_EXITED, CNT_STS_RUNNING
         ),
         expected_state=ServiceState.FAILED,
     ),
     ExpectedStatus(
-        containers_statuses=containers_statues(
-            CNT_STS_CREATED, CNT_STS_RUNNING, CNT_STS_EXITED
-        ),
+        containers_statuses=get_containers_inspect(CNT_STS_CREATED, CNT_STS_RUNNING),
         expected_state=ServiceState.STARTING,
     ),
     ExpectedStatus(
-        containers_statuses=containers_statues(CNT_STS_RUNNING, CNT_STS_EXITED),
+        containers_statuses=get_containers_inspect(CNT_STS_CREATED),
+        expected_state=ServiceState.STARTING,
+    ),
+    ExpectedStatus(
+        containers_statuses=get_containers_inspect(CNT_STS_RUNNING),
         expected_state=ServiceState.RUNNING,
     ),
     ExpectedStatus(
-        containers_statuses=containers_statues(CNT_STS_REMOVING, CNT_STS_EXITED),
-        expected_state=ServiceState.COMPLETE,
+        containers_statuses=get_containers_inspect(CNT_STS_REMOVING, CNT_STS_EXITED),
+        expected_state=ServiceState.FAILED,
     ),
 ]
 
@@ -182,9 +185,9 @@ def test_min_service_state_is_lowerst_in_expected_order():
     ids=[x.expected_state.name for x in SAMPLE_EXPECTED_STATUSES],
 )
 def test_extract_containers_minimim_statuses(
-    containers_statuses: dict[str, dict[str, str]], expected_state: ServiceState
+    containers_statuses: list[DockerContainerInspect], expected_state: ServiceState
 ):
-    service_state, _ = extract_containers_minimim_statuses(containers_statuses)
+    service_state, _ = extract_containers_minimum_statuses(containers_statuses)
     assert service_state == expected_state
 
 
