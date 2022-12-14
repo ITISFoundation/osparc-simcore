@@ -54,7 +54,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.addListener("appear", () => {
         validateCodeTF.focus();
         validateCodeTF.activate();
-        osparc.auth.ui.VerifyPhoneNumberView.restartResendTimer(this.__resendCodeBtn, this.tr("Resend code"));
+        osparc.auth.core.Utils.restartResendTimer(this.__resendCodeBtn, this.tr("Resend code"));
       });
 
       const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
