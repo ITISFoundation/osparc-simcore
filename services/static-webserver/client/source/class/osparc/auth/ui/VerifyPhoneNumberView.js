@@ -80,7 +80,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         flex: 1
       });
 
-      const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new qx.ui.form.Button(this.tr("Send SMS")).set({
+      const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
         maxHeight: 23,
         minWidth: 80
       });
@@ -117,16 +117,18 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const isValid = this.__itiInput.isValidNumber();
       if (isValid) {
         this.__itiInput.setEnabled(false);
-        this.__verifyPhoneNumberBtn.setEnabled(false);
-        this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
+        this.__verifyPhoneNumberBtn.setFetching(true);
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
           .then(data => {
             osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
+            this.__verifyPhoneNumberBtn.setFetching(false);
+            this.self().restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
             this.__validateCodeTF.setEnabled(true);
             this.__validateCodeBtn.setEnabled(true);
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            this.__verifyPhoneNumberBtn.setFetching(false);
             this.__itiInput.setEnabled(true);
           });
       }
