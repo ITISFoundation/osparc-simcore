@@ -433,9 +433,6 @@ async def test_outputs_watcher_disabling(
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
-        # use tenacity to wait for this, also add a wrapper
-        # fo the metric and see how fast it runs
-
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.01), stop=stop_after_delay(10), reraise=True
         ):
