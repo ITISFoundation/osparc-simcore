@@ -426,6 +426,8 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function() {
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
+
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
