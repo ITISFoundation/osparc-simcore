@@ -82,7 +82,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     ) -> bool:
         """Determines whether an identified user has permission
 
-        :param identity: session identified corresponds to the user's email as defined in login.handlers.registration
+        :param identity: session identified corresponds to the user's email as defined in login.handlers_registration
         :param permission: name of the operation that user wants to execute OR a tuple as (operator.and_|operator.or_, name1, name2, ...)
         :param context: context of the operation, defaults to None
         :return: True if user has permission to execute this operation within the given context

@@ -13,50 +13,33 @@ from faker import Faker
 from pytest import CaptureFixture, MonkeyPatch
 from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
+    _do_create_2fa_code,
     _generage_2fa_code,
     create_2fa_code,
     delete_2fa_code,
     get_2fa_code,
+    get_redis_validation_code_client,
     send_email_code,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
 
 
 @pytest.fixture
-def app_cfg(
-    app_cfg: ConfigDict,
-    monkeypatch: MonkeyPatch,
-) -> ConfigDict:
-    # overrides app_cfg.
-    # SEE sections in services/web/server/tests/data/default_app_config-unit.yaml
-
-    # disables GC
-    app_cfg["garbage_collector"]["enabled"] = False
-
-    # enables login
-    app_cfg["login"] = {
-        "enabled": True,
-        "registration_confirmation_required": True,
-        "registration_invitation_required": False,
-    }
-
-    # enable 2FA (via environs)
-    monkeypatch.setenv("LOGIN_2FA_REQUIRED", "true")
+def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     setenvs_from_dict(
         monkeypatch,
         {
-            "TWILIO_ACCOUNT_SID": "fake-account",
-            "TWILIO_AUTH_TOKEN": "fake-token",
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled
+            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
-
-    return app_cfg
 
 
 @pytest.fixture
@@ -79,15 +62,13 @@ def mocked_twilio_service(mocker) -> dict[str, Mock]:
             autospec=True,
         ),
         "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login.handlers.send_sms_code",
+            "simcore_service_webserver.login.handlers_auth.send_sms_code",
             autospec=True,
         ),
     }
 
 
-async def test_2fa_code_operations(
-    client: TestClient, mocked_twilio_service: dict[str, Mock]
-):
+async def test_2fa_code_operations(client: TestClient):
     assert client.app
 
     # get/delete an entry that does not exist
@@ -102,7 +83,9 @@ async def test_2fa_code_operations(
 
     # expired
     email = "expired@bar.com"
-    code = await create_2fa_code(client.app, email, expiration_time=1)
+    code = await _do_create_2fa_code(
+        get_redis_validation_code_client(client.app), email, expiration_seconds=1
+    )
     await asyncio.sleep(1.5)
     assert await get_2fa_code(client.app, email) is None
 
@@ -220,6 +203,8 @@ async def test_workflow_register_and_login_with_2fa(
             "code": received_code,
         },
     )
+    # WARNING: while debugging, breakpoints can add too much delay
+    # and make 2fa TTL expire resulting in this validation fail
     await assert_status(response, web.HTTPOk)
 
     # assert users is successfully registered
@@ -229,10 +214,12 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
+@pytest.mark.testit
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
     db: AsyncpgStorage,
     fake_user_email: str,
+    fake_user_password: str,
     fake_user_phone_number: str,
 ):
     """
@@ -243,8 +230,24 @@ async def test_register_phone_fails_with_used_number(
     # some user ALREADY registered with the same phone
     await utils_login.create_fake_user(db, data={"phone": fake_user_phone_number})
 
-    # new registration with same phone
-    # 1. submit
+    # some registered user w/o phone
+    await utils_login.create_fake_user(
+        db,
+        data={"email": fake_user_email, "password": fake_user_password, "phone": None},
+    )
+
+    # 1. login
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+        },
+    )
+    await assert_status(response, web.HTTPAccepted)
+
+    # 2. register existing phone
     url = client.app.router["auth_verify_2fa_phone"].url_for()
     response = await client.post(
         f"{url}",

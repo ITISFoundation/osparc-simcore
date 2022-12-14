@@ -33,7 +33,7 @@ def test_all_email_templates_include_subject(template_path: Path, app: web.Appli
     subject, content = template_path.read_text().split("\n", 1)
 
     assert re.match(
-        r"[\{\}a-zA-Z0-9\-_\s]+", subject
+        r"[\{\}a-zA-Z0-9\-_\s]+", subject.strip("🐼")
     ), f"Template {template_path} must start with a subject line, got {subject}"
 
     assert content

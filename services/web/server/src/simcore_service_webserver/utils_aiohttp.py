@@ -1,11 +1,13 @@
 import io
 import logging
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Generic, Literal, Optional, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
+from pydantic import Field
+from pydantic.generics import GenericModel
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
@@ -75,6 +77,11 @@ def envelope_json_response(
     )
 
 
+#
+# Special models and responses for the front-end
+#
+
+
 def create_redirect_response(
     app: web.Application, page: Literal["view", "error"], **parameters
 ) -> web.HTTPFound:
@@ -102,3 +109,24 @@ def create_redirect_response(
         app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
     )
     return web.HTTPFound(location=redirect_url)
+
+
+PageParameters = TypeVar("PageParameters")
+
+
+class NextPage(GenericModel, Generic[PageParameters]):
+    """
+    This is the body of a 2XX response to pass the front-end
+    what kind of page shall be display next and some information about it
+
+    An analogous structure is used in the redirects (see create_redirect_response) but
+    using a path+query in the fragment of the URL
+    """
+
+    name: str = Field(..., description="Code name to the front-end page")
+    parameters: Optional[PageParameters] = None
+
+    def as_redirect_response(self, app: web.Application) -> web.HTTPFound:
+        return create_redirect_response(
+            app=app, page=self.name, **self.parameters.dict()
+        )

@@ -6,7 +6,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Run Test",
+      "name": "Python: Test",
       "type": "python",
       "request": "launch",
       "module": "pytest",
@@ -15,6 +15,25 @@
         "--log-cli-level=INFO",
         "--pdb",
         "--setup-show",
+        "-sx",
+        "-vv",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Testit",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "--ff",
+        "--log-cli-level=INFO",
+        "--pdb",
+        "--setup-show",
+        "-m testit",
         "-sx",
         "-vv",
         "${file}"

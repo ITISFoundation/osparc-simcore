@@ -217,19 +217,19 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
-          store.getGroupsAll(),
+          store.getGroupEveryone(),
           store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
-            const all = values[0];
+            const everyone = values[0];
             const orgMembs = [];
             const orgMembers = values[1];
             for (const gid of Object.keys(orgMembers)) {
               orgMembs.push(orgMembers[gid]);
             }
             const orgs = values.length === 3 ? values[2] : [];
-            const groups = [orgMembs, orgs, [all]];
+            const groups = [orgMembs, orgs, [everyone]];
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
