@@ -427,7 +427,7 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getOrganization: function(orgId) {
+    getOrganizationOrUser: function(orgId) {
       return new Promise(resolve => {
         this.__getAllGroups()
           .then(orgs => {
@@ -471,11 +471,6 @@ qx.Class.define("osparc.store.Store", {
               });
           });
       });
-    },
-
-    getVisibleMember: function(id) {
-      const reachableMembers = this.getVisibleMembers();
-
     },
 
     getPotentialCollaborators: function() {

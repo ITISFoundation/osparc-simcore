@@ -299,7 +299,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             let groupContainer = this.__getGroupContainer(orgId);
             if (groupContainer === null) {
               groupContainer = this.__createGroupContainer(orgId, "loading-label");
-              osparc.store.Store.getInstance().getOrganization(orgId)
+              osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
                 .then(org => {
                   if (org) {
                     let icon = "";
