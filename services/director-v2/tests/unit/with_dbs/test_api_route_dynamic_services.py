@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_config(
+    disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
