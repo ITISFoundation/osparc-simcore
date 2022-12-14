@@ -17,6 +17,7 @@ import aiofiles
 import pytest
 import yaml
 from aiodocker.volumes import DockerVolume
+from aiofiles.os import mkdir
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
@@ -439,7 +440,7 @@ async def test_outputs_watcher_disabling(
         await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
         dir_name = outputs_context.outputs_path / random_subdir
-        dir_name.mkdir()
+        await mkdir(dir_name)
 
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
