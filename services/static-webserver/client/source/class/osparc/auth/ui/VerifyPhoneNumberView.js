@@ -50,19 +50,23 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     __validateCodeTF: null,
     __validateCodeBtn: null,
     __resendCodeBtn: null,
+    __sendViaEmail: null,
 
     _buildPage: function() {
       this.__buildVerificationLayout();
       this.__buildValidationLayout();
+      this.__buildSendViaEmailLayout();
       this.__attachHandlers();
     },
 
     __buildVerificationLayout: function() {
       const verificationInfoTitle = new qx.ui.basic.Label().set({
         value: this.tr("Two-Factor Authentication (2FA)"),
+        rich: true,
         font: "text-16"
       });
       this.add(verificationInfoTitle);
+
       const verificationInfoDesc = new qx.ui.basic.Label().set({
         value: this.tr("We will send you a text message to your mobile phone to authenticate you each time you log in."),
         rich: true,
@@ -105,6 +109,15 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       });
       smsValidationLayout.add(validateCodeBtn);
       this.add(smsValidationLayout);
+    },
+
+    __buildSendViaEmailLayout: function() {
+      const txt = this.tr("Skip phone registration and send code via email");
+      const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.LinkButton(txt).set({
+        appearance: "link-button"
+      });
+      sendViaEmail.addListener("execute", () => this.__requestCodeViaEmail(), this);
+      this.add(sendViaEmail);
     },
 
     __attachHandlers: function() {
@@ -159,6 +172,10 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
       const manager = osparc.auth.Manager.getInstance();
       manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
+    },
+
+    __requestCodeViaEmail: function() {
+      console.log("requestCodeViaEmail");
     }
   }
 });

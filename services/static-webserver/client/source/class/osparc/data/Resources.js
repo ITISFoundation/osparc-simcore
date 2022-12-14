@@ -572,7 +572,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/register"
           },
-          postVerifyPhoneNumber: {
+          verifyPhoneNumber: {
             method: "POST",
             url: statics.API + "/auth/verify-phone-number"
           },
@@ -580,11 +580,15 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/validate-code-register"
           },
+          resendCode: {
+            method: "POST",
+            url: statics.API + "/auth/two_factor:resend"
+          },
           postLogin: {
             method: "POST",
             url: statics.API + "/auth/login"
           },
-          postValidationCodeLogin: {
+          validateCodeLogin: {
             method: "POST",
             url: statics.API + "/auth/validate-code-login"
           },
