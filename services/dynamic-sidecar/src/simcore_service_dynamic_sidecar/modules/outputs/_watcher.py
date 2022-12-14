@@ -39,9 +39,7 @@ class OutputsWatcher:
             if event is None:
                 break
 
-            print("EVENT PROPAGATION: ", self._allow_event_propagation)
             if self._allow_event_propagation:
-                print("ADDING ", event)
                 await self._event_filter.enqueue(event)
 
     def enable_event_propagation(self) -> None:
