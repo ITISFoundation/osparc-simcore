@@ -416,7 +416,7 @@ async def test_outputs_watcher_disabling(
     outputs_context: OutputsContext = test_client.application.state.outputs_context
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
-    WAIT_FOR_EVENTS = outputs_manager.task_monitor_interval_s * 10
+    WAIT_FOR_EVENTS = outputs_manager.task_monitor_interval_s * 100
 
     async def _create_file_in_random_dir_in_inputs() -> int:
         random_subdir = f"{uuid4()}"
