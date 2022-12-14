@@ -10,6 +10,7 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -19,6 +20,7 @@ from pydantic import PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -34,6 +36,7 @@ from ....models.schemas.dynamic_services.scheduler import (
     DockerStatus,
 )
 from ....modules.director_v0 import DirectorV0Client
+from ....modules.rabbitmq import RabbitMQClient
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
@@ -101,6 +104,21 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+
+        # instrumentation
+        message = InstrumentationRabbitMessage(
+            metrics="service_started",
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            service_uuid=scheduler_data.node_uuid,
+            service_type=NodeClass.INTERACTIVE.value,
+            service_key=scheduler_data.key,
+            service_tag=scheduler_data.version,
+        )
+        rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+        await rabbitmq_client.publish(message.channel_name, message.json())
+
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )

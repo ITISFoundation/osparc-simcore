@@ -108,6 +108,7 @@ async def _assert_get_dynamic_services_mocked(
 
 @pytest.fixture
 def mock_env(
+    disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     simcore_services_network_name: str,

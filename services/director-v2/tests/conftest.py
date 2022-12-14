@@ -9,6 +9,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterable, Iterable
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -238,3 +239,13 @@ def fake_workbench_complete_adjacency(
     fake_workbench_complete_adjacency_file: Path,
 ) -> dict[str, Any]:
     return json.loads(fake_workbench_complete_adjacency_file.read_text())
+
+
+@pytest.fixture
+def disable_rabbitmq(mocker) -> None:
+    def mock_setup(app: FastAPI) -> None:
+        app.state.rabbitmq_client = AsyncMock()
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.rabbitmq.setup", side_effect=mock_setup
+    )

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Union
+from typing import Union
 
 from aiohttp import web
 from prometheus_client import Counter
@@ -26,12 +26,12 @@ from prometheus_client.registry import CollectorRegistry
 kSERVICE_STARTED = f"{__name__}.services_started"
 kSERVICE_STOPPED = f"{__name__}.services_stopped"
 
-SERVICE_STARTED_LABELS: List[str] = [
+SERVICE_STARTED_LABELS: list[str] = [
     "service_key",
     "service_tag",
 ]
 
-SERVICE_STOPPED_LABELS: List[str] = [
+SERVICE_STOPPED_LABELS: list[str] = [
     "service_key",
     "service_tag",
     "result",
@@ -64,11 +64,6 @@ def add_instrumentation(
 class ServiceResult(Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
-
-
-class ServiceType(Enum):
-    COMPUTATIONAL = 0
-    DYNAMIC = 1
 
 
 def service_started(
