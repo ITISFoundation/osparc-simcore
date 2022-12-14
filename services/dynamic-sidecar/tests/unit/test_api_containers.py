@@ -441,7 +441,6 @@ async def test_outputs_watcher_disabling(
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
-
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
