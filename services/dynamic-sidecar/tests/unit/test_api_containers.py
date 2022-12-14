@@ -30,7 +30,7 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_create,
 )
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
-from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
+from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
@@ -416,13 +416,14 @@ async def test_outputs_watcher_disabling(
     outputs_context: OutputsContext = test_client.application.state.outputs_context
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
-    WAIT_FOR_EVENTS = outputs_manager.task_monitor_interval_s * 100
+    WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
+    WAIT_FILE_SYSTEM_EVENTS = outputs_manager.task_monitor_interval_s * 100
 
-    async def _create_file_in_random_dir_in_inputs() -> int:
+    async def _create_3_file_system_events() -> int:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
-        await asyncio.sleep(WAIT_FOR_EVENTS)
+        await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
         dir_name = outputs_context.outputs_path / random_subdir
         dir_name.mkdir()
@@ -430,36 +431,33 @@ async def test_outputs_watcher_disabling(
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
-        dir_count = len(
-            [
-                1
-                for x in outputs_context.outputs_path.glob("*")
-                if not f"{x}".endswith(HIDDEN_FILE_NAME)
-            ]
-        )
-        await asyncio.sleep(WAIT_FOR_EVENTS)
-        return dir_count
+        await asyncio.sleep(WAIT_FILE_SYSTEM_EVENTS)
 
     CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
     # by default outputs-watcher it is disabled
+
+    # expect no events to be generated
+    assert mock_event_filter_enqueue.call_count == 0
+    await _create_3_file_system_events()
+    assert mock_event_filter_enqueue.call_count == 0
+
+    # after enabling new vents will be generated
     await _assert_enable_outputs_watcher(test_client)
     assert mock_event_filter_enqueue.call_count == 0
-    files_in_dir = await _create_file_in_random_dir_in_inputs()
-    assert files_in_dir == 1
+    await _create_3_file_system_events()
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
-    # disable and wait for events should have the same count as before
+    # disabling again, no longer generate events
     await _assert_disable_outputs_watcher(test_client)
-    files_in_dir = await _create_file_in_random_dir_in_inputs()
-    assert files_in_dir == 2
+    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    await _create_3_file_system_events()
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
-    # enable and wait for events
+    # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
-
-    files_in_dir = await _create_file_in_random_dir_in_inputs()
-    assert files_in_dir == 3
+    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    await _create_3_file_system_events()
     assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
 
 
