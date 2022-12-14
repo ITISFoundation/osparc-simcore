@@ -39,6 +39,7 @@ class OutputsWatcher:
             if event is None:
                 break
 
+            logger.debug("TEST_MARK %s", event)
             if self._allow_event_propagation:
                 await self._event_filter.enqueue(event)
 

@@ -21,7 +21,7 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -411,14 +411,16 @@ async def test_container_docker_error(
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mock_event_filter_enqueue: AsyncMock,
+    caplog_info_debug: LogCaptureFixture,
 ):
     assert isinstance(test_client.application, FastAPI)
     outputs_context: OutputsContext = test_client.application.state.outputs_context
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
     WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
-    WAIT_FILE_SYSTEM_EVENTS = outputs_manager.task_monitor_interval_s * 100
+    CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
+    # NOTE: below generates CALLS_RECEIVED_BY_EVENT_FILTER port_key events
     async def _create_port_key_events() -> int:
         random_subdir = f"{uuid4()}"
 
@@ -431,10 +433,17 @@ async def test_outputs_watcher_disabling(
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
-        await asyncio.sleep(WAIT_FILE_SYSTEM_EVENTS)
+        # use tenacity to wait for this, also add a wrapper
+        # fo the metric and see how fast it runs
 
-    # NOTE: above generates 3 port_key events
-    CALLS_RECEIVED_BY_EVENT_FILTER = 3
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.01), stop=stop_after_delay(10), reraise=True
+        ):
+            with attempt:
+                assert (
+                    caplog_info_debug.text.count(f"TEST_MARK {random_subdir}")
+                    == CALLS_RECEIVED_BY_EVENT_FILTER
+                )
 
     # by default outputs-watcher it is disabled
 
