@@ -69,7 +69,7 @@ qx.Class.define("osparc.auth.Manager", {
           code
         }
       };
-      osparc.data.Resources.fetch("auth", "postValidationCodeRegister", params)
+      osparc.data.Resources.fetch("auth", "validateCodeRegister", params)
         .then(data => {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {

@@ -576,7 +576,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/verify-phone-number"
           },
-          postValidationCodeRegister: {
+          validateCodeRegister: {
             method: "POST",
             url: statics.API + "/auth/validate-code-register"
           },
