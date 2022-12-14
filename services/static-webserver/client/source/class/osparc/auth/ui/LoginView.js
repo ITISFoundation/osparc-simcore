@@ -91,6 +91,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
+        registerBtn.setEnabled(false);
         osparc.data.Resources.getOne("config")
           .then(config => {
             if (config["invitation_required"]) {
@@ -102,10 +103,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
               this.fireEvent("toRegister");
             }
           })
-          .catch(err => {
-            console.error(err);
-            this.fireEvent("toRegister");
-          });
+          .catch(err => console.error(err));
+        registerBtn.setEnabled(true);
       }, this);
       osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
