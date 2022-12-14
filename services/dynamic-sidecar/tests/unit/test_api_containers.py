@@ -419,7 +419,7 @@ async def test_outputs_watcher_disabling(
     WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
     WAIT_FILE_SYSTEM_EVENTS = outputs_manager.task_monitor_interval_s * 100
 
-    async def _create_3_file_system_events() -> int:
+    async def _create_port_key_events() -> int:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
@@ -433,31 +433,32 @@ async def test_outputs_watcher_disabling(
 
         await asyncio.sleep(WAIT_FILE_SYSTEM_EVENTS)
 
+    # NOTE: above generates 3 port_key events
     CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
     # by default outputs-watcher it is disabled
 
     # expect no events to be generated
     assert mock_event_filter_enqueue.call_count == 0
-    await _create_3_file_system_events()
+    await _create_port_key_events()
     assert mock_event_filter_enqueue.call_count == 0
 
     # after enabling new vents will be generated
     await _assert_enable_outputs_watcher(test_client)
     assert mock_event_filter_enqueue.call_count == 0
-    await _create_3_file_system_events()
+    await _create_port_key_events()
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
     # disabling again, no longer generate events
     await _assert_disable_outputs_watcher(test_client)
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
-    await _create_3_file_system_events()
+    await _create_port_key_events()
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
     # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
     assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
-    await _create_3_file_system_events()
+    await _create_port_key_events()
     assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
 
 
