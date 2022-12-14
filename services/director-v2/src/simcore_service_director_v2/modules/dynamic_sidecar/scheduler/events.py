@@ -10,6 +10,7 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -19,6 +20,7 @@ from pydantic import PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -29,7 +31,12 @@ from tenacity.wait import wait_fixed
 from ....core.errors import NodeRightsAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
+from ....models.schemas.dynamic_services.scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+)
 from ....modules.director_v0 import DirectorV0Client
+from ....modules.rabbitmq import RabbitMQClient
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
@@ -54,7 +61,7 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import EntrypointContainerNotFoundError
+from ..errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
@@ -77,6 +84,8 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["task_template", "Resources", "Reservation", "GenericResources"],
 )
 
+_EXPECTED_STATUSES: set[DockerStatus] = {DockerStatus.created, DockerStatus.running}
+
 
 class CreateSidecars(DynamicSchedulerEvent):
     """Created the dynamic-sidecar and the proxy."""
@@ -95,6 +104,21 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+
+        # instrumentation
+        message = InstrumentationRabbitMessage(
+            metrics="service_started",
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            service_uuid=scheduler_data.node_uuid,
+            service_type=NodeClass.INTERACTIVE.value,
+            service_key=scheduler_data.key,
+            service_tag=scheduler_data.version,
+        )
+        rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+        await rabbitmq_client.publish(message.channel_name, message.json())
+
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -328,10 +352,19 @@ class GetStatus(DynamicSchedulerEvent):
             containers_inspect
         )
 
-        # TODO: ANE using `were_service_containers_detected_before` together with
-        # how many containers to expect, it can be detected if containers
-        # died and these can be restarted. Best way to go about it is
-        # to have a different handler trigger in this case registered for idling!
+        # NOTE: All containers are expected to be either created or running.
+        # Extra containers (utilities like forward proxies) can also be present here,
+        # these also are expected to be created or running.
+
+        containers_with_error: list[DockerContainerInspect] = []
+        for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect:
+            if container_inspect.status not in _EXPECTED_STATUSES:
+                containers_with_error.append(container_inspect)
+
+        if len(containers_with_error) > 0:
+            raise UnexpectedContainerStatusError(
+                containers_with_error=containers_with_error
+            )
 
 
 class PrepareServicesEnvironment(DynamicSchedulerEvent):

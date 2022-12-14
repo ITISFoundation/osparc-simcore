@@ -134,10 +134,18 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
 
-    if settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
+    dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED
-    ):
+    )
+
+    computational_backend_enabled = (
+        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED
+    )
+    if dynamic_scheduler_enabled or computational_backend_enabled:
+        rabbitmq.setup(app)
+
+    if dynamic_scheduler_enabled:
         dynamic_sidecar.setup(app)
 
     if (
@@ -145,8 +153,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     ):
         dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
-    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED:
-        rabbitmq.setup(app)
+    if computational_backend_enabled:
         comp_scheduler.setup(app)
 
     node_rights.setup(app)

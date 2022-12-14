@@ -2,7 +2,7 @@
     Models Front-end UI
 """
 
-from typing import Dict, Literal, Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
 from pydantic import BaseModel, Extra, Field
 from pydantic.color import Color
@@ -24,13 +24,13 @@ class _SlideshowRequired(TypedDict):
 
 
 class Slideshow(_SlideshowRequired, total=False):
-    instructions: Optional[str] # "Instructions about what to do in this step"
+    instructions: Optional[str]  # "Instructions about what to do in this step"
 
 
 class Annotation(BaseModel):
     type: Literal["rect", "text"] = Field(...)
     color: Color = Field(...)
-    attributes: Dict = Field(..., description="svg attributes")
+    attributes: dict = Field(..., description="svg attributes")
 
     class Config:
         extra = Extra.forbid
@@ -51,10 +51,10 @@ class Annotation(BaseModel):
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[Dict[NodeIDStr, WorkbenchUI]] = None
-    slideshow: Optional[Dict[NodeIDStr, Slideshow]] = None
+    workbench: Optional[dict[NodeIDStr, WorkbenchUI]] = None
+    slideshow: Optional[dict[NodeIDStr, Slideshow]] = None
     current_node_id: Optional[NodeID] = Field(None, alias="currentNodeId")
-    annotations: Optional[Dict[NodeIDStr, Annotation]] = None
+    annotations: Optional[dict[NodeIDStr, Annotation]] = None
 
     class Config:
         extra = Extra.allow

@@ -67,16 +67,6 @@ qx.Class.define("osparc.utils.Services", {
 
     servicesCached: {},
 
-    addServiceToCache: function(service) {
-      this.servicesCached = Object.assign(this.servicesCached, service);
-    },
-
-    servicesToCache: function(services) {
-      this.servicesCached = {};
-      this.__addExtraInfo(services);
-      this.servicesCached = Object.assign(this.servicesCached, services);
-    },
-
     getTypes: function() {
       return Object.keys(this.TYPES);
     },
@@ -340,7 +330,7 @@ qx.Class.define("osparc.utils.Services", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
 
-    __addExtraInfo: function(services) {
+    addTSRInfo: function(services) {
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
           if (osparc.data.model.Node.isComputational(service)) {
