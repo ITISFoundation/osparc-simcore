@@ -432,13 +432,19 @@ async def test_outputs_watcher_disabling(
     WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
     CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
-    # NOTE: below generates CALLS_RECEIVED_BY_EVENT_FILTER port_key events
     async def _create_port_key_events() -> int:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
         await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
+        # NOTE: normally below code bloc would generate
+        # CALLS_RECEIVED_BY_EVENT_FILTER == 3 events
+        # NOTE: sometimes the same event can be generated twice, see below
+        # <FileCreatedEvent: event_type=created, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+        # <FileCreatedEvent: event_type=created, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+        # <FileModifiedEvent: event_type=modified, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+        # <FileClosedEvent: event_type=closed, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
@@ -448,37 +454,47 @@ async def test_outputs_watcher_disabling(
             with attempt:
                 assert (
                     caplog_info_debug.text.count(f"{_TEST_MARK} {random_subdir}")
-                    == CALLS_RECEIVED_BY_EVENT_FILTER
+                    >= CALLS_RECEIVED_BY_EVENT_FILTER
                 )
+
+    def _assert_expected_event_group(*, event_chain_group: int) -> None:
+        lower_limit = event_chain_group * CALLS_RECEIVED_BY_EVENT_FILTER
+        upper_limit = (
+            event_chain_group * CALLS_RECEIVED_BY_EVENT_FILTER
+            # take into consideration that all event_filter invocations
+            # can generate +1 events
+            + 1 * event_chain_group
+        )
+        assert lower_limit <= mock_event_filter_enqueue.call_count <= upper_limit
 
     # by default outputs-watcher it is disabled
 
     # expect no events to be generated
-    assert mock_event_filter_enqueue.call_count == 0
+    _assert_expected_event_group(event_chain_group=0)
     await _create_port_key_events()
-    assert mock_event_filter_enqueue.call_count == 0
+    _assert_expected_event_group(event_chain_group=0)
 
     # after enabling new vents will be generated
     await _assert_enable_outputs_watcher(test_client)
-    assert mock_event_filter_enqueue.call_count == 0
+    _assert_expected_event_group(event_chain_group=0)
     await _create_port_key_events()
-    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_expected_event_group(event_chain_group=1)
 
     # disabling again, no longer generate events
     await _assert_disable_outputs_watcher(test_client)
-    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_expected_event_group(event_chain_group=1)
     await _create_port_key_events()
-    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_expected_event_group(event_chain_group=1)
 
     # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
-    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_expected_event_group(event_chain_group=1)
     await _create_port_key_events()
-    assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_expected_event_group(event_chain_group=2)
 
     assert (
         caplog_info_debug.text.count(f"{_TEST_MARK} ")
-        == 4 * CALLS_RECEIVED_BY_EVENT_FILTER
+        >= 4 * CALLS_RECEIVED_BY_EVENT_FILTER
     )
 
 
