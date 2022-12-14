@@ -78,7 +78,7 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+def mock_env(disable_rabbitmq: None, monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
