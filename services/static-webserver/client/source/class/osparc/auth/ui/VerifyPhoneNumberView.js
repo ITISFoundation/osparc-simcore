@@ -27,6 +27,10 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     }
   },
 
+  events: {
+    "skipPhoneRegistration": "qx.event.type.Data"
+  },
+
   statics: {
     restartResendTimer: function(button, buttonText) {
       let count = 60;
@@ -185,6 +189,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
         .then(data => {
           osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
+          this.fireDataEvent("skipPhoneRegistration", this.getUserEmail());
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
