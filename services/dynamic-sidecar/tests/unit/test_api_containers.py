@@ -37,11 +37,19 @@ from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsCont
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
+
+_TENACITY_RETRY_PARAMS = dict(
+    reraise=True,
+    retry=retry_if_exception_type(AssertionError),
+    stop=stop_after_delay(10),
+    wait=wait_fixed(0.01),
+)
 
 # UTILS
 
@@ -433,9 +441,7 @@ async def test_outputs_watcher_disabling(
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.01), stop=stop_after_delay(10), reraise=True
-        ):
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 assert (
                     caplog_info_debug.text.count(f"TEST_MARK {random_subdir}")
