@@ -112,8 +112,10 @@ async def test_lock_with_auto_extent(
         task_name=f"{ttl_lock.name}_auto_extend",
         lock=ttl_lock,
     ):
-        assert await ttl_lock.locked()
-        assert await ttl_lock.owned()
+        assert await ttl_lock.locked() is True
+        assert await ttl_lock.owned() is True
         await asyncio.sleep(5 * lock_timeout.total_seconds())
-        assert await ttl_lock.locked()
-        assert await ttl_lock.owned()
+        assert await ttl_lock.locked() is True
+        assert await ttl_lock.owned() is True
+    assert await ttl_lock.locked() is False
+    assert await ttl_lock.owned() is False
