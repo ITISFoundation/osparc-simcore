@@ -1,20 +1,28 @@
+import datetime
 from asyncio.log import logger
 from contextlib import asynccontextmanager
-from typing import Optional, Union
+from typing import Final, Optional, Union
 
 import redis
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
 from redis.asyncio.lock import Lock
+from servicelib.background_task import periodic_task
+from servicelib.logging_utils import log_catch
 
 from ..redis import get_redis_lock_manager_client
 from ..users_api import UserNameDict
 from .projects_exceptions import ProjectLockError
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
-
+PROJECT_LOCK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 ProjectLock = Lock
+
+
+async def _auto_extend_project_lock(project_lock: Lock) -> None:
+    with log_catch(logger, reraise=False):
+        await project_lock.reacquire()
 
 
 @asynccontextmanager
@@ -38,7 +46,8 @@ async def lock_project(
 
     """
     redis_lock = get_redis_lock_manager_client(app).lock(
-        PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+        PROJECT_REDIS_LOCK_KEY.format(project_uuid),
+        timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
     )
     try:
         if not await redis_lock.acquire(
@@ -52,7 +61,12 @@ async def lock_project(
             raise ProjectLockError(
                 f"Lock for project {project_uuid!r} user {user_id!r} could not be acquired"
             )
-        yield
+        async with periodic_task(
+            _auto_extend_project_lock,
+            interval=0.6 * PROJECT_LOCK_TIMEOUT,
+            task_name=f"{PROJECT_REDIS_LOCK_KEY.format(project_uuid)}_lock_auto_extend",
+        ):
+            yield
     finally:
         # let's ensure we release that stuff
         try:
