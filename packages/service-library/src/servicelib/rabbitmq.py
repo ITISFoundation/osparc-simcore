@@ -94,8 +94,15 @@ class RabbitMQClient:
             return connection.connected.is_set()
 
     async def subscribe(
-        self, exchange_name: str, message_handler: MessageHandler
+        self,
+        exchange_name: str,
+        message_handler: MessageHandler,
+        exclusive_queue: bool = True,
     ) -> None:
+        """subscribe to exchange_name calling message_handler for every incoming message
+        - exclusive_queue: True means that every instance of this application will receive the incoming messages
+        - exclusive_queue: False means that only one instance of this application will reveice the incoming message
+        """
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
@@ -110,11 +117,15 @@ class RabbitMQClient:
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
-            queue = await channel.declare_queue(
+            queue_parameters = dict(
                 durable=True,
-                exclusive=True,
+                exclusive=exclusive_queue,
                 arguments={"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
             )
+            if not exclusive_queue:
+                # NOTE: setting a name will ensure multiple instance will take their data here
+                queue_parameters |= {"name": exchange_name}
+            queue = await channel.declare_queue(**queue_parameters)
             await queue.bind(exchange)
 
             async def _on_message(
