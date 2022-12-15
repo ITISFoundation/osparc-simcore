@@ -8,6 +8,14 @@ class FileLocation(BaseModel):
     name: Optional[str] = None
     id: Optional[float] = None
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "simcore.s3",
+                "id": 0,
+            },
+        }
+
 
 class FileLocationArray(BaseModel):
     __root__: list[FileLocation]
@@ -51,6 +59,14 @@ class FileUploadCompleteFuture(BaseModel):
 class DatasetMetaData(BaseModel):
     dataset_id: Optional[str] = None
     display_name: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "dataset_id": "N:id-aaaa",
+                "display_name": "simcore-testing",
+            },
+        }
 
 
 class DatasetMetaDataArray(BaseModel):
@@ -104,6 +120,22 @@ class FileMetaData(BaseModel):
     file_size: Optional[int] = None
     entity_tag: Optional[str] = None
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "file_uuid": "simcore-testing/105/1000/3",
+                "location_id": "0",
+                "project_name": "futurology",
+                "node_name": "alpha",
+                "file_name": "example.txt",
+                "file_id": "N:package:e263da07-2d89-45a6-8b0f-61061b913873",
+                "created_at": "2019-06-19T12:29:03.308611Z",
+                "last_modified": "2019-06-19T12:29:03.78852Z",
+                "file_size": 73,
+                "entity_tag": "a87ff679a2f3e71d9181a67b7542122c",
+            }
+        }
+
 
 class FileMetaDataArray(BaseModel):
     __root__: list[FileMetaData]
@@ -116,6 +148,9 @@ class FileMetaEnvelope(BaseModel):
 
 class PresignedLink(BaseModel):
     link: Optional[str] = None
+
+    class Config:
+        schema_extra = {"example": {"link": "example_link"}}
 
 
 class PresignedLinkEnveloped(BaseModel):
