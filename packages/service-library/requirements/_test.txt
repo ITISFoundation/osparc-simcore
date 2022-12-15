@@ -25,10 +25,8 @@ attrs==21.4.0
     #   jsonschema
     #   pytest
     #   pytest-docker
-certifi==2022.9.24
-    # via
-    #   -c requirements/_fastapi.txt
-    #   requests
+certifi==2022.12.7
+    # via requests
 charset-normalizer==2.1.1
     # via
     #   -c requirements/_aiohttp.txt
