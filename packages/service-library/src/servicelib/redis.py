@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Final, Optional, Union
 
-import redis.asyncio as redis
+import redis.asyncio as aioredis
 import redis.exceptions
 from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
@@ -27,16 +27,16 @@ class AlreadyLockedError(PydanticErrorMixin, RuntimeError):
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
-    _client: redis.Redis = field(init=False)
+    _client: aioredis.Redis = field(init=False)
 
     @property
-    def redis(self) -> redis.Redis:
+    def redis(self) -> aioredis.Redis:
         return self._client
 
     def __post_init__(self):
         # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
         retry = Retry(ExponentialBackoff(cap=0.512, base=0.008), retries=3)
-        self._client = redis.from_url(
+        self._client = aioredis.from_url(
             self.redis_dsn,
             retry=retry,
             retry_on_error=[
