@@ -12,6 +12,8 @@ aiofiles==22.1.0
     # via -r requirements/_base.in
 aiormq==6.4.2
     # via aio-pika
+async-timeout==4.0.2
+    # via redis
 idna==3.4
     # via yarl
 multidict==6.0.3
@@ -23,6 +25,8 @@ pydantic==1.10.2
 pyinstrument==4.4.0
     # via -r requirements/_base.in
 pyyaml==5.4.1
+    # via -r requirements/_base.in
+redis==4.4.0
     # via -r requirements/_base.in
 tenacity==8.1.0
     # via -r requirements/_base.in
