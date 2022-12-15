@@ -106,7 +106,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
     createAccessRights: function(serviceData) {
       let permissions = "";
       const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = serviceData["access_rights"];
+      const ar = serviceData["accessRights"];
       if (myGID in ar) {
         if (ar[myGID]["write_access"]) {
           permissions = qx.locale.Manager.tr("Write");

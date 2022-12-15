@@ -14,7 +14,7 @@ class Ec2NotConnectedError(AutoscalingRuntimeError):
 
 
 class Ec2InstanceNotFoundError(AutoscalingRuntimeError):
-    msg_template: str = "Needed instance was not found"
+    msg_template: str = "EC2 instance was not found"
 
 
 class Ec2TooManyInstancesError(AutoscalingRuntimeError):
