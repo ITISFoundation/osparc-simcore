@@ -134,7 +134,7 @@ async def _find_terminateable_nodes(
 
 
 async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> None:
-    # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure (parametrize this)
+    # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure
     # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
     if terminateable_nodes := await _find_terminateable_nodes(app, monitored_nodes):
         await asyncio.gather(
