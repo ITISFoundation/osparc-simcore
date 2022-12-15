@@ -44,7 +44,7 @@ async function runTutorial() {
     // wait for the three services, except the optimizer
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [esId, tiId, ppId],
+      [esId],
       startTimeout,
       false
     );
@@ -74,14 +74,18 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Running Optimizer");
     await tutorial.takeScreenshot("optimizer_before");
     // one permutation should take less than 180"
-    await tutorial.waitForStudyDone(studyId, 240000);
+    await tutorial.waitForStudyDone(studyId, 480000);
     await tutorial.takeScreenshot("optimizer_after");
     await tutorial.waitAndClick("preparingInputsCloseBtn");
-    await tutorial.waitFor(5000, "Optimizer Finished");
+    await tutorial.waitFor(2000, "Optimizer Finished");
 
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
-    const postProIframe = await tutorial.getIframe(tiId);
+    // wait for iframe to be ready, it might take a while in Voila
+    const postProIframe = await tutorial.waitForVoilaIframe(tiId);
+    // wait for iframe to be rendered
+    await tutorial.waitForVoilaRendered(postProIframe);
+
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();
@@ -110,7 +114,7 @@ async function runTutorial() {
     await tutorial.takeScreenshot("postpro_export_report");
 
     const outFiles = [
-      "temp_ti_field.cache",
+      "output_1.zip",
       "TIP_report.pdf",
       "results.csv"
     ];
@@ -118,26 +122,19 @@ async function runTutorial() {
 
     // Check s4l
     await tutorial.waitAndClick("AppMode_NextBtn");
-    await tutorial.waitFor(5000, "Starting s4l");
-    await tutorial.takeScreenshot("s4l");
-    const s4lIframe = await tutorial.getIframe(ppId);
-    const postProTree = await s4lIframe.$('.algorithm-tree');
-    const postProItems = await postProTree.$$('.MuiTreeItem-label');
-    const nLabels = postProItems.length;
-    if (nLabels > 1) {
-      postProItems[0].click();
-      await tutorial.waitFor(2000, 'Importer clicked');
-      await tutorial.takeScreenshot('ImporterClicked');
-      postProItems[1].click();
-      await tutorial.waitFor(2000, 'Algorithm clicked');
-      await tutorial.takeScreenshot('AlgorithmClicked');
-    }
-    else {
-      throw("Post Pro tree missing");
-    }
+    await tutorial.testS4LTIPostPro(ppId);
   }
   catch (err) {
-    tutorial.setTutorialFailed(true);
+    // if it fails because the optimizer times out, close the "Preparing Inputs" view first
+    const page = tutorial.getPage();
+    const id = '[osparc-test-id=preparingInputsCloseBtn]';
+    await page.waitForSelector(id, {
+      timeout: 1000
+    })
+      .then(() => page.click(id))
+      .catch(() => console.log("Preparing Inputs window not found"));
+
+    tutorial.setTutorialFailed(true, false);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }

@@ -204,7 +204,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __populateList: function(reload = false) {
       this.__allServicesList = [];
       let store = osparc.store.Store.getInstance();
-      store.getServicesOnly(reload)
+      store.getAllServices(reload, false)
         .then(services => {
           this.__allServicesList = osparc.utils.Services.convertObjectToArray(services);
           this.__updateList();
@@ -304,7 +304,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __showServiceDetails: function() {
-      const serviceDetails = new osparc.servicecard.Large(this.__getSelectedService());
+      const serviceDetails = new osparc.info.ServiceLarge(this.__getSelectedService());
       const title = this.tr("Service information");
       const width = 600;
       const height = 700;

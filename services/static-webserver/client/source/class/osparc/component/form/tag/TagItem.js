@@ -41,6 +41,12 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       event: "changeColor",
       init: "#303030"
     },
+    accessRights: {
+      check: "Object",
+      nullable: false,
+      apply: "__renderLayout",
+      event: "changeAccessRights"
+    },
     mode: {
       check: "String",
       init: "display",
@@ -202,11 +208,13 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         icon: "@FontAwesome5Solid/trash/12",
         toolTipText: this.tr("Delete")
       });
+      if (this.isPropertyInitialized("accessRights")) {
+        editButton.setEnabled(this.getAccessRights()["write"]);
+        deleteButton.setEnabled(this.getAccessRights()["delete"]);
+      }
       buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
-      editButton.addListener("execute", () => {
-        this.setMode(this.self().modes.EDIT);
-      }, this);
+      editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
       deleteButton.addListener("execute", () => {
         deleteButton.setFetching(true);
         const params = {
@@ -290,7 +298,6 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
      */
     __serializeData: function() {
       return {
-        id: this.isPropertyInitialized("id") ? this.getId() : null,
         name: this.getChildControl("nameinput").getValue().trim(),
         description: this.getChildControl("descriptioninput").getValue().trim(),
         color: this.getChildControl("colorinput").getValue()

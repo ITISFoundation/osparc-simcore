@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   construct: function() {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
+
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -215,19 +217,19 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
-          store.getGroupsAll(),
+          store.getGroupEveryone(),
           store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
-            const all = values[0];
+            const everyone = values[0];
             const orgMembs = [];
             const orgMembers = values[1];
             for (const gid of Object.keys(orgMembers)) {
               orgMembs.push(orgMembers[gid]);
             }
             const orgs = values.length === 3 ? values[2] : [];
-            const groups = [orgMembs, orgs, [all]];
+            const groups = [orgMembs, orgs, [everyone]];
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
@@ -297,6 +299,10 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         const tagsContainer = this.getChildControl("tags");
+        if (tags.length) {
+          const iconContainer = this.getChildControl("icon");
+          iconContainer.setMaxHeight(105);
+        }
         tagsContainer.removeAll();
         tags.forEach(tag => {
           const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");

@@ -32,13 +32,23 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
-      - default
+      - autoscaling_subnet
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-    env_file:
-      - ../.env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+        limits:
+          cpus: "0.5"
+          memory: "512M"
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -241,10 +251,6 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie=true
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.samesite=lax
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.httponly=true
-        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=true
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v0`,`/socket.io/`,`/static-frontend-data.json`, `/study/{study_uuid:\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b}`, `/view`, `/#/view`, `/#/error`) ||  PathPrefix(`/v0/`))
@@ -382,6 +388,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
+      - autoscaling_subnet
     healthcheck:
       # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
       test: rabbitmq-diagnostics -q status
@@ -489,7 +496,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v2.5.6@sha256:2f603f8d3abe1dd3a4eb28960c55506be48293b41ea2c6ed4a4297c851a57a05"
+    image: "traefik:v2.9.5@sha256:6c37f2135af79e0c2e387653ff3ab9abf95eb393439f07cfcfa5e06fd4bb10bb"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
@@ -557,6 +564,8 @@ networks:
   default:
     attachable: true
   storage_subnet:
+    attachable: true
+  autoscaling_subnet:
     attachable: true
   interactive_services_subnet:
     driver: overlay

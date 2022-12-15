@@ -114,17 +114,9 @@ async function toDashboard(page) {
   await utils.waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
 }
 
-async function __waitForAllTemplates(page) {
-  await page.waitForSelector('[osparc-test-id="templatesList"]');
-  let loadingTemplatesCardVisible = true;
-  while(loadingTemplatesCardVisible) {
-    const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
-    loadingTemplatesCardVisible = childrenIDs.some(childrenID => childrenID.includes("templatesLoading"));
-  }
-}
-
 async function dashboardOpenFirstTemplate(page, templateName) {
-  await utils.sleep(5000);
+  // wait for All Templates
+  await utils.sleep(10000);
 
   // Returns true if template is found
   console.log("Creating New Study from template");
@@ -134,12 +126,16 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   await utils.takeScreenshot(page, "clicked on templates tab");
 
   if (templateName) {
+    // Show flat list
+    await utils.waitAndClick(page, '[osparc-test-id="groupByButton"]', 1000);
+    await utils.sleep(1000);
+    await utils.waitAndClick(page, '[osparc-test-id="groupByNone"]', 1000);
+    await utils.sleep(1000);
+
     await utils.takeScreenshot(page, "type filter text");
     await __filterTemplatesByText(page, templateName);
     await utils.takeScreenshot(page, "typed filter text");
   }
-
-  await __waitForAllTemplates(page);
 
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');

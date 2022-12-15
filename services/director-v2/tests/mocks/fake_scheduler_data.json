@@ -29,7 +29,8 @@
             {
                 "status": "running",
                 "name": "/dy-sidecar-3e68d1f6-be3e-414e-a468-4a2bf415f756-0-container",
-                "id": "c2f5f363cfa1bd4d16beb2086d2b7573fd4ebfb4fcf72bc7cda235efaaf5540b"
+                "id": "c2f5f363cfa1bd4d16beb2086d2b7573fd4ebfb4fcf72bc7cda235efaaf5540b",
+                "container_state": {}
             }
         ],
         "was_dynamic_sidecar_started": true,

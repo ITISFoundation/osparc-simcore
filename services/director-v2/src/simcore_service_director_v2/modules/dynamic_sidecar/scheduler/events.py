@@ -10,6 +10,7 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -19,6 +20,7 @@ from pydantic import PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -29,7 +31,12 @@ from tenacity.wait import wait_fixed
 from ....core.errors import NodeRightsAcquireError
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
+from ....models.schemas.dynamic_services.scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+)
 from ....modules.director_v0 import DirectorV0Client
+from ....modules.rabbitmq import RabbitMQClient
 from ...catalog import CatalogClient
 from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.projects_networks import ProjectsNetworksRepository
@@ -54,12 +61,11 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import EntrypointContainerNotFoundError
+from ..errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
     attempt_pod_removal_and_data_saving,
-    disabled_directory_watcher,
     get_director_v0_client,
     get_repository,
     parse_containers_inspect,
@@ -77,6 +83,8 @@ DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["task_template", "ContainerSpec", "Env"],
     ["task_template", "Resources", "Reservation", "GenericResources"],
 )
+
+_EXPECTED_STATUSES: set[DockerStatus] = {DockerStatus.created, DockerStatus.running}
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -96,6 +104,21 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+
+        # instrumentation
+        message = InstrumentationRabbitMessage(
+            metrics="service_started",
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            service_uuid=scheduler_data.node_uuid,
+            service_type=NodeClass.INTERACTIVE.value,
+            service_key=scheduler_data.key,
+            service_tag=scheduler_data.version,
+        )
+        rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+        await rabbitmq_client.publish(message.channel_name, message.json())
+
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -169,11 +192,13 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         catalog_client = CatalogClient.instance(app)
-        user_specific_service_spec = await catalog_client.get_service_specifications(
-            scheduler_data.user_id, scheduler_data.key, scheduler_data.version
-        )
+        user_specific_service_spec = (
+            await catalog_client.get_service_specifications(
+                scheduler_data.user_id, scheduler_data.key, scheduler_data.version
+            )
+        ).get("sidecar", {}) or {}
         user_specific_service_spec = AioDockerServiceSpec.parse_obj(
-            user_specific_service_spec.get("sidecar", {})
+            user_specific_service_spec
         )
         # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
         # we do not use aliases when exporting dynamic_sidecar_service_spec_base
@@ -327,10 +352,19 @@ class GetStatus(DynamicSchedulerEvent):
             containers_inspect
         )
 
-        # TODO: ANE using `were_service_containers_detected_before` together with
-        # how many containers to expect, it can be detected if containers
-        # died and these can be restarted. Best way to go about it is
-        # to have a different handler trigger in this case registered for idling!
+        # NOTE: All containers are expected to be either created or running.
+        # Extra containers (utilities like forward proxies) can also be present here,
+        # these also are expected to be created or running.
+
+        containers_with_error: list[DockerContainerInspect] = []
+        for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect:
+            if container_inspect.status not in _EXPECTED_STATUSES:
+                containers_with_error.append(container_inspect)
+
+        if len(containers_with_error) > 0:
+            raise UnexpectedContainerStatusError(
+                containers_with_error=containers_with_error
+            )
 
 
 class PrepareServicesEnvironment(DynamicSchedulerEvent):
@@ -360,46 +394,43 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         )
 
         async def _pull_outputs_and_state():
-            async with disabled_directory_watcher(
-                dynamic_sidecar_client, dynamic_sidecar_endpoint
-            ):
-                tasks = [
-                    dynamic_sidecar_client.pull_service_output_ports(
+            tasks = [
+                dynamic_sidecar_client.pull_service_output_ports(
+                    dynamic_sidecar_endpoint
+                )
+            ]
+            # When enabled no longer downloads state via nodeports
+            # S3 is used to store state paths
+            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+                tasks.append(
+                    dynamic_sidecar_client.restore_service_state(
                         dynamic_sidecar_endpoint
                     )
-                ]
-                # When enabled no longer downloads state via nodeports
-                # S3 is used to store state paths
-                if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                    tasks.append(
-                        dynamic_sidecar_client.restore_service_state(
-                            dynamic_sidecar_endpoint
-                        )
-                    )
+                )
 
-                await logged_gather(*tasks, max_concurrency=2)
+            await logged_gather(*tasks, max_concurrency=2)
 
-                # inside this directory create the missing dirs, fetch those form the labels
-                director_v0_client: DirectorV0Client = get_director_v0_client(app)
-                simcore_service_labels: SimcoreServiceLabels = (
-                    await director_v0_client.get_service_labels(
-                        service=ServiceKeyVersion(
-                            key=scheduler_data.key, version=scheduler_data.version
-                        )
+            # inside this directory create the missing dirs, fetch those form the labels
+            director_v0_client: DirectorV0Client = get_director_v0_client(app)
+            simcore_service_labels: SimcoreServiceLabels = (
+                await director_v0_client.get_service_labels(
+                    service=ServiceKeyVersion(
+                        key=scheduler_data.key, version=scheduler_data.version
                     )
                 )
-                service_outputs_labels = json.loads(
-                    simcore_service_labels.dict().get("io.simcore.outputs", "{}")
-                ).get("outputs", {})
-                logger.debug(
-                    "Creating dirs from service outputs labels: %s",
-                    service_outputs_labels,
-                )
-                await dynamic_sidecar_client.service_outputs_create_dirs(
-                    dynamic_sidecar_endpoint, service_outputs_labels
-                )
+            )
+            service_outputs_labels = json.loads(
+                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+            ).get("outputs", {})
+            logger.debug(
+                "Creating dirs from service outputs labels: %s",
+                service_outputs_labels,
+            )
+            await dynamic_sidecar_client.service_outputs_create_dirs(
+                dynamic_sidecar_endpoint, service_outputs_labels
+            )
 
-                scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+            scheduler_data.dynamic_sidecar.is_service_environment_ready = True
 
         if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
             node_rights_manager = NodeRightsManager.instance(app)
@@ -477,6 +508,10 @@ class CreateUserServices(DynamicSchedulerEvent):
 
         await dynamic_sidecar_client.create_containers(
             dynamic_sidecar_endpoint, compose_spec, progress_create_containers
+        )
+
+        await dynamic_sidecar_client.enable_service_outputs_watcher(
+            dynamic_sidecar_endpoint
         )
 
         # Starts PROXY -----------------------------------------------

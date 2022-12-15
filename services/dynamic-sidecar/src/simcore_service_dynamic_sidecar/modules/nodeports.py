@@ -66,13 +66,13 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
 )
 
 
-@run_sequentially_in_context()
+# NOTE: outputs_manager guarantees that no parallel calls
+# to this function occur
 async def upload_outputs(
     outputs_path: Path,
     port_keys: list[str],
     io_log_redirect_cb: Optional[LogRedirectCB],
 ) -> None:
-    """calls to this function will get queued and invoked in sequence"""
     # pylint: disable=too-many-branches
     logger.debug("uploading data to simcore...")
     start_time = time.perf_counter()
@@ -167,14 +167,6 @@ async def upload_outputs(
         total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
         logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
         logger.debug(_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE)
-
-
-async def dispatch_update_for_directory(
-    directory_path: Path, io_log_redirect_cb: Optional[LogRedirectCB]
-) -> None:
-    logger.debug("Uploading data for directory %s", directory_path)
-    # TODO: how to figure out from directory_path which is the correct target to upload
-    await upload_outputs(directory_path, [], io_log_redirect_cb=io_log_redirect_cb)
 
 
 # INPUTS section

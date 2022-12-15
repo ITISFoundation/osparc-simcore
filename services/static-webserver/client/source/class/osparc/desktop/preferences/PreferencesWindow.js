@@ -31,7 +31,6 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       modal: true,
       width: 550,
       height: 550 * 1.2,
-      showClose: true,
       showMaximize: false,
       showMinimize: false,
       resizable: false,

@@ -30,10 +30,10 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
    */
   construct: function(message, level) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this._setLayout(new qx.ui.layout.HBox(15));
 
     this.set({
-      padding: 15,
+      padding: 18,
       maxWidth: 400,
       allowStretchX: false,
       alignX: "center"

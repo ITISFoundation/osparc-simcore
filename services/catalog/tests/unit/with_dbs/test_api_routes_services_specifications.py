@@ -13,6 +13,17 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from models_library.generated_models.docker_rest_api import (
+    DiscreteResourceSpec,
+    GenericResource,
+    GenericResources,
+    Limit,
+    NamedResourceSpec,
+    ResourceObject,
+)
+from models_library.generated_models.docker_rest_api import (
+    Resources1 as ServiceTaskResources,
+)
 from models_library.generated_models.docker_rest_api import ServiceSpec
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
@@ -71,6 +82,44 @@ async def services_specifications_injector(
             )
 
 
+@pytest.fixture
+def create_service_specifications(
+    faker: Faker,
+) -> Callable[..., ServiceSpecificationsAtDB]:
+    def _creator(service_key, service_version, gid) -> ServiceSpecificationsAtDB:
+        return ServiceSpecificationsAtDB(
+            service_key=service_key,
+            service_version=service_version,
+            gid=gid,
+            sidecar=ServiceSpec(Labels=faker.pydict(allowed_types=(str,))),  # type: ignore
+            service=ServiceTaskResources(
+                Limits=Limit(
+                    NanoCPUs=faker.pyint(),
+                    MemoryBytes=faker.pyint(),
+                    Pids=faker.pyint(),
+                ),
+                Reservations=ResourceObject(
+                    NanoCPUs=faker.pyint(),
+                    MemoryBytes=faker.pyint(),
+                    GenericResources=GenericResources(
+                        __root__=[
+                            GenericResource(
+                                NamedResourceSpec=NamedResourceSpec(
+                                    Kind=faker.pystr(), Value=faker.pystr()
+                                ),
+                                DiscreteResourceSpec=DiscreteResourceSpec(
+                                    Kind=faker.pystr(), Value=faker.pyint()
+                                ),
+                            )
+                        ]
+                    ),
+                ),
+            ),
+        )
+
+    return _creator
+
+
 async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     mock_catalog_background_task,
     director_mockup: respx.MockRouter,
@@ -121,6 +170,7 @@ async def test_get_service_specifications(
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
     sqlalchemy_async_engine: AsyncEngine,
+    create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
 ):
     target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
@@ -150,13 +200,8 @@ async def test_get_service_specifications(
 
     everyone_gid, user_gid, team_gid = user_groups_ids
     # let's inject some rights for everyone group
-    everyone_service_specs = ServiceSpecificationsAtDB(
-        service_key=SERVICE_KEY,
-        service_version=SERVICE_VERSION,
-        gid=everyone_gid,
-        sidecar=ServiceSpec(  # type: ignore
-            Labels={"fake_label_for_everyone": "fake_label_value_for_everyone"}
-        ),
+    everyone_service_specs = create_service_specifications(
+        SERVICE_KEY, SERVICE_VERSION, everyone_gid
     )
     await services_specifications_injector(everyone_service_specs)
     response = client.get(f"{url}")
@@ -168,13 +213,8 @@ async def test_get_service_specifications(
     )
 
     # let's inject some rights in a standard group, user is not part of that group yet, so it should still return only everyone
-    standard_group_service_specs = ServiceSpecificationsAtDB(
-        service_key=SERVICE_KEY,
-        service_version=SERVICE_VERSION,
-        gid=team_gid,
-        sidecar=ServiceSpec(  # type: ignore
-            Labels={"fake_label_for_team": "fake_label_value_for_team"},
-        ),
+    standard_group_service_specs = create_service_specifications(
+        SERVICE_KEY, SERVICE_VERSION, team_gid
     )
     await services_specifications_injector(standard_group_service_specs)
     response = client.get(f"{url}")
@@ -197,13 +237,8 @@ async def test_get_service_specifications(
     )
 
     # now add some other spec in the primary gid, this takes precedence
-    user_group_service_specs = ServiceSpecificationsAtDB(
-        service_key=SERVICE_KEY,
-        service_version=SERVICE_VERSION,
-        gid=user_gid,
-        sidecar=ServiceSpec(  # type: ignore
-            Labels={"fake_label_for_user": "fake_label_value_for_user"}
-        ),
+    user_group_service_specs = create_service_specifications(
+        SERVICE_KEY, SERVICE_VERSION, user_gid
     )
     await services_specifications_injector(user_group_service_specs)
     response = client.get(f"{url}")
@@ -227,6 +262,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
     services_specifications_injector: Callable,
+    create_service_specifications: Callable[..., ServiceSpecificationsAtDB],
 ):
     target_product = products_names[-1]
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
@@ -272,16 +308,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
     version_speced: list[ServiceSpecificationsAtDB] = []
 
     for version in versions_with_specs:
-        specs = ServiceSpecificationsAtDB(
-            service_key=SERVICE_KEY,
-            service_version=version,
-            gid=everyone_gid,
-            sidecar=ServiceSpec(  # type: ignore
-                Labels={
-                    f"fake_label_for_everyone_version_{version}": f"fake_label_value_for_everyone_{version}"
-                }
-            ),
-        )
+        specs = create_service_specifications(SERVICE_KEY, version, everyone_gid)
         await services_specifications_injector(specs)
         version_speced.append(specs)
 

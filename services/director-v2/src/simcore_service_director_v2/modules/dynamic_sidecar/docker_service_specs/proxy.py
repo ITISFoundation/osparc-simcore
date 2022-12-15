@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from models_library.services_resources import (
     CPU_10_PERCENT,
@@ -21,7 +21,7 @@ def get_dynamic_proxy_spec(
     swarm_network_name: str,
     entrypoint_container_name: str,
     service_port: PositiveInt,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     The Traefik proxy is the entrypoint which forwards
     all the network requests to dynamic service.
@@ -84,7 +84,12 @@ def get_dynamic_proxy_spec(
                 "Hosts": [],
                 "Image": f"caddy:{proxy_settings.DYNAMIC_SIDECAR_CADDY_VERSION}",
                 "Init": True,
-                "Labels": {},
+                "Labels": {
+                    # NOTE: these labels get on the tasks and that is also useful to trace
+                    "study_id": f"{scheduler_data.project_id}",
+                    "user_id": f"{scheduler_data.user_id}",
+                    "uuid": f"{scheduler_data.node_uuid}",
+                },
                 "Command": [
                     "caddy",
                     "reverse-proxy",

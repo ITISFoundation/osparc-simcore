@@ -13,8 +13,28 @@ from typing import Any, Optional, Union
 from _common import Error, Log
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
-from pydantic import BaseModel, EmailStr, Field, SecretStr, confloat
+from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
+from simcore_service_webserver.login.handlers_2fa import Resend2faBody
+from simcore_service_webserver.login.handlers_auth import (
+    LoginBody,
+    LoginNextPage,
+    LoginTwoFactorAuthBody,
+    LogoutBody,
+)
+from simcore_service_webserver.login.handlers_change import (
+    ChangeEmailBody,
+    ChangePasswordBody,
+    ResetPasswordBody,
+)
+from simcore_service_webserver.login.handlers_confirmation import (
+    PhoneConfirmationBody,
+    ResetPasswordConfirmation,
+)
+from simcore_service_webserver.login.handlers_registration import (
+    RegisterBody,
+    RegisterPhoneBody,
+)
 
 app = FastAPI(redoc_url=None)
 
@@ -23,40 +43,14 @@ TAGS: list[Union[str, Enum]] = [
 ]
 
 
-class RegistrationCreate(BaseModel):
-    email: EmailStr
-    password: SecretStr
-    confirm: Optional[SecretStr] = Field(None, description="Password confirmation")
-    invitation: Optional[str] = Field(None, description="Invitation code")
-
-    class Config:
-        schema_extra = {
-            "examples": [
-                {
-                    "email": "foo@mymail.com",
-                    "password": "my secret",
-                    "confirm": "my secret",
-                    "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",
-                }
-            ]
-        }
-
-
 @app.post(
     "/auth/register",
     response_model=Envelope[Log],
     tags=TAGS,
     operation_id="auth_register",
 )
-async def register(registration: RegistrationCreate):
+async def register(registration: RegisterBody):
     """User registration"""
-
-
-class Verify2FAPhone(BaseModel):
-    email: EmailStr
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
 
 
 @app.post(
@@ -65,16 +59,8 @@ class Verify2FAPhone(BaseModel):
     tags=TAGS,
     operation_id="auth_verify_2fa_phone",
 )
-async def register_phone(registration: Verify2FAPhone):
+async def register_phone(registration: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
-
-
-class Validate2FAPhone(BaseModel):
-    email: str
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
-    code: str
 
 
 @app.post(
@@ -83,33 +69,25 @@ class Validate2FAPhone(BaseModel):
     tags=TAGS,
     operation_id="auth_validate_2fa_register",
 )
-async def phone_confirmation(confirmation: Validate2FAPhone):
+async def phone_confirmation(confirmation: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""
-
-
-class LoginForm(BaseModel):
-    email: Optional[str] = None
-    password: Optional[str] = None
-
-
-class Login2FAForm(BaseModel):
-    email: str
-    code: str
-
-
-class LogoutRequest(BaseModel):
-    client_session_id: Optional[str] = Field(
-        None, example="5ac57685-c40f-448f-8711-70be1936fd63"
-    )
 
 
 @app.post(
     "/auth/login",
-    response_model=Envelope[Log],
+    response_model=Envelope[LoginNextPage],
+    status_code=status.HTTP_201_CREATED,
     tags=TAGS,
     operation_id="auth_login",
+    responses={
+        # status.HTTP_503_SERVICE_UNAVAILABLE
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
 )
-async def login(authentication: LoginForm):
+async def login(authentication: LoginBody):
     """user logs in"""
 
 
@@ -117,10 +95,32 @@ async def login(authentication: LoginForm):
     "/auth/validate-code-login",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="auth_validate_2fa_login",
+    operation_id="auth_login_2fa",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
 )
-async def login_2fa(authentication: Login2FAForm):
+async def login_2fa(authentication: LoginTwoFactorAuthBody):
     """user enters 2 Factor Authentication code when login in"""
+
+
+@app.post(
+    "/auth/two_factor:resend",
+    response_model=Envelope[Log],
+    tags=TAGS,
+    operation_id="resend_2fa_code",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
+)
+async def resend_2fa_code(resend: Resend2faBody):
+    """Resends 2FA either via email or sms"""
 
 
 @app.post(
@@ -129,12 +129,8 @@ async def login_2fa(authentication: Login2FAForm):
     tags=TAGS,
     operation_id="auth_logout",
 )
-async def logout(data: LogoutRequest):
+async def logout(data: LogoutBody):
     """user logout"""
-
-
-class ResetPasswordRequest(BaseModel):
-    email: str
 
 
 @app.post(
@@ -144,13 +140,8 @@ class ResetPasswordRequest(BaseModel):
     operation_id="auth_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Envelope[Error]}},
 )
-async def reset_password(data: ResetPasswordRequest):
+async def reset_password(data: ResetPasswordBody):
     """a non logged-in user requests a password reset"""
-
-
-class ResetPasswordForm(BaseModel):
-    password: str
-    confirm: str
 
 
 @app.post(
@@ -165,12 +156,8 @@ class ResetPasswordForm(BaseModel):
         }
     },
 )
-async def reset_password_allowed(code: str, data: ResetPasswordForm):
+async def reset_password_allowed(code: str, data: ResetPasswordConfirmation):
     """changes password using a token code without being logged in"""
-
-
-class ChangeEmailForm(BaseModel):
-    email: str
 
 
 @app.post(
@@ -189,14 +176,8 @@ class ChangeEmailForm(BaseModel):
         },
     },
 )
-async def change_email(data: ChangeEmailForm):
+async def change_email(data: ChangeEmailBody):
     """logged in user changes email"""
-
-
-class ChangePasswordForm(BaseModel):
-    current: str
-    new: str
-    confirm: str
 
 
 class PasswordCheckSchema(BaseModel):
@@ -230,7 +211,7 @@ class PasswordCheckSchema(BaseModel):
         },
     },
 )
-async def change_password(data: ChangePasswordForm):
+async def change_password(data: ChangePasswordBody):
     """logged in user changes password"""
 
 
@@ -322,4 +303,4 @@ if __name__ == "__main__":
 
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-auth.ignore.yaml")
+    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-auth.yaml")

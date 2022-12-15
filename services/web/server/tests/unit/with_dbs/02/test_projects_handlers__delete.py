@@ -10,11 +10,15 @@ from unittest.mock import MagicMock, call
 
 import pytest
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    MockedStorageSubsystem,
+    standard_role_response,
+)
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
@@ -50,7 +54,7 @@ async def test_delete_project(
     # DELETE /v0/projects/{project_id}
     fakes = fake_services(5)
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.get_dynamic_services"
+        "director_v2_core_dynamic_services.list_dynamic_services"
     ].return_value = fakes
 
     await _request_delete_project(client, user_project, expected.no_content)
@@ -68,7 +72,7 @@ async def test_delete_project(
         await tasks[0]
 
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.get_dynamic_services"
+            "director_v2_core_dynamic_services.list_dynamic_services"
         ].assert_called_once()
 
         expected_calls = [

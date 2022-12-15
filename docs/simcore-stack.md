@@ -8,7 +8,7 @@ $ ./scripts/docker-compose-viz.bash .stack-simcore-version.yml
 $ mv .stack-simcore-version.yml.png docs/img/
 ```
 
-![](img/.stack-simcore-version.yml.png)
+![>If you cannot see an image here, run script above<](img/.stack-simcore-version.yml.png)
 
 
 

@@ -832,7 +832,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__studyOptionsPage]);
 
-      this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
+      this.__studyOptionsPage.add(new osparc.info.StudyMedium(study), {
         flex: 1
       });
 

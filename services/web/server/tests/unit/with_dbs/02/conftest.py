@@ -7,7 +7,7 @@ import re
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 
 import pytest
@@ -102,7 +102,7 @@ def mock_catalog_api(
 @pytest.fixture
 async def user_project(
     client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
-):
+) -> AsyncIterator[ProjectDict]:
     async with NewProject(
         fake_project,
         client.app,
@@ -123,7 +123,7 @@ async def shared_project(
     all_group,
     tests_data_dir: Path,
     osparc_product_name: str,
-):
+) -> AsyncIterator[ProjectDict]:
     fake_project.update(
         {
             "accessRights": {
@@ -151,7 +151,7 @@ async def template_project(
     all_group: dict[str, str],
     tests_data_dir: Path,
     osparc_product_name: str,
-) -> AsyncIterable[dict[str, Any]]:
+) -> AsyncIterator[ProjectDict]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"

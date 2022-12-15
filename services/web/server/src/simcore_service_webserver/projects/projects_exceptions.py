@@ -65,3 +65,10 @@ class ProjectStartsTooManyDynamicNodes(ProjectsException):
         )
         self.user_id = user_id
         self.project_uuid = project_uuid
+
+
+class ProjectTooManyProjectOpened(ProjectsException):
+    def __init__(self, max_num_projects: int):
+        super().__init__(
+            f"You cannot open more than {max_num_projects} stud{'y' if max_num_projects == 1 else 'ies'} at once. Please, close another study and retry."
+        )

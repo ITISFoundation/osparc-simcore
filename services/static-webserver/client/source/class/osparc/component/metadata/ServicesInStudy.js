@@ -28,11 +28,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
-    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 100);
-    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 200);
+    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
+    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 180);
     grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
     grid.setColumnAlign(this.self().GRID_POS.NAME, "left", "middle");
+    grid.setColumnMinWidth(this.self().GRID_POS.NAME, 80);
+    grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 180);
     this._setLayout(grid);
 
     this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -40,7 +42,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     const servicesInStudy = osparc.utils.Study.extractServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const store = osparc.store.Store.getInstance();
-      store.getServicesOnly()
+      store.getAllServices()
         .then(services => {
           this._services = services;
           this._populateLayout();
@@ -142,8 +144,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-          const serviceDetails = new osparc.servicecard.Large(metadata, {
+          const serviceDetails = new osparc.info.ServiceLarge(metadata, {
             nodeId,
+            studyId: this._studyData["uuid"],
             label: node["label"]
           });
           const title = this.tr("Service information");
@@ -157,6 +160,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
 
         const labelLabel = new qx.ui.basic.Label(node["label"]).set({
+          toolTipText: node["label"],
           font: "text-14"
         });
         this._add(labelLabel, {
@@ -170,8 +174,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           break;
         }
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
-          font: "text-14",
-          toolTipText: node["key"]
+          toolTipText: node["key"],
+          font: "text-14"
         });
         this._add(nameLabel, {
           row: i,

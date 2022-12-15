@@ -72,6 +72,7 @@ from .projects_exceptions import (
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodes,
+    ProjectTooManyProjectOpened,
 )
 from .projects_utils import extract_dns_without_default_port
 
@@ -189,7 +190,7 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.get_dynamic_services(
+    project_running_nodes = await director_v2_api.list_dynamic_services(
         request.app, user_id, f"{project_uuid}"
     )
 
@@ -206,6 +207,7 @@ async def _start_dynamic_service(
     # this is a dynamic node, let's gather its resources and start it
     service_resources: ServiceResourcesDict = await get_project_node_resources(
         request.app,
+        user_id=user_id,
         project={
             "workbench": {
                 f"{node_uuid}": {"key": service_key, "version": service_version}
@@ -309,7 +311,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_running_dynamic_services = await director_v2_api.get_dynamic_services(
+    list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
     if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
@@ -559,7 +561,11 @@ async def _clean_user_disconnected_clients(
 
 
 async def try_open_project_for_user(
-    user_id: UserID, project_uuid: str, client_session_id: str, app: web.Application
+    user_id: UserID,
+    project_uuid: str,
+    client_session_id: str,
+    app: web.Application,
+    max_number_of_studies_per_user: Optional[int],
 ) -> bool:
     try:
         async with lock_with_notification(
@@ -572,6 +578,24 @@ async def try_open_project_for_user(
         ):
 
             with managed_resource(user_id, client_session_id, app) as rt:
+                # NOTE: if max_number_of_studies_per_user is set, the same
+                # project shall still be openable if the tab was closed
+                if max_number_of_studies_per_user is not None and (
+                    len(
+                        {
+                            uuid
+                            for uuid in await rt.find_all_resources_of_user(
+                                PROJECT_ID_KEY
+                            )
+                            if uuid != project_uuid
+                        }
+                    )
+                    >= max_number_of_studies_per_user
+                ):
+                    raise ProjectTooManyProjectOpened(
+                        max_num_projects=max_number_of_studies_per_user
+                    )
+
                 user_session_id_list: list[
                     UserSessionID
                 ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
@@ -836,12 +860,13 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, project: dict[str, Any], node_id: NodeID
+    app: web.Application, user_id: UserID, project: dict[str, Any], node_id: NodeID
 ) -> ServiceResourcesDict:
     if project_node := project.get("workbench", {}).get(f"{node_id}"):
-        return await catalog_client.get_service_resources(
-            app, project_node["key"], project_node["version"]
+        default_service_resources = await catalog_client.get_service_resources(
+            app, user_id, project_node["key"], project_node["version"]
         )
+        return default_service_resources
     raise NodeNotFoundError(project["uuid"], f"{node_id}")
 
 
@@ -864,7 +889,7 @@ async def run_project_dynamic_services(
     assert project_settings  # nosec
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
-        for d in await director_v2_api.get_dynamic_services(
+        for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]

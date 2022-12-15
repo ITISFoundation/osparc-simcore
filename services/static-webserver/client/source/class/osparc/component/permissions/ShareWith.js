@@ -35,17 +35,17 @@ qx.Class.define("osparc.component.permissions.ShareWith", {
     const store = osparc.store.Store.getInstance();
     Promise.all([
       store.getGroupsMe(),
-      store.getGroupsAll()
+      store.getGroupEveryone()
     ])
       .then(values => {
         const groupMe = values[0];
-        const groupAll = values[1];
+        const groupEveryone = values[1];
         this.__rbManager.getChildren().forEach(rb => {
           if (rb.contextId === this.self().SharingOpts["me"].contextId) {
             rb.gid = groupMe["gid"];
           }
           if (rb.contextId === this.self().SharingOpts["all"].contextId) {
-            rb.gid = groupAll["gid"];
+            rb.gid = groupEveryone["gid"];
           }
         });
       });

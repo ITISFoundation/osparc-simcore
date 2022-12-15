@@ -66,6 +66,9 @@ qx.Class.define("osparc.Application", {
         qx.log.appender.Native;
       }
 
+      const intlTelInput = osparc.wrapper.IntlTelInput.getInstance();
+      intlTelInput.init();
+
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnline(false));
@@ -423,6 +426,8 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function() {
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
+
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {

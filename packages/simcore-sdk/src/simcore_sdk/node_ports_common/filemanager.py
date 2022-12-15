@@ -1,4 +1,5 @@
 import logging
+from asyncio import CancelledError
 from pathlib import Path
 from typing import Optional, Union
 
@@ -262,6 +263,7 @@ async def download_file_from_link(
 async def _abort_upload(
     session: ClientSession, upload_links: FileUploadSchema, *, reraise_exceptions: bool
 ) -> None:
+    # abort the upload correctly, so it can revert back to last version
     try:
         async with session.post(upload_links.links.abort_upload) as resp:
             resp.raise_for_status()
@@ -269,6 +271,7 @@ async def _abort_upload(
         log.warning("Error while aborting upload", exc_info=True)
         if reraise_exceptions:
             raise
+    log.warning("Upload aborted")
 
 
 async def upload_file(
@@ -352,10 +355,12 @@ async def upload_file(
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             log.error("The upload failed with an unexpected error:", exc_info=True)
             if upload_links:
-                # abort the upload correctly, so it can revert back to last version
                 await _abort_upload(session, upload_links, reraise_exceptions=False)
-                log.warning("Upload aborted")
             raise exceptions.S3TransferError from exc
+        except CancelledError:
+            if upload_links:
+                await _abort_upload(session, upload_links, reraise_exceptions=False)
+            raise
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {file_to_upload} complete.")
         return store_id, e_tag

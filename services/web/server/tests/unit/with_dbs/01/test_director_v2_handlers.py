@@ -4,12 +4,15 @@
 from typing import AsyncIterator
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_unit_with_db import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
 
@@ -110,5 +113,5 @@ async def test_regression_get_dynamic_services_empty_params(
     mocked_director_v2,
     client,
 ):
-    list_of_services = await director_v2_api.get_dynamic_services(client.app)
+    list_of_services = await director_v2_api.list_dynamic_services(client.app)
     assert list_of_services == []

@@ -1,7 +1,5 @@
 from logging import getLogger
 
-# TODO: Possible SQL injection vector through string-based query construction.
-
 log = getLogger(__name__)
 LOG_TPL = "%s <--%s"
 

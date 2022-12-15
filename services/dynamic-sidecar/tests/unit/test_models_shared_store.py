@@ -20,7 +20,9 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
 
 @pytest.fixture
 def trigger_setup_shutdown_events(
-    shared_store_dir: Path, app: FastAPI, test_client: TestClient
+    shared_store_dir: Path,
+    app: FastAPI,
+    test_client: TestClient,
 ) -> None:
     assert app.state.shared_store is not None
 

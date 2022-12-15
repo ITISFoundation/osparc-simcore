@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_config(
+    disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: MonkeyPatch,
@@ -77,7 +78,7 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+def mock_env(disable_rabbitmq: None, monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -96,6 +97,10 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+
+    monkeypatch.setenv("RABBIT_HOST", "mocked_host")
+    monkeypatch.setenv("RABBIT_USER", "mocked_user")
+    monkeypatch.setenv("RABBIT_PASSWORD", "mocked_password")
 
     monkeypatch.setenv("REGISTRY_AUTH", "false")
     monkeypatch.setenv("REGISTRY_USER", "test")

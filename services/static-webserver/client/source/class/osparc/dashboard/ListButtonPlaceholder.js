@@ -21,6 +21,8 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
   construct: function() {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
+
     this.set({
       cursor: "not-allowed"
     });

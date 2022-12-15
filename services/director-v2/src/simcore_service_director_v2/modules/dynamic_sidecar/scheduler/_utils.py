@@ -1,9 +1,9 @@
 import logging
 from collections import deque
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Deque, Dict, Final, List, Optional, Type
+from typing import Any, Deque, Final, Optional
 
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from pydantic import AnyHttpUrl
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
@@ -11,6 +11,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 )
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ....api.dependencies.database import get_base_repository
 from ....core.errors import NodeRightsAcquireError
@@ -20,6 +21,7 @@ from ....models.schemas.dynamic_services.scheduler import (
     DockerStatus,
     SchedulerData,
 )
+from ....modules.rabbitmq import RabbitMQClient
 from ...db.repositories import BaseRepository
 from ...director_v0 import DirectorV0Client
 from ...node_rights import NodeRightsManager, ResourceName
@@ -47,30 +49,7 @@ logger = logging.getLogger(__name__)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
 
 
-@asynccontextmanager
-async def disabled_directory_watcher(
-    dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> AsyncIterator[None]:
-    """
-    The following will happen when using this context manager:
-    - Disables file system event watcher while writing
-        to the outputs directory to avoid data being pushed
-        via nodeports upon change.
-    - Enables file system event watcher so data from outputs
-        can be again synced via nodeports upon change.
-    """
-    try:
-        await dynamic_sidecar_client.service_disable_dir_watcher(
-            dynamic_sidecar_endpoint
-        )
-        yield
-    finally:
-        await dynamic_sidecar_client.service_enable_dir_watcher(
-            dynamic_sidecar_endpoint
-        )
-
-
-def get_repository(app: FastAPI, repo_type: Type[BaseRepository]) -> BaseRepository:
+def get_repository(app: FastAPI, repo_type: type[BaseRepository]) -> BaseRepository:
     return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 
@@ -80,8 +59,8 @@ def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
 
 
 def parse_containers_inspect(
-    containers_inspect: Optional[Dict[str, Any]]
-) -> List[DockerContainerInspect]:
+    containers_inspect: Optional[dict[str, Any]]
+) -> list[DockerContainerInspect]:
     results: Deque[DockerContainerInspect] = deque()
 
     if containers_inspect is None:
@@ -94,10 +73,10 @@ def parse_containers_inspect(
 
 
 def are_all_user_services_containers_running(
-    containers_inspect: List[DockerContainerInspect],
+    containers_inspect: list[DockerContainerInspect],
 ) -> bool:
     return len(containers_inspect) > 0 and all(
-        (x.status == DockerStatus.RUNNING for x in containers_inspect)
+        x.status == DockerStatus.running for x in containers_inspect
     )
 
 
@@ -299,3 +278,17 @@ async def attempt_pod_removal_and_data_saving(
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
         TaskProgress.create(), app, scheduler_data, dynamic_sidecar_settings
     )
+
+    # instrumentation
+    message = InstrumentationRabbitMessage(
+        metrics="service_stopped",
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        service_uuid=scheduler_data.node_uuid,
+        service_type=NodeClass.INTERACTIVE.value,
+        service_key=scheduler_data.key,
+        service_tag=scheduler_data.version,
+    )
+    rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+    await rabbitmq_client.publish(message.channel_name, message.json())
