@@ -67,8 +67,17 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=55),
-        description="Defines the time an instance must be empty before the instance termination procedure may begin",
+        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
     )
+
+    @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
+    @classmethod
+    def check_valid_time_set(cls, value):
+        if value < datetime.timedelta(minutes=0):
+            value = datetime.timedelta(minutes=0)
+        elif value > datetime.timedelta(minutes=59):
+            value = datetime.timedelta(minutes=59)
+        return value
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
