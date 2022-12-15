@@ -11,7 +11,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/locations.yaml#/FileLocationArray"
+                $ref: "#/components/schemas/FileLocationArray"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -45,7 +45,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/locations.yaml#/TableSynchronisationEnveloped"
+                $ref: "#/components/schemas/TableSynchronisationEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -67,7 +67,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/datasets.yaml#/DatasetMetaDataArray"
+                $ref: "#/components/schemas/DatasetMetaDataArray"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -356,6 +356,59 @@ components:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
   schemas:
+    FileLocationEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/FileLocation"
+        error:
+          nullable: true
+          default: null
+
+    FileLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: number
+      example:
+        filename: "simcore.s3"
+        id: 0
+
+    FileLocationArray:
+      type: array
+      items:
+        $ref: "#/components/schemas/FileLocation"
+
+    TableSynchronisationEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/TableSynchronisation"
+        error:
+          nullable: true
+          default: null
+
+    TableSynchronisation:
+      type: object
+      required:
+        - removed
+      properties:
+        dry_run:
+          type: boolean
+        fire_and_forget:
+          type: boolean
+        removed:
+          type: array
+          items:
+            type: string
+
     FileUploadEnveloped:
       type: object
       required:
@@ -444,3 +497,30 @@ components:
         e_tag:
           type: string
           nullable: true
+
+    DatasetMetaEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/DatasetMetaData"
+        error:
+          nullable: true
+          default: null
+
+    DatasetMetaData:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+        display_name:
+          type: string
+      example:
+        dataset_uuid: "N:id-aaaa"
+        display_name: "simcore-testing"
+
+    DatasetMetaDataArray:
+      type: array
+      items:
+        $ref: "#/components/schemas/DatasetMetaData"
