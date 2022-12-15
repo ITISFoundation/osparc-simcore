@@ -49,13 +49,13 @@ FAST_POLLING_INTERVAL: Final[float] = 0.1
 # UTILS
 
 
-class FailTest(RuntimeError):
+class FailTestError(RuntimeError):
     pass
 
 
 _TENACITY_RETRY_PARAMS: dict[str, Any] = dict(
     reraise=True,
-    retry=retry_if_exception_type((FailTest, AssertionError)),
+    retry=retry_if_exception_type((FailTestError, AssertionError)),
     stop=stop_after_delay(10),
     wait=wait_fixed(0.01),
 )
@@ -491,7 +491,7 @@ async def test_outputs_watcher_disabling(
                 #   NOTE: will make entire test fail with a specific
                 #   exception and rely on mark.flaky to retry it.
                 if len(dir_event_set) < EXPECTED_EVENTS_PER_RANDOM_PORT_KEY:
-                    raise FailTest(
+                    raise FailTestError(
                         f"Expected at least {EXPECTED_EVENTS_PER_RANDOM_PORT_KEY}"
                         f" events, found: {dir_event_set}"
                     )
