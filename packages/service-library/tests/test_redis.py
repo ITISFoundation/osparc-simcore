@@ -11,10 +11,8 @@ from typing import AsyncIterator, Callable
 import docker
 import pytest
 from faker import Faker
-from redis.asyncio.lock import Lock
 from redis.exceptions import LockError, LockNotOwnedError
-from servicelib.background_task import periodic_task
-from servicelib.redis import RedisClient
+from servicelib.redis import AlreadyLockedError, RedisClient
 from settings_library.redis import RedisSettings
 
 pytest_simcore_core_services_selection = [
@@ -49,8 +47,15 @@ async def redis_client(
 
     yield _creator
     # cleanup, properly close the clients
-    await asyncio.gather(*(client.redis.flushall() for client in created_clients))
+    await asyncio.gather(
+        *(client.redis.flushall() for client in created_clients), return_exceptions=True
+    )
     await asyncio.gather(*(client.close() for client in created_clients))
+
+
+@pytest.fixture
+def lock_timeout() -> datetime.timedelta:
+    return datetime.timedelta(seconds=1)
 
 
 async def test_redis_key_encode_decode(
@@ -66,7 +71,9 @@ async def test_redis_key_encode_decode(
     await client.redis.delete(key)
 
 
-async def test_lock_acquisition(redis_client: Callable[[], RedisClient], faker: Faker):
+async def test_redis_lock_acquisition(
+    redis_client: Callable[[], RedisClient], faker: Faker
+):
     client = redis_client()
 
     lock_name = faker.pystr()
@@ -97,7 +104,7 @@ async def test_lock_acquisition(redis_client: Callable[[], RedisClient], faker: 
     assert not await lock.owned()
 
 
-async def test_lock_context_manager(
+async def test_redis_lock_context_manager(
     redis_client: Callable[[], RedisClient], faker: Faker
 ):
     client = redis_client()
@@ -127,12 +134,7 @@ async def test_lock_context_manager(
     assert not await lock.locked()
 
 
-@pytest.fixture
-def lock_timeout() -> datetime.timedelta:
-    return datetime.timedelta(seconds=2)
-
-
-async def test_lock_with_ttl(
+async def test_redis_lock_with_ttl(
     redis_client: Callable[[], RedisClient],
     faker: Faker,
     lock_timeout: datetime.timedelta,
@@ -150,31 +152,55 @@ async def test_lock_with_ttl(
             assert not await ttl_lock.locked()
 
 
-async def test_lock_with_auto_extent(
+async def test_lock_context(
     redis_client: Callable[[], RedisClient],
     faker: Faker,
     lock_timeout: datetime.timedelta,
 ):
     client = redis_client()
-    ttl_lock = client.redis.lock(faker.pystr(), timeout=lock_timeout.total_seconds())
-    assert not await ttl_lock.locked()
-
-    async def _auto_extend_lock(lock: Lock) -> None:
-        assert await lock.reacquire() is True
-
-    async with ttl_lock, periodic_task(
-        _auto_extend_lock,
-        interval=0.6 * lock_timeout,
-        task_name=f"{ttl_lock.name}_auto_extend",
-        lock=ttl_lock,
-    ):
-        assert await ttl_lock.locked() is True
+    lock_name = faker.pystr()
+    assert await client.is_locked(lock_name) is False
+    async with client.lock_context(lock_name, ttl=lock_timeout) as ttl_lock:
+        assert await client.is_locked(lock_name) is True
         assert await ttl_lock.owned() is True
         await asyncio.sleep(5 * lock_timeout.total_seconds())
-        assert await ttl_lock.locked() is True
+        assert await client.is_locked(lock_name) is True
         assert await ttl_lock.owned() is True
-    assert await ttl_lock.locked() is False
+    assert await client.is_locked(lock_name) is False
     assert await ttl_lock.owned() is False
+
+
+async def test_lock_context_with_already_locked_lock_raises(
+    redis_client: Callable[[], RedisClient],
+    faker: Faker,
+):
+    client = redis_client()
+    lock_name = faker.pystr()
+    assert await client.is_locked(lock_name) is False
+    async with client.lock_context(lock_name) as lock:
+        assert await client.is_locked(lock_name) is True
+
+        with pytest.raises(AlreadyLockedError):
+            assert isinstance(lock.name, str)
+            async with client.lock_context(lock.name):
+                ...
+        assert await lock.locked() is True
+    assert await client.is_locked(lock_name) is False
+
+
+async def test_lock_context_with_data(
+    redis_client: Callable[[], RedisClient], faker: Faker
+):
+    client = redis_client()
+    lock_data = faker.text()
+    lock_name = faker.pystr()
+    assert await client.is_locked(lock_name) is False
+    assert await client.lock_data(lock_name) is None
+    async with client.lock_context(lock_name, lock_data=lock_data) as lock:
+        assert await client.is_locked(lock_name) is True
+        assert await client.lock_data(lock_name) == lock_data
+    assert await client.is_locked(lock_name) is False
+    assert await client.lock_data(lock_name) is None
 
 
 async def test_redis_client_lose_connection(
