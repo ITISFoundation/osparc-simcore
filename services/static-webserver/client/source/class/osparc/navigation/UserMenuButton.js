@@ -80,12 +80,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         case "clusters":
           control = new qx.ui.menu.Button(this.tr("Clusters"));
           control.exclude();
-          osparc.utils.DisabledPlugins.isClustersDisabled()
-            .then(isDisabled => {
-              if (isDisabled === false) {
-                control.show();
-              }
-            });
+          if (!osparc.utils.Utils.isProduct("s4llite")) {
+            osparc.utils.DisabledPlugins.isClustersDisabled()
+              .then(isDisabled => {
+                if (isDisabled === false) {
+                  control.show();
+                }
+              });
+          }
           control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
