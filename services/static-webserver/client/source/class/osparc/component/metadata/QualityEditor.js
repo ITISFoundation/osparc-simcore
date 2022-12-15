@@ -689,7 +689,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
         orgIDs.push(myGid);
         if (osparc.utils.Resources.isService(this.__resourceData)) {
-          return osparc.component.permissions.Service.canAnyGroupWrite(this.__resourceData["access_rights"], orgIDs);
+          return osparc.component.permissions.Service.canAnyGroupWrite(this.__resourceData["accessRights"], orgIDs);
         }
         return osparc.component.permissions.Study.canGroupsWrite(this.__resourceData["accessRights"], orgIDs);
       }

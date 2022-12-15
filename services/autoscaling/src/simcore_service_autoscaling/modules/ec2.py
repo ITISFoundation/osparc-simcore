@@ -1,9 +1,11 @@
 import contextlib
+import datetime
 import logging
 from dataclasses import dataclass
 from typing import Optional, cast
 
 import aioboto3
+import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
@@ -18,6 +20,7 @@ from types_aiobotocore_ec2.type_defs import ReservationTypeDef
 
 from ..core.errors import (
     ConfigurationError,
+    Ec2InstanceNotFoundError,
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
@@ -37,7 +40,15 @@ def _is_ec2_instance_running(instance: ReservationTypeDef):
     )
 
 
-@dataclass
+@dataclass(frozen=True)
+class EC2InstanceData:
+    launch_time: datetime.datetime
+    id: str
+    aws_private_dns: InstancePrivateDNSName
+    type: InstanceTypeType
+
+
+@dataclass(frozen=True)
 class AutoscalingEC2:
     client: EC2Client
     session: aioboto3.Session
@@ -65,7 +76,7 @@ class AutoscalingEC2:
 
     async def ping(self) -> bool:
         try:
-            await self.client.describe_account_attributes(DryRun=True)
+            await self.client.describe_account_attributes()
             return True
         except Exception:  # pylint: disable=broad-except
             return False
@@ -100,7 +111,7 @@ class AutoscalingEC2:
         instance_type: InstanceTypeType,
         tags: dict[str, str],
         startup_script: str,
-    ) -> InstancePrivateDNSName:
+    ) -> EC2InstanceData:
         with log_context(
             logger,
             logging.INFO,
@@ -159,25 +170,69 @@ class AutoscalingEC2:
             await waiter.wait(InstanceIds=[instance_id])
             logger.info("instance %s is now running", instance_id)
 
-            # NOTE: this is currently deactivated as this makes starting an instance
-            # take between 2-4 minutes more and it seems to be responsive much before
-            # nevertheless if we get weird errors, this should be activated again!
-
-            # waiter = client.get_waiter("instance_status_ok")
-            # await waiter.wait(InstanceIds=[instance_id])
-            # logger.info("instance %s status is OK...", instance_id)
-
             # get the private IP
             instances = await self.client.describe_instances(InstanceIds=[instance_id])
-            private_dns_name: str = instances["Reservations"][0]["Instances"][0][
-                "PrivateDnsName"
-            ]
-            logger.info(
-                "instance %s is available on %s, happy computing!!",
-                instance_id,
-                private_dns_name,
+            instance = instances["Reservations"][0]["Instances"][0]
+            instance_data = EC2InstanceData(
+                launch_time=instance["LaunchTime"],
+                id=instance["InstanceId"],
+                aws_private_dns=instance["PrivateDnsName"],
+                type=instance["InstanceType"],
             )
-            return private_dns_name
+            logger.info(
+                "%s is available, happy computing!!",
+                f"{instance_data=}",
+            )
+            return instance_data
+
+    async def get_running_instance(
+        self,
+        instance_settings: EC2InstancesSettings,
+        tag_keys: list[str],
+        instance_host_name: str,
+    ) -> EC2InstanceData:
+        instances = await self.client.describe_instances(
+            Filters=[
+                {
+                    "Name": "key-name",
+                    "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
+                },
+                {"Name": "instance-state-name", "Values": ["running"]},
+                {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
+                {
+                    "Name": "network-interface.private-dns-name",
+                    "Values": [f"{instance_host_name}.ec2.internal"],
+                },
+            ]
+        )
+        if not instances["Reservations"]:
+            # NOTE: wrong hostname, or not running, or wrong usage
+            raise Ec2InstanceNotFoundError()
+
+        # NOTE: since the hostname is unique, there is only one instance here
+        assert "Instances" in instances["Reservations"][0]  # nosec
+        instance = instances["Reservations"][0]["Instances"][0]
+        assert "LaunchTime" in instance  # nosec
+        assert "InstanceId" in instance  # nosec
+        assert "PrivateDnsName" in instance  # nosec
+        assert "InstanceType" in instance  # nosec
+        return EC2InstanceData(
+            launch_time=instance["LaunchTime"],
+            id=instance["InstanceId"],
+            aws_private_dns=instance["PrivateDnsName"],
+            type=instance["InstanceType"],
+        )
+
+    async def terminate_instance(self, instance_data: EC2InstanceData) -> None:
+        try:
+            await self.client.terminate_instances(InstanceIds=[instance_data.id])
+        except botocore.exceptions.ClientError as exc:
+            if (
+                exc.response.get("Error", {}).get("Code", "")
+                == "InvalidInstanceID.NotFound"
+            ):
+                raise Ec2InstanceNotFoundError from exc
+            raise
 
 
 def setup(app: FastAPI) -> None:

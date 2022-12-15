@@ -232,7 +232,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadOrganizationsAndMembers: function() {
       this.__organizationsAndMembers.reset();
 
-      const aceessRights = this.__getAccessRights();
+      const aceessRights = this._serializedData["accessRights"];
       const myFriends = Object.values(this.__collaborators);
 
       // sort them first
@@ -273,7 +273,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const aceessRights = this.__getAccessRights();
+      const aceessRights = this._serializedData["accessRights"];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collaborator = this.__collaborators[gid];
@@ -287,10 +287,6 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           this.__collaboratorsModel.append(collaboratorModel);
         }
       });
-    },
-
-    __getAccessRights: function() {
-      return this._serializedData["accessRights"] || this._serializedData["access_rights"];
     },
 
     _isUserOwner: function() {

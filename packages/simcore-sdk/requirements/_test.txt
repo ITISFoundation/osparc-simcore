@@ -53,7 +53,7 @@ botocore==1.24.21
     #   boto3
     #   moto
     #   s3transfer
-certifi==2022.9.24
+certifi==2022.12.7
     # via
     #   minio
     #   requests
