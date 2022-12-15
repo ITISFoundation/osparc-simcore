@@ -72,7 +72,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
-    def check_valid_time_set(cls, value):
+    def ensure_time_is_in_range(cls, value):
         if value < datetime.timedelta(minutes=0):
             value = datetime.timedelta(minutes=0)
         elif value > datetime.timedelta(minutes=59):
