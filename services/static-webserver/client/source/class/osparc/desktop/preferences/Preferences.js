@@ -35,13 +35,6 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       event: "changeAutoConnectPorts"
     },
 
-    autoOpenNode: {
-      nullable: false,
-      init: true,
-      check: "Boolean",
-      event: "changeAutoOpenNode"
-    },
-
     confirmBackToDashboard: {
       nullable: false,
       init: true,
