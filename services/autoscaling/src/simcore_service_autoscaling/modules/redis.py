@@ -1,9 +1,7 @@
-import contextlib
 import logging
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.logging_utils import log_catch
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisSettings
 from tenacity._asyncio import AsyncRetrying
@@ -33,22 +31,16 @@ def setup(app: FastAPI) -> None:
                     raise RedisNotConnectedError(dsn=settings.dsn_locks)
 
     async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
+        if app.state.redis:
+            await app.state.redis.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    if not app.state.rabbitmq_client:
+def get_redis_client(app: FastAPI) -> RedisClientSDK:
+    if not app.state.redis:
         raise ConfigurationError(
-            msg="RabbitMQ client is not available. Please check the configuration."
+            msg="Redis client is not available. Please check the configuration."
         )
-    return cast(RabbitMQClient, app.state.rabbitmq_client)
-
-
-async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    with log_catch(logger, reraise=False), contextlib.suppress(ConfigurationError):
-        # NOTE: if rabbitmq was not initialized the error does not need to flood the logs
-        await get_rabbitmq_client(app).publish(message.channel_name, message.json())
+    return cast(RedisClientSDK, app.state.redis)
