@@ -445,7 +445,6 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
-@pytest.mark.flaky(max_runs=2)
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mocked_port_key_events_queue_coro_get: Mock,
@@ -456,15 +455,8 @@ async def test_outputs_watcher_disabling(
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
     WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
-    CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
-    # NOTE: sometimes the same event can be generated twice, see below
-    # <FileCreatedEvent: event_type=created, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-    # <FileCreatedEvent: event_type=created, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-    # <FileModifiedEvent: event_type=modified, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-    # <FileClosedEvent: event_type=closed, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-
-    async def _create_port_key_events() -> int:
+    async def _create_port_key_events() -> None:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
@@ -477,22 +469,17 @@ async def test_outputs_watcher_disabling(
 
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                calls_per_dir = [
-                    c
+                # check event was triggered
+                dir_event_set = {
+                    c.args[0]
                     for c in mocked_port_key_events_queue_coro_get.call_args_list
                     if c.args[0] == random_subdir
-                ]
-                assert len(calls_per_dir) >= CALLS_RECEIVED_BY_EVENT_FILTER
+                }
+                assert len(dir_event_set) == 1
 
-    def _assert_expected_event_group(*, event_chain_group: int) -> None:
-        lower_limit = event_chain_group * CALLS_RECEIVED_BY_EVENT_FILTER
-        upper_limit = (
-            event_chain_group * CALLS_RECEIVED_BY_EVENT_FILTER
-            # take into consideration that all event_filter invocations
-            # can generate +1 events
-            + 1 * event_chain_group
-        )
-        assert lower_limit <= mock_event_filter_enqueue.call_count <= upper_limit
+    def _assert_events_generated(*, expected_events: int) -> None:
+        events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
+        assert len(events_set) == expected_events
 
     # NOTE: for some reason the first event in the queue
     #  does not get delivered the AioQueue future handling coro_get hangs
@@ -502,32 +489,27 @@ async def test_outputs_watcher_disabling(
     # by default outputs-watcher it is disabled
 
     # expect no events to be generated
-    _assert_expected_event_group(event_chain_group=0)
+    _assert_events_generated(expected_events=0)
     await _create_port_key_events()
-    _assert_expected_event_group(event_chain_group=0)
+    _assert_events_generated(expected_events=0)
 
     # after enabling new vents will be generated
     await _assert_enable_outputs_watcher(test_client)
-    _assert_expected_event_group(event_chain_group=0)
+    _assert_events_generated(expected_events=0)
     await _create_port_key_events()
-    _assert_expected_event_group(event_chain_group=1)
+    _assert_events_generated(expected_events=1)
 
     # disabling again, no longer generate events
     await _assert_disable_outputs_watcher(test_client)
-    _assert_expected_event_group(event_chain_group=1)
+    _assert_events_generated(expected_events=1)
     await _create_port_key_events()
-    _assert_expected_event_group(event_chain_group=1)
+    _assert_events_generated(expected_events=1)
 
     # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
-    _assert_expected_event_group(event_chain_group=1)
+    _assert_events_generated(expected_events=1)
     await _create_port_key_events()
-    _assert_expected_event_group(event_chain_group=2)
-
-    assert (
-        mocked_port_key_events_queue_coro_get.call_count
-        >= 4 * CALLS_RECEIVED_BY_EVENT_FILTER
-    )
+    _assert_events_generated(expected_events=2)
 
 
 async def test_container_create_outputs_dirs(
