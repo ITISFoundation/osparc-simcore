@@ -477,12 +477,13 @@ async def test_outputs_watcher_disabling(
                     for c in mocked_port_key_events_queue_coro_get.call_args_list
                     if c.args[0] == random_subdir
                 ]
-                # NOTE: this test can sometimes generate more that +/- 1 event
-                # - when it creates +1 event ✅ we can deal with it
-                # - when it creates -1 event ❌ cannot deal with it
-                #   will cause downstream assertions to fail since in the
-                #   queue there are still present other
-                #   NOTE: will make entire test fail and it will get retried
+                # NOTE: this test can sometimes generate +/-(1 event)
+                # - when it creates +1 event ✅ using `>=` solves it
+                # - when it creates -1 event ❌ cannot deal with it from here
+                #   Will cause downstream assertions to fail since in the
+                #   event_filter_queue there will be unexpected items
+                #   NOTE: will make entire test fail and rely on
+                #   mark.flaky to retry it!
                 if len(dir_event_set) < EXPECTED_EVENTS_PER_RANDOM_PORT_KEY:
                     raise RuntimeError(
                         f" enough events were generated: {dir_event_set}"
