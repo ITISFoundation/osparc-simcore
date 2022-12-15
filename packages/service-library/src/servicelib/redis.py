@@ -54,7 +54,7 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         try:
             return await self._client.ping()
-        except ConnectionError:
+        except redis.exceptions.ConnectionError:
             return False
 
     @contextlib.asynccontextmanager
