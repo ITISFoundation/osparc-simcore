@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, Field, conint
 
 
 class FileLocation(BaseModel):
@@ -38,7 +38,7 @@ class FileUploadComplete(BaseModel):
     links: Links1
 
 
-class State(Enum, str):
+class State(str, Enum):
     ok = "ok"
     nok = "nok"
 
@@ -84,4 +84,40 @@ class FileUploadCompleteFutureEnveloped(BaseModel):
 
 class DatasetMetaEnvelope(BaseModel):
     data: DatasetMetaData
+    error: Optional[Any] = None
+
+
+class CompleteUpload(BaseModel):
+    number: int = Field(..., ge=1)
+    e_tag: str
+
+
+class FileMetaData(BaseModel):
+    file_uuid: Optional[str] = None
+    location_id: Optional[str] = None
+    project_name: Optional[str] = None
+    node_name: Optional[str] = None
+    file_name: Optional[str] = None
+    file_id: Optional[str] = None
+    created_at: Optional[str] = None
+    last_modified: Optional[str] = None
+    file_size: Optional[int] = None
+    entity_tag: Optional[str] = None
+
+
+class FileMetaDataArray(BaseModel):
+    __root__: list[FileMetaData]
+
+
+class FileMetaEnvelope(BaseModel):
+    data: FileMetaData
+    error: Optional[Any] = None
+
+
+class PresignedLink(BaseModel):
+    link: Optional[str] = None
+
+
+class PresignedLinkEnveloped(BaseModel):
+    data: PresignedLink
     error: Optional[Any] = None
