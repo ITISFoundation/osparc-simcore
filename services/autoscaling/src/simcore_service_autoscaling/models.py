@@ -9,6 +9,21 @@ class Resources(BaseModel):
     cpus: NonNegativeFloat
     ram: ByteSize
 
+    @classmethod
+    def create_as_empty(cls) -> "Resources":
+        return cls(cpus=0, ram=ByteSize(0))
+
+    def __ge__(self, other: "Resources") -> bool:
+        return self.cpus >= other.cpus and self.ram >= other.ram
+
+    def __add__(self, other: "Resources") -> "Resources":
+        return Resources.construct(
+            **{
+                key: a + b
+                for (key, a), b in zip(self.dict().items(), other.dict().values())
+            }
+        )
+
 
 class EC2Instance(BaseModel):
     name: str

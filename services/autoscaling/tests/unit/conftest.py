@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import datetime
 import json
 import random
 from pathlib import Path
@@ -13,7 +14,6 @@ from typing import (
     Callable,
     Final,
     Iterator,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -30,8 +30,10 @@ from asgi_lifespan import LifespanManager
 from deepdiff import DeepDiff
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DockerLabelKey
+from models_library.generated_models.docker_rest_api import Node, Service
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, PositiveInt
+from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -41,7 +43,7 @@ from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import ApplicationSettings, EC2Settings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
-from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2
+from simcore_service_autoscaling.modules.ec2 import AutoscalingEC2, EC2InstanceData
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -103,6 +105,13 @@ def app_environment(
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "EC2_INSTANCES_AMI_ID": faker.pystr(),
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
+            "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
+            "NODES_MONITORING_SERVICE_LABELS": json.dumps(
+                ["pytest.fake-service-label"]
+            ),
+            "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
+                ["pytest.fake-new-node-label"]
+            ),
         },
     )
     return mock_env_devel_environment | envs
@@ -157,6 +166,17 @@ def app_settings(initialized_app: FastAPI) -> ApplicationSettings:
 
 
 @pytest.fixture
+def service_monitored_labels(
+    app_settings: ApplicationSettings,
+) -> dict[DockerLabelKey, str]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    return {
+        key: "true"
+        for key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+    }
+
+
+@pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
     async with httpx.AsyncClient(
@@ -177,6 +197,16 @@ async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
 async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+async def host_node(
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+) -> Node:
+    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
+    assert len(nodes) == 1
+    return nodes[0]
 
 
 @pytest.fixture
@@ -228,13 +258,15 @@ async def create_service(
     docker_swarm: None,
     faker: Faker,
 ) -> AsyncIterator[
-    Callable[[dict[str, Any], Optional[dict[str, str]]], Awaitable[Mapping[str, Any]]]
+    Callable[[dict[str, Any], Optional[dict[str, str]]], Awaitable[Service]]
 ]:
     created_services = []
 
     async def _creator(
-        task_template: dict[str, Any], labels: Optional[dict[str, str]] = None
-    ) -> Mapping[str, Any]:
+        task_template: dict[str, Any],
+        labels: Optional[dict[str, str]] = None,
+        wait_for_service_state="running",
+    ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
         if labels:
             task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
@@ -247,17 +279,17 @@ async def create_service(
             labels=labels or {},  # type: ignore
         )
         assert service
-        service = await async_docker_client.services.inspect(service["ID"])
-        print(
-            f"--> created docker service {service['ID']} with {service['Spec']['Name']}"
+        service = parse_obj_as(
+            Service, await async_docker_client.services.inspect(service["ID"])
         )
-        assert "Labels" in service["Spec"]
-        assert service["Spec"]["Labels"] == (labels or {})
+        assert service.Spec
+        print(f"--> created docker service {service.ID} with {service.Spec.Name}")
+        assert service.Spec.Labels == (labels or {})
 
         created_services.append(service)
         # get more info on that service
 
-        assert service["Spec"]["Name"] == service_name
+        assert service.Spec.Name == service_name
         excluded_paths = {
             "ForceUpdate",
             "Runtime",
@@ -276,18 +308,20 @@ async def create_service(
                 )
         diff = DeepDiff(
             task_template,
-            service["Spec"]["TaskTemplate"],
+            service.Spec.TaskTemplate.dict(exclude_unset=True),
             exclude_paths=excluded_paths,
         )
         assert not diff, f"{diff}"
-        assert service["Spec"]["Labels"] == (labels or {})
-
+        assert service.Spec.Labels == (labels or {})
+        await assert_for_service_state(
+            async_docker_client, service, [wait_for_service_state]
+        )
         return service
 
     yield _creator
 
     await asyncio.gather(
-        *(async_docker_client.services.delete(s["ID"]) for s in created_services)
+        *(async_docker_client.services.delete(s.ID) for s in created_services)
     )
     # wait until all tasks are gone
     @retry(
@@ -296,70 +330,63 @@ async def create_service(
         wait=wait_fixed(1),
         stop=stop_after_delay(30),
     )
-    async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
+    async def _check_service_task_gone(service: Service) -> None:
+        assert service.Spec
         print(
-            f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
+            f"--> checking if service {service.ID}:{service.Spec.Name} is really gone..."
         )
         assert not await async_docker_client.containers.list(
             all=True,
             filters={
-                "label": [f"com.docker.swarm.service.id={service['ID']}"],
+                "label": [f"com.docker.swarm.service.id={service.ID}"],
             },
         )
-        print(f"<-- service {service['ID']}:{service['Spec']['Name']} is gone.")
+        print(f"<-- service {service.ID}:{service.Spec.Name} is gone.")
 
     await asyncio.gather(*(_check_service_task_gone(s) for s in created_services))
     await asyncio.sleep(0)
 
 
-@pytest.fixture
-def assert_for_service_state() -> Callable[
-    [aiodocker.Docker, Mapping[str, Any], list[str]], Awaitable[None]
-]:
-    async def _runner(
-        async_docker_client: aiodocker.Docker,
-        created_service: Mapping[str, Any],
-        expected_states: list[str],
-    ) -> None:
-        SUCCESS_STABLE_TIME_S: Final[float] = 3
-        WAIT_TIME: Final[float] = 0.5
-        number_of_success = 0
-        async for attempt in AsyncRetrying(
-            retry=retry_if_exception_type(AssertionError),
-            reraise=True,
-            wait=wait_fixed(WAIT_TIME),
-            stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
-        ):
-            with attempt:
-                print(
-                    f"--> waiting for service {created_service['ID']} to become {expected_states}..."
-                )
-                services = await async_docker_client.services.list(
-                    filters={"id": created_service["ID"]}
-                )
-                assert services, f"no service with {created_service['ID']}!"
-                assert len(services) == 1
-                found_service = services[0]
+async def assert_for_service_state(
+    async_docker_client: aiodocker.Docker, service: Service, expected_states: list[str]
+) -> None:
+    SUCCESS_STABLE_TIME_S: Final[float] = 3
+    WAIT_TIME: Final[float] = 0.5
+    number_of_success = 0
+    async for attempt in AsyncRetrying(
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+        wait=wait_fixed(WAIT_TIME),
+        stop=stop_after_delay(10 * SUCCESS_STABLE_TIME_S),
+    ):
+        with attempt:
+            print(
+                f"--> waiting for service {service.ID} to become {expected_states}..."
+            )
+            services = await async_docker_client.services.list(
+                filters={"id": service.ID}
+            )
+            assert services, f"no service with {service.ID}!"
+            assert len(services) == 1
+            found_service = services[0]
 
-                tasks = await async_docker_client.tasks.list(
-                    filters={"service": found_service["Spec"]["Name"]}
-                )
-                assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
-                assert len(tasks) == 1
-                service_task = tasks[0]
-                assert (
-                    service_task["Status"]["State"] in expected_states
-                ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
-                print(
-                    f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success}"
-                )
-                number_of_success += 1
-                assert (number_of_success * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
-                print(
-                    f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds"
-                )
-
-    return _runner
+            tasks = await async_docker_client.tasks.list(
+                filters={"service": found_service["Spec"]["Name"]}
+            )
+            assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
+            assert len(tasks) == 1
+            service_task = tasks[0]
+            assert (
+                service_task["Status"]["State"] in expected_states
+            ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
+            print(
+                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.'*number_of_success}"
+            )
+            number_of_success += 1
+            assert (number_of_success * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
+            print(
+                f"<-- service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds"
+            )
 
 
 @pytest.fixture(scope="module")
@@ -558,4 +585,19 @@ def osparc_docker_label_keys(
 ) -> SimcoreServiceDockerLabelKeys:
     return SimcoreServiceDockerLabelKeys.parse_obj(
         dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+    )
+
+
+@pytest.fixture
+def aws_instance_private_dns() -> str:
+    return "ip-10-23-40-12.ec2.internal"
+
+
+@pytest.fixture
+def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2InstanceData:
+    return EC2InstanceData(
+        launch_time=faker.date_time(tzinfo=datetime.timezone.utc),
+        id=faker.uuid4(),
+        aws_private_dns=aws_instance_private_dns,
+        type=faker.pystr(),
     )
