@@ -7,7 +7,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
-    parse_request_query_parameters_as,
+    parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.json_serialization import json_dumps
@@ -115,12 +115,12 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
 @_handle_cluster_exceptions
 async def get_cluster_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ClusterPathParams, request)
+    path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
     cluster = await director_v2_api.get_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
-        cluster_id=query_params.cluster_id,
+        cluster_id=path_params.cluster_id,
     )
     return web.json_response(data={"data": cluster}, dumps=json_dumps)
 
@@ -134,12 +134,12 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
 @_handle_cluster_exceptions
 async def get_cluster_details_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ClusterPathParams, request)
+    path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
     cluster_details = await director_v2_api.get_cluster_details(
         app=request.app,
         user_id=req_ctx.user_id,
-        cluster_id=query_params.cluster_id,
+        cluster_id=path_params.cluster_id,
     )
     return web.json_response(data={"data": cluster_details}, dumps=json_dumps)
 
@@ -152,13 +152,13 @@ async def get_cluster_details_handler(request: web.Request) -> web.Response:
 @_handle_cluster_exceptions
 async def update_cluster_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ClusterPathParams, request)
+    path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
     cluster_patch = await parse_request_body_as(ClusterPatch, request)
 
     updated_cluster = await director_v2_api.update_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
-        cluster_id=query_params.cluster_id,
+        cluster_id=path_params.cluster_id,
         cluster_patch=cluster_patch,
     )
     return web.json_response(data={"data": updated_cluster}, dumps=json_dumps)
@@ -172,12 +172,12 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
 @_handle_cluster_exceptions
 async def delete_cluster_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ClusterPathParams, request)
+    path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
     await director_v2_api.delete_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
-        cluster_id=query_params.cluster_id,
+        cluster_id=path_params.cluster_id,
     )
     return web.json_response(status=web.HTTPNoContent.status_code)
 
@@ -205,11 +205,11 @@ async def ping_cluster_handler(request: web.Request) -> web.Response:
 @_handle_cluster_exceptions
 async def ping_cluster_cluster_id_handler(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ClusterPathParams, request)
+    path_params = parse_request_path_parameters_as(_ClusterPathParams, request)
 
     await director_v2_api.ping_specific_cluster(
         app=request.app,
         user_id=req_ctx.user_id,
-        cluster_id=query_params.cluster_id,
+        cluster_id=path_params.cluster_id,
     )
     return web.json_response(status=web.HTTPNoContent.status_code)
