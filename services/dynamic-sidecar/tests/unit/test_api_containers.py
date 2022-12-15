@@ -47,7 +47,7 @@ FAST_POLLING_INTERVAL: Final[float] = 0.1
 
 _TENACITY_RETRY_PARAMS = dict(
     reraise=True,
-    retry=retry_if_exception_type(AssertionError),
+    retry=retry_if_exception_type((AssertionError, RuntimeError)),
     stop=stop_after_delay(10),
     wait=wait_fixed(0.01),
 )
@@ -445,6 +445,7 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mocked_port_key_events_queue_coro_get: Mock,
@@ -455,6 +456,7 @@ async def test_outputs_watcher_disabling(
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
     WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
+    EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 3
 
     async def _create_port_key_events() -> None:
         random_subdir = f"{uuid4()}"
@@ -470,12 +472,22 @@ async def test_outputs_watcher_disabling(
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 # check event was triggered
-                dir_event_set = {
+                dir_event_set = [
                     c.args[0]
                     for c in mocked_port_key_events_queue_coro_get.call_args_list
                     if c.args[0] == random_subdir
-                }
-                assert len(dir_event_set) == 1
+                ]
+                # NOTE: this test can sometimes generate more that +/- 1 event
+                # - when it creates +1 event ✅ we can deal with it
+                # - when it creates -1 event ❌ cannot deal with it
+                #   will cause downstream assertions to fail since in the
+                #   queue there are still present other
+                #   NOTE: will make entire test fail and it will get retried
+                if len(dir_event_set) < EXPECTED_EVENTS_PER_RANDOM_PORT_KEY:
+                    raise RuntimeError(
+                        f" enough events were generated: {dir_event_set}"
+                    )
+                assert len(dir_event_set) >= EXPECTED_EVENTS_PER_RANDOM_PORT_KEY
 
     def _assert_events_generated(*, expected_events: int) -> None:
         events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
