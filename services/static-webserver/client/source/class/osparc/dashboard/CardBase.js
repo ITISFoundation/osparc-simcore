@@ -326,7 +326,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyQuality: function(quality) {
-      if (osparc.component.metadata.Quality.isEnabled(quality)) {
+      if (!osparc.utils.Utils.isProduct("s4llite") && osparc.component.metadata.Quality.isEnabled(quality)) {
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           nStars: 4,
