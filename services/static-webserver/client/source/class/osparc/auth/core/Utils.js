@@ -18,8 +18,7 @@
 qx.Class.define("osparc.auth.core.Utils", {
   type: "static",
 
-  statics:
-  {
+  statics: {
     passwordLengthValidator: function(value, item) {
       const valid = value != null && value.length > 3;
       if (!valid) {
@@ -83,6 +82,20 @@ qx.Class.define("osparc.auth.core.Utils", {
         }
         window.history.replaceState("", document.title, url);
       }
+    },
+
+    restartResendTimer: function(button, buttonText, count = 60) {
+      const refreshIntervalId = setInterval(() => {
+        if (count > 0) {
+          count--;
+        } else {
+          clearInterval(refreshIntervalId);
+        }
+        button.set({
+          label: count > 0 ? buttonText + ` (${count})` : buttonText,
+          enabled: count === 0
+        });
+      }, 1000);
     }
   }
 });
