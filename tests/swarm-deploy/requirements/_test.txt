@@ -45,7 +45,7 @@ attrs==21.4.0
     #   aiohttp
     #   jsonschema
     #   pytest
-certifi==2022.9.24
+certifi==2022.12.7
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   minio
