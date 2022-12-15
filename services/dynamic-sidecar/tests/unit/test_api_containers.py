@@ -45,14 +45,20 @@ from tenacity.wait import wait_fixed
 WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
 
-_TENACITY_RETRY_PARAMS = dict(
+
+# UTILS
+
+
+class FailTest(RuntimeError):
+    pass
+
+
+_TENACITY_RETRY_PARAMS: dict[str, Any] = dict(
     reraise=True,
-    retry=retry_if_exception_type((AssertionError, RuntimeError)),
+    retry=retry_if_exception_type((FailTest, AssertionError)),
     stop=stop_after_delay(10),
     wait=wait_fixed(0.01),
 )
-
-# UTILS
 
 
 def _create_network_aliases(network_name: str) -> list[str]:
@@ -482,11 +488,12 @@ async def test_outputs_watcher_disabling(
                 # - when it creates -1 event ❌ cannot deal with it from here
                 #   Will cause downstream assertions to fail since in the
                 #   event_filter_queue there will be unexpected items
-                #   NOTE: will make entire test fail and rely on
-                #   mark.flaky to retry it!
+                #   NOTE: will make entire test fail with a specific
+                #   exception and rely on mark.flaky to retry it.
                 if len(dir_event_set) < EXPECTED_EVENTS_PER_RANDOM_PORT_KEY:
-                    raise RuntimeError(
-                        f" enough events were generated: {dir_event_set}"
+                    raise FailTest(
+                        f"Expected at least {EXPECTED_EVENTS_PER_RANDOM_PORT_KEY}"
+                        f" events, found: {dir_event_set}"
                     )
                 assert len(dir_event_set) >= EXPECTED_EVENTS_PER_RANDOM_PORT_KEY
 
