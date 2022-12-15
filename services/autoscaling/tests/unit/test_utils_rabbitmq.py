@@ -4,12 +4,13 @@
 # pylint:disable=too-many-arguments
 
 
-from typing import Any, Awaitable, Callable, Mapping
+from typing import Any, Awaitable, Callable
 
 import aiodocker
 from faker import Faker
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Task
+from models_library.docker import DockerLabelKey
+from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -46,9 +47,7 @@ async def test_post_log_message(
     rabbit_client: RabbitMQClient,
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[str, str]], Awaitable[Mapping[str, Any]]
-    ],
+    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     faker: Faker,
@@ -59,13 +58,13 @@ async def test_post_log_message(
     )
 
     service_with_labels = await create_service(
-        task_template,
-        osparc_docker_label_keys.to_docker_labels(),
+        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
     )
+    assert service_with_labels.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels["Spec"]["Name"]}
+            filters={"service": service_with_labels.Spec.Name}
         ),
     )
     assert service_tasks
@@ -98,15 +97,18 @@ async def test_post_log_message_does_not_raise_if_service_has_no_labels(
     disabled_ec2: None,
     initialized_app: FastAPI,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     faker: Faker,
 ):
-    service_without_labels = await create_service(task_template)
+    service_without_labels = await create_service(task_template, {}, "running")
+    assert service_without_labels.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_without_labels["Spec"]["Name"]}
+            filters={"service": service_without_labels.Spec.Name}
         ),
     )
     assert service_tasks

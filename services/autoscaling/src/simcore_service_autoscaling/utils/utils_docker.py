@@ -6,7 +6,7 @@ import asyncio
 import collections
 import logging
 import re
-from typing import Final
+from typing import Final, Optional
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
@@ -52,10 +52,10 @@ async def get_monitored_nodes(
     return nodes
 
 
-async def remove_monitored_down_nodes(
-    docker_client: AutoscalingDocker, nodes: list[Node]
+async def remove_nodes(
+    docker_client: AutoscalingDocker, nodes: list[Node], force: bool = False
 ) -> list[Node]:
-    """removes docker nodes that are in the down state"""
+    """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 
     def _check_if_node_is_removable(node: Node) -> bool:
         if node.Status and node.Status.State:
@@ -71,7 +71,9 @@ async def remove_monitored_down_nodes(
         # we do not remove a node that has a weird state, let it be done by someone smarter.
         return False
 
-    nodes_that_need_removal = [n for n in nodes if _check_if_node_is_removable(n)]
+    nodes_that_need_removal = [
+        n for n in nodes if (force is True) or _check_if_node_is_removable(n)
+    ]
     for node in nodes_that_need_removal:
         assert node.ID  # nosec
         with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
@@ -119,6 +121,17 @@ async def pending_service_tasks_with_insufficient_resources(
     pending_tasks = [task for task in tasks if _is_task_waiting_for_resources(task)]
 
     return pending_tasks
+
+
+def get_node_total_resources(node: Node) -> Resources:
+    assert node.Description  # nosec
+    assert node.Description.Resources  # nosec
+    assert node.Description.Resources.NanoCPUs  # nosec
+    assert node.Description.Resources.MemoryBytes  # nosec
+    return Resources(
+        cpus=node.Description.Resources.NanoCPUs / _NANO_CPU,
+        ram=ByteSize(node.Description.Resources.MemoryBytes),
+    )
 
 
 async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
@@ -176,10 +189,15 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
 async def compute_node_used_resources(
     docker_client: AutoscalingDocker,
     node: Node,
+    service_labels: Optional[list[DockerLabelKey]] = None,
 ) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
+    task_filters = {"node": node.ID}
+    if service_labels:
+        task_filters |= {"label": service_labels}
     all_tasks_on_node = parse_obj_as(
-        list[Task], await docker_client.tasks.list(filters={"node": node.ID})
+        list[Task],
+        await docker_client.tasks.list(filters=task_filters),
     )
     for task in all_tasks_on_node:
         assert task.Status  # nosec
@@ -281,3 +299,12 @@ async def tag_node(
                 "Role": node.Spec.Role.value,
             },
         )
+
+
+async def set_node_availability(
+    docker_client: AutoscalingDocker, node: Node, *, available: bool
+) -> None:
+    assert node.Spec  # nosec
+    return await tag_node(
+        docker_client, node, tags=node.Spec.Labels, available=available
+    )
