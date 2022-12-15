@@ -305,11 +305,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                     let icon = "";
                     if (org.thumbnail) {
                       icon = org.thumbnail;
-                    } else if (org["groupType"] === 0) {
+                    } else if (org["collabType"] === 0) {
                       icon = "@FontAwesome5Solid/globe/24";
-                    } else if (org["groupType"] === 1) {
+                    } else if (org["collabType"] === 1) {
                       icon = "@FontAwesome5Solid/users/24";
-                    } else if (org["groupType"] === 2) {
+                    } else if (org["collabType"] === 2) {
                       icon = "@FontAwesome5Solid/user/24";
                     }
                     groupContainer.set({
