@@ -18,6 +18,7 @@ coveralls
 deepdiff
 docker
 faker
+fakeredis
 httpx
 moto[server]
 psutil

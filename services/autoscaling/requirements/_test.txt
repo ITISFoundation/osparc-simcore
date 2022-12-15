@@ -10,6 +10,10 @@ anyio==3.6.2
     #   httpcore
 asgi-lifespan==2.0.0
     # via -r requirements/_test.in
+async-timeout==4.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   redis
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
@@ -83,6 +87,8 @@ ecdsa==0.18.0
 exceptiongroup==1.0.4
     # via pytest
 faker==15.3.3
+    # via -r requirements/_test.in
+fakeredis==2.2.0
     # via -r requirements/_test.in
 flask==2.1.3
     # via
@@ -222,6 +228,10 @@ pyyaml==5.4.1
     #   cfn-lint
     #   moto
     #   openapi-spec-validator
+redis==4.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   fakeredis
 requests==2.28.1
     # via
     #   codecov
@@ -262,6 +272,8 @@ sniffio==1.3.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
+sortedcontainers==2.4.0
+    # via fakeredis
 sshpubkeys==3.3.1
     # via moto
 toml==0.10.2
