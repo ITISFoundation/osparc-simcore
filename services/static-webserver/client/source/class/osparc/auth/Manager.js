@@ -58,7 +58,7 @@ qx.Class.define("osparc.auth.Manager", {
           phone: phoneNumber
         }
       };
-      return osparc.data.Resources.fetch("auth", "postVerifyPhoneNumber", params);
+      return osparc.data.Resources.fetch("auth", "verifyPhoneNumber", params);
     },
 
     validateCodeRegister: function(email, phone, code, loginCbk, failCbk, context) {
@@ -69,7 +69,7 @@ qx.Class.define("osparc.auth.Manager", {
           code
         }
       };
-      osparc.data.Resources.fetch("auth", "postValidationCodeRegister", params)
+      osparc.data.Resources.fetch("auth", "validateCodeRegister", params)
         .then(data => {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
@@ -88,7 +88,7 @@ qx.Class.define("osparc.auth.Manager", {
           code
         }
       };
-      osparc.data.Resources.fetch("auth", "postValidationCodeLogin", params)
+      osparc.data.Resources.fetch("auth", "validateCodeLogin", params)
         .then(data => {
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(profile => {
@@ -98,6 +98,26 @@ qx.Class.define("osparc.auth.Manager", {
             .catch(err => failCbk.call(context, err.message));
         })
         .catch(err => failCbk.call(context, err.message));
+    },
+
+    resendCodeViaSMS: function(email) {
+      const params = {
+        data: {
+          email,
+          via: "SMS"
+        }
+      };
+      return osparc.data.Resources.fetch("auth", "resendCode", params);
+    },
+
+    resendCodeViaEmail: function(email) {
+      const params = {
+        data: {
+          email,
+          via: "Email"
+        }
+      };
+      return osparc.data.Resources.fetch("auth", "resendCode", params);
     },
 
     isLoggedIn: function() {

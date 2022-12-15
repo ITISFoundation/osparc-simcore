@@ -13,6 +13,13 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+# Read self-signed SSH certificates (if applicable)
+#
+# In case the service must access a https service in a secure way (registry, mailserver, S3, ...) using
+# non-standard certificates (e.g. such as self-signed certificates), this call is needed.
+# It needs to be executed as root.
+update-ca-certificates
+
 echo "$INFO" "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "$INFO" "User :$(id "$(whoami)")"
 echo "$INFO" "Workdir : $(pwd)"
