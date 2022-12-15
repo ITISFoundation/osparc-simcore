@@ -63,7 +63,7 @@ def create_openapi_specs(app: FastAPI, file_path: Path):
     # Removes default response 422
     for _, method_item in openapi.get("paths", {}).items():
         for _, param in method_item.items():
-            param.get("responses", {}).pop("422")
+            param.get("responses", {}).pop("422", None)
 
     with file_path.open("wt") as fh:
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
