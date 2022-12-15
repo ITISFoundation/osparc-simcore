@@ -104,7 +104,7 @@ async def download_file(location_id: str, file_id: str):
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[FileUploadSchema],
     tags=TAGS,
-    operation_id="download_file",
+    operation_id="upload_file",
     summary="Returns upload link",
 )
 async def upload_file(location_id: str, file_id: str, file_size: NonNegativeInt):
@@ -161,7 +161,7 @@ async def is_completed_upload_file(location_id: str, file_id: str, future_id: st
     response_model=FileMetaData,
     tags=TAGS,
     summary="Get File Metadata",
-    operation_id="is_completed_upload_file",
+    operation_id="get_file_metadata",
 )
 async def get_file_metadata(location_id: str, file_id: str):
     ...
