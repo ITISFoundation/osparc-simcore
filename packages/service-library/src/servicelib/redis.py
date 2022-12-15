@@ -5,11 +5,11 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Final, Optional, Union
 
 import redis.asyncio as redis
+import redis.exceptions
 from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
-from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 
 from .background_task import periodic_task
 from .logging_utils import log_catch
@@ -25,7 +25,7 @@ class AlreadyLockedError(PydanticErrorMixin, RuntimeError):
 
 
 @dataclass
-class RedisClient:
+class RedisClientSDK:
     redis_dsn: str
     _client: redis.Redis = field(init=False)
 
@@ -39,7 +39,11 @@ class RedisClient:
         self._client = redis.from_url(
             self.redis_dsn,
             retry=retry,
-            retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
+            retry_on_error=[
+                redis.exceptions.BusyLoadingError,
+                redis.exceptions.ConnectionError,
+                redis.exceptions.TimeoutError,
+            ],
             encoding="utf-8",
             decode_responses=True,
         )
@@ -56,9 +60,8 @@ class RedisClient:
     @contextlib.asynccontextmanager
     async def lock_context(
         self,
-        lock_name: str,
-        lock_data: Optional[Union[bytes, str]] = None,
-        ttl: datetime.timedelta = _DEFAULT_LOCK_TTL,
+        lock_key: str,
+        lock_value: Optional[Union[bytes, str]] = None,
     ) -> AsyncIterator[Lock]:
         ttl_lock = None
         try:
@@ -66,13 +69,15 @@ class RedisClient:
             async def _auto_extend_lock(lock: Lock) -> None:
                 await lock.reacquire()
 
-            ttl_lock = self._client.lock(lock_name, timeout=ttl.total_seconds())
-            if not await ttl_lock.acquire(blocking=False, token=lock_data):
+            ttl_lock = self._client.lock(
+                lock_key, timeout=_DEFAULT_LOCK_TTL.total_seconds()
+            )
+            if not await ttl_lock.acquire(blocking=False, token=lock_value):
                 raise AlreadyLockedError(lock=ttl_lock)
             async with periodic_task(
                 _auto_extend_lock,
-                interval=_AUTO_EXTEND_LOCK_RATIO * ttl,
-                task_name=f"{lock_name}_auto_extend",
+                interval=_AUTO_EXTEND_LOCK_RATIO * _DEFAULT_LOCK_TTL,
+                task_name=f"{lock_key}_auto_extend",
                 lock=ttl_lock,
             ):
                 yield ttl_lock
@@ -86,5 +91,5 @@ class RedisClient:
         lock = self._client.lock(lock_name)
         return await lock.locked()
 
-    async def lock_data(self, lock_name: str) -> Optional[str]:
+    async def lock_value(self, lock_name: str) -> Optional[str]:
         return await self._client.get(lock_name)

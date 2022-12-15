@@ -12,7 +12,7 @@ import docker
 import pytest
 from faker import Faker
 from redis.exceptions import LockError, LockNotOwnedError
-from servicelib.redis import AlreadyLockedError, RedisClient
+from servicelib.redis import AlreadyLockedError, RedisClientSDK
 from settings_library.redis import RedisSettings
 
 pytest_simcore_core_services_selection = [
@@ -25,7 +25,7 @@ pytest_simcore_ops_services_selection = [
 
 
 async def test_redis_client(redis_service: RedisSettings):
-    client = RedisClient(redis_service.dsn_resources)
+    client = RedisClientSDK(redis_service.dsn_resources)
     assert client
     assert client.redis_dsn == redis_service.dsn_resources
     # check it is correctly initialized
@@ -36,11 +36,11 @@ async def test_redis_client(redis_service: RedisSettings):
 @pytest.fixture
 async def redis_client(
     redis_service: RedisSettings,
-) -> AsyncIterator[Callable[[], RedisClient]]:
+) -> AsyncIterator[Callable[[], RedisClientSDK]]:
     created_clients = []
 
-    def _creator() -> RedisClient:
-        client = RedisClient(redis_service.dsn_resources)
+    def _creator() -> RedisClientSDK:
+        client = RedisClientSDK(redis_service.dsn_resources)
         assert client
         created_clients.append(client)
         return client
@@ -59,7 +59,7 @@ def lock_timeout() -> datetime.timedelta:
 
 
 async def test_redis_key_encode_decode(
-    redis_client: Callable[[], RedisClient],
+    redis_client: Callable[[], RedisClientSDK],
     faker: Faker,
 ):
     client = redis_client()
@@ -72,7 +72,7 @@ async def test_redis_key_encode_decode(
 
 
 async def test_redis_lock_acquisition(
-    redis_client: Callable[[], RedisClient], faker: Faker
+    redis_client: Callable[[], RedisClientSDK], faker: Faker
 ):
     client = redis_client()
 
@@ -105,7 +105,7 @@ async def test_redis_lock_acquisition(
 
 
 async def test_redis_lock_context_manager(
-    redis_client: Callable[[], RedisClient], faker: Faker
+    redis_client: Callable[[], RedisClientSDK], faker: Faker
 ):
     client = redis_client()
     lock_name = faker.pystr()
@@ -135,7 +135,7 @@ async def test_redis_lock_context_manager(
 
 
 async def test_redis_lock_with_ttl(
-    redis_client: Callable[[], RedisClient],
+    redis_client: Callable[[], RedisClientSDK],
     faker: Faker,
     lock_timeout: datetime.timedelta,
 ):
@@ -153,7 +153,7 @@ async def test_redis_lock_with_ttl(
 
 
 async def test_lock_context(
-    redis_client: Callable[[], RedisClient],
+    redis_client: Callable[[], RedisClientSDK],
     faker: Faker,
     lock_timeout: datetime.timedelta,
 ):
@@ -171,7 +171,7 @@ async def test_lock_context(
 
 
 async def test_lock_context_with_already_locked_lock_raises(
-    redis_client: Callable[[], RedisClient],
+    redis_client: Callable[[], RedisClientSDK],
     faker: Faker,
 ):
     client = redis_client()
@@ -189,22 +189,22 @@ async def test_lock_context_with_already_locked_lock_raises(
 
 
 async def test_lock_context_with_data(
-    redis_client: Callable[[], RedisClient], faker: Faker
+    redis_client: Callable[[], RedisClientSDK], faker: Faker
 ):
     client = redis_client()
     lock_data = faker.text()
     lock_name = faker.pystr()
     assert await client.is_locked(lock_name) is False
-    assert await client.lock_data(lock_name) is None
+    assert await client.lock_value(lock_name) is None
     async with client.lock_context(lock_name, lock_data=lock_data) as lock:
         assert await client.is_locked(lock_name) is True
-        assert await client.lock_data(lock_name) == lock_data
+        assert await client.lock_value(lock_name) == lock_data
     assert await client.is_locked(lock_name) is False
-    assert await client.lock_data(lock_name) is None
+    assert await client.lock_value(lock_name) is None
 
 
 async def test_redis_client_lose_connection(
-    redis_client: Callable[[], RedisClient],
+    redis_client: Callable[[], RedisClientSDK],
     docker_client: docker.client.DockerClient,
 ):
     client = redis_client()
