@@ -22,7 +22,7 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
-from pytest import LogCaptureFixture, MonkeyPatch
+from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -36,10 +36,7 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
-from simcore_service_dynamic_sidecar.modules.outputs._watcher import (
-    _TEST_MARK,
-    OutputsWatcher,
-)
+from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -276,11 +273,39 @@ def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
 
 
 @pytest.fixture
-def mock_event_filter_enqueue(app: FastAPI, monkeypatch: MonkeyPatch) -> Iterator[Mock]:
+def mock_event_filter_enqueue(
+    app: FastAPI, monkeypatch: MonkeyPatch
+) -> Iterator[AsyncMock]:
     mock = AsyncMock(return_value=None)
     outputs_watcher: OutputsWatcher = app.state.outputs_watcher
     monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)
     yield mock
+
+
+@pytest.fixture
+async def mocked_port_key_events_queue_coro_get(
+    app: FastAPI, mocker: MockerFixture
+) -> Mock:
+    outputs_context: OutputsContext = app.state.outputs_context
+
+    target = getattr(outputs_context.port_key_events_queue, "coro_get")
+
+    mock_result_tracker = Mock()
+
+    async def _wrapped_coroutine() -> Any:
+        future: asyncio.Future = target()
+        result = await future
+        mock_result_tracker(result)
+
+        return result
+
+    mocker.patch.object(
+        outputs_context.port_key_events_queue,
+        "coro_get",
+        side_effect=_wrapped_coroutine,
+    )
+
+    return mock_result_tracker
 
 
 def test_ensure_api_vtag_is_v1():
@@ -420,10 +445,11 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
+    mocked_port_key_events_queue_coro_get: Mock,
     mock_event_filter_enqueue: AsyncMock,
-    caplog_info_debug: LogCaptureFixture,
 ):
     assert isinstance(test_client.application, FastAPI)
     outputs_context: OutputsContext = test_client.application.state.outputs_context
@@ -432,19 +458,18 @@ async def test_outputs_watcher_disabling(
     WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
     CALLS_RECEIVED_BY_EVENT_FILTER = 3
 
+    # NOTE: sometimes the same event can be generated twice, see below
+    # <FileCreatedEvent: event_type=created, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+    # <FileCreatedEvent: event_type=created, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+    # <FileModifiedEvent: event_type=modified, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+    # <FileClosedEvent: event_type=closed, src_path='.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
+
     async def _create_port_key_events() -> int:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
         await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
-        # NOTE: normally below code bloc would generate
-        # CALLS_RECEIVED_BY_EVENT_FILTER == 3 events
-        # NOTE: sometimes the same event can be generated twice, see below
-        # <FileCreatedEvent: event_type=created, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-        # <FileCreatedEvent: event_type=created, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-        # <FileModifiedEvent: event_type=modified, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
-        # <FileClosedEvent: event_type=closed, src_path='/tmp/.../file_0be4b1ae-ec65-44d5-b733-bf65822660cc', is_directory=False>
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
@@ -452,10 +477,12 @@ async def test_outputs_watcher_disabling(
 
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                assert (
-                    caplog_info_debug.text.count(f"{_TEST_MARK} {random_subdir}")
-                    >= CALLS_RECEIVED_BY_EVENT_FILTER
-                )
+                calls_per_dir = [
+                    c
+                    for c in mocked_port_key_events_queue_coro_get.call_args_list
+                    if c.args[0] == random_subdir
+                ]
+                assert len(calls_per_dir) >= CALLS_RECEIVED_BY_EVENT_FILTER
 
     def _assert_expected_event_group(*, event_chain_group: int) -> None:
         lower_limit = event_chain_group * CALLS_RECEIVED_BY_EVENT_FILTER
@@ -466,6 +493,11 @@ async def test_outputs_watcher_disabling(
             + 1 * event_chain_group
         )
         assert lower_limit <= mock_event_filter_enqueue.call_count <= upper_limit
+
+    # NOTE: for some reason the first event in the queue
+    #  does not get delivered the future hangs
+    await outputs_context.port_key_events_queue.coro_put("")
+    await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
     # by default outputs-watcher it is disabled
 
@@ -493,7 +525,7 @@ async def test_outputs_watcher_disabling(
     _assert_expected_event_group(event_chain_group=2)
 
     assert (
-        caplog_info_debug.text.count(f"{_TEST_MARK} ")
+        mocked_port_key_events_queue_coro_get.call_count
         >= 4 * CALLS_RECEIVED_BY_EVENT_FILTER
     )
 
