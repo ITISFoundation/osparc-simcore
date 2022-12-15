@@ -416,10 +416,6 @@ qx.Class.define("osparc.store.Store", {
               orgMembers[gid]["collabType"] = 2;
               groups.push(orgMembers[gid]);
             }
-            values[1].forEach(member => {
-              member["collabType"] = 2;
-              groups.push(member);
-            });
             values[2].forEach(org => {
               org["collabType"] = 1;
               groups.push(org);
