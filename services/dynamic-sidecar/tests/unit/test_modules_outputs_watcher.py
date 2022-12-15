@@ -367,8 +367,7 @@ async def test_port_key_sequential_event_generation(
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            uploaded_port_keys: set[str] = {
-                x.kwargs["port_keys"]
-                for x in mock_long_running_upload_outputs.call_args_list
-            }
+            uploaded_port_keys: set[str] = set()
+            for call_args in mock_long_running_upload_outputs.call_args_list:
+                uploaded_port_keys |= set(call_args.kwargs["port_keys"])
             assert uploaded_port_keys == set(port_keys)
