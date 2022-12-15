@@ -373,6 +373,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (osparc.utils.Resources.isService(resourceData)) {
         return null;
       }
+      if (!osparc.component.metadata.ServicesInStudyBootOpts.anyBootOptions(resourceData)) {
+        return null;
+      }
 
       const title = this.tr("Boot Options");
       const icon = "@FontAwesome5Solid/play-circle";
