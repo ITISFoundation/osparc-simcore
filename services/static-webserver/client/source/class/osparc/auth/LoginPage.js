@@ -87,14 +87,14 @@ qx.Class.define("osparc.auth.LoginPage", {
       const verifyPhoneNumber = new osparc.auth.ui.VerifyPhoneNumberView();
       const resetRequest = new osparc.auth.ui.ResetPassRequestView();
       const reset = new osparc.auth.ui.ResetPassView();
-      const loginSMSCode = new osparc.auth.ui.LoginSMSCodeView();
+      const login2FAValidationCode = new osparc.auth.ui.Login2FAValidationCodeView();
 
       pages.add(login);
       pages.add(register);
       pages.add(verifyPhoneNumber);
       pages.add(resetRequest);
       pages.add(reset);
-      pages.add(loginSMSCode);
+      pages.add(login2FAValidationCode);
 
       const page = osparc.auth.core.Utils.findParameterInFragment("page");
       const code = osparc.auth.core.Utils.findParameterInFragment("code");
@@ -137,18 +137,27 @@ qx.Class.define("osparc.auth.LoginPage", {
         login.resetValues();
       }, this);
 
-      login.addListener("toSMSCode", e => {
+      login.addListener("to2FAValidationCode", e => {
         const msg = e.getData();
         const startIdx = msg.indexOf("+");
-        loginSMSCode.set({
+        login2FAValidationCode.set({
           userEmail: login.getEmail(),
           userPhoneNumber: msg.substring(startIdx, msg.length)
         });
-        pages.setSelection([loginSMSCode]);
+        pages.setSelection([login2FAValidationCode]);
         login.resetValues();
       }, this);
 
-      loginSMSCode.addListener("done", msg => {
+      verifyPhoneNumber.addListener("skipPhoneRegistration", e => {
+        login2FAValidationCode.set({
+          userEmail: e.getData(),
+          userPhoneNumber: null
+        });
+        pages.setSelection([login2FAValidationCode]);
+        login.resetValues();
+      }, this);
+
+      login2FAValidationCode.addListener("done", msg => {
         login.resetValues();
         this.fireDataEvent("done", msg);
       }, this);
