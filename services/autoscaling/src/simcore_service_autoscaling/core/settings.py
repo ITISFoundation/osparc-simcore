@@ -157,7 +157,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
-    AUTOSCALING_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+    AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):
