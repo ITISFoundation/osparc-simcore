@@ -160,7 +160,7 @@ async def test_lock_context(
     client = redis_client()
     lock_name = faker.pystr()
     assert await client.is_locked(lock_name) is False
-    async with client.lock_context(lock_name, ttl=lock_timeout) as ttl_lock:
+    async with client.lock_context(lock_name) as ttl_lock:
         assert await client.is_locked(lock_name) is True
         assert await ttl_lock.owned() is True
         await asyncio.sleep(5 * lock_timeout.total_seconds())
@@ -196,7 +196,7 @@ async def test_lock_context_with_data(
     lock_name = faker.pystr()
     assert await client.is_locked(lock_name) is False
     assert await client.lock_value(lock_name) is None
-    async with client.lock_context(lock_name, lock_data=lock_data) as lock:
+    async with client.lock_context(lock_name, lock_value=lock_data) as lock:
         assert await client.is_locked(lock_name) is True
         assert await client.lock_value(lock_name) == lock_data
     assert await client.is_locked(lock_name) is False
