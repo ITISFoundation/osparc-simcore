@@ -1,14 +1,13 @@
 import logging
-from typing import List
 
 from aiohttp import web
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
 from pydantic.decorator import validate_arguments
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
-from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import (
     create_url_for_function,
@@ -145,7 +144,7 @@ async def _list_checkpoints_handler(request: web.Request):
     _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
     _offset = int(request.query.get("offset", 0))
 
-    checkpoints: List[Checkpoint]
+    checkpoints: list[Checkpoint]
 
     checkpoints, total = await list_checkpoints_safe(
         vc_repo,
