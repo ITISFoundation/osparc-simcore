@@ -445,7 +445,7 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
-@pytest.mark.flaky(max_runs=3)
+@pytest.mark.flaky(max_runs=2)
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mocked_port_key_events_queue_coro_get: Mock,
@@ -495,7 +495,7 @@ async def test_outputs_watcher_disabling(
         assert lower_limit <= mock_event_filter_enqueue.call_count <= upper_limit
 
     # NOTE: for some reason the first event in the queue
-    #  does not get delivered the future hangs
+    #  does not get delivered the AioQueue future handling coro_get hangs
     await outputs_context.port_key_events_queue.coro_put("")
     await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
