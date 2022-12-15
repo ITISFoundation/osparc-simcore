@@ -29,6 +29,7 @@ from aiohttp.test_utils import unused_port
 from asgi_lifespan import LifespanManager
 from deepdiff import DeepDiff
 from faker import Faker
+from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Service
@@ -601,3 +602,9 @@ def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2Instanc
         aws_private_dns=aws_instance_private_dns,
         type=faker.pystr(),
     )
+
+
+@pytest.fixture
+async def mocked_redis_server(mocker: MockerFixture):
+    mock_redis = FakeRedis()
+    mocker.patch("redis.asyncio.from_url", return_value=mock_redis)

@@ -21,6 +21,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     disabled_rabbitmq: None,
     mocked_aws_server_envs: None,
+    mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # fast interval
