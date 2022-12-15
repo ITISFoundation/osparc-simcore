@@ -192,5 +192,5 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     if process.returncode != 0:
         raise RuntimeError(
             f"Shell subprocesses yielded nonzero error code {process.returncode} "
-            f"for command {str_r_clone_sync}"
+            f"for command {str_r_clone_sync}\n{r_clone_sync_output}"
         )

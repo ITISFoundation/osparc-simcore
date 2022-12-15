@@ -13,7 +13,11 @@ import pytest
 from faker import Faker
 from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.background_task import (
+    periodic_task,
+    start_periodic_task,
+    stop_periodic_task,
+)
 
 _FAST_POLL_INTERVAL = 1
 
@@ -107,3 +111,20 @@ async def test_dynamic_scaling_task_correctly_cancels(
     await asyncio.sleep(5 * task_interval.total_seconds())
     # the task will be called once, and then stop
     mock_background_task.assert_called_once()
+
+
+async def test_periodic_task_context_manager(
+    mock_background_task: mock.AsyncMock,
+    task_interval: datetime.timedelta,
+    faker: Faker,
+):
+    task_name = faker.pystr()
+    async with periodic_task(
+        mock_background_task, interval=task_interval, task_name=task_name
+    ) as asyncio_task:
+        assert asyncio_task.get_name() == task_name
+        assert asyncio_task.cancelled() is False
+        await asyncio.sleep(5 * task_interval.total_seconds())
+        assert asyncio_task.cancelled() is False
+        assert asyncio_task.done() is False
+    assert asyncio_task.cancelled() is True
