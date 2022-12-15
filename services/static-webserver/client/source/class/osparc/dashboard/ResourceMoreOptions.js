@@ -141,9 +141,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.__getServicesBootOptionsPage,
         this.__getSaveAsTemplatePage
       ].forEach(pageCallee => {
-        const page = pageCallee.call(this);
-        if (page) {
-          this.add(page);
+        if (pageCallee) {
+          const page = pageCallee.call(this);
+          if (page) {
+            this.add(page);
+          }
         }
       });
 
@@ -317,6 +319,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getQualityPage: function() {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        return null;
+      }
       const id = "Quality";
       const resourceData = this.__resourceData;
       if (
