@@ -299,6 +299,9 @@ async def mocked_port_key_events_queue_coro_get(
     mock_result_tracker = Mock()
 
     async def _wrapped_coroutine() -> Any:
+        # NOTE: coro_get returns a future, naming is unfortunate
+        # and can cause confusion, normally an async def function
+        # will return a coroutine not a future object.
         future: asyncio.Future = target()
         result = await future
         mock_result_tracker(result)
@@ -312,6 +315,9 @@ async def mocked_port_key_events_queue_coro_get(
     )
 
     return mock_result_tracker
+
+
+# TESTS
 
 
 def test_ensure_api_vtag_is_v1():
