@@ -402,6 +402,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise(resolve => {
         const promises = [];
         promises.push(this.getGroupsMe());
+        promises.push(this.getVisibleMembers());
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getGroupEveryone());
         Promise.all(promises)
@@ -410,11 +411,15 @@ qx.Class.define("osparc.store.Store", {
             const groupMe = values[0];
             groupMe["groupType"] = 2;
             groups.push(groupMe);
-            values[1].forEach(org => {
+            values[1].forEach(member => {
+              member["groupType"] = 2;
+              groups.push(member);
+            });
+            values[2].forEach(org => {
               org["groupType"] = 1;
               groups.push(org);
             });
-            const groupEveryone = values[2];
+            const groupEveryone = values[3];
             groupEveryone["groupType"] = 0;
             groups.push(groupEveryone);
             resolve(groups);
@@ -422,7 +427,7 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getOrganization: function(orgId) {
+    getOrganizationOrUser: function(orgId) {
       return new Promise(resolve => {
         this.__getAllGroups()
           .then(orgs => {
@@ -436,7 +441,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getVisibleMembers: function(reload = false) {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         const reachableMembers = this.getReachableMembers();
         if (!reload && Object.keys(reachableMembers).length) {
           resolve(reachableMembers);
@@ -470,10 +475,9 @@ qx.Class.define("osparc.store.Store", {
 
     getPotentialCollaborators: function() {
       return new Promise((resolve, reject) => {
-        const store = osparc.store.Store.getInstance();
         const promises = [];
-        promises.push(store.getGroupsOrganizations());
-        promises.push(store.getVisibleMembers());
+        promises.push(this.getGroupsOrganizations());
+        promises.push(this.getVisibleMembers());
         Promise.all(promises)
           .then(values => {
             const orgs = values[0]; // array
@@ -512,7 +516,7 @@ qx.Class.define("osparc.store.Store", {
           resolve(oldClassifiers);
           return;
         }
-        osparc.store.Store.getInstance().getGroupsOrganizations()
+        this.getGroupsOrganizations()
           .then(orgs => {
             if (orgs.length === 0) {
               this.setClassifiers([]);
