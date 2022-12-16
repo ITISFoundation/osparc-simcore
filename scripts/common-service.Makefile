@@ -29,7 +29,7 @@ export APP_VERSION
 
 
 #
-# COMMON TASKS
+# VENV (virtual environment) TASKS
 #
 
 
@@ -59,6 +59,10 @@ test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests 
 test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 
+#
+# DOCKER CONTAINERS TASKS
+#
+
 .PHONY: build build-nc build-devel build-devel-nc
 build build-nc build-devel build-devel-nc: ## [docker] builds docker image in many flavours
 	# Building docker image for ${APP_NAME} ...
@@ -79,6 +83,15 @@ tail logs: ## [swarm] tails log of $(APP_NAME) container
 stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
 	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
+
+.PHONY: settings-schema
+settings-schema: ## [container] json-shema of this service settings
+	@docker run -it  local/${APP_NAME}:production ${APP_CLI_NAME} settings --as-json-schema | sed -e '1,/{/d'
+
+
+#
+# MISC
+#
 
 .PHONY: info
 info: ## displays service info
