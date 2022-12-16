@@ -1,3 +1,5 @@
+# pylint: disable=relative-beyond-top-level
+
 import json
 import logging
 from typing import Any, Final, Optional, cast
@@ -28,25 +30,26 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from ....core.errors import NodeRightsAcquireError
-from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
-from ....models.schemas.dynamic_services.scheduler import (
+from .....core.errors import NodeRightsAcquireError
+from .....core.settings import AppSettings, DynamicSidecarSettings
+from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
+from .....models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
     DockerStatus,
 )
-from ....modules.director_v0 import DirectorV0Client
-from ....modules.rabbitmq import RabbitMQClient
-from ...catalog import CatalogClient
-from ...db.repositories.projects import ProjectsRepository
-from ...db.repositories.projects_networks import ProjectsNetworksRepository
-from ...node_rights import NodeRightsManager
-from ..api_client import (
+from .....utils.db import get_repository
+from ....catalog import CatalogClient
+from ....db.repositories.projects import ProjectsRepository
+from ....db.repositories.projects_networks import ProjectsNetworksRepository
+from ....director_v0 import DirectorV0Client
+from ....node_rights import NodeRightsManager
+from ....rabbitmq import RabbitMQClient
+from ...api_client import (
     BaseClientHTTPError,
     get_dynamic_sidecar_client,
     get_dynamic_sidecar_service_health,
 )
-from ..docker_api import (
+from ...docker_api import (
     constrain_service_to_node,
     create_network,
     create_service_and_get_id,
@@ -54,23 +57,22 @@ from ..docker_api import (
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
 )
-from ..docker_compose_specs import assemble_spec
-from ..docker_service_specs import (
+from ...docker_compose_specs import assemble_spec
+from ...docker_service_specs import (
     extract_service_port_from_compose_start_spec,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
+from ...errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
+from ._abc import DynamicSchedulerEvent
 from ._utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
     attempt_pod_removal_and_data_saving,
     get_director_v0_client,
-    get_repository,
     parse_containers_inspect,
 )
-from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
 

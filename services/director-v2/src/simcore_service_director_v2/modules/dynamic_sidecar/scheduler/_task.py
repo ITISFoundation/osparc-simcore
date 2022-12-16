@@ -18,9 +18,7 @@ import contextlib
 import functools
 import logging
 from asyncio import Lock, Queue, Task, sleep
-from copy import deepcopy
 from dataclasses import dataclass, field
-from math import floor
 from typing import Optional, Union
 
 from fastapi import FastAPI
@@ -30,7 +28,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
 from models_library.users import UserID
 from pydantic import AnyHttpUrl
-from servicelib.error_codes import create_error_code
 
 from ....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
@@ -44,7 +41,6 @@ from ..api_client import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     get_dynamic_sidecar_state,
     get_dynamic_sidecars_to_observe,
-    is_dynamic_sidecar_stack_missing,
     remove_pending_volume_removal_services,
     update_scheduler_data_label,
 )
@@ -53,22 +49,13 @@ from ..errors import (
     DockerServiceNotFoundError,
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
-    GenericDockerError,
 )
-from ._task_utils import apply_observation_cycle
-from ._utils import attempt_pod_removal_and_data_saving
+from ._core._core import observing_single_service
 
 logger = logging.getLogger(__name__)
 
-ServiceName = str
 
 _DISABLED_MARK = object()
-
-
-def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
-    # divisor to figure out if 30 seconds have passed based on the cycle count
-    modulo_divisor = max(1, int(floor(30 / wait_interval)))
-    return observation_counter % modulo_divisor == 0
 
 
 @dataclass
@@ -382,94 +369,6 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
 
-        async def _observing_single_service(service_name: str) -> None:
-            scheduler_data: SchedulerData = self._to_observe[service_name]
-
-            if (
-                scheduler_data.dynamic_sidecar.status.current
-                == DynamicSidecarStatus.FAILING
-            ):
-                # potential use-cases:
-                # 1. service failed on start -> it can be removed safely
-                # 2. service must be deleted -> it can be removed safely
-                # 3. service started and failed while running (either
-                #   dy-sidecar, dy-proxy, or containers) -> it cannot be removed safely
-                # 4. service started, and failed on closing -> it cannot be removed safely
-
-                if (
-                    scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error
-                ):
-                    # use-cases: 3, 4
-                    # Since user data is important and must be saved, take no further
-                    # action and wait for manual intervention from support.
-
-                    # After manual intervention service can now be removed
-                    # from tracking.
-
-                    if (
-                        # NOTE: do not change below order, reduces pressure on the
-                        # docker swarm engine API.
-                        _trigger_every_30_seconds(
-                            self._observation_counter,
-                            dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
-                        )
-                        and await is_dynamic_sidecar_stack_missing(
-                            scheduler_data.node_uuid, dynamic_sidecar_settings
-                        )
-                    ):
-                        # if both proxy and sidecar ar missing at this point it
-                        # is safe to assume that user manually removed them from
-                        # Portainer after cleaning up.
-
-                        # NOTE: saving will fail since there is no dy-sidecar,
-                        # and the save was taken care of by support. Disabling it.
-                        scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
-                            False
-                        )
-                        await attempt_pod_removal_and_data_saving(
-                            self.app, scheduler_data
-                        )
-
-                    return
-
-                # use-cases: 1, 2
-                # Cleanup all resources related to the dynamic-sidecar.
-                await attempt_pod_removal_and_data_saving(self.app, scheduler_data)
-                return
-
-            scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
-            try:
-                await apply_observation_cycle(self.app, self, scheduler_data)
-                logger.debug("completed observation cycle of %s", f"{service_name=}")
-            except asyncio.CancelledError:  # pylint: disable=try-except-raise
-                raise  # pragma: no cover
-            except Exception as e:  # pylint: disable=broad-except
-                service_name = scheduler_data.service_name
-
-                # With unhandled errors, let's generate and ID and send it to the end-user
-                # so that we can trace the logs and debug the issue.
-
-                error_code = create_error_code(e)
-                logger.exception(
-                    "Observation of %s unexpectedly failed [%s]",
-                    f"{service_name=} ",
-                    f"{error_code}",
-                    extra={"error_code": error_code},
-                )
-                scheduler_data.dynamic_sidecar.status.update_failing_status(
-                    # This message must be human-friendly
-                    f"Upss! This service ({service_name}) unexpectedly failed",
-                    error_code,
-                )
-            finally:
-                if scheduler_data_copy != scheduler_data:
-                    try:
-                        await update_scheduler_data_label(scheduler_data)
-                    except GenericDockerError as e:
-                        logger.warning(
-                            "Skipped labels update, please check:\n %s", f"{e}"
-                        )
-
         service_name: str
         while service_name := await self._trigger_observation_queue.get():
             logger.info("Handling observation for %s", service_name)
@@ -481,10 +380,17 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
                 continue
 
             if self._service_observation_task.get(service_name) is None:
+                scheduler_data: SchedulerData = self._to_observe[service_name]
                 self._service_observation_task[
                     service_name
                 ] = observation_task = asyncio.create_task(
-                    _observing_single_service(service_name),
+                    observing_single_service(
+                        scheduler=self,
+                        service_name=service_name,
+                        scheduler_data=scheduler_data,
+                        dynamic_sidecar_settings=dynamic_sidecar_settings,
+                        dynamic_scheduler=dynamic_scheduler,
+                    ),
                     name=f"observe_{service_name}",
                 )
                 observation_task.add_done_callback(

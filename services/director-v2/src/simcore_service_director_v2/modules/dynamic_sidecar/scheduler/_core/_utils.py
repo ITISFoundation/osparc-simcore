@@ -1,3 +1,5 @@
+# pylint: disable=relative-beyond-top-level
+
 import logging
 from collections import deque
 from typing import Any, Deque, Final, Optional
@@ -13,31 +15,29 @@ from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
-from ....api.dependencies.database import get_base_repository
-from ....core.errors import NodeRightsAcquireError
-from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services.scheduler import (
+from .....core.errors import NodeRightsAcquireError
+from .....core.settings import AppSettings, DynamicSidecarSettings
+from .....models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
 )
-from ....modules.rabbitmq import RabbitMQClient
-from ...db.repositories import BaseRepository
-from ...director_v0 import DirectorV0Client
-from ...node_rights import NodeRightsManager, ResourceName
-from ..api_client import (
+from .....modules.rabbitmq import RabbitMQClient
+from ....director_v0 import DirectorV0Client
+from ....node_rights import NodeRightsManager, ResourceName
+from ...api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
 )
-from ..docker_api import (
+from ...docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
     remove_volumes_from_node,
     try_to_remove_network,
 )
-from ..volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
+from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +47,6 @@ logger = logging.getLogger(__name__)
 # - study is being opened (state and outputs are pulled)
 # - study is being closed (state and outputs are saved)
 RESOURCE_STATE_AND_INPUTS: Final[ResourceName] = "state_and_inputs"
-
-
-def get_repository(app: FastAPI, repo_type: type[BaseRepository]) -> BaseRepository:
-    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 
 def get_director_v0_client(app: FastAPI) -> DirectorV0Client:

@@ -81,14 +81,16 @@ async def observed_service(
 
 @pytest.fixture
 def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:
-    base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._utils"
-    mocker.patch(f"{base}.service_push_outputs", autospec=True)
-    mocker.patch(f"{base}.service_remove_containers", autospec=True)
+    module_base = (
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._utils"
+    )
+    mocker.patch(f"{module_base}.service_push_outputs", autospec=True)
+    mocker.patch(f"{module_base}.service_remove_containers", autospec=True)
     mocker.patch(
-        f"{base}.service_remove_sidecar_proxy_docker_networks_and_volumes",
+        f"{module_base}.service_remove_sidecar_proxy_docker_networks_and_volumes",
         autospec=True,
     )
-    mocker.patch(f"{base}.service_save_state", autospec=True)
+    mocker.patch(f"{module_base}.service_save_state", autospec=True)
 
 
 async def test_update_service_observation_node_not_found(
