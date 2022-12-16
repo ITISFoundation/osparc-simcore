@@ -107,7 +107,7 @@ qx.Class.define("osparc.store.Support", {
       const productName = osparc.utils.Utils.getProductName();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Send us an email to:"));
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `&nbsp<a href=mailto:${email}?subject=${productName} feedback" style='font-size: 14px; color: ${color}' target='_blank'>${email}</a>&nbsp`;
+      const textLink = `&nbsp<a href="mailto:${email}?subject=${productName} feedback" style='font-size: 14px; color: ${color}' target='_blank'>${email}</a>&nbsp`;
       const mailto = new qx.ui.basic.Label(textLink).set({
         selectable: true,
         rich : true
