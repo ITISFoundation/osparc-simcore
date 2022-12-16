@@ -332,6 +332,7 @@ async def test_does_not_trigger_on_attribute_change(
     assert mock_event_filter_upload_trigger.call_count == 1
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
     mounted_volumes: MountedVolumes,
