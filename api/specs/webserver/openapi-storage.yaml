@@ -11,7 +11,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/locations.yaml#/FileLocationArray"
+                $ref: "#/components/schemas/FileLocationArray"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -45,7 +45,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/locations.yaml#/TableSynchronisationEnveloped"
+                $ref: "#/components/schemas/TableSynchronisationEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -67,7 +67,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/datasets.yaml#/DatasetMetaDataArray"
+                $ref: "#/components/schemas/DatasetMetaDataArray"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -89,7 +89,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/files.yaml#/FileMetaDataArray"
+                $ref: "#/components/schemas/FileMetaDataArray"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -116,7 +116,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./components/schemas/files.yaml#/FileMetaDataArray"
+                $ref: "#/components/schemas/FileMetaDataArray"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
@@ -335,7 +335,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "./components/schemas/files.yaml#/FileMetaData"
+            $ref: "#/components/schemas/FileMetaData"
 
   responses:
     FileMetaData_200:
@@ -343,19 +343,72 @@ components:
       content:
         application/json:
           schema:
-            $ref: "./components/schemas/files.yaml#/FileMetaData"
+            $ref: "#/components/schemas/FileMetaData"
 
     PresignedLink_200:
       description: "Returns presigned link"
       content:
         application/json:
           schema:
-            $ref: "./components/schemas/presigned_link.yaml#/PresignedLink"
+            $ref: "#/components/schemas/PresignedLink"
 
     DefaultErrorResponse:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
   schemas:
+    FileLocationEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/FileLocation"
+        error:
+          nullable: true
+          default: null
+
+    FileLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: number
+      example:
+        filename: "simcore.s3"
+        id: 0
+
+    FileLocationArray:
+      type: array
+      items:
+        $ref: "#/components/schemas/FileLocation"
+
+    TableSynchronisationEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: "#/components/schemas/TableSynchronisation"
+        error:
+          nullable: true
+          default: null
+
+    TableSynchronisation:
+      type: object
+      required:
+        - removed
+      properties:
+        dry_run:
+          type: boolean
+        fire_and_forget:
+          type: boolean
+        removed:
+          type: array
+          items:
+            type: string
+
     FileUploadEnveloped:
       type: object
       required:
@@ -444,3 +497,101 @@ components:
         e_tag:
           type: string
           nullable: true
+
+    DatasetMetaEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/DatasetMetaData"
+        error:
+          nullable: true
+          default: null
+
+    DatasetMetaData:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+        display_name:
+          type: string
+      example:
+        dataset_uuid: "N:id-aaaa"
+        display_name: "simcore-testing"
+
+    DatasetMetaDataArray:
+      type: array
+      items:
+        $ref: "#/components/schemas/DatasetMetaData"
+
+    FileMetaEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/FileMetaData"
+        error:
+          nullable: true
+          default: null
+
+    # TODO: Rename with suffix *Type
+    FileMetaData:
+      type: object
+      properties:
+        file_uuid:
+          type: string
+        location_id:
+          type: string
+        project_name:
+          type: string
+        node_name:
+          type: string
+        file_name:
+          type: string
+        file_id:
+          type: string
+        created_at:
+          type: string
+        last_modified:
+          type: string
+        file_size:
+          type: integer
+        entity_tag:
+          type: string
+      example:
+        file_uuid: "simcore-testing/105/1000/3"
+        location_id: "0"
+        project_name: "futurology"
+        node_name: "alpha"
+        file_name: "example.txt"
+        file_id: "N:package:e263da07-2d89-45a6-8b0f-61061b913873"
+        created_at: "2019-06-19T12:29:03.308611Z"
+        last_modified: "2019-06-19T12:29:03.78852Z"
+        file_size: 73
+        entity_tag: a87ff679a2f3e71d9181a67b7542122c
+
+    FileMetaDataArray:
+      type: array
+      items:
+        $ref: "#/components/schemas/FileMetaData"
+
+    PresignedLinkEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/PresignedLink"
+        error:
+          nullable: true
+          default: null
+
+    PresignedLink:
+      type: object
+      properties:
+        link:
+          type: string
+      example:
+        link: "example_link"

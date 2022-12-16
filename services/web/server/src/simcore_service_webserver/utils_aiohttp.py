@@ -10,10 +10,10 @@ from pydantic import Field
 from pydantic.generics import GenericModel
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from yarl import URL
 
 from ._constants import INDEX_RESOURCE_NAME
-from .rest_constants import RESPONSE_MODEL_POLICY
 
 log = logging.getLogger(__name__)
 
