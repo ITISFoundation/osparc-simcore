@@ -1,8 +1,77 @@
 import copy
-from typing import Any
+import inspect
+from typing import Any, Iterator, NamedTuple
 
 import pytest
 from pydantic import BaseModel
+
+
+def is_strict_inner(outer_cls: type, inner_cls: type) -> bool:
+    #
+    # >>> class A:
+    # ...    class C:
+    # ...      ...
+    # >>> class B(A):
+    # ...   ...
+    # ...
+    # >>> A.C
+    # <class '__main__.A.C'>
+    # >>> B.C
+    # <class '__main__.A.C'>
+    #
+    # C is strict inner from A but not B
+    return f"{outer_cls.__name__}.{inner_cls.__name__}" in f"{inner_cls}"
+
+
+class ModelExample(NamedTuple):
+    model_cls: type[BaseModel]
+    example_name: str
+    example_data: Any
+
+
+def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
+    """Iterates on all examples defined as BaseModelClass.Config.schema_extra["example"]
+
+
+    Usage:
+
+        @pytest.mark.parametrize(
+            "model_cls, example_name, example_data",
+            iter_examples(simcore_service_webserver.storage_schemas),
+        )
+        def test_model_examples(
+            model_cls: type[BaseModel], example_name: int, example_data: Any
+        ):
+            print(example_name, ":", json.dumps(example_data))
+            assert model_cls.parse_obj(example_data)
+    """
+    assert inspect.ismodule(module)
+
+    for model_name, model_cls in inspect.getmembers(
+        module, lambda obj: inspect.isclass(obj) and issubclass(obj, BaseModel)
+    ):
+        assert model_name  # nosec
+        if (
+            (config_cls := getattr(model_cls, "Config"))
+            and inspect.isclass(config_cls)
+            and is_strict_inner(model_cls, config_cls)
+            and (schema_extra := getattr(config_cls, "schema_extra", {}))
+        ):
+            if "example" in schema_extra:
+                yield ModelExample(
+                    model_cls=model_cls,
+                    example_name="example",
+                    example_data=schema_extra["example"],
+                )
+
+            elif "examples" in schema_extra:
+                for index, example in enumerate(schema_extra["examples"]):
+                    yield ModelExample(
+                        model_cls=model_cls,
+                        example_name=f"examples_{index}",
+                        example_data=example,
+                    )
+
 
 ## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------
 

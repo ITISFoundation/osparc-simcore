@@ -5,7 +5,6 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.rest_utils import extract_and_validate
 
 from ._meta import api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
@@ -68,6 +67,4 @@ async def get_config(request: web.Request):
     register but the server has been setup to require an invitation. This option is setup
     at runtime and the front-end can only get it upon request to /config
     """
-    await extract_and_validate(request)
-
     return web.json_response(data={"data": request.app[APP_SETTINGS_KEY].public_dict()})

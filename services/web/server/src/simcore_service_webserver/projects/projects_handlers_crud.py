@@ -28,6 +28,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -37,7 +38,6 @@ from .._meta import api_version_prefix as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
-from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import (

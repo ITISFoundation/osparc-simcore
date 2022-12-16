@@ -14,10 +14,10 @@ from pydantic import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.errors import DatabaseError
 from sqlalchemy.sql import func
 
-from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from .decorators import RQT_USERID_KEY, login_required
 from .utils import get_random_string

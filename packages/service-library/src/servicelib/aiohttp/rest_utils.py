@@ -1,36 +1,13 @@
-""" rest - misc utils
-
-UNDER DEVELOPMENT
-
-TODO: deprecate. Too general
-"""
 import json
-from typing import Dict
+import warnings
 
 import attr
 from aiohttp import web
-from openapi_core.extensions.models.factories import Model as BodyModel
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .openapi_validation import (
-    COOKIE_KEY,
-    HEADER_KEY,
-    PATH_KEY,
-    QUERY_KEY,
-    validate_request,
-)
+from .openapi_validation import PATH_KEY, QUERY_KEY, validate_request
 from .rest_models import ErrorItemType, ErrorType
 from .rest_oas import get_specs
-
-
-def body_to_dict(body: BodyModel) -> Dict:
-    # openapi_core.extensions.models.factories.Model -> dict
-    dikt = {}
-    for k, v in body.__dict__.items():
-        if hasattr(v, "__dict__"):
-            v = body_to_dict(v)
-        dikt[k] = v
-    return dikt
 
 
 class EnvelopeFactory:
@@ -47,7 +24,7 @@ class EnvelopeFactory:
                 enveloped[key] = attr.asdict(value)
         self._envelope = enveloped
 
-    def as_dict(self) -> Dict:
+    def as_dict(self) -> dict:
         return self._envelope
 
     def as_text(self) -> str:
@@ -63,6 +40,11 @@ async def extract_and_validate(request: web.Request):
     Can raise '400 Bad Request': indicates that the server could not understand the request due to invalid syntax
     See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
     """
+    warnings.warn(
+        "extract_and_validate is deprecated. Use instead servicelib.rest_utils.extract_and_validate",
+        DeprecationWarning,
+    )
+
     spec = get_specs(request.app)
     params, body, errors = await validate_request(request, spec)
 
@@ -78,6 +60,3 @@ async def extract_and_validate(request: web.Request):
         )
 
     return params[PATH_KEY], params[QUERY_KEY], body
-
-
-__all__ = ("COOKIE_KEY", "HEADER_KEY", "PATH_KEY", "QUERY_KEY")
