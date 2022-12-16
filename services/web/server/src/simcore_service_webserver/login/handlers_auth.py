@@ -70,6 +70,10 @@ class LoginNextPage(NextPage[CodePageParams]):
 @session_access_trace(route_name="auth_login")
 @routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
+    """Login: user submits an email (identification) and a password
+
+    If 2FA is enabled, then the login continues with a second request to login_2fa
+    """
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
@@ -179,11 +183,7 @@ class LoginTwoFactorAuthBody(InputSchema):
 )
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
-    """2FA login
-
-    - Continuation of login + 2FA code
-
-    """
+    """Login (continuation): Submits 2FA code"""
     # validates input context
     settings: LoginSettings = get_plugin_settings(request.app)
     if not settings.LOGIN_2FA_REQUIRED:
