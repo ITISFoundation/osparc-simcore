@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Envelope_Log_"
+                $ref: "#/components/schemas/Envelope_RegisterPhoneNextPage_"
   /auth/validate-code-register:
     post:
       tags:
@@ -282,6 +282,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Envelope_Error_"
+        "422":
+          description: current password is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope_Error_"
   /auth/confirmation/{code}:
     get:
       tags:
@@ -490,6 +496,14 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/LoginNextPage"
+        error:
+          title: Error
+    Envelope_RegisterPhoneNextPage_:
+      title: Envelope[RegisterPhoneNextPage]
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/RegisterPhoneNextPage"
         error:
           title: Error
     Error:
@@ -717,6 +731,44 @@ components:
           type: string
           description: Phone number E.164, needed on the deployments with 2FA
       additionalProperties: false
+    RegisterPhoneNextPage:
+      title: RegisterPhoneNextPage
+      required:
+        - name
+        - message
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Code name to the front-end page
+        parameters:
+          $ref: "#/components/schemas/_PageParams"
+        logger:
+          title: Logger
+          type: string
+          default: user
+          deprecated: true
+        level:
+          title: Level
+          enum:
+            - INFO
+            - WARNING
+            - ERROR
+          type: string
+          default: INFO
+        message:
+          title: Message
+          type: string
+      description: "This is the body of a 2XX response to pass the front-end
+
+        what kind of page shall be display next and some information about it
+
+
+        An analogous structure is used in the redirects (see create_redirect_response)
+        but
+
+        using a path+query in the fragment of the URL"
     Resend2faBody:
       title: Resend2faBody
       required:
@@ -785,3 +837,12 @@ components:
         type:
           title: Error Type
           type: string
+    _PageParams:
+      title: _PageParams
+      type: object
+      properties:
+        retry_2fa_after:
+          title: Retry 2Fa After
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
