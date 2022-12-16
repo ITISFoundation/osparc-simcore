@@ -1,3 +1,5 @@
+# pylint: disable=relative-beyond-top-level
+
 import asyncio
 import logging
 from copy import deepcopy
@@ -6,24 +8,24 @@ from math import floor
 from fastapi import FastAPI
 from servicelib.error_codes import create_error_code
 
-from ....core.settings import (
+from .....core.settings import (
     DynamicServicesSchedulerSettings,
     DynamicServicesSettings,
     DynamicSidecarSettings,
 )
-from ....models.schemas.dynamic_services import (
+from .....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     SchedulerData,
     ServiceName,
 )
-from ..docker_api import (
+from ...docker_api import (
     are_sidecar_and_proxy_services_present,
     is_dynamic_sidecar_stack_missing,
     update_scheduler_data_label,
 )
-from ..errors import GenericDockerError
+from ...errors import GenericDockerError
+from ._events import REGISTERED_EVENTS
 from ._utils import attempt_pod_removal_and_data_saving
-from .events import REGISTERED_EVENTS
 
 logger = logging.getLogger(__name__)
 

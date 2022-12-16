@@ -22,12 +22,15 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _core, _utils
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import (
+    _core,
+    _utils,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task import (
     DynamicSidecarsScheduler,
 )
 
