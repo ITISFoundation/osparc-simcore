@@ -16,6 +16,17 @@ from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     EventFilter,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+
+_TENACITY_RETRY_PARAMS = dict(
+    reraise=True,
+    retry=retry_if_exception_type(AssertionError),
+    stop=stop_after_delay(10),
+    wait=wait_fixed(0.01),
+)
 
 # FIXTURES
 
@@ -167,13 +178,17 @@ async def test_minimum_amount_of_get_directory_total_size_calls(
     # wait a bit for the vent to be picked up
     # by the workers and processed
     await _wait_for_event_to_trigger(event_filter)
-    assert mock_get_directory_total_size.call_count == 1
-    assert mocked_port_key_content_changed.call_count == 0
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mock_get_directory_total_size.call_count == 1
+            assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
     await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mock_get_directory_total_size.call_count == 2
-    assert mocked_port_key_content_changed.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mock_get_directory_total_size.call_count == 2
+            assert mocked_port_key_content_changed.call_count == 1
 
 
 async def test_minimum_amount_of_get_directory_total_size_calls_with_continuous_changes(
