@@ -42,15 +42,9 @@ qx.Class.define("osparc.store.StaticInfo", {
       });
     },
 
-    getDisplayNameKey: function() {
-      const productName = osparc.utils.Utils.getProductName();
-      return productName + "DisplayName";
-    },
-
-    getSupportEmail: function() {
-      const productName = osparc.utils.Utils.getProductName();
-      const supportEmailKey = productName + "SupportEmail";
-      return this.getValue(supportEmailKey);
+    getDisplayName: function() {
+      const wsKey = "displayName";
+      return this.getValue(wsKey);
     },
 
     getMaxNumberDyNodes: function() {
