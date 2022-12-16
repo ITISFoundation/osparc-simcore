@@ -605,6 +605,6 @@ def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2Instanc
 
 
 @pytest.fixture
-async def mocked_redis_server(mocker: MockerFixture):
+async def mocked_redis_server(mocker: MockerFixture) -> None:
     mock_redis = FakeRedis()
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)

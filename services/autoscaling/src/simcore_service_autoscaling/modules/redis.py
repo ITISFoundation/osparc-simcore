@@ -9,7 +9,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
-from ..core.errors import ConfigurationError, RedisNotConnectedError
+from ..core.errors import RedisNotConnectedError
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,4 @@ def setup(app: FastAPI) -> None:
 
 
 def get_redis_client(app: FastAPI) -> RedisClientSDK:
-    if not app.state.redis:
-        raise ConfigurationError(
-            msg="Redis client is not available. Please check the configuration."
-        )
     return cast(RedisClientSDK, app.state.redis)
