@@ -2,9 +2,11 @@
 
 import logging
 from collections import deque
-from typing import Any, Deque, Final, Optional
+from typing import Any, Deque, Final, Optional, cast
 
 from fastapi import FastAPI
+from models_library.projects_networks import ProjectsNetworks
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from pydantic import AnyHttpUrl
 from servicelib.fastapi.long_running_tasks.client import (
@@ -23,6 +25,8 @@ from .....models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
 from .....modules.rabbitmq import RabbitMQClient
+from .....utils.db import get_repository
+from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
 from ....node_rights import NodeRightsManager, ResourceName
 from ...api_client import (
@@ -288,3 +292,36 @@ async def attempt_pod_removal_and_data_saving(
     )
     rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
     await rabbitmq_client.publish(message.channel_name, message.json())
+
+
+async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
+    logger.debug("Attaching project networks for %s", scheduler_data.service_name)
+
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_endpoint = scheduler_data.endpoint
+
+    projects_networks_repository: ProjectsNetworksRepository = cast(
+        ProjectsNetworksRepository,
+        get_repository(app, ProjectsNetworksRepository),
+    )
+
+    projects_networks: ProjectsNetworks = (
+        await projects_networks_repository.get_projects_networks(
+            project_id=scheduler_data.project_id
+        )
+    )
+    for (
+        network_name,
+        container_aliases,
+    ) in projects_networks.networks_with_aliases.items():
+        network_alias = container_aliases.get(NodeIDStr(scheduler_data.node_uuid))
+        if network_alias is not None:
+            await dynamic_sidecar_client.attach_service_containers_to_project_network(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+                project_network=network_name,
+                project_id=scheduler_data.project_id,
+                network_alias=network_alias,
+            )
+
+    scheduler_data.dynamic_sidecar.is_project_network_attached = True
