@@ -1,5 +1,5 @@
 
-qx.Class.define("osparc.navigation.Manuals", {
+qx.Class.define("osparc.store.Support", {
   type: "static",
 
   statics: {
@@ -28,7 +28,7 @@ qx.Class.define("osparc.navigation.Manuals", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
-      osparc.navigation.Manuals.getManuals()
+      osparc.store.Support.getManuals()
         .then(manuals => {
           if (menuButton) {
             menuButton.setVisibility(manuals.length ? "visible" : "excluded");

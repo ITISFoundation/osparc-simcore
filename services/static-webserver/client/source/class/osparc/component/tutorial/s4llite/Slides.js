@@ -40,7 +40,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
         textAlign: "center",
         rich : true
       });
-      osparc.navigation.Manuals.getManuals()
+      osparc.store.Support.getManuals()
         .then(manuals => {
           if (manuals.length > 0) {
             const color = qx.theme.manager.Color.getInstance().resolve("text");
@@ -55,7 +55,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Slides", {
         textAlign: "center",
         rich : true
       });
-      osparc.navigation.Manuals.getLicenseURL()
+      osparc.store.Support.getLicenseURL()
         .then(licenseUrl => {
           const color = qx.theme.manager.Color.getInstance().resolve("text");
           const textLink = `<a href=${licenseUrl} style='color: ${color}' target='_blank'>Licensing</a>`;
