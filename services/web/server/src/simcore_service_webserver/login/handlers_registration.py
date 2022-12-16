@@ -189,7 +189,9 @@ class RegisterPhoneBody(InputSchema):
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @session_access_constraint(
-    allow_access_after=["auth_register", "auth_login"], max_number_of_access=1
+    allow_access_after=["auth_register", "auth_login"],
+    max_number_of_access=1,
+    unauthorized_reason="Not allowed to register the phone",
 )
 @routes.post("/auth/verify-phone-number", name="auth_verify_2fa_phone")
 async def register_phone(request: web.Request):
