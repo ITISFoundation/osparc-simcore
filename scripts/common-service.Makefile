@@ -71,12 +71,19 @@ build build-nc build-devel build-devel-nc: ## [docker] builds docker image in ma
 
 .PHONY: shell
 shell: ## [swarm] runs shell inside $(APP_NAME) container
-	docker exec -it $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) /bin/bash
+	docker exec \
+		--interactive \
+		--tty \
+		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		/bin/bash
 
 
 .PHONY: tail logs
 tail logs: ## [swarm] tails log of $(APP_NAME) container
-	docker logs --follow $(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) 2>&1
+	docker logs \
+		--follow \
+		$(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		2>&1
 
 
 .PHONY: stats
@@ -84,9 +91,18 @@ stats: ## [swarm] display live stream of $(APP_NAME) container resource usage st
 	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
 
+
+DOCKER_REGISTRY ?=local
+DOCKER_IMAGE_TAG?=production
+
 .PHONY: settings-schema
 settings-schema: ## [container] json-shema of this service settings
-	@docker run -it  local/${APP_NAME}:production ${APP_CLI_NAME} settings --as-json-schema | sed -e '1,/{/d'
+	@docker run \
+		--interactive \
+		--tty \
+		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
+		${APP_CLI_NAME} settings --as-json-schema \
+		| sed -e '1,/{/d'
 
 
 #
