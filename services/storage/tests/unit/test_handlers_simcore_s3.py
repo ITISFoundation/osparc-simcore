@@ -186,7 +186,9 @@ async def random_project_with_files(
     aiopg_engine: Engine,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     create_project_node: Callable[..., Awaitable[NodeID]],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    create_simcore_file_id: Callable[
+        [ProjectID, NodeID, str, Optional[Path]], SimcoreS3FileID
+    ],
     upload_file: Callable[
         [ByteSize, str, str], Awaitable[tuple[Path, SimcoreS3FileID]]
     ],
@@ -207,23 +209,43 @@ async def random_project_with_files(
         src_projects_list: dict[NodeID, dict[SimcoreS3FileID, Path]] = {}
         upload_tasks: deque[Awaitable] = deque()
         for _node_index in range(num_nodes):
-            # NOTE: we put some more outputs in there to simuate a real case better
+            # NOTE: we put some more outputs in there to simulate a real case better
+            new_node_id = NodeID(faker.uuid4())
+            output3_file_id = create_simcore_file_id(
+                ProjectID(project["uuid"]),
+                new_node_id,
+                faker.file_name(),
+                Path("outputs/output3"),
+            )
             src_node_id = await create_project_node(
                 ProjectID(project["uuid"]),
-                outputs={"output_1": faker.pyint(), "output_2": faker.pystr()},
+                new_node_id,
+                outputs={
+                    "output_1": faker.pyint(),
+                    "output_2": faker.pystr(),
+                    "output_3": f"{output3_file_id}",
+                },
             )
+            assert src_node_id == new_node_id
+
+            # upload the output 3 and some random other files at the root of each node
             src_projects_list[src_node_id] = {}
+            src_file, _ = await upload_file(
+                choice(file_sizes), Path(output3_file_id).name, output3_file_id
+            )
+            src_projects_list[src_node_id][output3_file_id] = src_file
 
             async def _upload_file_and_update_project(project, src_node_id):
                 src_file_name = faker.file_name()
                 src_file_uuid = create_simcore_file_id(
-                    ProjectID(project["uuid"]), src_node_id, src_file_name
+                    ProjectID(project["uuid"]), src_node_id, src_file_name, None
                 )
                 src_file, _ = await upload_file(
                     choice(file_sizes), src_file_name, src_file_uuid
                 )
                 src_projects_list[src_node_id][src_file_uuid] = src_file
 
+            # add a few random files in the node storage
             upload_tasks.extend(
                 [
                     _upload_file_and_update_project(project, src_node_id)
