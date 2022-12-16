@@ -105,33 +105,35 @@ qx.Class.define("osparc.store.Support", {
 
     __openSendEmailFeedbackDialog: function(email) {
       const productName = osparc.utils.Utils.getProductName();
-      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Send us an email to:"));
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please, send us an email to:"));
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `&nbsp<a href="mailto:${email}?subject=${productName} feedback" style='font-size: 14px; color: ${color}' target='_blank'>${email}</a>&nbsp`;
+      const textLink = `&nbsp&nbsp<a href="mailto:${email}?subject=${productName} feedback" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp`;
       const mailto = new qx.ui.basic.Label(textLink).set({
+        alignX: "center",
+        font: "text-14",
         selectable: true,
         rich : true
       });
       giveEmailFeedbackWindow.addWidget(mailto);
-      giveEmailFeedbackWindow.addCancelButton().set({
-        label: qx.locale.Manager.tr("Close")
-      });
       giveEmailFeedbackWindow.open();
     },
 
     openCreateAccountDialog: function() {
       let text = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
       text += "<br>";
-      text += qx.locale.Manager.tr("Please contact ");
+      text += qx.locale.Manager.tr("Please contact:");
+      const createAccountWindow = new osparc.ui.window.Dialog("Create Account", null, text).set({
+        maxWidth: 380
+      });
       osparc.store.VendorInfo.getInstance().getSupportEmail()
         .then(supportEmail => {
-          text += supportEmail;
-          osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+          const mailto = new qx.ui.basic.Label(supportEmail).set({
+            alignX: "center",
+            font: "text-14",
+            selectable: true
+          });
+          createAccountWindow.addWidget(mailto);
         });
-      const createAccountWindow = new osparc.ui.window.Dialog("Create Account", null, text);
-      createAccountWindow.addCancelButton().set({
-        label: qx.locale.Manager.tr("Close")
-      });
       createAccountWindow.open();
     }
   }

@@ -23,8 +23,8 @@ qx.Class.define("osparc.store.VendorInfo", {
     __getFromStaticInfo: function(key, defaultValue) {
       return new Promise(resolve => {
         osparc.store.StaticInfo.getInstance().getValue(key)
-          .then(issuesData => {
-            issuesData ? resolve(issuesData) : resolve(defaultValue);
+          .then(staticData => {
+            staticData ? resolve(staticData) : resolve(defaultValue);
           })
           .catch(() => resolve(defaultValue));
       });
