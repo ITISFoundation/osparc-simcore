@@ -182,7 +182,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
 
     async with httpx.AsyncClient(
         app=initialized_app,
-        base_url="http://director-v2.testserver.io",
+        base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
