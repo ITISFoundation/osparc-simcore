@@ -95,14 +95,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         osparc.data.Resources.getOne("config")
           .then(config => {
             if (config["invitation_required"]) {
-              let text = this.tr("Registration is currently only available with an invitation.");
-              text += "<br>";
-              text += this.tr("Please contact ");
-              osparc.store.VendorInfo.getInstance().getSupportEmail()
-                .then(supportEmail => {
-                  text += supportEmail;
-                  osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-                });
+              osparc.store.Support.openCreateAccountDialog();
             } else {
               this.fireEvent("toRegister");
             }

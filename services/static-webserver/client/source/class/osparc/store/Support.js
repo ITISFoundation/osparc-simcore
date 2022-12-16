@@ -117,6 +117,22 @@ qx.Class.define("osparc.store.Support", {
         label: qx.locale.Manager.tr("Close")
       });
       giveEmailFeedbackWindow.open();
+    },
+
+    openCreateAccountDialog: function() {
+      let text = this.tr("Registration is currently only available with an invitation.");
+      text += "<br>";
+      text += this.tr("Please contact ");
+      osparc.store.VendorInfo.getInstance().getSupportEmail()
+        .then(supportEmail => {
+          text += supportEmail;
+          osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+        });
+      const createAccountWindow = new osparc.ui.window.Dialog("Create Account", null, text);
+      createAccountWindow.addCancelButton().set({
+        label: qx.locale.Manager.tr("Close")
+      });
+      createAccountWindow.open();
     }
   }
 });
