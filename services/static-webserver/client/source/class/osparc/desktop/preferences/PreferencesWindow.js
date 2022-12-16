@@ -54,15 +54,19 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(secBtn, "preferencesSecurityTabBtn");
     tabView.add(secPage);
 
-    const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
-    const tokensBtn = tokensPage.getChildControl("button");
-    osparc.utils.Utils.setIdToWidget(tokensBtn, "preferencesTokensTabBtn");
-    tabView.add(tokensPage);
+    if (!osparc.utils.Utils.isProduct("s4llite")) {
+      const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
+      const tokensBtn = tokensPage.getChildControl("button");
+      osparc.utils.Utils.setIdToWidget(tokensBtn, "preferencesTokensTabBtn");
+      tabView.add(tokensPage);
+    }
 
-    const expPage = new osparc.desktop.preferences.pages.ExperimentalPage();
-    const expBtn = expPage.getChildControl("button");
-    osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
-    tabView.add(expPage);
+    if (!osparc.utils.Utils.isProduct("s4llite")) {
+      const expPage = new osparc.desktop.preferences.pages.ExperimentalPage();
+      const expBtn = expPage.getChildControl("button");
+      osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");
+      tabView.add(expPage);
+    }
 
     const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
     tabView.add(confirmPage);
@@ -86,22 +90,24 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
         }
       });
 
-    const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
-    const clustersBtn = clustersPage.getChildControl("button");
-    osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
-    tabView.add(clustersPage);
-    clustersBtn.exclude();
-    osparc.utils.DisabledPlugins.isClustersDisabled()
-      .then(isDisabled => {
-        if (isDisabled === false) {
-          osparc.data.Resources.get("clusters")
-            .then(clusters => {
-              if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-                clustersBtn.show();
-              }
-            });
-        }
-      });
+    if (!osparc.utils.Utils.isProduct("s4llite")) {
+      const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
+      const clustersBtn = clustersPage.getChildControl("button");
+      osparc.utils.Utils.setIdToWidget(clustersBtn, "preferencesClustersTabBtn");
+      tabView.add(clustersPage);
+      clustersBtn.exclude();
+      osparc.utils.DisabledPlugins.isClustersDisabled()
+        .then(isDisabled => {
+          if (isDisabled === false) {
+            osparc.data.Resources.get("clusters")
+              .then(clusters => {
+                if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
+                  clustersBtn.show();
+                }
+              });
+          }
+        });
+    }
 
     if (osparc.data.Permissions.getInstance().canDo("statics.read")) {
       const testerPage = new osparc.desktop.preferences.pages.TesterPage();

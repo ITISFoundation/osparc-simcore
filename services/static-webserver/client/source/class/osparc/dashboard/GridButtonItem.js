@@ -44,12 +44,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "tsr-mode-update-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TSR_MODE);
-          break;
         case "tsr-rating": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
           const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
             toolTipText: this.tr("Ten Simple Rules")
           });
@@ -57,42 +52,38 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          layout.add(tsrLayout, {
-            flex: 1
-          });
+          this._mainLayout.add(tsrLayout, osparc.dashboard.GridButtonBase.POS.TSR);
           break;
         }
         case "ui-mode": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
-          control = new qx.ui.basic.Image();
-          layout.add(control);
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle"
+          });
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
         }
         case "update-study": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Image().set({
-            source: "@MaterialIcons/update/18",
-            visibility: "excluded"
+            source: "@MaterialIcons/update/16",
+            visibility: "excluded",
+            alignY: "middle"
           });
-          layout.add(control);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         }
         case "hits-service": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Label().set({
-            toolTipText: this.tr("Number of times it was instantiated")
+            toolTipText: this.tr("Number of times it was instantiated"),
+            alignY: "middle"
           });
-          layout.add(new qx.ui.core.Spacer(), {
-            flex: 1
-          });
-          layout.add(control);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true
           });
-          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-button": {
           this.getChildControl("title").set({
@@ -299,10 +290,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         const tagsContainer = this.getChildControl("tags");
-        if (tags.length) {
-          const iconContainer = this.getChildControl("icon");
-          iconContainer.setMaxHeight(105);
-        }
+        tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
         tags.forEach(tag => {
           const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");

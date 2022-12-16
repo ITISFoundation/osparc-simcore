@@ -409,18 +409,19 @@ qx.Class.define("osparc.store.Store", {
           .then(values => {
             const groups = [];
             const groupMe = values[0];
-            groupMe["groupType"] = 2;
+            groupMe["collabType"] = 2;
             groups.push(groupMe);
-            values[1].forEach(member => {
-              member["groupType"] = 2;
-              groups.push(member);
-            });
+            const orgMembers = values[1];
+            for (const gid of Object.keys(orgMembers)) {
+              orgMembers[gid]["collabType"] = 2;
+              groups.push(orgMembers[gid]);
+            }
             values[2].forEach(org => {
-              org["groupType"] = 1;
+              org["collabType"] = 1;
               groups.push(org);
             });
             const groupEveryone = values[3];
-            groupEveryone["groupType"] = 0;
+            groupEveryone["collabType"] = 0;
             groups.push(groupEveryone);
             resolve(groups);
           });

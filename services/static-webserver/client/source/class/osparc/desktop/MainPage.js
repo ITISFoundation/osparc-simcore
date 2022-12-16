@@ -85,9 +85,17 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (this.__studyEditor) {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmBackToDashboard()) {
-          const msg = this.tr("Do you really want to save and close the study?");
+          let msg = this.tr("Do you really want to save and close the study?");
+          let confirmText = this.tr("Save & Close");
+          if (osparc.utils.Utils.isProduct("s4llite")) {
+            msg = this.tr("Do you really want to close the project?");
+            msg += "<br>";
+            msg += this.tr("Make sure you saved the changes to the current <b>smash file</b> and <b>open notebooks</b>");
+            confirmText = this.tr("Close");
+          }
           const win = new osparc.ui.window.Confirmation(msg).set({
-            confirmText: this.tr("Save & Close")
+            caption: confirmText,
+            confirmText
           });
           const confirmButton = win.getConfirmButton();
           osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
