@@ -543,10 +543,19 @@ def upload_file(
 
 
 @pytest.fixture
-def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3FileID]:
+def create_simcore_file_id(
+    faker: Faker,
+) -> Callable[[ProjectID, NodeID, str, Optional[Path]], SimcoreS3FileID]:
     def _creator(
-        project_id: ProjectID, node_id: NodeID, file_name: str
+        project_id: ProjectID,
+        node_id: NodeID,
+        file_name: str,
+        file_base_path: Optional[Path] = None,
     ) -> SimcoreS3FileID:
-        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/{file_name}")
+        s3_file_name = file_name
+        if file_base_path:
+            s3_file_name = f"{file_base_path / file_name}"
+        clean_path = Path(f"{project_id}/{node_id}/{s3_file_name}")
+        return SimcoreS3FileID(f"{clean_path}")
 
     return _creator
