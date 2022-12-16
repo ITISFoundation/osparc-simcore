@@ -137,8 +137,7 @@ qx.Class.define("osparc.Application", {
                 value: product+ baseTextMsg,
                 rich: true
               });
-              const displayNameKey = osparc.store.StaticInfo.getInstance().getDisplayNameKey();
-              osparc.store.StaticInfo.getInstance().getValue(displayNameKey)
+              osparc.store.StaticInfo.getInstance().getDisplayName()
                 .then(displayName => {
                   label.setValue(displayName + baseTextMsg);
                 });
