@@ -27,6 +27,7 @@ from ._constants import (
     MSG_2FA_CODE_SENT,
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
+    MSG_UNAUTHORIZED_LOGIN_2FA,
     MSG_UNKNOWN_EMAIL,
     MSG_WRONG_2FA_CODE,
     MSG_WRONG_PASSWORD,
@@ -172,7 +173,9 @@ class LoginTwoFactorAuthBody(InputSchema):
 
 
 @session_access_constraint(
-    allow_access_after=["auth_login", "auth_resend_2fa_code"], max_number_of_access=1
+    allow_access_after=["auth_login", "auth_resend_2fa_code"],
+    max_number_of_access=3,
+    unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
