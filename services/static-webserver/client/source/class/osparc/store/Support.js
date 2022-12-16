@@ -120,9 +120,9 @@ qx.Class.define("osparc.store.Support", {
     },
 
     openCreateAccountDialog: function() {
-      let text = this.tr("Registration is currently only available with an invitation.");
+      let text = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
       text += "<br>";
-      text += this.tr("Please contact ");
+      text += qx.locale.Manager.tr("Please contact ");
       osparc.store.VendorInfo.getInstance().getSupportEmail()
         .then(supportEmail => {
           text += supportEmail;
