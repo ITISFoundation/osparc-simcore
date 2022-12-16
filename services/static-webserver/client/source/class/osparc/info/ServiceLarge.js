@@ -240,7 +240,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
         });
       }
 
-      if (this.getService()["quality"] && osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])) {
+      if (
+        !osparc.utils.Utils.isProduct("s4llite") &&
+        this.getService()["quality"] &&
+        osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])
+      ) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),

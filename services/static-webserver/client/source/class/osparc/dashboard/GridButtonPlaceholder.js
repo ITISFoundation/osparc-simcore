@@ -39,8 +39,18 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
 
   statics: {
     POS: {
-      STATE: osparc.dashboard.GridButtonBase.THUMBNAIL + 1,
-      PROGRESS: osparc.dashboard.GridButtonBase.THUMBNAIL + 2
+      STATE: {
+        row: 3,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      },
+      PROGRESS: {
+        row: 4,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      }
     }
   },
 
@@ -50,7 +60,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
       switch (id) {
         case "state-label":
           control = new qx.ui.basic.Label();
-          this._mainLayout.addAt(control, this.self().POS.STATE);
+          this._mainLayout.add(control, this.self().POS.STATE);
           break;
         case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
@@ -59,7 +69,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
           });
-          this._mainLayout.addAt(control, this.self().POS.PROGRESS);
+          this._mainLayout.add(control, this.self().POS.PROGRESS);
           break;
       }
       return control || this.base(arguments, id);

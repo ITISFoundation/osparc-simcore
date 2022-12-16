@@ -443,7 +443,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __applyState: function(value) {
-      if ("state" in value) {
+      if (value && "state" in value) {
         const isRunning = this.self().isRunning(value["state"]["value"]);
         this.setPipelineRunning(isRunning);
       } else {

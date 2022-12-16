@@ -19,6 +19,19 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
     GRID_POS: {
       ...osparc.component.metadata.ServicesInStudy.GRID_POS,
       BOOT_MODE: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length
+    },
+
+    anyBootOptions: function(studyData) {
+      if ("workbench" in studyData) {
+        for (const nodeId in studyData["workbench"]) {
+          const node = studyData["workbench"][nodeId];
+          const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+          if (metadata && "boot-options" in metadata) {
+            return true;
+          }
+        }
+      }
+      return false;
     }
   },
 
