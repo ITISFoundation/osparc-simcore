@@ -23,7 +23,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dict_utils import nested_update
-from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -64,13 +63,14 @@ from ...docker_service_specs import (
 )
 from ...errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._abc import DynamicSchedulerEvent
-from ._utils import (
+from ._events_utils import (
     RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
     attach_project_networks,
     attempt_pod_removal_and_data_saving,
     get_director_v0_client,
     parse_containers_inspect,
+    wait_for_sidecar_api,
 )
 
 logger = logging.getLogger(__name__)
@@ -255,24 +255,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-
-        async for attempt in AsyncRetrying(
-            stop=stop_after_delay(
-                dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
-            ),
-            wait=wait_fixed(1),
-            retry_error_cls=EntrypointContainerNotFoundError,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        ):
-            with attempt:
-                if not await get_dynamic_sidecar_service_health(
-                    app, scheduler_data, with_retry=False
-                ):
-                    raise TryAgain()
-                scheduler_data.dynamic_sidecar.is_healthy = True
+        await wait_for_sidecar_api(app, scheduler_data)
 
 
 class UpdateHealth(DynamicSchedulerEvent):

@@ -16,6 +16,11 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from tenacity import TryAgain
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings, DynamicSidecarSettings
@@ -24,15 +29,16 @@ from .....models.schemas.dynamic_services.scheduler import (
     DockerStatus,
     SchedulerData,
 )
-from .....modules.rabbitmq import RabbitMQClient
 from .....utils.db import get_repository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
 from ....node_rights import NodeRightsManager, ResourceName
+from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
     DynamicSidecarClient,
     get_dynamic_sidecar_client,
+    get_dynamic_sidecar_service_health,
 )
 from ...docker_api import (
     get_projects_networks_containers,
@@ -41,6 +47,7 @@ from ...docker_api import (
     remove_volumes_from_node,
     try_to_remove_network,
 )
+from ...errors import EntrypointContainerNotFoundError
 from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 logger = logging.getLogger(__name__)
@@ -325,3 +332,24 @@ async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -
             )
 
     scheduler_data.dynamic_sidecar.is_project_network_attached = True
+
+
+async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> None:
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
+        ),
+        wait=wait_fixed(1),
+        retry_error_cls=EntrypointContainerNotFoundError,
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    ):
+        with attempt:
+            if not await get_dynamic_sidecar_service_health(
+                app, scheduler_data, with_retry=False
+            ):
+                raise TryAgain()
+            scheduler_data.dynamic_sidecar.is_healthy = True
