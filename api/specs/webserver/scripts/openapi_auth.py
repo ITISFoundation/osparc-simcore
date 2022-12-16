@@ -34,6 +34,7 @@ from simcore_service_webserver.login.handlers_confirmation import (
 from simcore_service_webserver.login.handlers_registration import (
     RegisterBody,
     RegisterPhoneBody,
+    RegisterPhoneNextPage,
 )
 
 app = FastAPI(redoc_url=None)
@@ -55,7 +56,7 @@ async def register(registration: RegisterBody):
 
 @app.post(
     "/auth/verify-phone-number",
-    response_model=Envelope[Log],
+    response_model=Envelope[RegisterPhoneNextPage],
     tags=TAGS,
     operation_id="auth_register_phone",
 )

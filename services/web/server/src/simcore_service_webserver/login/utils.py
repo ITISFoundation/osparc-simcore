@@ -103,7 +103,7 @@ def flash_response(
     message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
     response = envelope_response(
-        attr.asdict(LogMessageType(message, level)),
+        data=attr.asdict(LogMessageType(message, level)),
         status=status,
     )
     return response

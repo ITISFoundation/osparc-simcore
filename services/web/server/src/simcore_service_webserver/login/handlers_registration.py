@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Literal, Optional
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from pydantic import EmailStr, Field, SecretStr, validator
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -14,10 +14,11 @@ from ..products import Product, get_current_product
 from ..security_api import encrypt_password
 from ..session_access import session_access_constraint, session_access_trace
 from ..utils import MINUTE
+from ..utils_aiohttp import NextPage
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
-from ._constants import MSG_2FA_CODE_SENT, MSG_CANT_SEND_MAIL
+from ._constants import CODE_2FA_CODE_REQUIRED, MSG_2FA_CODE_SENT, MSG_CANT_SEND_MAIL
 from ._models import InputSchema, check_confirm_password_match
 from ._registration import check_and_consume_invitation, check_other_registrations
 from ._security import login_granted_response
@@ -33,6 +34,7 @@ from .utils import (
     CONFIRMATION_PENDING,
     REGISTRATION,
     USER,
+    envelope_response,
     flash_response,
     get_client_ip,
 )
@@ -187,6 +189,16 @@ class RegisterPhoneBody(InputSchema):
     )
 
 
+class _PageParams(BaseModel):
+    retry_2fa_after: Optional[PositiveInt] = None
+
+
+class RegisterPhoneNextPage(NextPage[_PageParams]):
+    logger: str = Field("user", deprecated=True)
+    level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
+    message: str
+
+
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @session_access_constraint(
     allow_access_after=["auth_register", "auth_login"],
@@ -237,10 +249,21 @@ async def register_phone(request: web.Request):
             user_name=_get_user_name(registration.email),
         )
 
-        response = flash_response(
-            MSG_2FA_CODE_SENT.format(
-                phone_number=mask_phone_number(registration.phone)
-            ),
+        message = MSG_2FA_CODE_SENT.format(
+            phone_number=mask_phone_number(registration.phone)
+        )
+
+        response = envelope_response(
+            # RegisterPhoneNextPage
+            data={
+                "name": CODE_2FA_CODE_REQUIRED,
+                "parameters": {
+                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                },
+                "message": message,
+                "level": "INFO",
+                "logger": "user",
+            },
             status=web.HTTPAccepted.status_code,
         )
         return response

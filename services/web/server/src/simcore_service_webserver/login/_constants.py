@@ -33,3 +33,10 @@ MSG_USER_EXPIRED: Final[
 ] = "This account has expired and does not have anymore access. Please contact support for further details: {support_email}"
 MSG_WRONG_2FA_CODE: Final[str] = "Invalid code (wrong or expired)"
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
+
+
+# Login Accepted Response Codes:
+#  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
+#  - The frontend uses them alwo to determine what page/form has to display to the user for next step
+CODE_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
+CODE_2FA_CODE_REQUIRED = "SMS_CODE_REQUIRED"

@@ -22,6 +22,8 @@ from ._2fa import (
     send_sms_code,
 )
 from ._constants import (
+    CODE_2FA_CODE_REQUIRED,
+    CODE_PHONE_NUMBER_REQUIRED,
     MSG_2FA_CODE_SENT,
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
@@ -46,12 +48,6 @@ log = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
-
-# Login Accepted Response Codes:
-#  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
-#  - The frontend uses them alwo to determine what page/form has to display to the user for next step
-_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
-_SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 
 
 class LoginBody(InputSchema):
@@ -107,13 +103,13 @@ async def login(request: web.Request):
         response = envelope_response(
             # LoginNextPage
             {
-                "name": _PHONE_NUMBER_REQUIRED,
+                "name": CODE_PHONE_NUMBER_REQUIRED,
                 "parameters": {
                     "message": MSG_PHONE_MISSING,
                     "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
                 # TODO: deprecated: remove in next PR with @odeimaiz
-                "code": _PHONE_NUMBER_REQUIRED,
+                "code": CODE_PHONE_NUMBER_REQUIRED,
                 "reason": MSG_PHONE_MISSING,
             },
             status=web.HTTPAccepted.status_code,
@@ -140,7 +136,7 @@ async def login(request: web.Request):
         response = envelope_response(
             # LoginNextPage
             {
-                "name": _SMS_CODE_REQUIRED,
+                "name": CODE_2FA_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
@@ -148,7 +144,7 @@ async def login(request: web.Request):
                     "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
                 # TODO: deprecated: remove in next PR with @odeimaiz
-                "code": _SMS_CODE_REQUIRED,
+                "code": CODE_2FA_CODE_REQUIRED,
                 "reason": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(user["phone"])
                 ),

@@ -14,10 +14,8 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.login.handlers_auth import (
-    _SMS_CODE_REQUIRED,
-    LoginNextPage,
-)
+from simcore_service_webserver.login._constants import CODE_2FA_CODE_REQUIRED
+from simcore_service_webserver.login.handlers_auth import LoginNextPage
 
 
 @pytest.fixture
@@ -105,7 +103,7 @@ async def test_resend_2fa_workflow(
     )
     data, _ = await assert_status(response, web.HTTPAccepted)
     next_page = LoginNextPage.parse_obj(data)
-    assert next_page.name == _SMS_CODE_REQUIRED
+    assert next_page.name == CODE_2FA_CODE_REQUIRED
     assert next_page.parameters.retry_2fa_after > 0
 
     # resend code via SMS
