@@ -299,11 +299,14 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     for src_node_id in src_projects_list:
         dst_node_id = nodes_map.get(NodeIDStr(f"{src_node_id}"))
         assert dst_node_id
-        for src_file in src_projects_list[src_node_id].values():
+        for src_file_id, src_file in src_projects_list[src_node_id].items():
             await assert_file_meta_data_in_db(
                 aiopg_engine,
-                file_id=create_simcore_file_id(
-                    ProjectID(dst_project["uuid"]), NodeID(dst_node_id), src_file.name
+                file_id=parse_obj_as(
+                    SimcoreS3FileID,
+                    f"{src_file_id}".replace(
+                        src_project["uuid"], dst_project["uuid"]
+                    ).replace(f"{src_node_id}", f"{dst_node_id}"),
                 ),
                 expected_entry_exists=True,
                 expected_file_size=src_file.stat().st_size,
