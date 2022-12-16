@@ -6,10 +6,10 @@ import logging
 from aiohttp import web
 from models_library.generics import Envelope
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import users_api
 from .login.decorators import RQT_USERID_KEY, login_required
-from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .users_exceptions import TokenNotFoundError, UserNotFoundError
 from .users_models import ProfileGet, ProfileUpdate
