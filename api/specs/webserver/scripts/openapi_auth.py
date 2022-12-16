@@ -57,7 +57,7 @@ async def register(registration: RegisterBody):
     "/auth/verify-phone-number",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="auth_verify_2fa_phone",
+    operation_id="auth_register_phone",
 )
 async def register_phone(registration: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""

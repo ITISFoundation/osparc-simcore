@@ -61,7 +61,7 @@ class Resend2faBody(InputSchema):
 
 
 @session_access_constraint(
-    allow_access_after=["auth_login", "auth_verify_2fa_phone"],
+    allow_access_after=["auth_login", "auth_register_phone"],
     max_number_of_access=5,
     unauthorized_reason="Not allowed to resend code (only permitted during login or registration)",
 )

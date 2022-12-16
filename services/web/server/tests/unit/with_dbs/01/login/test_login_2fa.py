@@ -137,7 +137,7 @@ async def test_workflow_register_and_login_with_2fa(
     # register phone --------------------------------------------------
 
     # 1. submit
-    url = client.app.router["auth_verify_2fa_phone"].url_for()
+    url = client.app.router["auth_register_phone"].url_for()
     response = await client.post(
         f"{url}",
         json={
@@ -248,7 +248,7 @@ async def test_register_phone_fails_with_used_number(
     await assert_status(response, web.HTTPAccepted)
 
     # 2. register existing phone
-    url = client.app.router["auth_verify_2fa_phone"].url_for()
+    url = client.app.router["auth_register_phone"].url_for()
     response = await client.post(
         f"{url}",
         json={

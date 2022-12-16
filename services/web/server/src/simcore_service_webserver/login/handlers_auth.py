@@ -110,7 +110,7 @@ async def login(request: web.Request):
                 "name": _PHONE_NUMBER_REQUIRED,
                 "parameters": {
                     "message": MSG_PHONE_MISSING,
-                    "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
+                    "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
                 # TODO: deprecated: remove in next PR with @odeimaiz
                 "code": _PHONE_NUMBER_REQUIRED,

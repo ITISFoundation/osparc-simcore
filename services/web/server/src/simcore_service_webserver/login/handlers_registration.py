@@ -193,7 +193,7 @@ class RegisterPhoneBody(InputSchema):
     max_number_of_access=1,
     unauthorized_reason="Not allowed to register the phone",
 )
-@routes.post("/auth/verify-phone-number", name="auth_verify_2fa_phone")
+@routes.post("/auth/verify-phone-number", name="auth_register_phone")
 async def register_phone(request: web.Request):
     """
     Submits phone registration

@@ -42,7 +42,7 @@ def create_routes(validated_specs: openapi.Spec) -> list[web.RouteDef]:
         "auth_reset_password_allowed": confirmation_handlers.reset_password_allowed,
         "auth_reset_password": change_handlers.reset_password,
         "auth_phone_confirmation": confirmation_handlers.phone_confirmation,
-        "auth_verify_2fa_phone": register_handlers.register_phone,
+        "auth_register_phone": register_handlers.register_phone,
         "create_api_key": api_keys_handlers.create_api_key,
         "delete_api_key": api_keys_handlers.delete_api_key,
         "list_api_keys": api_keys_handlers.list_api_keys,

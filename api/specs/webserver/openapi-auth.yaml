@@ -27,7 +27,7 @@ paths:
       description:
         user tries to verify phone number for 2 Factor Authentication when
         registering
-      operationId: auth_verify_2fa_phone
+      operationId: auth_register_phone
       requestBody:
         content:
           application/json:
