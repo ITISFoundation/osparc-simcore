@@ -35,7 +35,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import (
     _apply_observation_cycle,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (

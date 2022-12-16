@@ -88,6 +88,7 @@ async def observing_single_service(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_scheduler: DynamicServicesSchedulerSettings,
 ) -> None:
+    app: FastAPI = scheduler.app
 
     if scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.FAILING:
         # potential use-cases:
@@ -123,13 +124,13 @@ async def observing_single_service(
                 # NOTE: saving will fail since there is no dy-sidecar,
                 # and the save was taken care of by support. Disabling it.
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = False
-                await attempt_pod_removal_and_data_saving(scheduler.app, scheduler_data)
+                await attempt_pod_removal_and_data_saving(app, scheduler_data)
 
             return
 
         # use-cases: 1, 2
         # Cleanup all resources related to the dynamic-sidecar.
-        await attempt_pod_removal_and_data_saving(scheduler.app, scheduler_data)
+        await attempt_pod_removal_and_data_saving(app, scheduler_data)
         return
 
     scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)

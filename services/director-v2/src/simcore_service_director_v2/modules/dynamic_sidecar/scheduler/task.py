@@ -19,7 +19,6 @@ import functools
 import logging
 from asyncio import Lock, Queue, Task, sleep
 from dataclasses import dataclass, field
-from math import floor
 from typing import Optional, Union
 
 from fastapi import FastAPI
@@ -51,18 +50,12 @@ from ..errors import (
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
 )
-from ._task_utils import observing_single_service
+from ._core import observing_single_service
 
 logger = logging.getLogger(__name__)
 
 
 _DISABLED_MARK = object()
-
-
-def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
-    # divisor to figure out if 30 seconds have passed based on the cycle count
-    modulo_divisor = max(1, int(floor(30 / wait_interval)))
-    return observation_counter % modulo_divisor == 0
 
 
 @dataclass
