@@ -111,7 +111,7 @@ async def login_2fa(authentication: LoginTwoFactorAuthBody):
     "/auth/two_factor:resend",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="resend_2fa_code",
+    operation_id="auth_resend_2fa_code",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],

@@ -46,7 +46,7 @@ def create_routes(validated_specs: openapi.Spec) -> list[web.RouteDef]:
         "create_api_key": api_keys_handlers.create_api_key,
         "delete_api_key": api_keys_handlers.delete_api_key,
         "list_api_keys": api_keys_handlers.list_api_keys,
-        "resend_2fa_code": handlers_2fa.resend_2fa_code,
+        "auth_resend_2fa_code": handlers_2fa.resend_2fa_code,
     }
 
     routes = map_handlers_with_operations(

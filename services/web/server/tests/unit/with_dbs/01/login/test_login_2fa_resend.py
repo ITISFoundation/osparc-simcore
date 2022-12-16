@@ -55,7 +55,7 @@ async def test_resend_2fa_entrypoint_is_protected(
 ):
     assert client.app
 
-    url = client.app.router["resend_2fa_code"].url_for()
+    url = client.app.router["auth_resend_2fa_code"].url_for()
     response = await client.post(
         f"{url}",
         json={
@@ -109,7 +109,7 @@ async def test_resend_2fa_workflow(
     assert next_page.parameters.retry_2fa_after > 0
 
     # resend code via SMS
-    url = client.app.router["resend_2fa_code"].url_for()
+    url = client.app.router["auth_resend_2fa_code"].url_for()
     response = await client.post(
         f"{url}",
         json={

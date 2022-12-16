@@ -65,7 +65,7 @@ class Resend2faBody(InputSchema):
     max_number_of_access=5,
     unauthorized_reason="Not allowed to resend code (only permitted during login or registration)",
 )
-@routes.post("/v0/auth/two_factor:resend", name="resend_2fa_code")
+@routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email
 

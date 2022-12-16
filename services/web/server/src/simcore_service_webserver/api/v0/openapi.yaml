@@ -218,7 +218,7 @@ paths:
         - authentication
       summary: Resend 2Fa Code
       description: Resends 2FA either via email or sms
-      operationId: resend_2fa_code
+      operationId: auth_resend_2fa_code
       requestBody:
         content:
           application/json:
