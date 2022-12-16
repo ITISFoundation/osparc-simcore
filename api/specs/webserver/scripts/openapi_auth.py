@@ -67,7 +67,7 @@ async def register_phone(registration: RegisterPhoneBody):
     "/auth/validate-code-register",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="auth_validate_2fa_register",
+    operation_id="auth_phone_confirmation",
 )
 async def phone_confirmation(confirmation: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""

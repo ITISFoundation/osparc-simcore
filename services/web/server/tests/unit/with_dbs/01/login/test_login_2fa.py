@@ -159,7 +159,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["phone"] is None
 
     # 2. confirmation
-    url = client.app.router["auth_validate_2fa_register"].url_for()
+    url = client.app.router["auth_phone_confirmation"].url_for()
     response = await client.post(
         f"{url}",
         json={

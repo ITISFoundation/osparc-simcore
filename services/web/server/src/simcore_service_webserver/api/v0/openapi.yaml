@@ -295,7 +295,7 @@ paths:
         - authentication
       summary: Phone Confirmation
       description: user enters 2 Factor Authentication code when registering
-      operationId: auth_validate_2fa_register
+      operationId: auth_phone_confirmation
       requestBody:
         content:
           application/json:
