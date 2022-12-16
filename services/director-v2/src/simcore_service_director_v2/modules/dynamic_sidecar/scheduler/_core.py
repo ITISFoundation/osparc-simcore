@@ -22,8 +22,8 @@ from ..docker_api import (
     update_scheduler_data_label,
 )
 from ..errors import GenericDockerError
-from ._utils import attempt_pod_removal_and_data_saving
-from .events import REGISTERED_EVENTS
+from ._core._events import REGISTERED_EVENTS
+from ._core._events_utils import attempt_pod_removal_and_data_saving
 
 logger = logging.getLogger(__name__)
 
