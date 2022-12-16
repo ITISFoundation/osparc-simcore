@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, Optional
 
 import pytest
 import sqlalchemy as sa
@@ -79,7 +79,9 @@ async def project_id(
 async def create_project_node(
     user_id: UserID, aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[NodeID]]]:
-    async def _creator(project_id: ProjectID, **kwargs) -> NodeID:
+    async def _creator(
+        project_id: ProjectID, node_id: Optional[NodeID] = None, **kwargs
+    ) -> NodeID:
         async with aiopg_engine.acquire() as conn:
             result = await conn.execute(
                 sa.select([projects.c.workbench]).where(
@@ -89,7 +91,7 @@ async def create_project_node(
             row = await result.fetchone()
             assert row
             project_workbench: dict[str, Any] = row[projects.c.workbench]
-            new_node_id = NodeID(faker.uuid4())
+            new_node_id = node_id or NodeID(faker.uuid4())
             node_data = {
                 "key": "simcore/services/frontend/file-picker",
                 "version": "1.0.0",
