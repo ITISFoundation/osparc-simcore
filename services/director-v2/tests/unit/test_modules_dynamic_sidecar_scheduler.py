@@ -35,12 +35,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task_utils import (
+    _apply_observation_cycle,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
-    apply_observation_cycle,
 )
 
 # running scheduler at a hight rate to stress out the system
@@ -236,12 +236,10 @@ def disabled_scheduler_background_task(mocker: MockerFixture):
 
 @pytest.fixture
 async def manually_trigger_scheduler(
-    minimal_app: FastAPI,
-    scheduler: DynamicSidecarsScheduler,
-    scheduler_data: SchedulerData,
+    scheduler: DynamicSidecarsScheduler, scheduler_data: SchedulerData
 ) -> Callable[[], Awaitable[None]]:
     async def _triggerer() -> None:
-        await apply_observation_cycle(minimal_app, scheduler, scheduler_data)
+        await _apply_observation_cycle(scheduler, scheduler_data)
 
     return _triggerer
 
