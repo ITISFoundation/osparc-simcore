@@ -66,11 +66,13 @@ def create_openapi_specs(
     if drop_fastapi_default_422:
         for _, method_item in openapi.get("paths", {}).items():
             for _, param in method_item.items():
-                if e422 := param.get("responses", {}).get("422", None):
-                    # NOTE: If description is like this,
-                    # it assumes it is the default HTTPValidationError from fastapi
-                    if e422["description"] == "Validation Error":
-                        param.get("responses", {}).pop("422", None)
+                # NOTE: If description is like this,
+                # it assumes it is the default HTTPValidationError from fastapi
+                if (
+                    e422 := param.get("responses", {}).get("422", None)
+                    and e422.get("description") == "Validation Error"
+                ):
+                    param.get("responses", {}).pop("422", None)
 
     with file_path.open("wt") as fh:
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
