@@ -30,10 +30,6 @@ qx.Class.define("osparc.store.VendorInfo", {
       });
     },
 
-    getDisplayName: function() {
-      return this.__getFromStaticInfo("displayName", "o\u00b2S\u00b2PARC");
-    },
-
     getSupportEmail: function() {
       return this.__getFromStaticInfo("supportEmail", "support@osparc.io");
     },
