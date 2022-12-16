@@ -22,7 +22,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils, task
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _core, _utils
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
@@ -100,7 +100,7 @@ def mock_is_dynamic_sidecar_stack_missing(mocker: MockerFixture) -> None:
         return False
 
     mocker.patch.object(
-        task, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
+        _core, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
     )
 
 
