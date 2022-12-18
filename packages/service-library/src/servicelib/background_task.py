@@ -60,10 +60,9 @@ async def stop_periodic_task(
         logger,
         logging.INFO,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
-    ), contextlib.suppress(asyncio.CancelledError):
+    ):
         asyncio_task.cancel()
-        with log_catch(logger, reraise=False):
-            await asyncio.wait((asyncio_task,), timeout=timeout)
+        await asyncio.wait((asyncio_task,), timeout=timeout)
 
 
 @contextlib.asynccontextmanager
@@ -82,4 +81,6 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
-            await stop_periodic_task(asyncio_task)
+            # NOTE: this stopping is shielded to prevent the cancellation to propagate
+            # into the stopping procedure
+            await asyncio.shield(stop_periodic_task(asyncio_task))
