@@ -33,7 +33,7 @@ def app_environment(
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     mocked_task = mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.check_dynamic_resources",
+        "simcore_service_autoscaling.dynamic_scaling.cluster_scaling_from_labelled_services",
         autospec=True,
     )
     return mocked_task
