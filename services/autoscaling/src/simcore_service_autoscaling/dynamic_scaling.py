@@ -1,13 +1,14 @@
+import json
 import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.redis_utils import exclusive
 
 from .core.settings import ApplicationSettings
 from .dynamic_scaling_core import check_dynamic_resources
 from .modules.redis import get_redis_client
-from .utils.redis import exclusive
 
 _TASK_NAME = "Autoscaling AWS EC2 instances"
 
@@ -18,9 +19,14 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
         assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-        lock_key = f"{app.title}:dynamic_services_resources:node_labels:{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}"
+        lock_key = f"{app.title}:check_dynamic_resources_lock"
+        lock_value = json.dumps(
+            {
+                "node_labels": app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            }
+        )
         app.state.autoscaler_task = await start_periodic_task(
-            exclusive(get_redis_client(app), lock_key=lock_key)(
+            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
                 check_dynamic_resources
             ),
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
