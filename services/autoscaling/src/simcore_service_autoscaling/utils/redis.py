@@ -8,7 +8,7 @@ def exclusive(redis: RedisClientSDK, *, lock_key: str):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with redis.lock_context(lock_key=lock_key):
-                return func(*args, **kwargs)
+                return await func(*args, **kwargs)
 
         return wrapper
 
