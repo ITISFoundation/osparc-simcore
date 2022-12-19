@@ -30,6 +30,9 @@ async function runTutorial(url, studyName, user, pass, newUser, enableDemoMode) 
       throw "Check exposed services";
     }
 
+    await utils.sleep(2000, "Wait for Quick Start dialog");
+    await tutorial.closeQuickStart();
+
     // start Sim4Life Lite
     const studyData = await tutorial.startSim4LifeLite();
     studyId = studyData["data"]["uuid"];
