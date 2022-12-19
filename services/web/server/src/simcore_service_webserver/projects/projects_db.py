@@ -479,7 +479,10 @@ class ProjectDBAPI:
             raise ProjectNotFoundError(project_uuid)
 
         # now carefuly check the access rights
-        _check_project_permissions(project_row, user_id, user_groups, check_permissions)
+        if only_published is False:
+            _check_project_permissions(
+                project_row, user_id, user_groups, check_permissions
+            )
 
         project = dict(project_row.items())
 

@@ -23,6 +23,7 @@ from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products import get_product_name
 from ..projects.projects_db import ProjectDBAPI
+from ..projects.projects_exceptions import ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
@@ -223,7 +224,13 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     # TODO: implement nice error-page.html
     project_id = request.match_info["id"]
 
-    template_project = await get_public_project(request.app, project_id)
+    try:
+        template_project = await get_public_project(request.app, project_id)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Requested study ({project_id}) has not been published.\
+             Please contact the data curators for more information."
+        ) from exc
     if not template_project:
         raise web.HTTPNotFound(
             reason=f"Requested study ({project_id}) has not been published.\
