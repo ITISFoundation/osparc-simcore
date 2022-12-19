@@ -76,7 +76,7 @@ if (nUsers && userPrefix && userSuffix && pass) {
     // it will only work from 01 to 99
     const id = ("0" + i).slice(-2);
     credentials.push({
-      user: userPrefix + id + userPrefix,
+      user: userPrefix + id + userSuffix,
       pass: pass
     });
   }
