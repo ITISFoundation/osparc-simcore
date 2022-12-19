@@ -257,7 +257,7 @@ jobs:
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    timeout-minutes: 5 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -291,7 +291,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 02
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 02/test_project_locks.py
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
