@@ -18,6 +18,18 @@ class _DBConnection(Protocol):
         ...
 
 
+class _AiopgConnection(Protocol):
+    # Prototype to account for aiopg-only (this protocol avoids import <-> installation)
+    async def scalar(self, *args, **kwargs):
+        ...
+
+    async def execute(self, *args, **kwargs):
+        ...
+
+    async def begin(self):
+        ...
+
+
 async def get_default_product_name(conn: _DBConnection) -> str:
     """The first row in the table is considered as the default product
 
@@ -39,11 +51,11 @@ async def get_product_group_id(
     group_id = await connection.scalar(
         sa.select([products.c.group_id]).where(products.c.name == product_name)
     )
-    return group_id
+    return None if group_id is None else int(group_id)
 
 
 async def get_or_create_product_group(
-    connection: _DBConnection, product_name: str
+    connection: _AiopgConnection, product_name: str
 ) -> int:
     """
     Returns group_id of a product. Creates it if undefined
