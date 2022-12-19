@@ -50,7 +50,7 @@ from ..errors import (
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
 )
-from ._core import observing_single_service
+from ._core._observer import observing_single_service
 
 logger = logging.getLogger(__name__)
 

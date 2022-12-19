@@ -17,12 +17,12 @@ from servicelib.fastapi.long_running_tasks.server import (
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
 from ...modules.dynamic_sidecar.api_client import DynamicSidecarClient
-from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
-from ...modules.dynamic_sidecar.scheduler._utils import (
-    service_push_outputs,
-    service_remove_containers,
-    service_remove_sidecar_proxy_docker_networks_and_volumes,
-    service_save_state,
+from ...modules.dynamic_sidecar.scheduler import (
+    DynamicSidecarsScheduler,
+    push_outputs,
+    remove_containers,
+    remove_sidecar_proxy_docker_networks_and_volumes,
+    save_state,
 )
 from ...utils.routes import NoContentResponse
 from ..dependencies import get_app
@@ -94,7 +94,7 @@ async def delete_service_containers(
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
-        await service_remove_containers(
+        await remove_containers(
             dynamic_sidecar_client, scheduler_data, _progress_callback
         )
 
@@ -142,7 +142,7 @@ async def save_service_state(
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
-        await service_save_state(
+        await save_state(
             dynamic_sidecar_client, dynamic_sidecar_endpoint, _progress_callback
         )
 
@@ -190,7 +190,7 @@ async def push_service_outputs(
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
-        await service_push_outputs(
+        await push_outputs(
             dynamic_sidecar_client, dynamic_sidecar_endpoint, _progress_callback
         )
 
@@ -238,7 +238,7 @@ async def delete_service_docker_resources(
         dynamic_sidecar_settings: DynamicSidecarSettings,
     ) -> None:
         scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
-        await service_remove_sidecar_proxy_docker_networks_and_volumes(
+        await remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress, app, scheduler_data, dynamic_sidecar_settings
         )
 
