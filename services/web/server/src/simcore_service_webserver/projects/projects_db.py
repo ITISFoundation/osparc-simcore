@@ -449,8 +449,8 @@ class ProjectDBAPI:
         user_id: int,
         project_uuid: str,
         exclude_foreign: Optional[list[str]] = None,
-        include_templates: Optional[bool] = False,
         for_update: bool = False,
+        only_templates: bool = False,
         only_published: bool = False,
         check_permissions: str = "read",
     ) -> dict:
@@ -465,7 +465,7 @@ class ProjectDBAPI:
             SELECT *
             FROM projects
             WHERE
-            {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
+            {"projects.type = 'TEMPLATE' AND" if only_templates else ""}
             uuid = '{project_uuid}'
             AND (jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})
             OR prj_owner = {user_id} {"OR published='true'" if only_published else ""})
@@ -496,9 +496,7 @@ class ProjectDBAPI:
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(
-                conn, user_id, project_uuid, include_templates=True
-            )
+            project = await self._get_project(conn, user_id, project_uuid)
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
             user_email = await self._get_user_email(conn, user_id)
@@ -510,9 +508,7 @@ class ProjectDBAPI:
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(
-                conn, user_id, project_uuid, include_templates=True
-            )
+            project = await self._get_project(conn, user_id, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
@@ -556,7 +552,7 @@ class ProjectDBAPI:
                 conn,
                 user_id,
                 project_uuid,
-                include_templates=True,
+                only_templates=True,
                 only_published=only_published,
                 check_permissions=check_permissions,
             )
@@ -592,7 +588,6 @@ class ProjectDBAPI:
                     user_id,
                     project_uuid,
                     exclude_foreign=["tags"],
-                    include_templates=True,
                     for_update=True,
                 )
                 user_groups: list[RowProxy] = await self.__load_user_groups(
@@ -691,7 +686,6 @@ class ProjectDBAPI:
         *,
         product_name: str,
         project_uuid: str,
-        include_templates: Optional[bool] = False,
     ) -> dict[str, Any]:
         """replaces a project from a user
         this method completely replaces a user project with new_project_data only keeping
@@ -708,7 +702,6 @@ class ProjectDBAPI:
                     user_id,
                     project_uuid,
                     exclude_foreign=["tags"],
-                    include_templates=include_templates,
                     for_update=True,
                 )
                 user_groups: list[RowProxy] = await self.__load_user_groups(
@@ -789,7 +782,7 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             async with conn.begin() as _transaction:
                 project = await self._get_project(
-                    conn, user_id, project_uuid, include_templates=True, for_update=True
+                    conn, user_id, project_uuid, for_update=True
                 )
                 # if we have delete access we delete the project
                 user_groups: list[RowProxy] = await self.__load_user_groups(
@@ -808,7 +801,7 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             async with conn.begin() as _transaction:
                 project = await self._get_project(
-                    conn, user_id, project_uuid, include_templates=True, for_update=True
+                    conn, user_id, project_uuid, for_update=True
                 )
                 # if we have delete access we delete the project
                 user_groups: list[RowProxy] = await self.__load_user_groups(

@@ -625,7 +625,6 @@ async def replace_project(request: web.Request):
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             product_name=req_ctx.product_name,
-            include_templates=True,
         )
 
         await update_frontend_outputs(
