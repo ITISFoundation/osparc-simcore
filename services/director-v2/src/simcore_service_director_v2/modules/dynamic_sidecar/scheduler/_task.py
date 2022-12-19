@@ -128,13 +128,6 @@ async def setup_scheduler(app: FastAPI):
 
 
 async def shutdown_scheduler(app: FastAPI):
-    settings: DynamicServicesSchedulerSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-    )
-    if not settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED:
-        logger.warning("dynamic-sidecar scheduler not started, nothing to shutdown!!!")
-        return
-
     scheduler: Optional[DynamicSidecarsScheduler] = app.state.dynamic_sidecar_scheduler
     if scheduler is not None:
         await scheduler.shutdown()
