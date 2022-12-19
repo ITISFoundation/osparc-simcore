@@ -18,8 +18,8 @@ const {
 
 const studyName = "sim4life";
 
-async function runTutorial(user, pass, newUser) {
-  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
+async function runTutorial(user, pass, newUser, parallelUserIdx) {
+  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode, parallelUserIdx);
   let studyId;
   try {
     await tutorial.start();
@@ -82,8 +82,8 @@ if (nUsers && userPrefix && userSuffix && pass) {
   }
 }
 
-credentials.forEach(credential => {
-  runTutorial(credential.user, credential.pass, newUser)
+credentials.forEach((credential, idx) => {
+  runTutorial(credential.user, credential.pass, newUser, idx)
     .catch(error => {
       console.log('Puppeteer error: ' + error);
       process.exit(1);

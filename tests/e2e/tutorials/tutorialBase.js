@@ -6,9 +6,13 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, templateName, user, pass, newUser, enableDemoMode = false) {
+  constructor(url, templateName, user, pass, newUser, enableDemoMode = false, parallelUserIdx = null) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
+    this.__screenshotText = templateName;
+    if (parallelUserIdx) {
+      this.__screenshotText + "_" + parallelUserIdx + "_";
+    }
 
     this.__url = url;
     this.__user = user;
