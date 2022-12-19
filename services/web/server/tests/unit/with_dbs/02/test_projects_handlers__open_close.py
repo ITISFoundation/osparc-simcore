@@ -354,7 +354,7 @@ async def test_open_project(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
@@ -373,7 +373,11 @@ async def test_open_template_project_for_edition(
     # POST /v0/projects/{project_id}:open
     # open project
     assert client.app
-    template_project = await create_template_project()
+    template_project = await create_template_project(
+        accessRights={
+            logged_user["primary_gid"]: {"read": False, "write": False, "delete": False}
+        }
+    )
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)

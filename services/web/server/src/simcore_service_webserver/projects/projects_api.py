@@ -43,6 +43,7 @@ from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..application_settings import get_settings
@@ -131,6 +132,14 @@ async def get_project_for_user(
     # Notice that db model does not include a check on project schema.
     await validate_project(app, project)
     return project
+
+
+async def get_project_type(
+    app: web.Application, project_uuid: ProjectID
+) -> ProjectType:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    return await db.get_project_type(project_uuid)
 
 
 #

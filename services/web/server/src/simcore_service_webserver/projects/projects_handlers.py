@@ -14,7 +14,10 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.webserver_models import ProjectType
 
+from .. import users_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
@@ -55,6 +58,15 @@ async def open_project(request: web.Request) -> web.Response:
             include_templates=True,
             include_state=True,
         )
+        project_type = await projects_api.get_project_type(
+            request.app, path_params.project_id
+        )
+        user_role: UserRole = await users_api.get_user_role(
+            request.app, req_ctx.user_id
+        )
+        if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
+            # only USERS/TESTERS can do that
+            raise web.HTTPForbidden(reason="Insufficient rights to edit a template")
         product: Product = get_current_product(request)
 
         if not await projects_api.try_open_project_for_user(
