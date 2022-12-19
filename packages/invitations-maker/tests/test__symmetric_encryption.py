@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cryptography.fernet import Fernet, InvalidToken
 from pytest import MonkeyPatch
-from yarl import URL
+from starlette.datastructures import URL
 
 
 def produce(guest_email: str):
@@ -18,12 +18,10 @@ def produce(guest_email: str):
     encrypted = fernet.encrypt(message)
 
     # WARNING: how to encode the encrypted message
-    p = (
-        URL()
-        .with_path("registration")
-        .with_query(invitation=base64.urlsafe_b64encode(encrypted).decode())
+    p = URL("/registration").include_query_params(
+        invitation=base64.urlsafe_b64encode(encrypted).decode()
     )
-    url = f"http://127.0.0.1.nip.io:9081/#{p}"
+    url = URL("http://127.0.0.1.nip.io:9081", fragment=f"{p}")
     return url
 
 
