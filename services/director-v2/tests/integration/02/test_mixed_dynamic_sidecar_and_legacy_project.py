@@ -237,6 +237,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
     user_dict: dict[str, Any],
