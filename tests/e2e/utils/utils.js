@@ -23,45 +23,45 @@ function parseCommandLineArguments(args) {
   const url = args[0];
 
   let user = null;
-  const userIdx = process.argv.indexOf('--user');
+  const userIdx = args.indexOf('--user');
   if (userIdx > -1) {
-    user = process.argv[userIdx + 1];
+    user = args[userIdx + 1];
   }
 
   let pass = null;
-  const passIdx = process.argv.indexOf('--pass');
+  const passIdx = args.indexOf('--pass');
   if (passIdx > -1) {
-    pass = process.argv[passIdx + 1];
+    pass = args[passIdx + 1];
   }
 
   let nUsers = null;
-  const nUsersIdx = process.argv.indexOf('--n_users');
+  const nUsersIdx = args.indexOf('--n_users');
   if (nUsersIdx > -1) {
-    nUsers = process.argv[nUsersIdx + 1];
+    nUsers = args[nUsersIdx + 1];
   }
 
   let userPrefix = null;
-  const userPrefixIdx = process.argv.indexOf('--user_prefix');
+  const userPrefixIdx = args.indexOf('--user_prefix');
   if (userPrefixIdx > -1) {
-    userPrefix = process.argv[userPrefixIdx + 1];
+    userPrefix = args[userPrefixIdx + 1];
   }
 
   let userSuffix = null;
-  const userSuffixIdx = process.argv.indexOf('--user_suffix');
+  const userSuffixIdx = args.indexOf('--user_suffix');
   if (userSuffixIdx > -1) {
-    userSuffix = process.argv[userSuffixIdx + 1];
+    userSuffix = args[userSuffixIdx + 1];
   }
 
   let startTimeout = DEFAULT_TIMEOUT;
-  const startTimeoutIdx = process.argv.indexOf('--start_timeout');
+  const startTimeoutIdx = args.indexOf('--start_timeout');
   if (startTimeoutIdx > -1) {
-    startTimeout = process.argv[startTimeoutIdx + 1];
+    startTimeout = args[startTimeoutIdx + 1];
   }
 
   const enableDemoMode = (args.indexOf("--demo") > -1);
 
   let newUser = false;
-  if (user === null || pass === null) {
+  if (pass === null) {
     const newCredentials = getUserAndPass(args);
     user = newCredentials.user;
     pass = newCredentials.pass;
