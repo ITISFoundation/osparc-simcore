@@ -5,27 +5,77 @@ const SCREENSHOTS_DIR = "../screenshots/";
 const DEFAULT_TIMEOUT = 60000;
 
 function parseCommandLineArguments(args) {
-  // node $tutorial.js [url] [user] [password] [--demo]
+  // node $tutorial.js
+  // [url]
+  // [--user] [user]
+  // [--pass] [pass]
+  // [--n_users] [nUsers]
+  // [--user_prefix] [userPrefix]
+  // [--user_suffix] [userSuffix]
+  // [--start_timeout] [startTimeout]
+  // [--demo]
 
   if (args.length < 1) {
-    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [start_timeout] [--demo]');
+    console.log('More arguments expected');
     process.exit(1);
   }
 
   const url = args[0];
-  const {
-    user,
-    pass,
-    newUser
-  } = getUserAndPass(args);
-  const startTimeout = args.length > 3 ? args[3] : DEFAULT_TIMEOUT;
-  const enableDemoMode = args.includes("--demo");
+
+  let user = null;
+  const userIdx = process.argv.indexOf('--user');
+  if (userIdx > -1) {
+    user = process.argv[userIdx + 1];
+  }
+
+  let pass = null;
+  const passIdx = process.argv.indexOf('--pass');
+  if (passIdx > -1) {
+    pass = process.argv[passIdx + 1];
+  }
+
+  let nUsers = null;
+  const nUsersIdx = process.argv.indexOf('--n_users');
+  if (nUsersIdx > -1) {
+    nUsers = process.argv[nUsersIdx + 1];
+  }
+
+  let userPrefix = null;
+  const userPrefixIdx = process.argv.indexOf('--user_prefix');
+  if (userPrefixIdx > -1) {
+    userPrefix = process.argv[userPrefixIdx + 1];
+  }
+
+  let userSuffix = null;
+  const userSuffixIdx = process.argv.indexOf('--user_suffix');
+  if (userSuffixIdx > -1) {
+    userSuffix = process.argv[userSuffixIdx + 1];
+  }
+
+  let startTimeout = DEFAULT_TIMEOUT;
+  const startTimeoutIdx = process.argv.indexOf('--start_timeout');
+  if (startTimeoutIdx > -1) {
+    startTimeout = process.argv[startTimeoutIdx + 1];
+  }
+
+  const enableDemoMode = (args.indexOf("--demo") > -1);
+
+  let newUser = false;
+  if (user === null || pass === null) {
+    const newCredentials = getUserAndPass(args);
+    user = newCredentials.user;
+    pass = newCredentials.pass;
+    newUser = true;
+  }
 
   return {
     url,
     user,
     pass,
     newUser,
+    nUsers,
+    userPrefix,
+    userSuffix,
     startTimeout,
     enableDemoMode
   }
