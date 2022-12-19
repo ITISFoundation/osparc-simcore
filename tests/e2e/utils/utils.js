@@ -6,14 +6,14 @@ const DEFAULT_TIMEOUT = 60000;
 
 function parseCommandLineArguments(args) {
   // node $tutorial.js
-  // [url]
-  // [--user] [user]
-  // [--pass] [pass]
-  // [--n_users] [nUsers]
-  // [--user_prefix] [userPrefix]
-  // [--user_suffix] [userSuffix]
-  // [--start_timeout] [startTimeout]
-  // [--demo]
+  // url
+  // --user [user]
+  // --pass [pass]
+  // --n_users [nUsers]
+  // --user_prefix [userPrefix]
+  // --user_suffix [userSuffix]
+  // --start_timeout [startTimeout]
+  // --demo
 
   if (args.length < 1) {
     console.log('More arguments expected');
