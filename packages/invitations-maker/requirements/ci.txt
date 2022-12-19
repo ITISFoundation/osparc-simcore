@@ -1,0 +1,16 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'invitations-maker'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+--requirement _base.txt
+--requirement _test.txt
+
+../pytest-simcore/
+
+# current module
+.

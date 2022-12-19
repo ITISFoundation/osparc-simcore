@@ -1,0 +1,9 @@
+#
+# Specifies third-party dependencies for 'invitations-maker'
+#
+--constraint ../../../requirements/constraints.txt
+
+
+cryptography # security
+fastapi
+typer[all]

@@ -1,0 +1,17 @@
+#
+# Specifies dependencies required to run 'invitations-maker'
+#
+--constraint ../../../requirements/constraints.txt
+
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
+#
+--constraint _base.txt
+
+coverage
+coveralls
+pytest
+pytest-cov
+pytest-instafail
+pytest-runner
+pytest-sugar
