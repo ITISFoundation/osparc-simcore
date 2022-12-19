@@ -65,7 +65,12 @@ async def stop_periodic_task(
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):
         asyncio_task.cancel()
-        await asyncio.wait((asyncio_task,), timeout=timeout)
+        _, pending = await asyncio.wait((asyncio_task,), timeout=timeout)
+        if pending:
+            logger.warning(
+                "periodic background task '%s' did not cancel properly and timed-out!",
+                f"{asyncio_task.get_name()}",
+            )
 
 
 @contextlib.asynccontextmanager
