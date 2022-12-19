@@ -21,7 +21,7 @@ def produce(guest_email: str):
     p = URL("/registration").include_query_params(
         invitation=base64.urlsafe_b64encode(encrypted).decode()
     )
-    url = URL("http://127.0.0.1.nip.io:9081", fragment=f"{p}")
+    url = URL(scheme="http", hostname="127.0.0.1", port=8000, fragment=f"{p}")
     return url
 
 
@@ -50,7 +50,7 @@ def consume(url):
         raise
 
 
-def test_it(monkeypatch: MonkeyPatch):
+def test_produce_and_consume(monkeypatch: MonkeyPatch):
     secret_key = Fernet.generate_key()
     monkeypatch.setenv("SECRET_KEY", secret_key.decode())
 
