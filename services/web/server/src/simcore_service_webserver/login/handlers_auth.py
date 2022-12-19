@@ -22,9 +22,12 @@ from ._2fa import (
     send_sms_code,
 )
 from ._constants import (
+    CODE_2FA_CODE_REQUIRED,
+    CODE_PHONE_NUMBER_REQUIRED,
     MSG_2FA_CODE_SENT,
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
+    MSG_UNAUTHORIZED_LOGIN_2FA,
     MSG_UNKNOWN_EMAIL,
     MSG_WRONG_2FA_CODE,
     MSG_WRONG_PASSWORD,
@@ -47,12 +50,6 @@ log = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
-# Login Accepted Response Codes:
-#  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
-#  - The frontend uses them alwo to determine what page/form has to display to the user for next step
-_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
-_SMS_CODE_REQUIRED = "SMS_CODE_REQUIRED"
-
 
 class LoginBody(InputSchema):
     email: EmailStr
@@ -73,6 +70,10 @@ class LoginNextPage(NextPage[CodePageParams]):
 @session_access_trace(route_name="auth_login")
 @routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
+    """Login: user submits an email (identification) and a password
+
+    If 2FA is enabled, then the login continues with a second request to login_2fa
+    """
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
@@ -107,13 +108,13 @@ async def login(request: web.Request):
         response = envelope_response(
             # LoginNextPage
             {
-                "name": _PHONE_NUMBER_REQUIRED,
+                "name": CODE_PHONE_NUMBER_REQUIRED,
                 "parameters": {
                     "message": MSG_PHONE_MISSING,
-                    "next_url": f"{request.app.router['auth_verify_2fa_phone'].url_for()}",
+                    "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
                 # TODO: deprecated: remove in next PR with @odeimaiz
-                "code": _PHONE_NUMBER_REQUIRED,
+                "code": CODE_PHONE_NUMBER_REQUIRED,
                 "reason": MSG_PHONE_MISSING,
             },
             status=web.HTTPAccepted.status_code,
@@ -140,7 +141,7 @@ async def login(request: web.Request):
         response = envelope_response(
             # LoginNextPage
             {
-                "name": _SMS_CODE_REQUIRED,
+                "name": CODE_2FA_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
@@ -148,7 +149,7 @@ async def login(request: web.Request):
                     "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
                 # TODO: deprecated: remove in next PR with @odeimaiz
-                "code": _SMS_CODE_REQUIRED,
+                "code": CODE_2FA_CODE_REQUIRED,
                 "reason": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(user["phone"])
                 ),
@@ -176,15 +177,13 @@ class LoginTwoFactorAuthBody(InputSchema):
 
 
 @session_access_constraint(
-    allow_access_after=["auth_login", "resend_2fa_code"], max_number_of_access=1
+    allow_access_after=["auth_login", "auth_resend_2fa_code"],
+    max_number_of_access=3,
+    unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
-    """2FA login
-
-    - Continuation of login + 2FA code
-
-    """
+    """Login (continuation): Submits 2FA code"""
     # validates input context
     settings: LoginSettings = get_plugin_settings(request.app)
     if not settings.LOGIN_2FA_REQUIRED:
