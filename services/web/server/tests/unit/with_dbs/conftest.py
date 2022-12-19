@@ -65,6 +65,7 @@ def disable_swagger_doc_generation(
     by not enabling the swagger documentation, 1.8s per test is gained
     """
     monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
 
 
 @pytest.fixture(scope="session")
