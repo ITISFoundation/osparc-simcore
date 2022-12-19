@@ -151,10 +151,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
       const editButton = this.__getEditTemplateMenuButton(studyData);
-      if (deleteButton) {
+      if (deleteButton && editButton) {
         menu.addSeparator();
-        menu.add(deleteButton);
         menu.add(editButton);
+        menu.add(deleteButton);
       }
     },
     __getEditTemplateMenuButton: function(templateData) {
