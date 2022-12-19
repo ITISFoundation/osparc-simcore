@@ -21,3 +21,9 @@ class Ec2TooManyInstancesError(AutoscalingRuntimeError):
     msg_template: str = (
         "The maximum amount of instances {num_instances} is already reached!"
     )
+
+
+class RedisNotConnectedError(AutoscalingRuntimeError):
+    msg_template: str = (
+        "Cannot connect with redis server on {dsn}, please check configuration"
+    )
