@@ -230,6 +230,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
     },
 
+    // groups sorted by [orgMembs, orgs, [everyone]];
     __setSharedIcon: function(image, value, groups) {
       let sharedGrps = [];
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
@@ -239,6 +240,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
           if (this.isResourceType("study") && (gid === myGroupId)) {
+            // image.setSource(osparc.dashboard.CardBase.SHARE_ICON);
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);
