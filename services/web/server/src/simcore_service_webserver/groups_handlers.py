@@ -63,13 +63,9 @@ async def list_groups(request: web.Request):
     primary_group, user_groups, all_group = await groups_api.list_user_groups(
         request.app, user_id
     )
-
-    # TODO: filter product
-
     return {
         "me": primary_group,
-        "organizations": user_groups,  # read/write
-        ## TODO: "product_all": product_group,
+        "organizations": user_groups,
         "all": all_group,
     }
 
