@@ -109,7 +109,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         request_dns: str,
         request_scheme: str,
     ) -> None:
-        """Public interface for adding a service"""
+        """Invoked before the service is started"""
         scheduler_data = SchedulerData.from_http_request(
             service=service,
             simcore_service_labels=simcore_service_labels,
@@ -120,13 +120,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         await self._add_service(scheduler_data)
 
     async def _add_service(self, scheduler_data: SchedulerData) -> None:
-        # make this one for internal use and create a public one for it!!
-        # TODO: this alo exposes internals to the outside, should contain the data in the creator
-        """Invoked before the service is started
-
-        Because we do not have all items require to compute the service_name the node_uuid is used to
-        keep track of the service for faster searches.
-        """
+        # NOTE: Because we do not have all items require to compute the
+        # service_name the node_uuid is used to keep track of the service
+        # for faster searches.
         async with self._lock:
             if scheduler_data.service_name in self._to_observe:
                 logger.warning(
@@ -148,20 +144,30 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
+    def _get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+        service_name = self._inverse_search_mapping[node_uuid]
+        return self._to_observe[service_name]
+
     def list_services(
         self,
         *,
         user_id: Optional[UserID] = None,
         project_id: Optional[ProjectID] = None,
     ) -> list[NodeID]:
-        """Returns the list of tracked service UUIDs"""
+        """
+        Returns the list of tracked service UUIDs
+
+        raises DynamicSidecarNotFoundError
+        """
         all_tracked_service_uuids = list(self._inverse_search_mapping.keys())
         if user_id is None and project_id is None:
             return all_tracked_service_uuids
         # let's filter
         def _is_scheduled(node_id: NodeID) -> bool:
             try:
-                scheduler_data = self.get_scheduler_data(node_id)
+                scheduler_data = self._get_scheduler_data(node_id)
                 if user_id and scheduler_data.user_id != user_id:
                     return False
                 if project_id and scheduler_data.project_id != project_id:
@@ -213,18 +219,6 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
             del self._inverse_search_mapping[node_uuid]
 
         logger.debug("Removed service '%s' from scheduler", service_name)
-
-    def get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
-        # TODO: can this be made not public and used somehow differently? it's part of the internals
-        # and has nothing to do with the interface
-        """
-
-        raises DynamicSidecarNotFoundError
-        """
-        if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
-        service_name = self._inverse_search_mapping[node_uuid]
-        return self._to_observe[service_name]
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         # pylint: disable=too-many-return-statements
