@@ -219,8 +219,9 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
             RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         )
 
+    dynamic_sidecars_scheduler_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler"
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.get_stack_status",
+        f"{dynamic_sidecars_scheduler_base}.get_stack_status",
         side_effect=get_stack_status,
     )
 
@@ -230,12 +231,12 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.mark_service_for_removal",
+        f"{dynamic_sidecars_scheduler_base}.mark_service_for_removal",
         side_effect=remove_service,
     )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler._discover_running_services",
+        f"{dynamic_sidecars_scheduler_base}._discover_running_services",
         return_value=None,
     )
 
