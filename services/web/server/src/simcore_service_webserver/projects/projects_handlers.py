@@ -52,7 +52,7 @@ async def open_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=False,
+            include_templates=True,
             include_state=True,
         )
         product: Product = get_current_product(request)

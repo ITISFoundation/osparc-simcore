@@ -349,6 +349,63 @@ async def test_open_project(
         )
 
 
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_open_template_project_for_edition(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    template_project: ProjectDict,
+    client_session_id_factory: Callable[[], str],
+    expected: type[web.HTTPException],
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services: mock.Mock,
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    # POST /v0/projects/{project_id}:open
+    # open project
+    assert client.app
+    assert client.server
+    url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected)
+    if resp.status == web.HTTPOk.status_code:
+        dynamic_services = {
+            service_uuid: service
+            for service_uuid, service in template_project["workbench"].items()
+            if "/dynamic/" in service["key"]
+        }
+        calls = []
+        request_scheme = resp.url.scheme
+        request_dns = f"{resp.url.host}:{resp.url.port}"
+        for service_uuid, service in dynamic_services.items():
+            calls.append(
+                call(
+                    client.server.app,
+                    project_id=template_project["uuid"],
+                    service_key=service["key"],
+                    service_uuid=service_uuid,
+                    service_version=service["version"],
+                    user_id=logged_user["id"],
+                    request_scheme=request_scheme,
+                    request_dns=request_dns,
+                    service_resources=ServiceResourcesDictHelpers.create_jsonable(
+                        mock_service_resources
+                    ),
+                )
+            )
+        mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
+            calls
+        )
+
+
 def standard_user_role() -> tuple[str, tuple]:
     all_roles = standard_role_response()
 
