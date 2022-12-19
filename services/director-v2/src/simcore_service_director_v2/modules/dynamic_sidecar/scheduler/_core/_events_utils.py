@@ -9,7 +9,6 @@ from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
-from pydantic import AnyHttpUrl
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -92,7 +91,7 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
     dynamic_sidecars_scheduler: "DynamicSidecarsScheduler" = (
         app.state.dynamic_sidecar_scheduler
     )
-    return dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
+    return dynamic_sidecars_scheduler._scheduler._get_scheduler_data(node_uuid)
 
 
 async def service_remove_containers(
@@ -212,7 +211,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         ]
     )
 
-    await app.state.dynamic_sidecar_scheduler.remove_service_from_observation(
+    await app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
@@ -230,10 +229,9 @@ async def attempt_pod_removal_and_data_saving(
 
     async def _remove_containers_save_state_and_outputs() -> None:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
 
         await service_remove_containers(
-            app, scheduler_data.node_uuid, dynamic_sidecar_endpoint
+            app, scheduler_data.node_uuid, dynamic_sidecar_client
         )
 
         # only try to save the status if :
@@ -305,7 +303,7 @@ async def attempt_pod_removal_and_data_saving(
         await _remove_containers_save_state_and_outputs()
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
-        TaskProgress.create(), app, scheduler_data, dynamic_sidecar_settings
+        TaskProgress.create(), app, scheduler_data.node_uuid, dynamic_sidecar_settings
     )
 
     # instrumentation

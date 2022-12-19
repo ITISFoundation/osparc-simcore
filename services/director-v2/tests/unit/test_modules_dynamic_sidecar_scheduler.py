@@ -87,7 +87,7 @@ async def _assert_get_dynamic_services_mocked(
     expected_status: str,
 ) -> AsyncGenerator[RunningDynamicServiceDetails, None]:
     with _mock_containers_docker_status(scheduler_data):
-        await scheduler.add_service(scheduler_data)
+        await scheduler._scheduler._add_service(scheduler_data)
         # put mocked data
         scheduler_data.dynamic_sidecar.containers_inspect = [
             DockerContainerInspect.from_container(
@@ -101,9 +101,11 @@ async def _assert_get_dynamic_services_mocked(
         yield stack_status
 
         await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
-        assert scheduler_data.service_name in scheduler._to_observe
-        await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
-        assert scheduler_data.service_name not in scheduler._to_observe
+        assert scheduler_data.service_name in scheduler._scheduler._to_observe
+        await scheduler._scheduler.remove_service_from_observation(
+            scheduler_data.node_uuid
+        )
+        assert scheduler_data.service_name not in scheduler._scheduler._to_observe
 
 
 @pytest.fixture
@@ -203,7 +205,7 @@ def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 @pytest.fixture
 def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.get_dynamic_sidecar_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler.get_dynamic_sidecar_state",
         return_value=(ServiceState.RUNNING, ""),
     )
 
@@ -213,7 +215,7 @@ def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[Asy
 @pytest.fixture
 def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.update_scheduler_data_label",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler.update_scheduler_data_label",
         return_value=None,
     )
 
@@ -256,7 +258,7 @@ async def test_scheduler_add_remove(
     mock_update_label: None,
     with_observation_cycle: bool,
 ) -> None:
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
     if with_observation_cycle:
         await manually_trigger_scheduler()
 
@@ -264,12 +266,12 @@ async def test_scheduler_add_remove(
     if with_observation_cycle:
         await manually_trigger_scheduler()
 
-    assert scheduler_data.service_name in scheduler._to_observe
+    assert scheduler_data.service_name in scheduler._scheduler._to_observe
 
-    await scheduler.remove_service_from_observation(scheduler_data.node_uuid)
+    await scheduler._scheduler.remove_service_from_observation(scheduler_data.node_uuid)
     if with_observation_cycle:
         await manually_trigger_scheduler()
-    assert scheduler_data.service_name not in scheduler._to_observe
+    assert scheduler_data.service_name not in scheduler._scheduler._to_observe
 
 
 async def test_scheduler_removes_partially_started_services(
@@ -281,7 +283,7 @@ async def test_scheduler_removes_partially_started_services(
     mock_docker_api: None,
 ) -> None:
     await manually_trigger_scheduler()
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
 
     scheduler_data.dynamic_sidecar.were_containers_created = True
     await manually_trigger_scheduler()
@@ -295,7 +297,7 @@ async def test_scheduler_is_failing(
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await manually_trigger_scheduler()
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
 
     scheduler_data.dynamic_sidecar.status.current = DynamicSidecarStatus.FAILING
     await manually_trigger_scheduler()
@@ -311,7 +313,7 @@ async def test_scheduler_health_timing_out(
 ):
 
     await manually_trigger_scheduler()
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
     await manually_trigger_scheduler()
 
     assert scheduler_data.dynamic_sidecar.is_ready is False
@@ -322,9 +324,9 @@ async def test_adding_service_two_times_does_not_raise(
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: None,
 ):
-    await scheduler.add_service(scheduler_data)
-    assert scheduler_data.service_name in scheduler._to_observe
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
+    assert scheduler_data.service_name in scheduler._scheduler._to_observe
+    await scheduler._scheduler._add_service(scheduler_data)
 
 
 async def test_collition_at_global_level_raises(
@@ -333,9 +335,11 @@ async def test_collition_at_global_level_raises(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ):
-    scheduler._inverse_search_mapping[scheduler_data.node_uuid] = "mock_service_name"
+    scheduler._scheduler._inverse_search_mapping[
+        scheduler_data.node_uuid
+    ] = "mock_service_name"
     with pytest.raises(DynamicSidecarError) as execinfo:
-        await scheduler.add_service(scheduler_data)
+        await scheduler._scheduler._add_service(scheduler_data)
     assert "collide" in str(execinfo.value)
 
 
@@ -359,7 +363,7 @@ async def test_get_stack_status(
     mock_docker_api: None,
 ) -> None:
     await manually_trigger_scheduler()
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
     assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
@@ -390,7 +394,7 @@ async def test_get_stack_status_failing_sidecar(
     failing_message = "some_failing_message"
     scheduler_data.dynamic_sidecar.status.update_failing_status(failing_message)
 
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
     assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
