@@ -52,8 +52,8 @@ async def get_public_project(app: web.Application, project_uuid: str):
     """
     from ..projects.projects_db import APP_PROJECT_DBAPI
 
-    db = app[APP_PROJECT_DBAPI]
-    prj = await db.get_template_project(project_uuid, only_published=True)
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    prj = await db.get_template_project(-1, project_uuid, only_published=True)
     return prj
 
 

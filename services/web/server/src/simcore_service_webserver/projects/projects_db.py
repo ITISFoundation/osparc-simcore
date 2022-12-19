@@ -451,6 +451,8 @@ class ProjectDBAPI:
         exclude_foreign: Optional[list[str]] = None,
         include_templates: Optional[bool] = False,
         for_update: bool = False,
+        only_published: bool = False,
+        check_permissions: str = "read",
     ) -> dict:
         exclude_foreign = exclude_foreign or []
         # this retrieves the projects where user is owner
@@ -466,7 +468,7 @@ class ProjectDBAPI:
             {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
             uuid = '{project_uuid}'
             AND (jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})
-            OR prj_owner = {user_id})
+            OR prj_owner = {user_id} {"OR published='true'" if only_published else ""})
             {"FOR UPDATE" if for_update else ""}
             """
         )
@@ -477,7 +479,7 @@ class ProjectDBAPI:
             raise ProjectNotFoundError(project_uuid)
 
         # now carefuly check the access rights
-        _check_project_permissions(project_row, user_id, user_groups, "read")
+        _check_project_permissions(project_row, user_id, user_groups, check_permissions)
 
         project = dict(project_row.items())
 
@@ -539,33 +541,25 @@ class ProjectDBAPI:
             return _convert_to_schema_names(project, user_email)
 
     async def get_template_project(
-        self, project_uuid: str, *, only_published=False
+        self,
+        user_id: UserID,
+        project_uuid: str,
+        *,
+        only_published: bool = False,
+        check_permissions: str = "read",
     ) -> dict:
-        template_prj = {}
         async with self.engine.acquire() as conn:
-            if only_published:
-                condition = and_(
-                    projects.c.type == ProjectType.TEMPLATE,
-                    projects.c.uuid == project_uuid,
-                    projects.c.published == True,
-                )
-            else:
-                condition = and_(
-                    projects.c.type == ProjectType.TEMPLATE,
-                    projects.c.uuid == project_uuid,
-                )
-
-            query = select([projects]).where(condition)
-
-            result = await conn.execute(query)
-            row = await result.first()
-            if row:
-                user_email = await self._get_user_email(conn, row["prj_owner"])
-                template_prj = _convert_to_schema_names(row, user_email)
-                tags = await self._get_tags_by_project(conn, project_id=row.id)
-                template_prj["tags"] = tags
-
-        return template_prj
+            project = await self._get_project(
+                conn,
+                user_id,
+                project_uuid,
+                include_templates=True,
+                only_published=only_published,
+                check_permissions=check_permissions,
+            )
+            # pylint: disable=no-value-for-parameter
+            user_email = await self._get_user_email(conn, project["prj_owner"])
+            return _convert_to_schema_names(project, user_email)
 
     async def patch_user_project_workbench(
         self,

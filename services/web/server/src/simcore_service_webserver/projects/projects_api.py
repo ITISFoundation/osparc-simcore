@@ -105,6 +105,7 @@ async def get_project_for_user(
     *,
     include_templates: Optional[bool] = False,
     include_state: Optional[bool] = False,
+    check_permissions: str = "read",
 ) -> dict:
     """Returns a VALID project accessible to user
 
@@ -118,7 +119,9 @@ async def get_project_for_user(
     project: dict = {}
     is_template = False
     if include_templates:
-        project = await db.get_template_project(project_uuid)
+        project = await db.get_template_project(
+            user_id, project_uuid, check_permissions=check_permissions
+        )
         is_template = bool(project)
 
     if not project:

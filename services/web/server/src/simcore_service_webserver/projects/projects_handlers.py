@@ -25,6 +25,7 @@ from ..products import Product, get_current_product
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import (
+    ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
@@ -51,13 +52,6 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
-        project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-            include_templates=True,
-            include_state=True,
-        )
         project_type = await projects_api.get_project_type(
             request.app, path_params.project_id
         )
@@ -66,7 +60,19 @@ async def open_project(request: web.Request) -> web.Response:
         )
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
             # only USERS/TESTERS can do that
-            raise web.HTTPForbidden(reason="Insufficient rights to edit a template")
+            raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")
+
+        project = await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
+            include_templates=bool(project_type is ProjectType.TEMPLATE),
+            include_state=True,
+            check_permissions="read|write"
+            if project_type is ProjectType.TEMPLATE
+            else "read",
+        )
+
         product: Product = get_current_product(request)
 
         if not await projects_api.try_open_project_for_user(
@@ -122,6 +128,10 @@ async def open_project(request: web.Request) -> web.Response:
         ) from exc
     except ProjectTooManyProjectOpened as exc:
         raise web.HTTPConflict(reason=f"{exc}") from exc
+    except ProjectInvalidRightsError as exc:
+        raise web.HTTPForbidden(
+            reason=f"You do not have sufficient rights to access project {path_params.project_id}"
+        ) from exc
 
 
 #
