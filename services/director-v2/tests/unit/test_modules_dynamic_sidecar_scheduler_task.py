@@ -22,12 +22,17 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _core, _utils
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
-    REGISTERED_EVENTS,
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import (
+    _events_utils,
+    _observer,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._abc import (
     DynamicSchedulerEvent,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events import (
+    REGISTERED_EVENTS,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task import (
     DynamicSidecarsScheduler,
 )
 
@@ -100,7 +105,7 @@ def mock_is_dynamic_sidecar_stack_missing(mocker: MockerFixture) -> None:
         return False
 
     mocker.patch.object(
-        _core, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
+        _observer, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
     )
 
 
@@ -203,7 +208,7 @@ def mocked_dynamic_scheduler_events(
 
 @pytest.fixture
 def mock_remove_calls(mocker: MockerFixture) -> None:
-    mocker.patch.object(_utils, "remove_volumes_from_node")
+    mocker.patch.object(_events_utils, "remove_volumes_from_node")
 
 
 async def test_skip_observation_cycle_after_error(
