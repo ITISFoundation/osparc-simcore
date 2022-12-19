@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 import random
 from copy import deepcopy
@@ -16,6 +17,7 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_webserver_unit_with_db import standard_role_response
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver._meta import API_VERSION
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -31,12 +33,9 @@ from simcore_service_webserver.login.storage import (
 )
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.utils import gravatar_hash
-
-API_VERSION = "v0"
 
 
 @pytest.fixture
@@ -84,7 +83,6 @@ def create_user(client: TestClient) -> Callable:
 
 
 # --------------------------------------------------------------------------
-PREFIX = "/" + API_VERSION + "/groups"
 
 
 def _assert_group(group: dict[str, str]):
@@ -125,7 +123,7 @@ async def test_list_groups(
     all_group: dict[str, str],
 ):
     url = client.app.router["list_groups"].url_for()
-    assert f"{url}" == f"{PREFIX}"
+    assert f"{url}" == f"/{API_VERSION}/groups"
 
     response = await client.get(url)
     data, error = await assert_status(
@@ -186,7 +184,7 @@ async def test_group_creation_workflow(
     expected: type[web.HTTPException],
 ):
     url = client.app.router["create_group"].url_for()
-    assert f"{url}" == f"{PREFIX}"
+    assert f"{url}" == f"/{API_VERSION}/groups"
 
     new_group = {
         "gid": "4564",
@@ -216,7 +214,7 @@ async def test_group_creation_workflow(
 
     # get the groups and check we are part of this new group
     url = client.app.router["list_groups"].url_for()
-    assert f"{url}" == f"{PREFIX}"
+    assert f"{url}" == f"/{API_VERSION}/groups"
 
     resp = await client.get(url)
     data, error = await assert_status(
@@ -228,7 +226,7 @@ async def test_group_creation_workflow(
 
     # check getting one group
     url = client.app.router["get_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"{PREFIX}/{assigned_group['gid']}"
+    assert f"{url}" == f"/{API_VERSION}/groups/{assigned_group['gid']}"
     resp = await client.get(url)
     data, error = await assert_status(
         resp, expected.ok if user_role != UserRole.GUEST else web.HTTPNotFound
@@ -239,7 +237,7 @@ async def test_group_creation_workflow(
     # modify the group
     modified_group = {"label": "Led Zeppelin"}
     url = client.app.router["update_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"{PREFIX}/{assigned_group['gid']}"
+    assert f"{url}" == f"/{API_VERSION}/groups/{assigned_group['gid']}"
     resp = await client.patch(url, json=modified_group)
     data, error = await assert_status(resp, expected.ok)
     if not error:
@@ -249,7 +247,7 @@ async def test_group_creation_workflow(
         assert data == assigned_group
     # check getting the group returns the newly modified group
     url = client.app.router["get_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"{PREFIX}/{assigned_group['gid']}"
+    assert f"{url}" == f"/{API_VERSION}/groups/{assigned_group['gid']}"
     resp = await client.get(url)
     data, error = await assert_status(
         resp, expected.ok if user_role != UserRole.GUEST else web.HTTPNotFound
@@ -260,7 +258,7 @@ async def test_group_creation_workflow(
 
     # delete the group
     url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"{PREFIX}/{assigned_group['gid']}"
+    assert f"{url}" == f"/{API_VERSION}/groups/{assigned_group['gid']}"
     resp = await client.delete(url)
     data, error = await assert_status(resp, expected.no_content)
     if not error:
@@ -268,13 +266,13 @@ async def test_group_creation_workflow(
 
     # check deleting the same group again fails
     url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"{PREFIX}/{assigned_group['gid']}"
+    assert f"{url}" == f"/{API_VERSION}/groups/{assigned_group['gid']}"
     resp = await client.delete(url)
     data, error = await assert_status(resp, expected.not_found)
 
     # check getting the group fails
     url = client.app.router["get_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"{PREFIX}/{assigned_group['gid']}"
+    assert f"{url}" == f"/{API_VERSION}/groups/{assigned_group['gid']}"
     resp = await client.get(url)
     data, error = await assert_status(
         resp, expected.not_found if user_role != UserRole.GUEST else web.HTTPNotFound
@@ -298,12 +296,12 @@ async def test_add_remove_users_from_group(
 
     # check that our group does not exist
     url = client.app.router["get_group_users"].url_for(gid=new_group["gid"])
-    assert f"{url}" == f"{PREFIX}/{new_group['gid']}/users"
+    assert f"{url}" == f"/{API_VERSION}/groups/{new_group['gid']}/users"
     resp = await client.get(url)
     data, error = await assert_status(resp, expected.not_found)
 
     url = client.app.router["create_group"].url_for()
-    assert f"{url}" == f"{PREFIX}"
+    assert f"{url}" == f"/{API_VERSION}/groups"
 
     resp = await client.post(url, json=new_group)
     data, error = await assert_status(resp, expected.created)
@@ -328,7 +326,10 @@ async def test_add_remove_users_from_group(
     get_group_users_url = client.app.router["get_group_users"].url_for(
         gid=f"{assigned_group['gid']}"
     )
-    assert str(get_group_users_url) == f"{PREFIX}/{assigned_group['gid']}/users"
+    assert (
+        str(get_group_users_url)
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users"
+    )
     resp = await client.get(get_group_users_url)
     data, error = await assert_status(resp, expected.ok)
 
@@ -342,7 +343,10 @@ async def test_add_remove_users_from_group(
     add_group_user_url = client.app.router["add_group_user"].url_for(
         gid=f"{assigned_group['gid']}"
     )
-    assert f"{add_group_user_url}" == f"{PREFIX}/{assigned_group['gid']}/users"
+    assert (
+        f"{add_group_user_url}"
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users"
+    )
     num_new_users = random.randint(1, 10)
     created_users_list = []
     for i in range(num_new_users):
@@ -362,7 +366,7 @@ async def test_add_remove_users_from_group(
         )
         assert (
             str(get_group_user_url)
-            == f"{PREFIX}/{assigned_group['gid']}/users/{created_users_list[i]['id']}"
+            == f"/{API_VERSION}/groups/{assigned_group['gid']}/users/{created_users_list[i]['id']}"
         )
         resp = await client.get(get_group_user_url)
         data, error = await assert_status(resp, expected.ok)
@@ -444,7 +448,7 @@ async def test_group_access_rights(
     # Use-case:
     # 1. create a group
     url = client.app.router["create_group"].url_for()
-    assert f"{url}" == f"{PREFIX}"
+    assert f"{url}" == f"/{API_VERSION}/groups"
 
     new_group = {
         "gid": "4564",
@@ -467,7 +471,10 @@ async def test_group_access_rights(
     add_group_user_url = client.app.router["add_group_user"].url_for(
         gid=f"{assigned_group['gid']}"
     )
-    assert f"{add_group_user_url}" == f"{PREFIX}/{assigned_group['gid']}/users"
+    assert (
+        f"{add_group_user_url}"
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users"
+    )
     for i, user in enumerate(users):
         params = {"uid": user["id"]} if i % 2 == 0 else {"email": user["email"]}
         resp = await client.post(add_group_user_url, json=params)
@@ -478,7 +485,7 @@ async def test_group_access_rights(
     )
     assert (
         f"{patch_group_user_url}"
-        == f"{PREFIX}/{assigned_group['gid']}/users/{users[0]['id']}"
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users/{users[0]['id']}"
     )
     params = {"accessRights": {"read": True, "write": True, "delete": False}}
     resp = await client.patch(patch_group_user_url, json=params)
@@ -489,7 +496,7 @@ async def test_group_access_rights(
     )
     assert (
         f"{patch_group_user_url}"
-        == f"{PREFIX}/{assigned_group['gid']}/users/{users[1]['id']}"
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users/{users[1]['id']}"
     )
     params = {"accessRights": {"read": True, "write": False, "delete": False}}
     resp = await client.patch(patch_group_user_url, json=params)
@@ -512,7 +519,7 @@ async def test_group_access_rights(
     )
     assert (
         str(delete_group_user_url)
-        == f"{PREFIX}/{assigned_group['gid']}/users/{users[1]['id']}"
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users/{users[1]['id']}"
     )
     resp = await client.delete(delete_group_user_url)
     data, error = await assert_status(resp, expected.no_content)
@@ -541,7 +548,7 @@ async def test_group_access_rights(
     )
     assert (
         str(delete_group_user_url)
-        == f"{PREFIX}/{assigned_group['gid']}/users/{users[0]['id']}"
+        == f"/{API_VERSION}/groups/{assigned_group['gid']}/users/{users[0]['id']}"
     )
     resp = await client.delete(delete_group_user_url)
     data, error = await assert_status(resp, web.HTTPForbidden)
@@ -577,7 +584,7 @@ async def test_add_user_gets_added_to_group(
         await auto_add_user_to_groups(client.app, user["id"])
 
         url = client.app.router["list_groups"].url_for()
-        assert f"{url}" == f"{PREFIX}"
+        assert f"{url}" == f"/{API_VERSION}/groups"
 
         resp = await client.get(url)
         data, error = await assert_status(
