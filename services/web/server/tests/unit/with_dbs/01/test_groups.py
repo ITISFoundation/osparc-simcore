@@ -17,7 +17,7 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_webserver_unit_with_db import standard_role_response
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver._meta import API_VERSION, API_VTAG
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -50,7 +50,7 @@ def client(
 
     port = cfg["main"]["port"]
 
-    assert cfg["rest"]["version"] == API_VERSION
+    assert cfg["rest"]["version"] == API_VTAG
     monkeypatch_setenv_from_app_config(cfg)
 
     # fake config
