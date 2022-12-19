@@ -168,96 +168,96 @@ jobs:
               - '**/*.py'
             anything-js:
               - '**/*.js'
-  build-test-images:
-    # this step comes first, so that it is executed as first job in push calls
-    # in PR calls this step is anyway skipped
-    needs: changes
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    name: "[build] docker images"
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: show system environs
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build
-      - name: upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-          path: /${{ runner.temp }}/build
+  # build-test-images:
+  #   # this step comes first, so that it is executed as first job in push calls
+  #   # in PR calls this step is anyway skipped
+  #   needs: changes
+  #   if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   name: "[build] docker images"
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: expose github runtime for buildx
+  #       uses: crazy-max/ghaction-github-runtime@v2
+  #     - name: show system environs
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: build images
+  #       run: |
+  #         export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+  #         mkdir --parents /${{ runner.temp }}/build
+  #         make build local-dest=/${{ runner.temp }}/build
+  #     - name: upload build artifacts
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+  #         path: /${{ runner.temp }}/build
 
-  unit-test-webserver-01:
-    needs: changes
-    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 01"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.8.2]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: setup python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: "services/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install webserver
-        run: ./ci/github/unit-testing/webserver.bash install
-      - name: test isolated
-        run: ./ci/github/unit-testing/webserver.bash test_isolated
-      - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v3.1.1
-        with:
-          flags: unittests #optional
+  # unit-test-webserver-01:
+  #   needs: changes
+  #   if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+  #   timeout-minutes: 25 # if this timeout gets too small, then split the tests
+  #   name: "[unit] webserver 01"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       python: ["3.9"]
+  #       os: [ubuntu-20.04]
+  #       docker_buildx: [v0.8.2]
+  #       docker_compose: [1.29.1]
+  #       include:
+  #         - docker_compose: 1.29.1
+  #           docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: setup docker buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: ${{ matrix.docker_buildx }}
+  #         driver: docker-container
+  #     - name: setup docker-compose
+  #       run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+  #     - name: setup python environment
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #         cache: "pip"
+  #         cache-dependency-path: "services/web/server/requirements/ci.txt"
+  #     - name: show system version
+  #       run: ./ci/helpers/show_system_versions.bash
+  #     - name: install webserver
+  #       run: ./ci/github/unit-testing/webserver.bash install
+  #     - name: test isolated
+  #       run: ./ci/github/unit-testing/webserver.bash test_isolated
+  #     - name: test
+  #       run: ./ci/github/unit-testing/webserver.bash test_with_db 01
+  #     - uses: codecov/codecov-action@v3.1.1
+  #       with:
+  #         flags: unittests #optional
 
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 5 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -291,7 +291,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 02/test_project_lock.py
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
