@@ -15,7 +15,7 @@ const {
 
 const studyName = "sim4life";
 
-async function runTutorial() {
+async function runTutorial(url, studyName, user, pass, newUser, enableDemoMode) {
   const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
   let studyId;
   try {
@@ -60,7 +60,7 @@ async function runTutorial() {
   }
 }
 
-runTutorial()
+runTutorial(url, studyName, user, pass, newUser, enableDemoMode)
   .catch(error => {
     console.log('Puppeteer error: ' + error);
     process.exit(1);
