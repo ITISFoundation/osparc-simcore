@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.tutorial.ti.Slides", {
         textAlign: "center",
         rich : true
       });
-      osparc.navigation.Manuals.getManuals()
+      osparc.store.Support.getManuals()
         .then(manuals => {
           if (manuals.length > 0) {
             manualsLabel.setValue(`<a href=${manuals[0].url} style='color: white' target='_blank'>Documentation</a>`);

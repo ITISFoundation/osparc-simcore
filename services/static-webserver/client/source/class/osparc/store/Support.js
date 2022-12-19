@@ -1,5 +1,5 @@
 
-qx.Class.define("osparc.navigation.Manuals", {
+qx.Class.define("osparc.store.Support", {
   type: "static",
 
   statics: {
@@ -28,7 +28,7 @@ qx.Class.define("osparc.navigation.Manuals", {
     },
 
     addManualButtonsToMenu: function(menu, menuButton) {
-      osparc.navigation.Manuals.getManuals()
+      osparc.store.Support.getManuals()
         .then(manuals => {
           if (menuButton) {
             menuButton.setVisibility(manuals.length ? "visible" : "excluded");
@@ -103,20 +103,40 @@ qx.Class.define("osparc.navigation.Manuals", {
         });
     },
 
-    __openSendEmailFeedbackDialog: function(email) {
-      const productName = osparc.utils.Utils.getProductName();
-      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Send us an email to:"));
+    getMailToLabel: function(email, subject) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `&nbsp<a href=mailto:${email}?subject=${productName} feedback" style='font-size: 14px; color: ${color}' target='_blank'>${email}</a>&nbsp`;
+      const textLink = `&nbsp&nbsp<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp`;
       const mailto = new qx.ui.basic.Label(textLink).set({
+        alignX: "center",
+        font: "text-14",
         selectable: true,
         rich : true
       });
+      return mailto;
+    },
+
+    __openSendEmailFeedbackDialog: function(email) {
+      const productName = osparc.utils.Utils.getProductName();
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please, send us an email to:"));
+      const mailto = this.getMailToLabel(email, productName + "feedback");
       giveEmailFeedbackWindow.addWidget(mailto);
-      giveEmailFeedbackWindow.addCancelButton().set({
-        label: qx.locale.Manager.tr("Close")
-      });
       giveEmailFeedbackWindow.open();
+    },
+
+    openCreateAccountDialog: function() {
+      let text = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
+      text += "<br>";
+      text += qx.locale.Manager.tr("Please contact:");
+      const createAccountWindow = new osparc.ui.window.Dialog("Create Account", null, text).set({
+        maxWidth: 380
+      });
+      osparc.store.VendorInfo.getInstance().getSupportEmail()
+        .then(supportEmail => {
+          const productName = osparc.utils.Utils.getProductName();
+          const mailto = this.getMailToLabel(supportEmail, "Request Account " + productName);
+          createAccountWindow.addWidget(mailto);
+        });
+      createAccountWindow.open();
     }
   }
 });
