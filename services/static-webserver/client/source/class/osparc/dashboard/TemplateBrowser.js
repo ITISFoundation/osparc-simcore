@@ -150,7 +150,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
 
       const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
-      const editButton = this.__getEditTemplateMenuButton(studyData)
+      const editButton = this.__getEditTemplateMenuButton(studyData);
       if (deleteButton) {
         menu.addSeparator();
         menu.add(deleteButton);
@@ -201,12 +201,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return confWin;
     },
     __editTemplate: function(studyData) {
-      const params = {
-        url: {
-          "studyId": studyData.uuid
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
       // osparc.data.Resources.fetch("studies", "open", params);
       this.__startStudy(studyData.uuid);
     },
