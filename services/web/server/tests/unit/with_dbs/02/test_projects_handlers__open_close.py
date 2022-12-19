@@ -304,20 +304,21 @@ async def test_share_project(
     ],
 )
 async def test_open_project(
-    client,
-    logged_user,
-    user_project,
-    client_session_id_factory: Callable,
-    expected,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    client_session_id_factory: Callable[[], str],
+    expected: type[web.HTTPException],
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
-    mock_orphaned_services,
+    mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:open
     # open project
+    assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {
@@ -331,7 +332,7 @@ async def test_open_project(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.server.app,
+                    client.app,
                     project_id=user_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
@@ -361,7 +362,7 @@ async def test_open_project(
 async def test_open_template_project_for_edition(
     client: TestClient,
     logged_user: UserInfoDict,
-    template_project: ProjectDict,
+    create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
     expected: type[web.HTTPException],
     mocked_director_v2_api: dict[str, mock.Mock],
@@ -372,7 +373,7 @@ async def test_open_template_project_for_edition(
     # POST /v0/projects/{project_id}:open
     # open project
     assert client.app
-    assert client.server
+    template_project = await create_template_project()
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
@@ -388,7 +389,7 @@ async def test_open_template_project_for_edition(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.server.app,
+                    client.app,
                     project_id=template_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
