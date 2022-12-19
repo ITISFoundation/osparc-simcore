@@ -146,7 +146,6 @@ async def copy_study_to_account(
     - Avoids multiple copies of the same template on each account
     """
     from ..projects.projects_db import APP_PROJECT_DBAPI
-    from ..projects.projects_exceptions import ProjectNotFoundError
     from ..projects.projects_utils import (
         clone_project_document,
         substitute_parameterized_inputs,
