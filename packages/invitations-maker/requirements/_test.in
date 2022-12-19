@@ -12,6 +12,5 @@ coverage
 coveralls
 pytest
 pytest-cov
-pytest-instafail
 pytest-runner
 pytest-sugar
