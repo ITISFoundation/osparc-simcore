@@ -150,12 +150,26 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
 
       const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
+      const editButton = this.__getEditTemplateMenuButton(studyData)
       if (deleteButton) {
         menu.addSeparator();
         menu.add(deleteButton);
+        menu.add(editButton);
       }
     },
+    __getEditTemplateMenuButton: function(templateData) {
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
 
+      const editButton = new qx.ui.menu.Button(this.tr("Edit"));
+      osparc.utils.Utils.setIdToWidget(editButton, "studyItemMenuEdit");
+      editButton.addListener("execute", () => {
+        this.__editTemplate(templateData);
+      }, this);
+      return editButton;
+    },
     __getDeleteTemplateMenuButton: function(templateData) {
       const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
       if (!isCurrentUserOwner) {
@@ -186,7 +200,16 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       return confWin;
     },
-
+    __editTemplate: function(studyData) {
+      const params = {
+        url: {
+          "studyId": studyData.uuid
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      // osparc.data.Resources.fetch("studies", "open", params);
+      this.__startStudy(studyData.uuid);
+    },
     __deleteTemplate: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
