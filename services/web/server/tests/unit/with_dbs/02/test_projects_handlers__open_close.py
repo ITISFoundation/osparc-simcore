@@ -373,6 +373,7 @@ async def test_open_template_project_for_edition(
     # POST /v0/projects/{project_id}:open
     # open project
     assert client.app
+    # NOTE: we need write access right to open a template
     template_project = await create_template_project(
         accessRights={
             logged_user["primary_gid"]: {"read": True, "write": True, "delete": False}
@@ -409,6 +410,40 @@ async def test_open_template_project_for_edition(
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
             calls
         )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPForbidden),
+    ],
+)
+async def test_open_template_project_for_edition_with_missing_write_rights(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_template_project: Callable[..., Awaitable[ProjectDict]],
+    client_session_id_factory: Callable[[], str],
+    expected: type[web.HTTPException],
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services: mock.Mock,
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    # POST /v0/projects/{project_id}:open
+    # open project
+    assert client.app
+    # NOTE: we need write access right to open a template
+    template_project = await create_template_project(
+        accessRights={
+            logged_user["primary_gid"]: {"read": True, "write": False, "delete": True}
+        }
+    )
+    url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected)
 
 
 def standard_user_role() -> tuple[str, tuple]:
@@ -649,6 +684,73 @@ async def test_close_project(
         ].assert_has_calls(calls)
 
         # should not be callsed request_retrieve_dyn_service
+
+
+# @pytest.mark.parametrize(*standard_role_response())
+# async def test_close_template_project(
+#     client,
+#     logged_user,
+#     template_project,
+#     client_session_id_factory: Callable,
+#     expected,
+#     mocked_director_v2_api: dict[str, mock.Mock],
+#     fake_services,
+# ):
+#     # POST /v0/projects/{project_id}:close
+#     fake_dynamic_services = fake_services(number_services=5)
+#     assert len(fake_dynamic_services) == 5
+#     mocked_director_v2_api[
+#         "director_v2_core_dynamic_services.list_dynamic_services"
+#     ].return_value = fake_dynamic_services
+
+#     # open project
+#     client_id = client_session_id_factory()
+#     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
+#     resp = await client.post(url, json=client_id)
+
+#     if resp.status == web.HTTPOk.status_code:
+#         mocked_director_v2_api["director_v2_api.list_dynamic_services"].assert_any_call(
+#             client.server.app, logged_user["id"], template_project["uuid"]
+#         )
+#         mocked_director_v2_api[
+#             "director_v2_core_dynamic_services.list_dynamic_services"
+#         ].reset_mock()
+
+#     # close project
+#     url = client.app.router["close_project"].url_for(
+#         project_id=template_project["uuid"]
+#     )
+#     resp = await client.post(url, json=client_id)
+#     await assert_status(resp, expected.no_content)
+
+#     if resp.status == web.HTTPNoContent.status_code:
+#         # These checks are after a fire&forget, so we wait a moment
+#         await asyncio.sleep(2)
+
+#         calls = [
+#             call(
+#                 client.server.app,
+#                 user_id=logged_user["id"],
+#                 project_id=template_project["uuid"],
+#             ),
+#         ]
+#         mocked_director_v2_api[
+#             "director_v2_core_dynamic_services.list_dynamic_services"
+#         ].assert_has_calls(calls)
+
+#         calls = [
+#             call(
+#                 app=client.server.app,
+#                 service_uuid=service["service_uuid"],
+#                 save_state=True,
+#             )
+#             for service in fake_dynamic_services
+#         ]
+#         mocked_director_v2_api[
+#             "director_v2_core_dynamic_services.stop_dynamic_service"
+#         ].assert_has_calls(calls)
+
+#         # should not be callsed request_retrieve_dyn_service
 
 
 @pytest.mark.parametrize(

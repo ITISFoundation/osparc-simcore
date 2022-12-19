@@ -159,7 +159,7 @@ async def close_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=False,
+            include_templates=True,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(

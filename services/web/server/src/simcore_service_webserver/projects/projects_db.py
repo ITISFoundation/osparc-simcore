@@ -589,7 +589,7 @@ class ProjectDBAPI:
                     user_id,
                     project_uuid,
                     exclude_foreign=["tags"],
-                    include_templates=False,
+                    include_templates=True,
                     for_update=True,
                 )
                 user_groups: list[RowProxy] = await self.__load_user_groups(
