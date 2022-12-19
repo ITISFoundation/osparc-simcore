@@ -9,6 +9,9 @@ const {
   user,
   pass,
   newUser,
+  nUsers,
+  userPrefix,
+  userSuffix,
   startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
@@ -63,8 +66,26 @@ async function runTutorial(url, studyName, user, pass, newUser, enableDemoMode) 
   }
 }
 
-runTutorial(url, studyName, user, pass, newUser, enableDemoMode)
-  .catch(error => {
-    console.log('Puppeteer error: ' + error);
-    process.exit(1);
-  });
+let credentials = [{
+  user,
+  pass
+}];
+if (nUsers && userPrefix && userSuffix && pass) {
+  credentials = [];
+  for (let i=1; i<=nUsers; i++) {
+    // it will only work from 01 to 99
+    const id = ("0" + i).slice(-2);
+    credentials.push({
+      user: userPrefix + id + userPrefix,
+      pass: pass
+    });
+  }
+}
+
+credentials.forEach(credential => {
+  runTutorial(url, studyName, credential.user, credential.pass, newUser, enableDemoMode)
+    .catch(error => {
+      console.log('Puppeteer error: ' + error);
+      process.exit(1);
+    });
+});
