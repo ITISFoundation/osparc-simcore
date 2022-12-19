@@ -18,7 +18,7 @@ const {
 
 const studyName = "sim4life";
 
-async function runTutorial(url, studyName, user, pass, newUser, enableDemoMode) {
+async function runTutorial(user, pass, newUser) {
   const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
   let studyId;
   try {
@@ -83,7 +83,7 @@ if (nUsers && userPrefix && userSuffix && pass) {
 }
 
 credentials.forEach(credential => {
-  runTutorial(url, studyName, credential.user, credential.pass, newUser, enableDemoMode)
+  runTutorial(credential.user, credential.pass, newUser)
     .catch(error => {
       console.log('Puppeteer error: ' + error);
       process.exit(1);
