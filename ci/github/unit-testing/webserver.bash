@@ -36,7 +36,7 @@ test_with_db() {
   source .venv/bin/activate
   pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
-  make test-ci-unit test-subfolder="with_dbs/$1"
+  make test-ci-unit test-subfolder="with_dbs/$1" pytest-parameters="--log-cli-level=DEBUG"
   popd
 }
 
