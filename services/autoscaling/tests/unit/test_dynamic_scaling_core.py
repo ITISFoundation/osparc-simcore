@@ -29,7 +29,7 @@ from simcore_service_autoscaling.dynamic_scaling_core import (
     _mark_empty_active_nodes_to_drain,
     _try_scale_down_cluster,
     _try_scale_up_with_drained_nodes,
-    check_dynamic_resources,
+    cluster_scaling_from_labelled_services,
 )
 from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
@@ -119,22 +119,23 @@ def minimal_configuration(
     aws_security_group_id: str,
     aws_ami_id: str,
     aws_allowed_ec2_instance_type_names: list[str],
+    mocked_redis_server: None,
 ) -> Iterator[None]:
     yield
 
 
-async def test_check_dynamic_resources_with_no_services_does_nothing(
+async def test_cluster_scaling_from_labelled_services_with_no_services_does_nothing(
     minimal_configuration: None,
     initialized_app: FastAPI,
     mock_start_aws_instance: mock.Mock,
     mock_terminate_instance: mock.Mock,
 ):
-    await check_dynamic_resources(initialized_app)
+    await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instance.assert_not_called()
 
 
-async def test_check_dynamic_resources_with_service_with_too_much_resources_starts_nothing(
+async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     initialized_app: FastAPI,
@@ -155,12 +156,12 @@ async def test_check_dynamic_resources_with_service_with_too_much_resources_star
         "pending",
     )
 
-    await check_dynamic_resources(initialized_app)
+    await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instance.assert_not_called()
 
 
-async def test_check_dynamic_resources_with_pending_resources_starts_new_instances(
+async def test_cluster_scaling_from_labelled_services_with_pending_resources_starts_new_instances(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
@@ -190,7 +191,7 @@ async def test_check_dynamic_resources_with_pending_resources_starts_new_instanc
     )
 
     # run the code
-    await check_dynamic_resources(initialized_app)
+    await cluster_scaling_from_labelled_services(initialized_app)
 
     # check the instance was started and we have exactly 1
     all_instances = await ec2_client.describe_instances()
