@@ -22,15 +22,19 @@ from dataclasses import dataclass, field
 from typing import Optional, Union
 
 from fastapi import FastAPI
+from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import RestartPolicy
+from models_library.service_settings_labels import RestartPolicy, SimcoreServiceLabels
 from models_library.users import UserID
 from pydantic import AnyHttpUrl
 
 from ....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
-from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
+from ....models.domains.dynamic_services import (
+    DynamicServiceCreate,
+    RetrieveDataOutEnveloped,
+)
 from ....models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
@@ -75,9 +79,9 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
 
-    def toggle_observation_cycle(self, node_uuid: NodeID, disable: bool) -> bool:
+    def toggle_observation(self, node_uuid: NodeID, disable: bool) -> bool:
         """
-        returns True if it managed to toggle the current state
+        returns True if it managed to enable/disable observation of the service
 
         raises DynamicSidecarNotFoundError
         """
@@ -97,7 +101,27 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
 
         return True
 
-    async def add_service(self, scheduler_data: SchedulerData) -> None:
+    async def add_service(
+        self,
+        service: DynamicServiceCreate,
+        simcore_service_labels: SimcoreServiceLabels,
+        port: PortInt,
+        request_dns: str,
+        request_scheme: str,
+    ) -> None:
+        """Public interface for adding a service"""
+        scheduler_data = SchedulerData.from_http_request(
+            service=service,
+            simcore_service_labels=simcore_service_labels,
+            port=port,
+            request_dns=request_dns,
+            request_scheme=request_scheme,
+        )
+        await self._add_service(scheduler_data)
+
+    async def _add_service(self, scheduler_data: SchedulerData) -> None:
+        # make this one for internal use and create a public one for it!!
+        # TODO: this alo exposes internals to the outside, should contain the data in the creator
         """Invoked before the service is started
 
         Because we do not have all items require to compute the service_name the node_uuid is used to
@@ -172,6 +196,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
+        # TODO: this is used internally no need to be here exposed in the interface
         """
         directly invoked from RemoveMarkedService once it's finished
         and removes the service from the observation cycle
@@ -190,6 +215,8 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         logger.debug("Removed service '%s' from scheduler", service_name)
 
     def get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
+        # TODO: can this be made not public and used somehow differently? it's part of the internals
+        # and has nothing to do with the interface
         """
 
         raises DynamicSidecarNotFoundError
@@ -447,7 +474,7 @@ class DynamicSidecarsScheduler:  # pylint: disable=too-many-instance-attributes
         )
 
         for scheduler_data in services_to_observe:
-            await self.add_service(scheduler_data)
+            await self._add_service(scheduler_data)
 
     async def _cleanup_volume_removal_services(self) -> None:
         settings: DynamicServicesSchedulerSettings = (
