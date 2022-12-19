@@ -14,6 +14,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     get_default_product_name,
     get_or_create_product_group,
+    get_product_group_id,
 )
 
 
@@ -30,7 +31,6 @@ async def test_default_product_undefined(pg_engine: Engine):
             await get_default_product_name(conn)
 
 
-@pytest.mark.testit
 async def test_get_or_create_group_product(
     pg_engine: Engine, make_products_table: Callable
 ):
@@ -78,5 +78,22 @@ async def test_get_or_create_group_product(
             )
             assert result.rowcount == 1
 
-            # TODO: if product is deleted?
-            # TODO: if group is deleted -> sets product.group_id=null / gid update -> how should product.group_id
+            assert product_group_id == await get_product_group_id(
+                conn, product_name=product_row.name
+            )
+
+            # group-id is UPDATED -> product.group_id is updated to the new value
+            await conn.execute(
+                groups.update().where(groups.c.gid == product_group_id).values(gid=1000)
+            )
+            product_group_id = await get_product_group_id(
+                conn, product_name=product_row.name
+            )
+            assert product_group_id == 1000
+
+            # if group is DELETED -> product.group_id=null
+            await conn.execute(groups.delete().where(groups.c.gid == product_group_id))
+            product_group_id = await get_product_group_id(
+                conn, product_name=product_row.name
+            )
+            assert product_group_id is None
