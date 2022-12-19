@@ -414,6 +414,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     await assert_project_in_db(aiopg_engine, empty_guest_user_project)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     simcore_services_ready,
