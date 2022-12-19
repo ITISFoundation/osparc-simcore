@@ -38,7 +38,7 @@ async def update_service_observation(
         get_dynamic_sidecar_scheduler
     ),
 ) -> NoContentResponse:
-    if dynamic_sidecars_scheduler.toggle_observation_cycle(
+    if dynamic_sidecars_scheduler.toggle_observation(
         node_uuid, observation_item.is_disabled
     ):
         return NoContentResponse()

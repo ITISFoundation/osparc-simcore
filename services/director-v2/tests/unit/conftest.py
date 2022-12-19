@@ -96,12 +96,12 @@ def request_scheme() -> str:
 
 @pytest.fixture
 def scheduler_data_from_http_request(
-    run_id: RunID,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
     dynamic_sidecar_port: int,
     request_dns: str,
     request_scheme: str,
+    run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
         service=dynamic_service_create,
