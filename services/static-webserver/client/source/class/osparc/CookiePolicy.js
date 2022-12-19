@@ -86,7 +86,7 @@ qx.Class.define("osparc.CookiePolicy", {
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
-          osparc.navigation.Manuals.getLicenseURL()
+          osparc.store.Support.getLicenseURL()
             .then(licenseLink => {
               const lbl = control.getLabel();
               if (licenseLink) {

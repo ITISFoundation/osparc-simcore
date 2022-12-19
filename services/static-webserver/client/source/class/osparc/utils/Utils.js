@@ -301,7 +301,7 @@ qx.Class.define("osparc.utils.Utils", {
       msg += qx.locale.Manager.tr("Please, contact us by email:");
       msg += "</br>";
       return new Promise(resolve => {
-        osparc.store.StaticInfo.getInstance().getSupportEmail()
+        osparc.store.VendorInfo.getInstance().getSupportEmail()
           .then(supportEmail => resolve(msg + supportEmail));
       });
     },

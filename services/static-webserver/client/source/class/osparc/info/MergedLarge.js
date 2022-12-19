@@ -189,8 +189,9 @@ qx.Class.define("osparc.info.MergedLarge", {
         action: null
       });
 
+      let i = 0;
       if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.splice(0, 0, {
+        extraInfo.splice(i++, 0, {
           label: this.tr("Study ID"),
           view: this.__createStudyId(),
           action: {
@@ -200,7 +201,7 @@ qx.Class.define("osparc.info.MergedLarge", {
           }
         });
 
-        extraInfo.splice(1, 0, {
+        extraInfo.splice(i++, 0, {
           label: this.tr("Service ID"),
           view: this.__createNodeId(),
           action: {
@@ -209,23 +210,24 @@ qx.Class.define("osparc.info.MergedLarge", {
             ctx: this
           }
         });
-
-        extraInfo.splice(2, 0, {
-          label: this.tr("Key"),
-          view: this.__createKey(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyKeyToClipboard,
-            ctx: this
-          }
-        });
-
-        extraInfo.splice(3, 0, {
-          label: this.tr("Version"),
-          view: this.__createVersion(),
-          action: null
-        });
       }
+
+      extraInfo.splice(i++, 0, {
+        label: this.tr("Service Key"),
+        view: this.__createKey(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyKeyToClipboard,
+          ctx: this
+        }
+      });
+
+      extraInfo.splice(i++, 0, {
+        label: this.tr("Service Version"),
+        view: this.__createVersion(),
+        action: null
+      });
+
       return extraInfo;
     },
 

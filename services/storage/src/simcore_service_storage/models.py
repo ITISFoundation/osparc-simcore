@@ -99,7 +99,7 @@ class FileMetaData(FileMetaDataGet):
             "location": location_name,
             "bucket_name": bucket,
             "object_name": file_id,
-            "file_name": parts[2],
+            "file_name": parts[-1],
             "user_id": user_id,
             "project_id": parse_obj_as(ProjectID, parts[0])
             if is_uuid(parts[0])
