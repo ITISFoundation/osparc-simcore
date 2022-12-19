@@ -25,7 +25,7 @@ from ...docker_api import (
 )
 from ...errors import GenericDockerError
 from ._events import REGISTERED_EVENTS
-from ._utils import attempt_pod_removal_and_data_saving
+from ._events_utils import attempt_pod_removal_and_data_saving
 
 logger = logging.getLogger(__name__)
 

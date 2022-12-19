@@ -21,9 +21,9 @@ async function runTutorial() {
   try {
     await tutorial.start();
 
-    // make sure only sim4life-dy is available
+    // make sure only sim4life-lite is available
     const services = tutorial.getReceivedServices();
-    if (services.length && services.every(service => service.key === "simcore/services/dynamic/sim4life-dy")) {
+    if (services.length && services.every(service => service.key === "simcore/services/dynamic/sim4life-lite")) {
       console.log("Expected services received");
     }
     else {

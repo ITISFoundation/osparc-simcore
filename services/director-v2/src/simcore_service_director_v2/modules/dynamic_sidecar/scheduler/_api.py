@@ -1,4 +1,4 @@
-from ._core._utils import (
+from ._core._events_utils import (
     service_push_outputs,
     service_remove_containers,
     service_remove_sidecar_proxy_docker_networks_and_volumes,

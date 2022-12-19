@@ -23,15 +23,11 @@ qx.Class.define("osparc.store.VendorInfo", {
     __getFromStaticInfo: function(key, defaultValue) {
       return new Promise(resolve => {
         osparc.store.StaticInfo.getInstance().getValue(key)
-          .then(issuesData => {
-            issuesData ? resolve(issuesData) : resolve(defaultValue);
+          .then(staticData => {
+            staticData ? resolve(staticData) : resolve(defaultValue);
           })
           .catch(() => resolve(defaultValue));
       });
-    },
-
-    getDisplayName: function() {
-      return this.__getFromStaticInfo("displayName", "o\u00b2S\u00b2PARC");
     },
 
     getSupportEmail: function() {

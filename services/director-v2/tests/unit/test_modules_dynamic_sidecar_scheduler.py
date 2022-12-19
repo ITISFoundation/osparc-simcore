@@ -35,12 +35,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._core import (
-    _apply_observation_cycle,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer import (
+    _apply_observation_cycle,
 )
 
 # running scheduler at a hight rate to stress out the system
