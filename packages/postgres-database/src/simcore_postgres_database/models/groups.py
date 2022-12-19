@@ -25,7 +25,6 @@ class GroupType(enum.Enum):
     EVERYONE = "everyone"
 
 
-# NOTE: using func.now() insted of python datetime ensure the time is computed server side
 groups = sa.Table(
     "groups",
     metadata,
