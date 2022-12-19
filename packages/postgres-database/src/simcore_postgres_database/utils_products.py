@@ -2,7 +2,7 @@
 
 """
 
-from typing import Protocol
+from typing import Optional, Protocol
 
 import sqlalchemy as sa
 
@@ -33,15 +33,22 @@ async def get_default_product_name(conn: _DBConnection) -> str:
     return product_name
 
 
+async def get_product_group_id(
+    connection: _DBConnection, product_name: str
+) -> Optional[int]:
+    group_id = await connection.scalar(
+        sa.select([products.c.group_id]).where(products.c.name == product_name)
+    )
+    return group_id
+
+
 async def get_or_create_product_group(
     connection: _DBConnection, product_name: str
 ) -> int:
     """
     Returns group_id of a product. Creates it if undefined
     """
-    group_id = await connection.scalar(
-        sa.select([products.c.group_id]).where(products.c.name == product_name)
-    )
+    group_id = await get_product_group_id(connection, product_name=product_name)
     if group_id is not None:
         return group_id
 
