@@ -9,7 +9,7 @@ const {
   templateUuid,
   startTimeout,
   enableDemoMode
-} = utils.parseCommandLineArgumentsTemplate(args);
+} = utils.parseCommandLineArgumentsAnonymous(args);
 
 const anonURL = urlPrefix + templateUuid;
 const screenshotPrefix = "3DEM_";
