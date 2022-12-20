@@ -43,6 +43,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   },
 
   statics: {
+    SHARE_ICON: "@FontAwesome5Solid/share-alt/14",
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
