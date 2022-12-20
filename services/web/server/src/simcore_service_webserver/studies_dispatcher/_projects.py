@@ -46,7 +46,7 @@ async def acquire_project_with_viewer(
 
     try:
         project_db: dict = await get_project_for_user(
-            app, project_id, user.id, include_templates=False, include_state=False
+            app, project_id, user.id, include_state=False
         )
 
         # check if viewer already created by this app module

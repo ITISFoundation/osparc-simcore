@@ -72,7 +72,6 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     NodeNotFoundError,
     ProjectLockError,
-    ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
@@ -102,9 +101,8 @@ async def validate_project(app: web.Application, project: dict):
 async def get_project_for_user(
     app: web.Application,
     project_uuid: str,
-    user_id: int,
+    user_id: UserID,
     *,
-    include_templates: Optional[bool] = False,
     include_state: Optional[bool] = False,
     check_permissions: str = "read",
 ) -> dict:
@@ -114,27 +112,20 @@ async def get_project_for_user(
     :return: schema-compliant project data
     :rtype: Dict
     """
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
+    db = ProjectDBAPI.get_from_app_context(app)
 
-    project: dict = {}
-    is_template = False
-    if include_templates:
-        with contextlib.suppress(ProjectNotFoundError):
-            project = await db.get_template_project(
-                user_id, project_uuid, check_permissions=check_permissions
-            )
-            is_template = True
-
-    if not project:
-        project = await db.get_user_project(user_id, project_uuid)
+    project, project_type = await db.get_project(
+        user_id,
+        project_uuid,
+        check_permissions=check_permissions,
+    )
 
     # adds state if it is not a template
     if include_state:
-        project = await add_project_states_for_user(user_id, project, is_template, app)
+        project = await add_project_states_for_user(
+            user_id, project, project_type is ProjectType.TEMPLATE, app
+        )
 
-    # TODO: how to handle when database has an invalid project schema???
-    # Notice that db model does not include a check on project schema.
     await validate_project(app, project)
     return project
 

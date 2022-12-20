@@ -66,7 +66,6 @@ async def open_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=project_type is ProjectType.TEMPLATE,
             include_state=True,
             check_permissions="read|write"
             if project_type is ProjectType.TEMPLATE
@@ -159,7 +158,6 @@ async def close_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(
@@ -192,7 +190,6 @@ async def get_project_state(request: web.Request) -> web.Response:
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
-        include_templates=True,
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])

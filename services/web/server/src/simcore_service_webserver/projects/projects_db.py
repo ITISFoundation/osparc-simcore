@@ -534,6 +534,29 @@ class ProjectDBAPI:
                     project["tags"].remove(tag_id)
                 return _convert_to_schema_names(project, user_email)
 
+    async def get_project(
+        self,
+        user_id: UserID,
+        project_uuid: str,
+        *,
+        only_published: bool = False,
+        check_permissions: str = "read",
+    ) -> tuple[ProjectDict, ProjectType]:
+        async with self.engine.acquire() as conn:
+            project = await self._get_project(
+                conn,
+                user_id,
+                project_uuid,
+                only_published=only_published,
+                check_permissions=check_permissions,
+            )
+            # pylint: disable=no-value-for-parameter
+            user_email = await self._get_user_email(conn, project["prj_owner"])
+            return (
+                _convert_to_schema_names(project, user_email),
+                ProjectType(project[projects.c.type]),
+            )
+
     async def get_user_project(self, user_id: int, project_uuid: str) -> dict:
         """Returns all projects *owned* by the user
 

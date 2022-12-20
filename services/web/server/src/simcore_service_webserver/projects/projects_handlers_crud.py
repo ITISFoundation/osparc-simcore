@@ -161,7 +161,6 @@ async def _prepare_project_copy(
         app,
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
-        include_templates=True,
     )
     settings = get_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
@@ -464,7 +463,6 @@ async def get_active_project(request: web.Request) -> web.Response:
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
-                include_templates=True,
                 include_state=True,
             )
 
@@ -498,7 +496,6 @@ async def get_project(request: web.Request):
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
             include_state=True,
         )
         if not await project_uses_available_services(project, user_available_services):
@@ -586,7 +583,6 @@ async def replace_project(request: web.Request):
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
             include_state=True,
         )
 
@@ -687,7 +683,6 @@ async def delete_project(request: web.Request):
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
         project_users: set[int] = set()
         with managed_resource(req_ctx.user_id, None, request.app) as rt:
