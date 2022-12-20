@@ -5,6 +5,7 @@
 from typing import Optional, Protocol
 
 import sqlalchemy as sa
+from models_library.users import GroupID
 
 from .models.groups import GroupType, groups
 from .models.products import products
@@ -47,16 +48,16 @@ async def get_default_product_name(conn: _DBConnection) -> str:
 
 async def get_product_group_id(
     connection: _DBConnection, product_name: str
-) -> Optional[int]:
+) -> Optional[GroupID]:
     group_id = await connection.scalar(
         sa.select([products.c.group_id]).where(products.c.name == product_name)
     )
-    return None if group_id is None else int(group_id)
+    return None if group_id is None else GroupID(group_id)
 
 
 async def get_or_create_product_group(
     connection: _AiopgConnection, product_name: str
-) -> int:
+) -> GroupID:
     """
     Returns group_id of a product. Creates it if undefined
     """
@@ -81,4 +82,4 @@ async def get_or_create_product_group(
             .where(products.c.name == product_name)
             .values(group_id=group_id)
         )
-        return int(group_id)
+        return GroupID(group_id)
