@@ -284,6 +284,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }, this);
       }
       const page = this.__permissionsPage = this.__createPage(title, permissionsView, icon, id);
+
       return page;
     },
 

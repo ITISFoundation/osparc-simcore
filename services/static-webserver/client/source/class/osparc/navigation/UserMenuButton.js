@@ -55,9 +55,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     },
 
     openPreferences: function() {
-      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
-      preferencesWindow.center();
-      preferencesWindow.open();
+      const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
+      return preferencesWindow;
     }
   },
 
@@ -75,6 +74,15 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("Preferences"));
           control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
           osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
+          this.getMenu().add(control);
+          break;
+        case "organizations":
+          control = new qx.ui.menu.Button(this.tr("Organizations"));
+          osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(control);
+          control.addListener("execute", () => {
+            const preferences = osparc.navigation.UserMenuButton.openPreferences();
+            preferences.openOrganizations();
+          }, this);
           this.getMenu().add(control);
           break;
         case "clusters":
@@ -128,6 +136,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateSimpleMenu: function() {
       this.getChildControl("preferences");
+      this.getChildControl("organizations");
       this.getChildControl("clusters");
       if (osparc.component.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
@@ -146,6 +155,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.__serverStatics = statics;
           this.getChildControl("theme-switcher");
           this.getChildControl("preferences");
+          this.getChildControl("organizations");
           this.getChildControl("clusters");
           this.getMenu().addSeparator();
           this.__addManualsToMenu();

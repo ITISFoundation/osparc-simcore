@@ -346,5 +346,5 @@ async def upload_file_to_presigned_links(
             return part_to_etag
         except ClientError as exc:
             raise exceptions.S3TransferError(
-                f"Could not upload file {file_name}:{exc}"
+                f"Could not upload file {file_name} ({file_size=}, {file_chunk_size=}, {last_chunk_size=}):{exc}"
             ) from exc
