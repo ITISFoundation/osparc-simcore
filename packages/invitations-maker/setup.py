@@ -70,8 +70,8 @@ SETUP = dict(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "invitations-maker=invitations_maker.cli:main",
-            "osparc-invitations-maker=invitations_maker.cli:main",
+            "invitations-maker=invitations_maker.cli:app",
+            "osparc-invitations-maker=invitations_maker.cli:app",
         ],
     },
 )

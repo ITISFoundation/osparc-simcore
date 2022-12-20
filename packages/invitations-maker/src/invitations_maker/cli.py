@@ -5,6 +5,7 @@ import typer
 from cryptography.fernet import Fernet
 from pydantic import EmailStr, parse_obj_as
 
+from . import web
 from ._meta import __version__
 from .invitations import InvitationData, create_invitation_link
 from .settings import ApplicationSettings
@@ -31,17 +32,17 @@ def main(
     ),
 ):
     """o2s2parc invitation maker"""
+    assert ctx  # nosec
     assert version or not version  # nosec
-    print(ctx)
 
 
 @app.command()
 def start(
     ctx: typer.Context,
 ):
-    """Starts invitation links http server"""
-    settings = ApplicationSettings()
-    print("Starting server")
+    """Starts server with http API"""
+    assert ctx  # nosec
+    web.start(log_level="info")
 
 
 @app.command()
@@ -53,6 +54,7 @@ def generate_key(
     Example:
         export INVITATIONS_MAKER_SECRET_KEY=$(invitations-maker generate-key)
     """
+    assert ctx  # nosec
     print(Fernet.generate_key().decode())
 
 
@@ -79,6 +81,7 @@ def invite(
     ),
 ):
     """Generates invitation links"""
+    assert ctx  # nosec
     kwargs = {}
 
     if osparc_url is not None:
