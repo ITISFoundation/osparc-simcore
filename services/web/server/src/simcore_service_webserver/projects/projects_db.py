@@ -543,6 +543,16 @@ class ProjectDBAPI:
         only_templates: bool = False,
         check_permissions: str = "read",
     ) -> tuple[ProjectDict, ProjectType]:
+        """Returns all projects *owned* by the user
+
+            - prj_owner
+            - Notice that a user can have access to a template but he might not onw it
+            - Notice that a user can have access to a project where he/she has read access
+
+        :raises ProjectNotFoundError: project is not assigned to user
+        :return: schema-compliant project
+        :rtype: dict
+        """
         async with self.engine.acquire() as conn:
             project = await self._get_project(
                 conn,
@@ -558,23 +568,6 @@ class ProjectDBAPI:
                 _convert_to_schema_names(project, user_email),
                 ProjectType(project[projects.c.type]),
             )
-
-    async def get_user_project(self, user_id: int, project_uuid: str) -> dict:
-        """Returns all projects *owned* by the user
-
-            - prj_owner
-            - Notice that a user can have access to a template but he might not onw it
-            - Notice that a user can have access to a project where he/she has read access
-
-        :raises ProjectNotFoundError: project is not assigned to user
-        :return: schema-compliant project
-        :rtype: dict
-        """
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
-            # pylint: disable=no-value-for-parameter
-            user_email = await self._get_user_email(conn, project["prj_owner"])
-            return _convert_to_schema_names(project, user_email)
 
     async def patch_user_project_workbench(
         self,

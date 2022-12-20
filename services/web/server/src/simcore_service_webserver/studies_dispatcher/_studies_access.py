@@ -51,7 +51,7 @@ async def get_public_project(app: web.Application, project_uuid: str):
     Returns project if project_uuid is a template and is marked as published, otherwise None
     """
     db = ProjectDBAPI.get_from_app_context(app)
-    prj = await db.get_project(
+    prj, _ = await db.get_project(
         -1, project_uuid, only_published=True, only_templates=True
     )
     return prj
@@ -162,7 +162,7 @@ async def copy_study_to_account(
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user["id"], project_uuid)
+        await db.get_project(user["id"], project_uuid)
 
         # FIXME: if template is parametrized and user has already a copy, then delete it and create a new one??
 
