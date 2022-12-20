@@ -56,11 +56,13 @@ qx.Class.define("osparc.component.permissions.Study", {
       return canWrite;
     },
 
-    canGroupDelete: function(accessRights, gid) {
-      if (gid in accessRights) {
-        return accessRights[gid]["delete"];
+    canGroupsDelete: function(accessRights, gIds) {
+      let canWrite = false;
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["delete"] : false;
       }
-      return false;
+      return canWrite;
     },
 
     getViewerAccessRight: function() {
@@ -108,7 +110,7 @@ qx.Class.define("osparc.component.permissions.Study", {
     __resourceType: null,
 
     _isUserOwner: function() {
-      return osparc.data.model.Study.isOwner(this.__studyData);
+      return osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]);
     },
 
     _addCollaborator: function() {

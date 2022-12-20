@@ -229,23 +229,22 @@ qx.Class.define("osparc.data.model.Study", {
       return studyObject;
     },
 
-    isOwner: function(studyData) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      let accessRights = {};
-      if (studyData instanceof osparc.data.model.Study) {
-        accessRights = studyData.getAccessRights();
-      } else {
-        accessRights = studyData["accessRights"];
-      }
-      return osparc.component.permissions.Study.canGroupDelete(accessRights, myGid);
-    },
-
     canIWrite: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.component.permissions.Study.canGroupsWrite(studyAccessRights, (orgIDs));
+      }
+      return false;
+    },
+
+    canIDelete: function(studyAccessRights) {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+      if (orgIDs.length) {
+        return osparc.component.permissions.Study.canGroupsDelete(studyAccessRights, (orgIDs));
       }
       return false;
     },

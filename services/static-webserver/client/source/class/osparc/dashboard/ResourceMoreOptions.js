@@ -251,7 +251,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __getPermissionsPage: function() {
       const id = "Permissions";
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.isOwner(resourceData)) {
+      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
         return null;
       }
       if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.isOwner(resourceData)) {
@@ -298,7 +298,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const resourceData = this.__resourceData;
       let classifiers = null;
       if (
-        (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.isOwner(resourceData) ||
+        (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.canIWrite(resourceData["accessRights"]) ||
         osparc.utils.Resources.isService(resourceData) && osparc.utils.Services.isOwner(resourceData)
       ) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(resourceData);
@@ -391,9 +391,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
 
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(this.__resourceData);
+      const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
-      if (isCurrentUserOwner && canCreateTemplate) {
+      if (canIWrite && canCreateTemplate) {
         const title = this.tr("Save as Template");
         const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);

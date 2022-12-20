@@ -152,7 +152,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
         this.__schema = schema;
 
-        if (this.__isUserOwner()) {
+        if (this.__canIWrite()) {
           this.__createEditBtns();
         }
 
@@ -160,7 +160,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         this.__createAnnotationsSection();
 
         this.__createEnableSection();
-        if (!this.__isUserOwner()) {
+        if (!this.__canIWrite()) {
           this.__enabledQuality.exclude();
         }
 
@@ -683,7 +683,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       }
     },
 
-    __isUserOwner: function() {
+    __canIWrite: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
         const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
