@@ -207,6 +207,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __cleanAll: function() {
       if (this.__flatList) {
         this.__flatList.removeAll();
+        this.__flatList = null;
       }
       this.__groupedContainers.forEach(groupedContainer => groupedContainer.getContentContainer().removeAll());
       this.__groupedContainers = [];

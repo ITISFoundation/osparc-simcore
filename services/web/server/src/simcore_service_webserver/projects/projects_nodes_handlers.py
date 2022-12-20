@@ -75,7 +75,6 @@ async def create_node(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
         data = {
             "node_id": await projects_api.add_project_node(
@@ -114,7 +113,6 @@ async def get_node(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
 
         if await projects_api.is_project_node_deprecated(
@@ -174,7 +172,6 @@ async def delete_node(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
 
         await projects_api.delete_project_node(
@@ -309,7 +306,6 @@ async def get_node_resources(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
 
         resources = await projects_api.get_project_node_resources(
@@ -349,7 +345,6 @@ async def replace_node_resources(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
         raise web.HTTPNotImplemented(reason="Not yet implemented!")
         # new_node_resources = await projects_api.set_project_node_resources(
