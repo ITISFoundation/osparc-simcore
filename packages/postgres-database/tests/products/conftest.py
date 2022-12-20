@@ -27,7 +27,13 @@ def make_products_table(
     async def _make(conn) -> None:
         for n, (name, regex) in enumerate(products_regex.items()):
             result = await conn.execute(
-                products.insert().values(name=name, host_regex=regex, priority=n)
+                products.insert().values(
+                    name=name,
+                    display_name=f"Product {name.capitalize()}",
+                    short_name=name[:3].lower(),
+                    host_regex=regex,
+                    priority=n,
+                )
             )
 
             assert result.closed
