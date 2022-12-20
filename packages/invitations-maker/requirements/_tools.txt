@@ -60,7 +60,7 @@ pylint==2.15.9
     # via -r requirements/../../../requirements/devenv.txt
 pyyaml==6.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   pre-commit
 toml==0.10.2
     # via pre-commit
