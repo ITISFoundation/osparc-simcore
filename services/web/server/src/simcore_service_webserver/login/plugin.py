@@ -71,8 +71,7 @@ def _setup_login_options(app: web.Application):
 
 async def _validate_products_login_settings(app: web.Application):
     """
-    - Some of the LoginSettings need to be in sync with product.login_settings
-    This in ensured here.
+    - Some of the LoginSettings need to be in sync with product.login_settings. This is validated here
 
     - Needs products plugin initialized (otherwise list_products does not work)
     """

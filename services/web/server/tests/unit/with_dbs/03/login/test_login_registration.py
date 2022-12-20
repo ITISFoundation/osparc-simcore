@@ -38,7 +38,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "0",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )

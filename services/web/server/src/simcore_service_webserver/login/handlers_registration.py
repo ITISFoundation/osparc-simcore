@@ -184,7 +184,7 @@ async def register(request: web.Request):
     else:
         # No confirmation required: authorize login
         assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
-        assert not settings.LOGIN_2FA_REQUIRED  # nosec
+        assert not product.login_settings.two_factor_enabled  # nosec
 
         response = await login_granted_response(request=request, user=user)
         return response
