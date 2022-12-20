@@ -142,7 +142,7 @@ async def phone_confirmation(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
-    two_factor_enabled = product.login.get(
+    two_factor_enabled = product.login_settings.get(
         "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
     )
     if not two_factor_enabled:

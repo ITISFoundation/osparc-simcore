@@ -224,7 +224,7 @@ async def register_phone(request: web.Request):
     product: Product = get_current_product(request)
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
-    two_factor_enabled = product.login.get(
+    two_factor_enabled = product.login_settings.get(
         "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
     )
 

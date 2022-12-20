@@ -6,6 +6,7 @@
 """
 
 import json
+from dataclasses import asdict, dataclass
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
@@ -79,16 +80,17 @@ class Forum(TypedDict, total=True):
     url: str
 
 
-class Login(TypedDict, total=True):
+@dataclass(frozen=True)
+class Login:
     """Login plugin settings customized for this product
 
-    Every item overrides a field in simcore_service_webserver.login.settings.LoginSettings
+    Extends simcore_service_webserver.login.settings.LoginSettings
     """
 
-    two_factor_enabled: bool  # overrides LOGIN_2FA_REQUIRED
+    two_factor_enabled: bool = False
 
 
-_DEFAULT_LOGIN = Login(two_factor_enabled=False)
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(Login()))
 
 
 #
@@ -159,11 +161,11 @@ products = sa.Table(
         doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
     ),
     sa.Column(
-        "login",
+        "login_settings",
         JSONB,
         nullable=False,
-        server_default=text(f"'{json.dumps(_DEFAULT_LOGIN)}'::jsonb"),
-        doc="Login/registration settings: Login",
+        server_default=text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
+        doc="Overrides values of simcore_service_webserver.login.settings.LoginSettings",
     ),
     sa.Column(
         "registration_email_template",

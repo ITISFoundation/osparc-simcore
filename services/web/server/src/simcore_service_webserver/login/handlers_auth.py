@@ -98,7 +98,7 @@ async def login(request: web.Request):
 
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
-    two_factor_enabled = product.login.get(
+    two_factor_enabled = product.login_settings.get(
         "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
     )
     if has_privileges or not two_factor_enabled:
@@ -192,7 +192,7 @@ async def login_2fa(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
-    two_factor_enabled = product.login.get(
+    two_factor_enabled = product.login_settings.get(
         "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
     )
     if not two_factor_enabled:

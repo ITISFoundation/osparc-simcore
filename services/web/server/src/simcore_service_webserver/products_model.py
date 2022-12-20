@@ -69,9 +69,9 @@ class Product(BaseModel):
 
     manuals: Optional[list[Manual]] = None
 
-    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = None
+    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
 
-    login: Login = Field(..., description="Login/registrations options")
+    login_settings: Login = Field(...)
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
