@@ -72,6 +72,7 @@ from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import (
     NodeNotFoundError,
     ProjectLockError,
+    ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
     ProjectTooManyProjectOpened,
 )
@@ -119,10 +120,11 @@ async def get_project_for_user(
     project: dict = {}
     is_template = False
     if include_templates:
-        project = await db.get_template_project(
-            user_id, project_uuid, check_permissions=check_permissions
-        )
-        is_template = bool(project)
+        with contextlib.suppress(ProjectNotFoundError):
+            project = await db.get_template_project(
+                user_id, project_uuid, check_permissions=check_permissions
+            )
+            is_template = True
 
     if not project:
         project = await db.get_user_project(user_id, project_uuid)
