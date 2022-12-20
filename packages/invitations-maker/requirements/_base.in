@@ -3,7 +3,7 @@
 #
 --constraint ../../../requirements/constraints.txt
 
-
 cryptography # security
 fastapi
+pydantic[email]
 typer[all]

@@ -10,6 +10,7 @@
 
 coverage
 coveralls
+faker
 pytest
 pytest-cov
 pytest-runner

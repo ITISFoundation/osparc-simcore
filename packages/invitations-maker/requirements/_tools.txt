@@ -25,7 +25,7 @@ distlib==0.3.6
     # via virtualenv
 filelock==3.8.2
     # via virtualenv
-identify==2.5.10
+identify==2.5.11
     # via pre-commit
 isort==5.11.3
     # via

@@ -21,6 +21,8 @@ docopt==0.6.2
     # via coveralls
 exceptiongroup==1.0.4
     # via pytest
+faker==15.3.4
+    # via -r requirements/_test.in
 idna==3.4
     # via
     #   -c requirements/_base.txt
@@ -44,8 +46,12 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.6
     # via -r requirements/_test.in
+python-dateutil==2.8.2
+    # via faker
 requests==2.28.1
     # via coveralls
+six==1.16.0
+    # via python-dateutil
 termcolor==2.1.1
     # via pytest-sugar
 tomli==2.0.1
