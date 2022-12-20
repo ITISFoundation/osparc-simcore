@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             }
             const orgs = values.length === 3 ? values[2] : [];
             const groups = [orgMembs, orgs, [everyone]];
-            this.__setSharedIcon(sharedIcon, value, groups);
+            this.__evaluateShareIcon(value, groups);
           });
 
         if (this.isResourceType("study")) {
@@ -231,7 +231,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     // groups sorted by [orgMembs, orgs, [everyone]];
-    __setSharedIcon: function(image, value, groups) {
+    __evaluateShareIcon: function(value, groups) {
+      const shareIcon = this.getChildControl("subtitle-icon");
+      if (osparc.data.model.Study.canIWrite(value)) {
+        shareIcon.set({
+          source: osparc.dashboard.CardBase.SHARE_ICON,
+          toolTipText: this.tr("Share")
+        });
+      }
       let sharedGrps = [];
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       for (let i=0; i<groups.length; i++) {
@@ -240,7 +247,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         for (let j=0; j<gids.length; j++) {
           const gid = parseInt(gids[j]);
           if (this.isResourceType("study") && (gid === myGroupId)) {
-            // image.setSource(osparc.dashboard.CardBase.SHARE_ICON);
             continue;
           }
           const grp = groups[i].find(group => group["gid"] === gid);
@@ -255,22 +261,21 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
         switch (i) {
           case 0:
-            image.setSource(osparc.dashboard.CardBase.SHARED_USER);
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
             break;
           case 1:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
             break;
           case 2:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
             break;
         }
       }
 
+      // tooltip
       if (sharedGrps.length === 0) {
-        image.setVisibility("excluded");
         return;
       }
-
       const sharedGrpLabels = [];
       const maxItems = 6;
       for (let i=0; i<sharedGrps.length; i++) {
@@ -284,9 +289,9 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
       }
       const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(image, hintText);
-      image.addListener("mouseover", () => hint.show(), this);
-      image.addListener("mouseout", () => hint.exclude(), this);
+      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
+      shareIcon.addListener("mouseover", () => hint.show(), this);
+      shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
     _applyTags: function(tags) {
