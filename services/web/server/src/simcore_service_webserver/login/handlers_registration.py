@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from ..groups_api import auto_add_user_to_groups
+from ..groups_api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..products import Product, get_current_product
 from ..security_api import encrypt_password
 from ..session_access import session_access_constraint, session_access_trace
@@ -130,7 +130,10 @@ async def register(request: web.Request):
     )
 
     # NOTE: PC->SAN: should this go here or when user is actually logged in?
-    await auto_add_user_to_groups(request.app, user["id"])
+    await auto_add_user_to_groups(app=request.app, user_id=user["id"])
+    await auto_add_user_to_product_group(
+        app=request.app, user_id=user["id"], product_name=product.name
+    )
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
