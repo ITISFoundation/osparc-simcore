@@ -42,17 +42,11 @@ qx.Class.define("osparc.component.permissions.Service", {
   },
 
   statics: {
-    canGroupWrite: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["write_access"];
-      }
-      return false;
-    },
-
-    canAnyGroupWrite: function(accessRights, GIDs) {
+    canGroupsWrite: function(accessRights, gIds) {
       let canWrite = false;
-      for (let i=0; i<GIDs.length && !canWrite; i++) {
-        canWrite = this.self().canGroupWrite(accessRights, GIDs[i]);
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["write_access"] : false;
       }
       return canWrite;
     },

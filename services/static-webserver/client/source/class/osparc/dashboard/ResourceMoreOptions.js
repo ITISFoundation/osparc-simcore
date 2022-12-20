@@ -254,7 +254,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
         return null;
       }
-      if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.isOwner(resourceData)) {
+      if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.canIWrite(resourceData["accessRights"])) {
         return null;
       }
 
@@ -299,7 +299,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       let classifiers = null;
       if (
         (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.canIWrite(resourceData["accessRights"]) ||
-        osparc.utils.Resources.isService(resourceData) && osparc.utils.Services.isOwner(resourceData)
+        osparc.utils.Resources.isService(resourceData) && osparc.utils.Services.canIWrite(resourceData["accessRights"])
       ) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(resourceData);
         classifiers.addListener("updateClassifiers", e => {
