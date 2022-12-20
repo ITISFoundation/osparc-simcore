@@ -1,7 +1,7 @@
 import base64
 import json
 import os
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qsl, urlparse
 
 from cryptography.fernet import Fernet, InvalidToken
 from pytest import MonkeyPatch
@@ -27,10 +27,9 @@ def produce(guest_email: str):
 
 def consume(url):
     frontend_entrypoint = urlparse(urlparse(f"{url}").fragment)
-    query_params = parse_qs(frontend_entrypoint.query)
-    invitation = query_params["invitation"][0]
-
-    invitation_code = base64.urlsafe_b64decode(invitation)
+    query_params = dict(parse_qsl(frontend_entrypoint.query))
+    invitation: str = query_params["invitation"]
+    invitation_code: bytes = base64.urlsafe_b64decode(invitation)
 
     try:
         secret_key = os.environ["SECRET_KEY"].strip().encode()
