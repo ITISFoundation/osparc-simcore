@@ -213,7 +213,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping
 
-    def _get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
+    def get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
         service_name = self._inverse_search_mapping[node_uuid]
@@ -236,7 +236,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
         # let's filter
         def _is_scheduled(node_id: NodeID) -> bool:
             try:
-                scheduler_data = self._get_scheduler_data(node_id)
+                scheduler_data = self.get_scheduler_data(node_id)
                 if user_id and scheduler_data.user_id != user_id:
                     return False
                 if project_id and scheduler_data.project_id != project_id:

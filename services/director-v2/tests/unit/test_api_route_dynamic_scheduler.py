@@ -92,7 +92,7 @@ async def observed_service(
         request_scheme,
     )
     # pylint:disable=protected-access
-    return dynamic_sidecar_scheduler._scheduler._get_scheduler_data(
+    return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(
         dynamic_service_create.node_uuid
     )
 

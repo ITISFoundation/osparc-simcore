@@ -91,7 +91,8 @@ def _get_scheduler_data(app: FastAPI, node_uuid: NodeID) -> SchedulerData:
     dynamic_sidecars_scheduler: "DynamicSidecarsScheduler" = (
         app.state.dynamic_sidecar_scheduler
     )
-    return dynamic_sidecars_scheduler._scheduler._get_scheduler_data(node_uuid)
+    # pylint: disable=protected-access
+    return dynamic_sidecars_scheduler._scheduler.get_scheduler_data(node_uuid)
 
 
 async def service_remove_containers(
@@ -211,6 +212,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         ]
     )
 
+    # pylint: disable=protected-access
     await app.state.dynamic_sidecar_scheduler._scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
