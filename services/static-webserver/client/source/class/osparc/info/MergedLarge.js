@@ -101,17 +101,17 @@ qx.Class.define("osparc.info.MergedLarge", {
       this._add(hBox);
 
       const tags = this.__createTags();
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
         tags.addAt(editInTitle, 0);
-        if (this.__isOwner()) {
+        if (this.__canIWrite()) {
           osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
         }
       }
       this._add(tags);
 
       const description = this.__createDescription();
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
         description.addAt(editInTitle, 0);
       }
@@ -134,8 +134,8 @@ qx.Class.define("osparc.info.MergedLarge", {
       more.getChildControl("header").add(copy2Clip);
     },
 
-    __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
+    __canIWrite: function() {
+      return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -143,7 +143,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         alignY: "middle"
       }));
       layout.add(view);
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editBtn = osparc.utils.Utils.getEditButton();
         editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);

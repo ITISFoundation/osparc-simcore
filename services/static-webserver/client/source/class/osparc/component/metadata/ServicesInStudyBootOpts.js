@@ -72,10 +72,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-        orgIDs.push(myGroupId);
-        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
+        const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
         if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
           const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
           const bootModeSB = new qx.ui.form.SelectBox();

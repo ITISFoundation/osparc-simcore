@@ -508,12 +508,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _setStudyPermissions: function(accessRights) {
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGroupId);
-
       const permissionIcon = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
+      if (osparc.data.model.Study.canIWrite(accessRights)) {
         permissionIcon.exclude();
       } else {
         permissionIcon.setSource(osparc.dashboard.CardBase.PERM_READ);
