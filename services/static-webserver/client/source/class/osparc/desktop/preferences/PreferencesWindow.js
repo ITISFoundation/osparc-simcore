@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     const closeBtn = this.getChildControl("close-button");
     osparc.utils.Utils.setIdToWidget(closeBtn, "preferencesWindowCloseBtn");
 
-    const tabView = new qx.ui.tabview.TabView().set({
+    const tabView = this.__tabView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
       contentPadding: 0
     });
@@ -77,18 +77,11 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       tabView.add(tagsPage);
     }
 
-    const orgsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
+    const orgsPage = this.__organizationsPage = new osparc.desktop.preferences.pages.OrganizationsPage();
     const orgsBtn = orgsPage.getChildControl("button");
     osparc.utils.Utils.setIdToWidget(orgsBtn, "preferencesOrganizationsTabBtn");
     tabView.add(orgsPage);
-    orgsBtn.exclude();
-    osparc.data.Resources.get("organizations")
-      .then(resp => {
-        const orgs = resp["organizations"];
-        if (orgs.length || osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
-          orgsBtn.show();
-        }
-      });
+    this.self().evaluateOrganizationsButton(orgsBtn);
 
     if (!osparc.utils.Utils.isProduct("s4llite")) {
       const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
@@ -115,5 +108,35 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     }
 
     this.add(tabView);
+  },
+
+  statics: {
+    evaluateOrganizationsButton: function(btn) {
+      if (!osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
+        btn.exclude();
+      }
+      osparc.data.Resources.get("organizations")
+        .then(resp => {
+          const orgs = resp["organizations"];
+          if (orgs.length) {
+            btn.show();
+          }
+        });
+    }
+  },
+
+  members: {
+    __tabView: null,
+    __organizationsPage: null,
+
+    openOrganizations: function() {
+      this.__openPage(this.__organizationsPage);
+    },
+
+    __openPage: function(page) {
+      if (page) {
+        this.__tabView.setSelection([page]);
+      }
+    }
   }
 });
