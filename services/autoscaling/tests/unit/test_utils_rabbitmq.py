@@ -43,6 +43,7 @@ async def test_post_log_message(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_client: RabbitMQClient,
     mocker: MockerFixture,
@@ -95,6 +96,7 @@ async def test_post_log_message_does_not_raise_if_service_has_no_labels(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    mocked_redis_server: None,
     initialized_app: FastAPI,
     async_docker_client: aiodocker.Docker,
     create_service: Callable[

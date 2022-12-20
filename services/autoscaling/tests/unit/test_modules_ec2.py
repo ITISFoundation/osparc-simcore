@@ -61,7 +61,10 @@ async def test_ec2_client_with_mock_server(
 
 
 async def test_ec2_does_not_initialize_if_deactivated(
-    disabled_rabbitmq: None, disabled_ec2: None, initialized_app: FastAPI
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    initialized_app: FastAPI,
 ):
     assert hasattr(initialized_app.state, "ec2_client")
     assert initialized_app.state.ec2_client == None

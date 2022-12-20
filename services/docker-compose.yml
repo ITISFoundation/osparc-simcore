@@ -35,6 +35,8 @@ services:
       - autoscaling_subnet
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
@@ -491,6 +493,7 @@ services:
       ]
     networks:
       - default
+      - autoscaling_subnet
     volumes:
       - redis-data:/data
     healthcheck:

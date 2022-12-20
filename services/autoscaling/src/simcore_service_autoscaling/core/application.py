@@ -14,6 +14,7 @@ from ..dynamic_scaling import setup as setup_background_task
 from ..modules.docker import setup as setup_docker
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
+from ..modules.redis import setup as setup_redis
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_docker(app)
     setup_rabbitmq(app)
     setup_ec2(app)
+    setup_redis(app)
     # autoscaler background task
     setup_background_task(app)
 

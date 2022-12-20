@@ -21,6 +21,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     enabled_rabbitmq: None,
     mocked_aws_server_envs: None,
+    mocked_redis_server: None,
 ) -> EnvVarsDict:
     return app_environment
 
