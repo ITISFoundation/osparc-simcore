@@ -75,7 +75,6 @@ async def _get_validated_workbench_model(
         app,
         project_uuid=f"{project_id}",
         user_id=user_id,
-        include_templates=False,
         include_state=False,
     )
 
