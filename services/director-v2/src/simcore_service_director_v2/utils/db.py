@@ -1,10 +1,14 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
+from fastapi import FastAPI
 from models_library.clusters import BaseCluster
 from models_library.projects_state import RunningState
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.comp_pipeline import StateType
+
+from ..api.dependencies.database import get_base_repository
+from ..modules.db.repositories import BaseRepository
 
 DB_TO_RUNNING_STATE = {
     StateType.FAILED: RunningState.FAILED,
@@ -22,7 +26,7 @@ RUNNING_STATE_TO_DB = {
 }
 
 
-def to_clusters_db(cluster: BaseCluster, only_update: bool) -> Dict[str, Any]:
+def to_clusters_db(cluster: BaseCluster, only_update: bool) -> dict[str, Any]:
     db_model = json.loads(
         cluster.json(
             by_alias=True,
@@ -33,3 +37,7 @@ def to_clusters_db(cluster: BaseCluster, only_update: bool) -> Dict[str, Any]:
         )
     )
     return db_model
+
+
+def get_repository(app: FastAPI, repo_type: type[BaseRepository]) -> BaseRepository:
+    return get_base_repository(engine=app.state.engine, repo_type=repo_type)

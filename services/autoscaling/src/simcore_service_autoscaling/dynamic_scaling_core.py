@@ -280,7 +280,7 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
             )
 
 
-async def check_dynamic_resources(app: FastAPI) -> None:
+async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
     If there are such tasks, this method will allocate new machines in AWS to cope with
     the additional load.

@@ -410,18 +410,19 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 @pytest.fixture
 def mock_docker_api(mocker: MockerFixture) -> None:
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecars_to_observe",
+        f"{module_base}._task.get_dynamic_sidecars_to_observe",
         autospec=True,
         return_value=[],
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core.are_sidecar_and_proxy_services_present",
+        f"{module_base}._core._observer.are_sidecar_and_proxy_services_present",
         autospec=True,
         return_value=True,
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
+        f"{module_base}._task.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
 

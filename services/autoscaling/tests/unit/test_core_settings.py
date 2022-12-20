@@ -14,6 +14,8 @@ def test_settings(app_environment: EnvVarsDict):
     assert settings.AUTOSCALING_EC2_ACCESS
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_NODES_MONITORING
+    assert settings.AUTOSCALING_RABBITMQ
+    assert settings.AUTOSCALING_REDIS
 
 
 def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(

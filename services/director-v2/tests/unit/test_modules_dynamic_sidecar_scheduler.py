@@ -35,12 +35,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import (
-    _apply_observation_cycle,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events import (
     REGISTERED_EVENTS,
     DynamicSchedulerEvent,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer import (
+    _apply_observation_cycle,
 )
 
 # running scheduler at a hight rate to stress out the system
@@ -203,7 +203,7 @@ def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 @pytest.fixture
 def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[AsyncMock]:
     mock = mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.get_dynamic_sidecar_state",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.get_dynamic_sidecar_state",
         return_value=(ServiceState.RUNNING, ""),
     )
 
@@ -213,7 +213,7 @@ def mock_service_running(mock_docker_api, mocker: MockerFixture) -> Iterator[Asy
 @pytest.fixture
 def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.update_scheduler_data_label",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.update_scheduler_data_label",
         return_value=None,
     )
 
@@ -229,7 +229,7 @@ def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
 @pytest.fixture
 def disabled_scheduler_background_task(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.start",
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler.start",
         autospec=True,
     )
 

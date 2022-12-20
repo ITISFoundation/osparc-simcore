@@ -213,7 +213,7 @@ jobs:
   unit-test-webserver-01:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -299,7 +299,7 @@ jobs:
   unit-test-webserver-03:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:

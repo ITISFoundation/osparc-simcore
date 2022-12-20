@@ -30,8 +30,8 @@ from ..modules import db, director_v0, dynamic_sidecar
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.director_v0 import DirectorV0Client
 from ..modules.dynamic_sidecar import api_client
-from ..modules.dynamic_sidecar.scheduler._utils import get_repository
 from ..modules.projects_networks import requires_dynamic_sidecar
+from ..utils.db import get_repository
 
 
 @asynccontextmanager
