@@ -6,7 +6,6 @@
 """
 import asyncio
 import logging
-import textwrap
 import uuid as uuidlib
 from collections import deque
 from contextlib import AsyncExitStack
@@ -446,7 +445,7 @@ class ProjectDBAPI:
     async def _get_project(
         self,
         connection: SAConnection,
-        user_id: int,
+        user_id: Optional[UserID],
         project_uuid: str,
         exclude_foreign: Optional[list[str]] = None,
         for_update: bool = False,
@@ -455,23 +454,36 @@ class ProjectDBAPI:
         check_permissions: str = "read",
     ) -> dict:
         exclude_foreign = exclude_foreign or []
+
         # this retrieves the projects where user is owner
         user_groups: list[RowProxy] = await self.__load_user_groups(connection, user_id)
 
-        # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
-
-        query = textwrap.dedent(
-            f"""\
-            SELECT *
-            FROM projects
-            WHERE
-            {"projects.type = 'TEMPLATE' AND" if only_templates else ""}
-            uuid = '{project_uuid}'
-            AND (jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})
-            OR prj_owner = {user_id} {"OR published='true'" if only_published else ""})
-            {"FOR UPDATE" if for_update else ""}
-            """
+        # NOTE: ChatGPT helped in producing this entry
+        conditions = sa.and_(
+            projects.c.uuid == f"{project_uuid}",
+            projects.c.type == f"{ProjectType.TEMPLATE.value}"
+            if only_templates
+            else True,
+            sa.or_(
+                projects.c.prj_owner == user_id,
+                sa.text(
+                    f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
+                ),
+                sa.case(
+                    [
+                        (
+                            only_published,
+                            projects.c.published == "true",
+                        )
+                    ],
+                    else_=True,
+                ),
+            ),
         )
+        query = select([projects]).where(conditions)
+        if for_update:
+            query = query.with_for_update()
+
         result = await connection.execute(query)
         project_row = await result.first()
 
@@ -541,7 +553,7 @@ class ProjectDBAPI:
 
     async def get_template_project(
         self,
-        user_id: UserID,
+        user_id: Optional[UserID],
         project_uuid: str,
         *,
         only_published: bool = False,
