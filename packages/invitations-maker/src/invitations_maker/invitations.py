@@ -40,5 +40,6 @@ def create_invitation_link(
     # Adds message as the invitation in query
     r = URL("/registration").include_query_params(invitation=encrypted_url_safe)
     # Adds query to fragment
+    base_url = f"{base_url.rstrip('/')}/"
     url = URL(base_url).replace(fragment=f"{r}")
     return parse_obj_as(HttpUrl, f"{url}")
