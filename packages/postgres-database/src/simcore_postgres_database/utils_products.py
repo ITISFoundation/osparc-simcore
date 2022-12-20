@@ -5,10 +5,12 @@
 from typing import Optional, Protocol
 
 import sqlalchemy as sa
-from models_library.users import GroupID
 
 from .models.groups import GroupType, groups
 from .models.products import products
+
+# NOTE: outside this module, use instead packages/models-library/src/models_library/users.py
+_GroupID = int
 
 
 class _DBConnection(Protocol):
@@ -48,16 +50,16 @@ async def get_default_product_name(conn: _DBConnection) -> str:
 
 async def get_product_group_id(
     connection: _DBConnection, product_name: str
-) -> Optional[GroupID]:
+) -> Optional[_GroupID]:
     group_id = await connection.scalar(
         sa.select([products.c.group_id]).where(products.c.name == product_name)
     )
-    return None if group_id is None else GroupID(group_id)
+    return None if group_id is None else _GroupID(group_id)
 
 
 async def get_or_create_product_group(
     connection: _AiopgConnection, product_name: str
-) -> GroupID:
+) -> _GroupID:
     """
     Returns group_id of a product. Creates it if undefined
     """
@@ -82,4 +84,4 @@ async def get_or_create_product_group(
             .where(products.c.name == product_name)
             .values(group_id=group_id)
         )
-        return GroupID(group_id)
+        return _GroupID(group_id)
