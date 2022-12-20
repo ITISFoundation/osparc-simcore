@@ -46,15 +46,12 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
     return new_uuid
 
 
-# TODO: from .projects import get_public_project
 async def get_public_project(app: web.Application, project_uuid: str):
     """
     Returns project if project_uuid is a template and is marked as published, otherwise None
     """
-    from ..projects.projects_db import APP_PROJECT_DBAPI
-
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    prj = await db.get_template_project(-1, project_uuid, only_published=True)
+    db = ProjectDBAPI.get_from_app_context(app)
+    prj = await db.get_template_project(None, project_uuid, only_published=True)
     return prj
 
 
