@@ -90,7 +90,8 @@ class Login:
     two_factor_enabled: bool = False
 
 
-_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(Login()))
+LOGIN_SETTINGS_DEFAULT = Login()
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(LOGIN_SETTINGS_DEFAULT))
 
 
 #

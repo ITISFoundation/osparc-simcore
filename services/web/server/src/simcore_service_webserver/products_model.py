@@ -117,7 +117,7 @@ class Product(BaseModel):
                     "host_regex": r"([\.-]{0,1}osparc[\.-])",
                     "twilio_messaging_sid": "1" * 34,
                     "registration_email_template": "osparc_registration_email",
-                    "login": {
+                    "login_settings": {
                         "two_factor_enabled": False,
                     },
                     # defaults from sqlalchemy table
@@ -138,7 +138,7 @@ class Product(BaseModel):
                     "issues_login_url": None,
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
-                    "login": {
+                    "login_settings": {
                         "two_factor_enabled": False,
                     },
                 },
@@ -188,7 +188,7 @@ class Product(BaseModel):
                             "label": "web-form",
                         },
                     ],
-                    "login": {
+                    "login_settings": {
                         "two_factor_enabled": False,
                     },
                 },
