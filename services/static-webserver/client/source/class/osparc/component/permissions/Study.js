@@ -47,26 +47,20 @@ qx.Class.define("osparc.component.permissions.Study", {
   },
 
   statics: {
-    __canGroupWrite: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["write"];
-      }
-      return false;
-    },
-    canGroupDelete: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["delete"];
-      }
-      return false;
-    },
-
-    canGroupsWrite: function(accessRights, GIDs) {
+    canGroupsWrite: function(accessRights, gIds) {
       let canWrite = false;
-      for (let i=0; i<GIDs.length && !canWrite; i++) {
-        // eslint-disable-next-line no-underscore-dangle
-        canWrite = this.self().__canGroupWrite(accessRights, GIDs[i]);
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
       return canWrite;
+    },
+
+    canGroupDelete: function(accessRights, gid) {
+      if (gid in accessRights) {
+        return accessRights[gid]["delete"];
+      }
+      return false;
     },
 
     getViewerAccessRight: function() {
