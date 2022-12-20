@@ -540,6 +540,7 @@ class ProjectDBAPI:
         project_uuid: str,
         *,
         only_published: bool = False,
+        only_templates: bool = False,
         check_permissions: str = "read",
     ) -> tuple[ProjectDict, ProjectType]:
         async with self.engine.acquire() as conn:
@@ -548,6 +549,7 @@ class ProjectDBAPI:
                 user_id,
                 project_uuid,
                 only_published=only_published,
+                only_templates=only_templates,
                 check_permissions=check_permissions,
             )
             # pylint: disable=no-value-for-parameter
@@ -570,27 +572,6 @@ class ProjectDBAPI:
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
-            # pylint: disable=no-value-for-parameter
-            user_email = await self._get_user_email(conn, project["prj_owner"])
-            return _convert_to_schema_names(project, user_email)
-
-    async def get_template_project(
-        self,
-        user_id: Optional[UserID],
-        project_uuid: str,
-        *,
-        only_published: bool = False,
-        check_permissions: str = "read",
-    ) -> dict:
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(
-                conn,
-                user_id,
-                project_uuid,
-                only_templates=True,
-                only_published=only_published,
-                check_permissions=check_permissions,
-            )
             # pylint: disable=no-value-for-parameter
             user_email = await self._get_user_email(conn, project["prj_owner"])
             return _convert_to_schema_names(project, user_email)
