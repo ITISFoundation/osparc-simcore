@@ -1,7 +1,30 @@
+""" Application's metadata
+
+"""
+from contextlib import suppress
+
 import pkg_resources
 
-# TODO: replace pkg_resources with https://importlib-metadata.readthedocs.io/en/latest/index.html which is backported from py3.7 and 3.8
+_current_distribution = pkg_resources.get_distribution("invitations_maker")
 
-current_distribution = pkg_resources.get_distribution("invitations-maker")
-project_name: str = current_distribution.project_name
-__version__ = current_distribution.version
+PROJECT_NAME: str = _current_distribution.project_name
+
+API_VERSION: str = _current_distribution.version
+MAJOR, MINOR, PATCH = _current_distribution.version.split(".")
+API_VTAG: str = f"v{MAJOR}"
+
+__version__ = _current_distribution.version
+
+
+def get_summary() -> str:
+    with suppress(Exception):
+        try:
+            metadata = _current_distribution.get_metadata_lines("METADATA")
+        except FileNotFoundError:
+            metadata = _current_distribution.get_metadata_lines("PKG-INFO")
+
+        return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
+    return ""
+
+
+SUMMARY: str = get_summary()
