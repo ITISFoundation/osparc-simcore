@@ -146,7 +146,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             allowGrowY: false
           });
           const subtitleLayout = this.getChildControl("subtitle");
-          subtitleLayout.addAt(control, 0, {
+          subtitleLayout.addAt(control, 1, {
             flex: 1
           });
           break;
