@@ -241,9 +241,11 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     canIWrite: function(studyAccessRights) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid) {
-        return osparc.component.permissions.Study.canGroupsWrite(studyAccessRights, [myGid]);
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(myGroupId);
+      if (orgIDs.length) {
+        return osparc.component.permissions.Study.canGroupsWrite(studyAccessRights, (orgIDs));
       }
       return false;
     },
@@ -438,15 +440,11 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __applyAccessRights: function(accessRights) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGid);
-
-      if (myGid && !this.isSnapshot()) {
-        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs);
-        this.setReadOnly(!canIWrite);
-      } else {
+      if (this.isSnapshot()) {
         this.setReadOnly(true);
+      } else {
+        const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
+        this.setReadOnly(!canIWrite);
       }
     },
 
