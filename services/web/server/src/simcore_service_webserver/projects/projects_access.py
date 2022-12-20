@@ -2,6 +2,7 @@ import jsondiff
 from aiohttp import web
 
 from ..security_api import UserRole, get_access_model
+from .projects_db import ProjectDBAPI
 
 
 async def can_update_node_inputs(context):
@@ -9,7 +10,7 @@ async def can_update_node_inputs(context):
 
     Returns True if user has permission to update inputs
     """
-    db = context["dbapi"]
+    db: ProjectDBAPI = context["dbapi"]
     project_uuid = context["project_id"]
     user_id = context["user_id"]
     updated_project = context["new_data"]
@@ -18,7 +19,7 @@ async def can_update_node_inputs(context):
         return False
 
     # get current version
-    current_project = await db.get_user_project(user_id, project_uuid)
+    current_project, _ = await db.get_project(user_id, project_uuid)
 
     diffs = jsondiff.diff(current_project, updated_project)
 

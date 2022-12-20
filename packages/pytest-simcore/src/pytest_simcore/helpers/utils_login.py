@@ -20,6 +20,7 @@ class _UserInfoDictRequired(TypedDict, total=True):
     id: int
     name: str
     email: str
+    primary_gid: str
     raw_password: str
     status: UserStatus
     role: UserRole

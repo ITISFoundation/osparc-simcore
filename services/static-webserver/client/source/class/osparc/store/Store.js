@@ -278,6 +278,14 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    setTemplateState: function(templateId, state) {
+      const templatesWStateCache = this.getTemplates();
+      const idx = templatesWStateCache.findIndex(templateWStateCache => templateWStateCache["uuid"] === templateId);
+      if (idx !== -1) {
+        templatesWStateCache[idx]["state"] = state;
+      }
+    },
+
     deleteStudy: function(studyId) {
       const params = {
         url: {
