@@ -531,11 +531,6 @@ async def post_trigger_connected_service_retrieve(
     )
 
 
-#
-# OPEN PROJECT -------------------------------------------------------------------
-#
-
-
 async def _user_has_another_client_open(
     user_session_id_list: list[UserSessionID], app: web.Application
 ) -> bool:
