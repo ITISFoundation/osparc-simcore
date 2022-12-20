@@ -304,20 +304,21 @@ async def test_share_project(
     ],
 )
 async def test_open_project(
-    client,
-    logged_user,
-    user_project,
-    client_session_id_factory: Callable,
-    expected,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    client_session_id_factory: Callable[[], str],
+    expected: type[web.HTTPException],
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
-    mock_orphaned_services,
+    mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:open
     # open project
+    assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {
@@ -331,7 +332,7 @@ async def test_open_project(
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
-                    client.server.app,
+                    client.app,
                     project_id=user_project["uuid"],
                     service_key=service["key"],
                     service_uuid=service_uuid,
@@ -347,6 +348,102 @@ async def test_open_project(
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
             calls
         )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_open_template_project_for_edition(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_template_project: Callable[..., Awaitable[ProjectDict]],
+    client_session_id_factory: Callable[[], str],
+    expected: type[web.HTTPException],
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services: mock.Mock,
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    # POST /v0/projects/{project_id}:open
+    # open project
+    assert client.app
+    # NOTE: we need write access right to open a template
+    template_project = await create_template_project(
+        accessRights={
+            logged_user["primary_gid"]: {"read": True, "write": True, "delete": False}
+        }
+    )
+    url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected)
+    if resp.status == web.HTTPOk.status_code:
+        dynamic_services = {
+            service_uuid: service
+            for service_uuid, service in template_project["workbench"].items()
+            if "/dynamic/" in service["key"]
+        }
+        calls = []
+        request_scheme = resp.url.scheme
+        request_dns = f"{resp.url.host}:{resp.url.port}"
+        for service_uuid, service in dynamic_services.items():
+            calls.append(
+                call(
+                    client.app,
+                    project_id=template_project["uuid"],
+                    service_key=service["key"],
+                    service_uuid=service_uuid,
+                    service_version=service["version"],
+                    user_id=logged_user["id"],
+                    request_scheme=request_scheme,
+                    request_dns=request_dns,
+                    service_resources=ServiceResourcesDictHelpers.create_jsonable(
+                        mock_service_resources
+                    ),
+                )
+            )
+        mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
+            calls
+        )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPForbidden),
+        (UserRole.TESTER, web.HTTPForbidden),
+    ],
+)
+async def test_open_template_project_for_edition_with_missing_write_rights(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_template_project: Callable[..., Awaitable[ProjectDict]],
+    client_session_id_factory: Callable[[], str],
+    expected: type[web.HTTPException],
+    mocked_director_v2_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_orphaned_services: mock.Mock,
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    # POST /v0/projects/{project_id}:open
+    # open project
+    assert client.app
+    # NOTE: we need write access right to open a template
+    template_project = await create_template_project(
+        accessRights={
+            logged_user["primary_gid"]: {"read": True, "write": False, "delete": True}
+        }
+    )
+    url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected)
 
 
 def standard_user_role() -> tuple[str, tuple]:

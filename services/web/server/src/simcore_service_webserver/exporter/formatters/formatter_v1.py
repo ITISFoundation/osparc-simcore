@@ -151,7 +151,6 @@ async def generate_directory_contents(
             app=app,
             project_uuid=project_id,
             user_id=user_id,
-            include_templates=True,
             include_state=True,
         )
     except ProjectsException as e:

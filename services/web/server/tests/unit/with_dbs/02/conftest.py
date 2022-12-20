@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import contextlib
 import re
 from contextlib import AsyncExitStack
 from copy import deepcopy
@@ -171,6 +172,45 @@ async def template_project(
         print("-----> added template project", template_project["name"])
         yield template_project
         print("<----- removed template project", template_project["name"])
+
+
+@pytest.fixture
+async def create_template_project(
+    client,
+    fake_project,
+    logged_user,
+    all_group: dict[str, str],
+    tests_data_dir: Path,
+    osparc_product_name: str,
+) -> AsyncIterator[Callable[..., Awaitable[ProjectDict]]]:
+    created_projects_exit_stack = contextlib.AsyncExitStack()
+
+    async def _creator(**prj_kwargs) -> ProjectDict:
+        project_data = deepcopy(fake_project)
+        project_data["name"] = "Fake template"
+        project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
+        project_data["accessRights"] = {
+            str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+        }
+        project_data |= prj_kwargs
+
+        new_template_project = await created_projects_exit_stack.enter_async_context(
+            NewProject(
+                project_data,
+                client.app,
+                user_id=None,
+                product_name=osparc_product_name,
+                clear_all=True,
+                tests_data_dir=tests_data_dir,
+                as_template=True,
+            )
+        )
+        print("-----> added template project", new_template_project["name"])
+        return new_template_project
+
+    yield _creator
+    await created_projects_exit_stack.aclose()
+    print("<---- removed all created template projects")
 
 
 @pytest.fixture

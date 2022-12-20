@@ -471,7 +471,6 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 app=app,
                 project_uuid=project_uuid,
                 user_id=user_id,
-                include_templates=True,
             )
         except (web.HTTPNotFound, ProjectNotFoundError) as err:
             logger.warning(
