@@ -122,7 +122,6 @@ async def login(request: web.Request):
         return response
 
     # create 2FA
-    # FIXME: product.two_factor_enable requires also some settings in place!!!!
     assert user["phone"]  # nosec
     assert product.login_settings.two_factor_enabled and settings.LOGIN_TWILIO  # nosec
     assert (  # nosec
