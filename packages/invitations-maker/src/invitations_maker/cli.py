@@ -1,24 +1,53 @@
 from typing import Optional
 
+import rich
 import typer
 from cryptography.fernet import Fernet
 from pydantic import EmailStr, parse_obj_as
 
+from ._meta import __version__
 from .invitations import InvitationData, create_invitation_link
 from .settings import ApplicationSettings
 
-main = typer.Typer()
+app = typer.Typer()
 
 
-@main.command()
-def start():
+def version_callback(value: bool):
+    if value:
+        rich.print(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    ctx: typer.Context,
+    version: Optional[bool] = (
+        typer.Option(
+            None,
+            "--version",
+            callback=version_callback,
+            is_eager=True,
+        ),
+    ),
+):
+    """o2s2parc invitation maker"""
+    assert version or not version  # nosec
+    print(ctx)
+
+
+@app.command()
+def start(
+    ctx: typer.Context,
+):
     """Starts invitation links http server"""
     settings = ApplicationSettings()
     print("Starting server")
 
 
-@main.command()
-def generate_key():
+@app.command()
+def generate_key(
+    ctx: typer.Context,
+):
     """Generates secret key
 
     Example:
@@ -27,8 +56,9 @@ def generate_key():
     print(Fernet.generate_key().decode())
 
 
-@main.command()
+@app.command()
 def invite(
+    ctx: typer.Context,
     email: Optional[str] = typer.Option(
         None,
         callback=lambda v: parse_obj_as(EmailStr, v),
@@ -66,7 +96,3 @@ def invite(
         base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
     )
     print(invitation_link)
-
-
-if __name__ == "__main__":
-    main()
