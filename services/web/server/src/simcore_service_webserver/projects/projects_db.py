@@ -445,7 +445,7 @@ class ProjectDBAPI:
     async def _get_project(
         self,
         connection: SAConnection,
-        user_id: Optional[UserID],
+        user_id: UserID,
         project_uuid: str,
         exclude_foreign: Optional[list[str]] = None,
         for_update: bool = False,
@@ -564,9 +564,10 @@ class ProjectDBAPI:
             )
             # pylint: disable=no-value-for-parameter
             user_email = await self._get_user_email(conn, project["prj_owner"])
+            project_type = ProjectType(project[projects.c.type.name])
             return (
                 _convert_to_schema_names(project, user_email),
-                ProjectType(project[projects.c.type]),
+                project_type,
             )
 
     async def patch_user_project_workbench(
