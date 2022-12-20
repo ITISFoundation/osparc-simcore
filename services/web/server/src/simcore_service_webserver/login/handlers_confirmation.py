@@ -13,6 +13,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
+from ..products import Product, get_current_product
 from ..security_api import encrypt_password
 from ..utils import MINUTE
 from ..utils_aiohttp import create_redirect_response
@@ -139,8 +140,12 @@ class PhoneConfirmationBody(InputSchema):
 async def phone_confirmation(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
+    product: Product = get_current_product(request)
 
-    if not settings.LOGIN_2FA_REQUIRED:
+    two_factor_enabled = product.login.get(
+        "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
+    )
+    if not two_factor_enabled:
         raise web.HTTPServiceUnavailable(
             reason="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,

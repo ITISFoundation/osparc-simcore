@@ -80,13 +80,15 @@ class Forum(TypedDict, total=True):
 
 
 class Login(TypedDict, total=True):
-    registration_invitation_required: bool
-    two_factor_auth_required: bool
+    """Login plugin settings customized for this product
+
+    Every item overrides a field in simcore_service_webserver.login.settings.LoginSettings
+    """
+
+    two_factor_enabled: bool  # overrides LOGIN_2FA_REQUIRED
 
 
-_LOGIN_DEFAULT = Login(
-    registration_invitation_required=True, two_factor_auth_required=False
-)
+_DEFAULT_LOGIN = Login(two_factor_enabled=False)
 
 
 #
@@ -160,7 +162,7 @@ products = sa.Table(
         "login",
         JSONB,
         nullable=False,
-        server_default=text(f"'{json.dumps(_LOGIN_DEFAULT)}'::jsonb"),
+        server_default=text(f"'{json.dumps(_DEFAULT_LOGIN)}'::jsonb"),
         doc="Login/registration settings: Login",
     ),
     sa.Column(

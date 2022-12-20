@@ -43,7 +43,8 @@ class LoginSettings(BaseCustomSettings):
 
     LOGIN_2FA_REQUIRED: bool = Field(
         default=False,
-        description="Enforces two-factor-authentication for all user's during login",
+        description="Use products.login.two_factor_enabled instead",
+        deprecated=True,
     )
 
     LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
