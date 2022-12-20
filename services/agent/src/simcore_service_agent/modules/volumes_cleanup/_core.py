@@ -37,7 +37,7 @@ async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
                     s3_parallelism=settings.AGENT_VOLUMES_CLEANUP_PARALLELISM,
                     exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
                 )
-            except RuntimeError as e:
+            except Exception as e:  # pylint:disable=broad-except
                 logger.error("%s", e)
                 continue
 
