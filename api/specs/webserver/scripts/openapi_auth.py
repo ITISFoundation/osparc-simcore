@@ -34,6 +34,7 @@ from simcore_service_webserver.login.handlers_confirmation import (
 from simcore_service_webserver.login.handlers_registration import (
     RegisterBody,
     RegisterPhoneBody,
+    RegisterPhoneNextPage,
 )
 
 app = FastAPI(redoc_url=None)
@@ -55,9 +56,9 @@ async def register(registration: RegisterBody):
 
 @app.post(
     "/auth/verify-phone-number",
-    response_model=Envelope[Log],
+    response_model=Envelope[RegisterPhoneNextPage],
     tags=TAGS,
-    operation_id="auth_verify_2fa_phone",
+    operation_id="auth_register_phone",
 )
 async def register_phone(registration: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
@@ -67,7 +68,7 @@ async def register_phone(registration: RegisterPhoneBody):
     "/auth/validate-code-register",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="auth_validate_2fa_register",
+    operation_id="auth_phone_confirmation",
 )
 async def phone_confirmation(confirmation: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""
@@ -111,7 +112,7 @@ async def login_2fa(authentication: LoginTwoFactorAuthBody):
     "/auth/two_factor:resend",
     response_model=Envelope[Log],
     tags=TAGS,
-    operation_id="resend_2fa_code",
+    operation_id="auth_resend_2fa_code",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],

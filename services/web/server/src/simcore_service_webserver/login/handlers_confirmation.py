@@ -135,7 +135,7 @@ class PhoneConfirmationBody(InputSchema):
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
-@routes.post("/auth/validate-code-register", name="auth_validate_2fa_register")
+@routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
     settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
