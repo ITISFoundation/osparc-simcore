@@ -69,10 +69,12 @@ def _setup_login_options(app: web.Application):
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
 
-def _validate_products_login_settings(app: web.Application):
+async def _validate_products_login_settings(app: web.Application):
     """
-    Some of the LoginSettings need to be in sync with product.login_settings
+    - Some of the LoginSettings need to be in sync with product.login_settings
     This in ensured here.
+
+    - Needs products plugin initialized (otherwise list_products does not work)
     """
     settings: LoginSettings = get_plugin_settings(app)
     errors = {}
@@ -101,10 +103,7 @@ def setup_login(app: web.Application):
 
     setup_db(app)
     setup_redis(app)
-
     setup_products(app)
-    _validate_products_login_settings(app)
-
     setup_rest(app)
     setup_email(app)
 
@@ -115,5 +114,7 @@ def setup_login(app: web.Application):
 
     _setup_login_options(app)
     setup_login_storage(app)
+
+    app.on_startup.append(_validate_products_login_settings)
 
     return True
