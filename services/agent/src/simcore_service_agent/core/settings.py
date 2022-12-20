@@ -15,7 +15,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     SC_BOOT_MODE: Optional[BootModeEnum]
 
-    AGENT_VOLUMES_CLEANUP_TARGE_SWARM_STACK_NAME: str = Field(
+    AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
     AGENT_VOLUMES_CLEANUP_S3_SECURE: bool = False

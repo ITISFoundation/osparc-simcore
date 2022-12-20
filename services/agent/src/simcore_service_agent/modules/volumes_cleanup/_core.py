@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 async def backup_and_remove_volumes(settings: ApplicationSettings) -> None:
     async with docker_client() as client:
         dyv_volumes: list[dict] = await get_dyv_volumes(
-            client, settings.AGENT_VOLUMES_CLEANUP_TARGE_SWARM_STACK_NAME
+            client, settings.AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME
         )
 
         if len(dyv_volumes) == 0:
