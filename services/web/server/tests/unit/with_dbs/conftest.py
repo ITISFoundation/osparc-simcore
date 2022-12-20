@@ -13,6 +13,7 @@
 import asyncio
 import sys
 import textwrap
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Iterator, Optional, Union
@@ -41,6 +42,8 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.common_aiopg_utils import DSN
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.groups import GroupType, groups
+from simcore_postgres_database.models.products import products
 from simcore_service_webserver import catalog
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -51,6 +54,7 @@ from simcore_service_webserver.groups_api import (
     list_user_groups,
 )
 from simcore_service_webserver.login.settings import LoginOptions
+from sqlalchemy import MetaData
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -393,6 +397,19 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
+@contextmanager
+def _foreign_key_checks(engine, enabled=True):
+    # Disable foreign key constraints
+    with engine.begin() as conn:
+        conn.execute("SET CONSTRAINTS ALL DEFERRED")
+    try:
+        yield
+    finally:
+        # Enable foreign key constraints
+        with engine.begin() as conn:
+            conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
 @pytest.fixture(scope="function")
 def postgres_db(
     postgres_dsn: dict, postgres_service: str
@@ -411,13 +428,35 @@ def postgres_db(
 
     yield engine
 
-    assert pg_cli.downgrade.callback
-    pg_cli.downgrade.callback("base")
-    assert pg_cli.clean.callback
-    pg_cli.clean.callback()
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    tables = metadata.tables.values()
 
-    orm.metadata.drop_all(engine)
-    engine.dispose()
+    # Truncate all the tables
+    with _foreign_key_checks(engine, enabled=False):
+        with engine.begin() as conn:
+            for table in tables:
+                if table.name == groups.name:
+                    # everyone group cannot be deleted
+                    conn.execute(
+                        groups.delete().where(groups.c.type != GroupType.EVERYONE)
+                    )
+                elif table.name == products.name:
+                    # there is a default entry
+                    conn.execute(products.delete().where(products.c.name != "osparc"))
+                elif table.name == "alembic_version":
+                    # this should not be touched
+                    continue
+                else:
+                    conn.execute(table.delete())
+
+    # assert pg_cli.downgrade.callback
+    # pg_cli.downgrade.callback("base")
+    # assert pg_cli.clean.callback
+    # pg_cli.clean.callback()
+
+    # orm.metadata.drop_all(engine)
+    # engine.dispose()
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
