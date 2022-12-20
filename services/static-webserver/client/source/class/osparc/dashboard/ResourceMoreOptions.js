@@ -285,16 +285,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
       const page = this.__permissionsPage = this.__createPage(title, permissionsView, icon, id);
 
-      const toOrganizationsButton = new qx.ui.form.Button(this.tr("Open Organizations...")).set({
-        allowGrowX: false
-      });
-      osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(toOrganizationsButton);
-      toOrganizationsButton.addListener("execute", () => {
-        const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
-        preferencesWindow.openOrganizations();
-      }, this);
-      page.addAt(toOrganizationsButton, 0);
-
       return page;
     },
 
