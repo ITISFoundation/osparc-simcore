@@ -111,6 +111,13 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
   },
 
   statics: {
+    openWindow: function() {
+      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
+      preferencesWindow.center();
+      preferencesWindow.open();
+      return preferencesWindow;
+    },
+
     evaluateOrganizationsButton: function(btn) {
       if (!osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
         btn.exclude();

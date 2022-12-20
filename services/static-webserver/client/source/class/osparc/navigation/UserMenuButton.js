@@ -55,9 +55,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     },
 
     openPreferences: function() {
-      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
-      preferencesWindow.center();
-      preferencesWindow.open();
+      const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
       return preferencesWindow;
     }
   },
