@@ -5,34 +5,84 @@ const SCREENSHOTS_DIR = "../screenshots/";
 const DEFAULT_TIMEOUT = 60000;
 
 function parseCommandLineArguments(args) {
-  // node $tutorial.js [url] [user] [password] [--demo]
+  // node $tutorial.js
+  // url
+  // --user [user]
+  // --pass [pass]
+  // --n_users [nUsers]
+  // --user_prefix [userPrefix]
+  // --user_suffix [userSuffix]
+  // --start_timeout [startTimeout]
+  // --demo
 
   if (args.length < 1) {
-    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [start_timeout] [--demo]');
+    console.log('More arguments expected');
     process.exit(1);
   }
 
   const url = args[0];
-  const {
-    user,
-    pass,
-    newUser
-  } = getUserAndPass(args);
-  const startTimeout = args.length > 3 ? args[3] : DEFAULT_TIMEOUT;
-  const enableDemoMode = args.includes("--demo");
+
+  let user = null;
+  const userIdx = args.indexOf('--user');
+  if (userIdx > -1) {
+    user = args[userIdx + 1];
+  }
+
+  let pass = null;
+  const passIdx = args.indexOf('--pass');
+  if (passIdx > -1) {
+    pass = args[passIdx + 1];
+  }
+
+  let nUsers = null;
+  const nUsersIdx = args.indexOf('--n_users');
+  if (nUsersIdx > -1) {
+    nUsers = args[nUsersIdx + 1];
+  }
+
+  let userPrefix = null;
+  const userPrefixIdx = args.indexOf('--user_prefix');
+  if (userPrefixIdx > -1) {
+    userPrefix = args[userPrefixIdx + 1];
+  }
+
+  let userSuffix = null;
+  const userSuffixIdx = args.indexOf('--user_suffix');
+  if (userSuffixIdx > -1) {
+    userSuffix = args[userSuffixIdx + 1];
+  }
+
+  let startTimeout = DEFAULT_TIMEOUT;
+  const startTimeoutIdx = args.indexOf('--start_timeout');
+  if (startTimeoutIdx > -1) {
+    startTimeout = args[startTimeoutIdx + 1];
+  }
+
+  const enableDemoMode = (args.indexOf("--demo") > -1);
+
+  let newUser = false;
+  if (pass === null) {
+    const newCredentials = getUserAndPass(args);
+    user = newCredentials.user;
+    pass = newCredentials.pass;
+    newUser = true;
+  }
 
   return {
     url,
     user,
     pass,
     newUser,
+    nUsers,
+    userPrefix,
+    userSuffix,
     startTimeout,
     enableDemoMode
   }
 }
 
-function parseCommandLineArgumentsTemplate(args) {
-  // node $template.js [url] [template_uuid] [start_timeout] [--demo]
+function parseCommandLineArgumentsAnonymous(args) {
+  // node $template.js [url_prefix] [template_uuid] [start_timeout] [--demo]
 
   if (args.length < 3) {
     console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [start_timeout] [--demo]');
@@ -562,7 +612,7 @@ module.exports = {
   takeScreenshot,
   extractWorkbenchData,
   parseCommandLineArguments,
-  parseCommandLineArgumentsTemplate,
+  parseCommandLineArgumentsAnonymous,
   parseCommandLineArgumentsStudyDispatcherParams,
   getGrayLogSnapshotUrl,
   typeInInputElement,
