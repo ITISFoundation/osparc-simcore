@@ -69,8 +69,11 @@ def _setup_login_options(app: web.Application):
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
 
-def _check_products_login_settings(app: web.Application):
-    # checks products have correct settings
+def _validate_products_login_settings(app: web.Application):
+    """
+    Some of the LoginSettings need to be in sync with product.login_settings
+    This in ensured here.
+    """
     settings: LoginSettings = get_plugin_settings(app)
     errors = {}
     for product in list_products(app):
@@ -100,7 +103,7 @@ def setup_login(app: web.Application):
     setup_redis(app)
 
     setup_products(app)
-    _check_products_login_settings(app)
+    _validate_products_login_settings(app)
 
     setup_rest(app)
     setup_email(app)
