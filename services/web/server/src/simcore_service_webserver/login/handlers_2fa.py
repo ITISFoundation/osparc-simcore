@@ -81,9 +81,7 @@ async def resend_2fa_code(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
-    if not product.login_settings.get(
-        "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
-    ):
+    if not product.login_settings.two_factor_enabled:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,

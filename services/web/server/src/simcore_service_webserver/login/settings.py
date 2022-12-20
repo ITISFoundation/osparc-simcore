@@ -43,7 +43,7 @@ class LoginSettings(BaseCustomSettings):
 
     LOGIN_2FA_REQUIRED: bool = Field(
         default=False,
-        description="Use products.login.two_factor_enabled instead",
+        description="DEPRECATED: Use products.login.two_factor_enabled instead",
         deprecated=True,
     )
 

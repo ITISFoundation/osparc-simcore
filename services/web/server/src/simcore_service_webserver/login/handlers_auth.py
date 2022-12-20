@@ -98,10 +98,7 @@ async def login(request: web.Request):
 
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
-    two_factor_enabled = product.login_settings.get(
-        "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
-    )
-    if has_privileges or not two_factor_enabled:
+    if has_privileges or not product.login_settings.two_factor_enabled:
         response = await login_granted_response(request, user=user)
         return response
 
@@ -127,8 +124,10 @@ async def login(request: web.Request):
     # create 2FA
     # FIXME: product.two_factor_enable requires also some settings in place!!!!
     assert user["phone"]  # nosec
-    assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
-    assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
+    assert product.login_settings.two_factor_enabled and settings.LOGIN_TWILIO  # nosec
+    assert (  # nosec
+        product.login_settings.two_factor_enabled and product.twilio_messaging_sid
+    )
 
     try:
         code = await create_2fa_code(app=request.app, user_email=user["email"])
@@ -188,14 +187,10 @@ class LoginTwoFactorAuthBody(InputSchema):
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
-    settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
-    two_factor_enabled = product.login_settings.get(
-        "two_factor_enabled", settings.LOGIN_2FA_REQUIRED
-    )
-    if not two_factor_enabled:
+    if not product.login_settings.two_factor_enabled:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,

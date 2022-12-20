@@ -3,6 +3,7 @@ import logging
 
 import asyncpg
 from aiohttp import web
+from pydantic import ValidationError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_OPENAPI_SPECS_KEY, INDEX_RESOURCE_NAME
@@ -12,11 +13,16 @@ from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email
 from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
-from ..products import setup_products
+from ..products import list_products, setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest
 from .routes import create_routes
-from .settings import APP_LOGIN_OPTIONS_KEY, LoginOptions
+from .settings import (
+    APP_LOGIN_OPTIONS_KEY,
+    LoginOptions,
+    LoginSettings,
+    get_plugin_settings,
+)
 from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 
 log = logging.getLogger(__name__)
@@ -63,6 +69,24 @@ def _setup_login_options(app: web.Application):
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
 
+def _check_products_login_settings(app: web.Application):
+    # checks products have correct settings
+    settings: LoginSettings = get_plugin_settings(app)
+    errors = {}
+    for product in list_products(app):
+        try:
+            cfg = settings.dict(exclude={"LOGIN_2FA_REQUIRED"})
+            _ = LoginSettings(
+                LOGIN_2FA_REQUIRED=product.login_settings.two_factor_enabled, **cfg
+            )
+        except ValidationError as err:
+            errors[product.name] = err
+
+    if errors:
+        msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
+        raise ValueError(f"Invalid product.login_settings:\n{msg}")
+
+
 @app_module_setup(
     "simcore_service_webserver.login",
     ModuleCategory.ADDON,
@@ -74,7 +98,10 @@ def setup_login(app: web.Application):
 
     setup_db(app)
     setup_redis(app)
+
     setup_products(app)
+    _check_products_login_settings(app)
+
     setup_rest(app)
     setup_email(app)
 
@@ -85,4 +112,5 @@ def setup_login(app: web.Application):
 
     _setup_login_options(app)
     setup_login_storage(app)
+
     return True
