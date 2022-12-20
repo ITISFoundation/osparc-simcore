@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
 
     this._serializedData = serializedData;
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
 
@@ -77,6 +77,21 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             flex: 1
           });
           break;
+        case "open-organizations-btn":
+          control = new qx.ui.form.Button(this.tr("Organizations...")).set({
+            allowGrowY: false,
+            allowGrowX: false,
+            icon: osparc.dashboard.CardBase.SHARED_ORGS
+          });
+          osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(control);
+          control.addListener("execute", () => {
+            const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
+            preferencesWindow.openOrganizations();
+          }, this);
+          this._add(control, {
+            flex: 1
+          });
+          break;
         case "study-link":
           control = this.__createStudyLinkSection();
           this._add(control);
@@ -88,6 +103,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
 
     __buildLayout: function() {
       this._createChildControlImpl("add-collaborator");
+      this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
     },
