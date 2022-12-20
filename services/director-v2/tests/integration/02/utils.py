@@ -211,7 +211,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     # patch the endppoint inside the scheduler
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
     endpoint: Optional[str] = None
-    async with scheduler._lock:  # pylint: disable=protected-access
+    async with scheduler._scheduler._lock:  # pylint: disable=protected-access
         for (
             scheduler_data
         ) in (  # pylint: disable=protected-access
