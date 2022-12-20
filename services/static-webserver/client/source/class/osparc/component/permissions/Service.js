@@ -82,13 +82,8 @@ qx.Class.define("osparc.component.permissions.Service", {
   },
 
   members: {
-    _isUserOwner: function() {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this._serializedData["accessRights"];
-      if (myGid in aceessRights) {
-        return aceessRights[myGid]["write_access"];
-      }
-      return false;
+    _canIWrite: function() {
+      return osparc.utils.Services.canIWrite(this._serializedData["accessRights"]);
     },
 
     _addCollaborator: function() {

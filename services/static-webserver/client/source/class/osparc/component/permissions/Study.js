@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.permissions.Study", {
     __studyData: null,
     __resourceType: null,
 
-    _isUserOwner: function() {
+    _canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]);
     },
 
