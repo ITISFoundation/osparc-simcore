@@ -69,6 +69,27 @@ def test_resources_add(a: Resources, b: Resources, result: Resources):
     assert a == result
 
 
+@pytest.mark.parametrize(
+    "a,b,result",
+    [
+        (
+            Resources(cpus=0, ram=ByteSize(0)),
+            Resources(cpus=1, ram=ByteSize(34)),
+            Resources.construct(cpus=-1, ram=ByteSize(-34)),
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(-1)),
+            Resources(cpus=1, ram=ByteSize(34)),
+            Resources.construct(cpus=-0.9, ram=ByteSize(-35)),
+        ),
+    ],
+)
+def test_resources_sub(a: Resources, b: Resources, result: Resources):
+    assert a - b == result
+    a -= b
+    assert a == result
+
+
 async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_raises(
     async_docker_client: aiodocker.Docker,
     create_service: Callable[[dict[str, Any], dict[str, Any], str], Awaitable[Service]],
