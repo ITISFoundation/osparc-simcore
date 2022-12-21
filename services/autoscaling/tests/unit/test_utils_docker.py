@@ -28,6 +28,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
+    compute_tasks_needed_resources,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
@@ -412,6 +413,27 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
     assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
         cpus=host_cpu_count, ram=parse_obj_as(ByteSize, "100Mib")
     )
+
+
+async def test_compute_tasks_needed_resources(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    host_cpu_count: int,
+    faker: Faker,
+):
+    service_with_no_resources = await create_service(task_template, {}, "running")
+    service_tasks = parse_obj_as(
+        list[Task],
+        await autoscaling_docker.tasks.list(
+            filters={"service": service_with_no_resources.Spec.Name}
+        ),
+    )
+    assert compute_tasks_needed_resources(service_tasks) == Resources.create_as_empty()
 
 
 async def test_compute_node_used_resources_with_no_service(
