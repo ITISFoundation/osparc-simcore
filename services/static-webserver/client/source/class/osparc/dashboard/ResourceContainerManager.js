@@ -197,6 +197,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
       card.setMenu(menu);
       card.subscribeToFilterGroup("searchBarFilter");
+
+      [
+        "updateStudy",
+        "updateTemplate",
+        "updateService",
+        "publishTemplate"
+      ].forEach(ev => card.addListener(ev, e => this.fireDataEvent(ev, e.getData())));
+
       return card;
     },
 
