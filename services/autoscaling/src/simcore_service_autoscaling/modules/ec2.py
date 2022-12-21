@@ -16,7 +16,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
-from types_aiobotocore_ec2.type_defs import ReservationTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
     ConfigurationError,
@@ -31,13 +31,6 @@ from ..utils.ec2 import compose_user_data
 InstancePrivateDNSName = str
 
 logger = logging.getLogger(__name__)
-
-
-def _is_ec2_instance_running(instance: ReservationTypeDef):
-    return (
-        instance.get("Instances", [{}])[0].get("State", {}).get("Name", "not_running")
-        == "running"
-    )
 
 
 @dataclass(frozen=True)
@@ -119,7 +112,7 @@ class AutoscalingEC2:
             msg=f"launching AWS instance {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            filters = [
+            filters: list[FilterTypeDef] = [
                 {"Name": "tag-key", "Values": [tag_key]} for tag_key in tags.keys()
             ]
             filters.append(
