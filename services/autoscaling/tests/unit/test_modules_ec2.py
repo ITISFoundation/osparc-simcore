@@ -140,6 +140,7 @@ async def test_start_aws_instance(
         instance_type,
         tags=tags,
         startup_script=startup_script,
+        number_of_instances=1,
     )
 
     # check we have that now in ec2
@@ -183,6 +184,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
             faker.pystr(),
             tags=tags,
             startup_script=startup_script,
+            number_of_instances=1,
         )
 
     # now creating one more shall fail
@@ -192,6 +194,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
             faker.pystr(),
             tags=tags,
             startup_script=startup_script,
+            number_of_instances=1,
         )
 
 
@@ -239,19 +242,23 @@ async def test_get_running_instance(
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    created_instance = await autoscaling_ec2.start_aws_instance(
+    created_instances = await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
+        number_of_instances=1,
     )
+    assert len(created_instances) == 1
 
     instance_received = await autoscaling_ec2.get_running_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
         tag_keys=list(tags.keys()),
-        instance_host_name=created_instance.aws_private_dns.split(".ec2.internal")[0],
+        instance_host_name=created_instances[0].aws_private_dns.split(".ec2.internal")[
+            0
+        ],
     )
-    assert created_instance == instance_received
+    assert created_instances[0] == instance_received
 
 
 async def test_terminate_instance(
@@ -273,17 +280,19 @@ async def test_terminate_instance(
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    created_instance = await autoscaling_ec2.start_aws_instance(
+    created_instances = await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
+        number_of_instances=1,
     )
+    assert len(created_instances) == 1
 
     # terminate the instance
-    await autoscaling_ec2.terminate_instance(created_instance)
+    await autoscaling_ec2.terminate_instance(created_instances[0])
     # calling it several times is ok, the instance stays a while
-    await autoscaling_ec2.terminate_instance(created_instance)
+    await autoscaling_ec2.terminate_instance(created_instances[0])
 
 
 async def test_terminate_instance_not_existing_raises(

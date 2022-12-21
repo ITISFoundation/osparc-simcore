@@ -16,10 +16,24 @@ class Resources(BaseModel):
     def __ge__(self, other: "Resources") -> bool:
         return self.cpus >= other.cpus and self.ram >= other.ram
 
+    def __gt__(self, other: "Resources") -> bool:
+        return self.cpus > other.cpus and self.ram > other.ram
+
+    def __lt__(self, other: "Resources") -> bool:
+        return self.cpus < other.cpus and self.ram < other.ram
+
     def __add__(self, other: "Resources") -> "Resources":
         return Resources.construct(
             **{
                 key: a + b
+                for (key, a), b in zip(self.dict().items(), other.dict().values())
+            }
+        )
+
+    def __sub__(self, other: "Resources") -> "Resources":
+        return Resources.construct(
+            **{
+                key: a - b
                 for (key, a), b in zip(self.dict().items(), other.dict().values())
             }
         )

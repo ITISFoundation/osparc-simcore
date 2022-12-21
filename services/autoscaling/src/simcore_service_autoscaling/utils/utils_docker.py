@@ -186,6 +186,13 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
     return Resources(cpus=0, ram=ByteSize(0))
 
 
+def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:
+    total = Resources.create_as_empty()
+    for t in tasks:
+        total += get_max_resources_from_docker_task(t)
+    return total
+
+
 async def compute_node_used_resources(
     docker_client: AutoscalingDocker,
     node: Node,
