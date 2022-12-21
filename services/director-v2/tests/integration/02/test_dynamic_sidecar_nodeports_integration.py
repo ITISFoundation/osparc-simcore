@@ -716,7 +716,7 @@ async def _wait_for_dy_services_to_fully_stop(
 ) -> None:
     # pylint: disable=protected-access
     to_observe = (
-        director_v2_client._transport.app.state.dynamic_sidecar_scheduler._to_observe
+        director_v2_client._transport.app.state.dynamic_sidecar_scheduler._scheduler._to_observe
     )
     # TODO: ANE please use tenacity
     for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
