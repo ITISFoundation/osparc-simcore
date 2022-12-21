@@ -89,6 +89,20 @@ async def test_ec2_client_when_ec2_server_goes_up_and_down(
     await ec2_client.describe_account_attributes(DryRun=True)
 
 
+async def test_ping(
+    mocked_aws_server: ThreadedMotoServer,
+    mocked_aws_server_envs: None,
+    aws_allowed_ec2_instance_type_names: list[str],
+    app_settings: ApplicationSettings,
+    autoscaling_ec2: AutoscalingEC2,
+):
+    assert await autoscaling_ec2.ping() is True
+    mocked_aws_server.stop()
+    assert await autoscaling_ec2.ping() is False
+    mocked_aws_server.start()
+    assert await autoscaling_ec2.ping() is True
+
+
 async def test_get_ec2_instance_capabilities(
     mocked_aws_server_envs: None,
     aws_allowed_ec2_instance_type_names: list[str],
