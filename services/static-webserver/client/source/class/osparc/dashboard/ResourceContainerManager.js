@@ -54,6 +54,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
+    "updateService": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
   },
