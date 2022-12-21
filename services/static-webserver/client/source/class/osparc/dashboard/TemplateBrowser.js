@@ -194,7 +194,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __getEditTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(templateData["accessRights"]);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -205,7 +205,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __getDeleteTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
+      const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
       if (!isCurrentUserOwner) {
         return null;
       }

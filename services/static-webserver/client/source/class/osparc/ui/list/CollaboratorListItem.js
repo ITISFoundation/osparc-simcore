@@ -102,11 +102,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         return;
       }
       const subtitle = this.getChildControl("contact");
-      const isOwner = osparc.component.permissions.Permissions.canDelete(value);
-      const isCollaborator = osparc.component.permissions.Permissions.canWrite(value);
-      if (isOwner) {
+      const canDelete = osparc.component.permissions.Permissions.canDelete(value);
+      const canWrite = osparc.component.permissions.Permissions.canWrite(value);
+      if (canDelete) {
         subtitle.setValue(this.tr("Owner"));
-      } else if (isCollaborator) {
+      } else if (canWrite) {
         subtitle.setValue(this.tr("Collaborator"));
       } else {
         subtitle.setValue(this.tr("Viewer"));

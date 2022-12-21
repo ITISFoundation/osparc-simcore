@@ -179,7 +179,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       const study = this.getStudy();
       if (study) {
         const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
-        osparc.data.model.Study.isOwner(study) && osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
+        osparc.data.model.Study.canIWrite(study.getAccessRights()) && osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
         if (!study.getWorkbench().isPipelineLinear()) {
           editSlideshowButtons.exclude();
         }

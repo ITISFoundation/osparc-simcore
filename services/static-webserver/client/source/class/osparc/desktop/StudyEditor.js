@@ -192,13 +192,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             });
 
           osparc.data.Resources.get("organizations")
-            .then(resp => {
-              const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-              const orgs = resp["organizations"];
-              const orgIDs = [myGroupId];
-              orgs.forEach(org => orgIDs.push(org["gid"]));
-
-              if (osparc.component.permissions.Study.canGroupsWrite(study.getAccessRights(), orgIDs)) {
+            .then(() => {
+              if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
                 this.__startAutoSaveTimer();
               } else {
                 const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
@@ -607,10 +602,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     updateStudyDocument: function(run = false) {
-      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGrpId);
-      if (!osparc.component.permissions.Study.canGroupsWrite(this.getStudy().getAccessRights(), orgIDs)) {
+      if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
         });

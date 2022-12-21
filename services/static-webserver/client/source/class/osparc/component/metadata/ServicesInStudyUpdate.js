@@ -112,10 +112,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     _populateRows: function() {
       this.base(arguments);
 
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGroupId);
-      const canIWriteStudy = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
+      const canIWriteStudy = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
 
       const updatableServices = [];
       let i = 0;
