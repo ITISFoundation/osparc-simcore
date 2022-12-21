@@ -197,6 +197,42 @@ async def _try_scale_up_with_drained_nodes(
     return False
 
 
+def _try_assigning_task_to_instances(
+    pending_task: Task, list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]]
+) -> bool:
+    for instance, instance_assigned_tasks in list_of_instance_to_tasks:
+        instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
+        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
+            instance_assigned_tasks
+        )
+        if (
+            instance_total_resource - tasks_needed_resources
+        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
+            instance_assigned_tasks.append(pending_task)
+            return True
+    return False
+
+
+async def _wait_and_tag_node(
+    app: FastAPI, app_settings: ApplicationSettings, node_name: str
+) -> None:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    new_node = await utils_docker.wait_for_node(get_docker_client(app), node_name)
+    await utils_docker.tag_node(
+        get_docker_client(app),
+        new_node,
+        tags={
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        }
+        | {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        },
+        available=True,
+    )
+
+
 async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
@@ -213,37 +249,25 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     # some instances might be able to run several tasks
     list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
-        # 1. check if one of the new instances has enough resources remaining for that task
-        task_is_assigned = False
-        for instance, instance_assigned_tasks in list_of_instance_to_tasks:
-            instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
-            tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-                instance_assigned_tasks
-            )
-            if (
-                instance_total_resource - tasks_needed_resources
-            ) >= utils_docker.get_max_resources_from_docker_task(task):
-                instance_assigned_tasks.append(task)
-                task_is_assigned = True
-                break
+        if _try_assigning_task_to_instances(task, list_of_instance_to_tasks):
+            continue
 
-        if task_is_assigned is False:
-            try:
-                # 2. we need a new instance, let's find the best one
-                best_ec2_instance = ec2.find_best_fitting_ec2_instance(
-                    list_of_ec2_instances,
-                    utils_docker.get_max_resources_from_docker_task(task),
-                    score_type=ec2.closest_instance_policy,
-                )
-                list_of_instance_to_tasks.append((best_ec2_instance, [task]))
-            except Ec2InstanceNotFoundError:
-                logger.error(
-                    "Task %s needs more resources than any EC2 instance "
-                    "can provide with the current configuration. Please check.",
-                    {
-                        f"{task.Name if task.Name else 'unknown task name'}:{task.ServiceID if task.ServiceID else 'unknown service ID'}"
-                    },
-                )
+        try:
+            # we need a new instance, let's find one
+            best_ec2_instance = ec2.find_best_fitting_ec2_instance(
+                list_of_ec2_instances,
+                utils_docker.get_max_resources_from_docker_task(task),
+                score_type=ec2.closest_instance_policy,
+            )
+            list_of_instance_to_tasks.append((best_ec2_instance, [task]))
+        except Ec2InstanceNotFoundError:
+            logger.error(
+                "Task %s needs more resources than any EC2 instance "
+                "can provide with the current configuration. Please check.",
+                {
+                    f"{task.Name if task.Name else 'unknown task name'}:{task.ServiceID if task.ServiceID else 'unknown service ID'}"
+                },
+            )
         await rabbitmq.post_log_message(
             app,
             task,
@@ -257,7 +281,7 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
-    instance_tags = {
+    INSTANCE_TAGS = {
         "io.simcore.autoscaling.version": f"{VERSION}",
         "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
@@ -272,7 +296,7 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(InstanceTypeType, instance_type),
-                tags=instance_tags,
+                tags=INSTANCE_TAGS,
                 startup_script=startup_script,
                 number_of_instances=instance_num,
             )
@@ -282,22 +306,6 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     )
 
     # let's add them all to the swarm
-    async def _wait_and_tag_node(node_name: str) -> None:
-        assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-        new_node = await utils_docker.wait_for_node(get_docker_client(app), node_name)
-        await utils_docker.tag_node(
-            get_docker_client(app),
-            new_node,
-            tags={
-                tag_key: "true"
-                for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-            }
-            | {
-                tag_key: "true"
-                for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-            },
-            available=True,
-        )
 
     node_names = []
     for result in results:
@@ -318,7 +326,8 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
                 )
 
     await asyncio.gather(
-        *(_wait_and_tag_node(n) for n in node_names), return_exceptions=True
+        *(_wait_and_tag_node(app, app_settings, n) for n in node_names),
+        return_exceptions=True,
     )
 
 
