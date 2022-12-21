@@ -796,12 +796,10 @@ async def add_project_states_for_user(
         f"{project['uuid']=}",
     )
     # for templates: the project is never locked and never opened. also the running state is always unknown
-    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+    lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
     running_state = RunningState.UNKNOWN
 
     if not is_template:
-        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
-
         if computation_task := await director_v2_api.get_computation_task(
             app, user_id, project["uuid"]
         ):

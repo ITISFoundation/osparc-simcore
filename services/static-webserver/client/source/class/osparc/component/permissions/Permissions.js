@@ -110,7 +110,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      vBox.setVisibility(this._isUserOwner() ? "visible" : "excluded");
+      vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
 
       const label = new qx.ui.basic.Label(this.tr("Select from the following list"));
       vBox.add(label);
@@ -298,14 +298,14 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          collaborator["showOptions"] = this._isUserOwner();
+          collaborator["showOptions"] = this._canIWrite();
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
           this.__collaboratorsModel.append(collaboratorModel);
         }
       });
     },
 
-    _isUserOwner: function() {
+    _canIWrite: function() {
       throw new Error("Abstract method called!");
     },
 
