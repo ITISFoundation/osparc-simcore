@@ -62,3 +62,31 @@ async def test_workflow(
     log_messages = caplog_info_debug.messages
     assert f"Removed docker volume: '{unused_volume_name}'" in log_messages
     assert f"Skipped in use docker volume: '{used_volume_name}'" in log_messages
+
+
+@pytest.mark.parametrize(
+    "error_class, error_message",
+    [
+        (RuntimeError, "this was already handled"),
+        (Exception, "also capture all other generic errors"),
+    ],
+)
+async def test_regression_error_handling(
+    mock_volumes_folders: None,
+    caplog_info_debug: LogCaptureFixture,
+    settings: ApplicationSettings,
+    used_volume_name: str,
+    unused_volume_name: str,
+    mocker: MockerFixture,
+    error_class: type[BaseException],
+    error_message: str,
+):
+    mocker.patch(
+        "simcore_service_agent.modules.volumes_cleanup._core.store_to_s3",
+        side_effect=error_class(error_message),
+    )
+
+    await backup_and_remove_volumes(settings)
+
+    log_messages = caplog_info_debug.messages
+    assert error_message in log_messages

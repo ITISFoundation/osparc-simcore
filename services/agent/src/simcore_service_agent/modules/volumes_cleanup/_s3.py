@@ -49,7 +49,6 @@ def _get_dir_name(volume_name: str) -> str:
 
 
 def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Path:
-
     joint_key = "/".join(
         (
             s3_bucket,
