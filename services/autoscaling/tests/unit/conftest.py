@@ -443,6 +443,7 @@ def aws_allowed_ec2_instance_type_names(
             [
                 "t2.xlarge",
                 "t2.2xlarge",
+                "g3.4xlarge",
                 "r5n.4xlarge",
                 "r5n.8xlarge",
             ]

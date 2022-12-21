@@ -131,7 +131,7 @@ class AutoscalingEC2:
 
             instances = await self.client.run_instances(
                 ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
-                MinCount=1,
+                MinCount=number_of_instances,
                 MaxCount=number_of_instances,
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",

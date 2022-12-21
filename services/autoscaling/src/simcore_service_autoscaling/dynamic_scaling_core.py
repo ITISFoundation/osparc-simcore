@@ -209,6 +209,7 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     pending_tasks.sort(
         key=lambda t: utils_docker.get_max_resources_from_docker_task(t).cpus
     )
+
     # some instances might be able to run several tasks
     list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
