@@ -240,6 +240,14 @@ qx.Class.define("osparc.data.model.Study", {
       return osparc.component.permissions.Study.canGroupDelete(accessRights, myGid);
     },
 
+    canIWrite: function(studyAccessRights) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid) {
+        return osparc.component.permissions.Study.canGroupsWrite(studyAccessRights, [myGid]);
+      }
+      return false;
+    },
+
     hasSlideshow: function(studyData) {
       if ("ui" in studyData && "slideshow" in studyData["ui"] && Object.keys(studyData["ui"]["slideshow"]).length) {
         return true;
@@ -429,13 +437,13 @@ qx.Class.define("osparc.data.model.Study", {
       return Object.keys(this.getWorkbench().getNodes()).length === 0;
     },
 
-    __applyAccessRights: function(value) {
+    __applyAccessRights: function(accessRights) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(myGid);
 
       if (myGid && !this.isSnapshot()) {
-        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(value, orgIDs);
+        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs);
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);

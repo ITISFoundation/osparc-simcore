@@ -43,6 +43,7 @@ from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..application_settings import get_settings
@@ -100,10 +101,10 @@ async def validate_project(app: web.Application, project: dict):
 async def get_project_for_user(
     app: web.Application,
     project_uuid: str,
-    user_id: int,
+    user_id: UserID,
     *,
-    include_templates: Optional[bool] = False,
     include_state: Optional[bool] = False,
+    check_permissions: str = "read",
 ) -> dict:
     """Returns a VALID project accessible to user
 
@@ -111,26 +112,30 @@ async def get_project_for_user(
     :return: schema-compliant project data
     :rtype: Dict
     """
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
+    db = ProjectDBAPI.get_from_app_context(app)
 
-    project: dict = {}
-    is_template = False
-    if include_templates:
-        project = await db.get_template_project(project_uuid)
-        is_template = bool(project)
-
-    if not project:
-        project = await db.get_user_project(user_id, project_uuid)
+    project, project_type = await db.get_project(
+        user_id,
+        project_uuid,
+        check_permissions=check_permissions,
+    )
 
     # adds state if it is not a template
     if include_state:
-        project = await add_project_states_for_user(user_id, project, is_template, app)
+        project = await add_project_states_for_user(
+            user_id, project, project_type is ProjectType.TEMPLATE, app
+        )
 
-    # TODO: how to handle when database has an invalid project schema???
-    # Notice that db model does not include a check on project schema.
     await validate_project(app, project)
     return project
+
+
+async def get_project_type(
+    app: web.Application, project_uuid: ProjectID
+) -> ProjectType:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    return await db.get_project_type(project_uuid)
 
 
 #

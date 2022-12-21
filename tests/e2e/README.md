@@ -60,8 +60,8 @@ Now you can run the tests by clicking on the Play button, using that configurati
 ```cmd
 cd tests/e2e
 npm install --save
-node tutorials/{{test.js}} {{deployment}} ({{user}}) ({{password}}) (--demo)
-node tutorials/sleepers.js https://osparc-master.speag.com/ user@domain mypass --demo
+node tutorials/{{test.js}} {{deployment}} (--user {{user}}) (--pass {{password}}) (--demo)
+node tutorials/sleepers.js https://osparc-master.speag.com/ --user user@domain --pass mypass --demo
 ```
 ## Run portal-to-end
 

@@ -9,14 +9,17 @@ const {
   user,
   pass,
   newUser,
+  nUsers,
+  userPrefix,
+  userSuffix,
   startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
 const studyName = "sim4life";
 
-async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
+async function runTutorial(user, pass, newUser, parallelUserIdx) {
+  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode, parallelUserIdx);
   let studyId;
   try {
     await tutorial.start();
@@ -29,6 +32,9 @@ async function runTutorial() {
     else {
       throw "Check exposed services";
     }
+
+    await utils.sleep(2000, "Wait for Quick Start dialog");
+    await tutorial.closeQuickStart();
 
     // start Sim4Life Lite
     const studyData = await tutorial.startSim4LifeLite();
@@ -60,8 +66,26 @@ async function runTutorial() {
   }
 }
 
-runTutorial()
-  .catch(error => {
-    console.log('Puppeteer error: ' + error);
-    process.exit(1);
-  });
+let credentials = [{
+  user,
+  pass
+}];
+if (nUsers && userPrefix && userSuffix && pass) {
+  credentials = [];
+  for (let i=1; i<=nUsers; i++) {
+    // it will only work from 01 to 99
+    const id = ("0" + i).slice(-2);
+    credentials.push({
+      user: userPrefix + id + userSuffix,
+      pass: pass
+    });
+  }
+}
+
+credentials.forEach((credential, idx) => {
+  runTutorial(credential.user, credential.pass, newUser, idx)
+    .catch(error => {
+      console.log('Puppeteer error: ' + error);
+      process.exit(1);
+    });
+});
