@@ -427,6 +427,7 @@ async def test_compute_tasks_needed_resources(
     faker: Faker,
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
+    assert service_with_no_resources.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await autoscaling_docker.tasks.list(
@@ -434,6 +435,29 @@ async def test_compute_tasks_needed_resources(
         ),
     )
     assert compute_tasks_needed_resources(service_tasks) == Resources.create_as_empty()
+
+    task_template_with_manageable_resources = task_template | create_task_reservations(
+        1, 0
+    )
+    services = await asyncio.gather(
+        *(
+            create_service(task_template_with_manageable_resources, {}, "running")
+            for cpu in range(host_cpu_count)
+        )
+    )
+    all_tasks = service_tasks
+    for s in services:
+        service_tasks = parse_obj_as(
+            list[Task],
+            await autoscaling_docker.tasks.list(filters={"service": s.Spec.Name}),
+        )
+        assert compute_tasks_needed_resources(service_tasks) == Resources(
+            cpus=1, ram=ByteSize(0)
+        )
+        all_tasks.extend(service_tasks)
+    assert compute_tasks_needed_resources(all_tasks) == Resources(
+        cpus=host_cpu_count, ram=ByteSize(0)
+    )
 
 
 async def test_compute_node_used_resources_with_no_service(
