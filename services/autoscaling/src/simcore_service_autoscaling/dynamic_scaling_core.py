@@ -205,8 +205,10 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     list_of_ec2_instances = await ec2_client.get_ec2_instance_capabilities(
         app_settings.AUTOSCALING_EC2_INSTANCES
     )
-    # get the task in larger resource to smaller
-    pending_tasks.sort(key=utils_docker.get_max_resources_from_docker_task)
+    # get the task in larger cpu resources to smaller
+    pending_tasks.sort(
+        key=lambda t: utils_docker.get_max_resources_from_docker_task(t).cpus
+    )
     # some instances might be able to run several tasks
     list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
