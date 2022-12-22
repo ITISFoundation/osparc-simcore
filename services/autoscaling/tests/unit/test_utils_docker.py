@@ -163,7 +163,9 @@ async def test_remove_monitored_down_nodes_of_down_node(
         fake_docker_node
     ]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
-    mocked_aiodocker.remove.assert_called_once_with(node_id=fake_docker_node.ID)
+    mocked_aiodocker.remove.assert_called_once_with(
+        node_id=fake_docker_node.ID, force=False
+    )
 
 
 async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
