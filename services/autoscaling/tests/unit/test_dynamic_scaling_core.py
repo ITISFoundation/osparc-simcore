@@ -5,8 +5,9 @@
 # pylint: disable=too-many-arguments
 
 
+import asyncio
 import datetime
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
@@ -31,6 +32,7 @@ from simcore_service_autoscaling.dynamic_scaling_core import (
     _try_scale_up_with_drained_nodes,
     cluster_scaling_from_labelled_services,
 )
+from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
@@ -161,7 +163,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     mock_terminate_instance.assert_not_called()
 
 
-async def test_cluster_scaling_from_labelled_services_with_pending_resources_starts_new_instances(
+async def test_cluster_scaling_up(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
@@ -239,6 +241,130 @@ async def test_cluster_scaling_from_labelled_services_with_pending_resources_sta
         fake_node,
         tags=expected_docker_node_tags,
         available=True,
+    )
+
+
+@dataclass(frozen=True)
+class _ScaleUpParams:
+    service_resources: Resources
+    num_services: int
+    expected_instance_type: str
+    expected_num_instances: int
+
+
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                service_resources=Resources(
+                    cpus=5, ram=parse_obj_as(ByteSize, "36Gib")
+                ),
+                num_services=10,
+                expected_instance_type="g3.4xlarge",
+                expected_num_instances=4,
+            ),
+            id="sim4life-light",
+        )
+    ],
+)
+async def test_cluster_scaling_up_starts_multiple_instances(
+    minimal_configuration: None,
+    service_monitored_labels: dict[DockerLabelKey, str],
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    ec2_client: EC2Client,
+    mock_wait_for_node: mock.Mock,
+    mock_tag_node: mock.Mock,
+    fake_node: Node,
+    scale_up_params: _ScaleUpParams,
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # create a task that needs more power
+    task_template_for_service = task_template | create_task_reservations(
+        int(scale_up_params.service_resources.cpus),
+        scale_up_params.service_resources.ram,
+    )
+    await asyncio.gather(
+        *(
+            create_service(
+                task_template_for_service,
+                service_monitored_labels,
+                "pending",
+            )
+            for _ in range(scale_up_params.num_services)
+        )
+    )
+
+    # run the code
+    await cluster_scaling_from_labelled_services(initialized_app)
+
+    # check the instances were started
+    all_instances = await ec2_client.describe_instances()
+    assert len(all_instances["Reservations"]) == 1
+    running_instances = all_instances["Reservations"][0]
+    assert "Instances" in running_instances
+    assert len(running_instances["Instances"]) == scale_up_params.expected_num_instances
+
+    # check the instances
+    all_private_dns_names = []
+    for instance in running_instances["Instances"]:
+        assert "InstanceType" in instance
+        assert instance["InstanceType"] == scale_up_params.expected_instance_type
+        assert "Tags" in instance
+        assert instance["Tags"]
+        expected_tag_keys = [
+            "io.simcore.autoscaling.version",
+            "io.simcore.autoscaling.monitored_nodes_labels",
+            "io.simcore.autoscaling.monitored_services_labels",
+        ]
+        for tag_dict in instance["Tags"]:
+            assert "Key" in tag_dict
+            assert "Value" in tag_dict
+
+            assert tag_dict["Key"] in expected_tag_keys
+
+        assert "PrivateDnsName" in instance
+        instance_private_dns_name = instance["PrivateDnsName"]
+        assert instance_private_dns_name.endswith(".ec2.internal")
+        all_private_dns_names.append(instance_private_dns_name)
+
+    # expect to wait for the node to appear
+    mock_wait_for_node.assert_has_calls(
+        [
+            mock.call(get_docker_client(initialized_app), dns[: dns.find(".")])
+            for dns in all_private_dns_names
+        ],
+        any_order=True,
+    )
+
+    # expect to tag the node with the expected labels, and also to make it active
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    expected_docker_node_tags = {
+        tag_key: "true"
+        for tag_key in (
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        )
+    }
+    mock_tag_node.assert_has_calls(
+        [
+            mock.call(
+                get_docker_client(initialized_app),
+                fake_node,
+                tags=expected_docker_node_tags,
+                available=True,
+            )
+            for _ in all_private_dns_names
+        ]
     )
 
 

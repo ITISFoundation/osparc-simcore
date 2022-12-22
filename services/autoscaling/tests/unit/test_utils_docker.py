@@ -28,6 +28,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
+    compute_tasks_needed_resources,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
@@ -162,7 +163,9 @@ async def test_remove_monitored_down_nodes_of_down_node(
         fake_docker_node
     ]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
-    mocked_aiodocker.remove.assert_called_once_with(node_id=fake_docker_node.ID)
+    mocked_aiodocker.remove.assert_called_once_with(
+        node_id=fake_docker_node.ID, force=False
+    )
 
 
 async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
@@ -411,6 +414,51 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
 
     assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
         cpus=host_cpu_count, ram=parse_obj_as(ByteSize, "100Mib")
+    )
+
+
+async def test_compute_tasks_needed_resources(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    host_cpu_count: int,
+    faker: Faker,
+):
+    service_with_no_resources = await create_service(task_template, {}, "running")
+    assert service_with_no_resources.Spec
+    service_tasks = parse_obj_as(
+        list[Task],
+        await autoscaling_docker.tasks.list(
+            filters={"service": service_with_no_resources.Spec.Name}
+        ),
+    )
+    assert compute_tasks_needed_resources(service_tasks) == Resources.create_as_empty()
+
+    task_template_with_manageable_resources = task_template | create_task_reservations(
+        1, 0
+    )
+    services = await asyncio.gather(
+        *(
+            create_service(task_template_with_manageable_resources, {}, "running")
+            for cpu in range(host_cpu_count)
+        )
+    )
+    all_tasks = service_tasks
+    for s in services:
+        service_tasks = parse_obj_as(
+            list[Task],
+            await autoscaling_docker.tasks.list(filters={"service": s.Spec.Name}),
+        )
+        assert compute_tasks_needed_resources(service_tasks) == Resources(
+            cpus=1, ram=ByteSize(0)
+        )
+        all_tasks.extend(service_tasks)
+    assert compute_tasks_needed_resources(all_tasks) == Resources(
+        cpus=host_cpu_count, ram=ByteSize(0)
     )
 
 

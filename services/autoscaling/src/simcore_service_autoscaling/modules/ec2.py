@@ -16,7 +16,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
-from types_aiobotocore_ec2.type_defs import ReservationTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 from ..core.errors import (
     ConfigurationError,
@@ -31,13 +31,6 @@ from ..utils.ec2 import compose_user_data
 InstancePrivateDNSName = str
 
 logger = logging.getLogger(__name__)
-
-
-def _is_ec2_instance_running(instance: ReservationTypeDef):
-    return (
-        instance.get("Instances", [{}])[0].get("State", {}).get("Name", "not_running")
-        == "running"
-    )
 
 
 @dataclass(frozen=True)
@@ -111,24 +104,26 @@ class AutoscalingEC2:
         instance_type: InstanceTypeType,
         tags: dict[str, str],
         startup_script: str,
-    ) -> EC2InstanceData:
+        number_of_instances: int,
+    ) -> list[EC2InstanceData]:
         with log_context(
             logger,
             logging.INFO,
-            msg=f"launching AWS instance {instance_type} with {tags=}",
+            msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
+            filters: list[FilterTypeDef] = [
+                {"Name": "tag-key", "Values": [tag_key]} for tag_key in tags.keys()
+            ]
+            filters.append(
+                {"Name": "instance-state-name", "Values": ["pending", "running"]}
+            )
             if current_instances := await self.client.describe_instances(
-                Filters=[
-                    {"Name": "tag-key", "Values": [tag_key]} for tag_key in tags.keys()
-                ]
+                Filters=filters
             ):
                 if (
                     len(current_instances.get("Reservations", []))
                     >= instance_settings.EC2_INSTANCES_MAX_INSTANCES
-                ) and all(
-                    _is_ec2_instance_running(instance)
-                    for instance in current_instances["Reservations"]
                 ):
                     raise Ec2TooManyInstancesError(
                         num_instances=instance_settings.EC2_INSTANCES_MAX_INSTANCES
@@ -136,8 +131,8 @@ class AutoscalingEC2:
 
             instances = await self.client.run_instances(
                 ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
-                MinCount=1,
-                MaxCount=1,
+                MinCount=number_of_instances,
+                MaxCount=number_of_instances,
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
@@ -154,36 +149,39 @@ class AutoscalingEC2:
                 UserData=compose_user_data(startup_script),
                 SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
             )
-            instance_id = instances["Instances"][0]["InstanceId"]
+            instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             logger.info(
-                "New instance launched: %s, waiting for it to start now...", instance_id
+                "New instances launched: %s, waiting for them to start now...",
+                instance_ids,
             )
             # wait for the instance to be in a running state
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
             waiter = self.client.get_waiter("instance_exists")
-            await waiter.wait(InstanceIds=[instance_id])
+            await waiter.wait(InstanceIds=instance_ids)
             logger.info(
-                "instance %s exists now, waiting for running state...", instance_id
+                "instances %s exists now, waiting for running state...", instance_ids
             )
 
             waiter = self.client.get_waiter("instance_running")
-            await waiter.wait(InstanceIds=[instance_id])
-            logger.info("instance %s is now running", instance_id)
+            await waiter.wait(InstanceIds=instance_ids)
+            logger.info("instances %s is now running", instance_ids)
 
-            # get the private IP
-            instances = await self.client.describe_instances(InstanceIds=[instance_id])
-            instance = instances["Reservations"][0]["Instances"][0]
-            instance_data = EC2InstanceData(
-                launch_time=instance["LaunchTime"],
-                id=instance["InstanceId"],
-                aws_private_dns=instance["PrivateDnsName"],
-                type=instance["InstanceType"],
-            )
+            # get the private IPs
+            instances = await self.client.describe_instances(InstanceIds=instance_ids)
+            instance_datas = [
+                EC2InstanceData(
+                    launch_time=instance["LaunchTime"],
+                    id=instance["InstanceId"],
+                    aws_private_dns=instance["PrivateDnsName"],
+                    type=instance["InstanceType"],
+                )
+                for instance in instances["Reservations"][0]["Instances"]
+            ]
             logger.info(
                 "%s is available, happy computing!!",
-                f"{instance_data=}",
+                f"{instance_datas=}",
             )
-            return instance_data
+            return instance_datas
 
     async def get_running_instance(
         self,
