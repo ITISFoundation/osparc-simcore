@@ -77,7 +77,7 @@ async def remove_nodes(
     for node in nodes_that_need_removal:
         assert node.ID  # nosec
         with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
-            await docker_client.nodes.remove(node_id=node.ID)
+            await docker_client.nodes.remove(node_id=node.ID, force=force)
     return nodes_that_need_removal
 
 
