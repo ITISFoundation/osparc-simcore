@@ -378,25 +378,31 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     )
 
     # let's start these
-    started_instances_node_names = await _start_instances(app, needed_instances)
-    await _log_tasks_message(
-        app,
-        pending_tasks,
-        f"[cluster] {sum(n for n in needed_instances.values())} new machines created, attaching now, please wait...",
-    )
-    # and tag them make them available
-    await asyncio.gather(
-        *(
-            _wait_and_tag_node(app, app_settings, n)
-            for n in started_instances_node_names
-        ),
-        return_exceptions=True,
-    )
-    await _log_tasks_message(
-        app,
-        pending_tasks,
-        f"[cluster] cluster was now up-scaled with {sum(n for n in needed_instances.values())} new machines, service should start shortly...",
-    )
+    if started_instances_node_names := await _start_instances(app, needed_instances):
+        await _log_tasks_message(
+            app,
+            pending_tasks,
+            f"[cluster] {sum(n for n in needed_instances.values())} new machines created, attaching now, please wait...",
+        )
+        # and tag them make them available
+        await asyncio.gather(
+            *(
+                _wait_and_tag_node(app, app_settings, n)
+                for n in started_instances_node_names
+            ),
+            return_exceptions=True,
+        )
+        await _log_tasks_message(
+            app,
+            pending_tasks,
+            f"[cluster] cluster was now up-scaled with {sum(n for n in needed_instances.values())} new machines, service should start shortly...",
+        )
+    else:
+        await _log_tasks_message(
+            app,
+            pending_tasks,
+            "[cluster] Issue while up-scaling cluster, please contact support!",
+        )
 
 
 async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
