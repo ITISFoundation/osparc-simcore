@@ -27,7 +27,7 @@ _TENACITY_RETRY_PARAMS = dict(
     reraise=True,
     retry=retry_if_exception_type(AssertionError),
     stop=stop_after_delay(30),
-    wait=wait_fixed(0.5),
+    wait=wait_fixed(0.1),
 )
 
 
@@ -84,7 +84,7 @@ async def test_post_task_log_message(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
                     user_id=osparc_docker_label_keys.user_id,
-                    messages=[log_message],
+                    messages=[f"[cluster] {log_message}"],
                 )
                 .json()
                 .encode()
