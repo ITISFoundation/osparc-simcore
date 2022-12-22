@@ -109,7 +109,7 @@ class AutoscalingEC2:
         with log_context(
             logger,
             logging.INFO,
-            msg=f"launching AWS instance {instance_type} with {tags=}",
+            msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
             filters: list[FilterTypeDef] = [
