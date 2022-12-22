@@ -24,8 +24,16 @@ class Resources(BaseModel):
             }
         )
 
+    def __sub__(self, other: "Resources") -> "Resources":
+        return Resources.construct(
+            **{
+                key: a - b
+                for (key, a), b in zip(self.dict().items(), other.dict().values())
+            }
+        )
 
-class EC2Instance(BaseModel):
+
+class EC2Instance(BaseModel, frozen=True):
     name: str
     cpus: PositiveInt
     ram: ByteSize

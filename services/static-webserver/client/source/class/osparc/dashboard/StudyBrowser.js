@@ -271,12 +271,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __attachEventHandlers: function() {
-      // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
-      // callback for incoming logs
       const slotName = "projectStateUpdated";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(jsonString) {
+      socket.on(slotName, jsonString => {
         const data = JSON.parse(jsonString);
         if (data) {
           const studyId = data["project_uuid"];

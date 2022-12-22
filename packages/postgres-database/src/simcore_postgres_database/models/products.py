@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
+from .groups import groups
 from .jinja2_templates import jinja2_templates
 
 # NOTE: a default entry is created in the table Product
@@ -180,6 +181,19 @@ products = sa.Table(
         sa.Integer(),
         nullable=True,
         doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+    ),
+    sa.Column(
+        "group_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            groups.c.gid,
+            name="fk_products_group_id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+        ),
+        unique=True,
+        nullable=True,
+        doc="Group associated to this product",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

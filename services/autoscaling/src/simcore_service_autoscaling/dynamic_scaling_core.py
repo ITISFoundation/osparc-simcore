@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import json
 import logging
 import re
@@ -12,7 +13,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
-from .models import Resources
+from .models import EC2Instance, Resources
 from .modules.docker import get_docker_client
 from .modules.ec2 import EC2InstanceData, get_ec2_client
 from .utils import ec2, rabbitmq, utils_docker
@@ -158,6 +159,22 @@ async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> 
     # 4.
 
 
+def _try_assigning_task_to_node(
+    pending_task: Task, node_to_tasks: list[tuple[Node, list[Task]]]
+) -> bool:
+    for node, node_assigned_tasks in node_to_tasks:
+        instance_total_resource = utils_docker.get_node_total_resources(node)
+        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
+            node_assigned_tasks
+        )
+        if (
+            instance_total_resource - tasks_needed_resources
+        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
+            node_assigned_tasks.append(pending_task)
+            return True
+    return False
+
+
 async def _try_scale_up_with_drained_nodes(
     app: FastAPI,
     monitored_nodes: list[Node],
@@ -166,34 +183,170 @@ async def _try_scale_up_with_drained_nodes(
     docker_client = get_docker_client(app)
     if not pending_tasks:
         return True
-    for task in pending_tasks:
-        # NOTE: currently we go one by one and break, next iteration
-        # will take care of next tasks if there are any
 
-        # check if there is some node with enough resources
-        for node in monitored_nodes:
-            assert node.Spec  # nosec
-            assert node.Description  # nosec
-            if (node.Spec.Availability == Availability.drain) and (
-                utils_docker.get_node_total_resources(node)
-                >= utils_docker.get_max_resources_from_docker_task(task)
-            ):
-                # let's make that node available again
-                await utils_docker.set_node_availability(
-                    docker_client, node, available=True
-                )
-                logger.info(
-                    "Activated former drained node '%s'", node.Description.Hostname
-                )
-                await rabbitmq.post_log_message(
+    activatable_nodes: list[tuple[Node, list[Task]]] = [
+        (
+            node,
+            [],
+        )
+        for node in monitored_nodes
+        if node.Spec and (node.Spec.Availability == Availability.drain)
+    ]
+    for task in pending_tasks:
+        if _try_assigning_task_to_node(task, activatable_nodes):
+            continue
+
+    nodes_to_activate = [
+        (node, assigned_tasks)
+        for node, assigned_tasks in activatable_nodes
+        if assigned_tasks
+    ]
+
+    async def _activate_and_notify(node: Node, tasks: list[Task]) -> None:
+        await asyncio.gather(
+            *(
+                utils_docker.set_node_availability(docker_client, node, available=True),
+                _log_tasks_message(
                     app,
-                    task,
-                    "cluster was scaled up and is now ready to run service",
-                    logging.INFO,
-                )
-                return True
-    logger.info("There are no available drained node for the pending tasks")
+                    tasks,
+                    "[cluster] cluster adjusted, service should start shortly...",
+                ),
+            )
+        )
+
+    # scale up
+    await asyncio.gather(
+        *(_activate_and_notify(node, tasks) for node, tasks in nodes_to_activate)
+    )
+
+    return len(nodes_to_activate) > 0
+
+
+def _try_assigning_task_to_instances(
+    pending_task: Task, list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]]
+) -> bool:
+    for instance, instance_assigned_tasks in list_of_instance_to_tasks:
+        instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
+        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
+            instance_assigned_tasks
+        )
+        if (
+            instance_total_resource - tasks_needed_resources
+        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
+            instance_assigned_tasks.append(pending_task)
+            return True
     return False
+
+
+async def _find_needed_instances(
+    pending_tasks: list[Task],
+    available_ec2s: list[EC2Instance],
+) -> dict[EC2Instance, int]:
+    list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
+    for task in pending_tasks:
+        if _try_assigning_task_to_instances(task, list_of_instance_to_tasks):
+            continue
+
+        try:
+            # we need a new instance, let's find one
+            best_ec2_instance = ec2.find_best_fitting_ec2_instance(
+                available_ec2s,
+                utils_docker.get_max_resources_from_docker_task(task),
+                score_type=ec2.closest_instance_policy,
+            )
+            list_of_instance_to_tasks.append((best_ec2_instance, [task]))
+        except Ec2InstanceNotFoundError:
+            logger.error(
+                "Task %s needs more resources than any EC2 instance "
+                "can provide with the current configuration. Please check.",
+                f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
+            )
+
+    num_instances_per_type = dict(
+        collections.Counter(t for t, _ in list_of_instance_to_tasks)
+    )
+    return num_instances_per_type
+
+
+async def _start_instances(
+    app: FastAPI, needed_instances: dict[EC2Instance, int]
+) -> list[str]:
+    ec2_client = get_ec2_client(app)
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+
+    startup_script = await utils_docker.get_docker_swarm_join_bash_command()
+    results = await asyncio.gather(
+        *(
+            ec2_client.start_aws_instance(
+                app_settings.AUTOSCALING_EC2_INSTANCES,
+                instance_type=parse_obj_as(InstanceTypeType, instance.name),
+                tags={
+                    "io.simcore.autoscaling.version": f"{VERSION}",
+                    "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+                    ),
+                    "io.simcore.autoscaling.monitored_services_labels": json.dumps(
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+                    ),
+                },
+                startup_script=startup_script,
+                number_of_instances=instance_num,
+            )
+            for instance, instance_num in needed_instances.items()
+        ),
+        return_exceptions=True,
+    )
+    # parse results
+    docker_node_names: list[str] = []
+    for r in results:
+        if isinstance(r, Exception):
+            logger.error("Unexpected error happened when starting EC2 instance: %s", r)
+            continue
+        assert isinstance(r, list)  # nosec
+        for ec2_instance_data in r:
+            assert isinstance(ec2_instance_data, EC2InstanceData)  # nosec
+            if match := re.match(
+                _EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns
+            ):
+                docker_node_names.append(match.group(1))
+            else:
+                logger.error(
+                    "Please check: unexpected ec2 instance dns name: %s",
+                    ec2_instance_data,
+                )
+    return docker_node_names
+
+
+async def _wait_and_tag_node(
+    app: FastAPI, app_settings: ApplicationSettings, node_name: str
+) -> None:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    new_node = await utils_docker.wait_for_node(get_docker_client(app), node_name)
+    await utils_docker.tag_node(
+        get_docker_client(app),
+        new_node,
+        tags={
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        }
+        | {
+            tag_key: "true"
+            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+        },
+        available=True,
+    )
+
+
+async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> None:
+    await asyncio.gather(
+        *(
+            rabbitmq.post_log_message(app, task, message, logging.INFO)
+            for task in tasks
+        ),
+        return_exceptions=True,
+    )
 
 
 async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
@@ -204,80 +357,52 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     list_of_ec2_instances = await ec2_client.get_ec2_instance_capabilities(
         app_settings.AUTOSCALING_EC2_INSTANCES
     )
-    for task in pending_tasks:
-        await rabbitmq.post_log_message(
+    # get the task in larger cpu resources to smaller
+    pending_tasks.sort(
+        key=lambda t: utils_docker.get_max_resources_from_docker_task(t).cpus
+    )
+    await _log_tasks_message(
+        app,
+        pending_tasks,
+        "[cluster] service is pending due to missing resources, scaling up cluster now, please wait...",
+    )
+
+    # some instances might be able to run several tasks
+    needed_instances = await _find_needed_instances(
+        pending_tasks, list_of_ec2_instances
+    )
+    await _log_tasks_message(
+        app,
+        pending_tasks,
+        f"[cluster] {sum(n for n in needed_instances.values())} new machines will be added, please wait...",
+    )
+
+    # let's start these
+    if started_instances_node_names := await _start_instances(app, needed_instances):
+        await _log_tasks_message(
             app,
-            task,
-            "service is pending due to insufficient resources, scaling up cluster please wait...",
-            logging.INFO,
+            pending_tasks,
+            f"[cluster] {sum(n for n in needed_instances.values())} new machines created, attaching now, please wait...",
         )
-        try:
-            ec2_instances_needed = [
-                ec2.find_best_fitting_ec2_instance(
-                    list_of_ec2_instances,
-                    utils_docker.get_max_resources_from_docker_task(task),
-                    score_type=ec2.closest_instance_policy,
-                )
-            ]
-            assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
-            assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-
-            logger.debug("%s", f"{ec2_instances_needed[0]=}")
-            new_instance_data = await ec2_client.start_aws_instance(
-                app_settings.AUTOSCALING_EC2_INSTANCES,
-                instance_type=parse_obj_as(
-                    InstanceTypeType, ec2_instances_needed[0].name
-                ),
-                tags={
-                    "io.simcore.autoscaling.version": f"{VERSION}",
-                    "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-                    ),
-                    "io.simcore.autoscaling.monitored_services_labels": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-                    ),
-                },
-                startup_script=await utils_docker.get_docker_swarm_join_bash_command(),
-            )
-
-            # NOTE: new_instance_dns_name is of type ip-123-23-23-3.ec2.internal and we need only the first part
-            if match := re.match(
-                _EC2_INTERNAL_DNS_RE, new_instance_data.aws_private_dns
-            ):
-                new_instance_dns_name = match.group(1)
-                new_node = await utils_docker.wait_for_node(
-                    get_docker_client(app), new_instance_dns_name
-                )
-                await utils_docker.tag_node(
-                    get_docker_client(app),
-                    new_node,
-                    tags={
-                        tag_key: "true"
-                        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-                    }
-                    | {
-                        tag_key: "true"
-                        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-                    },
-                    available=True,
-                )
-                await rabbitmq.post_log_message(
-                    app,
-                    task,
-                    "cluster was scaled up and is now ready to run service",
-                    logging.INFO,
-                )
-            # NOTE: in this first trial we start one instance at a time
-            # In the next iteration, some tasks might already run with that instance
-            break
-        except Ec2InstanceNotFoundError:
-            logger.error(
-                "Task %s needs more resources than any EC2 instance "
-                "can provide with the current configuration. Please check.",
-                {
-                    f"{task.Name if task.Name else 'unknown task name'}:{task.ServiceID if task.ServiceID else 'unknown service ID'}"
-                },
-            )
+        # and tag them make them available
+        await asyncio.gather(
+            *(
+                _wait_and_tag_node(app, app_settings, n)
+                for n in started_instances_node_names
+            ),
+            return_exceptions=True,
+        )
+        await _log_tasks_message(
+            app,
+            pending_tasks,
+            f"[cluster] cluster was now up-scaled with {sum(n for n in needed_instances.values())} new machines, service should start shortly...",
+        )
+    else:
+        await _log_tasks_message(
+            app,
+            pending_tasks,
+            "[cluster] Issue while up-scaling cluster, please contact support!",
+        )
 
 
 async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:

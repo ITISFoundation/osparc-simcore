@@ -103,10 +103,13 @@ async def test_jinja2_templates_table(
 
         result: ResultProxy = await conn.execute(stmt)
         assert result.rowcount == 2
-        assert await result.fetchall() == [
-            ("osparc", "registration_email.jinja2", "osparc"),
-            ("s4l", "registration_email.jinja2", "s4l web"),
-        ]
+        rows = await result.fetchall()
+        assert sorted(r.as_tuple() for r in rows) == sorted(
+            [
+                ("osparc", "registration_email.jinja2", "osparc"),
+                ("s4l", "registration_email.jinja2", "s4l web"),
+            ]
+        )
 
         assert (
             await conn.scalar(

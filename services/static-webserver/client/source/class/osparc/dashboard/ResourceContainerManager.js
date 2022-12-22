@@ -54,6 +54,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
+    "updateService": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
   },
@@ -197,6 +201,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
       card.setMenu(menu);
       card.subscribeToFilterGroup("searchBarFilter");
+
+      [
+        "updateStudy",
+        "updateTemplate",
+        "updateService",
+        "publishTemplate"
+      ].forEach(ev => card.addListener(ev, e => this.fireDataEvent(ev, e.getData())));
+
       return card;
     },
 

@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
 
     this._serializedData = serializedData;
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
 
@@ -77,6 +77,21 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             flex: 1
           });
           break;
+        case "open-organizations-btn":
+          control = new qx.ui.form.Button(this.tr("Organizations...")).set({
+            allowGrowY: false,
+            allowGrowX: false,
+            icon: osparc.dashboard.CardBase.SHARED_ORGS
+          });
+          osparc.desktop.preferences.PreferencesWindow.evaluateOrganizationsButton(control);
+          control.addListener("execute", () => {
+            const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
+            preferencesWindow.openOrganizations();
+          }, this);
+          this._add(control, {
+            flex: 1
+          });
+          break;
         case "study-link":
           control = this.__createStudyLinkSection();
           this._add(control);
@@ -88,13 +103,14 @@ qx.Class.define("osparc.component.permissions.Permissions", {
 
     __buildLayout: function() {
       this._createChildControlImpl("add-collaborator");
+      this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
     },
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      vBox.setVisibility(this._isUserOwner() ? "visible" : "excluded");
+      vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
 
       const label = new qx.ui.basic.Label(this.tr("Select from the following list"));
       vBox.add(label);
@@ -282,14 +298,14 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          collaborator["showOptions"] = this._isUserOwner();
+          collaborator["showOptions"] = this._canIWrite();
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
           this.__collaboratorsModel.append(collaboratorModel);
         }
       });
     },
 
-    _isUserOwner: function() {
+    _canIWrite: function() {
       throw new Error("Abstract method called!");
     },
 

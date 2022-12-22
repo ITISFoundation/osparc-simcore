@@ -50,8 +50,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __attachEventHandlers: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       const slotName = "projectStateUpdated";
-      socket.removeSlot(slotName);
-      socket.on(slotName, function(jsonString) {
+      socket.on(slotName, jsonString => {
         const data = JSON.parse(jsonString);
         if (data) {
           const templateId = data["project_uuid"];
@@ -194,7 +193,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __getEditTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(templateData["accessRights"]);
       if (!isCurrentUserOwner) {
         return null;
       }
@@ -205,7 +204,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __getDeleteTemplateMenuButton: function(templateData) {
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(templateData);
+      const isCurrentUserOwner = osparc.data.model.Study.canIDelete(templateData["accessRights"]);
       if (!isCurrentUserOwner) {
         return null;
       }

@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -8,6 +8,7 @@ from aiopg.sa import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -29,6 +30,11 @@ from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS: AccessRightsDict = {
+    "read": False,
+    "write": False,
+    "delete": False,
+}
 
 DEFAULT_GROUP_READ_ACCESS_RIGHTS: AccessRightsDict = {
     "read": True,
@@ -44,10 +50,9 @@ DEFAULT_GROUP_OWNER_ACCESS_RIGHTS: AccessRightsDict = {
 
 async def list_user_groups(
     app: web.Application, user_id: int
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
-    """returns the user groups
-    Returns:
-        Tuple[List[Dict[str, str]]] -- [returns the user primary group, standard groups and the all group]
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
+    """
+    Returns the user primary group, standard groups and the all group
     """
     engine = app[APP_DB_ENGINE_KEY]
     primary_group = {}
@@ -98,7 +103,7 @@ async def _get_user_from_email(app: web.Application, email: str) -> RowProxy:
 
 async def get_user_group(
     app: web.Application, user_id: int, gid: int
-) -> Dict[str, str]:
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group: RowProxy = await _get_user_group(conn, user_id, gid)
@@ -107,8 +112,8 @@ async def get_user_group(
 
 
 async def create_user_group(
-    app: web.Application, user_id: int, new_group: Dict
-) -> Dict[str, str]:
+    app: web.Application, user_id: int, new_group: dict
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(
@@ -138,8 +143,8 @@ async def create_user_group(
 
 
 async def update_user_group(
-    app: web.Application, user_id: int, gid: int, new_group_values: Dict[str, str]
-) -> Dict[str, str]:
+    app: web.Application, user_id: int, gid: int, new_group_values: dict[str, str]
+) -> dict[str, str]:
     new_values = {
         k: v for k, v in convert_groups_schema_to_db(new_group_values).items() if v
     }
@@ -177,7 +182,7 @@ async def delete_user_group(app: web.Application, user_id: int, gid: int) -> Non
 
 async def list_users_in_group(
     app: web.Application, user_id: int, gid: int
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
@@ -197,24 +202,24 @@ async def list_users_in_group(
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
-    user: Dict = await get_user(app, user_id)
+    user: dict = await get_user(app, user_id)
 
     # auto add user to the groups with the right rules
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         # get the groups where there are inclusion rules and see if they apply
         query = sa.select([groups]).where(groups.c.inclusion_rules != {})
-        possible_gids = set()
+        possible_group_ids = set()
         async for row in conn.execute(query):
             inclusion_rules = row[groups.c.inclusion_rules]
             for prop, rule_pattern in inclusion_rules.items():
                 if not prop in user:
                     continue
                 if re.search(rule_pattern, user[prop]):
-                    possible_gids.add(row[groups.c.gid])
+                    possible_group_ids.add(row[groups.c.gid])
 
         # now add the user to these groups if possible
-        for gid in possible_gids:
+        for gid in possible_group_ids:
             await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 insert(user_to_groups)
@@ -223,6 +228,26 @@ async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
                 )
                 .on_conflict_do_nothing()  # in case the user was already added
             )
+
+
+async def auto_add_user_to_product_group(
+    app: web.Application, user_id: int, product_name: str
+) -> int:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        product_group_id = await get_or_create_product_group(conn, product_name)
+
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            insert(user_to_groups)
+            .values(
+                uid=user_id,
+                gid=product_group_id,
+                access_rights=DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS,
+            )
+            .on_conflict_do_nothing()  # in case the user was already added
+        )
+        return product_group_id
 
 
 async def add_user_in_group(
@@ -287,7 +312,7 @@ async def _get_user_in_group_permissions(
 
 async def get_user_in_group(
     app: web.Application, user_id: int, gid: int, the_user_id_in_group: int
-) -> Dict[str, str]:
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
@@ -306,8 +331,8 @@ async def update_user_in_group(
     user_id: int,
     gid: int,
     the_user_id_in_group: int,
-    new_values_for_user_in_group: Dict,
-) -> Dict[str, str]:
+    new_values_for_user_in_group: dict,
+) -> dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:

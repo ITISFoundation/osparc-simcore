@@ -77,7 +77,7 @@ async def remove_nodes(
     for node in nodes_that_need_removal:
         assert node.ID  # nosec
         with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
-            await docker_client.nodes.remove(node_id=node.ID)
+            await docker_client.nodes.remove(node_id=node.ID, force=force)
     return nodes_that_need_removal
 
 
@@ -184,6 +184,13 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
             ),
         )
     return Resources(cpus=0, ram=ByteSize(0))
+
+
+def compute_tasks_needed_resources(tasks: list[Task]) -> Resources:
+    total = Resources.create_as_empty()
+    for t in tasks:
+        total += get_max_resources_from_docker_task(t)
+    return total
 
 
 async def compute_node_used_resources(
