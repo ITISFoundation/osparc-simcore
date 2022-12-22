@@ -213,6 +213,94 @@ def _try_assigning_task_to_instances(
     return False
 
 
+async def _find_needed_instances(
+    app: FastAPI,
+    pending_tasks: list[Task],
+    available_ec2s: list[EC2Instance],
+) -> dict[EC2Instance, int]:
+    list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
+    for task in pending_tasks:
+        if _try_assigning_task_to_instances(task, list_of_instance_to_tasks):
+            continue
+
+        try:
+            # we need a new instance, let's find one
+            best_ec2_instance = ec2.find_best_fitting_ec2_instance(
+                available_ec2s,
+                utils_docker.get_max_resources_from_docker_task(task),
+                score_type=ec2.closest_instance_policy,
+            )
+            list_of_instance_to_tasks.append((best_ec2_instance, [task]))
+        except Ec2InstanceNotFoundError:
+            logger.error(
+                "Task %s needs more resources than any EC2 instance "
+                "can provide with the current configuration. Please check.",
+                f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
+            )
+        await rabbitmq.post_log_message(
+            app,
+            task,
+            "service is pending due to insufficient resources, scaling up cluster please wait...",
+            logging.INFO,
+        )
+
+    num_instances_per_type = dict(
+        collections.Counter(t for t, _ in list_of_instance_to_tasks)
+    )
+    return num_instances_per_type
+
+
+async def _start_instances(
+    app: FastAPI, needed_instances: dict[EC2Instance, int]
+) -> list[str]:
+    ec2_client = get_ec2_client(app)
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+
+    startup_script = await utils_docker.get_docker_swarm_join_bash_command()
+    results = await asyncio.gather(
+        *(
+            ec2_client.start_aws_instance(
+                app_settings.AUTOSCALING_EC2_INSTANCES,
+                instance_type=parse_obj_as(InstanceTypeType, instance.name),
+                tags={
+                    "io.simcore.autoscaling.version": f"{VERSION}",
+                    "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+                    ),
+                    "io.simcore.autoscaling.monitored_services_labels": json.dumps(
+                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
+                    ),
+                },
+                startup_script=startup_script,
+                number_of_instances=instance_num,
+            )
+            for instance, instance_num in needed_instances.items()
+        ),
+        return_exceptions=True,
+    )
+    # parse results
+    docker_node_names: list[str] = []
+    for r in results:
+        if isinstance(r, Exception):
+            logger.error("Unexpected error happened when starting EC2 instance: %s", r)
+            continue
+        assert isinstance(r, list)  # nosec
+        for ec2_instance_data in r:
+            assert isinstance(ec2_instance_data, EC2InstanceData)  # nosec
+            if match := re.match(
+                _EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns
+            ):
+                docker_node_names.append(match.group(1))
+            else:
+                logger.error(
+                    "Please check: unexpected ec2 instance dns name: %s",
+                    ec2_instance_data,
+                )
+    return docker_node_names
+
+
 async def _wait_and_tag_node(
     app: FastAPI, app_settings: ApplicationSettings, node_name: str
 ) -> None:
@@ -247,86 +335,18 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     )
 
     # some instances might be able to run several tasks
-    list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
-    for task in pending_tasks:
-        if _try_assigning_task_to_instances(task, list_of_instance_to_tasks):
-            continue
-
-        try:
-            # we need a new instance, let's find one
-            best_ec2_instance = ec2.find_best_fitting_ec2_instance(
-                list_of_ec2_instances,
-                utils_docker.get_max_resources_from_docker_task(task),
-                score_type=ec2.closest_instance_policy,
-            )
-            list_of_instance_to_tasks.append((best_ec2_instance, [task]))
-        except Ec2InstanceNotFoundError:
-            logger.error(
-                "Task %s needs more resources than any EC2 instance "
-                "can provide with the current configuration. Please check.",
-                {
-                    f"{task.Name if task.Name else 'unknown task name'}:{task.ServiceID if task.ServiceID else 'unknown service ID'}"
-                },
-            )
-        await rabbitmq.post_log_message(
-            app,
-            task,
-            "service is pending due to insufficient resources, scaling up cluster please wait...",
-            logging.INFO,
-        )
-    # now we know which instances are needed let's aggregate them by type and start them
-    num_instances_per_type = dict(
-        collections.Counter(t.name for t, _ in list_of_instance_to_tasks)
-    )
-    assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-
-    INSTANCE_TAGS = {
-        "io.simcore.autoscaling.version": f"{VERSION}",
-        "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-        ),
-        "io.simcore.autoscaling.monitored_services_labels": json.dumps(
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-        ),
-    }
-    startup_script = await utils_docker.get_docker_swarm_join_bash_command()
-    results = await asyncio.gather(
-        *(
-            ec2_client.start_aws_instance(
-                app_settings.AUTOSCALING_EC2_INSTANCES,
-                instance_type=parse_obj_as(InstanceTypeType, instance_type),
-                tags=INSTANCE_TAGS,
-                startup_script=startup_script,
-                number_of_instances=instance_num,
-            )
-            for instance_type, instance_num in num_instances_per_type.items()
-        ),
-        return_exceptions=True,
+    needed_instances = await _find_needed_instances(
+        app, pending_tasks, list_of_ec2_instances
     )
 
-    # let's add them all to the swarm
-
-    node_names = []
-    for result in results:
-        if isinstance(result, Exception):
-            logger.error(
-                "Unexpected error happened when starting EC2 instance: %s", result
-            )
-            continue
-        for ec2_instance_data in result:
-            if match := re.match(
-                _EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns
-            ):
-                node_names.append(match.group(1))
-            else:
-                logger.error(
-                    "Please check: unexpected ec2 instance dns name: %s",
-                    ec2_instance_data,
-                )
-
+    # let's start these
+    started_instances_node_names = await _start_instances(app, needed_instances)
+    # and tag them make them available
     await asyncio.gather(
-        *(_wait_and_tag_node(app, app_settings, n) for n in node_names),
+        *(
+            _wait_and_tag_node(app, app_settings, n)
+            for n in started_instances_node_names
+        ),
         return_exceptions=True,
     )
 

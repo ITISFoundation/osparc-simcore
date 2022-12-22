@@ -33,7 +33,7 @@ class Resources(BaseModel):
         )
 
 
-class EC2Instance(BaseModel):
+class EC2Instance(BaseModel, frozen=True):
     name: str
     cpus: PositiveInt
     ram: ByteSize
