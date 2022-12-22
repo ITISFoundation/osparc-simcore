@@ -197,14 +197,28 @@ async def _try_scale_up_with_drained_nodes(
             continue
 
     nodes_to_activate = [
-        node for node, assigned_tasks in activatable_nodes if assigned_tasks
+        (node, assigned_tasks)
+        for node, assigned_tasks in activatable_nodes
+        if assigned_tasks
     ]
-    await asyncio.gather(
-        *(
-            utils_docker.set_node_availability(docker_client, node, available=True)
-            for node in nodes_to_activate
+
+    async def _activate_and_notify(node: Node, tasks: list[Task]) -> None:
+        await asyncio.gather(
+            *(
+                utils_docker.set_node_availability(docker_client, node, available=True),
+                _log_tasks_message(
+                    app,
+                    tasks,
+                    "[cluster] cluster adjusted, service should start shortly...",
+                ),
+            )
         )
+
+    # scale up
+    await asyncio.gather(
+        *(_activate_and_notify(node, tasks) for node, tasks in nodes_to_activate)
     )
+
     return len(nodes_to_activate) > 0
 
 
@@ -225,7 +239,6 @@ def _try_assigning_task_to_instances(
 
 
 async def _find_needed_instances(
-    app: FastAPI,
     pending_tasks: list[Task],
     available_ec2s: list[EC2Instance],
 ) -> dict[EC2Instance, int]:
@@ -248,12 +261,6 @@ async def _find_needed_instances(
                 "can provide with the current configuration. Please check.",
                 f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
             )
-        await rabbitmq.post_log_message(
-            app,
-            task,
-            "service is pending due to insufficient resources, scaling up cluster please wait...",
-            logging.INFO,
-        )
 
     num_instances_per_type = dict(
         collections.Counter(t for t, _ in list_of_instance_to_tasks)
@@ -332,6 +339,16 @@ async def _wait_and_tag_node(
     )
 
 
+async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> None:
+    await asyncio.gather(
+        *(
+            rabbitmq.post_log_message(app, task, message, logging.INFO)
+            for task in tasks
+        ),
+        return_exceptions=True,
+    )
+
+
 async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
@@ -344,14 +361,29 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     pending_tasks.sort(
         key=lambda t: utils_docker.get_max_resources_from_docker_task(t).cpus
     )
+    await _log_tasks_message(
+        app,
+        pending_tasks,
+        "[cluster] service is pending due to missing resources, scaling up cluster now, please wait...",
+    )
 
     # some instances might be able to run several tasks
     needed_instances = await _find_needed_instances(
-        app, pending_tasks, list_of_ec2_instances
+        pending_tasks, list_of_ec2_instances
+    )
+    await _log_tasks_message(
+        app,
+        pending_tasks,
+        f"[cluster] {sum(n for n in needed_instances.values())} new machines will be added, please wait...",
     )
 
     # let's start these
     started_instances_node_names = await _start_instances(app, needed_instances)
+    await _log_tasks_message(
+        app,
+        pending_tasks,
+        f"[cluster] {sum(n for n in needed_instances.values())} new machines created, attaching now, please wait...",
+    )
     # and tag them make them available
     await asyncio.gather(
         *(
@@ -359,6 +391,11 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
             for n in started_instances_node_names
         ),
         return_exceptions=True,
+    )
+    await _log_tasks_message(
+        app,
+        pending_tasks,
+        f"[cluster] cluster was now up-scaled with {sum(n for n in needed_instances.values())} new machines, service should start shortly...",
     )
 
 
