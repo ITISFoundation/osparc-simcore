@@ -342,7 +342,7 @@ async def _wait_and_tag_node(
 async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> None:
     await asyncio.gather(
         *(
-            rabbitmq.post_log_message(app, task, message, logging.INFO)
+            rabbitmq.post_task_log_message(app, task, message, logging.INFO)
             for task in tasks
         ),
         return_exceptions=True,

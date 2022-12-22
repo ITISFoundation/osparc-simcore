@@ -11,7 +11,7 @@ from ..modules.rabbitmq import post_message
 logger = logging.getLogger(__name__)
 
 
-async def post_log_message(app: FastAPI, task: Task, log: str, level: int):
+async def post_task_log_message(app: FastAPI, task: Task, log: str, level: int) -> None:
     with log_catch(logger, reraise=False):
         simcore_label_keys = SimcoreServiceDockerLabelKeys.from_docker_task(task)
         message = LoggerRabbitMessage(
