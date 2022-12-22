@@ -2,7 +2,7 @@ import contextlib
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import Optional, cast
+from typing import Optional, Protocol, cast
 
 import aioboto3
 import botocore.exceptions
@@ -24,7 +24,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings
-from ..models import EC2Instance
+from ..models import EC2Instance, StartedInstancesData
 from ..utils.ec2 import compose_user_data
 
 InstancePrivateDNSName = str
@@ -97,6 +97,10 @@ class AutoscalingEC2:
                 )
         return list_instances
 
+    class StartInstanceCB(Protocol):
+        async def __call__(self, instance_data: StartedInstancesData) -> None:
+            ...
+
     async def start_aws_instance(
         self,
         instance_settings: EC2InstancesSettings,
@@ -104,6 +108,7 @@ class AutoscalingEC2:
         tags: dict[str, str],
         startup_script: str,
         number_of_instances: int,
+        progress_callback: StartInstanceCB,
     ) -> list[EC2InstanceData]:
         with log_context(
             logger,
@@ -147,6 +152,9 @@ class AutoscalingEC2:
                 "New instances launched: %s, waiting for them to start now...",
                 instance_ids,
             )
+            await progress_callback(
+                StartedInstancesData(num_launched=number_of_instances)
+            )
             # wait for the instance to be in a running state
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
             waiter = self.client.get_waiter("instance_exists")
@@ -154,10 +162,21 @@ class AutoscalingEC2:
             logger.info(
                 "instances %s exists now, waiting for running state...", instance_ids
             )
-
+            await progress_callback(
+                StartedInstancesData(
+                    num_launched=number_of_instances, num_booting=number_of_instances
+                )
+            )
             waiter = self.client.get_waiter("instance_running")
             await waiter.wait(InstanceIds=instance_ids)
             logger.info("instances %s is now running", instance_ids)
+            await progress_callback(
+                StartedInstancesData(
+                    num_launched=number_of_instances,
+                    num_booting=number_of_instances,
+                    num_running=number_of_instances,
+                )
+            )
 
             # get the private IPs
             instances = await self.client.describe_instances(InstanceIds=instance_ids)

@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import functools
 import json
 import logging
 import re
@@ -7,13 +8,17 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Availability, Node, Task
+from models_library.rabbitmq_messages import (
+    RabbitAutoscalingIdleMessage,
+    RabbitAutoscalingUpScalingMessage,
+)
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
-from .models import EC2Instance, Resources
+from .models import EC2Instance, Resources, StartedInstancesData
 from .modules.docker import get_docker_client
 from .modules.ec2 import EC2InstanceData, get_ec2_client
 from .utils import ec2, rabbitmq, utils_docker
@@ -269,7 +274,7 @@ async def _find_needed_instances(
 
 
 async def _start_instances(
-    app: FastAPI, needed_instances: dict[EC2Instance, int]
+    app: FastAPI, monitored_nodes: list[Node], needed_instances: dict[EC2Instance, int]
 ) -> list[str]:
     ec2_client = get_ec2_client(app)
     app_settings: ApplicationSettings = app.state.settings
@@ -277,6 +282,26 @@ async def _start_instances(
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
     startup_script = await utils_docker.get_docker_swarm_join_bash_command()
+
+    total_started_instance_data = StartedInstancesData()
+
+    async def _instance_start_cb(
+        total_started_instance_data: StartedInstancesData,
+        instance_data: StartedInstancesData,
+    ):
+        total_started_instance_data += instance_data
+        base_message = await _create_rabbit_message_from_nodes(app, monitored_nodes)
+
+        await rabbitmq.post_message(
+            app,
+            RabbitAutoscalingUpScalingMessage(
+                **base_message.dict(),
+                instances_launched=total_started_instance_data.num_launched,
+                instances_booting=total_started_instance_data.num_booting,
+                instances_running=total_started_instance_data.num_running,
+            ),
+        )
+
     results = await asyncio.gather(
         *(
             ec2_client.start_aws_instance(
@@ -293,6 +318,9 @@ async def _start_instances(
                 },
                 startup_script=startup_script,
                 number_of_instances=instance_num,
+                progress_callback=functools.partial(
+                    _instance_start_cb, total_started_instance_data
+                ),
             )
             for instance, instance_num in needed_instances.items()
         ),
@@ -349,7 +377,9 @@ async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> N
     )
 
 
-async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
+async def _scale_up_cluster(
+    app: FastAPI, monitored_nodes: list[Node], pending_tasks: list[Task]
+) -> None:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -378,7 +408,9 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     )
 
     # let's start these
-    if started_instances_node_names := await _start_instances(app, needed_instances):
+    if started_instances_node_names := await _start_instances(
+        app, monitored_nodes, needed_instances
+    ):
         await _log_tasks_message(
             app,
             pending_tasks,
@@ -405,6 +437,41 @@ async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
         )
 
 
+async def _create_rabbit_message_from_nodes(
+    app: FastAPI,
+    monitored_nodes: list[Node],
+) -> RabbitAutoscalingIdleMessage:
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    docker_client = get_docker_client(app)
+    total_resources, used_resources = await asyncio.gather(
+        *(
+            utils_docker.compute_cluster_total_resources(monitored_nodes),
+            utils_docker.compute_cluster_used_resources(docker_client, monitored_nodes),
+        )
+    )
+    return RabbitAutoscalingIdleMessage.construct(
+        origin=f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}",
+        nodes_total=len(monitored_nodes),
+        nodes_active=len(
+            [
+                n
+                for n in monitored_nodes
+                if n.Spec and (n.Spec.Availability is Availability.active)
+            ]
+        ),
+        nodes_reserved=len(
+            [
+                n
+                for n in monitored_nodes
+                if n.Spec and (n.Spec.Availability is Availability.drain)
+            ]
+        ),
+        cluster_total_resources=total_resources.dict(),
+        cluster_used_resources=used_resources.dict(),
+    )
+
+
 async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
     If there are such tasks, this method will allocate new machines in AWS to cope with
@@ -420,16 +487,6 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         docker_client,
         node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
     )
-    cluster_total_resources = await utils_docker.compute_cluster_total_resources(
-        monitored_nodes
-    )
-    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
-        docker_client, monitored_nodes
-    )
-    logger.info("Monitored nodes total resources: %s", f"{cluster_total_resources}")
-    logger.info(
-        "Monitored nodes current used resources: %s", f"{cluster_used_resources}"
-    )
 
     # 2. Cleanup nodes that are gone
     await utils_docker.remove_nodes(docker_client, monitored_nodes)
@@ -443,7 +500,10 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
             app, monitored_nodes, pending_tasks
         ):
             # no? then scale up
-            await _scale_up_cluster(app, pending_tasks)
+            await _scale_up_cluster(app, monitored_nodes, pending_tasks)
     else:
         await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
         await _try_scale_down_cluster(app, monitored_nodes)
+        await rabbitmq.post_message(
+            app, await _create_rabbit_message_from_nodes(app, monitored_nodes)
+        )

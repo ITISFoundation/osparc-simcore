@@ -5,7 +5,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
 
@@ -14,7 +14,7 @@ class RabbitEventMessageType(str, Enum):
 
 
 class RabbitMessageBase(BaseModel):
-    channel_name: str
+    channel_name: str = Field(..., const=True)
 
     @classmethod
     def get_channel_name(cls) -> str:
@@ -60,11 +60,29 @@ class AutoscalingStatus(str, Enum):
     SCALING_UP = "SCALING_UP"
 
 
-class RabbitAutoscalingMessage(RabbitMessageBase):
-    channel_name: Literal["io.simcore.autoscaling"] = "io.simcore.autoscaling"
-    origin: str
-    number_monitored_nodes: int
+class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.autoscaling"] = Field(
+        default="io.simcore.autoscaling", const=True
+    )
+    origin: str = Field(
+        ..., description="autoscaling app type, in case there would be more than one"
+    )
+
+
+class _RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
+    nodes_total: int
+    nodes_active: int
+    nodes_reserved: int
+
     cluster_total_resources: dict[str, Any]
     cluster_used_resources: dict[str, Any]
-    number_pending_tasks_without_resources: int
-    status: AutoscalingStatus
+
+
+class RabbitAutoscalingIdleMessage(_RabbitAutoscalingStatusMessage):
+    ...
+
+
+class RabbitAutoscalingUpScalingMessage(_RabbitAutoscalingStatusMessage):
+    instances_launched: int
+    instances_booting: int
+    instances_running: int
