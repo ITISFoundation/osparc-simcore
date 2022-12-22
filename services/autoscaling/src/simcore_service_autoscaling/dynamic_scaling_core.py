@@ -159,6 +159,22 @@ async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> 
     # 4.
 
 
+def _try_assigning_task_to_node(
+    pending_task: Task, node_to_tasks: list[tuple[Node, list[Task]]]
+) -> bool:
+    for node, node_assigned_tasks in node_to_tasks:
+        instance_total_resource = utils_docker.get_node_total_resources(node)
+        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
+            node_assigned_tasks
+        )
+        if (
+            instance_total_resource - tasks_needed_resources
+        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
+            node_assigned_tasks.append(pending_task)
+            return True
+    return False
+
+
 async def _try_scale_up_with_drained_nodes(
     app: FastAPI,
     monitored_nodes: list[Node],
@@ -167,34 +183,29 @@ async def _try_scale_up_with_drained_nodes(
     docker_client = get_docker_client(app)
     if not pending_tasks:
         return True
-    for task in pending_tasks:
-        # NOTE: currently we go one by one and break, next iteration
-        # will take care of next tasks if there are any
 
-        # check if there is some node with enough resources
-        for node in monitored_nodes:
-            assert node.Spec  # nosec
-            assert node.Description  # nosec
-            if (node.Spec.Availability == Availability.drain) and (
-                utils_docker.get_node_total_resources(node)
-                >= utils_docker.get_max_resources_from_docker_task(task)
-            ):
-                # let's make that node available again
-                await utils_docker.set_node_availability(
-                    docker_client, node, available=True
-                )
-                logger.info(
-                    "Activated former drained node '%s'", node.Description.Hostname
-                )
-                await rabbitmq.post_log_message(
-                    app,
-                    task,
-                    "cluster was scaled up and is now ready to run service",
-                    logging.INFO,
-                )
-                return True
-    logger.info("There are no available drained node for the pending tasks")
-    return False
+    activatable_nodes: list[tuple[Node, list[Task]]] = [
+        (
+            node,
+            [],
+        )
+        for node in monitored_nodes
+        if node.Spec and (node.Spec.Availability == Availability.drain)
+    ]
+    for task in pending_tasks:
+        if _try_assigning_task_to_node(task, activatable_nodes):
+            continue
+
+    nodes_to_activate = [
+        node for node, assigned_tasks in activatable_nodes if assigned_tasks
+    ]
+    await asyncio.gather(
+        *(
+            utils_docker.set_node_availability(docker_client, node, available=True)
+            for node in nodes_to_activate
+        )
+    )
+    return len(nodes_to_activate) > 0
 
 
 def _try_assigning_task_to_instances(
