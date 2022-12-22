@@ -33,7 +33,7 @@ _TENACITY_RETRY_PARAMS = dict(
     reraise=True,
     retry=retry_if_exception_type(AssertionError),
     stop=stop_after_delay(30),
-    wait=wait_fixed(0.5),
+    wait=wait_fixed(0.1),
 )
 
 # Selection of core and tool services started in this swarm fixture (integration)
