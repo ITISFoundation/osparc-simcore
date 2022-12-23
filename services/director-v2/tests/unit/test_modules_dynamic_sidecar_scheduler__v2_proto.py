@@ -4,6 +4,8 @@ import pytest
 from fastapi import FastAPI
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto import (
     ContextResolver,
+    NotAllowedContextKeyError,
+    ReservedContextKeys,
     State,
     StateRegistry,
     WorkflowTracker,
@@ -118,6 +120,31 @@ async def test_iter_from():
         assert len(zero_element_list) == 0
 
 
+async def test_context_resolver_ignored_keys():
+    context_resolver = ContextResolver(app=FastAPI())
+    await context_resolver.start()
+
+    with pytest.raises(NotAllowedContextKeyError):
+        await context_resolver.set(ReservedContextKeys.EXCEPTION, "value")
+
+    await context_resolver.set(
+        ReservedContextKeys.EXCEPTION, "value", check_reserved=False
+    )
+
+    await context_resolver.shutdown()
+
+
+async def test_reserved_context_keys():
+    user_defined_keys: set[str] = set()
+    for key_name, value in ReservedContextKeys.__dict__.items():
+        if isinstance(value, str) and not key_name.startswith("_"):
+            user_defined_keys.add(value)
+
+    assert (
+        user_defined_keys == ReservedContextKeys.RESERVED
+    ), "please make sure all defined keys are also listed inside RESERVED"
+
+
 async def test_run_workflow():
     workflow_tracker = WorkflowTracker(name="random", state="first")
     context_resolver = ContextResolver(app=FastAPI())
@@ -164,10 +191,15 @@ async def test_run_workflow():
 
     state_registry = StateRegistry(FIRST_STATE, SECOND_STATE)
 
+    async def debug_print(state, event) -> None:
+        print(f"{state=}, {event=}")
+
     await workflow_runner(
         state_registry=state_registry,
         context_resolver=context_resolver,
         workflow_tracker=workflow_tracker,
+        before_event=debug_print,
+        after_event=debug_print,
     )
     print(context_resolver)
 

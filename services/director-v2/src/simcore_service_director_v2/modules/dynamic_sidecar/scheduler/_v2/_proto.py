@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from asyncio import Task
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Awaitable, Callable, Iterable, Optional
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field, NonNegativeInt, parse_obj_as, validator
@@ -42,6 +42,14 @@ class GetTypeMismatchError(BaseContextException):
     msg_template = (
         "Found a variable named '{key}' of type='{existing_type}' and value="
         "'{existing_value}'. Expecting type='{expected_type}'"
+    )
+
+
+class NotAllowedContextKeyError(BaseContextException):
+    code = "dynamic_sidecar.scheduler.v2.key_not_allowed"
+    msg_template = (
+        "Provided key='{key}' is reserved for internal usage, "
+        "please try using a different one."
     )
 
 
@@ -124,6 +132,13 @@ class InMemoryContext(ContextStorageInterface, ContextSerializerInterface):
         """nothing to do here"""
 
 
+class ReservedContextKeys:
+    EXCEPTION: str = "_exception"
+
+    # should contain all entries defined above
+    RESERVED: set[str] = {EXCEPTION}
+
+
 class ContextResolver(ContextSerializerInterface):
     """
     Used to keep track of generated data.
@@ -135,11 +150,15 @@ class ContextResolver(ContextSerializerInterface):
         self._context: ContextStorageInterface = InMemoryContext()
         self._skip_serialization: set[str] = {"app"}
 
-    async def set(self, key: str, value: Any) -> None:
+    async def set(self, key: str, value: Any, *, check_reserved: bool = True) -> None:
         """
         Saves a value. Note the type of the value is forced
         at the same type as the first time this was set.
+
         """
+        if key in ReservedContextKeys.RESERVED and check_reserved:
+            raise NotAllowedContextKeyError(key=key)
+
         if await self._context.has_key(key):
             # if a value previously existed,
             # ensure it has the same type
@@ -308,11 +327,20 @@ def _get_event_and_index(
             yield i, value
 
 
+class ExceptionInfo(BaseModel):
+    exception_class: type
+    serialized_traceback: str
+    state: StateName
+    event: EventName
+
+
 async def workflow_runner(
     state_registry: StateRegistry,
     context_resolver: ContextResolver,
     workflow_tracker: WorkflowTracker,
-    # TODO: optional async callbacks for when the events stat and finish?
+    *,
+    before_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    after_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
 ) -> None:
     """
 
@@ -356,7 +384,16 @@ async def workflow_runner(
                 # running event handler
                 workflow_tracker.current_event = event.__name__
                 workflow_tracker.current_event_index = index
+
+                if before_event:
+                    await before_event(
+                        workflow_tracker.state, workflow_tracker.current_event
+                    )
                 result = await event(**inputs)
+                if after_event:
+                    await after_event(
+                        workflow_tracker.state, workflow_tracker.current_event
+                    )
 
                 # saving outputs to context
                 logger.debug(
@@ -368,7 +405,7 @@ async def workflow_runner(
                         for var_name, var_value in result.items()
                     ]
                 )
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
             logger.exception(
                 "An unexpected exception was detected, deferring execution to state=%s",
                 state.on_error_state,
@@ -379,11 +416,16 @@ async def workflow_runner(
                 # just raise it here and halt the task
                 raise
 
-            # TODO: the exception need to be passed somehow in here, injected via
-            # Context
-            # TODO: injected exception needs to be serializable somehow!
-            # figure out how to handle this issue!
-            # that for sure since it excepts to pull it from the input!
+            # Storing exception to be possibly handled by the error state
+            exception_info = ExceptionInfo(
+                exception_class=e.__class__,
+                serialized_traceback="",
+                state=workflow_tracker.state,
+                event=workflow_tracker.current_event,
+            )
+            await context_resolver.set(
+                ReservedContextKeys.EXCEPTION, exception_info, check_reserved=False
+            )
 
             state = (
                 None
