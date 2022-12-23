@@ -489,9 +489,19 @@ class WorkflowManager:
     # NOTE: simply put a workflow is the graph the states generate
     # when they are run
 
-    def __init__(self, app: FastAPI, state_registry: StateRegistry) -> None:
-        self.app: FastAPI = app
-        self.state_registry: StateRegistry = state_registry
+    def __init__(
+        self,
+        app: FastAPI,
+        state_registry: StateRegistry,
+        *,
+        before_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
+        after_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    ) -> None:
+        self.app = app
+        self.state_registry = state_registry
+        self.before_event = before_event
+        self.after_event = after_event
+
         self._workflow_tasks: dict[WorkflowName, Task] = {}
         self._workflow_context: dict[WorkflowName, ContextResolver] = {}
 
@@ -515,6 +525,8 @@ class WorkflowManager:
         workflow_runner_awaitable: Awaitable = workflow_runner(
             state_registry=self.state_registry,
             context_resolver=context_resolver,
+            before_event=self.before_event,
+            after_event=self.after_event,
         )
 
         self._create_workflow_task(workflow_runner_awaitable, workflow_name)
@@ -523,7 +535,10 @@ class WorkflowManager:
         # NOTE: expecting `await context_resolver.start()` to have already been ran
 
         workflow_runner_awaitable: Awaitable = workflow_runner(
-            state_registry=self.state_registry, context_resolver=context_resolver
+            state_registry=self.state_registry,
+            context_resolver=context_resolver,
+            before_event=self.before_event,
+            after_event=self.after_event,
         )
 
         workflow_name: WorkflowName = await context_resolver.get(
