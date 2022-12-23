@@ -455,7 +455,7 @@ async def workflow_runner(
             # Storing exception to be possibly handled by the error state
             exception_info = ExceptionInfo(
                 exception_class=e.__class__,
-                serialized_traceback="",
+                serialized_traceback="",  # TODO: properly format taceback stack
                 state_name=await context_resolver.get(
                     ReservedContextKeys.WORKFLOW_STATE_NAME, WorkflowName
                 ),
