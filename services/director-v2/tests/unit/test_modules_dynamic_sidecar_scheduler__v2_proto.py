@@ -8,7 +8,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto im
     ReservedContextKeys,
     State,
     StateRegistry,
-    WorkflowTracker,
     _get_event_and_index,
     mark_event,
     workflow_runner,
@@ -121,14 +120,14 @@ async def test_iter_from():
 
 
 async def test_context_resolver_ignored_keys():
-    context_resolver = ContextResolver(app=FastAPI())
+    context_resolver = ContextResolver(app=FastAPI(), workflow_name="", state_name="")
     await context_resolver.start()
 
     with pytest.raises(NotAllowedContextKeyError):
         await context_resolver.set(ReservedContextKeys.EXCEPTION, "value")
 
     await context_resolver.set(
-        ReservedContextKeys.EXCEPTION, "value", check_reserved=False
+        ReservedContextKeys.EXCEPTION, "value", set_reserved=True
     )
 
     await context_resolver.shutdown()
@@ -146,8 +145,9 @@ async def test_reserved_context_keys():
 
 
 async def test_run_workflow():
-    workflow_tracker = WorkflowTracker(name="random", state="first")
-    context_resolver = ContextResolver(app=FastAPI())
+    context_resolver = ContextResolver(
+        app=FastAPI(), workflow_name="unique", state_name="first"
+    )
     await context_resolver.start()
 
     # define some states
@@ -197,10 +197,13 @@ async def test_run_workflow():
     await workflow_runner(
         state_registry=state_registry,
         context_resolver=context_resolver,
-        workflow_tracker=workflow_tracker,
         before_event=debug_print,
         after_event=debug_print,
     )
     print(context_resolver)
 
     await context_resolver.shutdown()
+
+
+async def test_workflow_manager():
+    pass

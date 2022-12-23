@@ -3,12 +3,12 @@ import inspect
 import logging
 from abc import ABC, abstractmethod
 from asyncio import Task
-from dataclasses import dataclass
-from functools import wraps
+from contextlib import suppress
+from functools import partial, wraps
 from typing import Any, Awaitable, Callable, Iterable, Optional
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field, NonNegativeInt, parse_obj_as, validator
+from pydantic import BaseModel, Field, NonNegativeInt, validator
 from pydantic.errors import PydanticErrorMixin
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,11 @@ class UnexpectedEventReturnTypeError(BaseEventException):
 class WorkflowAlreadyRunningException(BaseEventException):
     code = "dynamic_sidecar.scheduler.v2.workflow_already_running"
     msg_template = "Another workflow named '{workflow}' is already running"
+
+
+class WorkflowNotFoundException(BaseEventException):
+    code = "dynamic_sidecar.scheduler.v2.workflow_not_found"
+    msg_template = "Workflow '{workflow}' not found"
 
 
 ### CONTEXT
@@ -133,10 +138,29 @@ class InMemoryContext(ContextStorageInterface, ContextSerializerInterface):
 
 
 class ReservedContextKeys:
+    APP: str = "app"
+
+    WORKFLOW_NAME: str = "__workflow_name"
+    WORKFLOW_STATE_NAME: str = "__workflow_state_name"
+    WORKFLOW_CURRENT_EVENT_NAME: str = "__workflow_current_event_name"
+    WORKFLOW_CURRENT_EVENT_INDEX: str = "__workflow_current_event_index"
+
     EXCEPTION: str = "_exception"
 
-    # should contain all entries defined above
-    RESERVED: set[str] = {EXCEPTION}
+    # reserved keys cannot be overwritten by the event handlers
+    RESERVED: set[str] = {
+        APP,
+        EXCEPTION,
+        WORKFLOW_NAME,
+        WORKFLOW_STATE_NAME,
+        WORKFLOW_CURRENT_EVENT_NAME,
+        WORKFLOW_CURRENT_EVENT_INDEX,
+    }
+
+
+WorkflowName = str
+StateName = str
+EventName = str
 
 
 class ContextResolver(ContextSerializerInterface):
@@ -144,19 +168,23 @@ class ContextResolver(ContextSerializerInterface):
     Used to keep track of generated data.
     """
 
-    def __init__(self, app: FastAPI) -> None:
+    def __init__(
+        self, app: FastAPI, workflow_name: WorkflowName, state_name: StateName
+    ) -> None:
         self._app: FastAPI = app
+        self._workflow_name: WorkflowName = workflow_name
+        self._state_name: StateName = state_name
 
         self._context: ContextStorageInterface = InMemoryContext()
         self._skip_serialization: set[str] = {"app"}
 
-    async def set(self, key: str, value: Any, *, check_reserved: bool = True) -> None:
+    async def set(self, key: str, value: Any, *, set_reserved: bool = False) -> None:
         """
         Saves a value. Note the type of the value is forced
         at the same type as the first time this was set.
 
         """
-        if key in ReservedContextKeys.RESERVED and check_reserved:
+        if key in ReservedContextKeys.RESERVED and not set_reserved:
             raise NotAllowedContextKeyError(key=key)
 
         if await self._context.has_key(key):
@@ -204,7 +232,17 @@ class ContextResolver(ContextSerializerInterface):
     async def start(self) -> None:
         await self._context.start()
         # adding app to context
-        await self.set(key="app", value=self._app)
+        await self.set(key=ReservedContextKeys.APP, value=self._app, set_reserved=True)
+        await self.set(
+            key=ReservedContextKeys.WORKFLOW_NAME,
+            value=self._workflow_name,
+            set_reserved=True,
+        )
+        await self.set(
+            key=ReservedContextKeys.WORKFLOW_STATE_NAME,
+            value=self._state_name,
+            set_reserved=True,
+        )
 
     async def shutdown(self) -> None:
         await self._context.shutdown()
@@ -243,10 +281,6 @@ def mark_event(func: Callable) -> Callable:
 
 
 # state definition
-
-WorkflowName = str
-StateName = str
-EventName = str
 
 
 class State(BaseModel):
@@ -306,19 +340,6 @@ class StateRegistry:
 # WORKFLOW
 
 
-class WorkflowTracker(BaseModel):
-    """
-    Contains information relative to internals required to
-    handle a workflow.
-    """
-
-    name: WorkflowName  # required
-    state: StateName  # required
-
-    current_event: Optional[EventName] = None
-    current_event_index: Optional[NonNegativeInt] = None
-
-
 def _get_event_and_index(
     iterable: Iterable[Callable], *, index: NonNegativeInt = 0
 ) -> tuple[NonNegativeInt, Callable]:
@@ -330,14 +351,13 @@ def _get_event_and_index(
 class ExceptionInfo(BaseModel):
     exception_class: type
     serialized_traceback: str
-    state: StateName
-    event: EventName
+    state_name: StateName
+    event_name: EventName
 
 
 async def workflow_runner(
     state_registry: StateRegistry,
     context_resolver: ContextResolver,
-    workflow_tracker: WorkflowTracker,
     *,
     before_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
     after_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
@@ -351,18 +371,25 @@ async def workflow_runner(
     # goes through all the states defined and does tuff right?
     # not in some cases this needs to end, these are ran as tasks
     #
-    state: Optional[State] = state_registry[workflow_tracker.state]
-    start_from_index = (
-        0
-        if workflow_tracker.current_event_index is None
-        else workflow_tracker.current_event_index
+    state_name: StateName = await context_resolver.get(
+        ReservedContextKeys.WORKFLOW_STATE_NAME, StateName
     )
+    state: Optional[State] = state_registry[state_name]
+
+    start_from_index: NonNegativeInt = 0
+    try:
+        start_from_index = await context_resolver.get(
+            ReservedContextKeys.WORKFLOW_CURRENT_EVENT_INDEX, NonNegativeInt
+        )
+    except NotInContextError:
+        pass
 
     while state is not None:
-        workflow_tracker.state = state.name
-        logger.debug(
-            "Running state='%s', events=%s", workflow_tracker.state, state.events_names
+        state_name = state.name
+        await context_resolver.set(
+            ReservedContextKeys.WORKFLOW_STATE_NAME, state_name, set_reserved=True
         )
+        logger.debug("Running state='%s', events=%s", state_name, state.events_names)
         try:
             for index, event in _get_event_and_index(
                 state.events, index=start_from_index
@@ -377,28 +404,29 @@ async def workflow_runner(
                         ]
                     )
                     inputs = dict(zip(event.input_types, get_inputs_results))
-                logger.debug(
-                    "event='%s' with inputs=%s", workflow_tracker.current_event, inputs
-                )
 
+                event_name = event.__name__
+                logger.debug("event='%s' with inputs=%s", event_name, inputs)
                 # running event handler
-                workflow_tracker.current_event = event.__name__
-                workflow_tracker.current_event_index = index
+                await context_resolver.set(
+                    ReservedContextKeys.WORKFLOW_CURRENT_EVENT_NAME,
+                    event_name,
+                    set_reserved=True,
+                )
+                await context_resolver.set(
+                    ReservedContextKeys.WORKFLOW_CURRENT_EVENT_INDEX,
+                    index,
+                    set_reserved=True,
+                )
 
                 if before_event:
-                    await before_event(
-                        workflow_tracker.state, workflow_tracker.current_event
-                    )
+                    await before_event(state_name, event_name)
                 result = await event(**inputs)
                 if after_event:
-                    await after_event(
-                        workflow_tracker.state, workflow_tracker.current_event
-                    )
+                    await after_event(state_name, event_name)
 
                 # saving outputs to context
-                logger.debug(
-                    "event='%s', result=%s", workflow_tracker.current_event, result
-                )
+                logger.debug("event='%s', result=%s", event_name, result)
                 await asyncio.gather(
                     *[
                         context_resolver.set(key=var_name, value=var_value)
@@ -420,11 +448,15 @@ async def workflow_runner(
             exception_info = ExceptionInfo(
                 exception_class=e.__class__,
                 serialized_traceback="",
-                state=workflow_tracker.state,
-                event=workflow_tracker.current_event,
+                state_name=await context_resolver.get(
+                    ReservedContextKeys.WORKFLOW_STATE_NAME, WorkflowName
+                ),
+                event_name=await context_resolver.get(
+                    ReservedContextKeys.WORKFLOW_STATE_NAME, StateName
+                ),
             )
             await context_resolver.set(
-                ReservedContextKeys.EXCEPTION, exception_info, check_reserved=False
+                ReservedContextKeys.EXCEPTION, exception_info, set_reserved=False
             )
 
             state = (
@@ -445,28 +477,6 @@ async def workflow_runner(
 ### Cancellable workflow and workflow switching
 
 
-@dataclass
-class WorkflowState:
-    # data generated by the states and their events
-    context_resolver: ContextResolver
-    # data relative to internals and required for resuming upon error
-    workflow_tracker: WorkflowTracker
-
-    async def deserialize(self, incoming: dict[str, Any]) -> None:
-        self.context_resolver.deserialize(incoming["context"])
-        self.workflow_tracker = parse_obj_as(
-            WorkflowTracker, incoming["workflow_tracker"]
-        )
-
-    async def serialize(
-        self,
-    ) -> dict[str, Any]:
-        return dict(
-            context=await self.context_resolver.serialize(),
-            workflow_tracker=self.workflow_tracker.dict(),
-        )
-
-
 class WorkflowManager:
     # NOTE: simply put a workflow is the graph the states generate
     # when they are run
@@ -475,52 +485,68 @@ class WorkflowManager:
         self.app: FastAPI = app
         self.state_registry: StateRegistry = state_registry
         self._workflow_tasks: dict[WorkflowName, Task] = {}
-        self._workflow_states: dict[WorkflowName, WorkflowState] = {}
+        self._workflow_context: dict[WorkflowName, ContextResolver] = {}
 
-    async def start_or_resume_workflow(
-        self,
-        name: WorkflowName,
-        state_name: StateName,
-        *,
-        workflow_state: Optional[WorkflowState] = None,
+    async def start_workflow(
+        self, workflow_name: WorkflowName, state_name: StateName
     ) -> None:
-        # TODO: maybe split into two separate handlers
-        # one for start and one for resume!
+        """starts a new workflow with a unique name"""
+        self._workflow_context[workflow_name] = context_resolver = ContextResolver(
+            app=self.app, workflow_name=workflow_name, state_name=state_name
+        )
+        await context_resolver.start()
 
-        if name not in self._workflow_tasks:
-            raise WorkflowAlreadyRunningException(workflow=name)
+        workflow_runner_awaitable: Awaitable = workflow_runner(
+            state_registry=self.state_registry,
+            context_resolver=context_resolver,
+        )
 
-        if workflow_state is None:
-            context_resolver = ContextResolver(app=self.app)
-            workflow_tracker = WorkflowTracker(name=name, state=state_name)
-            await context_resolver.start()
-            # TODO start this as a task
-            workflow_runner(
-                state_registry=self.state_registry,
-                context_resolver=context_resolver,
-                workflow_tracker=workflow_tracker,
-            )
-        else:
-            # TODO start this as a task
-            workflow_runner(
-                state_registry=self.state_registry,
-                context_resolver=workflow_state.context_resolver,
-                workflow_tracker=workflow_state.workflow_tracker,
-            )
+        self._create_workflow_task(workflow_runner_awaitable, workflow_name)
 
-        # TODO: append done callbacks to remove it when the workflow is completed
-        # This way we know if something went wrong with it
+    async def resume_workflow(self, context_resolver: ContextResolver) -> None:
+        workflow_runner_awaitable: Awaitable = workflow_runner(
+            state_registry=self.state_registry, context_resolver=context_resolver
+        )
+
+        workflow_name: WorkflowName = await context_resolver.get(
+            ReservedContextKeys.WORKFLOW_NAME, WorkflowName
+        )
+        self._create_workflow_task(workflow_runner_awaitable, workflow_name)
+
+    def _create_workflow_task(
+        self, runner_awaitable: Awaitable, workflow_name: WorkflowName
+    ) -> None:
+        task = self._workflow_tasks[workflow_name] = asyncio.create_task(
+            runner_awaitable, name=workflow_name
+        )
+        # remove when task is done
+        task.add_done_callback(
+            partial(lambda s, _: self._workflow_tasks.pop(s, None), workflow_name)
+        )
 
     async def wait_workflow(self, name: WorkflowName) -> None:
         """waits for workflow Task to finish"""
+        if name not in self._workflow_tasks:
+            raise WorkflowNotFoundException(workflow=name)
+
+        task = self._workflow_tasks[name]
+        await task
 
     async def cancel_workflow(self, name: WorkflowName) -> None:
         """cancels current workflow Task"""
+        if name not in self._workflow_tasks:
+            raise WorkflowNotFoundException(workflow=name)
+
+        task = self._workflow_tasks[name]
+        task.cancel()
+        # TODO: better cancellation with timeout pattern as san suggested in other places
+        with suppress(asyncio.CancelledError):
+            await task
 
     async def start(self) -> None:
         pass
 
     async def shutdown(self) -> None:
         # shutting down all context_resolver instances
-        for workflow_state in self._workflow_states.values():
-            await workflow_state.context_resolver.shutdown()
+        for context_resolver in self._workflow_context.values():
+            await context_resolver.shutdown()
