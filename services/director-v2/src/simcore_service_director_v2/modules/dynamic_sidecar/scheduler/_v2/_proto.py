@@ -64,12 +64,20 @@ class UnexpectedEventReturnTypeError(BaseEventException):
 
 class WorkflowAlreadyRunningException(BaseEventException):
     code = "dynamic_sidecar.scheduler.v2.workflow_already_running"
-    msg_template = "Another workflow named '{workflow}' is already running"
+    msg_template = "Another workflow named '{workflow_name}' is already running"
 
 
 class WorkflowNotFoundException(BaseEventException):
     code = "dynamic_sidecar.scheduler.v2.workflow_not_found"
-    msg_template = "Workflow '{workflow}' not found"
+    msg_template = "Workflow '{workflow_name}' not found"
+
+
+class StateNotRegisteredException(BaseEventException):
+    code = "dynamic_sidecar.scheduler.v2.state_not_registered"
+    msg_template = (
+        "Trying to start state '{state_name}' but these are the only"
+        "available states {state_registry}"
+    )
 
 
 ### CONTEXT
@@ -491,6 +499,14 @@ class WorkflowManager:
         self, workflow_name: WorkflowName, state_name: StateName
     ) -> None:
         """starts a new workflow with a unique name"""
+
+        if workflow_name in self._workflow_context:
+            raise WorkflowAlreadyRunningException(workflow_name=workflow_name)
+        if state_name not in self.state_registry:
+            raise StateNotRegisteredException(
+                state_name=state_name, state_registry=self.state_registry
+            )
+
         self._workflow_context[workflow_name] = context_resolver = ContextResolver(
             app=self.app, workflow_name=workflow_name, state_name=state_name
         )
@@ -504,6 +520,8 @@ class WorkflowManager:
         self._create_workflow_task(workflow_runner_awaitable, workflow_name)
 
     async def resume_workflow(self, context_resolver: ContextResolver) -> None:
+        # NOTE: expecting `await context_resolver.start()` to have already been ran
+
         workflow_runner_awaitable: Awaitable = workflow_runner(
             state_registry=self.state_registry, context_resolver=context_resolver
         )
@@ -524,20 +542,20 @@ class WorkflowManager:
             partial(lambda s, _: self._workflow_tasks.pop(s, None), workflow_name)
         )
 
-    async def wait_workflow(self, name: WorkflowName) -> None:
+    async def wait_workflow(self, workflow_name: WorkflowName) -> None:
         """waits for workflow Task to finish"""
-        if name not in self._workflow_tasks:
-            raise WorkflowNotFoundException(workflow=name)
+        if workflow_name not in self._workflow_tasks:
+            raise WorkflowNotFoundException(workflow_name=workflow_name)
 
-        task = self._workflow_tasks[name]
+        task = self._workflow_tasks[workflow_name]
         await task
 
-    async def cancel_workflow(self, name: WorkflowName) -> None:
+    async def cancel_workflow(self, workflow_name: WorkflowName) -> None:
         """cancels current workflow Task"""
-        if name not in self._workflow_tasks:
-            raise WorkflowNotFoundException(workflow=name)
+        if workflow_name not in self._workflow_tasks:
+            raise WorkflowNotFoundException(workflow_name=workflow_name)
 
-        task = self._workflow_tasks[name]
+        task = self._workflow_tasks[workflow_name]
         task.cancel()
         # TODO: better cancellation with timeout pattern as san suggested in other places
         with suppress(asyncio.CancelledError):
