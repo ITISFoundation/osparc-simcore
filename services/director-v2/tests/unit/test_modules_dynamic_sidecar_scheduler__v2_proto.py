@@ -8,6 +8,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto im
     ReservedContextKeys,
     State,
     StateRegistry,
+    WorkflowManager,
+    WorkflowNotFoundException,
     _get_event_and_index,
     mark_event,
     workflow_runner,
@@ -206,4 +208,60 @@ async def test_run_workflow():
 
 
 async def test_workflow_manager():
-    pass
+    @mark_event
+    async def initial_state() -> dict[str, Any]:
+        print("initial state")
+        return {"x": 10, "y": 12.3}
+
+    @mark_event
+    async def verify(x: int, y: float) -> dict[str, Any]:
+        assert type(x) == int
+        assert type(y) == float
+        return {"z": x + y}
+
+    @mark_event
+    async def print_second() -> dict[str, Any]:
+        print("SECOND")
+        return {}
+
+    FIRST_STATE = State(
+        name="first",
+        events=[
+            initial_state,
+            verify,
+        ],
+        next_state="second",
+        on_error_state=None,
+    )
+    SECOND_STATE = State(
+        name="second",
+        events=[
+            print_second,
+            verify,
+            verify,
+        ],
+        next_state=None,
+        on_error_state=None,
+    )
+
+    state_registry = StateRegistry(FIRST_STATE, SECOND_STATE)
+
+    async def debug_print(state, event) -> None:
+        print(f"{state=}, {event=}")
+
+    workflow_manager = WorkflowManager(
+        app=FastAPI(),
+        state_registry=state_registry,
+        before_event=debug_print,
+        after_event=debug_print,
+    )
+
+    # ok workflow
+    await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
+    await workflow_manager.wait_workflow("start_first")
+
+    # cancel workflow
+    await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
+    await workflow_manager.cancel_workflow("start_first")
+    with pytest.raises(WorkflowNotFoundException):
+        await workflow_manager.wait_workflow("start_first")
