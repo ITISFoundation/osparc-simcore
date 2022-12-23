@@ -119,7 +119,7 @@ async def test_iter_from():
 
 
 async def test_run_workflow():
-    workflow_tracker = WorkflowTracker(name="random")
+    workflow_tracker = WorkflowTracker(name="random", state="first")
     context_resolver = ContextResolver(app=FastAPI())
     await context_resolver.start()
 
@@ -157,7 +157,6 @@ async def test_run_workflow():
             print_second,
             verify,
             verify,
-            verify,
         ],
         next_state=None,
         on_error_state=None,
@@ -168,7 +167,6 @@ async def test_run_workflow():
     await workflow_runner(
         state_registry=state_registry,
         context_resolver=context_resolver,
-        initial_state="first",
         workflow_tracker=workflow_tracker,
     )
     print(context_resolver)

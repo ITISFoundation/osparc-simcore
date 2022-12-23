@@ -312,6 +312,7 @@ async def workflow_runner(
     state_registry: StateRegistry,
     context_resolver: ContextResolver,
     workflow_tracker: WorkflowTracker,
+    # TODO: optional async callbacks for when the events stat and finish?
 ) -> None:
     """
 
@@ -330,11 +331,9 @@ async def workflow_runner(
     )
 
     while state is not None:
-        workflow_tracker.current_state = state.name
+        workflow_tracker.state = state.name
         logger.debug(
-            "Running state='%s', events=%s",
-            workflow_tracker.current_state,
-            state.events_names,
+            "Running state='%s', events=%s", workflow_tracker.state, state.events_names
         )
         try:
             for index, event in _get_event_and_index(
@@ -391,12 +390,10 @@ async def workflow_runner(
                 if state.on_error_state is None
                 else state_registry[state.on_error_state]
             )
-            workflow_tracker.state = state.on_error_state
         else:
             state = (
                 None if state.next_state is None else state_registry[state.next_state]
             )
-            workflow_tracker.state = state.next_state
         finally:
             start_from_index = 0
 
