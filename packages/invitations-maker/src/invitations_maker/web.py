@@ -1,9 +1,11 @@
 from typing import Literal
 
 import uvicorn
-from invitations_maker.web_application import create_app
 
-app = create_app()
+# FIXME: this cannot be imported into cli
+# from invitations_maker.web_application import create_app
+
+# app = create_app()
 
 
 def start(log_level: Literal["info", "debug", "warning", "error"] = "info"):
