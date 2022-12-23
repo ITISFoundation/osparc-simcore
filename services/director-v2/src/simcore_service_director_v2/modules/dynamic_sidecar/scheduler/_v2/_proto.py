@@ -504,8 +504,9 @@ class WorkflowManager:
 
         self._workflow_tasks: dict[WorkflowName, Task] = {}
         self._workflow_context: dict[WorkflowName, ContextResolver] = {}
+        self._shutdown_tasks_workflow_context: dict[WorkflowName, Task] = {}
 
-    async def start_workflow(
+    async def run_workflow(
         self, workflow_name: WorkflowName, state_name: StateName
     ) -> None:
         """starts a new workflow with a unique name"""
@@ -552,10 +553,26 @@ class WorkflowManager:
         task = self._workflow_tasks[workflow_name] = asyncio.create_task(
             runner_awaitable, name=workflow_name
         )
+
+        def workflow_complete(_: Task) -> None:
+            self._workflow_tasks.pop(workflow_name, None)
+            context_resolver: Optional[ContextResolver] = self._workflow_context.pop(
+                workflow_name, None
+            )
+            if context_resolver:
+                # shutting down context resolver and ensure task will not be pending
+                task = self._shutdown_tasks_workflow_context[
+                    workflow_name
+                ] = asyncio.create_task(context_resolver.shutdown())
+                task.add_done_callback(
+                    partial(
+                        lambda s, _: self._shutdown_tasks_workflow_context.pop(s, None),
+                        workflow_name,
+                    )
+                )
+
         # remove when task is done
-        task.add_done_callback(
-            partial(lambda s, _: self._workflow_tasks.pop(s, None), workflow_name)
-        )
+        task.add_done_callback(workflow_complete)
 
     async def wait_workflow(self, workflow_name: WorkflowName) -> None:
         """waits for workflow Task to finish"""
@@ -565,21 +582,37 @@ class WorkflowManager:
         task = self._workflow_tasks[workflow_name]
         await task
 
+    @staticmethod
+    async def __cancel_task(task: Optional[Task]) -> None:
+        if task is None:
+            return
+
+        task.cancel()
+        # TODO: better cancellation with timeout pattern as san suggested in other places
+        with suppress(asyncio.CancelledError):
+            await task
+
     async def cancel_workflow(self, workflow_name: WorkflowName) -> None:
         """cancels current workflow Task"""
         if workflow_name not in self._workflow_tasks:
             raise WorkflowNotFoundException(workflow_name=workflow_name)
 
         task = self._workflow_tasks[workflow_name]
-        task.cancel()
-        # TODO: better cancellation with timeout pattern as san suggested in other places
-        with suppress(asyncio.CancelledError):
-            await task
+        await self.__cancel_task(task)
+
+    async def shutdown(self) -> None:
+        # NOTE: content can change while iterating
+        for key in self._workflow_context.keys():
+            context_resolver: Optional[ContextResolver] = self._workflow_context.get(
+                key, None
+            )
+            if context_resolver:
+                await context_resolver.shutdown()
+
+        # NOTE: content can change while iterating
+        for key in self._shutdown_tasks_workflow_context.keys():
+            task: Optional[Task] = self._shutdown_tasks_workflow_context.get(key, None)
+            await self.__cancel_task(task)
 
     async def start(self) -> None:
         pass
-
-    async def shutdown(self) -> None:
-        # shutting down all context_resolver instances
-        for context_resolver in self._workflow_context.values():
-            await context_resolver.shutdown()
