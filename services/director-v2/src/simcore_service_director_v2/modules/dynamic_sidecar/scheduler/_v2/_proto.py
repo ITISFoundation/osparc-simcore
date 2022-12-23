@@ -212,13 +212,13 @@ class ContextResolver(ContextSerializerInterface):
 
 ### EVENT MARKERS AND DETECTION
 
-# TODO: add parameters to support a retry policy,
-# like the one From tenacity!
+
 def mark_event(func: Callable) -> Callable:
     """
     Register a coroutine as an event.
     Return type must always be of type `dict[str, Any]`
-    Stores input types in `.input_types` attribute for later usage.
+    Stores input types in `.input_types` and return type
+    in `.return_type` for later usage.
     """
 
     func_annotations = inspect.getfullargspec(func).annotations
@@ -232,7 +232,7 @@ def mark_event(func: Callable) -> Callable:
     async def wrapped(*args, **kwargs) -> Any:
         return await func(*args, **kwargs)
 
-    # store inputs for later usage
+    # store input and return types for later usage
     wrapped.return_type = return_type
     wrapped.input_types = func_annotations
 
