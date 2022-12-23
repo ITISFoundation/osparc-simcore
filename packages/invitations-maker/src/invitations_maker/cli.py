@@ -28,7 +28,7 @@ def main(
             "--version",
             callback=version_callback,
             is_eager=True,
-        ),
+        )
     ),
 ):
     """o2s2parc invitation maker"""
