@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 from typing import Any
 
 import pytest
@@ -258,10 +260,16 @@ async def test_workflow_manager():
 
     # ok workflow
     await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
+    assert "start_first" in workflow_manager._workflow_context
+    assert "start_first" in workflow_manager._workflow_tasks
     await workflow_manager.wait_workflow("start_first")
+    assert "start_first" not in workflow_manager._workflow_context
+    assert "start_first" not in workflow_manager._workflow_tasks
 
     # cancel workflow
     await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
     await workflow_manager.cancel_workflow("start_first")
+    assert "start_first" not in workflow_manager._workflow_context
+    assert "start_first" not in workflow_manager._workflow_tasks
     with pytest.raises(WorkflowNotFoundException):
         await workflow_manager.wait_workflow("start_first")
