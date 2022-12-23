@@ -33,6 +33,7 @@ async def test_register_event_with_return_value():
 # TODO: test with wrong return type!
 # TODO: test to see for state definition
 # TODO: test to ensure the chained serializers for events I/O chains are working
+# TODO: add checks for context via local and remove storage to see it works as expected
 
 
 async def test_state_definition_ok():

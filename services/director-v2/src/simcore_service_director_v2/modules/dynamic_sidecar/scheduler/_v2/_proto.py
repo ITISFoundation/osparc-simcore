@@ -84,6 +84,36 @@ class StateNotRegisteredException(BaseEventException):
 ### CONTEXT
 
 
+class ReservedContextKeys:
+    APP: str = "app"
+
+    WORKFLOW_NAME: str = "__workflow_name"
+    WORKFLOW_STATE_NAME: str = "__workflow_state_name"
+    WORKFLOW_CURRENT_EVENT_NAME: str = "__workflow_current_event_name"
+    WORKFLOW_CURRENT_EVENT_INDEX: str = "__workflow_current_event_index"
+
+    EXCEPTION: str = "_exception"
+
+    # reserved keys cannot be overwritten by the event handlers
+    RESERVED: set[str] = {
+        APP,
+        EXCEPTION,
+        WORKFLOW_NAME,
+        WORKFLOW_STATE_NAME,
+        WORKFLOW_CURRENT_EVENT_NAME,
+        WORKFLOW_CURRENT_EVENT_INDEX,
+    }
+
+    # these keys should not be included in the serialization
+    # TODO: maybe a concept of LOCAL and REMOTE
+    # keys or serilizable and not srializable keys is required
+    # some stuff liek the app state is not required to be set remotely
+    # but in local mermory
+    # -maybe have a `ContextStorageInterface` and a `ContextLocalStorageInterface`(used for such properties)
+    # used for properties required by the events but it makes no sense to have them put elsewere
+    LOCAL_STORAGE: set[str] = {APP}
+
+
 class ContextSerializerInterface(ABC):
     @abstractmethod
     async def serialize(self) -> dict[str, Any]:
@@ -146,27 +176,6 @@ class InMemoryContext(ContextStorageInterface, ContextSerializerInterface):
         """nothing to do here"""
 
 
-class ReservedContextKeys:
-    APP: str = "app"
-
-    WORKFLOW_NAME: str = "__workflow_name"
-    WORKFLOW_STATE_NAME: str = "__workflow_state_name"
-    WORKFLOW_CURRENT_EVENT_NAME: str = "__workflow_current_event_name"
-    WORKFLOW_CURRENT_EVENT_INDEX: str = "__workflow_current_event_index"
-
-    EXCEPTION: str = "_exception"
-
-    # reserved keys cannot be overwritten by the event handlers
-    RESERVED: set[str] = {
-        APP,
-        EXCEPTION,
-        WORKFLOW_NAME,
-        WORKFLOW_STATE_NAME,
-        WORKFLOW_CURRENT_EVENT_NAME,
-        WORKFLOW_CURRENT_EVENT_INDEX,
-    }
-
-
 WorkflowName = str
 StateName = str
 EventName = str
@@ -185,7 +194,8 @@ class ContextResolver(ContextSerializerInterface):
         self._state_name: StateName = state_name
 
         self._context: ContextStorageInterface = InMemoryContext()
-        self._skip_serialization: set[str] = {"app"}
+
+        self._local_storage: dict[str, Any] = {}
 
     async def set(self, key: str, value: Any, *, set_reserved: bool = False) -> None:
         """
@@ -196,13 +206,11 @@ class ContextResolver(ContextSerializerInterface):
         if key in ReservedContextKeys.RESERVED and not set_reserved:
             raise NotAllowedContextKeyError(key=key)
 
-        if await self._context.has_key(key):
+        def ensure_type_matches(existing_value: Any, value: Any) -> None:
             # if a value previously existed,
             # ensure it has the same type
-            existing_value = await self._context.load(key)
             existing_type = type(existing_value)
             value_type = type(value)
-
             if existing_type != value_type:
                 raise SetTypeMismatchError(
                     key=key,
@@ -212,16 +220,34 @@ class ContextResolver(ContextSerializerInterface):
                     new_type=value_type,
                 )
 
-        await self._context.save(key, value)
+        if key in ReservedContextKeys.LOCAL_STORAGE:
+            if key in self._local_storage:
+                ensure_type_matches(
+                    existing_value=self._local_storage[key], value=value
+                )
+            self._local_storage[key] = value
+        else:
+            if await self._context.has_key(key):
+                ensure_type_matches(
+                    existing_value=await self._context.load(key), value=value
+                )
+            await self._context.save(key, value)
 
     async def get(self, key: str, expected_type: type) -> Optional[Any]:
         """
         returns an existing value ora raises an error
         """
-        if not await self._context.has_key(key):
+        if (
+            key not in ReservedContextKeys.LOCAL_STORAGE
+            and not await self._context.has_key(key)
+        ):
             raise NotInContextError(key=key, context=await self._context.serialize())
 
-        existing_value = await self._context.load(key)
+        existing_value = (
+            self._local_storage[key]
+            if key in ReservedContextKeys.LOCAL_STORAGE
+            else await self._context.load(key)
+        )
         exiting_type = type(existing_value)
         if exiting_type != expected_type:
             raise GetTypeMismatchError(
