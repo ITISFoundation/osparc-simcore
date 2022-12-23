@@ -1,11 +1,13 @@
 # pylint: disable=protected-access
 
+import asyncio
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto import (
     ContextResolver,
+    ExceptionInfo,
     NotAllowedContextKeyError,
     ReservedContextKeys,
     State,
@@ -250,6 +252,7 @@ async def test_workflow_manager():
 
     async def debug_print(state, event) -> None:
         print(f"{state=}, {event=}")
+        # TODO: these need to be tested!
 
     workflow_manager = WorkflowManager(
         app=FastAPI(),
@@ -273,3 +276,72 @@ async def test_workflow_manager():
     assert "start_first" not in workflow_manager._workflow_tasks
     with pytest.raises(WorkflowNotFoundException):
         await workflow_manager.wait_workflow("start_first")
+
+
+async def test_workflow_manager_error_handling():
+    ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
+
+    @mark_event
+    async def error_raiser() -> dict[str, Any]:
+        raise RuntimeError(ERROR_MARKER_IN_TB)
+
+    @mark_event
+    async def graceful_error_handler(_exception: ExceptionInfo) -> dict[str, Any]:
+        assert _exception.exception_class == RuntimeError
+        assert _exception.state_name in {"case_1_rasing_error", "case_2_rasing_error"}
+        assert _exception.event_name == error_raiser.__name__
+        assert ERROR_MARKER_IN_TB in _exception.serialized_traceback
+        await asyncio.sleep(0.1)
+        return {}
+
+    # CASE 1
+    # error is raised by first state, second state handles it -> no error raised
+    CASE_1_RAISING_ERROR = State(
+        name="case_1_rasing_error",
+        events=[
+            error_raiser,
+        ],
+        next_state=None,
+        on_error_state="case_1_handling_error",
+    )
+    CASE_1_HANDLING_ERROR = State(
+        name="case_1_handling_error",
+        events=[
+            graceful_error_handler,
+        ],
+        next_state=None,
+        on_error_state=None,
+    )
+
+    # CASE 2
+    # error is raised by first state -> raises error
+    CASE_2_RASING_ERROR = State(
+        name="case_2_raising_error",
+        events=[
+            error_raiser,
+        ],
+        next_state=None,
+        on_error_state=None,
+    )
+
+    state_registry = StateRegistry(
+        CASE_1_RAISING_ERROR,
+        CASE_1_HANDLING_ERROR,
+        CASE_2_RASING_ERROR,
+    )
+
+    workflow_name = "test_workflow"
+    # CASE 1
+    workflow_manager = WorkflowManager(app=FastAPI(), state_registry=state_registry)
+    await workflow_manager.run_workflow(
+        workflow_name=workflow_name, state_name="case_1_rasing_error"
+    )
+    await workflow_manager.wait_workflow(workflow_name)
+
+    # CASE 2
+    workflow_manager = WorkflowManager(app=FastAPI(), state_registry=state_registry)
+    await workflow_manager.run_workflow(
+        workflow_name=workflow_name, state_name="case_2_raising_error"
+    )
+    with pytest.raises(RuntimeError):
+        await workflow_manager.wait_workflow(workflow_name)

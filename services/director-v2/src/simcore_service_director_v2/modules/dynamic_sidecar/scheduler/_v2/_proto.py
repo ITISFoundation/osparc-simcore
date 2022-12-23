@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+import traceback
 from abc import ABC, abstractmethod
 from asyncio import Task
 from contextlib import suppress
@@ -358,9 +359,9 @@ def _get_event_and_index(
 
 class ExceptionInfo(BaseModel):
     exception_class: type
-    serialized_traceback: str
     state_name: StateName
     event_name: EventName
+    serialized_traceback: str
 
 
 async def workflow_runner(
@@ -443,28 +444,29 @@ async def workflow_runner(
                 )
         except Exception as e:  # pylint: disable=broad-except
             logger.exception(
-                "An unexpected exception was detected, deferring execution to state=%s",
+                "Unexpected exception, deferring handling to state='%s'",
                 state.on_error_state,
             )
 
             if state.on_error_state is None:
                 # NOTE: since there is no state that takes care of the error
                 # just raise it here and halt the task
+                logger.error("context=%s", await context_resolver.serialize())
                 raise
 
             # Storing exception to be possibly handled by the error state
             exception_info = ExceptionInfo(
                 exception_class=e.__class__,
-                serialized_traceback="",  # TODO: properly format taceback stack
                 state_name=await context_resolver.get(
                     ReservedContextKeys.WORKFLOW_STATE_NAME, WorkflowName
                 ),
                 event_name=await context_resolver.get(
-                    ReservedContextKeys.WORKFLOW_STATE_NAME, StateName
+                    ReservedContextKeys.WORKFLOW_CURRENT_EVENT_NAME, StateName
                 ),
+                serialized_traceback=traceback.format_exc(),
             )
             await context_resolver.set(
-                ReservedContextKeys.EXCEPTION, exception_info, set_reserved=False
+                ReservedContextKeys.EXCEPTION, exception_info, set_reserved=True
             )
 
             state = (
