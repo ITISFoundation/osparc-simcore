@@ -471,7 +471,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # for passing self-signed certificate to spawned services
-    # TODO: fix these variables once the timeout-minutes: 30 is able to start dynamic services
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: str = ""
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: str = ""
     DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: str = ""
