@@ -203,7 +203,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         fetching,
         visibility
       });
-      this._moreResourcesRequired();
+      loadMoreBtn.addListener("appear", () => this._moreResourcesRequired());
 
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
@@ -493,7 +493,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       loadMoreBtn.setCardKey("load-more");
       osparc.utils.Utils.setIdToWidget(loadMoreBtn, "studiesLoading");
       loadMoreBtn.addListener("execute", () => {
-        this.setValue(false);
+        loadMoreBtn.setValue(false);
         this._moreResourcesRequired();
       });
       return loadMoreBtn;
