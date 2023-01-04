@@ -269,7 +269,7 @@ def get_dynamic_sidecar_spec(
                     and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME
                     and app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
                 )
-                else [],
+                else None,
             },
             "Placement": {
                 "Constraints": deepcopy(
