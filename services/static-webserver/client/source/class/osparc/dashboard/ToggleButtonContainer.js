@@ -97,15 +97,6 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
-      // OM check this
-      /*
-      if (this.nextRequest !== null && loadingResourcesBtn &&
-        (this.__getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn))
-      ) {
-        return true;
-      }
-      */
       if (this.nextRequest !== null && loadingResourcesBtn && osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn)) {
         return true;
       }

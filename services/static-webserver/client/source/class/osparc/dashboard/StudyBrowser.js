@@ -203,6 +203,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         fetching,
         visibility
       });
+      this._moreResourcesRequired();
+
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
@@ -491,10 +493,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       loadMoreBtn.setCardKey("load-more");
       osparc.utils.Utils.setIdToWidget(loadMoreBtn, "studiesLoading");
       loadMoreBtn.addListener("execute", () => {
-        if (this._resourcesContainer.getFlatList().nextRequest !== null) {
-          this.resetSelection();
-          this.reloadResources();
-        }
+        this.setValue(false);
+        this._moreResourcesRequired();
       });
       return loadMoreBtn;
     },
