@@ -193,14 +193,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("studiesList");
       this.__configureCards(cards);
+
       this.__addNewStudyButtons();
+
       const loadMoreBtn = this.__createLoadMoreButton();
       loadMoreBtn.set({
         fetching,
         visibility
       });
       loadMoreBtn.addListener("appear", () => this._moreResourcesRequired());
-
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
