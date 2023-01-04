@@ -458,7 +458,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__addNewStudyButtons();
 
-      const loadMoreBtn = this.__createLoadMoreButton("studiesLoading");
+      const loadMoreBtn = this.__createLoadMoreButton();
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       this.addListener("changeMultiSelection", e => {
@@ -490,6 +490,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const loadMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
       loadMoreBtn.setCardKey("load-more");
       osparc.utils.Utils.setIdToWidget(loadMoreBtn, "studiesLoading");
+      loadMoreBtn.addListener("execute", () => {
+        if (this._resourcesContainer.getFlatList().nextRequest !== null) {
+          this.resetSelection();
+          this.reloadResources();
+        }
+      });
       return loadMoreBtn;
     },
 
