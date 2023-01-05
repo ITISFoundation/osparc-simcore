@@ -1,10 +1,10 @@
 from copy import deepcopy
 from typing import Any, Optional
 
-from ._context_base import ContextSerializerInterface, ContextStorageInterface
+from ._context_base import BaseContextInterface
 
 
-class InMemoryContext(ContextStorageInterface, ContextSerializerInterface):
+class InMemoryContext(BaseContextInterface):
     def __init__(self) -> None:
         self._context: dict[str, Any] = {}
 

@@ -3,7 +3,8 @@ from typing import Any, Optional
 from fastapi import FastAPI
 
 from ._context_base import (
-    ContextSerializerInterface,
+    BaseContextInterface,
+    ContextIOInterface,
     ContextStorageInterface,
     ReservedContextKeys,
 )
@@ -16,14 +17,14 @@ from ._errors import (
 from ._models import StateName, WorkflowName
 
 
-class ContextResolver(ContextSerializerInterface):
+class ContextResolver(ContextIOInterface):
     """
     Used to keep track of generated data.
     """
 
     def __init__(
         self,
-        storage_context: type[ContextSerializerInterface],
+        storage_context: type[BaseContextInterface],
         app: FastAPI,
         workflow_name: WorkflowName,
         state_name: StateName,

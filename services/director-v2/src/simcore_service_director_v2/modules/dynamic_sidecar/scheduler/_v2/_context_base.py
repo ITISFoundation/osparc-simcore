@@ -27,7 +27,7 @@ class ReservedContextKeys:
     STORED_LOCALLY: set[str] = {APP}
 
 
-class ContextSerializerInterface(ABC):
+class ContextIOInterface(ABC):
     @abstractmethod
     async def to_dict(self) -> dict[str, Any]:
         """returns the context of a store as a dictionary"""
@@ -61,3 +61,9 @@ class ContextStorageInterface(ABC):
     @abstractmethod
     async def shutdown(self) -> None:
         """run storage specific halt and cleanup"""
+
+
+class BaseContextInterface(ContextStorageInterface, ContextIOInterface):
+    """
+    This should be inherited when defining a new type of Context.
+    """

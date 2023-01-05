@@ -53,7 +53,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.vo
     DockerVersion,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
-    ContextSerializerInterface,
+    ContextIOInterface,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_in_memory import (
     InMemoryContext,
@@ -450,5 +450,5 @@ async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion
 
 
 @pytest.fixture(params=[InMemoryContext])
-def storage_context(request: FixtureRequest) -> type[ContextSerializerInterface]:
+def storage_context(request: FixtureRequest) -> type[ContextIOInterface]:
     return request.param

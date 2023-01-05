@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from pytest import LogCaptureFixture
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
-    ContextSerializerInterface,
+    ContextIOInterface,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_resolver import (
     ContextResolver,
@@ -76,7 +76,7 @@ async def test_iter_from():
 
 
 async def test_run_workflow(
-    storage_context: type[ContextSerializerInterface],
+    storage_context: type[ContextIOInterface],
     caplog_info_level: LogCaptureFixture,
 ):
     context_resolver = ContextResolver(
@@ -149,7 +149,7 @@ async def test_run_workflow(
     await context_resolver.shutdown()
 
 
-async def test_workflow_manager(storage_context: type[ContextSerializerInterface]):
+async def test_workflow_manager(storage_context: type[ContextIOInterface]):
     @mark_event
     async def initial_state() -> dict[str, Any]:
         print("initial state")
@@ -210,7 +210,7 @@ async def test_workflow_manager(storage_context: type[ContextSerializerInterface
 
 
 async def test_workflow_manager_error_handling(
-    storage_context: type[ContextSerializerInterface],
+    storage_context: type[ContextIOInterface],
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
 

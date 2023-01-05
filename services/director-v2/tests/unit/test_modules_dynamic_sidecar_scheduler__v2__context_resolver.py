@@ -5,7 +5,7 @@ import pytest
 from fastapi import FastAPI
 from pytest import FixtureRequest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
-    ContextSerializerInterface,
+    ContextIOInterface,
     ReservedContextKeys,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_in_memory import (
@@ -20,12 +20,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors i
 
 
 @pytest.fixture(params=[InMemoryContext])
-def storage_context(request: FixtureRequest) -> type[ContextSerializerInterface]:
+def storage_context(request: FixtureRequest) -> type[ContextIOInterface]:
     return request.param
 
 
 async def test_context_resolver_initialization(
-    storage_context: type[ContextSerializerInterface],
+    storage_context: type[ContextIOInterface],
 ):
     app = FastAPI()
     context_resolver = ContextResolver(
@@ -42,7 +42,7 @@ async def test_context_resolver_initialization(
 
 
 async def test_context_resolver_ignored_keys(
-    storage_context: type[ContextSerializerInterface],
+    storage_context: type[ContextIOInterface],
 ):
     context_resolver = ContextResolver(
         storage_context, app=FastAPI(), workflow_name="", state_name=""

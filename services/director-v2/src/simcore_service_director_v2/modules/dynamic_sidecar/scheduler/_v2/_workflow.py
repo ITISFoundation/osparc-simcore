@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable, Iterable, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, NonNegativeInt
 
-from ._context_base import ContextSerializerInterface, ReservedContextKeys
+from ._context_base import BaseContextInterface, ReservedContextKeys
 from ._context_resolver import ContextResolver
 from ._errors import (
     NotInContextError,
@@ -171,7 +171,7 @@ class WorkflowManager:
 
     def __init__(
         self,
-        storage_context: type[ContextSerializerInterface],
+        storage_context: type[BaseContextInterface],
         app: FastAPI,
         state_registry: StateRegistry,
         *,
