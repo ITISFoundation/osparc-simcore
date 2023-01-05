@@ -39,7 +39,7 @@ class ContextSerializerInterface(ABC):
 
 class ContextStorageInterface(ABC):
     """
-    Base interface for saving and loading data.
+    Base interface for saving and loading data from a store
     """
 
     @abstractmethod
