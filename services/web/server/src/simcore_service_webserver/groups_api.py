@@ -58,6 +58,7 @@ async def list_user_groups(
     primary_group = {}
     user_groups = []
     all_group = {}
+
     async with engine.acquire() as conn:
         query = (
             sa.select([groups, user_to_groups.c.access_rights])
@@ -66,12 +67,19 @@ async def list_user_groups(
             )
             .where(user_to_groups.c.uid == user_id)
         )
+        row: RowProxy
         async for row in conn.execute(query):
-            if row["type"] == GroupType.EVERYONE:
+            if row.type == GroupType.EVERYONE:
+                # FIXME: only admin should have read access to EVERYONE
+                assert row.access_rights["read"]  # nosec
                 all_group = convert_groups_db_to_schema(row)
-            elif row["type"] == GroupType.PRIMARY:
+
+            elif row.type == GroupType.PRIMARY:
+                assert row.access_rights["read"]  # nosec
                 primary_group = convert_groups_db_to_schema(row)
+
             else:
+                assert row.type == GroupType.STANDARD  # nosec
                 # only add if user has read access
                 if row.access_rights["read"]:
                     user_groups.append(convert_groups_db_to_schema(row))
