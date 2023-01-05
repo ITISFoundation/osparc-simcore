@@ -1,17 +1,22 @@
 # pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
 
 import asyncio
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
+from pytest import FixtureRequest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto import (
     ContextResolver,
+    ContextSerializerInterface,
     ExceptionInfo,
+    InMemoryContext,
     NotAllowedContextKeyError,
     ReservedContextKeys,
     State,
     StateRegistry,
+    UnexpectedEventReturnTypeError,
     WorkflowManager,
     WorkflowNotFoundException,
     _get_event_and_index,
@@ -30,10 +35,21 @@ async def test_register_event_with_return_value():
     assert await return_inputs(1, 2, {"ciao": 3}) == dict(x=1, y=2, z={"ciao": 3})
 
 
-# TODO: test with wrong return type!
-# TODO: test to see for state definition
-# TODO: test to ensure the chained serializers for events I/O chains are working
-# TODO: add checks for context via local and remove storage to see it works as expected
+async def test_register_event_wrong_return_type():
+    with pytest.raises(UnexpectedEventReturnTypeError) as exec_info:
+
+        @mark_event
+        async def wrong_return_type(x: str, y: float, z: dict[str, int]) -> str:
+            return {"x": x, "y": y, "z": z}
+
+    assert (
+        f"{exec_info.value}"
+        == "Event should always return `dict[str, Any]`, returning: <class 'str'>"
+    )
+
+
+# TODO: test to see for state definition -> not sure wht this is related to
+# TODO: test to ensure the chained serializers for events I/O chains are working -> depends on implementation?
 
 
 async def test_state_definition_ok():
@@ -126,8 +142,34 @@ async def test_iter_from():
         assert len(zero_element_list) == 0
 
 
-async def test_context_resolver_ignored_keys():
-    context_resolver = ContextResolver(app=FastAPI(), workflow_name="", state_name="")
+@pytest.fixture(params=[InMemoryContext])
+def storage_context(request: FixtureRequest) -> type[ContextSerializerInterface]:
+    return request.param
+
+
+async def test_context_resolver_initialization(
+    storage_context: type[ContextSerializerInterface],
+):
+    app = FastAPI()
+    context_resolver = ContextResolver(
+        storage_context, app=app, workflow_name="", state_name=""
+    )
+    await context_resolver.start()
+
+    # check locally stored values are available
+    for key in ReservedContextKeys.STORED_LOCALLY:
+        assert key in context_resolver._local_storage
+    assert app == context_resolver._local_storage[ReservedContextKeys.APP]
+
+    await context_resolver.shutdown()
+
+
+async def test_context_resolver_ignored_keys(
+    storage_context: type[ContextSerializerInterface],
+):
+    context_resolver = ContextResolver(
+        storage_context, app=FastAPI(), workflow_name="", state_name=""
+    )
     await context_resolver.start()
 
     with pytest.raises(NotAllowedContextKeyError):
@@ -148,12 +190,14 @@ async def test_reserved_context_keys():
 
     assert (
         user_defined_keys == ReservedContextKeys.RESERVED
-    ), "please make sure all defined keys are also listed inside RESERVED"
+    ), "please make sure all keys starting with `_` are also listed inside RESERVED"
 
 
-async def test_run_workflow():
+async def test_run_workflow(
+    storage_context: type[ContextSerializerInterface],
+):
     context_resolver = ContextResolver(
-        app=FastAPI(), workflow_name="unique", state_name="first"
+        storage_context, app=FastAPI(), workflow_name="unique", state_name="first"
     )
     await context_resolver.start()
 
@@ -204,15 +248,15 @@ async def test_run_workflow():
     await workflow_runner(
         state_registry=state_registry,
         context_resolver=context_resolver,
-        before_event=debug_print,
-        after_event=debug_print,
+        before_event_hook=debug_print,
+        after_event_hook=debug_print,
     )
     print(context_resolver)
 
     await context_resolver.shutdown()
 
 
-async def test_workflow_manager():
+async def test_workflow_manager(storage_context: type[ContextSerializerInterface]):
     @mark_event
     async def initial_state() -> dict[str, Any]:
         print("initial state")
@@ -256,10 +300,11 @@ async def test_workflow_manager():
         # TODO: these need to be tested!
 
     workflow_manager = WorkflowManager(
+        storage_context=storage_context,
         app=FastAPI(),
         state_registry=state_registry,
-        before_event=debug_print,
-        after_event=debug_print,
+        before_event_hook=debug_print,
+        after_event_hook=debug_print,
     )
 
     # ok workflow
@@ -279,7 +324,9 @@ async def test_workflow_manager():
         await workflow_manager.wait_workflow("start_first")
 
 
-async def test_workflow_manager_error_handling():
+async def test_workflow_manager_error_handling(
+    storage_context: type[ContextSerializerInterface],
+):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
 
     @mark_event
@@ -333,14 +380,18 @@ async def test_workflow_manager_error_handling():
 
     workflow_name = "test_workflow"
     # CASE 1
-    workflow_manager = WorkflowManager(app=FastAPI(), state_registry=state_registry)
+    workflow_manager = WorkflowManager(
+        storage_context=storage_context, app=FastAPI(), state_registry=state_registry
+    )
     await workflow_manager.run_workflow(
         workflow_name=workflow_name, state_name="case_1_rasing_error"
     )
     await workflow_manager.wait_workflow(workflow_name)
 
     # CASE 2
-    workflow_manager = WorkflowManager(app=FastAPI(), state_registry=state_registry)
+    workflow_manager = WorkflowManager(
+        storage_context=storage_context, app=FastAPI(), state_registry=state_registry
+    )
     await workflow_manager.run_workflow(
         workflow_name=workflow_name, state_name="case_2_raising_error"
     )

@@ -104,14 +104,9 @@ class ReservedContextKeys:
         WORKFLOW_CURRENT_EVENT_INDEX,
     }
 
-    # these keys should not be included in the serialization
-    # TODO: maybe a concept of LOCAL and REMOTE
-    # keys or serilizable and not srializable keys is required
-    # some stuff liek the app state is not required to be set remotely
-    # but in local mermory
-    # -maybe have a `ContextStorageInterface` and a `ContextLocalStorageInterface`(used for such properties)
-    # used for properties required by the events but it makes no sense to have them put elsewere
-    LOCAL_STORAGE: set[str] = {APP}
+    # NOTE: the objects pointed by these keys are just references
+    # to local global values and never serialized
+    STORED_LOCALLY: set[str] = {APP}
 
 
 class ContextSerializerInterface(ABC):
@@ -187,13 +182,17 @@ class ContextResolver(ContextSerializerInterface):
     """
 
     def __init__(
-        self, app: FastAPI, workflow_name: WorkflowName, state_name: StateName
+        self,
+        storage_context: type[ContextSerializerInterface],
+        app: FastAPI,
+        workflow_name: WorkflowName,
+        state_name: StateName,
     ) -> None:
         self._app: FastAPI = app
         self._workflow_name: WorkflowName = workflow_name
         self._state_name: StateName = state_name
 
-        self._context: ContextStorageInterface = InMemoryContext()
+        self._context: ContextStorageInterface = storage_context()
 
         self._local_storage: dict[str, Any] = {}
 
@@ -220,7 +219,7 @@ class ContextResolver(ContextSerializerInterface):
                     new_type=value_type,
                 )
 
-        if key in ReservedContextKeys.LOCAL_STORAGE:
+        if key in ReservedContextKeys.STORED_LOCALLY:
             if key in self._local_storage:
                 ensure_type_matches(
                     existing_value=self._local_storage[key], value=value
@@ -238,14 +237,14 @@ class ContextResolver(ContextSerializerInterface):
         returns an existing value ora raises an error
         """
         if (
-            key not in ReservedContextKeys.LOCAL_STORAGE
+            key not in ReservedContextKeys.STORED_LOCALLY
             and not await self._context.has_key(key)
         ):
             raise NotInContextError(key=key, context=await self._context.serialize())
 
         existing_value = (
             self._local_storage[key]
-            if key in ReservedContextKeys.LOCAL_STORAGE
+            if key in ReservedContextKeys.STORED_LOCALLY
             else await self._context.load(key)
         )
         exiting_type = type(existing_value)
@@ -394,8 +393,8 @@ async def workflow_runner(
     state_registry: StateRegistry,
     context_resolver: ContextResolver,
     *,
-    before_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
-    after_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    before_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    after_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
 ) -> None:
     """
 
@@ -454,11 +453,11 @@ async def workflow_runner(
                     set_reserved=True,
                 )
 
-                if before_event:
-                    await before_event(state_name, event_name)
+                if before_event_hook:
+                    await before_event_hook(state_name, event_name)
                 result = await event(**inputs)
-                if after_event:
-                    await after_event(state_name, event_name)
+                if after_event_hook:
+                    await after_event_hook(state_name, event_name)
 
                 # saving outputs to context
                 logger.debug("event='%s', result=%s", event_name, result)
@@ -519,16 +518,18 @@ class WorkflowManager:
 
     def __init__(
         self,
+        storage_context: type[ContextSerializerInterface],
         app: FastAPI,
         state_registry: StateRegistry,
         *,
-        before_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
-        after_event: Optional[Callable[[str, str], Awaitable[None]]] = None,
+        before_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
+        after_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
     ) -> None:
+        self.storage_context = storage_context
         self.app = app
         self.state_registry = state_registry
-        self.before_event = before_event
-        self.after_event = after_event
+        self.before_event_hook = before_event_hook
+        self.after_event_hook = after_event_hook
 
         self._workflow_tasks: dict[WorkflowName, Task] = {}
         self._workflow_context: dict[WorkflowName, ContextResolver] = {}
@@ -547,15 +548,18 @@ class WorkflowManager:
             )
 
         self._workflow_context[workflow_name] = context_resolver = ContextResolver(
-            app=self.app, workflow_name=workflow_name, state_name=state_name
+            storage_context=self.storage_context,
+            app=self.app,
+            workflow_name=workflow_name,
+            state_name=state_name,
         )
         await context_resolver.start()
 
         workflow_runner_awaitable: Awaitable = workflow_runner(
             state_registry=self.state_registry,
             context_resolver=context_resolver,
-            before_event=self.before_event,
-            after_event=self.after_event,
+            before_event_hook=self.before_event_hook,
+            after_event_hook=self.after_event_hook,
         )
 
         self._create_workflow_task(workflow_runner_awaitable, workflow_name)
@@ -566,8 +570,8 @@ class WorkflowManager:
         workflow_runner_awaitable: Awaitable = workflow_runner(
             state_registry=self.state_registry,
             context_resolver=context_resolver,
-            before_event=self.before_event,
-            after_event=self.after_event,
+            before_event_hook=self.before_event_hook,
+            after_event_hook=self.after_event_hook,
         )
 
         workflow_name: WorkflowName = await context_resolver.get(
