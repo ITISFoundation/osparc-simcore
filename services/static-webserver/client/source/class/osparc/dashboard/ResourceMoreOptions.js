@@ -289,7 +289,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getClassifiersPage: function() {
-      const id = "Classfiiers";
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        return null;
+      }
+      const id = "Classifiers";
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
       }
