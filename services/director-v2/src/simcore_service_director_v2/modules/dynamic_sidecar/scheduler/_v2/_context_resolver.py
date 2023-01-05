@@ -80,7 +80,7 @@ class ContextResolver(ContextSerializerInterface):
             key not in ReservedContextKeys.STORED_LOCALLY
             and not await self._context.has_key(key)
         ):
-            raise NotInContextError(key=key, context=await self._context.serialize())
+            raise NotInContextError(key=key, context=await self._context.to_dict())
 
         existing_value = (
             self._local_storage[key]
@@ -97,11 +97,11 @@ class ContextResolver(ContextSerializerInterface):
             )
         return existing_value
 
-    async def serialize(self) -> dict[str, Any]:
-        return await self._context.serialize()
+    async def to_dict(self) -> dict[str, Any]:
+        return await self._context.to_dict()
 
-    async def deserialize(self, incoming: dict[str, Any]) -> None:
-        return await self._context.deserialize(incoming)
+    async def from_dict(self, incoming: dict[str, Any]) -> None:
+        return await self._context.from_dict(incoming)
 
     async def start(self) -> None:
         await self._context.start()

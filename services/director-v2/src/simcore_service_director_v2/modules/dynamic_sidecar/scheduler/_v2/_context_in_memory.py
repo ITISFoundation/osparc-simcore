@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Optional
 
 from ._context_base import ContextSerializerInterface, ContextStorageInterface
@@ -16,10 +17,10 @@ class InMemoryContext(ContextStorageInterface, ContextSerializerInterface):
     async def has_key(self, key: str) -> bool:
         return key in self._context
 
-    async def serialize(self) -> dict[str, Any]:
-        return self._context
+    async def to_dict(self) -> dict[str, Any]:
+        return deepcopy(self._context)
 
-    async def deserialize(self, incoming: dict[str, Any]) -> None:
+    async def from_dict(self, incoming: dict[str, Any]) -> None:
         self._context.update(incoming)
 
     async def start(self) -> None:

@@ -29,11 +29,11 @@ class ReservedContextKeys:
 
 class ContextSerializerInterface(ABC):
     @abstractmethod
-    async def serialize(self) -> dict[str, Any]:
+    async def to_dict(self) -> dict[str, Any]:
         """returns the context of a store as a dictionary"""
 
     @abstractmethod
-    async def deserialize(self, incoming: dict[str, Any]) -> None:
+    async def from_dict(self, incoming: dict[str, Any]) -> None:
         """parses the incoming context and sends it to the store"""
 
 
