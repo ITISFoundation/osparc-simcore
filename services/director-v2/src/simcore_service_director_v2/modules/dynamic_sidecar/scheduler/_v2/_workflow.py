@@ -23,19 +23,19 @@ from ._state import State, StateRegistry
 logger = logging.getLogger(__name__)
 
 
+class ExceptionInfo(BaseModel):
+    exception_class: type
+    state_name: StateName
+    event_name: EventName
+    serialized_traceback: str
+
+
 def _get_event_and_index(
     iterable: Iterable[Callable], *, index: NonNegativeInt = 0
 ) -> tuple[NonNegativeInt, Callable]:
     for i, value in enumerate(iterable):
         if i >= index:
             yield i, value
-
-
-class ExceptionInfo(BaseModel):
-    exception_class: type
-    state_name: StateName
-    event_name: EventName
-    serialized_traceback: str
 
 
 async def workflow_runner(
