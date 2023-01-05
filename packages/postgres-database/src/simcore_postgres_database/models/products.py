@@ -31,7 +31,8 @@ class Vendor(TypedDict, total=False):
     name: str
     copyright: str
     url: str
-    license_url: str
+    license_url: str  # Which are the license terms? (if applies)
+    invitation_url: str  # How to request a trial invitation? (if applies)
 
 
 class IssueTracker(TypedDict, total=True):
