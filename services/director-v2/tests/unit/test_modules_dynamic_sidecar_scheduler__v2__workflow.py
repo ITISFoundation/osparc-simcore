@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from typing import Any
 
 import pytest
@@ -36,6 +37,15 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow
 )
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def _workflow_manager_lifecycle(workflow_manager: WorkflowManager) -> None:
+    try:
+        await workflow_manager.start()
+        yield None
+    finally:
+        await workflow_manager.shutdown()
 
 
 async def test_iter_from():
@@ -75,7 +85,7 @@ async def test_iter_from():
         assert len(zero_element_list) == 0
 
 
-async def test_run_workflow(
+async def test_workflow_runner(
     storage_context: type[ContextIOInterface],
     caplog_info_level: LogCaptureFixture,
 ):
@@ -191,22 +201,26 @@ async def test_workflow_manager(storage_context: type[ContextIOInterface]):
     workflow_manager = WorkflowManager(
         storage_context=storage_context, app=FastAPI(), state_registry=state_registry
     )
-
-    # ok workflow
-    await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
-    assert "start_first" in workflow_manager._workflow_context
-    assert "start_first" in workflow_manager._workflow_tasks
-    await workflow_manager.wait_workflow("start_first")
-    assert "start_first" not in workflow_manager._workflow_context
-    assert "start_first" not in workflow_manager._workflow_tasks
-
-    # cancel workflow
-    await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
-    await workflow_manager.cancel_workflow("start_first")
-    assert "start_first" not in workflow_manager._workflow_context
-    assert "start_first" not in workflow_manager._workflow_tasks
-    with pytest.raises(WorkflowNotFoundException):
+    async with _workflow_manager_lifecycle(workflow_manager):
+        # ok workflow
+        await workflow_manager.run_workflow(
+            workflow_name="start_first", state_name="first"
+        )
+        assert "start_first" in workflow_manager._workflow_context
+        assert "start_first" in workflow_manager._workflow_tasks
         await workflow_manager.wait_workflow("start_first")
+        assert "start_first" not in workflow_manager._workflow_context
+        assert "start_first" not in workflow_manager._workflow_tasks
+
+        # cancel workflow
+        await workflow_manager.run_workflow(
+            workflow_name="start_first", state_name="first"
+        )
+        await workflow_manager.cancel_workflow("start_first")
+        assert "start_first" not in workflow_manager._workflow_context
+        assert "start_first" not in workflow_manager._workflow_tasks
+        with pytest.raises(WorkflowNotFoundException):
+            await workflow_manager.wait_workflow("start_first")
 
 
 async def test_workflow_manager_error_handling(
@@ -268,17 +282,19 @@ async def test_workflow_manager_error_handling(
     workflow_manager = WorkflowManager(
         storage_context=storage_context, app=FastAPI(), state_registry=state_registry
     )
-    await workflow_manager.run_workflow(
-        workflow_name=workflow_name, state_name="case_1_rasing_error"
-    )
-    await workflow_manager.wait_workflow(workflow_name)
+    async with _workflow_manager_lifecycle(workflow_manager):
+        await workflow_manager.run_workflow(
+            workflow_name=workflow_name, state_name="case_1_rasing_error"
+        )
+        await workflow_manager.wait_workflow(workflow_name)
 
     # CASE 2
     workflow_manager = WorkflowManager(
         storage_context=storage_context, app=FastAPI(), state_registry=state_registry
     )
-    await workflow_manager.run_workflow(
-        workflow_name=workflow_name, state_name="case_2_raising_error"
-    )
-    with pytest.raises(RuntimeError):
-        await workflow_manager.wait_workflow(workflow_name)
+    async with _workflow_manager_lifecycle(workflow_manager):
+        await workflow_manager.run_workflow(
+            workflow_name=workflow_name, state_name="case_2_raising_error"
+        )
+        with pytest.raises(RuntimeError):
+            await workflow_manager.wait_workflow(workflow_name)
