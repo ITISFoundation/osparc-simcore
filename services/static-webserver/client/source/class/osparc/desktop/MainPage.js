@@ -118,18 +118,16 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardBtn = this.__navBar.getChildControl("dashboard-button");
       dashboardBtn.setFetching(true);
       if (this.__studyEditor.didStudyChange()) {
+        // make sure very latest changes are saved
         await this.__studyEditor.updateStudyDocument(false);
       }
       const studyId = this.__studyEditor.getStudy().getUuid();
       this.__studyEditor.closeEditor();
+      this.__closeStudy(studyId);
       this.__showDashboard();
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
-      this.__dashboard.getStudyBrowser().reloadStudy(studyId)
-        .then(() => {
-          this.__closeStudy(studyId);
-        });
       dashboardBtn.setFetching(false);
     },
 

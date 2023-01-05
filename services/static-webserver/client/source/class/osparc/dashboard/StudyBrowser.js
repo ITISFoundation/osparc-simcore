@@ -187,22 +187,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _reloadCards: function() {
-      let fetching = false;
-      let visibility = "excluded";
-      if (this._loadingResourcesBtn) {
-        fetching = this._loadingResourcesBtn.getFetching();
-        visibility = this._loadingResourcesBtn.getVisibility();
-      }
+      const fetching = this._loadingResourcesBtn ? this._loadingResourcesBtn.getFetching() : false;
+      const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("studiesList");
       this.__configureCards(cards);
+
       this.__addNewStudyButtons();
+
       const loadMoreBtn = this.__createLoadMoreButton();
       loadMoreBtn.set({
         fetching,
         visibility
       });
+      loadMoreBtn.addListener("appear", () => this._moreResourcesRequired());
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
@@ -458,7 +457,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__addNewStudyButtons();
 
-      const loadMoreBtn = this.__createLoadMoreButton("studiesLoading");
+      const loadMoreBtn = this.__createLoadMoreButton();
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       this.addListener("changeMultiSelection", e => {
@@ -490,6 +489,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const loadMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
       loadMoreBtn.setCardKey("load-more");
       osparc.utils.Utils.setIdToWidget(loadMoreBtn, "studiesLoading");
+      loadMoreBtn.addListener("execute", () => {
+        loadMoreBtn.setValue(false);
+        this._moreResourcesRequired();
+      });
       return loadMoreBtn;
     },
 

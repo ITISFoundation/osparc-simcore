@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.form.ColorPicker", {
           control.addListener("execute", () => this.setColor(osparc.utils.Utils.getRandomColor()), this);
           this.bind("color", control, "backgroundColor");
           this.bind("color", control, "textColor", {
-            converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
+            converter: value => qx.theme.manager.Color.getInstance().resolve(osparc.utils.Utils.getContrastedTextColor(value))
           });
           break;
         case "selector-button":
@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.form.ColorPicker", {
           control.addListener("execute", () => this.__openColorSelector(), this);
           this.bind("color", control, "backgroundColor");
           this.bind("color", control, "textColor", {
-            converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
+            converter: value => qx.theme.manager.Color.getInstance().resolve(osparc.utils.Utils.getContrastedTextColor(value))
           });
           break;
         case "color-input":

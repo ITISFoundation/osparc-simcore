@@ -92,9 +92,9 @@ qx.Class.define("osparc.CookiePolicy", {
               if (licenseLink) {
                 const color = qx.theme.manager.Color.getInstance().resolve("text");
                 const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
-                control.setLabel(lbl + textLink);
+                control.setValue(lbl + textLink);
               } else {
-                control.setLabel(lbl + this.tr("Licensing."));
+                control.setValue(lbl + this.tr("Licensing."));
               }
             });
           this._add(control, {
