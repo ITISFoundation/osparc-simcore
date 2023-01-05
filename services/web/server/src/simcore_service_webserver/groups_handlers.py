@@ -74,9 +74,21 @@ async def list_groups(request: web.Request):
     }
 
     if product.group_id:
-        result["product"] = await groups_api.get_user_group(
-            app=request.app, user_id=user_id, gid=product.group_id
-        )
+        try:
+            result["product"] = await groups_api.get_product_group_for_user(
+                app=request.app,
+                user_id=user_id,
+                product_gid=product.group_id,
+            )
+        except GroupNotFoundError as err:
+            logger.debug(
+                "This user does not belong to any product's group: %s."
+                "This is typically assigned during registration but this user "
+                "might have been created prior to this new feature."
+                "TIP: assign it manually to the default product group_id and "
+                "restart service to refresh product info",
+                err,
+            )
 
     return result
 

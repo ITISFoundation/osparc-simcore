@@ -111,10 +111,29 @@ async def _get_user_from_email(app: web.Application, email: str) -> RowProxy:
 async def get_user_group(
     app: web.Application, user_id: int, gid: int
 ) -> dict[str, str]:
+    """
+    Gets group gid if user associated to it and has read access
+
+    raises GroupNotFoundError
+    raises UserInsufficientRightsError
+    """
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group: RowProxy = await _get_user_group(conn, user_id, gid)
         check_group_permissions(group, user_id, gid, "read")
+        return convert_groups_db_to_schema(group)
+
+
+async def get_product_group_for_user(
+    app: web.Application, user_id: int, product_gid: int
+) -> dict[str, str]:
+    """
+    Returns product's group if user belongs to it, otherwise it
+    raises GroupNotFoundError
+    """
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        group: RowProxy = await _get_user_group(conn, user_id, product_gid)
         return convert_groups_db_to_schema(group)
 
 
