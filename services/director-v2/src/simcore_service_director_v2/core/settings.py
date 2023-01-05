@@ -471,9 +471,18 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # for passing self-signed certificate to spawned services
-    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: str = ""
-    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: str = ""
-    DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: str = ""
+    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: Optional[str] = Field(
+        None,
+        description="ID of the docker secret containing the self-signed certificate",
+    )
+    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: Optional[str] = Field(
+        None,
+        description="Name of the docker secret containing the self-signed certificate",
+    )
+    DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: Optional[str] = Field(
+        None,
+        description="Filepath to self-signed osparc.crt file *as mounted inside the container*",
+    )
 
     # extras
     EXTRA_HOSTS_SUFFIX: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
