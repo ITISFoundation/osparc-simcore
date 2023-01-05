@@ -115,7 +115,7 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
     return json.loads(fpath.read_text())
 
 
-@pytest.fixture()
+@pytest.fixture
 async def logged_user(
     client: TestClient, user_role: UserRole
 ) -> AsyncIterator[UserInfoDict]:
