@@ -10,7 +10,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._state im
 )
 
 
-async def test_state_definition_ok():
+async def test_state_ok():
     @mark_event
     async def print_info() -> dict[str, Any]:
         print("some info")
