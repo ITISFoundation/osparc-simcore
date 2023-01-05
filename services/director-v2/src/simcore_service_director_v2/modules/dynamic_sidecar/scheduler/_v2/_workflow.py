@@ -291,7 +291,7 @@ class WorkflowManager:
 
     async def shutdown(self) -> None:
         # NOTE: content can change while iterating
-        for key in self._workflow_context.keys():
+        for key in set(self._workflow_context.keys()):
             context_resolver: Optional[ContextResolver] = self._workflow_context.get(
                 key, None
             )
@@ -299,7 +299,7 @@ class WorkflowManager:
                 await context_resolver.shutdown()
 
         # NOTE: content can change while iterating
-        for key in self._shutdown_tasks_workflow_context.keys():
+        for key in set(self._shutdown_tasks_workflow_context.keys()):
             task: Optional[Task] = self._shutdown_tasks_workflow_context.get(key, None)
             await self.__cancel_task(task)
 
