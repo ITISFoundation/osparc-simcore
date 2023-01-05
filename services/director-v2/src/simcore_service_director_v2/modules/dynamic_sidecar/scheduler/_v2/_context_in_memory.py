@@ -5,6 +5,12 @@ from ._context_base import BaseContextInterface
 
 
 class InMemoryContext(BaseContextInterface):
+    """
+    Very simple context to keep track of data.
+    NOTE: Does not support data persistance. Requires
+    external system to back it up.
+    """
+
     def __init__(self) -> None:
         self._context: dict[str, Any] = {}
 
