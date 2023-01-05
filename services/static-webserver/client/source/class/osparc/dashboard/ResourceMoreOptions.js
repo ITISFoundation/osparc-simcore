@@ -204,7 +204,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const resourceData = this.__resourceData;
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
-      infoCard.addListener("openClassifiers", () => this.openClassfiers());
+      infoCard.addListener("openClassifiers", () => this.openClassifiers());
       infoCard.addListener("openQuality", () => this.openQuality());
       infoCard.addListener("updateStudy", e => {
         const updatedData = e.getData();
