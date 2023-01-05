@@ -72,8 +72,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
-    PAGINATED_STUDIES: 10,
-    MIN_FILTERED_STUDIES: 15
+    PAGINATED_STUDIES: 10
   },
 
   members: {
