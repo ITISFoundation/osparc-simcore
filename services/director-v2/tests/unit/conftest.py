@@ -32,7 +32,7 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKeyVersion
 from pydantic import parse_obj_as
 from pydantic.types import NonNegativeInt
-from pytest import LogCaptureFixture, MonkeyPatch
+from pytest import FixtureRequest, LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -51,6 +51,12 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
     DockerVersion,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
+    ContextSerializerInterface,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_in_memory import (
+    InMemoryContext,
 )
 from yarl import URL
 
@@ -441,3 +447,8 @@ async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion
         )
     )
     return parse_obj_as(DockerVersion, version_request["Version"])
+
+
+@pytest.fixture(params=[InMemoryContext])
+def storage_context(request: FixtureRequest) -> type[ContextSerializerInterface]:
+    return request.param
