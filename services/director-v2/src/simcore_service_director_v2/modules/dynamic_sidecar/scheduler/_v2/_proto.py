@@ -393,8 +393,12 @@ async def workflow_runner(
     state_registry: StateRegistry,
     context_resolver: ContextResolver,
     *,
-    before_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
-    after_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    before_event_hook: Optional[
+        Callable[[StateName, EventName], Awaitable[None]]
+    ] = None,
+    after_event_hook: Optional[
+        Callable[[StateName, EventName], Awaitable[None]]
+    ] = None,
 ) -> None:
     """
 
@@ -522,8 +526,12 @@ class WorkflowManager:
         app: FastAPI,
         state_registry: StateRegistry,
         *,
-        before_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
-        after_event_hook: Optional[Callable[[str, str], Awaitable[None]]] = None,
+        before_event_hook: Optional[
+            Callable[[StateName, EventName], Awaitable[None]]
+        ] = None,
+        after_event_hook: Optional[
+            Callable[[StateName, EventName], Awaitable[None]]
+        ] = None,
     ) -> None:
         self.storage_context = storage_context
         self.app = app

@@ -2,19 +2,22 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
+import logging
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from pytest import FixtureRequest
+from pytest import FixtureRequest, LogCaptureFixture
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto import (
     ContextResolver,
     ContextSerializerInterface,
+    EventName,
     ExceptionInfo,
     InMemoryContext,
     NotAllowedContextKeyError,
     ReservedContextKeys,
     State,
+    StateName,
     StateRegistry,
     UnexpectedEventReturnTypeError,
     WorkflowManager,
@@ -23,6 +26,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto im
     mark_event,
     workflow_runner,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def test_register_event_with_return_value():
@@ -46,10 +51,6 @@ async def test_register_event_wrong_return_type():
         f"{exec_info.value}"
         == "Event should always return `dict[str, Any]`, returning: <class 'str'>"
     )
-
-
-# TODO: test to see for state definition -> not sure wht this is related to
-# TODO: test to ensure the chained serializers for events I/O chains are working -> depends on implementation?
 
 
 async def test_state_definition_ok():
@@ -195,6 +196,7 @@ async def test_reserved_context_keys():
 
 async def test_run_workflow(
     storage_context: type[ContextSerializerInterface],
+    caplog_info_level: LogCaptureFixture,
 ):
     context_resolver = ContextResolver(
         storage_context, app=FastAPI(), workflow_name="unique", state_name="first"
@@ -242,16 +244,26 @@ async def test_run_workflow(
 
     state_registry = StateRegistry(FIRST_STATE, SECOND_STATE)
 
-    async def debug_print(state, event) -> None:
-        print(f"{state=}, {event=}")
+    async def hook_before(state: StateName, event: EventName) -> None:
+        logger.info("hook_before %s %s", f"{state=}", f"{event=}")
+
+    async def hook_after(state: StateName, event: EventName) -> None:
+        logger.info("hook_after %s %s", f"{state=}", f"{event=}")
 
     await workflow_runner(
         state_registry=state_registry,
         context_resolver=context_resolver,
-        before_event_hook=debug_print,
-        after_event_hook=debug_print,
+        before_event_hook=hook_before,
+        after_event_hook=hook_after,
     )
-    print(context_resolver)
+
+    # check hooks are working as expected
+    assert (
+        "hook_before state='first' event='initial_state'" in caplog_info_level.messages
+    )
+    assert (
+        "hook_after state='first' event='initial_state'" in caplog_info_level.messages
+    )
 
     await context_resolver.shutdown()
 
@@ -314,6 +326,8 @@ async def test_workflow_manager(storage_context: type[ContextSerializerInterface
     await workflow_manager.wait_workflow("start_first")
     assert "start_first" not in workflow_manager._workflow_context
     assert "start_first" not in workflow_manager._workflow_tasks
+
+    # TODO: checkout hooks working
 
     # cancel workflow
     await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
