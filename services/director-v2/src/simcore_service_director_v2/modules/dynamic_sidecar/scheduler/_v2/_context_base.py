@@ -12,7 +12,7 @@ class ReservedContextKeys:
 
     EXCEPTION: str = "_exception"
 
-    # reserved keys cannot be overwritten by the event handlers
+    # reserved keys cannot be overwritten by the events
     RESERVED: set[str] = {
         APP,
         EXCEPTION,
@@ -22,12 +22,20 @@ class ReservedContextKeys:
         WORKFLOW_CURRENT_EVENT_INDEX,
     }
 
-    # NOTE: the objects pointed by these keys are just references
+    # NOTE: objects pointed by these keys are just references
     # to local global values and never serialized
     STORED_LOCALLY: set[str] = {APP}
 
 
 class ContextIOInterface(ABC):
+    """
+    Used to serialize/deserialize the context in bulk.
+    Useful for those types of stores which are not capable of guaranteeing
+    data persistance between reboots. (eg: in memory implementation)
+    Should become obsolete in the future if something like Redis will be
+    used.
+    """
+
     @abstractmethod
     async def to_dict(self) -> dict[str, Any]:
         """returns the context of a store as a dictionary"""
@@ -39,7 +47,7 @@ class ContextIOInterface(ABC):
 
 class ContextStorageInterface(ABC):
     """
-    Base interface for saving and loading data from a store
+    Base interface for saving and loading data from a store.
     """
 
     @abstractmethod
