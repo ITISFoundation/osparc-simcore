@@ -1,7 +1,7 @@
 from pydantic import BaseSettings, Field, HttpUrl, SecretStr
 
 
-class ApplicationSettings(BaseSettings):
+class BasicApplicationSettings(BaseSettings):
 
     INVITATIONS_MAKER_SECRET_KEY: SecretStr = Field(
         ...,
@@ -11,3 +11,18 @@ class ApplicationSettings(BaseSettings):
     )
 
     INVITATIONS_MAKER_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
+
+
+class ApplicationSettings(BasicApplicationSettings):
+    """web app settings"""
+
+    INVITATIONS_USERNAME: str = Field(
+        ...,
+        description="Username for HTTP Basic Auth. Required if started as a web app.",
+        min_length=3,
+    )
+    INVITATIONS_PASSWORD: SecretStr = Field(
+        ...,
+        description="Password for HTTP Basic Auth. Required if started as a web app.",
+        min_length=10,
+    )

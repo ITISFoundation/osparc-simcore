@@ -9,7 +9,7 @@ from starlette.datastructures import URL
 class InvitationData(BaseModel):
     issuer: str = Field(
         ...,
-        description="Who issued this invitation?",
+        description="Who issued this invitation? Some identifier such as LicenseRequestID",
         max_length=10,
         alias="i",
     )
