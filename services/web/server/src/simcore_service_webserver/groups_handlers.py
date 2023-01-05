@@ -16,6 +16,7 @@ from .groups_exceptions import (
     UserInsufficientRightsError,
 )
 from .login.decorators import RQT_USERID_KEY, login_required
+from .products import Product, get_current_product
 from .scicrunch.db import ResearchResourceRepository
 from .scicrunch.errors import ScicrunchError
 from .scicrunch.models import ResearchResource, ResourceHit
@@ -59,15 +60,24 @@ async def list_groups(request: web.Request):
 
     List of the groups I belonged to
     """
+    product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
     primary_group, user_groups, all_group = await groups_api.list_user_groups(
         request.app, user_id
     )
-    return {
+
+    result = {
         "me": primary_group,
         "organizations": user_groups,
         "all": all_group,
     }
+
+    if product.group_id:
+        result["product"] = await groups_api.get_user_group(
+            app=request.app, user_id=user_id, gid=product.group_id
+        )
+
+    return result
 
 
 @routes.get(f"/{API_VTAG}/groups/{{gid}}", name="get_group")
