@@ -70,7 +70,6 @@ async def list_user_groups(
         row: RowProxy
         async for row in conn.execute(query):
             if row.type == GroupType.EVERYONE:
-                # FIXME: only admin should have read access to EVERYONE
                 assert row.access_rights["read"]  # nosec
                 all_group = convert_groups_db_to_schema(row)
 
