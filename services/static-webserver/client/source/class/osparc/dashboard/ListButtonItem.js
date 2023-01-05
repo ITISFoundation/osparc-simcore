@@ -98,17 +98,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tsr-rating": {
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
             alignY: "middle"
           })).set({
             toolTipText: this.tr("Ten Simple Rules"),
             minWidth: 85
           });
           const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          this._add(tsrLayout, {
+          control.add(tsrLabel);
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          control.add(tsrRating);
+          this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TSR
           });
