@@ -17,14 +17,16 @@ from ._errors import (
 from ._models import StateName, WorkflowName
 
 
-class ContextResolver(ContextIOInterface):
+class WorkflowContextResolver(ContextIOInterface):
     """
-    Used to keep track of generated data.
+    Used to keep track of the state of a workflow.
+    Responsible for providing an interface which guarantees
+    that workflow specific data is saved
     """
 
     def __init__(
         self,
-        storage_context: type[BaseContextInterface],
+        storage_context: BaseContextInterface,
         app: FastAPI,
         workflow_name: WorkflowName,
         state_name: StateName,
@@ -33,7 +35,7 @@ class ContextResolver(ContextIOInterface):
         self._workflow_name: WorkflowName = workflow_name
         self._state_name: StateName = state_name
 
-        self._context: ContextStorageInterface = storage_context()
+        self._context: ContextStorageInterface = storage_context
 
         self._local_storage: dict[str, Any] = {}
 
@@ -105,7 +107,6 @@ class ContextResolver(ContextIOInterface):
         return await self._context.from_dict(incoming)
 
     async def start(self) -> None:
-        await self._context.start()
         # adding app to context
         await self.set(key=ReservedContextKeys.APP, value=self._app, set_reserved=True)
         await self.set(
@@ -120,4 +121,4 @@ class ContextResolver(ContextIOInterface):
         )
 
     async def shutdown(self) -> None:
-        await self._context.shutdown()
+        pass

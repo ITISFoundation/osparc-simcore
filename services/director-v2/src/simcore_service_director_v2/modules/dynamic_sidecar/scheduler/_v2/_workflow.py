@@ -10,7 +10,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel, NonNegativeInt
 
 from ._context_base import BaseContextInterface, ReservedContextKeys
-from ._context_resolver import ContextResolver
 from ._errors import (
     NotInContextError,
     StateNotRegisteredException,
@@ -19,6 +18,7 @@ from ._errors import (
 )
 from ._models import EventName, StateName, WorkflowName
 from ._state import State, StateRegistry
+from ._workflow_context_resolver import WorkflowContextResolver
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def _get_event_and_index(
 
 async def workflow_runner(
     state_registry: StateRegistry,
-    context_resolver: ContextResolver,
+    context_resolver: WorkflowContextResolver,
     *,
     before_event_hook: Optional[
         Callable[[StateName, EventName], Awaitable[None]]
@@ -171,7 +171,7 @@ class WorkflowManager:
 
     def __init__(
         self,
-        storage_context: type[BaseContextInterface],
+        storage_context: BaseContextInterface,
         app: FastAPI,
         state_registry: StateRegistry,
         *,
@@ -189,7 +189,7 @@ class WorkflowManager:
         self.after_event_hook = after_event_hook
 
         self._workflow_tasks: dict[WorkflowName, Task] = {}
-        self._workflow_context: dict[WorkflowName, ContextResolver] = {}
+        self._workflow_context: dict[WorkflowName, WorkflowContextResolver] = {}
         self._shutdown_tasks_workflow_context: dict[WorkflowName, Task] = {}
 
     async def run_workflow(
@@ -204,7 +204,9 @@ class WorkflowManager:
                 state_name=state_name, state_registry=self.state_registry
             )
 
-        self._workflow_context[workflow_name] = context_resolver = ContextResolver(
+        self._workflow_context[
+            workflow_name
+        ] = context_resolver = WorkflowContextResolver(
             storage_context=self.storage_context,
             app=self.app,
             workflow_name=workflow_name,
@@ -221,7 +223,7 @@ class WorkflowManager:
 
         self._create_workflow_task(workflow_runner_awaitable, workflow_name)
 
-    async def resume_workflow(self, context_resolver: ContextResolver) -> None:
+    async def resume_workflow(self, context_resolver: WorkflowContextResolver) -> None:
         # NOTE: expecting `await context_resolver.start()` to have already been ran
 
         workflow_runner_awaitable: Awaitable = workflow_runner(
@@ -245,14 +247,14 @@ class WorkflowManager:
 
         def workflow_complete(_: Task) -> None:
             self._workflow_tasks.pop(workflow_name, None)
-            context_resolver: Optional[ContextResolver] = self._workflow_context.pop(
-                workflow_name, None
-            )
-            if context_resolver:
+            workflow_context_resolver: Optional[
+                WorkflowContextResolver
+            ] = self._workflow_context.pop(workflow_name, None)
+            if workflow_context_resolver:
                 # shutting down context resolver and ensure task will not be pending
                 task = self._shutdown_tasks_workflow_context[
                     workflow_name
-                ] = asyncio.create_task(context_resolver.shutdown())
+                ] = asyncio.create_task(workflow_context_resolver.shutdown())
                 task.add_done_callback(
                     partial(
                         lambda s, _: self._shutdown_tasks_workflow_context.pop(s, None),
@@ -292,9 +294,9 @@ class WorkflowManager:
     async def shutdown(self) -> None:
         # NOTE: content can change while iterating
         for key in set(self._workflow_context.keys()):
-            context_resolver: Optional[ContextResolver] = self._workflow_context.get(
-                key, None
-            )
+            context_resolver: Optional[
+                WorkflowContextResolver
+            ] = self._workflow_context.get(key, None)
             if context_resolver:
                 await context_resolver.shutdown()
 

@@ -12,9 +12,6 @@ from pytest import LogCaptureFixture
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextIOInterface,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_resolver import (
-    ContextResolver,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
     WorkflowNotFoundException,
 )
@@ -34,6 +31,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow
     WorkflowManager,
     _get_event_and_index,
     workflow_runner,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context_resolver import (
+    WorkflowContextResolver,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,10 +86,9 @@ async def test_iter_from():
 
 
 async def test_workflow_runner(
-    storage_context: type[ContextIOInterface],
-    caplog_info_level: LogCaptureFixture,
+    storage_context: ContextIOInterface, caplog_info_level: LogCaptureFixture
 ):
-    context_resolver = ContextResolver(
+    context_resolver = WorkflowContextResolver(
         storage_context, app=FastAPI(), workflow_name="unique", state_name="first"
     )
     await context_resolver.start()
@@ -159,7 +158,7 @@ async def test_workflow_runner(
     await context_resolver.shutdown()
 
 
-async def test_workflow_manager(storage_context: type[ContextIOInterface]):
+async def test_workflow_manager(storage_context: ContextIOInterface):
     @mark_event
     async def initial_state() -> dict[str, Any]:
         print("initial state")
@@ -224,7 +223,7 @@ async def test_workflow_manager(storage_context: type[ContextIOInterface]):
 
 
 async def test_workflow_manager_error_handling(
-    storage_context: type[ContextIOInterface],
+    storage_context: ContextIOInterface,
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
 

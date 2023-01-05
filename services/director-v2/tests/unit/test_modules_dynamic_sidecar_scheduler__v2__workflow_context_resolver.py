@@ -9,13 +9,13 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_
     ContextIOInterface,
     ReservedContextKeys,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_resolver import (
-    ContextResolver,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
     GetTypeMismatchError,
     NotAllowedContextKeyError,
     NotInContextError,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context_resolver import (
+    WorkflowContextResolver,
 )
 
 WORKFLOW_NAME = "test_workflow"
@@ -38,9 +38,9 @@ def app() -> FastAPI:
 
 @pytest.fixture
 async def context_resolver(
-    app: FastAPI, storage_context: type[ContextIOInterface]
-) -> ContextResolver:
-    resolver = ContextResolver(
+    app: FastAPI, storage_context: ContextIOInterface
+) -> WorkflowContextResolver:
+    resolver = WorkflowContextResolver(
         storage_context,
         app=app,
         workflow_name=WORKFLOW_NAME,
@@ -52,7 +52,7 @@ async def context_resolver(
 
 
 async def test_context_resolver_local_values(
-    app: FastAPI, context_resolver: ContextResolver
+    app: FastAPI, context_resolver: WorkflowContextResolver
 ):
     # check all locally stored values are available
     for key in ReservedContextKeys.STORED_LOCALLY:
@@ -70,7 +70,7 @@ async def test_context_resolver_local_values(
         assert value_2 == context_resolver._local_storage[local_key]
 
 
-async def test_context_resolver_reserved_key(context_resolver: ContextResolver):
+async def test_context_resolver_reserved_key(context_resolver: WorkflowContextResolver):
     with pytest.raises(NotAllowedContextKeyError):
         await context_resolver.set(ReservedContextKeys.EXCEPTION, "value")
 
@@ -79,28 +79,32 @@ async def test_context_resolver_reserved_key(context_resolver: ContextResolver):
     )
 
 
-async def test_key_not_found_in_context(context_resolver: ContextResolver):
+async def test_key_not_found_in_context(context_resolver: WorkflowContextResolver):
     with pytest.raises(NotInContextError):
         await context_resolver.get("for_sure_I_am_missing", str)
 
 
-async def test_key_get_wrong_type(key_1: str, context_resolver: ContextResolver):
+async def test_key_get_wrong_type(
+    key_1: str, context_resolver: WorkflowContextResolver
+):
     await context_resolver.set(key_1, 4)
     with pytest.raises(GetTypeMismatchError):
         await context_resolver.get(key_1, str)
 
 
-async def test_set_and_get_non_local(key_1: str, context_resolver: ContextResolver):
+async def test_set_and_get_non_local(
+    key_1: str, context_resolver: WorkflowContextResolver
+):
     await context_resolver.set(key_1, 4)
     assert await context_resolver.get(key_1, int) == 4
 
 
-async def test_to_dict(key_1: str, context_resolver: ContextResolver):
+async def test_to_dict(key_1: str, context_resolver: WorkflowContextResolver):
     await context_resolver.set(key_1, 4)
     assert await context_resolver.to_dict() == {key_1: 4} | EXTRA_DICT_DATA
 
 
-async def test_from_dict(context_resolver: ContextResolver):
+async def test_from_dict(context_resolver: WorkflowContextResolver):
     in_dict: dict[str, Any] = {"1": 1, "d": dict(me=1.1)}
     await context_resolver.from_dict(in_dict)
     assert await context_resolver.to_dict() == in_dict | EXTRA_DICT_DATA

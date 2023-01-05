@@ -450,5 +450,5 @@ async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion
 
 
 @pytest.fixture(params=[InMemoryContext])
-def storage_context(request: FixtureRequest) -> type[ContextIOInterface]:
-    return request.param
+def storage_context(request: FixtureRequest) -> ContextIOInterface:
+    return request.param()
