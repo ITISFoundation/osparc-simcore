@@ -1112,6 +1112,8 @@ paths:
                           $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
                       all:
                         $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                      product:
+                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
                     default: null
