@@ -2,12 +2,7 @@ from typing import Any, Optional
 
 from fastapi import FastAPI
 
-from ._context_base import (
-    BaseContextInterface,
-    ContextIOInterface,
-    ContextStorageInterface,
-    ReservedContextKeys,
-)
+from ._context_base import BaseContextInterface, ContextIOInterface, ReservedContextKeys
 from ._errors import (
     GetTypeMismatchError,
     NotAllowedContextKeyError,
@@ -35,7 +30,7 @@ class WorkflowContextResolver(ContextIOInterface):
         self._workflow_name: WorkflowName = workflow_name
         self._state_name: StateName = state_name
 
-        self._context: ContextStorageInterface = storage_context
+        self._context: BaseContextInterface = storage_context
 
         self._local_storage: dict[str, Any] = {}
 

@@ -40,7 +40,7 @@ def _get_event_and_index(
 
 async def workflow_runner(
     state_registry: StateRegistry,
-    context_resolver: WorkflowContextResolver,
+    workflow_context_resolver: WorkflowContextResolver,
     *,
     before_event_hook: Optional[
         Callable[[StateName, EventName], Awaitable[None]]
@@ -58,14 +58,14 @@ async def workflow_runner(
     # goes through all the states defined and does tuff right?
     # not in some cases this needs to end, these are ran as tasks
     #
-    state_name: StateName = await context_resolver.get(
+    state_name: StateName = await workflow_context_resolver.get(
         ReservedContextKeys.WORKFLOW_STATE_NAME, StateName
     )
     state: Optional[State] = state_registry[state_name]
 
     start_from_index: NonNegativeInt = 0
     try:
-        start_from_index = await context_resolver.get(
+        start_from_index = await workflow_context_resolver.get(
             ReservedContextKeys.WORKFLOW_CURRENT_EVENT_INDEX, NonNegativeInt
         )
     except NotInContextError:
@@ -73,7 +73,7 @@ async def workflow_runner(
 
     while state is not None:
         state_name = state.name
-        await context_resolver.set(
+        await workflow_context_resolver.set(
             ReservedContextKeys.WORKFLOW_STATE_NAME, state_name, set_reserved=True
         )
         logger.debug("Running state='%s', events=%s", state_name, state.events_names)
@@ -86,7 +86,7 @@ async def workflow_runner(
                 if event.input_types:
                     get_inputs_results = await asyncio.gather(
                         *[
-                            context_resolver.get(var_name, var_type)
+                            workflow_context_resolver.get(var_name, var_type)
                             for var_name, var_type in event.input_types.items()
                         ]
                     )
@@ -95,12 +95,12 @@ async def workflow_runner(
                 event_name = event.__name__
                 logger.debug("event='%s' with inputs=%s", event_name, inputs)
                 # running event handler
-                await context_resolver.set(
+                await workflow_context_resolver.set(
                     ReservedContextKeys.WORKFLOW_CURRENT_EVENT_NAME,
                     event_name,
                     set_reserved=True,
                 )
-                await context_resolver.set(
+                await workflow_context_resolver.set(
                     ReservedContextKeys.WORKFLOW_CURRENT_EVENT_INDEX,
                     index,
                     set_reserved=True,
@@ -116,7 +116,7 @@ async def workflow_runner(
                 logger.debug("event='%s', result=%s", event_name, result)
                 await asyncio.gather(
                     *[
-                        context_resolver.set(key=var_name, value=var_value)
+                        workflow_context_resolver.set(key=var_name, value=var_value)
                         for var_name, var_value in result.items()
                     ]
                 )
@@ -129,21 +129,21 @@ async def workflow_runner(
             if state.on_error_state is None:
                 # NOTE: since there is no state that takes care of the error
                 # just raise it here and halt the task
-                logger.error("context=%s", await context_resolver.to_dict())
+                logger.error("context=%s", await workflow_context_resolver.to_dict())
                 raise
 
             # Storing exception to be possibly handled by the error state
             exception_info = ExceptionInfo(
                 exception_class=e.__class__,
-                state_name=await context_resolver.get(
+                state_name=await workflow_context_resolver.get(
                     ReservedContextKeys.WORKFLOW_STATE_NAME, WorkflowName
                 ),
-                event_name=await context_resolver.get(
+                event_name=await workflow_context_resolver.get(
                     ReservedContextKeys.WORKFLOW_CURRENT_EVENT_NAME, StateName
                 ),
                 serialized_traceback=traceback.format_exc(),
             )
-            await context_resolver.set(
+            await workflow_context_resolver.set(
                 ReservedContextKeys.EXCEPTION, exception_info, set_reserved=True
             )
 
@@ -216,7 +216,7 @@ class WorkflowManager:
 
         workflow_runner_awaitable: Awaitable = workflow_runner(
             state_registry=self.state_registry,
-            context_resolver=context_resolver,
+            workflow_context_resolver=context_resolver,
             before_event_hook=self.before_event_hook,
             after_event_hook=self.after_event_hook,
         )
@@ -228,7 +228,7 @@ class WorkflowManager:
 
         workflow_runner_awaitable: Awaitable = workflow_runner(
             state_registry=self.state_registry,
-            context_resolver=context_resolver,
+            workflow_context_resolver=context_resolver,
             before_event_hook=self.before_event_hook,
             after_event_hook=self.after_event_hook,
         )

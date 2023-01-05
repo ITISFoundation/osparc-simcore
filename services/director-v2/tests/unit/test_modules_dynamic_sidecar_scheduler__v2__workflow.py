@@ -142,7 +142,7 @@ async def test_workflow_runner(
 
     await workflow_runner(
         state_registry=state_registry,
-        context_resolver=context_resolver,
+        workflow_context_resolver=context_resolver,
         before_event_hook=hook_before,
         after_event_hook=hook_after,
     )
