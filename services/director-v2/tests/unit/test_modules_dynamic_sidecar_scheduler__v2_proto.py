@@ -307,16 +307,8 @@ async def test_workflow_manager(storage_context: type[ContextSerializerInterface
 
     state_registry = StateRegistry(FIRST_STATE, SECOND_STATE)
 
-    async def debug_print(state, event) -> None:
-        print(f"{state=}, {event=}")
-        # TODO: these need to be tested!
-
     workflow_manager = WorkflowManager(
-        storage_context=storage_context,
-        app=FastAPI(),
-        state_registry=state_registry,
-        before_event_hook=debug_print,
-        after_event_hook=debug_print,
+        storage_context=storage_context, app=FastAPI(), state_registry=state_registry
     )
 
     # ok workflow
@@ -326,8 +318,6 @@ async def test_workflow_manager(storage_context: type[ContextSerializerInterface
     await workflow_manager.wait_workflow("start_first")
     assert "start_first" not in workflow_manager._workflow_context
     assert "start_first" not in workflow_manager._workflow_tasks
-
-    # TODO: checkout hooks working
 
     # cancel workflow
     await workflow_manager.run_workflow(workflow_name="start_first", state_name="first")
