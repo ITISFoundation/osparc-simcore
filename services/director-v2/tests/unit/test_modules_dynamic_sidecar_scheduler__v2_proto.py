@@ -8,22 +8,36 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from pytest import FixtureRequest, LogCaptureFixture
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._proto import (
-    ContextResolver,
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextSerializerInterface,
-    EventName,
-    ExceptionInfo,
-    InMemoryContext,
-    NotAllowedContextKeyError,
     ReservedContextKeys,
-    State,
-    StateName,
-    StateRegistry,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_in_memory import (
+    InMemoryContext,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_resolver import (
+    ContextResolver,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
+    NotAllowedContextKeyError,
     UnexpectedEventReturnTypeError,
-    WorkflowManager,
     WorkflowNotFoundException,
-    _get_event_and_index,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
     mark_event,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
+    EventName,
+    StateName,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._state import (
+    State,
+    StateRegistry,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
+    ExceptionInfo,
+    WorkflowManager,
+    _get_event_and_index,
     workflow_runner,
 )
 
