@@ -183,11 +183,13 @@ qx.Class.define("osparc.info.MergedLarge", {
         });
       }
 
-      extraInfo.push({
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: null
-      });
+      if (!osparc.utils.Utils.isProduct("s4llite")) {
+        extraInfo.push({
+          label: this.tr("Classifiers"),
+          view: this.__createClassifiers(),
+          action: null
+        });
+      }
 
       let i = 0;
       if (osparc.data.Permissions.getInstance().isTester()) {

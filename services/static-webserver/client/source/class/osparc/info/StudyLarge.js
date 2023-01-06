@@ -198,15 +198,17 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      extraInfo.push({
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
-          ctx: this
-        } : null
-      });
+      if (!osparc.utils.Utils.isProduct("s4llite")) {
+        extraInfo.push({
+          label: this.tr("Classifiers"),
+          view: this.__createClassifiers(),
+          action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
+            ctx: this
+          } : null
+        });
+      }
 
       if (osparc.data.Permissions.getInstance().isTester()) {
         extraInfo.splice(0, 0, {

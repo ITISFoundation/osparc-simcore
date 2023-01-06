@@ -88,7 +88,7 @@ qx.Class.define("osparc.CookiePolicy", {
           });
           osparc.store.Support.getLicenseURL()
             .then(licenseLink => {
-              const lbl = control.getLabel();
+              const lbl = control.getValue();
               if (licenseLink) {
                 const color = qx.theme.manager.Color.getInstance().resolve("text");
                 const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
