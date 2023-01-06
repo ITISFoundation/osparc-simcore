@@ -81,7 +81,7 @@ class Forum(TypedDict, total=True):
 
 
 @dataclass(frozen=True)
-class Login:
+class ProductLoginSettings:
     """Login plugin settings customized for this product
 
     Extends simcore_service_webserver.login.settings.LoginSettings
@@ -90,7 +90,8 @@ class Login:
     two_factor_enabled: bool = False
 
 
-LOGIN_SETTINGS_DEFAULT = Login()
+# NOTE: defaults affects migration!!
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettings()
 _LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(LOGIN_SETTINGS_DEFAULT))
 
 

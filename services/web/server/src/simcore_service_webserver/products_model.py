@@ -12,8 +12,8 @@ from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
     IssueTracker,
-    Login,
     Manual,
+    ProductLoginSettings,
     Vendor,
     WebFeedback,
 )
@@ -71,7 +71,7 @@ class Product(BaseModel):
 
     support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
 
-    login_settings: Login = Field(...)
+    login_settings: ProductLoginSettings = Field(...)
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
