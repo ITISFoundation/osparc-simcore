@@ -64,3 +64,19 @@ class SceneNotRegisteredException(BaseActionException):
         "Trying to start scene '{scene_name}' but these are the only"
         "available scenes {play_catalog}"
     )
+
+
+class OnErrorSceneNotInPlayCatalogException(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.on_error_scene_not_in_play_catalog"
+    msg_template = (
+        "Scene '{scene_name}' defines an on_error_scene '{on_error_scene}'"
+        "that is not in the present in the play catalog {play_catalog}"
+    )
+
+
+class NextSceneNotInPlayCatalogException(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.next_scene_not_in_play_catalog"
+    msg_template = (
+        "Scene '{scene_name}' defines an next_scene '{next_scene}'"
+        "that is not in the present in the play catalog {play_catalog}"
+    )
