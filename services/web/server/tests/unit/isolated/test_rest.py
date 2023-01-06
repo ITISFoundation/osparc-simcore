@@ -5,6 +5,7 @@
 import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 import jsonschema
 import jsonschema.validators
