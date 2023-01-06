@@ -22,6 +22,7 @@ from ._resources import resources
 from .products_db import ProductRepository
 from .products_events import (
     APP_PRODUCTS_TEMPLATES_DIR_KEY,
+    auto_create_products_groups,
     load_products_on_startup,
     setup_product_templates,
 )
@@ -42,7 +43,14 @@ def setup_products(app: web.Application):
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
+    # middlewares
     app.middlewares.append(discover_product_middleware)
+
+    # events
+    app.on_startup.append(
+        # NOTE: must go BEFORE load_products_on_startup
+        auto_create_products_groups
+    )
     app.on_startup.append(load_products_on_startup)
     app.cleanup_ctx.append(setup_product_templates)
 

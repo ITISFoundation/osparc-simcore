@@ -59,15 +59,38 @@ async def list_groups(request: web.Request):
 
     List of the groups I belonged to
     """
+    from .products import Product, get_current_product
+
+    product: Product = get_current_product(request)
     user_id = request[RQT_USERID_KEY]
     primary_group, user_groups, all_group = await groups_api.list_user_groups(
         request.app, user_id
     )
-    return {
+
+    result = {
         "me": primary_group,
         "organizations": user_groups,
         "all": all_group,
     }
+
+    if product.group_id:
+        try:
+            result["product"] = await groups_api.get_product_group_for_user(
+                app=request.app,
+                user_id=user_id,
+                product_gid=product.group_id,
+            )
+        except GroupNotFoundError as err:
+            logger.debug(
+                "This user does not belong to any product's group: %s."
+                "This is typically assigned during registration but this user "
+                "might have been created prior to this new feature."
+                "TIP: assign it manually to the default product group_id and "
+                "restart service to refresh product info",
+                err,
+            )
+
+    return result
 
 
 @routes.get(f"/{API_VTAG}/groups/{{gid}}", name="get_group")

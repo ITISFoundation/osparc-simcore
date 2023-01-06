@@ -79,6 +79,10 @@ class Product(BaseModel):
         description="Limits the number of studies a user may have open concurently (disabled if NULL)",
     )
 
+    group_id: Optional[int] = Field(
+        default=None, description="Groups associated to this product"
+    )
+
     @validator("name", pre=True, always=True)
     @classmethod
     def validate_name(cls, v):
@@ -179,6 +183,7 @@ class Product(BaseModel):
                             "label": "web-form",
                         },
                     ],
+                    "group_id": 12345,
                 },
             ]
         }
