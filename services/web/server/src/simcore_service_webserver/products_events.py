@@ -51,7 +51,7 @@ async def auto_create_products_groups(app: web.Application) -> int:
             product_name = row.name
             product_group_id = await get_or_create_product_group(conn, product_name)
             log.debug(
-                "Missing group for %s, created %s",
+                "Product with %s has an associated group with %s",
                 f"{product_name=}",
                 f"{product_group_id=}",
             )
