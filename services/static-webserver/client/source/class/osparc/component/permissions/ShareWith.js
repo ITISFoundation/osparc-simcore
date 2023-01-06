@@ -35,17 +35,29 @@ qx.Class.define("osparc.component.permissions.ShareWith", {
     const store = osparc.store.Store.getInstance();
     Promise.all([
       store.getGroupsMe(),
+      store.getProductEveryone(),
       store.getGroupEveryone()
     ])
       .then(values => {
         const groupMe = values[0];
-        const groupEveryone = values[1];
+        const groupProductEveryone = values[1];
+        const groupEveryone = values[2];
         this.__rbManager.getChildren().forEach(rb => {
           if (rb.contextId === this.self().SharingOpts["me"].contextId) {
             rb.gid = groupMe["gid"];
           }
+          if (rb.contextId === this.self().SharingOpts["productAll"].contextId) {
+            // Only users  the product group can share for everyone
+            if (groupProductEveryone) {
+              rb.gid = groupProductEveryone["gid"];
+              rb.show();
+            }
+          }
           if (rb.contextId === this.self().SharingOpts["all"].contextId) {
-            rb.gid = groupEveryone["gid"];
+            if (osparc.data.Permissions.getInstance().canDo("studies.template.create.all")) {
+              rb.gid = groupEveryone["gid"];
+              rb.show();
+            }
           }
         });
       });
@@ -70,8 +82,12 @@ qx.Class.define("osparc.component.permissions.ShareWith", {
         contextId: 1,
         label: "Organizations"
       },
-      "all": {
+      "productAll": {
         contextId: 2,
+        label: "Product Everyone"
+      },
+      "all": {
+        contextId: 3,
         label: "Everyone"
       }
     }
@@ -106,11 +122,12 @@ qx.Class.define("osparc.component.permissions.ShareWith", {
             this._add(vBox);
             break;
           }
-          case "all":
-            if (osparc.data.Permissions.getInstance().canDo("studies.template.create.all")) {
-              this._add(rb);
-            }
+          case "productAll":
+          case "all": {
+            rb.exclude();
+            this._add(rb);
             break;
+          }
         }
         this.__rbManager.add(rb);
       }
