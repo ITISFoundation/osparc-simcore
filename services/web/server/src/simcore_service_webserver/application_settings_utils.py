@@ -100,13 +100,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 None,
             )
             else 0,
-            "login_2fa_required": 1
-            if getattr(
-                app_settings.WEBSERVER_LOGIN,
-                "LOGIN_2FA_REQUIRED",
-                None,
-            )
-            else 0,
         },
         "smtp": {
             "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
