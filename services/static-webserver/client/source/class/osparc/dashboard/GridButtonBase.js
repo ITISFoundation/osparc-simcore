@@ -214,6 +214,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       this._mainLayout._getChildren().forEach(child => {
         if (checkThis.includes(child.getSubcontrolId()) && child.getBounds()) {
           maxHeight -= (child.getBounds().height + this.self().SPACING_IN);
+          if (child.getSubcontrolId() === "tags") {
+            maxHeight -= 7;
+          }
         }
       });
       iconLayout.getChildControl("image").setMaxHeight(maxHeight);
