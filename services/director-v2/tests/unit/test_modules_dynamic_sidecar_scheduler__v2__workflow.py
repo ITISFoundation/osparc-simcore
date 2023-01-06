@@ -29,7 +29,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._state im
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
     ExceptionInfo,
     WorkflowManager,
-    _get_event_and_index,
+    _iter_index_event,
     workflow_runner,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context_resolver import (
@@ -48,7 +48,7 @@ async def _workflow_manager_lifecycle(workflow_manager: WorkflowManager) -> None
         await workflow_manager.shutdown()
 
 
-async def test_iter_from():
+async def test_iter_index_event():
     async def first():
         pass
 
@@ -61,25 +61,25 @@ async def test_iter_from():
     awaitables = [first, second, third]
     event_sequence = list(enumerate(awaitables))
 
-    three_element_list = list(_get_event_and_index(awaitables))
+    three_element_list = list(_iter_index_event(awaitables))
     assert three_element_list == event_sequence
     assert len(three_element_list) == 3
 
-    three_element_list = list(_get_event_and_index(awaitables, index=0))
+    three_element_list = list(_iter_index_event(awaitables, index=0))
     assert three_element_list == event_sequence
     assert len(three_element_list) == 3
 
-    two_element_list = list(_get_event_and_index(awaitables, index=1))
+    two_element_list = list(_iter_index_event(awaitables, index=1))
     assert two_element_list == event_sequence[1:]
     assert len(two_element_list) == 2
 
-    one_element_list = list(_get_event_and_index(awaitables, index=2))
+    one_element_list = list(_iter_index_event(awaitables, index=2))
     assert one_element_list == event_sequence[2:]
     assert len(one_element_list) == 1
 
     for out_of_bound_index in range(3, 10):
         zero_element_list = list(
-            _get_event_and_index(awaitables, index=out_of_bound_index)
+            _iter_index_event(awaitables, index=out_of_bound_index)
         )
         assert zero_element_list == event_sequence[out_of_bound_index:]
         assert len(zero_element_list) == 0

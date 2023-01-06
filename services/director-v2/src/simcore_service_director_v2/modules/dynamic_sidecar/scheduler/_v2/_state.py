@@ -6,22 +6,26 @@ from ._models import StateName
 
 
 class State(BaseModel):
-    name: str = Field(..., description="Name of the state, required to identify them")
+    """
+    A sequence of events (functions)
+    """
+
+    name: StateName
     events: list[Callable] = Field(
         ...,
         description=(
-            "list of functions marked as events, the order in this list "
+            "list awaitables marked as events, the order in this list "
             "is the order in which events will be executed"
         ),
     )
 
     next_state: Optional[StateName] = Field(
         ...,
-        description="name of the state to run after this state",
+        description="optional, name of the state to run after this state",
     )
     on_error_state: Optional[StateName] = Field(
         ...,
-        description="name of the state to run after this state raises an unexpected error",
+        description="optional, name of the state to run after this state raises an unexpected error",
     )
 
     @property
@@ -35,7 +39,8 @@ class State(BaseModel):
             for attr_name in ("input_types", "return_type"):
                 if not hasattr(event, attr_name):
                     raise ValueError(
-                        f"Event handler {event.__name__} should expose `{attr_name}` attribute. Was it decorated with @mark_event?"
+                        f"Event handler {event.__name__} should expose `{attr_name}` "
+                        "attribute. Was it decorated with @mark_event?"
                     )
             if type(getattr(event, "input_types")) != dict:
                 raise ValueError(
@@ -49,11 +54,13 @@ class State(BaseModel):
 
 
 class StateRegistry:
-    def __init__(self, *states: State) -> None:
-        self._registry: dict[str, State] = {x.name: x for x in states}
+    """Keeps track of state information associated to each state's name"""
 
-    def __contains__(self, item: str) -> bool:
+    def __init__(self, *states: State) -> None:
+        self._registry: dict[StateName, State] = {x.name: x for x in states}
+
+    def __contains__(self, item: StateName) -> bool:
         return item in self._registry
 
-    def __getitem__(self, key: str) -> State:
+    def __getitem__(self, key: StateName) -> State:
         return self._registry[key]

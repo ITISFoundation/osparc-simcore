@@ -30,7 +30,7 @@ class ExceptionInfo(BaseModel):
     serialized_traceback: str
 
 
-def _get_event_and_index(
+def _iter_index_event(
     iterable: Iterable[Callable], *, index: NonNegativeInt = 0
 ) -> tuple[NonNegativeInt, Callable]:
     for i, value in enumerate(iterable):
@@ -50,7 +50,7 @@ async def workflow_runner(
     ] = None,
 ) -> None:
     """
-
+    Given a `WorkflowContextResolver` and a `StateRegistry`
     A workflow is a series of states that need to be ran
     NOTE: a workflow can continue or finish.
     """
@@ -78,9 +78,7 @@ async def workflow_runner(
         )
         logger.debug("Running state='%s', events=%s", state_name, state.events_names)
         try:
-            for index, event in _get_event_and_index(
-                state.events, index=start_from_index
-            ):
+            for index, event in _iter_index_event(state.events, index=start_from_index):
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
                 if event.input_types:
