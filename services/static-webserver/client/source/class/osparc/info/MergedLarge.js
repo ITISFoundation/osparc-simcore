@@ -101,17 +101,17 @@ qx.Class.define("osparc.info.MergedLarge", {
       this._add(hBox);
 
       const tags = this.__createTags();
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
         tags.addAt(editInTitle, 0);
-        if (this.__isOwner()) {
+        if (this.__canIWrite()) {
           osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
         }
       }
       this._add(tags);
 
       const description = this.__createDescription();
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
         description.addAt(editInTitle, 0);
       }
@@ -134,8 +134,8 @@ qx.Class.define("osparc.info.MergedLarge", {
       more.getChildControl("header").add(copy2Clip);
     },
 
-    __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
+    __canIWrite: function() {
+      return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -143,7 +143,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         alignY: "middle"
       }));
       layout.add(view);
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editBtn = osparc.utils.Utils.getEditButton();
         editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
@@ -171,7 +171,11 @@ qx.Class.define("osparc.info.MergedLarge", {
         action: null
       }];
 
-      if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
+      if (
+        !osparc.utils.Utils.isProduct("s4llite") &&
+        this.getStudy().getQuality() &&
+        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+      ) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
@@ -179,14 +183,17 @@ qx.Class.define("osparc.info.MergedLarge", {
         });
       }
 
-      extraInfo.push({
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: null
-      });
+      if (!osparc.utils.Utils.isProduct("s4llite")) {
+        extraInfo.push({
+          label: this.tr("Classifiers"),
+          view: this.__createClassifiers(),
+          action: null
+        });
+      }
 
+      let i = 0;
       if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.splice(0, 0, {
+        extraInfo.splice(i++, 0, {
           label: this.tr("Study ID"),
           view: this.__createStudyId(),
           action: {
@@ -196,7 +203,7 @@ qx.Class.define("osparc.info.MergedLarge", {
           }
         });
 
-        extraInfo.splice(1, 0, {
+        extraInfo.splice(i++, 0, {
           label: this.tr("Service ID"),
           view: this.__createNodeId(),
           action: {
@@ -205,23 +212,24 @@ qx.Class.define("osparc.info.MergedLarge", {
             ctx: this
           }
         });
-
-        extraInfo.splice(2, 0, {
-          label: this.tr("Key"),
-          view: this.__createKey(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyKeyToClipboard,
-            ctx: this
-          }
-        });
-
-        extraInfo.splice(3, 0, {
-          label: this.tr("Version"),
-          view: this.__createVersion(),
-          action: null
-        });
       }
+
+      extraInfo.splice(i++, 0, {
+        label: this.tr("Service Key"),
+        view: this.__createKey(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyKeyToClipboard,
+          ctx: this
+        }
+      });
+
+      extraInfo.splice(i++, 0, {
+        label: this.tr("Service Version"),
+        view: this.__createVersion(),
+        action: null
+      });
+
       return extraInfo;
     },
 

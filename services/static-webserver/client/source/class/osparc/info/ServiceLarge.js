@@ -103,10 +103,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
   },
 
   members: {
-    __isOwner: function() {
-      return osparc.utils.Services.isOwner(this.getService());
-    },
-
     __rebuildLayout: function() {
       this._removeAll();
 
@@ -170,7 +166,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         alignY: "middle"
       }));
       layout.add(view);
-      if (this.__isOwner()) {
+      if (osparc.utils.Services.canIWrite(this.getService()["accessRights"])) {
         const editBtn = osparc.utils.Utils.getEditButton();
         editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
@@ -240,7 +236,11 @@ qx.Class.define("osparc.info.ServiceLarge", {
         });
       }
 
-      if (this.getService()["quality"] && osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])) {
+      if (
+        !osparc.utils.Utils.isProduct("s4llite") &&
+        this.getService()["quality"] &&
+        osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])
+      ) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
@@ -398,7 +398,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     __openClassifiers: function() {
       const title = this.tr("Classifiers");
       let classifiers = null;
-      if (this.__isOwner()) {
+      if (osparc.utils.Services.canIWrite(this.getService()["accessRights"])) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(this.getService());
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {

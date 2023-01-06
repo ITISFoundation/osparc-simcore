@@ -13,6 +13,7 @@ from models_library.services_resources import (
 )
 from pint import UnitRegistry
 from pydantic import ValidationError
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from . import catalog_client
 from ._constants import RQ_PRODUCT_KEY
@@ -29,7 +30,6 @@ from .catalog_models import (
 )
 from .catalog_units import can_connect
 from .login.decorators import RQT_USERID_KEY, login_required
-from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 
 logger = logging.getLogger(__name__)

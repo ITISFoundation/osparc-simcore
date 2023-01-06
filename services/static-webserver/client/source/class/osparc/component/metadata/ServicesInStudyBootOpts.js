@@ -19,6 +19,19 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
     GRID_POS: {
       ...osparc.component.metadata.ServicesInStudy.GRID_POS,
       BOOT_MODE: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length
+    },
+
+    anyBootOptions: function(studyData) {
+      if ("workbench" in studyData) {
+        for (const nodeId in studyData["workbench"]) {
+          const node = studyData["workbench"][nodeId];
+          const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+          if (metadata && "boot-options" in metadata) {
+            return true;
+          }
+        }
+      }
+      return false;
     }
   },
 
@@ -59,10 +72,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-        orgIDs.push(myGroupId);
-        const canIWrite = osparc.component.permissions.Study.canGroupsWrite(this._studyData["accessRights"], orgIDs);
+        const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
         if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
           const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
           const bootModeSB = new qx.ui.form.SelectBox();

@@ -1,9 +1,11 @@
 import contextlib
+import datetime
 import logging
 from dataclasses import dataclass
 from typing import Optional, cast
 
 import aioboto3
+import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from fastapi import FastAPI
 from pydantic import ByteSize, parse_obj_as
@@ -14,10 +16,10 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
-from types_aiobotocore_ec2.type_defs import ReservationTypeDef
 
 from ..core.errors import (
     ConfigurationError,
+    Ec2InstanceNotFoundError,
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
@@ -30,14 +32,15 @@ InstancePrivateDNSName = str
 logger = logging.getLogger(__name__)
 
 
-def _is_ec2_instance_running(instance: ReservationTypeDef):
-    return (
-        instance.get("Instances", [{}])[0].get("State", {}).get("Name", "not_running")
-        == "running"
-    )
+@dataclass(frozen=True)
+class EC2InstanceData:
+    launch_time: datetime.datetime
+    id: str
+    aws_private_dns: InstancePrivateDNSName
+    type: InstanceTypeType
 
 
-@dataclass
+@dataclass(frozen=True)
 class AutoscalingEC2:
     client: EC2Client
     session: aioboto3.Session
@@ -65,7 +68,7 @@ class AutoscalingEC2:
 
     async def ping(self) -> bool:
         try:
-            await self.client.describe_account_attributes(DryRun=True)
+            await self.client.describe_account_attributes()
             return True
         except Exception:  # pylint: disable=broad-except
             return False
@@ -100,33 +103,29 @@ class AutoscalingEC2:
         instance_type: InstanceTypeType,
         tags: dict[str, str],
         startup_script: str,
-    ) -> InstancePrivateDNSName:
+        number_of_instances: int,
+    ) -> list[EC2InstanceData]:
         with log_context(
             logger,
             logging.INFO,
-            msg=f"launching AWS instance {instance_type} with {tags=}",
+            msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            if current_instances := await self.client.describe_instances(
-                Filters=[
-                    {"Name": "tag-key", "Values": [tag_key]} for tag_key in tags.keys()
-                ]
+            current_instances = await self.get_all_pending_running_instances(
+                instance_settings, list(tags.keys())
+            )
+            if (
+                len(current_instances) + number_of_instances
+                > instance_settings.EC2_INSTANCES_MAX_INSTANCES
             ):
-                if (
-                    len(current_instances.get("Reservations", []))
-                    >= instance_settings.EC2_INSTANCES_MAX_INSTANCES
-                ) and all(
-                    _is_ec2_instance_running(instance)
-                    for instance in current_instances["Reservations"]
-                ):
-                    raise Ec2TooManyInstancesError(
-                        num_instances=instance_settings.EC2_INSTANCES_MAX_INSTANCES
-                    )
+                raise Ec2TooManyInstancesError(
+                    num_instances=instance_settings.EC2_INSTANCES_MAX_INSTANCES
+                )
 
             instances = await self.client.run_instances(
                 ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
-                MinCount=1,
-                MaxCount=1,
+                MinCount=number_of_instances,
+                MaxCount=number_of_instances,
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
@@ -143,41 +142,121 @@ class AutoscalingEC2:
                 UserData=compose_user_data(startup_script),
                 SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
             )
-            instance_id = instances["Instances"][0]["InstanceId"]
+            instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             logger.info(
-                "New instance launched: %s, waiting for it to start now...", instance_id
+                "New instances launched: %s, waiting for them to start now...",
+                instance_ids,
             )
             # wait for the instance to be in a running state
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
             waiter = self.client.get_waiter("instance_exists")
-            await waiter.wait(InstanceIds=[instance_id])
+            await waiter.wait(InstanceIds=instance_ids)
             logger.info(
-                "instance %s exists now, waiting for running state...", instance_id
+                "instances %s exists now, waiting for running state...", instance_ids
             )
 
             waiter = self.client.get_waiter("instance_running")
-            await waiter.wait(InstanceIds=[instance_id])
-            logger.info("instance %s is now running", instance_id)
+            await waiter.wait(InstanceIds=instance_ids)
+            logger.info("instances %s is now running", instance_ids)
 
-            # NOTE: this is currently deactivated as this makes starting an instance
-            # take between 2-4 minutes more and it seems to be responsive much before
-            # nevertheless if we get weird errors, this should be activated again!
-
-            # waiter = client.get_waiter("instance_status_ok")
-            # await waiter.wait(InstanceIds=[instance_id])
-            # logger.info("instance %s status is OK...", instance_id)
-
-            # get the private IP
-            instances = await self.client.describe_instances(InstanceIds=[instance_id])
-            private_dns_name: str = instances["Reservations"][0]["Instances"][0][
-                "PrivateDnsName"
+            # get the private IPs
+            instances = await self.client.describe_instances(InstanceIds=instance_ids)
+            instance_datas = [
+                EC2InstanceData(
+                    launch_time=instance["LaunchTime"],
+                    id=instance["InstanceId"],
+                    aws_private_dns=instance["PrivateDnsName"],
+                    type=instance["InstanceType"],
+                )
+                for instance in instances["Reservations"][0]["Instances"]
             ]
             logger.info(
-                "instance %s is available on %s, happy computing!!",
-                instance_id,
-                private_dns_name,
+                "%s is available, happy computing!!",
+                f"{instance_datas=}",
             )
-            return private_dns_name
+            return instance_datas
+
+    async def get_all_pending_running_instances(
+        self,
+        instance_settings: EC2InstancesSettings,
+        tag_keys: list[str],
+    ) -> list[EC2InstanceData]:
+        instances = await self.client.describe_instances(
+            Filters=[
+                {
+                    "Name": "key-name",
+                    "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
+                },
+                {"Name": "instance-state-name", "Values": ["pending", "running"]},
+                {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
+            ]
+        )
+        all_instances = []
+        for reservation in instances["Reservations"]:
+            assert "Instances" in reservation  # nosec
+            for instance in reservation["Instances"]:
+                assert "LaunchTime" in instance  # nosec
+                assert "InstanceId" in instance  # nosec
+                assert "PrivateDnsName" in instance  # nosec
+                assert "InstanceType" in instance  # nosec
+                all_instances.append(
+                    EC2InstanceData(
+                        launch_time=instance["LaunchTime"],
+                        id=instance["InstanceId"],
+                        aws_private_dns=instance["PrivateDnsName"],
+                        type=instance["InstanceType"],
+                    )
+                )
+        return all_instances
+
+    async def get_running_instance(
+        self,
+        instance_settings: EC2InstancesSettings,
+        tag_keys: list[str],
+        instance_host_name: str,
+    ) -> EC2InstanceData:
+        instances = await self.client.describe_instances(
+            Filters=[
+                {
+                    "Name": "key-name",
+                    "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
+                },
+                {"Name": "instance-state-name", "Values": ["running"]},
+                {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
+                {
+                    "Name": "network-interface.private-dns-name",
+                    "Values": [f"{instance_host_name}.ec2.internal"],
+                },
+            ]
+        )
+        if not instances["Reservations"]:
+            # NOTE: wrong hostname, or not running, or wrong usage
+            raise Ec2InstanceNotFoundError()
+
+        # NOTE: since the hostname is unique, there is only one instance here
+        assert "Instances" in instances["Reservations"][0]  # nosec
+        instance = instances["Reservations"][0]["Instances"][0]
+        assert "LaunchTime" in instance  # nosec
+        assert "InstanceId" in instance  # nosec
+        assert "PrivateDnsName" in instance  # nosec
+        assert "InstanceType" in instance  # nosec
+        return EC2InstanceData(
+            launch_time=instance["LaunchTime"],
+            id=instance["InstanceId"],
+            aws_private_dns=instance["PrivateDnsName"],
+            type=instance["InstanceType"],
+        )
+
+    async def terminate_instance(self, instance_data: EC2InstanceData) -> None:
+        try:
+            await self.client.terminate_instances(InstanceIds=[instance_data.id])
+        except botocore.exceptions.ClientError as exc:
+            if (
+                exc.response.get("Error", {}).get("Code", "")
+                == "InvalidInstanceID.NotFound"
+            ):
+                raise Ec2InstanceNotFoundError from exc
+            raise
 
 
 def setup(app: FastAPI) -> None:

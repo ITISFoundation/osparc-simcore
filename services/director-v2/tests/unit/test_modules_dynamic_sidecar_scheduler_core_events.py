@@ -20,7 +20,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
     BaseClientHTTPError,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import events
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import _events
 
 NETWORK_TOLERANCE_S: Final[PositiveFloat] = 0.1
 STEPS: Final[PositiveFloat] = 10
@@ -57,7 +57,7 @@ def mock_dynamic_sidecar_client_always_fail(mocker: MockerFixture) -> None:
         async def containers_inspect(cls, *args, **kwargs) -> None:
             raise BaseClientHTTPError("will always fail")
 
-    mocker.patch.object(events, "get_dynamic_sidecar_client", return_value=MockedObj())
+    mocker.patch.object(_events, "get_dynamic_sidecar_client", return_value=MockedObj())
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ def mock_dynamic_sidecar_client_stops_failing(mocker: MockerFixture) -> None:
             if self.counter < STEPS / 2:
                 raise BaseClientHTTPError("will always fail")
 
-    mocker.patch.object(events, "get_dynamic_sidecar_client", return_value=MockedObj())
+    mocker.patch.object(_events, "get_dynamic_sidecar_client", return_value=MockedObj())
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ async def test_event_get_status_network_connectivity(
 ):
     with pytest.raises(BaseClientHTTPError):
         for _ in range(REPEAT_COUNT):
-            await events.GetStatus.action(minimal_app, scheduler_data)
+            await _events.GetStatus.action(minimal_app, scheduler_data)
             await asyncio.sleep(SLEEP_BETWEEN_CALLS)
 
     assert caplog_info_level.text.count(_CHECK_LOG_EXCEPTION_IS_SKIPPED) > 1
@@ -113,6 +113,6 @@ async def test_event_get_status_recovers_after_error(
     caplog_info_level: LogCaptureFixture,
 ):
     for _ in range(REPEAT_COUNT):
-        await events.GetStatus.action(minimal_app, scheduler_data)
+        await _events.GetStatus.action(minimal_app, scheduler_data)
         await asyncio.sleep(SLEEP_BETWEEN_CALLS)
     assert caplog_info_level.text.count(_CHECK_LOG_EXCEPTION_IS_SKIPPED) >= 1

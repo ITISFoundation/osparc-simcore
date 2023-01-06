@@ -152,8 +152,10 @@ async def mock_retrieve_features(
             service_name = "service_name"
 
             # pylint: disable=protected-access
-            dynamic_sidecar_scheduler._inverse_search_mapping[node_uuid] = service_name
-            dynamic_sidecar_scheduler._to_observe[
+            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping[
+                node_uuid
+            ] = service_name
+            dynamic_sidecar_scheduler._scheduler._to_observe[
                 service_name
             ] = scheduler_data_from_http_request
 
@@ -174,8 +176,8 @@ async def mock_retrieve_features(
 
             yield respx_mock
 
-            dynamic_sidecar_scheduler._inverse_search_mapping.pop(node_uuid)
-            dynamic_sidecar_scheduler._to_observe.pop(service_name)
+            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping.pop(node_uuid)
+            dynamic_sidecar_scheduler._scheduler._to_observe.pop(service_name)
 
 
 @pytest.fixture
@@ -219,8 +221,9 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
             RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         )
 
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.get_stack_status",
+        f"{module_base}._task.DynamicSidecarsScheduler.get_stack_status",
         side_effect=get_stack_status,
     )
 
@@ -230,12 +233,12 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
             raise DynamicSidecarNotFoundError(node_uuid)
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler.mark_service_for_removal",
+        f"{module_base}._task.DynamicSidecarsScheduler.mark_service_for_removal",
         side_effect=remove_service,
     )
 
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler._discover_running_services",
+        f"{module_base}._core._scheduler.Scheduler._discover_running_services",
         return_value=None,
     )
 

@@ -191,10 +191,10 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    isOwner: function(serviceData) {
+    canIWrite: function(serviceAccessRights) {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-      return osparc.component.permissions.Service.canAnyGroupWrite(serviceData["access_rights"], orgIDs);
+      return osparc.component.permissions.Service.canGroupsWrite(serviceAccessRights, orgIDs);
     },
 
     /**

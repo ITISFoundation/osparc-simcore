@@ -72,8 +72,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
-    PAGINATED_STUDIES: 10,
-    MIN_FILTERED_STUDIES: 15
+    PAGINATED_STUDIES: 10
   },
 
   members: {
@@ -129,6 +128,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
+
+      resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+      resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
+
       this._add(resourcesContainer);
     },
 
@@ -253,25 +258,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    _createStudyItem: function(resourceData) {
-      const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
-
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
-      item.set({
-        resourceData,
-        tags
-      });
-
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
-      item.setMenu(menu);
-      this._populateCardMenu(menu, resourceData);
-      item.subscribeToFilterGroup("searchBarFilter");
-
-      return item;
-    },
-
     _taskDataReceived: function(taskData) {
       throw new Error("Abstract method called!");
     },
@@ -303,18 +289,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
         const title = this.tr("More options");
         const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
-        moreOpts.addListener("updateStudy", e => {
-          const updatedStudyData = e.getData();
-          this._updateStudyData(updatedStudyData);
-        });
-        moreOpts.addListener("updateTemplate", e => {
-          const updatedTemplateData = e.getData();
-          this._updateTemplateData(updatedTemplateData);
-        });
-        moreOpts.addListener("updateService", e => {
-          const updatedServiceData = e.getData();
-          this._updateServiceData(updatedServiceData);
-        });
+        moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+        moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+        moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
         moreOpts.addListener("publishTemplate", e => {
           win.close();
           this.fireDataEvent("publishTemplate", e.getData());

@@ -28,6 +28,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -37,7 +38,6 @@ from .._meta import api_version_prefix as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
-from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import (
@@ -161,7 +161,6 @@ async def _prepare_project_copy(
         app,
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
-        include_templates=True,
     )
     settings = get_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
@@ -464,7 +463,6 @@ async def get_active_project(request: web.Request) -> web.Response:
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
-                include_templates=True,
                 include_state=True,
             )
 
@@ -498,7 +496,6 @@ async def get_project(request: web.Request):
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
             include_state=True,
         )
         if not await project_uses_available_services(project, user_available_services):
@@ -586,7 +583,6 @@ async def replace_project(request: web.Request):
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
             include_state=True,
         )
 
@@ -625,7 +621,6 @@ async def replace_project(request: web.Request):
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             product_name=req_ctx.product_name,
-            include_templates=True,
         )
 
         await update_frontend_outputs(
@@ -688,7 +683,6 @@ async def delete_project(request: web.Request):
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
         project_users: set[int] = set()
         with managed_resource(req_ctx.user_id, None, request.app) as rt:

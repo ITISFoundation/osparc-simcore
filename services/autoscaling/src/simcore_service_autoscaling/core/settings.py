@@ -12,6 +12,7 @@ from models_library.docker import DockerLabelKey
 from pydantic import Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -40,7 +41,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="Defines the AMI (Amazon Machine Image) ID used to start a new EC2 instance",
     )
     EC2_INSTANCES_MAX_INSTANCES: int = Field(
-        10,
+        default=10,
         description="Defines the maximum number of instances the autoscaling app may create",
     )
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
@@ -64,6 +65,20 @@ class EC2InstancesSettings(BaseCustomSettings):
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
         "this is required to start a new EC2 instance",
     )
+
+    EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=55),
+        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
+    )
+
+    @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
+    @classmethod
+    def ensure_time_is_in_range(cls, value):
+        if value < datetime.timedelta(minutes=0):
+            value = datetime.timedelta(minutes=0)
+        elif value > datetime.timedelta(minutes=59):
+            value = datetime.timedelta(minutes=59)
+        return value
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
@@ -141,6 +156,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     AUTOSCALING_RABBITMQ: Optional[RabbitSettings] = Field(auto_default_from_env=True)
+
+    AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
     @cached_property
     def LOG_LEVEL(self):

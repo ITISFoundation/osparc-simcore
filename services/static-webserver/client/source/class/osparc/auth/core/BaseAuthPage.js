@@ -38,7 +38,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     this.set({
       layout: new qx.ui.layout.VBox(20),
       width: 300,
-      height: 350
+      height: 300
     });
     // at least chrome hates it when a password input field exists
     // outside a form, so lets accomodate him

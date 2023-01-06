@@ -54,6 +54,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
+    "updateService": "qx.event.type.Data",
+    "publishTemplate": "qx.event.type.Data",
     "changeSelection": "qx.event.type.Data",
     "changeVisibility": "qx.event.type.Data"
   },
@@ -197,6 +201,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
       card.setMenu(menu);
       card.subscribeToFilterGroup("searchBarFilter");
+
+      [
+        "updateStudy",
+        "updateTemplate",
+        "updateService",
+        "publishTemplate"
+      ].forEach(ev => card.addListener(ev, e => this.fireDataEvent(ev, e.getData())));
+
       return card;
     },
 
@@ -207,6 +219,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __cleanAll: function() {
       if (this.__flatList) {
         this.__flatList.removeAll();
+        this.__flatList = null;
       }
       this.__groupedContainers.forEach(groupedContainer => groupedContainer.getContentContainer().removeAll());
       this.__groupedContainers = [];
@@ -282,11 +295,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       } else if (this.getGroupBy() === "shared") {
         let orgIds = [];
         if ("accessRights" in resourceData) {
-          // study or templates
           orgIds = Object.keys(resourceData["accessRights"]);
-        } else if ("access_rights" in resourceData) {
-          // services
-          orgIds = Object.keys(resourceData["access_rights"]);
         }
         if (orgIds.length === 0) {
           let noGroupContainer = this.__getGroupContainer("no-group");
@@ -305,11 +314,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                     let icon = "";
                     if (org.thumbnail) {
                       icon = org.thumbnail;
-                    } else if (org["groupType"] === 0) {
+                    } else if (org["collabType"] === 0) {
                       icon = "@FontAwesome5Solid/globe/24";
-                    } else if (org["groupType"] === 1) {
+                    } else if (org["collabType"] === 1) {
                       icon = "@FontAwesome5Solid/users/24";
-                    } else if (org["groupType"] === 2) {
+                    } else if (org["collabType"] === 2) {
                       icon = "@FontAwesome5Solid/user/24";
                     }
                     groupContainer.set({

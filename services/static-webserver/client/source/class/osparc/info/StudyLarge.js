@@ -81,8 +81,8 @@ qx.Class.define("osparc.info.StudyLarge", {
   },
 
   members: {
-    __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
+    __canIWrite: function() {
+      return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
 
     __rebuildLayout: function() {
@@ -127,17 +127,17 @@ qx.Class.define("osparc.info.StudyLarge", {
         this._add(hBox);
       }
 
-      if (this.getStudy().getTags().length || this.__isOwner()) {
+      if (this.getStudy().getTags().length || this.__canIWrite()) {
         const tags = this.__createTags();
         const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
         tags.addAt(editInTitle, 0);
-        if (this.__isOwner()) {
+        if (this.__canIWrite()) {
           osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
         }
         this._add(tags);
       }
 
-      if (this.getStudy().getDescription() || this.__isOwner()) {
+      if (this.getStudy().getDescription() || this.__canIWrite()) {
         const description = this.__createDescription();
         const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
         description.addAt(editInTitle, 0);
@@ -150,7 +150,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         alignY: "middle"
       }));
       layout.add(view);
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         const editBtn = osparc.utils.Utils.getEditButton();
         editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
@@ -182,7 +182,11 @@ qx.Class.define("osparc.info.StudyLarge", {
         }
       }];
 
-      if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
+      if (
+        !osparc.utils.Utils.isProduct("s4llite") &&
+        this.getStudy().getQuality() &&
+        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+      ) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
@@ -194,15 +198,17 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      extraInfo.push({
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
-          ctx: this
-        } : null
-      });
+      if (!osparc.utils.Utils.isProduct("s4llite")) {
+        extraInfo.push({
+          label: this.tr("Classifiers"),
+          view: this.__createClassifiers(),
+          action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
+            ctx: this
+          } : null
+        });
+      }
 
       if (osparc.data.Permissions.getInstance().isTester()) {
         extraInfo.splice(0, 0, {
@@ -304,7 +310,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __openClassifiers: function() {
       const title = this.tr("Classifiers");
       let classifiers = null;
-      if (this.__isOwner()) {
+      if (this.__canIWrite()) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {

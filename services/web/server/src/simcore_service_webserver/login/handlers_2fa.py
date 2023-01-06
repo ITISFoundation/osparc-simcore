@@ -18,7 +18,12 @@ from ._2fa import (
     send_email_code,
     send_sms_code,
 )
-from ._constants import MSG_2FA_CODE_SENT, MSG_EMAIL_SENT, MSG_UNKNOWN_EMAIL
+from ._constants import (
+    MSG_2FA_CODE_SENT,
+    MSG_EMAIL_SENT,
+    MSG_UNAUTHORIZED_CODE_RESEND_2FA,
+    MSG_UNKNOWN_EMAIL,
+)
 from ._models import InputSchema
 from .settings import LoginSettings, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
@@ -60,8 +65,12 @@ class Resend2faBody(InputSchema):
     via: Literal["SMS", "Email"] = "SMS"
 
 
-@session_access_constraint(allow_access_after=["auth_login"], max_number_of_access=5)
-@routes.post("/v0/auth/two_factor:resend", name="resend_2fa_code")
+@session_access_constraint(
+    allow_access_after=["auth_login", "auth_register_phone"],
+    max_number_of_access=5,
+    unauthorized_reason=MSG_UNAUTHORIZED_CODE_RESEND_2FA,
+)
+@routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email
 

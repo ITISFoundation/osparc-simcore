@@ -86,15 +86,15 @@ qx.Class.define("osparc.CookiePolicy", {
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
-          osparc.navigation.Manuals.getLicenseURL()
+          osparc.store.Support.getLicenseURL()
             .then(licenseLink => {
-              const lbl = control.getLabel();
+              const lbl = control.getValue();
               if (licenseLink) {
                 const color = qx.theme.manager.Color.getInstance().resolve("text");
                 const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
-                control.setLabel(lbl + textLink);
+                control.setValue(lbl + textLink);
               } else {
-                control.setLabel(lbl + this.tr("Licensing."));
+                control.setValue(lbl + this.tr("Licensing."));
               }
             });
           this._add(control, {

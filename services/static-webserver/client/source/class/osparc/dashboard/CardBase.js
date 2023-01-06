@@ -43,6 +43,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   },
 
   statics: {
+    SHARE_ICON: "@FontAwesome5Solid/share-alt/14",
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
@@ -236,37 +237,33 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.getResourceType() === resourceType;
     },
 
-    __applyResourceData: function(studyData) {
+    __applyResourceData: function(resourceData) {
       let defaultThumbnail = "";
       let uuid = null;
       let owner = "";
-      let accessRights = {};
       let defaultHits = null;
       let workbench = null;
-      switch (studyData["resourceType"]) {
+      switch (resourceData["resourceType"]) {
         case "study":
-          uuid = studyData.uuid ? studyData.uuid : uuid;
-          owner = studyData.prjOwner ? studyData.prjOwner : owner;
-          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
+          uuid = resourceData.uuid ? resourceData.uuid : uuid;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
           defaultThumbnail = this.self().STUDY_ICON;
-          workbench = studyData.workbench ? studyData.workbench : workbench;
+          workbench = resourceData.workbench ? resourceData.workbench : workbench;
           break;
         case "template":
-          uuid = studyData.uuid ? studyData.uuid : uuid;
-          owner = studyData.prjOwner ? studyData.prjOwner : owner;
-          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
+          uuid = resourceData.uuid ? resourceData.uuid : uuid;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
           defaultThumbnail = this.self().TEMPLATE_ICON;
-          workbench = studyData.workbench ? studyData.workbench : workbench;
+          workbench = resourceData.workbench ? resourceData.workbench : workbench;
           break;
         case "service":
-          uuid = studyData.key ? studyData.key : uuid;
-          owner = studyData.owner ? studyData.owner : owner;
-          accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
+          uuid = resourceData.key ? resourceData.key : uuid;
+          owner = resourceData.owner ? resourceData.owner : owner;
           defaultThumbnail = this.self().SERVICE_ICON;
-          if (osparc.data.model.Node.isComputational(studyData)) {
+          if (osparc.data.model.Node.isComputational(resourceData)) {
             defaultThumbnail = this.self().COMP_SERVICE_ICON;
           }
-          if (osparc.data.model.Node.isDynamic(studyData)) {
+          if (osparc.data.model.Node.isDynamic(resourceData)) {
             defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
           }
           defaultHits = 0;
@@ -274,19 +271,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       this.set({
-        resourceType: studyData.resourceType,
+        resourceType: resourceData.resourceType,
         uuid,
-        title: studyData.name,
-        description: studyData.description,
+        title: resourceData.name,
+        description: resourceData.description,
         owner,
-        accessRights,
-        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
-        icon: studyData.thumbnail || defaultThumbnail,
-        state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        quality: studyData.quality ? studyData.quality : null,
-        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null,
-        hits: studyData.hits ? studyData.hits : defaultHits,
+        accessRights: resourceData.accessRights ? resourceData.accessRights : {},
+        lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
+        icon: resourceData.thumbnail || defaultThumbnail,
+        state: resourceData.state ? resourceData.state : {},
+        classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
+        quality: resourceData.quality ? resourceData.quality : null,
+        uiMode: resourceData.ui && resourceData.ui.mode ? resourceData.ui.mode : null,
+        hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
     },
@@ -326,8 +323,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyQuality: function(quality) {
-      if (osparc.component.metadata.Quality.isEnabled(quality)) {
-        const tsrRating = this.getChildControl("tsr-rating");
+      if (!osparc.utils.Utils.isProduct("s4llite") && osparc.component.metadata.Quality.isEnabled(quality)) {
+        const tsrRatingLayout = this.getChildControl("tsr-rating");
+        const tsrRating = tsrRatingLayout.getChildren()[1];
         tsrRating.set({
           nStars: 4,
           showScore: true
@@ -511,12 +509,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _setStudyPermissions: function(accessRights) {
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGroupId);
-
       const permissionIcon = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
+      if (osparc.data.model.Study.canIWrite(accessRights)) {
         permissionIcon.exclude();
       } else {
         permissionIcon.setSource(osparc.dashboard.CardBase.PERM_READ);

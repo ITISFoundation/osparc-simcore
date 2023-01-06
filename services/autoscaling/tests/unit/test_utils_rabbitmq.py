@@ -4,19 +4,20 @@
 # pylint:disable=too-many-arguments
 
 
-from typing import Any, Awaitable, Callable, Mapping
+from typing import Any, Awaitable, Callable
 
 import aiodocker
 from faker import Faker
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Task
+from models_library.docker import DockerLabelKey
+from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
-from simcore_service_autoscaling.utils.rabbitmq import post_log_message
+from simcore_service_autoscaling.utils.rabbitmq import post_task_log_message
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -26,7 +27,7 @@ _TENACITY_RETRY_PARAMS = dict(
     reraise=True,
     retry=retry_if_exception_type(AssertionError),
     stop=stop_after_delay(30),
-    wait=wait_fixed(0.5),
+    wait=wait_fixed(0.1),
 )
 
 
@@ -38,17 +39,16 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = []
 
 
-async def test_post_log_message(
+async def test_post_task_log_message(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_client: RabbitMQClient,
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[str, str]], Awaitable[Mapping[str, Any]]
-    ],
+    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     faker: Faker,
@@ -59,20 +59,20 @@ async def test_post_log_message(
     )
 
     service_with_labels = await create_service(
-        task_template,
-        osparc_docker_label_keys.to_docker_labels(),
+        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
     )
+    assert service_with_labels.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels["Spec"]["Name"]}
+            filters={"service": service_with_labels.Spec.Name}
         ),
     )
     assert service_tasks
     assert len(service_tasks) == 1
 
     log_message = faker.pystr()
-    await post_log_message(initialized_app, service_tasks[0], log_message, 0)
+    await post_task_log_message(initialized_app, service_tasks[0], log_message, 0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -84,7 +84,7 @@ async def test_post_log_message(
                     node_id=osparc_docker_label_keys.node_id,
                     project_id=osparc_docker_label_keys.project_id,
                     user_id=osparc_docker_label_keys.user_id,
-                    messages=[log_message],
+                    messages=[f"[cluster] {log_message}"],
                 )
                 .json()
                 .encode()
@@ -92,21 +92,25 @@ async def test_post_log_message(
             print("... message received")
 
 
-async def test_post_log_message_does_not_raise_if_service_has_no_labels(
+async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
     disable_dynamic_service_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    mocked_redis_server: None,
     initialized_app: FastAPI,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any]], Awaitable[Mapping[str, Any]]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     faker: Faker,
 ):
-    service_without_labels = await create_service(task_template)
+    service_without_labels = await create_service(task_template, {}, "running")
+    assert service_without_labels.Spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_without_labels["Spec"]["Name"]}
+            filters={"service": service_without_labels.Spec.Name}
         ),
     )
     assert service_tasks
@@ -114,4 +118,4 @@ async def test_post_log_message_does_not_raise_if_service_has_no_labels(
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
-    await post_log_message(initialized_app, service_tasks[0], faker.pystr(), 0)
+    await post_task_log_message(initialized_app, service_tasks[0], faker.pystr(), 0)

@@ -36,10 +36,18 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(this.self().V_SPACING)).set({
+    const grid = new qx.ui.layout.Grid();
+    grid.setSpacing(this.self().SPACING_IN);
+    grid.setRowFlex(2, 1);
+    grid.setColumnFlex(0, 1);
+    grid.setRowMaxHeight(0, 34);
+
+    const mainLayout = this._mainLayout = new qx.ui.container.Composite().set({
       maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
       maxHeight: this.self().ITEM_HEIGHT - 2*this.self().PADDING
     });
+    mainLayout.setLayout(grid);
+
     this._add(mainLayout, {
       top: 0,
       right: 0,
@@ -52,14 +60,47 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
-    V_SPACING: 6,
+    SPACING_IN: 4,
     SPACING: 15,
     POS: {
-      TITLE: 0,
-      SUBTITLE: 1,
-      THUMBNAIL: 2,
-      TSR_MODE: 3,
-      TAGS: 4
+      TITLE: {
+        row: 0,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      },
+      SUBTITLE: {
+        row: 1,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      },
+      THUMBNAIL: {
+        row: 2,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 3
+      },
+      TSR: {
+        row: 3,
+        column: 0
+      },
+      TAGS: {
+        row: 4,
+        column: 0
+      },
+      VIEWER_MODE: {
+        row: 3,
+        column: 1,
+        rowSpan: 2,
+        colSpan: 1
+      },
+      UPDATES: {
+        row: 3,
+        column: 2,
+        rowSpan: 2,
+        colSpan: 1
+      }
     }
   },
 
@@ -77,25 +118,25 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       switch (id) {
         case "title":
           control = new qx.ui.basic.Label().set({
-            margin: [5, 0],
+            marginTop: 3,
             font: "title-14",
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
             maxHeight: 34, // two lines
             rich: true,
             wrap: true
           });
-          this._mainLayout.addAt(control, this.self().POS.TITLE);
+          this._mainLayout.add(control, this.self().POS.TITLE);
           break;
         case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          this._mainLayout.addAt(control, this.self().POS.SUBTITLE);
+          this._mainLayout.add(control, this.self().POS.SUBTITLE);
           break;
         case "subtitle-icon": {
           control = new qx.ui.basic.Image();
-          const sharedDescriptionLayout = this.getChildControl("subtitle");
-          sharedDescriptionLayout.addAt(control, 0);
+          const subtitleLayout = this.getChildControl("subtitle");
+          subtitleLayout.addAt(control, 0);
           break;
         }
         case "subtitle-text": {
@@ -104,8 +145,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             font: "text-13",
             allowGrowY: false
           });
-          const sharedDescriptionLayout = this.getChildControl("subtitle");
-          sharedDescriptionLayout.addAt(control, 1, {
+          const subtitleLayout = this.getChildControl("subtitle");
+          subtitleLayout.addAt(control, 1, {
             flex: 1
           });
           break;
@@ -116,9 +157,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control.getChildControl("image").set({
             anonymous: true
           });
-          this._mainLayout.addAt(control, this.self().POS.THUMBNAIL, {
-            flex: 1
-          });
+          this._mainLayout.add(control, this.self().POS.THUMBNAIL);
           break;
         }
       }
@@ -139,9 +178,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         "appear",
         "loaded"
       ].forEach(eventName => {
-        image.addListener(eventName, () => {
-          this.__fitIconHeight();
-        }, this);
+        image.addListener(eventName, () => this.__fitIconHeight(), this);
       });
     },
 
@@ -167,10 +204,19 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     __fitIconHeight: function() {
       const iconLayout = this.getChildControl("icon");
       let maxHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom();
+      const checkThis = [
+        "title",
+        "subtitle",
+        "tsr-rating",
+        "tags"
+      ];
       // eslint-disable-next-line no-underscore-dangle
       this._mainLayout._getChildren().forEach(child => {
-        if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
-          maxHeight -= (child.getBounds().height + 6);
+        if (checkThis.includes(child.getSubcontrolId()) && child.getBounds()) {
+          maxHeight -= (child.getBounds().height + this.self().SPACING_IN);
+          if (child.getSubcontrolId() === "tags") {
+            maxHeight -= 7;
+          }
         }
       });
       iconLayout.getChildControl("image").setMaxHeight(maxHeight);

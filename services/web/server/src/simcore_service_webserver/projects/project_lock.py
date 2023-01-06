@@ -9,7 +9,6 @@ from models_library.projects import ProjectID
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
 from redis.asyncio.lock import Lock
 from servicelib.background_task import periodic_task
-from servicelib.logging_utils import log_catch
 
 from ..redis import get_redis_lock_manager_client
 from ..users_api import UserNameDict
@@ -21,8 +20,8 @@ ProjectLock = Lock
 
 
 async def _auto_extend_project_lock(project_lock: Lock) -> None:
-    with log_catch(logger, reraise=False):
-        await project_lock.reacquire()
+    # NOTE: the background task already catches anything that might raise here
+    await project_lock.reacquire()
 
 
 @asynccontextmanager
@@ -65,6 +64,7 @@ async def lock_project(
             _auto_extend_project_lock,
             interval=0.6 * PROJECT_LOCK_TIMEOUT,
             task_name=f"{PROJECT_REDIS_LOCK_KEY.format(project_uuid)}_lock_auto_extend",
+            project_lock=redis_lock,
         ):
             yield
     finally:

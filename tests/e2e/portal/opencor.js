@@ -9,7 +9,7 @@ const {
   templateUuid,
   startTimeout,
   enableDemoMode
-} = utils.parseCommandLineArgumentsTemplate(args);
+} = utils.parseCommandLineArgumentsAnonymous(args);
 
 const anonURL = urlPrefix + templateUuid + "?stimulation_mode=1&stimulation_level=0.5";
 const screenshotPrefix = "Opencor_";

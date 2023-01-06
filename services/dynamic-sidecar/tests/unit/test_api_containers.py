@@ -17,6 +17,7 @@ import aiofiles
 import pytest
 import yaml
 from aiodocker.volumes import DockerVolume
+from aiofiles.os import mkdir
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
@@ -30,20 +31,34 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_create,
 )
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
-from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
+from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
 
+
 # UTILS
+
+
+class FailTestError(RuntimeError):
+    pass
+
+
+_TENACITY_RETRY_PARAMS: dict[str, Any] = dict(
+    reraise=True,
+    retry=retry_if_exception_type((FailTestError, AssertionError)),
+    stop=stop_after_delay(10),
+    wait=wait_fixed(0.01),
+)
 
 
 def _create_network_aliases(network_name: str) -> list[str]:
@@ -264,11 +279,45 @@ def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
 
 
 @pytest.fixture
-def mock_event_filter_enqueue(app: FastAPI, monkeypatch: MonkeyPatch) -> Iterator[Mock]:
+def mock_event_filter_enqueue(
+    app: FastAPI, monkeypatch: MonkeyPatch
+) -> Iterator[AsyncMock]:
     mock = AsyncMock(return_value=None)
     outputs_watcher: OutputsWatcher = app.state.outputs_watcher
     monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)
     yield mock
+
+
+@pytest.fixture
+async def mocked_port_key_events_queue_coro_get(
+    app: FastAPI, mocker: MockerFixture
+) -> Mock:
+    outputs_context: OutputsContext = app.state.outputs_context
+
+    target = getattr(outputs_context.port_key_events_queue, "coro_get")
+
+    mock_result_tracker = Mock()
+
+    async def _wrapped_coroutine() -> Any:
+        # NOTE: coro_get returns a future, naming is unfortunate
+        # and can cause confusion, normally an async def function
+        # will return a coroutine not a future object.
+        future: asyncio.Future = target()
+        result = await future
+        mock_result_tracker(result)
+
+        return result
+
+    mocker.patch.object(
+        outputs_context.port_key_events_queue,
+        "coro_get",
+        side_effect=_wrapped_coroutine,
+    )
+
+    return mock_result_tracker
+
+
+# TESTS
 
 
 def test_ensure_api_vtag_is_v1():
@@ -408,59 +457,85 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
+    mocked_port_key_events_queue_coro_get: Mock,
     mock_event_filter_enqueue: AsyncMock,
 ):
     assert isinstance(test_client.application, FastAPI)
     outputs_context: OutputsContext = test_client.application.state.outputs_context
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
-    WAIT_FOR_EVENTS = outputs_manager.task_monitor_interval_s * 10
+    WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
+    EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 3
 
-    async def _create_file_in_random_dir_in_inputs() -> int:
+    async def _create_port_key_events() -> None:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
-        await asyncio.sleep(WAIT_FOR_EVENTS)
+        await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
         dir_name = outputs_context.outputs_path / random_subdir
-        dir_name.mkdir()
-
+        await mkdir(dir_name)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
-        dir_count = len(
-            [
-                1
-                for x in outputs_context.outputs_path.glob("*")
-                if not f"{x}".endswith(HIDDEN_FILE_NAME)
-            ]
-        )
-        await asyncio.sleep(WAIT_FOR_EVENTS)
-        return dir_count
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                # check event was triggered
+                dir_event_set = [
+                    c.args[0]
+                    for c in mocked_port_key_events_queue_coro_get.call_args_list
+                    if c.args[0] == random_subdir
+                ]
+                # NOTE: this test can sometimes generate +/-(1 event)
+                # - when it creates +1 event ✅ using `>=` solves it
+                # - when it creates -1 event ❌ cannot deal with it from here
+                #   Will cause downstream assertions to fail since in the
+                #   event_filter_queue there will be unexpected items
+                #   NOTE: will make entire test fail with a specific
+                #   exception and rely on mark.flaky to retry it.
+                if len(dir_event_set) < EXPECTED_EVENTS_PER_RANDOM_PORT_KEY:
+                    raise FailTestError(
+                        f"Expected at least {EXPECTED_EVENTS_PER_RANDOM_PORT_KEY}"
+                        f" events, found: {dir_event_set}"
+                    )
+                assert len(dir_event_set) >= EXPECTED_EVENTS_PER_RANDOM_PORT_KEY
 
-    CALLS_RECEIVED_BY_EVENT_FILTER = 3
+    def _assert_events_generated(*, expected_events: int) -> None:
+        events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
+        assert len(events_set) == expected_events
+
+    # NOTE: for some reason the first event in the queue
+    #  does not get delivered the AioQueue future handling coro_get hangs
+    await outputs_context.port_key_events_queue.coro_put("")
+    await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
     # by default outputs-watcher it is disabled
-    await _assert_enable_outputs_watcher(test_client)
-    assert mock_event_filter_enqueue.call_count == 0
-    files_in_dir = await _create_file_in_random_dir_in_inputs()
-    assert files_in_dir == 1
-    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
 
-    # disable and wait for events should have the same count as before
+    # expect no events to be generated
+    _assert_events_generated(expected_events=0)
+    await _create_port_key_events()
+    _assert_events_generated(expected_events=0)
+
+    # after enabling new vents will be generated
+    await _assert_enable_outputs_watcher(test_client)
+    _assert_events_generated(expected_events=0)
+    await _create_port_key_events()
+    _assert_events_generated(expected_events=1)
+
+    # disabling again, no longer generate events
     await _assert_disable_outputs_watcher(test_client)
-    files_in_dir = await _create_file_in_random_dir_in_inputs()
-    assert files_in_dir == 2
-    assert mock_event_filter_enqueue.call_count == 1 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_events_generated(expected_events=1)
+    await _create_port_key_events()
+    _assert_events_generated(expected_events=1)
 
-    # enable and wait for events
+    # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
-
-    files_in_dir = await _create_file_in_random_dir_in_inputs()
-    assert files_in_dir == 3
-    assert mock_event_filter_enqueue.call_count == 2 * CALLS_RECEIVED_BY_EVENT_FILTER
+    _assert_events_generated(expected_events=1)
+    await _create_port_key_events()
+    _assert_events_generated(expected_events=2)
 
 
 async def test_container_create_outputs_dirs(

@@ -1,8 +1,10 @@
+# pylint: disable=relative-beyond-top-level
+
 from abc import ABC, abstractmethod
 
 from fastapi import FastAPI
 
-from ....models.schemas.dynamic_services import SchedulerData
+from .....models.schemas.dynamic_services import SchedulerData
 
 
 class DynamicSchedulerEvent(ABC):
