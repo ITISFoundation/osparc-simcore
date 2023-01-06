@@ -21,6 +21,7 @@ from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
     LoginSettings,
+    LoginSettingsForProduct,
     get_plugin_settings,
 )
 from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
@@ -79,9 +80,9 @@ async def _validate_products_login_settings(app: web.Application):
     errors = {}
     for product in list_products(app):
         try:
-            cfg = settings.dict(exclude={"LOGIN_2FA_REQUIRED"})
-            _ = LoginSettings(
-                LOGIN_2FA_REQUIRED=product.login_settings.two_factor_enabled, **cfg
+            _ = LoginSettingsForProduct.create_from_merge(
+                plugin_login_settings=settings,
+                product_login_settings=product.login_settings,
             )
         except ValidationError as err:
             errors[product.name] = err
