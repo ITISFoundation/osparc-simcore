@@ -88,7 +88,7 @@ class PlayContext(ContextIOInterface):
             raise GetTypeMismatchError(
                 key=key,
                 existing_value=existing_value,
-                exiting_type=exiting_type,
+                existing_type=exiting_type,
                 expected_type=expected_type,
             )
         return existing_value
