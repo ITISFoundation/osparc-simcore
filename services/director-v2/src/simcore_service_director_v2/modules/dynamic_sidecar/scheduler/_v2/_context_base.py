@@ -5,10 +5,10 @@ from typing import Any, Optional
 class ReservedContextKeys:
     APP: str = "app"
 
-    WORKFLOW_NAME: str = "__workflow_name"
-    WORKFLOW_STATE_NAME: str = "__workflow_state_name"
-    WORKFLOW_CURRENT_EVENT_NAME: str = "__workflow_current_event_name"
-    WORKFLOW_CURRENT_EVENT_INDEX: str = "__workflow_current_event_index"
+    PLAY_NAME: str = "__play_name"
+    PLAY_SCENE_NAME: str = "__play_scene_name"
+    PLAY_CURRENT_ACTION_NAME: str = "__play_current_action_name"
+    PLAY_CURRENT_ACTION_INDEX: str = "__play_current_action_index"
 
     EXCEPTION: str = "_exception"
 
@@ -16,10 +16,10 @@ class ReservedContextKeys:
     RESERVED: set[str] = {
         APP,
         EXCEPTION,
-        WORKFLOW_NAME,
-        WORKFLOW_STATE_NAME,
-        WORKFLOW_CURRENT_EVENT_NAME,
-        WORKFLOW_CURRENT_EVENT_INDEX,
+        PLAY_NAME,
+        PLAY_SCENE_NAME,
+        PLAY_CURRENT_ACTION_NAME,
+        PLAY_CURRENT_ACTION_INDEX,
     }
 
     # NOTE: objects pointed by these keys are just references
@@ -29,11 +29,11 @@ class ReservedContextKeys:
 
 class ContextIOInterface(ABC):
     """
-    Used to serialize/deserialize the context in bulk.
+    Used to save/load the context in bulk.
     Useful for those types of stores which are not capable of guaranteeing
     data persistance between reboots. (eg: in memory implementation)
-    Should become obsolete in the future if something like Redis will be
-    used.
+    Should become obsolete in the future if something like a Redis based
+    store will be used.
     """
 
     @abstractmethod
@@ -71,7 +71,7 @@ class ContextStorageInterface(ABC):
         """run storage specific halt and cleanup"""
 
 
-class BaseContextInterface(ContextStorageInterface, ContextIOInterface):
+class ContextInterface(ContextStorageInterface, ContextIOInterface):
     """
     This should be inherited when defining a new type of Context.
     """

@@ -1,10 +1,10 @@
 from copy import deepcopy
 from typing import Any, Optional
 
-from ._context_base import BaseContextInterface
+from ._context_base import ContextInterface
 
 
-class InMemoryContext(BaseContextInterface):
+class InMemoryContext(ContextInterface):
     """
     Very simple context to keep track of data.
     NOTE: Does not support data persistance. Requires

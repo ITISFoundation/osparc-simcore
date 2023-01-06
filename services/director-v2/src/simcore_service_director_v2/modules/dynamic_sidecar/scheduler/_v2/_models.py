@@ -1,3 +1,3 @@
-WorkflowName = str
-StateName = str
-EventName = str
+PlayName = str
+SceneName = str
+ActionName = str

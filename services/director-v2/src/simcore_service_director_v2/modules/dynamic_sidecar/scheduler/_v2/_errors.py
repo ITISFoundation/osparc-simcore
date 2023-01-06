@@ -39,28 +39,28 @@ class NotAllowedContextKeyError(BaseContextException):
     )
 
 
-class BaseEventException(BaseV2SchedulerException):
+class BaseActionException(BaseV2SchedulerException):
     """use as base for all context related errors"""
 
 
-class UnexpectedEventReturnTypeError(BaseEventException):
-    code = "dynamic_sidecar.scheduler.v2.unexpected_event_return_type"
-    msg_template = "Event should always return `dict[str, Any]`, returning: {type}"
+class UnexpectedActionReturnTypeError(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.unexpected_action_return_type"
+    msg_template = "Action should always return `dict[str, Any]`, returning: {type}"
 
 
-class WorkflowAlreadyRunningException(BaseEventException):
-    code = "dynamic_sidecar.scheduler.v2.workflow_already_running"
-    msg_template = "Another workflow named '{workflow_name}' is already running"
+class PlayAlreadyRunningException(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.play_already_running"
+    msg_template = "Another play named '{play_name}' is already running"
 
 
-class WorkflowNotFoundException(BaseEventException):
-    code = "dynamic_sidecar.scheduler.v2.workflow_not_found"
-    msg_template = "Workflow '{workflow_name}' not found"
+class PlayNotFoundException(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.play_not_found"
+    msg_template = "Play '{play_name}' not found"
 
 
-class StateNotRegisteredException(BaseEventException):
-    code = "dynamic_sidecar.scheduler.v2.state_not_registered"
+class SceneNotRegisteredException(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.scene_not_registered"
     msg_template = (
-        "Trying to start state '{state_name}' but these are the only"
-        "available states {state_registry}"
+        "Trying to start scene '{scene_name}' but these are the only"
+        "available scenes {play_catalog}"
     )

@@ -2,35 +2,47 @@ from typing import Any, Optional
 
 from fastapi import FastAPI
 
-from ._context_base import BaseContextInterface, ContextIOInterface, ReservedContextKeys
+from ._context_base import ContextInterface, ContextIOInterface, ReservedContextKeys
 from ._errors import (
     GetTypeMismatchError,
     NotAllowedContextKeyError,
     NotInContextError,
     SetTypeMismatchError,
 )
-from ._models import StateName, WorkflowName
+from ._models import PlayName, SceneName
 
 
-class WorkflowContextResolver(ContextIOInterface):
+def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
+    # if a value previously existed,
+    # ensure it has the same type
+    existing_type = type(existing_value)
+    value_type = type(value)
+    if existing_type != value_type:
+        raise SetTypeMismatchError(
+            key=key,
+            existing_value=existing_value,
+            existing_type=existing_type,
+            new_value=value,
+            new_type=value_type,
+        )
+
+
+class PlayContext(ContextIOInterface):
     """
-    Used to keep track of the state of a workflow.
-    Responsible for providing an interface which guarantees
-    that workflow specific data is saved
+    Data container responsible for keeping track of the state of a play.
     """
 
     def __init__(
         self,
-        storage_context: BaseContextInterface,
+        context: ContextInterface,
         app: FastAPI,
-        workflow_name: WorkflowName,
-        state_name: StateName,
+        play_name: PlayName,
+        scene_name: SceneName,
     ) -> None:
-        self._app: FastAPI = app
-        self._workflow_name: WorkflowName = workflow_name
-        self._state_name: StateName = state_name
-
-        self._context: BaseContextInterface = storage_context
+        self._context = context
+        self._app = app
+        self._play_name = play_name
+        self._scene_name = scene_name
 
         self._local_storage: dict[str, Any] = {}
 
@@ -43,30 +55,16 @@ class WorkflowContextResolver(ContextIOInterface):
         if key in ReservedContextKeys.RESERVED and not set_reserved:
             raise NotAllowedContextKeyError(key=key)
 
-        def ensure_type_matches(existing_value: Any, value: Any) -> None:
-            # if a value previously existed,
-            # ensure it has the same type
-            existing_type = type(existing_value)
-            value_type = type(value)
-            if existing_type != value_type:
-                raise SetTypeMismatchError(
-                    key=key,
-                    existing_value=existing_value,
-                    existing_type=existing_type,
-                    new_value=value,
-                    new_type=value_type,
-                )
-
         if key in ReservedContextKeys.STORED_LOCALLY:
             if key in self._local_storage:
-                ensure_type_matches(
-                    existing_value=self._local_storage[key], value=value
+                _ensure_type_matches(
+                    key=key, existing_value=self._local_storage[key], value=value
                 )
             self._local_storage[key] = value
         else:
             if await self._context.has_key(key):
-                ensure_type_matches(
-                    existing_value=await self._context.load(key), value=value
+                _ensure_type_matches(
+                    key=key, existing_value=await self._context.load(key), value=value
                 )
             await self._context.save(key, value)
 
@@ -105,13 +103,13 @@ class WorkflowContextResolver(ContextIOInterface):
         # adding app to context
         await self.set(key=ReservedContextKeys.APP, value=self._app, set_reserved=True)
         await self.set(
-            key=ReservedContextKeys.WORKFLOW_NAME,
-            value=self._workflow_name,
+            key=ReservedContextKeys.PLAY_NAME,
+            value=self._play_name,
             set_reserved=True,
         )
         await self.set(
-            key=ReservedContextKeys.WORKFLOW_STATE_NAME,
-            value=self._state_name,
+            key=ReservedContextKeys.PLAY_SCENE_NAME,
+            value=self._scene_name,
             set_reserved=True,
         )
 

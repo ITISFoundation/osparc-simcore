@@ -2,34 +2,34 @@ from typing import Any
 
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
-    mark_event,
+    mark_action,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._state import (
-    State,
-    StateRegistry,
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._scene import (
+    PlayCatalog,
+    Scene,
 )
 
 
 async def test_state_ok():
-    @mark_event
+    @mark_action
     async def print_info() -> dict[str, Any]:
         print("some info")
         return {}
 
-    @mark_event
+    @mark_action
     async def verify(x: float, y: int) -> dict[str, Any]:
         assert type(x) == float
         assert type(y) == int
         return {}
 
-    INFO_CHECK = State(
+    INFO_CHECK = Scene(
         name="test",
-        events=[
+        actions=[
             print_info,
             verify,
         ],
-        next_state=None,
-        on_error_state=None,
+        next_scene=None,
+        on_error_scene=None,
     )
     assert INFO_CHECK
 
@@ -39,14 +39,14 @@ def test_state_registry():
     STATE_TWO_NAME = "two"
     STATE_MISSING_NAME = "not_existing_state"
 
-    state_one = State(
-        name=STATE_ONE_NAME, events=[], next_state=None, on_error_state=None
+    state_one = Scene(
+        name=STATE_ONE_NAME, actions=[], next_scene=None, on_error_scene=None
     )
-    state_two = State(
-        name=STATE_TWO_NAME, events=[], next_state=None, on_error_state=None
+    state_two = Scene(
+        name=STATE_TWO_NAME, actions=[], next_scene=None, on_error_scene=None
     )
 
-    registry = StateRegistry(
+    registry = PlayCatalog(
         state_one,
         state_two,
     )
