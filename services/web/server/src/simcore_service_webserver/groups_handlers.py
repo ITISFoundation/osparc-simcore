@@ -1,6 +1,7 @@
 import functools
 import json
 import logging
+from contextlib import suppress
 from typing import Optional
 
 from aiohttp import web
@@ -71,23 +72,15 @@ async def list_groups(request: web.Request):
         "me": primary_group,
         "organizations": user_groups,
         "all": all_group,
+        "product": None,
     }
 
     if product.group_id:
-        try:
+        with suppress(GroupNotFoundError):
             result["product"] = await groups_api.get_product_group_for_user(
                 app=request.app,
                 user_id=user_id,
                 product_gid=product.group_id,
-            )
-        except GroupNotFoundError as err:
-            logger.debug(
-                "This user does not belong to any product's group: %s."
-                "This is typically assigned during registration but this user "
-                "might have been created prior to this new feature."
-                "TIP: assign it manually to the default product group_id and "
-                "restart service to refresh product info",
-                err,
             )
 
     return result
