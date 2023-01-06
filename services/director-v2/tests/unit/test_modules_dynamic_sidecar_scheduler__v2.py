@@ -1,5 +1,7 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 
+import asyncio
 import logging
 import random
 from typing import Any
@@ -223,3 +225,21 @@ async def test_bake_cake_fails(
     )
     with pytest.raises(NotEnoughIngredientsError):
         await player_manager.wait_scene_player(play_name)
+
+
+async def test_bake_cake_cancelled_by_external_event(
+    player_manager: PlayerManager, context: ContextInterface, play_name: PlayName
+):
+    await context.save("available_time_hours", 1e10)
+    await context.save("oven_fail_probability", 1.0)
+
+    await player_manager.start_scene_player(
+        play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
+    )
+
+    WAIT_FOR_PLAY_TO_START = 0.1
+    await asyncio.sleep(WAIT_FOR_PLAY_TO_START)
+
+    assert play_name in player_manager._player_tasks
+    await player_manager.cancel_scene_player(play_name)
+    assert play_name not in player_manager._player_tasks
