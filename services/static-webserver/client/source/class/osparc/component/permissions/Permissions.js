@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     initCollabs.forEach(initCollab => {
       this.__collaborators[initCollab["gid"]] = initCollab;
     });
-    this.getCollaborators();
+    this.__getCollaborators();
   },
 
   statics: {
@@ -236,7 +236,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       return vBox;
     },
 
-    getCollaborators: function() {
+    __getCollaborators: function() {
       osparc.store.Store.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
