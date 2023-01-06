@@ -68,7 +68,6 @@ async def test_resend_2fa_entrypoint_is_protected(
     assert response.status == web.HTTPUnauthorized.status_code
 
 
-@pytest.mark.testit
 async def test_resend_2fa_workflow(
     client: TestClient,
     registered_user: UserInfoDict,

@@ -100,7 +100,6 @@ async def test_get_or_create_group_product(
             assert product_group_id is None
 
 
-@pytest.mark.testit
 async def test_get_or_create_group_product_concurrent(
     pg_engine: Engine, make_products_table: Callable
 ):

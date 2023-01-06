@@ -216,7 +216,6 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
-@pytest.mark.testit
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
     db: AsyncpgStorage,
