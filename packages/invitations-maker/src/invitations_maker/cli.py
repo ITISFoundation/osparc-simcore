@@ -1,14 +1,18 @@
+import getpass
+import random
+import secrets
+import string
 from typing import Optional
 
 import rich
 import typer
 from cryptography.fernet import Fernet
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, SecretStr, parse_obj_as
 
 from . import web_server
 from ._meta import __version__
 from .invitations import InvitationData, create_invitation_link
-from .settings import DesktopApplicationSettings
+from .settings import DesktopApplicationSettings, WebApplicationSettings
 
 app = typer.Typer()
 
@@ -60,9 +64,45 @@ def generate_key(
 
 
 @app.command()
+def generate_dotenv(ctx: typer.Context):
+    """Generates an example of environment variables file (or dot-envfile)
+
+    Example of usage:
+
+    $ invitations-maker generate-dotenv > .env
+    $ cat .env
+    $ set -o allexport; source .env; set +o allexport
+    """
+    assert ctx  # nosec
+
+    def _generate_password():
+        alphabet = string.digits + string.ascii_letters + string.punctuation
+        source = random.sample(alphabet, len(alphabet))
+        return "".join(secrets.choice(source) for _ in range(32))
+
+    settings = WebApplicationSettings(
+        INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",
+        INVITATIONS_MAKER_SECRET_KEY=Fernet.generate_key().decode(),
+        INVITATIONS_USERNAME=getpass.getuser(),
+        INVITATIONS_PASSWORD=getpass.getpass(
+            prompt="Password [Press Enter to auto-generate]: "
+        )
+        or _generate_password(),
+    )
+
+    for name, value in settings.dict().items():
+        value = (
+            f'"{value.get_secret_value()}"'
+            if isinstance(value, SecretStr)
+            else f"{value}"
+        )
+        print(f"{name}={value}")
+
+
+@app.command()
 def invite(
     ctx: typer.Context,
-    email: Optional[str] = typer.Option(
+    email: str = typer.Option(
         None,
         callback=lambda v: parse_obj_as(EmailStr, v),
         help="Custom invitation for a given guest",
@@ -71,22 +111,13 @@ def invite(
         None,
         help=InvitationData.__fields__["trial_account_days"].field_info.description,
     ),
-    issuer: Optional[str] = typer.Option(
+    issuer: str = typer.Option(
         None, help=InvitationData.__fields__["issuer"].field_info.description
-    ),
-    osparc_url: Optional[str] = typer.Option(
-        None,
-        help=DesktopApplicationSettings.__fields__[
-            "INVITATIONS_MAKER_OSPARC_URL"
-        ].field_info.description,
     ),
 ):
     """Generates invitation links"""
     assert ctx  # nosec
     kwargs = {}
-
-    if osparc_url is not None:
-        kwargs["INVITATIONS_MAKER_OSPARC_URL"] = osparc_url
 
     settings = DesktopApplicationSettings(**kwargs)
 
