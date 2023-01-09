@@ -114,4 +114,4 @@ class PlayContext(ContextIOInterface):
         )
 
     async def shutdown(self) -> None:
-        pass
+        """no action required here"""
