@@ -315,8 +315,8 @@ async def test_bake_cake_cancelled_by_external_event(
         play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
     )
 
-    WAIT_FOR_PLAY_TO_START = 0.1
-    await asyncio.sleep(WAIT_FOR_PLAY_TO_START)
+    ENSURE_IT_IS_RUNNING = 0.1
+    await asyncio.sleep(ENSURE_IT_IS_RUNNING)
 
     assert play_name in player_manager._player_tasks
     await player_manager.cancel_scene_player(play_name)
