@@ -38,26 +38,6 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     this.__getCollaborators();
   },
 
-  statics: {
-    canDelete: function(accessRights) {
-      let canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
-      canDelete = canDelete || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
-      return canDelete;
-    },
-
-    canWrite: function(accessRights) {
-      let canWrite = accessRights.getWrite ? accessRights.getWrite() : false;
-      canWrite = canWrite || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
-      return canWrite;
-    },
-
-    canView: function(accessRights) {
-      let canView = accessRights.getRead ? accessRights.getRead() : false;
-      canView = canView || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
-      return canView;
-    }
-  },
-
   members: {
     _serializedData: null,
     __organizationsAndMembers: null,
