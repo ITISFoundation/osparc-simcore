@@ -12,7 +12,8 @@ class InvitationData(BaseModel):
     issuer: str = Field(
         ...,
         description="Who issued this invitation? Some identifier such as LicenseRequestID",
-        max_length=15,
+        min_length=1,
+        max_length=30,
     )
     guest: EmailStr = Field(
         ...,
@@ -51,27 +52,41 @@ def _build_link(
     return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
 
 
-def create_invitation_link(
-    invitation_data: InvitationData, secret_key: bytes, base_url: HttpUrl
-) -> HttpUrl:
-
+def _create_invitation_code(
+    invitation_data: InvitationData, secret_key: bytes
+) -> bytes:
+    """Produces url-save  invitation code in bytes"""
     # creates message
     # NOTE: export using short aliasa and values in order to produce shorter messages
     serialized: str = invitation_data.json(exclude_unset=True, by_alias=True)
 
     # encrypts message
     fernet = Fernet(secret_key)
-    encrypted: bytes = fernet.encrypt(serialized.encode())
+    code: bytes = fernet.encrypt(serialized.encode())
+    return base64.urlsafe_b64encode(code)
 
+
+def create_invitation_link(
+    invitation_data: InvitationData, secret_key: bytes, base_url: HttpUrl
+) -> HttpUrl:
+
+    invitation_code = _create_invitation_code(
+        invitation_data=invitation_data, secret_key=secret_key
+    )
     # Adds message as the invitation in query
     url = _build_link(
         base_url=base_url,
-        code_url_safe=base64.urlsafe_b64encode(encrypted).decode(),
+        code_url_safe=invitation_code.decode(),
     )
     return url
 
 
 def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationData:
+    """
+
+    raises cryptography.fernet.InvalidToken if code has a different secret_key
+
+    """
     # decode urlsafe (symmetric from base64.urlsafe_b64encode(encrypted))
     code: bytes = base64.urlsafe_b64decode(invitation_code)
 
