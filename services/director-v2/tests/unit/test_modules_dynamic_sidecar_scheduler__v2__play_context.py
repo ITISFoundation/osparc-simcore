@@ -20,9 +20,11 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._play_con
 
 PLAY_NAME = "test_play"
 PLAY_SCENE_NAME = "test_play_scene_name"
+
 EXTRA_PLAY_DATA: dict[str, str] = {
-    "__play_name": PLAY_NAME,
-    "__play_scene_name": PLAY_SCENE_NAME,
+    ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX: 0,
+    ReservedContextKeys.PLAY_NAME: PLAY_NAME,
+    ReservedContextKeys.PLAY_SCENE_NAME: PLAY_SCENE_NAME,
 }
 
 

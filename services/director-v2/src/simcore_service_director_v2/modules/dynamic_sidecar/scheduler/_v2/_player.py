@@ -63,10 +63,10 @@ async def scene_player(
     )
     scene: Optional[Scene] = play_catalog[scene_name]
 
-    start_from_index: NonNegativeInt = 0
+    start_from_index: int = 0
     try:
         start_from_index = await play_context.get(
-            ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX, NonNegativeInt
+            ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX, int
         )
     except NotInContextError:
         pass

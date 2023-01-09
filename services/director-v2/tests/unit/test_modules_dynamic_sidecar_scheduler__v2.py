@@ -315,9 +315,17 @@ async def test_bake_cake_cancelled_by_external_event(
         play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
     )
 
+    # receive phone call, stop everything
     ENSURE_IT_IS_RUNNING = 0.1
     await asyncio.sleep(ENSURE_IT_IS_RUNNING)
 
     assert play_name in player_manager._player_tasks
     await player_manager.cancel_scene_player(play_name)
     assert play_name not in player_manager._player_tasks
+
+    # oven fixed
+    await context.save("oven_fail_probability", 0.0)
+    await player_manager.start_scene_player(
+        play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
+    )
+    await player_manager.wait_scene_player(play_name)

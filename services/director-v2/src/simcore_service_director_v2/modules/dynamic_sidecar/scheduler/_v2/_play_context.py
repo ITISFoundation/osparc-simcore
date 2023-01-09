@@ -103,14 +103,15 @@ class PlayContext(ContextIOInterface):
         # adding app to context
         await self.set(key=ReservedContextKeys.APP, value=self._app, set_reserved=True)
         await self.set(
-            key=ReservedContextKeys.PLAY_NAME,
-            value=self._play_name,
-            set_reserved=True,
+            key=ReservedContextKeys.PLAY_NAME, value=self._play_name, set_reserved=True
         )
         await self.set(
             key=ReservedContextKeys.PLAY_SCENE_NAME,
             value=self._scene_name,
             set_reserved=True,
+        )
+        await self.set(
+            ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX, 0, set_reserved=True
         )
 
     async def shutdown(self) -> None:
