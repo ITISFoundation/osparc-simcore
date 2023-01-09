@@ -67,7 +67,8 @@ async def test_logged_gather(event_loop, coros, mock_logger):
     assert isinstance(excinfo.value, ValueError)
 
     for task in asyncio.all_tasks(event_loop):
-        if task is not asyncio.current_task():
+
+        if task is not asyncio.current_task() and task.get_coro().__name__ != "_worker":
             # info
             task.print_stack()
 
