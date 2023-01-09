@@ -91,18 +91,18 @@ class DynamicSidecarClient:
             return {}
 
     @log_decorator(logger=logger)
-    async def service_disable_dir_watcher(
+    async def disable_service_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.patch_containers_directory_watcher(
+        await self._thin_client.patch_containers_outputs_watcher(
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
     @log_decorator(logger=logger)
-    async def service_enable_dir_watcher(
+    async def enable_service_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.patch_containers_directory_watcher(
+        await self._thin_client.patch_containers_outputs_watcher(
             dynamic_sidecar_endpoint, is_enabled=True
         )
 
@@ -367,11 +367,10 @@ class DynamicSidecarClient:
     async def push_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_push(
-            dynamic_sidecar_endpoint, port_keys
+            dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
 

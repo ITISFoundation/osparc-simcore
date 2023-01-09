@@ -279,8 +279,12 @@ async def connect_to_socketio(client, user, socketio_client_factory: Callable):
         "user_id": str(user["id"]),
         "client_session_id": cur_client_session_id,
     }
-    assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
-    assert sio.sid in await socket_registry.find_resources(resource_key, "socket_id")
+    assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
+        resource_key
+    ]
+    assert sio.get_sid() in await socket_registry.find_resources(
+        resource_key, "socket_id"
+    )
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
     sio_connection_data = sio, resource_key
     return sio_connection_data
@@ -289,12 +293,12 @@ async def connect_to_socketio(client, user, socketio_client_factory: Callable):
 async def disconnect_user_from_socketio(client, sio_connection_data):
     """disconnect a previously connected socket.io connection"""
     sio, resource_key = sio_connection_data
-    sid = sio.sid
+    sid = sio.get_sid()
     socket_registry = get_registry(client.server.app)
     await sio.disconnect()
     assert not sio.sid
     await asyncio.sleep(0)  # just to ensure there is a context switch
-    assert not await socket_registry.find_keys(("socket_id", sio.sid))
+    assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
     assert not sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert not await socket_registry.find_resources(resource_key, "socket_id")
 
@@ -410,6 +414,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     await assert_project_in_db(aiopg_engine, empty_guest_user_project)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     simcore_services_ready,

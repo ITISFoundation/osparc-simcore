@@ -63,8 +63,10 @@ def setup_s3(app: web.Application):
 
     log.debug("Setting up %s ...", __name__)
 
-    app.cleanup_ctx.append(setup_s3_client)
-    app.cleanup_ctx.append(setup_s3_bucket)
+    if setup_s3_client not in app.cleanup_ctx:
+        app.cleanup_ctx.append(setup_s3_client)
+    if setup_s3_bucket not in app.cleanup_ctx:
+        app.cleanup_ctx.append(setup_s3_bucket)
 
 
 def get_s3_client(app: web.Application) -> StorageS3Client:

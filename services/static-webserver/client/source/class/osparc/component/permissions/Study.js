@@ -47,24 +47,20 @@ qx.Class.define("osparc.component.permissions.Study", {
   },
 
   statics: {
-    __canGroupWrite: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["write"];
+    canGroupsWrite: function(accessRights, gIds) {
+      let canWrite = false;
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
-      return false;
-    },
-    canGroupDelete: function(accessRights, GID) {
-      if (GID in accessRights) {
-        return accessRights[GID]["delete"];
-      }
-      return false;
+      return canWrite;
     },
 
-    canGroupsWrite: function(accessRights, GIDs) {
+    canGroupsDelete: function(accessRights, gIds) {
       let canWrite = false;
-      for (let i=0; i<GIDs.length && !canWrite; i++) {
-        // eslint-disable-next-line no-underscore-dangle
-        canWrite = this.self().__canGroupWrite(accessRights, GIDs[i]);
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["delete"] : false;
       }
       return canWrite;
     },
@@ -113,8 +109,8 @@ qx.Class.define("osparc.component.permissions.Study", {
     __studyData: null,
     __resourceType: null,
 
-    _isUserOwner: function() {
-      return osparc.data.model.Study.isOwner(this.__studyData);
+    _canIWrite: function() {
+      return osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]);
     },
 
     _addCollaborator: function() {

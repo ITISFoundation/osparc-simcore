@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.projects_nodes import NodeID
-from pydantic import AnyHttpUrl, BaseModel
+from pydantic import BaseModel
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressMessage,
     ProgressPercent,
@@ -14,23 +14,9 @@ from servicelib.fastapi.long_running_tasks.server import (
     start_task,
 )
 
-from ...core.settings import DynamicSidecarSettings
-from ...models.schemas.dynamic_services import SchedulerData
-from ...modules.dynamic_sidecar.api_client import DynamicSidecarClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
-from ...modules.dynamic_sidecar.scheduler._utils import (
-    service_push_outputs,
-    service_remove_containers,
-    service_remove_sidecar_proxy_docker_networks_and_volumes,
-    service_save_state,
-)
 from ...utils.routes import NoContentResponse
-from ..dependencies import get_app
-from ..dependencies.dynamic_sidecar import (
-    get_dynamic_sidecar_client,
-    get_dynamic_sidecar_scheduler,
-    get_dynamic_sidecar_settings,
-)
+from ..dependencies.dynamic_sidecar import get_dynamic_sidecar_scheduler
 
 
 class ObservationItem(BaseModel):
@@ -52,7 +38,7 @@ async def update_service_observation(
         get_dynamic_sidecar_scheduler
     ),
 ) -> NoContentResponse:
-    if dynamic_sidecars_scheduler.toggle_observation_cycle(
+    if dynamic_sidecars_scheduler.toggle_observation(
         node_uuid, observation_item.is_disabled
     ):
         return NoContentResponse()
@@ -77,25 +63,20 @@ async def update_service_observation(
 async def delete_service_containers(
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
     dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
-
     async def _task_remove_service_containers(
-        task_progress: TaskProgress,
-        dynamic_sidecar_client: DynamicSidecarClient,
-        scheduler_data: SchedulerData,
+        task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent, _: TaskId
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
-        await service_remove_containers(
-            dynamic_sidecar_client, scheduler_data, _progress_callback
+        await dynamic_sidecars_scheduler.remove_service_containers(
+            node_uuid=node_uuid, progress_callback=_progress_callback
         )
 
     try:
@@ -103,8 +84,7 @@ async def delete_service_containers(
             tasks_manager,
             task=_task_remove_service_containers,
             unique=True,
-            dynamic_sidecar_client=dynamic_sidecar_client,
-            scheduler_data=scheduler_data,
+            node_uuid=node_uuid,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -125,25 +105,21 @@ async def delete_service_containers(
 async def save_service_state(
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
     dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
-
     async def _task_save_service_state(
         task_progress: TaskProgress,
-        dynamic_sidecar_client: DynamicSidecarClient,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        node_uuid: NodeID,
     ) -> None:
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent, _: TaskId
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
-        await service_save_state(
-            dynamic_sidecar_client, dynamic_sidecar_endpoint, _progress_callback
+        await dynamic_sidecars_scheduler.save_service_state(
+            node_uuid=node_uuid, progress_callback=_progress_callback
         )
 
     try:
@@ -151,8 +127,7 @@ async def save_service_state(
             tasks_manager,
             task=_task_save_service_state,
             unique=True,
-            dynamic_sidecar_client=dynamic_sidecar_client,
-            dynamic_sidecar_endpoint=scheduler_data.endpoint,
+            node_uuid=node_uuid,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -173,25 +148,20 @@ async def save_service_state(
 async def push_service_outputs(
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecar_client: DynamicSidecarClient = Depends(get_dynamic_sidecar_client),
     dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
-
     async def _task_push_service_outputs(
-        task_progress: TaskProgress,
-        dynamic_sidecar_client: DynamicSidecarClient,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent, _: TaskId
         ) -> None:
             task_progress.update(message=message, percent=percent)
 
-        await service_push_outputs(
-            dynamic_sidecar_client, dynamic_sidecar_endpoint, _progress_callback
+        await dynamic_sidecars_scheduler.push_service_outputs(
+            node_uuid=node_uuid, progress_callback=_progress_callback
         )
 
     try:
@@ -199,8 +169,7 @@ async def push_service_outputs(
             tasks_manager,
             task=_task_push_service_outputs,
             unique=True,
-            dynamic_sidecar_client=dynamic_sidecar_client,
-            dynamic_sidecar_endpoint=scheduler_data.endpoint,
+            node_uuid=node_uuid,
         )
         return task_id
     except TaskAlreadyRunningError as e:
@@ -221,25 +190,15 @@ async def push_service_outputs(
 async def delete_service_docker_resources(
     node_uuid: NodeID,
     tasks_manager: TasksManager = Depends(get_tasks_manager),
-    app: FastAPI = Depends(get_app),
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(
-        get_dynamic_sidecar_settings
-    ),
     dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
         get_dynamic_sidecar_scheduler
     ),
 ):
-    scheduler_data = dynamic_sidecars_scheduler.get_scheduler_data(node_uuid)
-
     async def _task_cleanup_service_docker_resources(
-        task_progress: TaskProgress,
-        app: FastAPI,
-        scheduler_data: SchedulerData,
-        dynamic_sidecar_settings: DynamicSidecarSettings,
+        task_progress: TaskProgress, node_uuid: NodeID
     ) -> None:
-        scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
-        await service_remove_sidecar_proxy_docker_networks_and_volumes(
-            task_progress, app, scheduler_data, dynamic_sidecar_settings
+        await dynamic_sidecars_scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
+            task_progress=task_progress, node_uuid=node_uuid
         )
 
     try:
@@ -247,9 +206,7 @@ async def delete_service_docker_resources(
             tasks_manager,
             task=_task_cleanup_service_docker_resources,
             unique=True,
-            app=app,
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            node_uuid=node_uuid,
         )
         return task_id
     except TaskAlreadyRunningError as e:

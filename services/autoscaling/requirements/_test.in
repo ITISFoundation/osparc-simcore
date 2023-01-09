@@ -10,10 +10,18 @@
 #
 --constraint _base.txt
 
+asgi-lifespan
+
 codecov
 coverage
 coveralls
+deepdiff
+docker
 faker
+fakeredis[lua]
+httpx
+moto[server]
+psutil
 pytest
 pytest-asyncio
 pytest-cov
@@ -21,4 +29,3 @@ pytest-mock
 pytest-runner
 python-dotenv
 respx
-types-aiobotocore[s3] # s3 storage

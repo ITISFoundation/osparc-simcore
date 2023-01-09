@@ -18,8 +18,7 @@
 qx.Class.define("osparc.auth.core.Utils", {
   type: "static",
 
-  statics:
-  {
+  statics: {
     passwordLengthValidator: function(value, item) {
       const valid = value != null && value.length > 3;
       if (!valid) {
@@ -46,7 +45,7 @@ qx.Class.define("osparc.auth.core.Utils", {
       const regEx = /^\+[1-9]\d{4,14}$/;
       const isValid = regEx.test(phoneNumber);
       item.set({
-        invalidMessage: isValid ? "" : qx.locale.Manager.tr("Invalid phone number. Please, [+][country code][phone number plus area code]"),
+        invalidMessage: isValid ? "" : qx.locale.Manager.tr("Invalid phone number. Please, [+][country code][phone number]"),
         valid: isValid
       });
       return isValid;
@@ -83,6 +82,20 @@ qx.Class.define("osparc.auth.core.Utils", {
         }
         window.history.replaceState("", document.title, url);
       }
+    },
+
+    restartResendTimer: function(button, buttonText, count = 60) {
+      const refreshIntervalId = setInterval(() => {
+        if (count > 0) {
+          count--;
+        } else {
+          clearInterval(refreshIntervalId);
+        }
+        button.set({
+          label: count > 0 ? buttonText + ` (${count})` : buttonText,
+          enabled: count === 0
+        });
+      }, 1000);
     }
   }
 });

@@ -30,8 +30,8 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
-from ..modules.directory_watcher import directory_watcher_disabled
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.outputs import OutputsManager, outputs_watcher_disabled
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ async def task_create_service_containers(
     await post_sidecar_log_message(app, "starting service containers")
     assert shared_store.compose_spec  # nosec
 
-    with directory_watcher_disabled(app):
+    with outputs_watcher_disabled(app):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         await docker_compose_rm(shared_store.compose_spec, settings)
@@ -286,21 +286,19 @@ async def task_ports_outputs_pull(
 
 
 async def task_ports_outputs_push(
-    progress: TaskProgress,
-    port_keys: Optional[list[str]],
-    mounted_volumes: MountedVolumes,
-    app: FastAPI,
+    progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
 ) -> None:
     progress.update(message="starting outputs pushing", percent=0.0)
-    port_keys = [] if port_keys is None else port_keys
 
-    await post_sidecar_log_message(app, f"Pushing outputs for {port_keys}")
-    await nodeports.upload_outputs(
-        mounted_volumes.disk_outputs_path,
-        port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+    await post_sidecar_log_message(
+        app,
+        f"waiting for outputs {outputs_manager.outputs_context.file_type_port_keys} to be pushed",
     )
-    await post_sidecar_log_message(app, "Finished pulling outputs")
+
+    await outputs_manager.wait_for_all_uploads_to_finish()
+
+    await post_sidecar_log_message(app, "finished outputs pushing")
+
     progress.update(message="finished outputs pushing", percent=0.99)
 
 
@@ -310,30 +308,39 @@ async def task_containers_restart(
     settings: ApplicationSettings,
     shared_store: SharedStore,
 ) -> None:
-    progress.update(message="starting containers restart", percent=0.0)
-    if shared_store.compose_spec is None:
-        raise RuntimeError("No spec for docker-compose command was found")
+    assert app.state.container_restart_lock  # nosec
 
-    for container_name in shared_store.container_names:
-        await stop_log_fetching(app, container_name)
+    # NOTE: if containers inspect reports that the containers are restarting
+    # or some other state, the service will get shutdown, to prevent this
+    # blocking status while containers are being restarted.
+    async with app.state.container_restart_lock:
 
-    progress.update(message="stopped log fetching", percent=0.1)
+        progress.update(message="starting containers restart", percent=0.0)
+        if shared_store.compose_spec is None:
+            raise RuntimeError("No spec for docker-compose command was found")
 
-    result = await docker_compose_restart(shared_store.compose_spec, settings)
+        for container_name in shared_store.container_names:
+            await stop_log_fetching(app, container_name)
 
-    if not result.success:
-        logger.warning(
-            "docker-compose restart finished with errors\n%s", result.message
+        progress.update(message="stopped log fetching", percent=0.1)
+
+        result = await docker_compose_restart(shared_store.compose_spec, settings)
+
+        if not result.success:
+            logger.warning(
+                "docker-compose restart finished with errors\n%s", result.message
+            )
+            raise RuntimeError(result.message)
+
+        progress.update(message="containers restarted", percent=0.8)
+
+        for container_name in shared_store.container_names:
+            await start_log_fetching(app, container_name)
+
+        progress.update(message="started log fetching", percent=0.9)
+
+        await post_sidecar_log_message(
+            app, "Service was restarted please reload the UI"
         )
-        raise RuntimeError(result.message)
-
-    progress.update(message="containers restarted", percent=0.8)
-
-    for container_name in shared_store.container_names:
-        await start_log_fetching(app, container_name)
-
-    progress.update(message="started log fetching", percent=0.9)
-
-    await post_sidecar_log_message(app, "Service was restarted please reload the UI")
-    await post_event_reload_iframe(app)
-    progress.update(message="started log fetching", percent=0.99)
+        await post_event_reload_iframe(app)
+        progress.update(message="started log fetching", percent=0.99)

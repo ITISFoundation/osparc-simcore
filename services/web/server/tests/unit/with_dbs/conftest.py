@@ -9,6 +9,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
 import asyncio
 import sys
 import textwrap
@@ -30,9 +31,11 @@ from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
@@ -47,6 +50,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.login.settings import LoginOptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -61,6 +65,7 @@ def disable_swagger_doc_generation(
     by not enabling the swagger documentation, 1.8s per test is gained
     """
     monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
 
 
 @pytest.fixture(scope="session")
@@ -103,7 +108,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 def app_environment(
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
-) -> dict[str, str]:
+) -> EnvVarsDict:
     """overridable fixture that defines the ENV for the webserver application
     based on legacy application config files.
 
@@ -122,7 +127,7 @@ def app_environment(
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
-    app_environment,
+    app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     # tools
     aiohttp_server: Callable,
@@ -153,9 +158,10 @@ def web_server(
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client,
+    aiohttp_client: Callable,
     web_server: TestServer,
     mock_orphaned_services,
+    redis_client: Redis,
 ) -> TestClient:
     cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
@@ -302,7 +308,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     #
     for func_name in (
         "get_dynamic_service",
-        "get_dynamic_services",
+        "list_dynamic_services",
         "run_dynamic_service",
         "stop_dynamic_service",
     ):
@@ -352,10 +358,10 @@ def create_dynamic_service_mock(
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         mocked_director_v2_api[
-            "director_v2_api.get_dynamic_services"
+            "director_v2_api.list_dynamic_services"
         ].return_value = services
         mocked_director_v2_api[
-            "director_v2_core_dynamic_services.get_dynamic_services"
+            "director_v2_core_dynamic_services.list_dynamic_services"
         ].return_value = services
         return running_service_dict
 
@@ -473,16 +479,20 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user) -> dict[str, Any]:
+async def primary_group(
+    client: TestClient,
+    logged_user: UserInfoDict,
+) -> dict[str, Any]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
 
 @pytest.fixture
 async def standard_groups(
-    client, logged_user: dict
+    client: TestClient,
+    logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
-    # create a separate admin account to create some standard groups for the logged user
+
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -497,40 +507,52 @@ async def standard_groups(
         "thumbnail": None,
         "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
     }
+
+    # create a separate account to own standard groups
     async with NewUser(
-        {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app
-    ) as admin_user:
+        {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
+    ) as owner_user:
+
         # creates two groups
-        sparc_group = await create_user_group(client.app, admin_user["id"], sparc_group)
+        sparc_group = await create_user_group(
+            app=client.app,
+            user_id=owner_user["id"],
+            new_group=sparc_group,
+        )
         team_black_group = await create_user_group(
-            client.app, admin_user["id"], team_black_group
+            app=client.app,
+            user_id=owner_user["id"],
+            new_group=team_black_group,
         )
 
         # adds logged_user  to sparc group
         await add_user_in_group(
-            client.app,
-            admin_user["id"],
-            sparc_group["gid"],
+            app=client.app,
+            user_id=owner_user["id"],
+            gid=sparc_group["gid"],
             new_user_id=logged_user["id"],
         )
 
         # adds logged_user  to team-black group
         await add_user_in_group(
-            client.app,
-            admin_user["id"],
-            team_black_group["gid"],
+            app=client.app,
+            user_id=owner_user["id"],
+            gid=team_black_group["gid"],
             new_user_email=logged_user["email"],
         )
 
         _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
         yield standard_groups
         # clean groups
-        await delete_user_group(client.app, admin_user["id"], sparc_group["gid"])
-        await delete_user_group(client.app, admin_user["id"], team_black_group["gid"])
+        await delete_user_group(client.app, owner_user["id"], sparc_group["gid"])
+        await delete_user_group(client.app, owner_user["id"], team_black_group["gid"])
 
 
 @pytest.fixture
-async def all_group(client, logged_user) -> dict[str, str]:
+async def all_group(
+    client: TestClient,
+    logged_user: UserInfoDict,
+) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
 
@@ -539,9 +561,12 @@ async def all_group(client, logged_user) -> dict[str, str]:
 
 
 def _patch_compose_mail(monkeypatch):
-    async def print_mail_to_stdout(*args):
-        _app, recipient, subject, body = args
-        print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
+    async def print_mail_to_stdout(
+        cfg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
+    ):
+        print(
+            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
+        )
 
     monkeypatch.setattr(
         simcore_service_webserver.login.utils_email,

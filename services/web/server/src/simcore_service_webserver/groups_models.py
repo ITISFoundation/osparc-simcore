@@ -96,6 +96,7 @@ class AllUsersGroups(BaseModel):
     me: Optional[UsersGroup] = None
     organizations: Optional[list[UsersGroup]] = None
     all: Optional[UsersGroup] = None
+    product: Optional[UsersGroup] = None
 
     class Config:
         schema_extra = {

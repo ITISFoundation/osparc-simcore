@@ -86,7 +86,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // populate it with owned versions
       const store = osparc.store.Store.getInstance();
-      store.getServicesOnly(false)
+      store.getAllServices()
         .then(services => {
           const versions = osparc.utils.Services.getVersions(services, this.__resourceData["key"]);
           const selectBox = this.__serviceVersionSelector;
@@ -105,7 +105,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (selection && selection.length) {
           const serviceVersion = selection[0].getLabel();
           if (serviceVersion !== this.__resourceData["version"]) {
-            store.getServicesOnly(false)
+            store.getAllServices()
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 console.log(serviceData);
@@ -141,9 +141,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.__getServicesBootOptionsPage,
         this.__getSaveAsTemplatePage
       ].forEach(pageCallee => {
-        const page = pageCallee.call(this);
-        if (page) {
-          this.add(page);
+        if (pageCallee) {
+          const page = pageCallee.call(this);
+          if (page) {
+            this.add(page);
+          }
         }
       });
 
@@ -200,9 +202,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, null, false) : new osparc.studycard.Large(resourceData, false);
+      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
-      infoCard.addListener("openClassifiers", () => this.openClassfiers());
+      infoCard.addListener("openClassifiers", () => this.openClassifiers());
       infoCard.addListener("openQuality", () => this.openQuality());
       infoCard.addListener("updateStudy", e => {
         const updatedData = e.getData();
@@ -249,10 +251,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __getPermissionsPage: function() {
       const id = "Permissions";
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.isOwner(resourceData)) {
+      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
         return null;
       }
-      if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.isOwner(resourceData)) {
+      if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.canIWrite(resourceData["accessRights"])) {
         return null;
       }
 
@@ -282,11 +284,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }, this);
       }
       const page = this.__permissionsPage = this.__createPage(title, permissionsView, icon, id);
+
       return page;
     },
 
     __getClassifiersPage: function() {
-      const id = "Classfiiers";
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        return null;
+      }
+      const id = "Classifiers";
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
       }
@@ -295,8 +301,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const resourceData = this.__resourceData;
       let classifiers = null;
       if (
-        (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.isOwner(resourceData) ||
-        osparc.utils.Resources.isService(resourceData) && osparc.utils.Services.isOwner(resourceData)
+        (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.canIWrite(resourceData["accessRights"]) ||
+        osparc.utils.Resources.isService(resourceData) && osparc.utils.Services.canIWrite(resourceData["accessRights"])
       ) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(resourceData);
         classifiers.addListener("updateClassifiers", e => {
@@ -317,6 +323,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getQualityPage: function() {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        return null;
+      }
       const id = "Quality";
       const resourceData = this.__resourceData;
       if (
@@ -368,6 +377,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (osparc.utils.Resources.isService(resourceData)) {
         return null;
       }
+      if (!osparc.component.metadata.ServicesInStudyBootOpts.anyBootOptions(resourceData)) {
+        return null;
+      }
 
       const title = this.tr("Boot Options");
       const icon = "@FontAwesome5Solid/play-circle";
@@ -382,9 +394,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
 
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(this.__resourceData);
+      const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
-      if (isCurrentUserOwner && canCreateTemplate) {
+      if (canIWrite && canCreateTemplate) {
         const title = this.tr("Save as Template");
         const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);

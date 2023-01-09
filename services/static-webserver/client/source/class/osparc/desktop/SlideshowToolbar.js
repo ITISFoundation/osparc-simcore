@@ -179,7 +179,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       const study = this.getStudy();
       if (study) {
         const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
-        osparc.data.model.Study.isOwner(study) && osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
+        osparc.data.model.Study.canIWrite(study.getAccessRights()) && osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? editSlideshowButtons.show() : editSlideshowButtons.exclude();
         if (!study.getWorkbench().isPipelineLinear()) {
           editSlideshowButtons.exclude();
         }
@@ -203,8 +203,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     },
 
     __openStudyDetails: function() {
-      const studyDetails = new osparc.studycard.Large(this.getStudy());
-      const title = this.tr("Study Details");
+      const studyDetails = new osparc.info.StudyLarge(this.getStudy());
+      const title = this.tr("Study Information");
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);

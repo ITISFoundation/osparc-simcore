@@ -49,7 +49,6 @@ def _get_dir_name(volume_name: str) -> str:
 
 
 def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Path:
-
     joint_key = "/".join(
         (
             s3_bucket,
@@ -192,5 +191,5 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     if process.returncode != 0:
         raise RuntimeError(
             f"Shell subprocesses yielded nonzero error code {process.returncode} "
-            f"for command {str_r_clone_sync}"
+            f"for command {str_r_clone_sync}\n{r_clone_sync_output}"
         )

@@ -43,6 +43,7 @@ from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.webserver_models import ProjectType
 
 from .. import catalog_client, director_v2_api, storage_api
 from ..application_settings import get_settings
@@ -72,6 +73,7 @@ from .projects_exceptions import (
     NodeNotFoundError,
     ProjectLockError,
     ProjectStartsTooManyDynamicNodes,
+    ProjectTooManyProjectOpened,
 )
 from .projects_utils import extract_dns_without_default_port
 
@@ -99,10 +101,10 @@ async def validate_project(app: web.Application, project: dict):
 async def get_project_for_user(
     app: web.Application,
     project_uuid: str,
-    user_id: int,
+    user_id: UserID,
     *,
-    include_templates: Optional[bool] = False,
     include_state: Optional[bool] = False,
+    check_permissions: str = "read",
 ) -> dict:
     """Returns a VALID project accessible to user
 
@@ -110,26 +112,30 @@ async def get_project_for_user(
     :return: schema-compliant project data
     :rtype: Dict
     """
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
+    db = ProjectDBAPI.get_from_app_context(app)
 
-    project: dict = {}
-    is_template = False
-    if include_templates:
-        project = await db.get_template_project(project_uuid)
-        is_template = bool(project)
-
-    if not project:
-        project = await db.get_user_project(user_id, project_uuid)
+    project, project_type = await db.get_project(
+        user_id,
+        project_uuid,
+        check_permissions=check_permissions,
+    )
 
     # adds state if it is not a template
     if include_state:
-        project = await add_project_states_for_user(user_id, project, is_template, app)
+        project = await add_project_states_for_user(
+            user_id, project, project_type is ProjectType.TEMPLATE, app
+        )
 
-    # TODO: how to handle when database has an invalid project schema???
-    # Notice that db model does not include a check on project schema.
     await validate_project(app, project)
     return project
+
+
+async def get_project_type(
+    app: web.Application, project_uuid: ProjectID
+) -> ProjectType:
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db  # nosec
+    return await db.get_project_type(project_uuid)
 
 
 #
@@ -189,7 +195,7 @@ async def _start_dynamic_service(
 ):
     if not _is_node_dynamic(service_key):
         return
-    project_running_nodes = await director_v2_api.get_dynamic_services(
+    project_running_nodes = await director_v2_api.list_dynamic_services(
         request.app, user_id, f"{project_uuid}"
     )
 
@@ -206,6 +212,7 @@ async def _start_dynamic_service(
     # this is a dynamic node, let's gather its resources and start it
     service_resources: ServiceResourcesDict = await get_project_node_resources(
         request.app,
+        user_id=user_id,
         project={
             "workbench": {
                 f"{node_uuid}": {"key": service_key, "version": service_version}
@@ -309,7 +316,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_running_dynamic_services = await director_v2_api.get_dynamic_services(
+    list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
     if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
@@ -559,7 +566,11 @@ async def _clean_user_disconnected_clients(
 
 
 async def try_open_project_for_user(
-    user_id: UserID, project_uuid: str, client_session_id: str, app: web.Application
+    user_id: UserID,
+    project_uuid: str,
+    client_session_id: str,
+    app: web.Application,
+    max_number_of_studies_per_user: Optional[int],
 ) -> bool:
     try:
         async with lock_with_notification(
@@ -572,6 +583,24 @@ async def try_open_project_for_user(
         ):
 
             with managed_resource(user_id, client_session_id, app) as rt:
+                # NOTE: if max_number_of_studies_per_user is set, the same
+                # project shall still be openable if the tab was closed
+                if max_number_of_studies_per_user is not None and (
+                    len(
+                        {
+                            uuid
+                            for uuid in await rt.find_all_resources_of_user(
+                                PROJECT_ID_KEY
+                            )
+                            if uuid != project_uuid
+                        }
+                    )
+                    >= max_number_of_studies_per_user
+                ):
+                    raise ProjectTooManyProjectOpened(
+                        max_num_projects=max_number_of_studies_per_user
+                    )
+
                 user_session_id_list: list[
                     UserSessionID
                 ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
@@ -767,12 +796,10 @@ async def add_project_states_for_user(
         f"{project['uuid']=}",
     )
     # for templates: the project is never locked and never opened. also the running state is always unknown
-    lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+    lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
     running_state = RunningState.UNKNOWN
 
     if not is_template:
-        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
-
         if computation_task := await director_v2_api.get_computation_task(
             app, user_id, project["uuid"]
         ):
@@ -836,12 +863,13 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, project: dict[str, Any], node_id: NodeID
+    app: web.Application, user_id: UserID, project: dict[str, Any], node_id: NodeID
 ) -> ServiceResourcesDict:
     if project_node := project.get("workbench", {}).get(f"{node_id}"):
-        return await catalog_client.get_service_resources(
-            app, project_node["key"], project_node["version"]
+        default_service_resources = await catalog_client.get_service_resources(
+            app, user_id, project_node["key"], project_node["version"]
         )
+        return default_service_resources
     raise NodeNotFoundError(project["uuid"], f"{node_id}")
 
 
@@ -864,7 +892,7 @@ async def run_project_dynamic_services(
     assert project_settings  # nosec
     running_service_uuids: list[NodeIDStr] = [
         d["service_uuid"]
-        for d in await director_v2_api.get_dynamic_services(
+        for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]

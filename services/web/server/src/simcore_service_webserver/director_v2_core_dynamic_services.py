@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 
 @log_decorator(logger=log)
-async def get_dynamic_services(
+async def list_dynamic_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
@@ -142,7 +142,7 @@ async def stop_dynamic_services_in_project(
     save_state: bool = True,
 ) -> None:
     """Stops all dynamic services of either project_id or user_id in concurrently"""
-    running_dynamic_services = await get_dynamic_services(
+    running_dynamic_services = await list_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
 

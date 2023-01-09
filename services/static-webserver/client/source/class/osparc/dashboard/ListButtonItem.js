@@ -27,6 +27,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
   construct: function() {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
+
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -96,17 +98,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tsr-rating": {
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
             alignY: "middle"
           })).set({
             toolTipText: this.tr("Ten Simple Rules"),
             minWidth: 85
           });
           const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          this._add(tsrLayout, {
+          control.add(tsrLabel);
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          control.add(tsrRating);
+          this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TSR
           });
@@ -207,19 +209,19 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
-          store.getGroupsAll(),
+          store.getGroupEveryone(),
           store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
-            const all = values[0];
+            const everyone = values[0];
             const orgMembs = [];
             const orgMembers = values[1];
             for (const gid of Object.keys(orgMembers)) {
               orgMembs.push(orgMembers[gid]);
             }
             const orgs = values.length === 3 ? values[2] : [];
-            const groups = [orgMembs, orgs, [all]];
+            const groups = [orgMembs, orgs, [everyone]];
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 

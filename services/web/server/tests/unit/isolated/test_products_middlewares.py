@@ -6,6 +6,7 @@
 from typing import Any
 
 import pytest
+from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT
 from simcore_postgres_database.webserver_models import products
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.products import get_product_name
@@ -22,6 +23,8 @@ def mock_postgres_product_table():
     column_defaults = {
         c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default
     }
+
+    column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
 
     return [
         dict(name="osparc", host_regex=r"([\.-]{0,1}osparc[\.-])", **column_defaults),

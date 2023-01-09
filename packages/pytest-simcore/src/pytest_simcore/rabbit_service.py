@@ -11,6 +11,7 @@ from typing import Any, AsyncIterator, Optional
 import aio_pika
 import pytest
 import tenacity
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -32,7 +33,7 @@ async def wait_till_rabbit_responsive(url: str) -> None:
     await connection.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def rabbit_settings(
     docker_stack: dict, testing_environ_vars: dict  # stack is up
 ) -> RabbitSettings:
@@ -55,7 +56,7 @@ async def rabbit_settings(
     return settings
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def rabbit_service(
     rabbit_settings: RabbitSettings, monkeypatch: pytest.MonkeyPatch
 ) -> RabbitSettings:
@@ -73,7 +74,7 @@ async def rabbit_service(
     return rabbit_settings
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def rabbit_connection(
     rabbit_settings: RabbitSettings,
 ) -> AsyncIterator[aio_pika.abc.AbstractConnection]:
@@ -103,7 +104,7 @@ async def rabbit_connection(
     assert connection.is_closed
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def rabbit_channel(
     rabbit_connection: aio_pika.abc.AbstractConnection,
 ) -> AsyncIterator[aio_pika.abc.AbstractChannel]:
@@ -118,3 +119,13 @@ async def rabbit_channel(
         channel.close_callbacks.add(_channel_close_callback)
         yield channel
     assert channel.is_closed
+
+
+@pytest.fixture
+async def rabbit_client(
+    rabbit_settings: RabbitSettings,
+) -> AsyncIterator[RabbitMQClient]:
+    client = RabbitMQClient("pytest", settings=rabbit_settings)
+    assert client
+    yield client
+    await client.close()

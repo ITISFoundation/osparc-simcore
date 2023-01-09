@@ -501,21 +501,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.fireEvent("pipelineChanged");
     },
 
-    moveNode: function(node, newParent, oldParent) {
-      const nodeId = node.getNodeId();
-      if (oldParent === null) {
-        delete this.__rootNodes[nodeId];
-      } else {
-        oldParent.removeInnerNode(nodeId);
-      }
-      if (newParent === null) {
-        this.__rootNodes[nodeId] = node;
-      } else {
-        newParent.addInnerNode(nodeId, node);
-      }
-      node.setParentNodeId(newParent ? newParent.getNodeId() : null);
-    },
-
     removeNode: function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
@@ -750,82 +735,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         x: avgX,
         y: avgY
       };
-    },
-
-    groupNodes: function(currentModel, selectedNodes) {
-      const selectedNodeIds = [];
-      selectedNodes.forEach(selectedNode => {
-        selectedNodeIds.push(selectedNode.getNodeId());
-      });
-
-      const brotherNodes = this.__getBrotherNodes(currentModel, selectedNodeIds);
-
-      // Create nodesGroup
-      const nodesGroupService = osparc.utils.Services.getNodesGroup();
-      const parentNode = currentModel.getNodeId ? currentModel : null;
-      const nodesGroup = this.createNode(nodesGroupService.key, nodesGroupService.version, null, parentNode);
-      if (!nodesGroup) {
-        return;
-      }
-
-      const avgPos = this.__getAveragePosition(selectedNodes);
-      nodesGroup.setPosition(avgPos);
-
-      // change parents on future inner nodes
-      selectedNodes.forEach(selectedNode => {
-        this.moveNode(selectedNode, nodesGroup, parentNode);
-      });
-
-      // find inputNodes for nodesGroup
-      selectedNodes.forEach(selectedNode => {
-        const selInputNodes = selectedNode.getInputNodes();
-        selInputNodes.forEach(inputNode => {
-          const index = selectedNodeIds.indexOf(inputNode);
-          if (index === -1) {
-            nodesGroup.addInputNode(inputNode);
-          }
-        });
-      });
-
-      // change input nodes in those nodes connected to the selected ones
-      brotherNodes.forEach(brotherNode => {
-        selectedNodes.forEach(selectedNode => {
-          const selectedNodeId = selectedNode.getNodeId();
-          if (brotherNode.isInputNode(selectedNodeId)) {
-            brotherNode.addInputNode(nodesGroup.getNodeId());
-            brotherNode.removeInputNode(selectedNodeId);
-            nodesGroup.addOutputNode(selectedNodeId);
-          }
-        });
-      });
-    },
-
-    ungroupNode: function(currentModel, nodesGroup) {
-      let newParentNode = null;
-      if (currentModel !== this) {
-        newParentNode = currentModel;
-      }
-
-      const brotherNodes = this.__getBrotherNodes(currentModel, [nodesGroup.getNodeId()]);
-
-
-      // change parents on old inner nodes
-      const innerNodes = nodesGroup.getInnerNodes(false);
-      for (const innerNodeId in innerNodes) {
-        const innerNode = innerNodes[innerNodeId];
-        this.moveNode(innerNode, newParentNode, nodesGroup);
-      }
-
-      // change input nodes in those nodes connected to the nodesGroup
-      brotherNodes.forEach(brotherNode => {
-        if (brotherNode.isInputNode(nodesGroup.getNodeId())) {
-          brotherNode.removeInputNode(nodesGroup.getNodeId());
-          brotherNode.addInputNodes(nodesGroup.getExposedNodeIDs());
-        }
-      });
-
-      // Remove nodesGroup
-      this.removeNode(nodesGroup.getNodeId());
     },
 
     serialize: function(clean = true) {

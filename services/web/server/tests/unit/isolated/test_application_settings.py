@@ -8,6 +8,7 @@ import re
 
 import pytest
 from aiohttp import web
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
@@ -146,7 +147,7 @@ def mock_webserver_service_environment(
 
 
 @pytest.fixture
-def app_settings(mock_webserver_service_environment) -> ApplicationSettings:
+def app_settings(mock_webserver_service_environment: None) -> ApplicationSettings:
 
     app = web.Application()
 
@@ -220,7 +221,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
 
 def test_settings_to_client_statics_plugins(
-    mock_webserver_service_environment, monkeypatch
+    mock_webserver_service_environment: None, monkeypatch: MonkeyPatch
 ):
     disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
     for name in disable_plugins:

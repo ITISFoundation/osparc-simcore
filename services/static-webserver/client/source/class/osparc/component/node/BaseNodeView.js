@@ -225,10 +225,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __openServiceDetails: function() {
       const node = this.getNode();
-      const serviceDetails = new osparc.servicecard.Large(node.getMetaData(), {
+      const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
         nodeId: node.getNodeId(),
         label: node.getLabel(),
-        study: node.getStudy()
+        study: node.getStudy().getUuid()
       });
       const title = this.tr("Service information");
       const width = 600;

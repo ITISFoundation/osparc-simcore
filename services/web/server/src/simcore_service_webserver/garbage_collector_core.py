@@ -320,7 +320,7 @@ async def _remove_single_orphaned_service(
 
     # if the node is not present in any of the currently opened project it shall be closed
     if service_uuid not in currently_opened_projects_node_ids:
-        if interactive_service.get("service_state") in [
+        if service_state := interactive_service.get("service_state") in [
             "pulling",
             "starting",
         ]:
@@ -340,7 +340,7 @@ async def _remove_single_orphaned_service(
             logger.warning(
                 "Skipping %s since service state is %s",
                 f"{service_host=}",
-                interactive_service.get("service_state", "unknown"),
+                service_state,
             )
             return
 
@@ -398,7 +398,7 @@ async def remove_orphaned_services(
 
     running_interactive_services: list[dict[str, Any]] = []
     try:
-        running_interactive_services = await director_v2_api.get_dynamic_services(app)
+        running_interactive_services = await director_v2_api.list_dynamic_services(app)
     except director_v2_api.DirectorServiceError:
         logger.debug("Could not fetch running_interactive_services")
 
@@ -471,7 +471,6 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 app=app,
                 project_uuid=project_uuid,
                 user_id=user_id,
-                include_templates=True,
             )
         except (web.HTTPNotFound, ProjectNotFoundError) as err:
             logger.warning(

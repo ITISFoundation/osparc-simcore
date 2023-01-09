@@ -2,30 +2,42 @@ import logging
 from typing import Optional
 
 from aiohttp import web
-from pydantic import EmailStr, parse_obj_as
-from servicelib.aiohttp.rest_utils import extract_and_validate
-from servicelib.logging_utils import log_context
+from aiohttp.web import RouteTableDef
+from pydantic import BaseModel, EmailStr, Field, SecretStr, parse_obj_as, validator
+from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
+from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
 
-from ..security_api import encrypt_password, remember
+from ..products import Product, get_current_product
+from ..security_api import encrypt_password
 from ..utils import MINUTE
+from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
-from .settings import (
-    LoginOptions,
-    LoginSettings,
-    get_plugin_options,
-    get_plugin_settings,
-)
+from ._constants import MSG_PASSWORD_CHANGED
+from ._models import InputSchema, check_confirm_password_match
+from ._security import login_granted_response
+from .settings import LoginOptions, get_plugin_options
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_response
 
 log = logging.getLogger(__name__)
 
 
+routes = RouteTableDef()
+
+
+class _PathParam(BaseModel):
+    code: SecretStr
+
+
+@routes.get("/auth/confirmation/{code}", name="auth_confirmation")
 async def email_confirmation(request: web.Request):
     """Handles email confirmation by checking a code passed as query parameter
 
@@ -42,82 +54,106 @@ async def email_confirmation(request: web.Request):
             - show the reset-password page
             - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
     """
-    params, _, _ = await extract_and_validate(request)
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    code = params["code"]
+    path_params = parse_request_path_parameters_as(_PathParam, request)
 
     confirmation: Optional[ConfirmationTokenDict] = await validate_confirmation_code(
-        code, db, cfg
+        path_params.code.get_secret_value(), db=db, cfg=cfg
     )
-    redirect_url = URL(cfg.LOGIN_REDIRECT)
 
+    redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
     if confirmation and (action := confirmation["action"]):
-        if action == REGISTRATION:
-            user = await db.get_user({"id": confirmation["user_id"]})
-            await db.update_user(user, {"status": ACTIVE})
-            await db.delete_confirmation(confirmation)
-            redirect_url = redirect_url.with_fragment("?registered=true")
-            log.debug(
-                "%s registered -> %s",
-                f"{user=}",
-                f"{redirect_url=}",
-            )
+        try:
+            user_id = confirmation["user_id"]
+            if action == REGISTRATION:
+                # activate user and consume confirmation token
+                await db.delete_confirmation_and_update_user(
+                    user_id=user_id,
+                    updates={"status": ACTIVE},
+                    confirmation=confirmation,
+                )
 
-        elif action == CHANGE_EMAIL:
-            #
-            # TODO: compose error and send to front-end using fragments in the redirection
-            # But first we need to implement this refactoring https://github.com/ITISFoundation/osparc-simcore/issues/1975
-            #
-            user_update = {"email": parse_obj_as(EmailStr, confirmation["data"])}
-            user = await db.get_user({"id": confirmation["user_id"]})
-            await db.update_user(user, user_update)
-            await db.delete_confirmation(confirmation)
-            log.debug(
-                "%s updated %s",
-                f"{user=}",
-                f"{user_update}",
-            )
+                redirect_to_login_url = redirect_to_login_url.with_fragment(
+                    "?registered=true"
+                )
 
-        elif action == RESET_PASSWORD:
-            # NOTE: By using fragments (instead of queries or path parameters), the browser does NOT reloads page
-            redirect_url = redirect_url.with_fragment("reset-password?code=%s" % code)
+            elif action == CHANGE_EMAIL:
+                # update and consume confirmation token
+                await db.delete_confirmation_and_update_user(
+                    user_id=user_id,
+                    updates={"email": parse_obj_as(EmailStr, confirmation["data"])},
+                    confirmation=confirmation,
+                )
+
+            elif action == RESET_PASSWORD:
+                #
+                # NOTE: By using fragments (instead of queries or path parameters),
+                # the browser does NOT reloads page
+                #
+                redirect_to_login_url = redirect_to_login_url.with_fragment(
+                    f"reset-password?code={path_params.code}"
+                )
+
             log.debug(
-                "Reset password requested %s. %s",
+                "Confirms %s of %s with %s -> %s",
+                action,
+                f"{user_id=}",
                 f"{confirmation=}",
-                f"{redirect_url=}",
+                f"{redirect_to_login_url=}",
             )
 
-    raise web.HTTPFound(location=redirect_url)
+        except Exception as err:  # pylint: disable=broad-except
+            error_code = create_error_code(err)
+            log.exception(
+                "Failed during email_confirmation [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise create_redirect_response(
+                request.app,
+                page="error",
+                message=f"Sorry, we cannot confirm your {action}."
+                "Please try again in a few moments ({error_code})",
+                status_code=web.HTTPServiceUnavailable.status_code,
+            ) from err
+
+    raise web.HTTPFound(location=redirect_to_login_url)
+
+
+class PhoneConfirmationBody(InputSchema):
+    email: EmailStr
+    phone: str = Field(
+        ..., description="Phone number E.164, needed on the deployments with 2FA"
+    )
+    code: SecretStr
 
 
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
+@routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
-    _, _, body = await extract_and_validate(request)
-
-    settings: LoginSettings = get_plugin_settings(request.app)
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
-    email = body.email
-    phone = body.phone
-    code = body.code
-
-    if not settings.LOGIN_2FA_REQUIRED:
+    if not product.login_settings.two_factor_enabled:
         raise web.HTTPServiceUnavailable(
             reason="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    if (expected := await get_2fa_code(request.app, email)) and code == expected:
-        await delete_2fa_code(request.app, email)
+    request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
-        # db
+    if (
+        expected := await get_2fa_code(request.app, request_body.email)
+    ) and request_body.code.get_secret_value() == expected:
+        # consumes code
+        await delete_2fa_code(request.app, request_body.email)
+
+        # updates confirmed phone number
         try:
-            user = await db.get_user({"email": email})
-            await db.update_user(user, {"phone": phone})
+            user = await db.get_user({"email": request_body.email})
+            await db.update_user(user, {"phone": request_body.phone})
 
         except UniqueViolation as err:
             raise web.HTTPUnauthorized(
@@ -125,51 +161,52 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        # login
-        with log_context(
-            log,
-            logging.INFO,
-            "login after phone_confirmation of user_id=%s with %s",
-            f"{user.get('id')}",
-            f"{email=}",
-        ):
-            identity = user["email"]
-            response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
-            await remember(request, response, identity)
-            return response
+        response = await login_granted_response(request, user=user)
+        return response
 
-    # unauthorized
+    # fails because of invalid or no code
     raise web.HTTPUnauthorized(
         reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
+class ResetPasswordConfirmation(InputSchema):
+    password: SecretStr
+    confirm: SecretStr
+
+    _password_confirm_match = validator("confirm", allow_reuse=True)(
+        check_confirm_password_match
+    )
+
+
+@routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")
 async def reset_password_allowed(request: web.Request):
     """Changes password using a token code without being logged in"""
-    params, _, body = await extract_and_validate(request)
-
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
-    code = params["code"]
-    password = body.password
-    confirm = body.confirm
+    path_params = parse_request_path_parameters_as(_PathParam, request)
+    request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    if password != confirm:
-        raise web.HTTPConflict(
-            reason=cfg.MSG_PASSWORD_MISMATCH, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 409
-
-    confirmation = await validate_confirmation_code(code, db, cfg)
+    confirmation = await validate_confirmation_code(
+        path_params.code.get_secret_value(), db, cfg
+    )
 
     if confirmation:
         user = await db.get_user({"id": confirmation["user_id"]})
         assert user  # nosec
 
-        await db.update_user(user, {"password_hash": encrypt_password(password)})
+        await db.update_user(
+            user,
+            {
+                "password_hash": encrypt_password(
+                    request_body.password.get_secret_value()
+                )
+            },
+        )
         await db.delete_confirmation(confirmation)
 
-        response = flash_response(cfg.MSG_PASSWORD_CHANGED)
+        response = flash_response(MSG_PASSWORD_CHANGED)
         return response
 
     raise web.HTTPUnauthorized(

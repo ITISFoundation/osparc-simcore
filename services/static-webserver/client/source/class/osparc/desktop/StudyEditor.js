@@ -68,18 +68,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }, this);
     slideshowView.addListener("stopPipeline", this.__stopPipeline, this);
 
-    [
-      workbenchView.getStartStopButtons()
-    ].forEach(startStopButtons => {
-      startStopButtons.addListener("startPipeline", () => {
-        this.__startPipeline([]);
-      }, this);
-      startStopButtons.addListener("startPartialPipeline", () => {
-        const partialPipeline = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
-        this.__startPipeline(partialPipeline);
-      }, this);
-      startStopButtons.addListener("stopPipeline", this.__stopPipeline, this);
-    });
+
+    const startStopButtons = workbenchView.getStartStopButtons();
+    startStopButtons.addListener("startPipeline", () => this.__startPipeline([]), this);
+    startStopButtons.addListener("startPartialPipeline", () => {
+      const partialPipeline = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
+      this.__startPipeline(partialPipeline);
+    }, this);
+    startStopButtons.addListener("stopPipeline", () => this.__stopPipeline(), this);
+
 
     this._add(viewsStack, {
       flex: 1
@@ -145,7 +142,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         };
         const promises = [
           osparc.data.Resources.getOne("studies", params),
-          osparc.store.Store.getInstance().getServicesOnly()
+          osparc.store.Store.getInstance().getAllServices()
         ];
         Promise.all(promises)
           .then(values => {
@@ -177,14 +174,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
-          osparc.data.Resources.get("organizations")
-            .then(resp => {
-              const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-              const orgs = resp["organizations"];
-              const orgIDs = [myGroupId];
-              orgs.forEach(org => orgIDs.push(org["gid"]));
+          // Count dynamic services.
+          // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
+          osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
+            .then(maxNumber => {
+              console.log(maxNumber);
+              if (maxNumber) {
+                const nodes = study.getWorkbench().getNodes();
+                const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
+                if (nDynamics > maxNumber) {
+                  let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
+                  msg += "<br>";
+                  msg += this.tr("Please, start them manually.");
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                }
+              }
+            });
 
-              if (osparc.component.permissions.Study.canGroupsWrite(study.getAccessRights(), orgIDs)) {
+          osparc.data.Resources.get("organizations")
+            .then(() => {
+              if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
                 this.__startAutoSaveTimer();
               } else {
                 const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
@@ -235,7 +244,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         })
         .catch(err => {
           let msg = "";
-          if ("status" in err && err["status"] == 423) { // Locked
+          if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
+            msg = err["message"];
+          } else if ("status" in err && err["status"] == 423) { // Locked
             msg = study.getName() + this.tr(" is already opened");
           } else {
             console.error(err);
@@ -326,7 +337,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
         })
         .catch(() => {
-          this.__getStudyLogger().error(null, "Run failed");
+          this.getStudyLogger().error(null, "Run failed");
           this.getStudy().setPipelineRunning(false);
         });
     },
@@ -336,14 +347,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", () => {
-        this.__getStudyLogger().error(null, "Error submitting pipeline");
+        this.getStudyLogger().error(null, "Error submitting pipeline");
         this.getStudy().setPipelineRunning(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getStatus() == "403") {
-          this.__getStudyLogger().error(null, "Pipeline is already running");
+          this.getStudyLogger().error(null, "Pipeline is already running");
         } else if (e.getTarget().getStatus() == "422") {
-          this.__getStudyLogger().info(null, "The pipeline is up-to-date");
+          this.getStudyLogger().info(null, "The pipeline is up-to-date");
           const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
           const win = new osparc.ui.window.Confirmation(msg).set({
             confirmText: this.tr("Run"),
@@ -357,7 +368,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             }
           }, this);
         } else {
-          this.__getStudyLogger().error(null, "Failed submitting pipeline");
+          this.getStudyLogger().error(null, "Failed submitting pipeline");
         }
         this.getStudy().setPipelineRunning(false);
       }, this);
@@ -373,9 +384,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       req.setRequestData(requestData);
       req.send();
       if (partialPipeline.length) {
-        this.__getStudyLogger().info(null, "Starting partial pipeline");
+        this.getStudyLogger().info(null, "Starting partial pipeline");
       } else {
-        this.__getStudyLogger().info(null, "Starting pipeline");
+        this.getStudyLogger().info(null, "Starting pipeline");
       }
 
       return true;
@@ -385,15 +396,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
       const iterationRefIds = resp.data["ref_ids"];
-      this.__getStudyLogger().debug(null, "Pipeline ID " + pipelineId);
+      this.getStudyLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.__getStudyLogger().error(null, "Submission failed");
+        this.getStudyLogger().error(null, "Submission failed");
       } else {
         if (iterationRefIds) {
           this.__reloadSnapshotsAndIterations();
         }
-        this.__getStudyLogger().info(null, "Pipeline started");
+        this.getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
@@ -420,12 +431,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __requestStopPipeline: function(studyId) {
       const url = "/computations/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", () => this.__getStudyLogger().debug(null, "Pipeline aborting"), this);
-      req.addListener("error", () => this.__getStudyLogger().error(null, "Error stopping pipeline"), this);
-      req.addListener("fail", () => this.__getStudyLogger().error(null, "Failed stopping pipeline"), this);
+      req.addListener("success", () => this.getStudyLogger().debug(null, "Pipeline aborting"), this);
+      req.addListener("error", () => this.getStudyLogger().error(null, "Error stopping pipeline"), this);
+      req.addListener("fail", () => this.getStudyLogger().error(null, "Failed stopping pipeline"), this);
       req.send();
 
-      this.__getStudyLogger().info(null, "Stopping pipeline");
+      this.getStudyLogger().info(null, "Stopping pipeline");
       return true;
     },
     // ------------------ START/STOP PIPELINE ------------------
@@ -434,13 +445,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.updateStudyDocument(false)
         .then(() => {
           if (node) {
-            this.__getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
+            this.getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
             node.retrieveInputs(portKey);
           } else {
-            this.__getStudyLogger().debug(null, "Retrieving inputs");
+            this.getStudyLogger().debug(null, "Retrieving inputs");
           }
         });
-      this.__getStudyLogger().debug(null, "Updating pipeline");
+      this.getStudyLogger().debug(null, "Updating pipeline");
     },
 
     // overridden
@@ -453,7 +464,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__slideshowView.nodeSelected(nodeId);
     },
 
-    __getStudyLogger: function() {
+    getStudyLogger: function() {
       return this.__workbenchView.getLogger();
     },
 
@@ -591,10 +602,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     updateStudyDocument: function(run = false) {
-      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGrpId);
-      if (!osparc.component.permissions.Study.canGroupsWrite(this.getStudy().getAccessRights(), orgIDs)) {
+      if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
         });
@@ -613,7 +621,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             console.error(error);
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
           }
-          this.__getStudyLogger().error(null, "Error updating pipeline");
+          this.getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later
           throw error;
         })

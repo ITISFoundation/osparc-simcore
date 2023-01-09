@@ -1,25 +1,34 @@
-# FIXME: move to settings-library or refactor
-
+import functools
 import logging
-from typing import Optional
+from typing import Optional, Union
 
-from tenacity import before_sleep_log, stop_after_attempt, wait_fixed
+from .redis import RedisClientSDK
 
 log = logging.getLogger(__file__)
 
 
-class RedisRetryPolicyUponInitialization:
-    """Retry policy upon service initialization"""
+def exclusive(
+    redis: RedisClientSDK,
+    *,
+    lock_key: str,
+    lock_value: Optional[Union[bytes, str]] = None
+):
+    """
+    Define a method to run exclusively accross
+    processes by leveraging a Redis Lock.
 
-    WAIT_SECS = 2
-    ATTEMPTS_COUNT = 20
+    parameters:
+    redis: the redis client SDK
+    lock_key: a string as the name of the lock (good practice: app_name:lock_name)
+    lock_value: some additional data that can be retrieved by another client
+    """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
-        logger = logger or log
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            async with redis.lock_context(lock_key=lock_key, lock_value=lock_value):
+                return await func(*args, **kwargs)
 
-        self.kwargs = dict(
-            wait=wait_fixed(self.WAIT_SECS),
-            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            before_sleep=before_sleep_log(logger, logging.INFO),
-            reraise=True,
-        )
+        return wrapper
+
+    return decorator

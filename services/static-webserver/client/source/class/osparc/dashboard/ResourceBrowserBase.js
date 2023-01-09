@@ -22,7 +22,6 @@
  * - Study Browser
  * - Template Browser
  * - Service Browser
- * - Data Browser
  */
 
 qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
@@ -73,16 +72,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return (card instanceof osparc.dashboard.GridButtonItem || card instanceof osparc.dashboard.ListButtonItem);
     },
 
-    PAGINATED_STUDIES: 10,
-    MIN_FILTERED_STUDIES: 15
+    PAGINATED_STUDIES: 10
   },
 
   members: {
+    _resourcesList: null,
     _topBar: null,
     _secondaryBar: null,
+    __viewMenuButton: null,
     _resourcesContainer: null,
-    _viewGridBtn: null,
-    _viewListBtn: null,
     _loadingResourcesBtn: null,
 
     _createChildControlImpl: function(id) {
@@ -118,16 +116,29 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const topBar = this.__createTopBar(resourceType);
       this._add(topBar);
 
-      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        paddingRight: 8,
+        alignY: "middle"
+      });
       this._add(secondaryBar);
 
-      const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      const resourcesContainer = this._resourcesContainer = new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+      const viewByMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      this.__viewMenuButton = new qx.ui.form.MenuButton(this.tr("View"), "@FontAwesome5Solid/chevron-down/10", viewByMenu);
+
+      const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
+
+      resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+      resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
+
       this._add(resourcesContainer);
     },
 
     __createTopBar: function(resourceType) {
-      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(12)).set({
+      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         paddingRight: 8,
         alignY: "middle"
       });
@@ -139,26 +150,72 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         flex: 1
       });
 
-      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-      const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
-      const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
-      const group = new qx.ui.form.RadioGroup();
-      [
-        viewGridBtn,
-        viewListBtn
-      ].forEach(btn => {
-        containterModeBtns.add(btn);
-        group.add(btn);
-        btn.getContentElement().setStyles({
-          "border-radius": "8px"
-        });
-      });
-      topBar.add(containterModeBtns);
-
-      viewGridBtn.addListener("execute", () => this.__setResourcesContainerMode("grid"));
-      viewListBtn.addListener("execute", () => this.__setResourcesContainerMode("list"));
-
       return topBar;
+    },
+
+    _groupByChanged: function(groupBy) {
+      // if cards are grouped they need to be in grid mode
+      this._resourcesContainer.setMode("grid");
+      this.__viewMenuButton.setVisibility(groupBy ? "excluded" : "visible");
+      this._resourcesContainer.setGroupBy(groupBy);
+      this._reloadCards();
+    },
+
+    _viewByChanged: function(viewMode) {
+      this._resourcesContainer.setMode(viewMode);
+      this._reloadCards();
+    },
+
+    _addGroupByButton: function() {
+      const groupByMenu = new qx.ui.menu.Menu().set({
+        font: "text-14"
+      });
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
+      osparc.utils.Utils.setIdToWidget(groupByButton, "groupByButton");
+
+      const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
+      osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
+      dontGroup.addListener("execute", () => this._groupByChanged(null));
+      const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
+      tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+      const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+      [
+        dontGroup,
+        tagByGroup,
+        groupByShared
+      ].forEach(btn => {
+        groupByMenu.add(btn);
+        groupOptions.add(btn);
+      });
+
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        tagByGroup.execute();
+      }
+
+      this._secondaryBar.add(groupByButton);
+    },
+
+    _addViewModeButton: function() {
+      const viewByMenu = this.__viewMenuButton.getMenu();
+
+      const gridBtn = new qx.ui.menu.RadioButton(this.tr("Grid"));
+      gridBtn.addListener("execute", () => this._viewByChanged("grid"));
+      const listBtn = new qx.ui.menu.RadioButton(this.tr("List"));
+      listBtn.addListener("execute", () => this._viewByChanged("list"));
+
+      const groupOptions = new qx.ui.form.RadioGroup();
+      [
+        gridBtn,
+        listBtn
+      ].forEach(btn => {
+        viewByMenu.add(btn);
+        groupOptions.add(btn);
+      });
+
+      this._secondaryBar.add(this.__viewMenuButton);
     },
 
     /**
@@ -185,138 +242,39 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    __setResourcesContainerMode: function(mode = "grid") {
-      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      this._resourcesContainer.getLayout().set({
-        spacingX: spacing,
-        spacingY: spacing
-      });
-      this._resourcesContainer.setMode(mode);
-    },
-
-    _createLoadMoreButton: function(widgetId = "studiesLoading", mode = "grid") {
-      const loadingMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
-      osparc.utils.Utils.setIdToWidget(loadingMoreBtn, widgetId);
-      return loadingMoreBtn;
-    },
-
-    _requestResources: function(templates = false) {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      osparc.data.Resources.get("tasks")
-        .then(tasks => {
-          if (tasks && tasks.length) {
-            this.__tasksReceived(tasks);
-          }
-        });
-      this._loadingResourcesBtn.setFetching(true);
-      const request = this.__getNextRequest(templates);
-      request
-        .then(resp => {
-          const resources = resp["data"];
-          this._resourcesContainer.nextRequest = resp["_links"]["next"];
-          this._addResourcesToList(resources);
-
-          if (osparc.utils.Utils.isProduct("tis")) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("tiDontShowQuickStart");
-            if (dontShow === "true") {
-              return;
-            }
-            if (templates === false && "_meta" in resp && resp["_meta"]["total"] === 0) {
-              // there are no studies
-              const tutorialWindow = new osparc.component.tutorial.ti.Slides();
-              tutorialWindow.center();
-              tutorialWindow.open();
-            }
-          }
-        })
-        .catch(err => {
-          console.error(err);
-        })
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
-          this._moreResourcesRequired();
-        });
-    },
-
-    __tasksReceived: function(tasks) {
-      tasks.forEach(taskData => this._taskDataReceived(taskData));
-    },
-
-    __getNextRequest: function(templates) {
-      const params = {
-        url: {
-          offset: 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
+    _removeResourceCards: function() {
+      const cards = this._resourcesContainer.getCards();
+      for (let i=cards.length-1; i>=0; i--) {
+        const card = cards[i];
+        if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)) {
+          this._resourcesContainer.removeNonResourceCard(card);
         }
-      };
-      if ("nextRequest" in this._resourcesContainer &&
-        this._resourcesContainer.nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "limit")) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "limit");
       }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, options);
-    },
-
-    _addResourcesToList: function() {
-      throw new Error("Abstract method called!");
     },
 
     _moreResourcesRequired: function() {
-      if (this._resourcesContainer &&
-        this._loadingResourcesBtn &&
-        this._resourcesContainer.nextRequest !== null &&
-        (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        osparc.utils.Utils.checkIsOnScreen(this._loadingResourcesBtn))
-      ) {
+      if (this._resourcesContainer && this._resourcesContainer.areMoreResourcesRequired(this._loadingResourcesBtn)) {
         this.reloadResources();
       }
-    },
-
-    _createResourceItem: function(resourceData) {
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
-
-      const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
-      item.set({
-        resourceData,
-        tags
-      });
-
-      const menu = this._getResourceItemMenu(resourceData, item);
-      item.setMenu(menu);
-      item.subscribeToFilterGroup("searchBarFilter");
-
-      return item;
     },
 
     _taskDataReceived: function(taskData) {
       throw new Error("Abstract method called!");
     },
 
-    _getResourceItemMenu: function(resourceData, item) {
+    _populateCardMenu: function(menu, resourceData) {
       throw new Error("Abstract method called!");
     },
 
-    _resetStudyItem: function(studyData) {
+    _updateStudyData: function(studyData) {
       throw new Error("Abstract method called!");
     },
 
-    _resetTemplateItem: function(templateData) {
+    _updateTemplateData: function(templateData) {
       throw new Error("Abstract method called!");
     },
 
-    _resetServiceItem: function(serviceData) {
-      throw new Error("Abstract method called!");
-    },
-
-    _resetResourcesList: function(resourcesList) {
+    _updateServiceData: function(serviceData) {
       throw new Error("Abstract method called!");
     },
 
@@ -331,18 +289,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
         const title = this.tr("More options");
         const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
-        moreOpts.addListener("updateStudy", e => {
-          const updatedStudyData = e.getData();
-          this._resetStudyItem(updatedStudyData);
-        });
-        moreOpts.addListener("updateTemplate", e => {
-          const updatedTemplateData = e.getData();
-          this._resetTemplateItem(updatedTemplateData);
-        });
-        moreOpts.addListener("updateService", e => {
-          const updatedServiceData = e.getData();
-          this._resetServiceItem(updatedServiceData);
-        });
+        moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+        moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+        moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
         moreOpts.addListener("publishTemplate", e => {
           win.close();
           this.fireDataEvent("publishTemplate", e.getData());

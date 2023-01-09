@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   construct: function() {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
+
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -42,55 +44,46 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "tsr-mode-update-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TSR_MODE);
-          break;
         case "tsr-rating": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
             toolTipText: this.tr("Ten Simple Rules")
           });
           const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          layout.add(tsrLayout, {
-            flex: 1
-          });
+          control.add(tsrLabel);
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          control.add(tsrRating);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TSR);
           break;
         }
         case "ui-mode": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
-          control = new qx.ui.basic.Image();
-          layout.add(control);
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle"
+          });
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
         }
         case "update-study": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Image().set({
-            source: "@MaterialIcons/update/18",
-            visibility: "excluded"
+            source: "@MaterialIcons/update/16",
+            visibility: "excluded",
+            alignY: "middle"
           });
-          layout.add(control);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         }
         case "hits-service": {
-          const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Label().set({
-            toolTipText: this.tr("Number of times it was instantiated")
+            toolTipText: this.tr("Number of times it was instantiated"),
+            alignY: "middle"
           });
-          layout.add(new qx.ui.core.Spacer(), {
-            flex: 1
-          });
-          layout.add(control);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
           break;
         }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true
           });
-          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-button": {
           this.getChildControl("title").set({
@@ -215,20 +208,20 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
-          store.getGroupsAll(),
+          store.getGroupEveryone(),
           store.getVisibleMembers(),
           store.getGroupsOrganizations()
         ])
           .then(values => {
-            const all = values[0];
+            const everyone = values[0];
             const orgMembs = [];
             const orgMembers = values[1];
             for (const gid of Object.keys(orgMembers)) {
               orgMembs.push(orgMembers[gid]);
             }
             const orgs = values.length === 3 ? values[2] : [];
-            const groups = [orgMembs, orgs, [all]];
-            this.__setSharedIcon(sharedIcon, value, groups);
+            const groups = [orgMembs, orgs, [everyone]];
+            this.__evaluateShareIcon(value, groups);
           });
 
         if (this.isResourceType("study")) {
@@ -237,7 +230,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
     },
 
-    __setSharedIcon: function(image, value, groups) {
+    // groups sorted by [orgMembs, orgs, [everyone]];
+    __evaluateShareIcon: function(value, groups) {
+      const shareIcon = this.getChildControl("subtitle-icon");
+      if (osparc.data.model.Study.canIWrite(value)) {
+        shareIcon.set({
+          source: osparc.dashboard.CardBase.SHARE_ICON,
+          toolTipText: this.tr("Share")
+        });
+      }
       let sharedGrps = [];
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       for (let i=0; i<groups.length; i++) {
@@ -260,22 +261,21 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
         switch (i) {
           case 0:
-            image.setSource(osparc.dashboard.CardBase.SHARED_USER);
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
             break;
           case 1:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
             break;
           case 2:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
             break;
         }
       }
 
+      // tooltip
       if (sharedGrps.length === 0) {
-        image.setVisibility("excluded");
         return;
       }
-
       const sharedGrpLabels = [];
       const maxItems = 6;
       for (let i=0; i<sharedGrps.length; i++) {
@@ -289,14 +289,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
       }
       const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(image, hintText);
-      image.addListener("mouseover", () => hint.show(), this);
-      image.addListener("mouseout", () => hint.exclude(), this);
+      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
+      shareIcon.addListener("mouseover", () => hint.show(), this);
+      shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
     _applyTags: function(tags) {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         const tagsContainer = this.getChildControl("tags");
+        tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
         tags.forEach(tag => {
           const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");

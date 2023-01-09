@@ -119,22 +119,22 @@ EXCHANGE_TO_PARSER_CONFIG = (
     (
         LoggerRabbitMessage.get_channel_name(),
         log_message_parser,
-        {"no_ack": True},
+        {},
     ),
     (
         ProgressRabbitMessage.get_channel_name(),
         progress_message_parser,
-        {"no_ack": True},
+        {},
     ),
     (
         InstrumentationRabbitMessage.get_channel_name(),
         instrumentation_message_parser,
-        {"no_ack": False},
+        dict(exclusive_queue=False),
     ),
     (
         EventRabbitMessage.get_channel_name(),
         events_message_parser,
-        {"no_ack": False},
+        {},
     ),
 )
 
@@ -151,9 +151,9 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     ):
         rabbit_client = RabbitMQClient("webserver", settings)
 
-        for exchange_name, parser_fct, _exchange_kwargs in EXCHANGE_TO_PARSER_CONFIG:
+        for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG:
             await rabbit_client.subscribe(
-                exchange_name, functools.partial(parser_fct, app)
+                exchange_name, functools.partial(parser_fct, app), **queue_kwargs
             )
 
     yield

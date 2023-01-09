@@ -203,7 +203,7 @@ def user_id() -> PositiveInt:
 def mock_docker_calls(mocker: MockerFixture) -> Iterable[dict[str, AsyncMock]]:
     requires_dynamic_sidecar_mock = AsyncMock()
     requires_dynamic_sidecar_mock.return_value = True
-    class_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler"
+    class_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler"
     mocked_items = {
         "attach": mocker.patch(f"{class_base}.attach_project_network", AsyncMock()),
         "detach": mocker.patch(f"{class_base}.detach_project_network", AsyncMock()),

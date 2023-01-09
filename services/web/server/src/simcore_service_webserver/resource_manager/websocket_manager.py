@@ -17,9 +17,10 @@
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Iterator, Optional, Union
 
 from aiohttp import web
+from servicelib.logging_utils import log_context
 
 from .registry import get_registry
 from .settings import ResourceManagerSettings, get_plugin_settings
@@ -58,7 +59,7 @@ class WebsocketRegistry:
     client_session_id: Optional[str]
     app: web.Application
 
-    def _resource_key(self) -> Dict[str, str]:
+    def _resource_key(self) -> dict[str, str]:
         return {
             "user_id": f"{self.user_id}",
             "client_session_id": self.client_session_id
@@ -115,7 +116,7 @@ class WebsocketRegistry:
             self._resource_key(), get_service_deletion_timeout(self.app)
         )
 
-    async def find_socket_ids(self) -> List[str]:
+    async def find_socket_ids(self) -> list[str]:
         log.debug(
             "user %s/tab %s finding %s from registry...",
             self.user_id,
@@ -128,7 +129,16 @@ class WebsocketRegistry:
         )
         return user_sockets
 
-    async def find(self, key: str) -> List[str]:
+    async def find_all_resources_of_user(self, key: str) -> list[str]:
+        with log_context(
+            log, logging.DEBUG, msg=f"{self.user_id=} finding all {key} from registry"
+        ):
+            resources = await get_registry(self.app).find_resources(
+                {"user_id": f"{self.user_id}", "client_session_id": "*"}, key
+            )
+            return resources
+
+    async def find(self, key: str) -> list[str]:
         log.debug(
             "user %s/tab %s finding %s from registry...",
             self.user_id,
@@ -160,7 +170,7 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    async def find_users_of_resource(self, key: str, value: str) -> List[UserSessionID]:
+    async def find_users_of_resource(self, key: str, value: str) -> list[UserSessionID]:
         log.debug(
             "user %s/tab %s finding %s:%s in registry...",
             self.user_id,

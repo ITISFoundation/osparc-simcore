@@ -4,7 +4,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
@@ -13,6 +13,7 @@ from aiohttp.client_exceptions import (
     InvalidURL,
 )
 from models_library.services_resources import ServiceResourcesDict
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
@@ -100,8 +101,8 @@ async def make_request_and_envelope_response(
 
 
 async def get_services_for_user_in_product(
-    app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
-) -> List[Dict]:
+    app: web.Application, user_id: UserID, product_name: str, *, only_key_versions: bool
+) -> list[dict]:
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
 
@@ -131,11 +132,11 @@ async def get_services_for_user_in_product(
 
 async def get_service(
     app: web.Application,
-    user_id: int,
+    user_id: UserID,
     service_key: str,
     service_version: str,
     product_name: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
 
@@ -160,6 +161,7 @@ async def get_service(
 
 async def get_service_resources(
     app: web.Application,
+    user_id: UserID,
     service_key: str,
     service_version: str,
 ) -> ServiceResourcesDict:
@@ -168,7 +170,7 @@ async def get_service_resources(
     url = (
         URL(settings.api_base_url)
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/resources"
-    )
+    ).with_query({"user_id": user_id})
 
     try:
         async with session.get(url) as resp:
@@ -190,12 +192,12 @@ async def get_service_resources(
 
 async def update_service(
     app: web.Application,
-    user_id: int,
+    user_id: UserID,
     service_key: str,
     service_version: str,
     product_name: str,
-    update_data: Dict[str, Any],
-) -> Dict[str, Any]:
+    update_data: dict[str, Any],
+) -> dict[str, Any]:
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
 

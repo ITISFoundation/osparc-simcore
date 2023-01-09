@@ -7,16 +7,17 @@ from typing import Optional
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.errors import DatabaseError
 from sqlalchemy.sql import func
 
-from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from .decorators import RQT_USERID_KEY, login_required
 from .utils import get_random_string
@@ -137,7 +138,11 @@ class CRUD:
 #
 
 
+routes = RouteTableDef()
+
+
 @login_required
+@routes.get("/v0/auth/api-keys", name="list_api_keys")
 async def list_api_keys(request: web.Request):
     """
     GET /auth/api-keys
@@ -150,6 +155,7 @@ async def list_api_keys(request: web.Request):
 
 
 @login_required
+@routes.post("/v0/auth/api-keys", name="create_api_key")
 async def create_api_key(request: web.Request):
     """
     POST /auth/api-keys
@@ -175,6 +181,7 @@ async def create_api_key(request: web.Request):
 
 
 @login_required
+@routes.delete("/v0/auth/api-keys", name="delete_api_key")
 async def delete_api_key(request: web.Request):
     """
     DELETE /auth/api-keys

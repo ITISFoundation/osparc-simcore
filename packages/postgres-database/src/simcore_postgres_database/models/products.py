@@ -5,19 +5,27 @@
     - Every product has a front-end with exactly the same name
 """
 
+import json
+from dataclasses import asdict, dataclass
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 
 from .base import metadata
+from .groups import groups
 from .jinja2_templates import jinja2_templates
+
+# NOTE: a default entry is created in the table Product
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
 
 
 #
 # Layout of the data in the JSONB columns
 #
+
+
 class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
@@ -27,7 +35,8 @@ class Vendor(TypedDict, total=False):
     name: str
     copyright: str
     url: str
-    license_url: str
+    license_url: str  # Which are the license terms? (if applies)
+    invitation_url: str  # How to request a trial invitation? (if applies)
 
 
 class IssueTracker(TypedDict, total=True):
@@ -72,9 +81,26 @@ class Forum(TypedDict, total=True):
     url: str
 
 
+@dataclass(frozen=True)
+class ProductLoginSettings:
+    """Login plugin settings customized for this product
+
+    Extends simcore_service_webserver.login.settings.LoginSettings
+    """
+
+    two_factor_enabled: bool = False
+
+
+# NOTE: defaults affects migration!!
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettings()
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(LOGIN_SETTINGS_DEFAULT))
+
+
 #
 # Table
 #
+# NOTE: a default entry is created in the table Product
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
 
 products = sa.Table(
     "products",
@@ -138,6 +164,13 @@ products = sa.Table(
         doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
     ),
     sa.Column(
+        "login_settings",
+        JSONB,
+        nullable=False,
+        server_default=text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
+        doc="Overrides values of simcore_service_webserver.login.settings.LoginSettings",
+    ),
+    sa.Column(
         "registration_email_template",
         sa.String,
         sa.ForeignKey(
@@ -169,6 +202,25 @@ products = sa.Table(
         sa.Integer(),
         server_default=sa.text("0"),
         doc="Index used to sort the products. E.g. determine default",
+    ),
+    sa.Column(
+        "max_open_studies_per_user",
+        sa.Integer(),
+        nullable=True,
+        doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+    ),
+    sa.Column(
+        "group_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            groups.c.gid,
+            name="fk_products_group_id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+        ),
+        unique=True,
+        nullable=True,
+        doc="Group associated to this product",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

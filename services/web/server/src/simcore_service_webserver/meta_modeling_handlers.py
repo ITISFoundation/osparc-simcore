@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Callable, List, NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -11,13 +11,13 @@ from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, ValidationError, validator
 from pydantic.fields import Field
 from pydantic.networks import HttpUrl
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
 from .meta_modeling_iterations import IterationID, ProjectIteration
 from .meta_modeling_results import ExtractedResults, extract_project_results
 from .meta_modeling_version_control import VersionControlForMetaModeling
-from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
 from .version_control_models import CheckpointID, CommitID, TagProxy
@@ -67,7 +67,7 @@ class IterationItem(NamedTuple):
 
 
 class _IterationsRange(NamedTuple):
-    items: List[IterationItem]
+    items: list[IterationItem]
     total_count: int
 
 
@@ -89,11 +89,11 @@ async def _get_project_iterations_range(
 
     # TODO: do all these operations in database.
     # TODO: implement real pagination https://github.com/ITISFoundation/osparc-simcore/issues/2735
-    tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
+    tags_per_child: list[list[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
 
-    iter_items: List[IterationItem] = []
+    iter_items: list[IterationItem] = []
     for n, tags in enumerate(tags_per_child):
         try:
             iteration: Optional[ProjectIteration] = None
@@ -161,7 +161,7 @@ async def create_or_get_project_iterations(
     vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
     commit_id: CommitID,
-) -> List[IterationItem]:
+) -> list[IterationItem]:
 
     raise NotImplementedError()
 

@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.tutorial.ti.Welcome", {
-  extend: osparc.component.tutorial.ti.SlideBase,
+  extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
     const title = this.tr("User Interface Overview");

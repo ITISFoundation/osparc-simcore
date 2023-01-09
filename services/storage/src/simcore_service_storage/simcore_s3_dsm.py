@@ -470,7 +470,7 @@ class SimcoreS3DataManager(BaseDataManager):
                         user_id,
                         src_fmd,
                         SimcoreS3FileID(
-                            f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/')[-1]}"
+                            f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/', maxsplit=2)[-1]}"
                         ),
                         bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
                     )

@@ -14,14 +14,13 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
-from .settings import LoginOptions
+from ._constants import MSG_ACTIVATION_REQUIRED, MSG_USER_BANNED, MSG_USER_EXPIRED
 
 log = logging.getLogger(__name__)
 
 
 def _to_names(enum_cls, names):
     """ensures names are in enum be retrieving each of them"""
-    # FIXME: with asyncpg need to user NAMES
     return [getattr(enum_cls, att).name for att in names.split()]
 
 
@@ -41,24 +40,24 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 )
 
 
-def validate_user_status(user: dict, cfg: LoginOptions, support_email: str):
+def validate_user_status(*, user: dict, support_email: str):
     user_status: str = user["status"]
 
     if user_status == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_BANNED.format(support_email=support_email),
+            reason=MSG_USER_BANNED.format(support_email=support_email),
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == EXPIRED:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_USER_EXPIRED.format(support_email=support_email),
+            reason=MSG_USER_EXPIRED.format(support_email=support_email),
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(
-            reason=cfg.MSG_ACTIVATION_REQUIRED,
+            reason=MSG_ACTIVATION_REQUIRED,
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
@@ -78,9 +77,7 @@ async def notify_user_logout(
 
 
 def encrypt_password(password: str) -> str:
-    # TODO: add settings sha256_crypt.using(**settings).hash(secret)
-    # see https://passlib.readthedocs.io/en/stable/lib/passlib.hash.sha256_crypt.html
-    #
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3375
     return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
 
 
@@ -105,17 +102,17 @@ def get_client_ip(request: web.Request) -> str:
 def flash_response(
     message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
-    rsp = envelope_response(
-        attr.asdict(LogMessageType(message, level)),
+    response = envelope_response(
+        data=attr.asdict(LogMessageType(message, level)),
         status=status,
     )
-    return rsp
+    return response
 
 
 def envelope_response(
     data: Any, *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
-    rsp = web.json_response(
+    response = web.json_response(
         {
             "data": data,
             "error": None,
@@ -123,4 +120,4 @@ def envelope_response(
         dumps=json_dumps,
         status=status,
     )
-    return rsp
+    return response

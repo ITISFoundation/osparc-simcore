@@ -7,12 +7,13 @@ from models_library.basic_regex import (
     TWILIO_ALPHANUMERIC_SENDER_ID_RE,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, EmailStr, Extra, Field, validator
+from pydantic import BaseModel, EmailStr, Extra, Field, PositiveInt, validator
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
     IssueTracker,
     Manual,
+    ProductLoginSettings,
     Vendor,
     WebFeedback,
 )
@@ -68,10 +69,21 @@ class Product(BaseModel):
 
     manuals: Optional[list[Manual]] = None
 
-    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = None
+    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
+
+    login_settings: ProductLoginSettings = Field(...)
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
+    )
+
+    max_open_studies_per_user: Optional[PositiveInt] = Field(
+        default=None,
+        description="Limits the number of studies a user may have open concurently (disabled if NULL)",
+    )
+
+    group_id: Optional[int] = Field(
+        default=None, description="Groups associated to this product"
     )
 
     @validator("name", pre=True, always=True)
@@ -109,6 +121,9 @@ class Product(BaseModel):
                     "host_regex": r"([\.-]{0,1}osparc[\.-])",
                     "twilio_messaging_sid": "1" * 34,
                     "registration_email_template": "osparc_registration_email",
+                    "login_settings": {
+                        "two_factor_enabled": False,
+                    },
                     # defaults from sqlalchemy table
                     **{
                         c.name: c.server_default.arg
@@ -127,6 +142,9 @@ class Product(BaseModel):
                     "issues_login_url": None,
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
+                    "login_settings": {
+                        "two_factor_enabled": False,
+                    },
                 },
                 # full example
                 {
@@ -174,6 +192,10 @@ class Product(BaseModel):
                             "label": "web-form",
                         },
                     ],
+                    "login_settings": {
+                        "two_factor_enabled": False,
+                    },
+                    "group_id": 12345,
                 },
             ]
         }
