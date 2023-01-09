@@ -121,7 +121,7 @@ async def get_service_metadata(
     )
 
 
-@router.post("/invitation", response_model=InvitationGet)
+@router.post("/invitation", response_model=InvitationGet, response_model_by_alias=False)
 async def create_invitation(
     invitation_create: InvitationCreate,
     settings: DesktopApplicationSettings = Depends(get_settings),

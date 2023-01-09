@@ -10,7 +10,7 @@ import httpx
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from invitations_maker.web_api import Meta
+from invitations_maker.web_api import InvitationGet, Meta
 from invitations_maker.web_application import create_app
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
@@ -48,11 +48,14 @@ def test_make_invitation(
     response = client.post(
         "/invitation",
         json={
-            "issuer": "issuerid",
+            "issuer": "lri123",  # "LicenseRequestID": 123,
             "guest": "invitedguest@company.com",
             "trial_account_days": None,
-            # "LicenseRequestID": 123,
         },
         auth=httpx.BasicAuth(fake_user_name, fake_password),
     )
     assert response.status_code == 200, f"{response.json()=}"
+
+    invitation = InvitationGet(**response.json())
+    assert invitation.issuer == "lri123"
+    assert invitation.guest == "invitedguest@company.com"
