@@ -32,7 +32,7 @@ class ExceptionInfo(BaseModel):
 
 def _iter_index_action(
     iterable: Iterable[Callable], *, index: NonNegativeInt = 0
-) -> tuple[NonNegativeInt, Callable]:
+) -> Iterable[tuple[NonNegativeInt, Callable]]:
     for i, value in enumerate(iterable):
         if i >= index:
             yield i, value
@@ -273,10 +273,17 @@ class PlayerManager:
         if task is None:
             return
 
-        task.cancel()
-        # TODO: better cancellation with timeout pattern as san suggested in other places
-        with suppress(asyncio.CancelledError):
+        async def _await_task(task: Task) -> None:
             await task
+
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            try:
+                await asyncio.wait_for(_await_task(task), timeout=10)
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "Timed out while awaiting for cancellation of '%s'", task.get_name()
+                )
 
     async def cancel_scene_player(self, play_name: PlayName) -> None:
         """cancels current scene player Task"""
