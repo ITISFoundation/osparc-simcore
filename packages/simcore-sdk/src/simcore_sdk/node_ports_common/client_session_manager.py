@@ -1,6 +1,6 @@
 import warnings
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout, TCPConnector
 
 from ..config.http_clients import client_request_settings
 
@@ -17,11 +17,14 @@ class ClientSessionContextManager:
         # there is no timeout for file download operations
 
         self.active_session = session or ClientSession(
+            connector=TCPConnector(
+                force_close=True
+            ),  # NOTE: this disable keep-alive connections, this might be a potential fix for https://github.com/ITISFoundation/osparc-simcore/issues/3531
             timeout=ClientTimeout(
                 total=None,
                 connect=client_request_settings.HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT,
                 sock_connect=client_request_settings.HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT,
-            )  # type: ignore
+            ),  # type: ignore
         )
         self.is_owned = self.active_session is not session
 
