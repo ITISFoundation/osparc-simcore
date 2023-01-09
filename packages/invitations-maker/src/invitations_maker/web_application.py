@@ -5,7 +5,7 @@ from .settings import ApplicationSettings
 from .web_api import router
 
 
-def create_app() -> FastAPI:
+def create_app(settings: ApplicationSettings) -> FastAPI:
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
@@ -14,6 +14,6 @@ def create_app() -> FastAPI:
         docs_url="/doc",
         redoc_url=None,  # default disabled, see below
     )
-    app.state.settings = ApplicationSettings()
+    app.state.settings = settings
     app.router.include_router(router)
     return app

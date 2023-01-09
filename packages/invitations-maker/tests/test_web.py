@@ -10,6 +10,7 @@ import httpx
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
+from invitations_maker.settings import ApplicationSettings
 from invitations_maker.web_api import Meta
 from invitations_maker.web_application import create_app
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -19,7 +20,10 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
     print(f"app_environment={json.dumps(app_environment)}")
 
-    app = create_app()
+    settings = ApplicationSettings()
+    print("settings:\n", settings.json(indent=1))
+
+    app = create_app(settings)
     with TestClient(app) as client:
         yield client
 
@@ -47,9 +51,9 @@ def test_make_invitation(
     response = client.post(
         "/invitation",
         json={
-            "i": "issuerid",
-            "g": "invitedguest@company.com",
-            "t": None,
+            "issuer": "issuerid",
+            "guest": "invitedguest@company.com",
+            "trial_account_days": None,
             # "LicenseRequestID": 123,
         },
         auth=httpx.BasicAuth(fake_user_name, fake_password),

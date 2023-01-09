@@ -62,7 +62,7 @@ def get_current_username(
 
 
 #
-# SCHEMA MODELS
+# API SCHEMA MODELS
 #
 
 
@@ -72,8 +72,30 @@ class Meta(BaseModel):
     docs_url: AnyHttpUrl
 
 
-class Invitation(InvitationData):
-    url: AnyHttpUrl = Field(..., description="Invitation link")
+class InvitationCreate(InvitationData):
+    class Config:
+        # Same as InvitationData but WITHOUT alias
+        schema_extra = {
+            "example": {
+                "issuer": "issuerid",
+                "guest": "invitedguest@company.com",
+                "trial_account_days": None,
+            }
+        }
+
+
+class InvitationGet(InvitationCreate):
+    invitation_url: AnyHttpUrl = Field(..., description="Resulting invitation link")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "issuer": "issuerid",
+                "guest": "invitedguest@company.com",
+                "trial_account_days": None,
+                "invitation_url": "https://foo.com/#/registration?invitation=1234",
+            }
+        }
 
 
 #
@@ -98,9 +120,9 @@ async def get_service_metadata(
     )
 
 
-@router.post("/invitation", response_model=Invitation, response_model_by_alias=False)
+@router.post("/invitation", response_model=InvitationGet)
 async def create_invitation(
-    invitation_data: InvitationData,
+    invitation_create: InvitationCreate,
     settings: BasicApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
@@ -108,11 +130,14 @@ async def create_invitation(
     assert username == settings.INVITATIONS_USERNAME  # nosec
 
     invitation_link = create_invitation_link(
-        invitation_data,
+        invitation_create,
         secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value(),
         base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
     )
-    invitation = Invitation(url=invitation_link, **invitation_data.dict())
+    invitation = InvitationGet(
+        invitation_url=invitation_link,
+        **invitation_create.dict(),
+    )
 
     logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
 
