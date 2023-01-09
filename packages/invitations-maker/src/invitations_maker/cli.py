@@ -5,7 +5,7 @@ import typer
 from cryptography.fernet import Fernet
 from pydantic import EmailStr, parse_obj_as
 
-from . import web
+from . import web_server
 from ._meta import __version__
 from .invitations import InvitationData, create_invitation_link
 from .settings import BasicApplicationSettings
@@ -39,10 +39,11 @@ def main(
 @app.command()
 def start(
     ctx: typer.Context,
+    reload: bool = False,
 ):
     """Starts server with http API"""
     assert ctx  # nosec
-    web.start(log_level="info")
+    web_server.start(log_level="info", reload=reload)
 
 
 @app.command()
