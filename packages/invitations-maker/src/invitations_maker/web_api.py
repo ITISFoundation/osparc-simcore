@@ -187,7 +187,7 @@ async def check_invitation(
     )
 
     invitation = InvitationGet(
-        invitation_url=invitation_check.invitation_link,
+        invitation_url=invitation_check.invitation_url,
         **invitation.dict(),
     )
 

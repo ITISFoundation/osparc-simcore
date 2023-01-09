@@ -117,7 +117,7 @@ def invite(
         help=InvitationData.__fields__["trial_account_days"].field_info.description,
     ),
 ):
-    """Generates invitation links"""
+    """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
     settings = DesktopApplicationSettings()
 
