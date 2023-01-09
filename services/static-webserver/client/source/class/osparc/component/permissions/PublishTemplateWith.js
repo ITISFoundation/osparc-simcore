@@ -16,13 +16,13 @@
 ************************************************************************ */
 
 /**
- * View that shows who you want to share the resource with:
+ * View that shows template publishing sharing options:
  * - Private
  * - My organizations
  * - Everyone
  */
 
-qx.Class.define("osparc.component.permissions.ShareWith", {
+qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
