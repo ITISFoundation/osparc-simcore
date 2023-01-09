@@ -81,7 +81,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       } else if (value.getRead()) {
         subtitle.setValue(this.tr("Member"));
       } else {
-        this.exclude();
+        subtitle.setValue(this.tr("No Read access"));
       }
     },
 

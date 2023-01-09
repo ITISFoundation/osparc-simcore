@@ -95,7 +95,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         osparc.data.Resources.getOne("config")
           .then(config => {
             if (config["invitation_required"]) {
-              osparc.store.Support.openCreateAccountDialog();
+              osparc.store.Support.openInvitationRequiredDialog();
             } else {
               this.fireEvent("toRegister");
             }

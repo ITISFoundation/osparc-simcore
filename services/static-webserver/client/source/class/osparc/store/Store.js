@@ -386,9 +386,9 @@ qx.Class.define("osparc.store.Store", {
 
     __getGroups: function(group) {
       return new Promise(resolve => {
-        osparc.data.Resources.getOne("profile")
-          .then(profile => {
-            resolve(profile["groups"][group]);
+        osparc.data.Resources.get("organizations")
+          .then(groups => {
+            resolve(groups[group]);
           })
           .catch(err => console.error(err));
       });
@@ -402,6 +402,10 @@ qx.Class.define("osparc.store.Store", {
       return this.__getGroups("organizations");
     },
 
+    getProductEveryone: function() {
+      return this.__getGroups("product");
+    },
+
     getGroupEveryone: function() {
       return this.__getGroups("all");
     },
@@ -412,6 +416,7 @@ qx.Class.define("osparc.store.Store", {
         promises.push(this.getGroupsMe());
         promises.push(this.getVisibleMembers());
         promises.push(this.getGroupsOrganizations());
+        promises.push(this.getProductEveryone());
         promises.push(this.getGroupEveryone());
         Promise.all(promises)
           .then(values => {
@@ -428,7 +433,10 @@ qx.Class.define("osparc.store.Store", {
               org["collabType"] = 1;
               groups.push(org);
             });
-            const groupEveryone = values[3];
+            const groupProductEveryone = values[3];
+            groupProductEveryone["collabType"] = 0;
+            groups.push(groupProductEveryone);
+            const groupEveryone = values[4];
             groupEveryone["collabType"] = 0;
             groups.push(groupEveryone);
             resolve(groups);
@@ -487,6 +495,7 @@ qx.Class.define("osparc.store.Store", {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getVisibleMembers());
+        promises.push(this.getProductEveryone());
         Promise.all(promises)
           .then(values => {
             const orgs = values[0]; // array
@@ -499,6 +508,11 @@ qx.Class.define("osparc.store.Store", {
             for (const gid of Object.keys(members)) {
               members[gid]["collabType"] = 2;
               potentialCollaborators[gid] = members[gid];
+            }
+            const productEveryone = values[2]; // entry
+            if (productEveryone) {
+              productEveryone["collabType"] = 0;
+              potentialCollaborators[productEveryone["gid"]] = productEveryone;
             }
             resolve(potentialCollaborators);
           })
