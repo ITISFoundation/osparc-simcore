@@ -84,7 +84,7 @@ def fire_and_forget_task(
 
 
 # // tasks
-async def logged_gather(
+async def old_logged_gather(
     *tasks: Awaitable[Any],
     reraise: bool = True,
     log: logging.Logger = logger,
@@ -134,3 +134,66 @@ async def logged_gather(
         raise error
 
     return results
+
+
+async def _worker(
+    queue_in: asyncio.Queue,
+    queue_out: asyncio.Queue,
+    log: logging.Logger,
+    reraise: bool,
+):
+    while True:
+        task_id, task = await queue_in.get()
+        try:
+            result = await task
+            await queue_out.put((task, result))
+        except Exception as exc:
+            log.warning(
+                "Error in %i-th concurrent task %s: %s",
+                task_id,
+                f"{task}",
+                f"{exc}",
+            )
+            await queue_out.put((task, exc))
+            if reraise:
+                raise exc
+        finally:
+            queue_in.task_done()
+
+
+async def logged_gather(
+    *tasks: Awaitable[Any],
+    reraise: bool = True,
+    log: logging.Logger = logger,
+    max_concurrency: int = 10,
+    fail_fast: bool = False,
+) -> list[Any]:
+    queue_in = asyncio.Queue()
+    queue_out = asyncio.Queue()
+    workers = [
+        asyncio.create_task(_worker(queue_in, queue_out, log, fail_fast))
+        for _ in range(max_concurrency)
+    ]
+    for task_index, task in enumerate(tasks):
+        await queue_in.put((task_index, task))
+    try:
+        # if reraise:
+        done, pending = await asyncio.wait(
+            workers,
+            return_when=asyncio.FIRST_EXCEPTION if fail_fast else asyncio.ALL_COMPLETED,
+        )
+        if reraise:
+            for t in done:
+                if t.exception():
+                    raise t.exception()
+        assert not pending
+        await queue_in.join()
+    finally:
+        for w in workers:
+            w.cancel()
+
+    results = {}
+    while not queue_out.empty():
+        task, result = await queue_out.get()
+        results[task] = result
+    return [results[t] for t in tasks]
