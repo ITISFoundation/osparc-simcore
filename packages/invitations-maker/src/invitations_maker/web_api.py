@@ -2,14 +2,16 @@ import logging
 import secrets
 from datetime import datetime
 from typing import Any, Callable
+from urllib import parse
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import AnyHttpUrl, BaseModel, Field
+from starlette.datastructures import URL
 
 from ._meta import API_VERSION, PROJECT_NAME
-from .invitations import InvitationData, create_invitation_link
+from .invitations import InvitationData, create_invitation_link, decrypt_invitation
 from .settings import WebApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,25 @@ class InvitationGet(InvitationCreate):
         }
 
 
+class InvitationCheck(BaseModel):
+    invitation_url: AnyHttpUrl = Field(..., description="Resulting invitation link")
+
+    def get_invitation_code(self):
+        try:
+
+            query_params = dict(
+                parse.parse_qsl(URL(self.invitation_url.fragment).query)
+            )
+            invitation_code = query_params["invitation"]
+            return invitation_code
+
+        except KeyError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid invitation_url",
+            )
+
+
 #
 # ROUTE HANDLERS
 #
@@ -145,5 +166,29 @@ async def create_invitation(
     )
 
     logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
+
+    return invitation
+
+
+@router.post(
+    "/invitation:check", response_model=InvitationGet, response_model_by_alias=False
+)
+async def check_invitation(
+    invitation_check: InvitationCheck,
+    settings: WebApplicationSettings = Depends(get_settings),
+    username: str = Depends(get_current_username),
+):
+    """Generates a new invitation link"""
+    assert username == settings.INVITATIONS_USERNAME  # nosec
+
+    invitation = decrypt_invitation(
+        invitation_code=invitation_check.get_invitation_code(),
+        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
+    )
+
+    invitation = InvitationGet(
+        invitation_url=invitation_check.invitation_link,
+        **invitation.dict(),
+    )
 
     return invitation
