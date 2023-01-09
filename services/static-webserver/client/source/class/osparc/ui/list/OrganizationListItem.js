@@ -36,7 +36,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     "deleteOrganization": "qx.event.type.Data"
   },
 
-  static: {
+  statics: {
     ICON_SIZE: 24
   },
 
@@ -109,7 +109,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       const store = osparc.store.Store.getInstance();
       store.getProductEveryone()
         .then(groupProductEveryone => {
-          if (groupProductEveryone && this.getKey() === groupProductEveryone["gid"]) {
+          if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
             thumbnail.setSource(osparc.utils.Icons.everyone(this.self().ICON_SIZE));
           }
         });
