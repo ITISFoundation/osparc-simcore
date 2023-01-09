@@ -33,7 +33,7 @@ from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
-from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -479,16 +479,20 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user) -> dict[str, Any]:
+async def primary_group(
+    client: TestClient,
+    logged_user: UserInfoDict,
+) -> dict[str, Any]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
 
 @pytest.fixture
 async def standard_groups(
-    client, logged_user: dict
+    client: TestClient,
+    logged_user: UserInfoDict,
 ) -> AsyncIterator[list[dict[str, Any]]]:
-    # create a separate admin account to create some standard groups for the logged user
+
     sparc_group = {
         "gid": "5",  # this will be replaced
         "label": "SPARC",
@@ -503,40 +507,52 @@ async def standard_groups(
         "thumbnail": None,
         "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
     }
+
+    # create a separate account to own standard groups
     async with NewUser(
-        {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app
-    ) as admin_user:
+        {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
+    ) as owner_user:
+
         # creates two groups
-        sparc_group = await create_user_group(client.app, admin_user["id"], sparc_group)
+        sparc_group = await create_user_group(
+            app=client.app,
+            user_id=owner_user["id"],
+            new_group=sparc_group,
+        )
         team_black_group = await create_user_group(
-            client.app, admin_user["id"], team_black_group
+            app=client.app,
+            user_id=owner_user["id"],
+            new_group=team_black_group,
         )
 
         # adds logged_user  to sparc group
         await add_user_in_group(
-            client.app,
-            admin_user["id"],
-            sparc_group["gid"],
+            app=client.app,
+            user_id=owner_user["id"],
+            gid=sparc_group["gid"],
             new_user_id=logged_user["id"],
         )
 
         # adds logged_user  to team-black group
         await add_user_in_group(
-            client.app,
-            admin_user["id"],
-            team_black_group["gid"],
+            app=client.app,
+            user_id=owner_user["id"],
+            gid=team_black_group["gid"],
             new_user_email=logged_user["email"],
         )
 
         _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
         yield standard_groups
         # clean groups
-        await delete_user_group(client.app, admin_user["id"], sparc_group["gid"])
-        await delete_user_group(client.app, admin_user["id"], team_black_group["gid"])
+        await delete_user_group(client.app, owner_user["id"], sparc_group["gid"])
+        await delete_user_group(client.app, owner_user["id"], team_black_group["gid"])
 
 
 @pytest.fixture
-async def all_group(client, logged_user) -> dict[str, str]:
+async def all_group(
+    client: TestClient,
+    logged_user: UserInfoDict,
+) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
 

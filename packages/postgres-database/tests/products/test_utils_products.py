@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 
 
+import asyncio
 from typing import Callable
 
 import pytest
@@ -97,3 +98,29 @@ async def test_get_or_create_group_product(
                 conn, product_name=product_row.name
             )
             assert product_group_id is None
+
+
+async def test_get_or_create_group_product_concurrent(
+    pg_engine: Engine, make_products_table: Callable
+):
+    async with pg_engine.acquire() as conn:
+        await make_products_table(conn)
+
+    async def _auto_create_products_groups():
+        async with pg_engine.acquire() as conn:
+            async for product_row in await conn.execute(
+                sa.select([products.c.name, products.c.group_id]).order_by(
+                    products.c.priority
+                )
+            ):
+                # get or create
+                product_group_id = await get_or_create_product_group(
+                    conn, product_name=product_row.name
+                )
+                return product_group_id
+
+    tasks = [asyncio.create_task(_auto_create_products_groups()) for _ in range(5)]
+
+    results = await asyncio.gather(*tasks)
+
+    assert all(res == results[0] for res in results[1:])
