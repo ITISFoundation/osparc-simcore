@@ -124,11 +124,10 @@ qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
             break;
           }
           case "productAll":
-          case "all": {
+          case "all":
             rb.exclude();
             this._add(rb);
             break;
-          }
         }
         this.__rbManager.add(rb);
       }
