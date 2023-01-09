@@ -1,3 +1,81 @@
+"""
+Problem: `Baking a chocolate cake`.
+
+When following a recipe all should be relatively simple,
+but in reality unexpected things can happen:
+- the oven you are using can be faulty
+- you can run out of ingredients
+- you might not have enough time to finish
+- you can be interrupted by something more urgent
+
+---
+Breakdown of the above problem in simple steps
+
+Step 1 `buy ingredients`:
+- go to the store and buy required ingredients
+
+Step 2 `prepare mixture`:
+- get correct ingredient amounts (ingredients can be insufficient, you
+have to get some more)
+- mix the ingredients
+
+Step 3 `bake cake`:
+- butter tin
+- bake cake in the oven (the oven could burn the cake, you have to try again)
+
+Step 4 `enjoy the cake`:
+- take nice picture of the cake
+- eat the cake
+
+Expected outcomes:
+1. baking finishes without issues
+2. did not finish baking and have to retry for several reasons
+3. get interrupted by an urgent phone call and have to cancel
+
+---
+`Scenes` and `actions` required to describe above:
+
+Scene `initial_setup`:
+- `actions`:
+    - shop for ingredients
+- `next_scene`: `preparation`
+- `on_error_scene`: None
+
+Scene `preparation`:
+- `actions`:
+    - get correct amounts of ingredients
+    - mix ingredients
+- `next_scene`: `baking`
+- `on_error_scene`: `error_out_of_ingredients`
+
+Scene `baking`:
+- `actions`:
+    - butter tin
+    - bake in faulty oven (probability of fail 65%)
+- `next_scene`: `eat_cake`
+- `on_error_scene`: `error_cake_burned`
+
+Scene `eat_cake`:
+- `actions`:
+    - take picture of cake
+    - eat it (finished successfully) :+1:
+- `next_scene`: None
+- `on_error_scene`: None
+
+Scene `error_cake_burned`:
+- `actions`:
+    - take note of your error
+    - `next_scene`: `preparation` (try to bake cake again with remaining ingredients)
+- `on_error_scene`: None
+
+Scene `error_out_of_ingredients`:
+- `actions`:
+    - if no more time remains raise an error and stop here :-1:
+- `next_scene`: `initial_setup` (start form scratch again)
+- `on_error_scene`: None
+
+"""
+
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 
