@@ -19,6 +19,7 @@
  * View that shows template publishing sharing options:
  * - Private
  * - My organizations
+ * - Product everyone
  * - Everyone
  */
 
