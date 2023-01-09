@@ -75,19 +75,21 @@ def generate_dotenv(ctx: typer.Context):
     """
     assert ctx  # nosec
 
-    def _generate_password():
+    def _generate_password() -> str:
         alphabet = string.digits + string.ascii_letters + string.punctuation
         source = random.sample(alphabet, len(alphabet))
         return "".join(secrets.choice(source) for _ in range(32))
 
+    password: str = (
+        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
+        or _generate_password()
+    )
+
     settings = WebApplicationSettings(
-        INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",
+        INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",  # type: ignore
         INVITATIONS_MAKER_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=getpass.getuser(),
-        INVITATIONS_PASSWORD=getpass.getpass(
-            prompt="Password [Press Enter to auto-generate]: "
-        )
-        or _generate_password(),
+        INVITATIONS_PASSWORD=password,  # type: ignore
     )
 
     for name, value in settings.dict().items():
@@ -117,17 +119,17 @@ def invite(
 ):
     """Generates invitation links"""
     assert ctx  # nosec
-    kwargs = {}
-
-    settings = DesktopApplicationSettings(**kwargs)
+    settings = DesktopApplicationSettings()
 
     invitation_data = InvitationData(
-        issuer=issuer, guest=email, trial_account_days=trial_account_days
+        issuer=issuer,
+        guest=email,  # type: ignore
+        trial_account_days=trial_account_days,
     )
 
     invitation_link = create_invitation_link(
         invitation_data=invitation_data,
-        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value(),
+        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
     )
     print(invitation_link)

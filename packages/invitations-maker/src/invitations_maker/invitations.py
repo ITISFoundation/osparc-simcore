@@ -1,5 +1,5 @@
 import base64
-from typing import Optional
+from typing import Optional, cast
 
 from cryptography.fernet import Fernet
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, PositiveInt, parse_obj_as
@@ -48,7 +48,7 @@ def _build_link(
     # Adds query to fragment
     base_url = f"{base_url.rstrip('/')}/"
     url = URL(base_url).replace(fragment=f"{r}")
-    return parse_obj_as(HttpUrl, f"{url}")
+    return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
 
 
 def create_invitation_link(

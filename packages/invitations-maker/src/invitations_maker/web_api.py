@@ -10,7 +10,7 @@ from pydantic import AnyHttpUrl, BaseModel, Field
 
 from ._meta import API_VERSION, PROJECT_NAME
 from .invitations import InvitationData, create_invitation_link
-from .settings import DesktopApplicationSettings
+from .settings import WebApplicationSettings
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +23,16 @@ get_basic_credentials = HTTPBasic()
 
 def get_reverse_url_mapper(request: Request) -> Callable:
     def _reverse_url_mapper(name: str, **path_params: Any) -> str:
-        url = request.url_for(name, **path_params)
+        url: str = request.url_for(name, **path_params)
         return url
 
     return _reverse_url_mapper
 
 
-def get_settings(request: Request) -> DesktopApplicationSettings:
-    return request.app.state.settings
+def get_settings(request: Request) -> WebApplicationSettings:
+    app_settings: WebApplicationSettings = request.app.state.settings
+    assert app_settings  # nosec
+    return app_settings
 
 
 def get_app(request: Request) -> FastAPI:
@@ -39,7 +41,7 @@ def get_app(request: Request) -> FastAPI:
 
 def get_current_username(
     credentials: HTTPBasicCredentials = Depends(get_basic_credentials),
-    settings: DesktopApplicationSettings = Depends(get_settings),
+    settings: WebApplicationSettings = Depends(get_settings),
 ) -> str:
 
     # username
@@ -59,6 +61,8 @@ def get_current_username(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Basic"},
         )
+
+    assert isinstance(credentials.username, str)  # nosec
     return credentials.username
 
 
@@ -124,7 +128,7 @@ async def get_service_metadata(
 @router.post("/invitation", response_model=InvitationGet, response_model_by_alias=False)
 async def create_invitation(
     invitation_create: InvitationCreate,
-    settings: DesktopApplicationSettings = Depends(get_settings),
+    settings: WebApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
     """Generates a new invitation link"""
@@ -132,7 +136,7 @@ async def create_invitation(
 
     invitation_link = create_invitation_link(
         invitation_create,
-        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value(),
+        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
     )
     invitation = InvitationGet(
