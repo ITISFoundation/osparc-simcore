@@ -41,7 +41,7 @@ def main(
 
 
 @app.command()
-def start(
+def serve(
     ctx: typer.Context,
     reload: bool = False,
 ):

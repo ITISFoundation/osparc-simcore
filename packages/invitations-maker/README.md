@@ -1,12 +1,23 @@
 # osparc invitations-maker
 
+``invitations-maker`` can create invitations via CLI or can run as a web app with a http API to create invitations.
 
-### Creating an invitation
-```cmd
 
-$ export INVITATIONS_MAKER_SECRET_KEY=$(invitations-maker generate-key)
-$ export INVITATIONS_MAKER_OSPARC_URL=https://myosparc.com
+A simple workflow would be
 
-$ invitations-maker invite --email=guest@company.com --issuer=1234
-https://myosparc.com/#/registration?invitation=Z0FBQU3TG1FQ0lZbHQtSTA2RVozX3VkU3ZSVU4teVVialptVEpnODZrVzA2d3FTQVdWYU9ScnpZaG1MQm9ISHdYd2M0Sm1HdnBPNEdNVEN1S1ZwSDkwOGNxMTN3PQ%3D%3D
+
+1. create ``.env`` file
 ```
+$ invitations-maker generate-dotenv > .env
+```
+and modify the ``.env`` if needed
+2. create a invitation for ``guest@company.com`` as
+```
+$ invitations-maker invite guest@company.com --issuer=me
+```
+and will produce a link
+3. or start it as a web app as
+```
+# invitations-maker serve
+```
+and then open http://127.0.0.1:8000/doc

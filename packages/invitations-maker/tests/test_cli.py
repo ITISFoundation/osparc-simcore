@@ -25,7 +25,5 @@ def test_invite_user(cli_runner: CliRunner, faker: Faker):
         INVITATIONS_MAKER_OSPARC_URL=faker.url(),
     )
 
-    result = cli_runner.invoke(
-        app, f"invite --email={faker.email()} --issuer=ME", env=environs
-    )
+    result = cli_runner.invoke(app, f"invite {faker.email()} --issuer=ME", env=environs)
     assert result.exit_code == os.EX_OK
