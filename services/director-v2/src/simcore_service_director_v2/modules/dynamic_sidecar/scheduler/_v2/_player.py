@@ -306,4 +306,4 @@ class PlayerManager:
             await self.__cancel_task(task)
 
     async def start(self) -> None:
-        pass
+        """currently not required"""
