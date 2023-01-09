@@ -7,28 +7,35 @@ from starlette.datastructures import URL
 
 
 class InvitationData(BaseModel):
+    """Data in an invitation"""
+
     issuer: str = Field(
         ...,
         description="Who issued this invitation? Some identifier such as LicenseRequestID",
-        max_length=10,
-        alias="i",
+        max_length=15,
     )
-    guest: Optional[EmailStr] = Field(
+    guest: EmailStr = Field(
         ...,
-        description="Invitee's email or None if invitation is not locked to an email",
-        alias="g",
+        description="Invitee's email. Note that the registration can ONLY be used with this email",
     )
     trial_account_days: Optional[PositiveInt] = Field(
         None,
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
-        alias="t",
     )
 
     class Config:
-        allow_population_by_field_name = True
-        anystr_strip_whitespace = True
+
+        allow_population_by_field_name = True  # NOTE: can parse using field names
         allow_mutation = False
+        anystr_strip_whitespace = True
+
+        # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
+        fields = {
+            "issuer": {"alias": "i"},
+            "guest": {"alias": "g"},
+            "trial_account_days": {"alias": "t"},
+        }
 
 
 def _build_link(
@@ -49,12 +56,12 @@ def create_invitation_link(
 ) -> HttpUrl:
 
     # creates message
-    # NOTE: alias are very short and values are limited in lenght to produce a shorter code
-    message: str = invitation_data.json(exclude_unset=True, by_alias=True)
+    # NOTE: export using short aliasa and values in order to produce shorter messages
+    serialized: str = invitation_data.json(exclude_unset=True, by_alias=True)
 
     # encrypts message
     fernet = Fernet(secret_key)
-    encrypted: bytes = fernet.encrypt(message.encode())
+    encrypted: bytes = fernet.encrypt(serialized.encode())
 
     # Adds message as the invitation in query
     url = _build_link(
@@ -71,5 +78,5 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationDat
     fernet = Fernet(secret_key)
     decryted: bytes = fernet.decrypt(token=code)
 
-    # parse
+    # parses serialized invitation
     return InvitationData.parse_raw(decryted.decode())

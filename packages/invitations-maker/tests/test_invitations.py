@@ -37,3 +37,25 @@ def test_create_invitation(faker: Faker, secret_key: str):
     assert received_invitation_data == invitation_data
 
     # TODO: tests error handling
+
+
+def test_invitation_import_and_export_by_alias(faker: Faker):
+
+    data = dict(
+        issuer="Test",
+        guest=faker.email(),
+        trial_account_days=faker.random_int(min=1, max=100),
+    )
+    invitation_data = InvitationData.parse_obj(data)
+
+    # export by alias
+    data_w_alias = invitation_data.dict(by_alias=True)
+
+    # parse/import by alias
+    invitation_data2 = InvitationData.parse_obj(data_w_alias)
+    assert invitation_data == invitation_data2
+
+    # export by alias produces smaller strings
+    assert len(invitation_data.json(by_alias=True)) < len(
+        invitation_data.json(by_alias=False)
+    )
