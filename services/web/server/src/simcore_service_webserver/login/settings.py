@@ -8,6 +8,7 @@ from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
+from simcore_postgres_database.models.products import ProductLoginSettings
 
 from .._constants import APP_SETTINGS_KEY
 
@@ -41,14 +42,34 @@ class LoginSettings(BaseCustomSettings):
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
-    LOGIN_2FA_REQUIRED: bool = Field(
-        default=False,
-        description="Enforces two-factor-authentication for all user's during login",
-    )
-
     LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
         default=60.0, description="Expiration time for code [sec]"
     )
+
+
+class LoginSettingsForProduct(LoginSettings):
+    """It extends LoginSettings with ProductLoginSettings values
+
+
+    Used to validate and sync product.login_settings and app's login settings
+    SEE plugin._validate_products_login_settings event
+    """
+
+    LOGIN_2FA_REQUIRED: bool = Field(
+        default=False,
+        description="Use products.login.two_factor_enabled instead",
+    )
+
+    @classmethod
+    def create_from_merge(
+        cls,
+        plugin_login_settings: LoginSettings,
+        product_login_settings: ProductLoginSettings,
+    ) -> "LoginSettingsForProduct":
+        return cls(
+            LOGIN_2FA_REQUIRED=product_login_settings.two_factor_enabled,
+            **plugin_login_settings.dict(),
+        )
 
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod

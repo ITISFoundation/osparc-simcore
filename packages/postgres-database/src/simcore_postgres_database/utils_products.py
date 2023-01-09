@@ -63,25 +63,30 @@ async def get_or_create_product_group(
     """
     Returns group_id of a product. Creates it if undefined
     """
-    group_id = await get_product_group_id(connection, product_name=product_name)
-    if group_id is not None:
-        return group_id
-
     async with connection.begin():
         group_id = await connection.scalar(
-            groups.insert()
-            .values(
-                name=product_name,
-                description=f"{product_name} product group",
-                type=GroupType.STANDARD,
-            )
-            .returning(groups.c.gid)
-        )
-        assert group_id  # nosec
-
-        await connection.execute(
-            products.update()
+            sa.select([products.c.group_id])
             .where(products.c.name == product_name)
-            .values(group_id=group_id)
+            .with_for_update(read=True)
+            # a `FOR SHARE` lock: locks changes in the product until transaction is done.
+            # Read might return in None, but it is OK
         )
+        if group_id is None:
+            group_id = await connection.scalar(
+                groups.insert()
+                .values(
+                    name=product_name,
+                    description=f"{product_name} product group",
+                    type=GroupType.STANDARD,
+                )
+                .returning(groups.c.gid)
+            )
+            assert group_id  # nosec
+
+            await connection.execute(
+                products.update()
+                .where(products.c.name == product_name)
+                .values(group_id=group_id)
+            )
+
         return _GroupID(group_id)

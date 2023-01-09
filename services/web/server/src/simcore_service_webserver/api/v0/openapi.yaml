@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.13.1
+  version: 0.14.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -157,11 +157,8 @@ paths:
                     properties:
                       invitation_required:
                         type: boolean
-                      login_2fa_required:
-                        type: boolean
                     example:
                       invitation_required: true
-                      login_2fa_required: false
                   error:
                     nullable: true
                     default: null
@@ -1111,6 +1108,8 @@ paths:
                         items:
                           $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
                       all:
+                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                      product:
                         $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
