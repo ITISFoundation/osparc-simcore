@@ -4,7 +4,8 @@ from datetime import datetime
 from typing import Any, Callable
 from urllib import parse
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+import cryptography.fernet
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import AnyHttpUrl, BaseModel, Field
@@ -37,10 +38,6 @@ def get_settings(request: Request) -> WebApplicationSettings:
     return app_settings
 
 
-def get_app(request: Request) -> FastAPI:
-    return request.app
-
-
 def get_current_username(
     credentials: HTTPBasicCredentials = Depends(get_basic_credentials),
     settings: WebApplicationSettings = Depends(get_settings),
@@ -71,6 +68,8 @@ def get_current_username(
 #
 # API SCHEMA MODELS
 #
+
+INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 
 class Meta(BaseModel):
@@ -106,7 +105,7 @@ class InvitationGet(InvitationCreate):
 
 
 class InvitationCheck(BaseModel):
-    invitation_url: AnyHttpUrl = Field(..., description="Resulting invitation link")
+    invitation_url: AnyHttpUrl = Field(..., description="Full Invitation link")
 
     def get_invitation_code(self):
         try:
@@ -117,11 +116,11 @@ class InvitationCheck(BaseModel):
             invitation_code = query_params["invitation"]
             return invitation_code
 
-        except KeyError:
+        except KeyError as err:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid invitation_url",
-            )
+                detail=INVALID_INVITATION_URL_MSG,
+            ) from err
 
 
 #
@@ -181,10 +180,17 @@ async def check_invitation(
     """Generates a new invitation link"""
     assert username == settings.INVITATIONS_USERNAME  # nosec
 
-    invitation = decrypt_invitation(
-        invitation_code=invitation_check.get_invitation_code(),
-        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
-    )
+    try:
+
+        invitation = decrypt_invitation(
+            invitation_code=invitation_check.get_invitation_code(),
+            secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
+        )
+    except cryptography.fernet.InvalidToken as err:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=INVALID_INVITATION_URL_MSG,
+        ) from err
 
     invitation = InvitationGet(
         invitation_url=invitation_check.invitation_url,

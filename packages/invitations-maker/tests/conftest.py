@@ -5,7 +5,8 @@
 import pytest
 from cryptography.fernet import Fernet
 from faker import Faker
-from pytest import MonkeyPatch
+from invitations_maker.invitations import InvitationData
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 
@@ -18,6 +19,13 @@ pytest_plugins = [
 def secret_key() -> str:
     key = Fernet.generate_key()
     return key.decode()
+
+
+@pytest.fixture
+def another_secret_key(secret_key: str) -> str:
+    other = Fernet.generate_key()
+    assert other.decode() != secret_key
+    return other.decode()
 
 
 @pytest.fixture
@@ -49,3 +57,17 @@ def app_environment(
     )
 
     return envs
+
+
+@pytest.fixture(params=[True, False])
+def is_trial_account(request: FixtureRequest) -> bool:
+    return request.param
+
+
+@pytest.fixture
+def invitation_data(is_trial_account: bool, faker: Faker) -> InvitationData:
+    return InvitationData(
+        issuer="LicenseRequestID=123456789",
+        guest=faker.email(),
+        trial_account_days=faker.pyint(min_value=1) if is_trial_account else None,
+    )
