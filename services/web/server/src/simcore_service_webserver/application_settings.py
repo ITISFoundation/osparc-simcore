@@ -294,7 +294,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             data[
                 "invitation_required"
             ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
-            data["login_2fa_required"] = self.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
 
         data.update(
             self._export_by_alias(

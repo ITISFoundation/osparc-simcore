@@ -5,11 +5,13 @@
     - Every product has a front-end with exactly the same name
 """
 
+import json
+from dataclasses import asdict, dataclass
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 
 from .base import metadata
 from .groups import groups
@@ -22,6 +24,8 @@ from .jinja2_templates import jinja2_templates
 #
 # Layout of the data in the JSONB columns
 #
+
+
 class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
@@ -75,6 +79,21 @@ class Forum(TypedDict, total=True):
     kind: Literal["forum"]
     label: str
     url: str
+
+
+@dataclass(frozen=True)
+class ProductLoginSettings:
+    """Login plugin settings customized for this product
+
+    Extends simcore_service_webserver.login.settings.LoginSettings
+    """
+
+    two_factor_enabled: bool = False
+
+
+# NOTE: defaults affects migration!!
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettings()
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(LOGIN_SETTINGS_DEFAULT))
 
 
 #
@@ -143,6 +162,13 @@ products = sa.Table(
         JSONB,
         nullable=True,
         doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
+    ),
+    sa.Column(
+        "login_settings",
+        JSONB,
+        nullable=False,
+        server_default=text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
+        doc="Overrides values of simcore_service_webserver.login.settings.LoginSettings",
     ),
     sa.Column(
         "registration_email_template",

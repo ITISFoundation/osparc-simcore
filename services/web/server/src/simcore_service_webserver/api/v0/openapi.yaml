@@ -157,11 +157,8 @@ paths:
                     properties:
                       invitation_required:
                         type: boolean
-                      login_2fa_required:
-                        type: boolean
                     example:
                       invitation_required: true
-                      login_2fa_required: false
                   error:
                     nullable: true
                     default: null

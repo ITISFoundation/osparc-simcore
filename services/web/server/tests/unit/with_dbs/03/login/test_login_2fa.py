@@ -36,7 +36,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
@@ -47,7 +46,10 @@ def postgres_db(postgres_db: sa.engine.Engine):
     # adds fake twilio_messaging_sid in osparc product (pre-initialized)
     stmt = (
         products.update()
-        .values(twilio_messaging_sid="x" * 34)
+        .values(
+            twilio_messaging_sid="x" * 34,
+            login_settings={"two_factor_enabled": True},  # <--- 2FA Enabled
+        )
         .where(products.c.name == "osparc")
     )
     postgres_db.execute(stmt)
@@ -214,7 +216,6 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
-@pytest.mark.testit
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
     db: AsyncpgStorage,

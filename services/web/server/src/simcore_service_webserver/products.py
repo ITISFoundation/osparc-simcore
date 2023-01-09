@@ -70,6 +70,10 @@ def get_current_product(request: web.Request) -> Product:
     return request.app[APP_PRODUCTS_KEY][product_name]
 
 
+def list_products(app: web.Application) -> list[Product]:
+    return app[APP_PRODUCTS_KEY].values()
+
+
 async def get_product_template_path(request: web.Request, filename: str) -> Path:
     def _themed(dirname, template) -> Path:
         return resources.get_path(os.path.join(dirname, template))

@@ -184,7 +184,7 @@ async def register(request: web.Request):
     else:
         # No confirmation required: authorize login
         assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
-        assert not settings.LOGIN_2FA_REQUIRED  # nosec
+        assert not product.login_settings.two_factor_enabled  # nosec
 
         response = await login_granted_response(request=request, user=user)
         return response
@@ -224,7 +224,7 @@ async def register_phone(request: web.Request):
     product: Product = get_current_product(request)
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
-    if not settings.LOGIN_2FA_REQUIRED:
+    if not product.login_settings.two_factor_enabled:
         raise web.HTTPServiceUnavailable(
             reason="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -233,7 +233,9 @@ async def register_phone(request: web.Request):
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
     try:
-        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+        assert (  # nosec
+            product.login_settings.two_factor_enabled and settings.LOGIN_TWILIO
+        )
         if not product.twilio_messaging_sid:
             raise ValueError(
                 f"Messaging SID is not configured in {product}. "
