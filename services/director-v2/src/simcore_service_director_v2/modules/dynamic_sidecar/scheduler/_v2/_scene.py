@@ -65,20 +65,17 @@ class PlayCatalog:
         for scene in scenes:
             if (
                 scene.on_error_scene is not None
-                and scene.on_error_scene.name not in self._registry
+                and scene.on_error_scene not in self._registry
             ):
                 raise OnErrorSceneNotInPlayCatalogException(
                     scene_name=scene.name,
-                    on_error_scene=scene.on_error_scene.name,
+                    on_error_scene=scene.on_error_scene,
                     play_catalog=self._registry,
                 )
-            if (
-                scene.next_scene is not None
-                and scene.next_scene.name not in self._registry
-            ):
+            if scene.next_scene is not None and scene.next_scene not in self._registry:
                 raise NextSceneNotInPlayCatalogException(
                     scene_name=scene.name,
-                    next_scene=scene.next_scene.name,
+                    next_scene=scene.next_scene,
                     play_catalog=self._registry,
                 )
 

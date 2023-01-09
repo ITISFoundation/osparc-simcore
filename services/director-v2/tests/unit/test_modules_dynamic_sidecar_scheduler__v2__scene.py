@@ -1,6 +1,10 @@
 from typing import Any
 
 import pytest
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
+    NextSceneNotInPlayCatalogException,
+    OnErrorSceneNotInPlayCatalogException,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
     mark_action,
 )
@@ -10,7 +14,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._scene im
 )
 
 
-async def test_state_ok():
+async def test_scene_ok():
     @mark_action
     async def print_info() -> dict[str, Any]:
         print("some info")
@@ -34,30 +38,52 @@ async def test_state_ok():
     assert INFO_CHECK
 
 
-def test_state_registry():
-    STATE_ONE_NAME = "one"
-    STATE_TWO_NAME = "two"
-    STATE_MISSING_NAME = "not_existing_state"
+def test_play_catalog():
+    SCENE_ONE_NAME = "one"
+    SCENE_TWO_NAME = "two"
+    SCENE_MISSING_NAME = "not_existing_scene"
 
-    state_one = Scene(
-        name=STATE_ONE_NAME, actions=[], next_scene=None, on_error_scene=None
+    scene_one = Scene(
+        name=SCENE_ONE_NAME, actions=[], next_scene=None, on_error_scene=None
     )
-    state_two = Scene(
-        name=STATE_TWO_NAME, actions=[], next_scene=None, on_error_scene=None
+    scene_two = Scene(
+        name=SCENE_TWO_NAME, actions=[], next_scene=None, on_error_scene=None
     )
 
-    registry = PlayCatalog(
-        state_one,
-        state_two,
+    play_catalog = PlayCatalog(
+        scene_one,
+        scene_two,
     )
 
     # in operator
-    assert STATE_ONE_NAME in registry
-    assert STATE_TWO_NAME in registry
-    assert STATE_MISSING_NAME not in registry
+    assert SCENE_ONE_NAME in play_catalog
+    assert SCENE_TWO_NAME in play_catalog
+    assert SCENE_MISSING_NAME not in play_catalog
 
     # get key operator
-    assert registry[STATE_ONE_NAME] == state_one
-    assert registry[STATE_TWO_NAME] == state_two
+    assert play_catalog[SCENE_ONE_NAME] == scene_one
+    assert play_catalog[SCENE_TWO_NAME] == scene_two
     with pytest.raises(KeyError):
-        registry[STATE_MISSING_NAME]  # pylint:disable=pointless-statement
+        play_catalog[SCENE_MISSING_NAME]  # pylint:disable=pointless-statement
+
+
+def test_play_catalog_missing_next_scene():
+    scene = Scene(
+        name="some_name",
+        actions=[],
+        next_scene="missing_next_scene",
+        on_error_scene=None,
+    )
+    with pytest.raises(NextSceneNotInPlayCatalogException):
+        PlayCatalog(scene)
+
+
+def test_play_catalog_missing_on_error_scene():
+    scene = Scene(
+        name="some_name",
+        actions=[],
+        next_scene=None,
+        on_error_scene="missing_on_error_scene",
+    )
+    with pytest.raises(OnErrorSceneNotInPlayCatalogException):
+        PlayCatalog(scene)
