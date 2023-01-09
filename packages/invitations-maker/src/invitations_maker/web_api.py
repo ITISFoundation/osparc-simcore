@@ -10,7 +10,7 @@ from pydantic import AnyHttpUrl, BaseModel, Field
 
 from ._meta import API_VERSION, PROJECT_NAME
 from .invitations import InvitationData, create_invitation_link
-from .settings import BasicApplicationSettings
+from .settings import DesktopApplicationSettings
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +23,13 @@ get_basic_credentials = HTTPBasic()
 
 def get_reverse_url_mapper(request: Request) -> Callable:
     def _reverse_url_mapper(name: str, **path_params: Any) -> str:
-        return request.url_for(name, **path_params)
+        url = request.url_for(name, **path_params)
+        return url
 
     return _reverse_url_mapper
 
 
-def get_settings(request: Request) -> BasicApplicationSettings:
+def get_settings(request: Request) -> DesktopApplicationSettings:
     return request.app.state.settings
 
 
@@ -38,7 +39,7 @@ def get_app(request: Request) -> FastAPI:
 
 def get_current_username(
     credentials: HTTPBasicCredentials = Depends(get_basic_credentials),
-    settings: BasicApplicationSettings = Depends(get_settings),
+    settings: DesktopApplicationSettings = Depends(get_settings),
 ) -> str:
 
     # username
@@ -123,7 +124,7 @@ async def get_service_metadata(
 @router.post("/invitation", response_model=InvitationGet)
 async def create_invitation(
     invitation_create: InvitationCreate,
-    settings: BasicApplicationSettings = Depends(get_settings),
+    settings: DesktopApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
     """Generates a new invitation link"""

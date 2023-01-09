@@ -8,7 +8,7 @@ from pydantic import EmailStr, parse_obj_as
 from . import web_server
 from ._meta import __version__
 from .invitations import InvitationData, create_invitation_link
-from .settings import BasicApplicationSettings
+from .settings import DesktopApplicationSettings
 
 app = typer.Typer()
 
@@ -76,7 +76,7 @@ def invite(
     ),
     osparc_url: Optional[str] = typer.Option(
         None,
-        help=BasicApplicationSettings.__fields__[
+        help=DesktopApplicationSettings.__fields__[
             "INVITATIONS_MAKER_OSPARC_URL"
         ].field_info.description,
     ),
@@ -88,7 +88,7 @@ def invite(
     if osparc_url is not None:
         kwargs["INVITATIONS_MAKER_OSPARC_URL"] = osparc_url
 
-    settings = BasicApplicationSettings(**kwargs)
+    settings = DesktopApplicationSettings(**kwargs)
 
     invitation_data = InvitationData(
         issuer=issuer, guest=email, trial_account_days=trial_account_days

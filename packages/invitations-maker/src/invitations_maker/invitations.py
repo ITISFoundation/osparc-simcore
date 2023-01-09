@@ -41,7 +41,7 @@ class InvitationData(BaseModel):
 def _build_link(
     base_url: str,
     code_url_safe: str,
-):
+) -> HttpUrl:
     # TODO: test invitations url INVARIANT
     r = URL("/registration").include_query_params(invitation=code_url_safe)
 

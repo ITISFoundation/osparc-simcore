@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
-from .settings import ApplicationSettings
+from .settings import WebApplicationSettings
 from .web_api import router
 
 
@@ -16,7 +16,7 @@ def create_app() -> FastAPI:
         redoc_url=None,  # default disabled, see below
     )
     # states
-    app.state.settings = ApplicationSettings()
+    app.state.settings = WebApplicationSettings()
 
     # routes
     app.router.include_router(router)

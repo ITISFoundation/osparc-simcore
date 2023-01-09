@@ -1,4 +1,7 @@
-from invitations_maker.settings import ApplicationSettings, BasicApplicationSettings
+from invitations_maker.settings import (
+    DesktopApplicationSettings,
+    WebApplicationSettings,
+)
 from pytest import MonkeyPatch
 
 # pylint: disable=redefined-outer-name
@@ -18,10 +21,10 @@ def test_valid_cli_application_settings(monkeypatch: MonkeyPatch, secret_key: st
         },
     )
 
-    settings = BasicApplicationSettings()
+    settings = DesktopApplicationSettings()
     assert settings
 
 
 def test_valid_web_application_settings(app_environment: EnvVarsDict):
-    settings = ApplicationSettings()
+    settings = WebApplicationSettings()
     assert settings
