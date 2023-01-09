@@ -102,17 +102,17 @@ def generate_dotenv(ctx: typer.Context):
 @app.command()
 def invite(
     ctx: typer.Context,
-    email: str = typer.Option(
-        None,
+    email: str = typer.Argument(
+        ...,
         callback=lambda v: parse_obj_as(EmailStr, v),
         help="Custom invitation for a given guest",
+    ),
+    issuer: str = typer.Option(
+        ..., help=InvitationData.__fields__["issuer"].field_info.description
     ),
     trial_account_days: Optional[int] = typer.Option(
         None,
         help=InvitationData.__fields__["trial_account_days"].field_info.description,
-    ),
-    issuer: str = typer.Option(
-        None, help=InvitationData.__fields__["issuer"].field_info.description
     ),
 ):
     """Generates invitation links"""
