@@ -26,14 +26,18 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models i
     StepName,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
-    ExceptionInfo,
     Workflow,
-    WorkflowRunnerManager,
-    _iter_index_step,
-    workflow_runner,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context import (
     WorkflowContext,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_runner import (
+    ExceptionInfo,
+    _iter_index_step,
+    workflow_runner,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_runner_manager import (
+    WorkflowRunnerManager,
 )
 
 logger = logging.getLogger(__name__)
