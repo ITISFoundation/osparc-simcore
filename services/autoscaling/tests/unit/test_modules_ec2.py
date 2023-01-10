@@ -151,16 +151,13 @@ async def test_start_aws_instance(
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    progress_mock_fct = mocker.AsyncMock()
     await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
         number_of_instances=1,
-        progress_callback=progress_mock_fct,
     )
-    assert progress_mock_fct.call_count == 3
 
     # check we have that now in ec2
     all_instances = await ec2_client.describe_instances()
@@ -198,7 +195,6 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     # create as many instances as we can
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    progress_mock_fct = mocker.AsyncMock()
     for _ in range(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES):
         await autoscaling_ec2.start_aws_instance(
             app_settings.AUTOSCALING_EC2_INSTANCES,
@@ -206,7 +202,6 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
             tags=tags,
             startup_script=startup_script,
             number_of_instances=1,
-            progress_callback=progress_mock_fct,
         )
 
     # now creating one more shall fail
@@ -217,7 +212,6 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
             tags=tags,
             startup_script=startup_script,
             number_of_instances=1,
-            progress_callback=progress_mock_fct,
         )
 
 
@@ -266,14 +260,12 @@ async def test_get_running_instance(
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    progress_mock_fct = mocker.AsyncMock()
     created_instances = await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
         number_of_instances=1,
-        progress_callback=progress_mock_fct,
     )
     assert len(created_instances) == 1
 
@@ -307,14 +299,12 @@ async def test_terminate_instance(
     instance_type = faker.pystr()
     tags = faker.pydict(allowed_types=(str,))
     startup_script = faker.pystr()
-    progress_mock_fct = mocker.AsyncMock()
     created_instances = await autoscaling_ec2.start_aws_instance(
         app_settings.AUTOSCALING_EC2_INSTANCES,
         instance_type,
         tags=tags,
         startup_script=startup_script,
         number_of_instances=1,
-        progress_callback=progress_mock_fct,
     )
     assert len(created_instances) == 1
 

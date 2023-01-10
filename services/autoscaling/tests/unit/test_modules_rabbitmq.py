@@ -11,7 +11,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
-    RabbitAutoscalingIdleMessage,
+    RabbitAutoscalingStatusMessage,
     RabbitMessageBase,
 )
 from pytest_mock.plugin import MockerFixture
@@ -44,14 +44,16 @@ pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
-def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingIdleMessage:
-    return RabbitAutoscalingIdleMessage(
+def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingStatusMessage:
+    return RabbitAutoscalingStatusMessage(
         origin=faker.pystr(),
         nodes_total=faker.pyint(),
         nodes_active=faker.pyint(),
         nodes_drained=faker.pyint(),
         cluster_total_resources=faker.pydict(),
         cluster_used_resources=faker.pydict(),
+        instances_pending=faker.pyint(),
+        instances_running=faker.pyint(),
     )
 
 
@@ -68,7 +70,7 @@ def rabbit_log_message(faker: Faker) -> LoggerRabbitMessage:
 @pytest.fixture(params=["rabbit_autoscaling_message", "rabbit_log_message"])
 def rabbit_message(
     request: pytest.FixtureRequest,
-    rabbit_autoscaling_message: RabbitAutoscalingIdleMessage,
+    rabbit_autoscaling_message: RabbitAutoscalingStatusMessage,
     rabbit_log_message: LoggerRabbitMessage,
 ) -> RabbitMessageBase:
     return {
@@ -168,7 +170,7 @@ async def test_post_message_when_rabbit_disconnected(
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    rabbit_autoscaling_message: RabbitAutoscalingIdleMessage,
+    rabbit_autoscaling_message: RabbitAutoscalingStatusMessage,
     async_docker_client: aiodocker.Docker,
 ):
     await _switch_off_rabbit_mq_instance(async_docker_client)

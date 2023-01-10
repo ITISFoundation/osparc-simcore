@@ -69,7 +69,7 @@ class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
     )
 
 
-class _RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
+class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     nodes_total: int
     nodes_active: int
     nodes_drained: int
@@ -77,12 +77,5 @@ class _RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     cluster_total_resources: dict[str, Any]
     cluster_used_resources: dict[str, Any]
 
-
-class RabbitAutoscalingIdleMessage(_RabbitAutoscalingStatusMessage):
-    ...
-
-
-class RabbitAutoscalingUpScalingMessage(_RabbitAutoscalingStatusMessage):
-    instances_launched: int
-    instances_booting: int
+    instances_pending: int
     instances_running: int
