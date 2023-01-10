@@ -198,94 +198,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       return;
     },
 
-    _applyAccessRights: function(value, old) {
+    _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
-        const sharedIcon = this.getChildControl("shared-icon");
-        sharedIcon.addListener("tap", e => {
-          e.stopPropagation();
-          this._openAccessRights();
-        }, this);
-        sharedIcon.addListener("pointerdown", e => e.stopPropagation());
-
-        const store = osparc.store.Store.getInstance();
-        Promise.all([
-          store.getGroupEveryone(),
-          store.getVisibleMembers(),
-          store.getGroupsOrganizations()
-        ])
-          .then(values => {
-            const everyone = values[0];
-            const orgMembs = [];
-            const orgMembers = values[1];
-            for (const gid of Object.keys(orgMembers)) {
-              orgMembs.push(orgMembers[gid]);
-            }
-            const orgs = values.length === 3 ? values[2] : [];
-            const groups = [orgMembs, orgs, [everyone]];
-            this.__setSharedIcon(sharedIcon, value, groups);
-          });
-
-        if (this.isResourceType("study")) {
-          this._setStudyPermissions(value);
-        }
+        const shareIcon = this.getChildControl("shared-icon");
+        this._evaluateShareIcon(shareIcon, value);
       }
-    },
-
-    __setSharedIcon: function(image, value, groups) {
-      let sharedGrps = [];
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      for (let i=0; i<groups.length; i++) {
-        const sharedGrp = [];
-        const gids = Object.keys(value);
-        for (let j=0; j<gids.length; j++) {
-          const gid = parseInt(gids[j]);
-          if (this.isResourceType("study") && (gid === myGroupId)) {
-            continue;
-          }
-          const grp = groups[i].find(group => group["gid"] === gid);
-          if (grp) {
-            sharedGrp.push(grp);
-          }
-        }
-        if (sharedGrp.length === 0) {
-          continue;
-        } else {
-          sharedGrps = sharedGrps.concat(sharedGrp);
-        }
-        switch (i) {
-          case 0:
-            image.setSource(osparc.dashboard.CardBase.SHARED_USER);
-            break;
-          case 1:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
-            break;
-          case 2:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ALL);
-            break;
-        }
-      }
-
-      if (sharedGrps.length === 0) {
-        image.setVisibility("excluded");
-        return;
-      }
-
-      const sharedGrpLabels = [];
-      const maxItems = 6;
-      for (let i=0; i<sharedGrps.length; i++) {
-        if (i > maxItems) {
-          sharedGrpLabels.push("...");
-          break;
-        }
-        const sharedGrpLabel = sharedGrps[i]["label"];
-        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
-          sharedGrpLabels.push(sharedGrpLabel);
-        }
-      }
-      const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(image, hintText);
-      image.addListener("mouseover", () => hint.show(), this);
-      image.addListener("mouseout", () => hint.exclude(), this);
     },
 
     _applyTags: function(tags) {

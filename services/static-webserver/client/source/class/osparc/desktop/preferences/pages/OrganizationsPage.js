@@ -243,6 +243,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         this.__memberInvitation.show();
       }
 
+      const sortMembers = (a, b) => {
+        const aAccessRights = a.getAccessRights();
+        const bAccessRights = b.getAccessRights();
+        if (aAccessRights.getDelete() !== bAccessRights.getDelete()) {
+          return bAccessRights.getDelete() - aAccessRights.getDelete();
+        }
+        if (aAccessRights.getWrite() !== bAccessRights.getWrite()) {
+          return bAccessRights.getWrite() - aAccessRights.getWrite();
+        }
+        if (aAccessRights.getRead() !== bAccessRights.getRead()) {
+          return bAccessRights.getRead() - aAccessRights.getRead();
+        }
+        return a.getName() > b.getName();
+      };
       const params = {
         url: {
           "gid": orgModel.getKey()
@@ -255,6 +269,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
             member["showOptions"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
+            membersModel.sort(sortMembers);
           });
         });
     },
