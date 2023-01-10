@@ -163,15 +163,17 @@ services:
       - computational_services_subnet
 
   invitations:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscinvitationsaling:${DOCKER_IMAGE_TAG:-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
-      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-    env_file:
-      - ../.env
+      - INVITATIONS_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - INVITATIONS_MAKER_SECRET_KEY=${INVITATIONS_MAKER_SECRET_KEY}
+      - INVITATIONS_MAKER_OSPARC_URL=${INVITATIONS_MAKER_OSPARC_URL}
+      - INVITATIONS_USERNAME=${INVITATIONS_MAKER_OSPARC_URL}
+      - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
