@@ -22,6 +22,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     Task,
 )
+from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -72,6 +73,14 @@ def mock_get_running_instance(
         return_value=ec2_instance_data,
     )
     yield mocked_start_aws_instance
+
+
+@pytest.fixture
+def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_post_message = mocker.patch(
+        "simcore_service_autoscaling.utils.rabbitmq.post_message", autospec=True
+    )
+    yield mocked_post_message
 
 
 @pytest.fixture
@@ -126,20 +135,50 @@ def minimal_configuration(
     yield
 
 
+def _assert_rabbit_autoscaling_message_sent(
+    mock_rabbitmq_post_message: mock.Mock,
+    app_settings: ApplicationSettings,
+    app: FastAPI,
+    **message_update_kwargs,
+):
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    default_message = RabbitAutoscalingStatusMessage(
+        origin=f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}",
+        nodes_total=0,
+        nodes_active=0,
+        nodes_drained=0,
+        cluster_total_resources=Resources.create_as_empty().dict(),
+        cluster_used_resources=Resources.create_as_empty().dict(),
+        instances_pending=0,
+        instances_running=0,
+    )
+    expected_message = default_message.copy(update=message_update_kwargs)
+    mock_rabbitmq_post_message.assert_called_once_with(
+        app,
+        expected_message,
+    )
+
+
 async def test_cluster_scaling_from_labelled_services_with_no_services_does_nothing(
     minimal_configuration: None,
+    app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_start_aws_instance: mock.Mock,
     mock_terminate_instance: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
 ):
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instance.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app
+    )
 
 
 async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
+    app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
@@ -148,6 +187,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     mock_start_aws_instance: mock.Mock,
     mock_terminate_instance: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
 ):
     task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
@@ -161,6 +201,9 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instance.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app
+    )
 
 
 async def test_cluster_scaling_up(
@@ -177,6 +220,7 @@ async def test_cluster_scaling_up(
     mock_wait_for_node: mock.Mock,
     mock_tag_node: mock.Mock,
     fake_node: Node,
+    mock_rabbitmq_post_message: mock.Mock,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -243,6 +287,11 @@ async def test_cluster_scaling_up(
         available=True,
     )
 
+    # check rabbit messages were sent
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app, instances_running=1
+    )
+
 
 @dataclass(frozen=True)
 class _ScaleUpParams:
@@ -283,6 +332,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_tag_node: mock.Mock,
     fake_node: Node,
     scale_up_params: _ScaleUpParams,
+    mock_rabbitmq_post_message: mock.Mock,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -365,6 +415,14 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             )
             for _ in all_private_dns_names
         ]
+    )
+
+    # check rabbit messages were sent
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        instances_running=scale_up_params.expected_num_instances,
     )
 
 
