@@ -10,13 +10,15 @@ const {
   pass,
   newUser,
   startTimeout,
+  basicauthUsername,
+  basicauthPassword,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
 const studyName = "TI Planning Tool";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();
