@@ -471,12 +471,12 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # for passing self-signed certificate to spawned services
-    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: Optional[str] = Field(
-        None,
+    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: str = Field(
+        "",
         description="ID of the docker secret containing the self-signed certificate",
     )
-    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: Optional[str] = Field(
-        None,
+    DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: str = Field(
+        "",
         description="Name of the docker secret containing the self-signed certificate",
     )
     DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: str = Field(
