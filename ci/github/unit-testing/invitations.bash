@@ -10,7 +10,7 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd packages/invitations-maker
+  pushd services/invitations
   make install-ci
   popd
   .venv/bin/pip list --verbose
@@ -19,13 +19,13 @@ install() {
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pushd packages/invitations-maker
+  pushd services/invitations
   make tests-ci
   popd
 }
 
 typecheck() {
-  pushd packages/invitations-maker
+  pushd services/invitations
   make mypy
   popd
 }

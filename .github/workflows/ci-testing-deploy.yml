@@ -47,7 +47,6 @@ jobs:
     # Set job outputs to values from filter step
     outputs:
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
-      invitations-maker: ${{ steps.filter.outputs.invitations-maker }}
       models-library: ${{ steps.filter.outputs.models-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
       service-integration: ${{ steps.filter.outputs.service-integration }}
@@ -64,6 +63,7 @@ jobs:
       director: ${{ steps.filter.outputs.director }}
       director-v2: ${{ steps.filter.outputs.director-v2 }}
       dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
+      invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
@@ -82,10 +82,6 @@ jobs:
             dask-task-models-library:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
-              - 'services/docker-compose*'
-            invitations-maker:
-              - 'packages/pytest-simcore/**'
-              - 'packages/invitations-maker/**'
               - 'services/docker-compose*'
             models-library:
               - 'packages/models-library/**'
@@ -149,6 +145,10 @@ jobs:
             dynamic-sidecar:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
+              - 'services/docker-compose*'
+            invitations:
+              - 'packages/**'
+              - 'services/invitations/**'
               - 'services/docker-compose*'
             migration:
               - 'packages/**'
@@ -1005,11 +1005,11 @@ jobs:
         with:
           flags: unittests #optional
 
-  unit-test-invitations-maker:
+  unit-test-invitations:
     needs: changes
-    if: ${{ needs.changes.outputs.invitations-maker == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.invitations == 'true' || github.event_name == 'push' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] invitations-maker"
+    name: "[unit] invitations"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1036,16 +1036,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: "pip"
-          cache-dependency-path: "packages/invitations-maker/requirements/ci.txt"
+          cache-dependency-path: "services/invitations/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
-        run: ./ci/github/unit-testing/invitations-maker.bash install
+        run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
-        run: ./ci/github/unit-testing/invitations-maker.bash typecheck
+        run: ./ci/github/unit-testing/invitations.bash typecheck
       - name: test
         if: always()
-        run: ./ci/github/unit-testing/invitations-maker.bash test
+        run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
