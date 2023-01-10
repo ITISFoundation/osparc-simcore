@@ -62,21 +62,21 @@ class ActionNotRegisteredException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.action_not_registered"
     msg_template = (
         "Trying to start action '{action_name}' but these are the only"
-        "available actions {play_catalog}"
+        "available actions {workflow}"
     )
 
 
 class OnErrorActionNotInPlayCatalogException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.on_error_action_not_in_play_catalog"
+    code = "dynamic_sidecar.scheduler.v2.on_error_action_not_in_workflow"
     msg_template = (
         "Action '{action_name}' defines an on_error_action '{on_error_action}'"
-        "that is not in the present in the play catalog {play_catalog}"
+        "that is not in the present in the play catalog {workflow}"
     )
 
 
 class NextActionNotInPlayCatalogException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.next_action_not_in_play_catalog"
+    code = "dynamic_sidecar.scheduler.v2.next_action_not_in_workflow"
     msg_template = (
         "Action '{action_name}' defines an next_action '{next_action}'"
-        "that is not in the present in the play catalog {play_catalog}"
+        "that is not in the present in the play catalog {workflow}"
     )

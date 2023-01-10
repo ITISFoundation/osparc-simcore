@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
     Action,
-    PlayCatalog,
+    Workflow,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
     NextActionNotInPlayCatalogException,
@@ -38,7 +38,7 @@ async def test_action_ok():
     assert INFO_CHECK
 
 
-def test_play_catalog():
+def test_workflow():
     ACTION_ONE_NAME = "one"
     ACTION_TWO_NAME = "two"
     ACTION_MISSING_NAME = "not_existing_action"
@@ -50,24 +50,24 @@ def test_play_catalog():
         name=ACTION_TWO_NAME, steps=[], next_action=None, on_error_action=None
     )
 
-    play_catalog = PlayCatalog(
+    workflow = Workflow(
         action_one,
         acton_two,
     )
 
     # in operator
-    assert ACTION_ONE_NAME in play_catalog
-    assert ACTION_TWO_NAME in play_catalog
-    assert ACTION_MISSING_NAME not in play_catalog
+    assert ACTION_ONE_NAME in workflow
+    assert ACTION_TWO_NAME in workflow
+    assert ACTION_MISSING_NAME not in workflow
 
     # get key operator
-    assert play_catalog[ACTION_ONE_NAME] == action_one
-    assert play_catalog[ACTION_TWO_NAME] == acton_two
+    assert workflow[ACTION_ONE_NAME] == action_one
+    assert workflow[ACTION_TWO_NAME] == acton_two
     with pytest.raises(KeyError):
-        play_catalog[ACTION_MISSING_NAME]  # pylint:disable=pointless-statement
+        workflow[ACTION_MISSING_NAME]  # pylint:disable=pointless-statement
 
 
-def test_play_catalog_missing_next_action():
+def test_workflow_missing_next_action():
     action = Action(
         name="some_name",
         steps=[],
@@ -75,10 +75,10 @@ def test_play_catalog_missing_next_action():
         on_error_action=None,
     )
     with pytest.raises(NextActionNotInPlayCatalogException):
-        PlayCatalog(action)
+        Workflow(action)
 
 
-def test_play_catalog_missing_on_error_action():
+def test_workflow_missing_on_error_action():
     action = Action(
         name="some_name",
         steps=[],
@@ -86,4 +86,4 @@ def test_play_catalog_missing_on_error_action():
         on_error_action="missing_on_error_action",
     )
     with pytest.raises(OnErrorActionNotInPlayCatalogException):
-        PlayCatalog(action)
+        Workflow(action)

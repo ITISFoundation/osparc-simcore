@@ -88,8 +88,8 @@ from unittest.mock import AsyncMock
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2 import (
     Action,
-    PlayCatalog,
     PlayerManager,
+    Workflow,
     mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
@@ -201,7 +201,7 @@ async def check_if_still_have_time(available_time_hours: float) -> dict[str, Any
     return {}
 
 
-PLAY_CATALOG = PlayCatalog(  # Workflow
+WORKFLOW = Workflow(
     Action(
         name=ActionNames.INITIAL_SETUP,
         steps=[
@@ -255,7 +255,7 @@ PLAY_CATALOG = PlayCatalog(  # Workflow
         on_error_action=None,
     ),
 )
-# Form above PLAY_CATALOG the code execution path excepted
+# Form above WORKFLOW the code execution path excepted
 # under normal circumstances is the following composed by
 # the following steps:
 # - shop_for_ingredients (from INITIAL_SETUP)
@@ -283,7 +283,7 @@ def play_name() -> PlayName:
 
 @pytest.fixture
 async def player_manager(app: AsyncMock, context: ContextInterface) -> PlayerManager:
-    player_manager = PlayerManager(context=context, app=app, play_catalog=PLAY_CATALOG)
+    player_manager = PlayerManager(context=context, app=app, workflow=WORKFLOW)
     await player_manager.setup()
     yield player_manager
     await player_manager.teardown()

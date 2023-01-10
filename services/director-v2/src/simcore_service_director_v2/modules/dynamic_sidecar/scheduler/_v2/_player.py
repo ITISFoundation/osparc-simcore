@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable, Iterable, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, NonNegativeInt
 
-from ._action import Action, PlayCatalog
+from ._action import Action, Workflow
 from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
     ActionNotRegisteredException,
@@ -39,7 +39,7 @@ def _iter_index_step(
 
 
 async def action_player(
-    play_catalog: PlayCatalog,
+    workflow: Workflow,
     play_context: PlayContext,
     *,
     before_step_hook: Optional[
@@ -59,7 +59,7 @@ async def action_player(
     action_name: ActionName = await play_context.get(
         ReservedContextKeys.PLAY_ACTION_NAME, ActionName
     )
-    action: Optional[Action] = play_catalog[action_name]
+    action: Optional[Action] = workflow[action_name]
 
     start_from_index: int = 0
     try:
@@ -148,11 +148,11 @@ async def action_player(
             action = (
                 None
                 if action.on_error_action is None
-                else play_catalog[action.on_error_action]
+                else workflow[action.on_error_action]
             )
         else:
             action = (
-                None if action.next_action is None else play_catalog[action.next_action]
+                None if action.next_action is None else workflow[action.next_action]
             )
         finally:
             start_from_index = 0
@@ -168,7 +168,7 @@ class PlayerManager:
         self,
         context: ContextInterface,
         app: FastAPI,
-        play_catalog: PlayCatalog,
+        workflow: Workflow,
         *,
         before_step_hook: Optional[
             Callable[[ActionName, StepName], Awaitable[None]]
@@ -179,7 +179,7 @@ class PlayerManager:
     ) -> None:
         self.context = context
         self.app = app
-        self.play_catalog = play_catalog
+        self.workflow = workflow
         self.before_step_hook = before_step_hook
         self.after_step_hook = after_step_hook
 
@@ -194,9 +194,9 @@ class PlayerManager:
 
         if play_name in self._play_context:
             raise PlayAlreadyRunningException(play_name=play_name)
-        if action_name not in self.play_catalog:
+        if action_name not in self.workflow:
             raise ActionNotRegisteredException(
-                action_name=action_name, play_catalog=self.play_catalog
+                action_name=action_name, workflow=self.workflow
             )
 
         self._play_context[play_name] = play_context = PlayContext(
@@ -208,7 +208,7 @@ class PlayerManager:
         await play_context.setup()
 
         action_player_awaitable: Awaitable = action_player(
-            play_catalog=self.play_catalog,
+            workflow=self.workflow,
             play_context=play_context,
             before_step_hook=self.before_step_hook,
             after_step_hook=self.after_step_hook,
@@ -220,7 +220,7 @@ class PlayerManager:
         # NOTE: expecting `await play_context.start()` to have already been ran
 
         action_player_awaitable: Awaitable = action_player(
-            play_catalog=self.play_catalog,
+            workflow=self.workflow,
             play_context=play_context,
             before_step_hook=self.before_step_hook,
             after_step_hook=self.after_step_hook,

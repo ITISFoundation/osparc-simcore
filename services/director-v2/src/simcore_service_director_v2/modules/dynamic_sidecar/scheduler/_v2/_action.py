@@ -57,7 +57,7 @@ class Action(BaseModel):
         return steps
 
 
-class PlayCatalog:
+class Workflow:
     """contains Action entries which define links to `next_action` and `on_error_action`"""
 
     def __init__(self, *actions: Action) -> None:
@@ -70,7 +70,7 @@ class PlayCatalog:
                 raise OnErrorActionNotInPlayCatalogException(
                     action_name=action.name,
                     on_error_action=action.on_error_action,
-                    play_catalog=self._registry,
+                    workflow=self._registry,
                 )
             if (
                 action.next_action is not None
@@ -79,7 +79,7 @@ class PlayCatalog:
                 raise NextActionNotInPlayCatalogException(
                     action_name=action.name,
                     next_action=action.next_action,
-                    play_catalog=self._registry,
+                    workflow=self._registry,
                 )
 
     def __contains__(self, item: ActionName) -> bool:

@@ -11,7 +11,7 @@ import pytest
 from pytest import LogCaptureFixture
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
     Action,
-    PlayCatalog,
+    Workflow,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextIOInterface,
@@ -134,7 +134,7 @@ async def test_action_player(
         on_error_action=None,
     )
 
-    play_catalog = PlayCatalog(FIRST_STATE, SECOND_STATE)
+    workflow = Workflow(FIRST_STATE, SECOND_STATE)
 
     async def hook_before(action: ActionName, step: StepName) -> None:
         logger.info("hook_before %s %s", f"{action=}", f"{step=}")
@@ -143,7 +143,7 @@ async def test_action_player(
         logger.info("hook_after %s %s", f"{action=}", f"{step=}")
 
     await action_player(
-        play_catalog=play_catalog,
+        workflow=workflow,
         play_context=play_context,
         before_step_hook=hook_before,
         after_step_hook=hook_after,
@@ -191,11 +191,9 @@ async def test_player_manager(context: ContextIOInterface):
         on_error_action=None,
     )
 
-    play_catalog = PlayCatalog(FIRST_ACTION, SECOND_ACTION)
+    workflow = Workflow(FIRST_ACTION, SECOND_ACTION)
 
-    play_manager = PlayerManager(
-        context=context, app=AsyncMock(), play_catalog=play_catalog
-    )
+    play_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
     async with _player_manager_lifecycle(play_manager):
         # ok action_player
         await play_manager.start_action_player(
@@ -266,7 +264,7 @@ async def test_action_player_error_handling(
         on_error_action=None,
     )
 
-    play_catalog = PlayCatalog(
+    workflow = Workflow(
         CASE_1_RAISING_ERROR,
         CASE_1_HANDLING_ERROR,
         CASE_2_RASING_ERROR,
@@ -274,9 +272,7 @@ async def test_action_player_error_handling(
 
     play_name = "test_play"
     # CASE 1
-    player_manager = PlayerManager(
-        context=context, app=AsyncMock(), play_catalog=play_catalog
-    )
+    player_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
     async with _player_manager_lifecycle(player_manager):
         await player_manager.start_action_player(
             play_name=play_name, action_name="case_1_rasing_error"
@@ -284,9 +280,7 @@ async def test_action_player_error_handling(
         await player_manager.wait_action_player(play_name)
 
     # CASE 2
-    player_manager = PlayerManager(
-        context=context, app=AsyncMock(), play_catalog=play_catalog
-    )
+    player_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
     async with _player_manager_lifecycle(player_manager):
         await player_manager.start_action_player(
             play_name=play_name, action_name="case_2_raising_error"
