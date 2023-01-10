@@ -43,9 +43,9 @@ class BaseActionException(BaseV2SchedulerException):
     """use as base for all context related errors"""
 
 
-class UnexpectedActionReturnTypeError(BaseActionException):
-    code = "dynamic_sidecar.scheduler.v2.unexpected_action_return_type"
-    msg_template = "Action should always return `dict[str, Any]`, returning: {type}"
+class UnexpectedStepReturnTypeError(BaseActionException):
+    code = "dynamic_sidecar.scheduler.v2.unexpected_step_return_type"
+    msg_template = "Step should always return `dict[str, Any]`, returning: {type}"
 
 
 class PlayAlreadyRunningException(BaseActionException):

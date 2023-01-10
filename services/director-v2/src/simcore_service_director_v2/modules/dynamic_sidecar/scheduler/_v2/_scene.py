@@ -11,15 +11,15 @@ from ._models import SceneName
 
 class Scene(BaseModel):
     """
-    A sequence of actions (functions)
+    A sequence of steps (functions)
     """
 
     name: SceneName
-    actions: list[Callable] = Field(
+    steps: list[Callable] = Field(
         ...,
         description=(
-            "list awaitables marked as actions, the order in this list "
-            "is the order in which actions will be executed"
+            "list awaitables marked as steps, the order in this list "
+            "is the order in which steps will be executed"
         ),
     )
 
@@ -33,28 +33,28 @@ class Scene(BaseModel):
     )
 
     @property
-    def actions_names(self) -> list[str]:
-        return [x.__name__ for x in self.actions]
+    def steps_names(self) -> list[str]:
+        return [x.__name__ for x in self.steps]
 
-    @validator("actions")
+    @validator("steps")
     @classmethod
-    def ensure_all_marked_as_action(cls, actions):
-        for action in actions:
+    def ensure_all_marked_as_step(cls, steps):
+        for step in steps:
             for attr_name in ("input_types", "return_type"):
-                if not hasattr(action, attr_name):
+                if not hasattr(step, attr_name):
                     raise ValueError(
-                        f"Event handler {action.__name__} should expose `{attr_name}` "
-                        "attribute. Was it decorated with @mark_action?"
+                        f"Event handler {step.__name__} should expose `{attr_name}` "
+                        "attribute. Was it decorated with @mark_step?"
                     )
-            if type(getattr(action, "input_types")) != dict:
+            if type(getattr(step, "input_types")) != dict:
                 raise ValueError(
-                    f"`{action.__name__}.input_types` should be of type {dict}"
+                    f"`{step.__name__}.input_types` should be of type {dict}"
                 )
-            if getattr(action, "return_type") != dict[str, Any]:
+            if getattr(step, "return_type") != dict[str, Any]:
                 raise ValueError(
-                    f"`{action.__name__}.return_type` should be of type {dict[str, Any]}"
+                    f"`{step.__name__}.return_type` should be of type {dict[str, Any]}"
                 )
-        return actions
+        return steps
 
 
 class PlayCatalog:

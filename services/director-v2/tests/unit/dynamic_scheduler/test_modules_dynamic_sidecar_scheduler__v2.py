@@ -90,7 +90,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2 import (
     PlayCatalog,
     PlayerManager,
     Scene,
-    mark_action,
+    mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextInterface,
@@ -123,13 +123,13 @@ class SceneNames:
     ERROR_OUT_OF_INGREDIENTS = "error_out_of_ingredients"
 
 
-@mark_action
+@mark_step
 async def shop_for_ingredients() -> dict[str, Any]:
     return {"cake_mix_kg": 1.0, "butter_g": 100}
 
 
-@mark_action
-async def get_correct_amount_fo_ingredients(
+@mark_step
+async def prepare_correct_amount_fo_ingredients(
     cake_mix_kg: float, butter_g: int
 ) -> dict[str, Any]:
     cake_mix_kg -= 0.25
@@ -144,25 +144,25 @@ async def get_correct_amount_fo_ingredients(
     return remaining_supplies
 
 
-@mark_action
+@mark_step
 async def mix_ingredients() -> dict[str, Any]:
     logger.info("mixing ingredients...")
     return {}
 
 
-@mark_action
+@mark_step
 async def butter_tin() -> dict[str, Any]:
     logger.info("buttering tin...")
     return {}
 
 
-@mark_action
+@mark_step
 async def bake_cake_in_oven(available_time_hours: float) -> dict[str, Any]:
     available_time_hours -= 1.0
     return dict(available_time_hours=available_time_hours)
 
 
-@mark_action
+@mark_step
 async def check_bake_result(oven_fail_probability: float) -> dict[str, Any]:
     assert 0 <= oven_fail_probability <= 1
     fails = int(oven_fail_probability * 100)
@@ -176,35 +176,35 @@ async def check_bake_result(oven_fail_probability: float) -> dict[str, Any]:
     return {}
 
 
-@mark_action
+@mark_step
 async def take_picture_of_cake() -> dict[str, Any]:
     logger.info("snapped cake pic!")
     return {}
 
 
-@mark_action
+@mark_step
 async def eat_cake() -> dict[str, Any]:
     logger.info("eating cake...")
     return {}
 
 
-@mark_action
+@mark_step
 async def take_note_of_the_error() -> dict[str, Any]:
     logger.info("oven failed to bake cake, will try again")
     return {}
 
 
-@mark_action
+@mark_step
 async def check_if_still_have_time(available_time_hours: float) -> dict[str, Any]:
     if available_time_hours < 1.0:
         raise NotEnoughIngredientsError("did not have enough time to finish")
     return {}
 
 
-PLAY_CATALOG = PlayCatalog(
-    Scene(
+PLAY_CATALOG = PlayCatalog(  # Workflow
+    Scene(  # Actions
         name=SceneNames.INITIAL_SETUP,
-        actions=[
+        steps=[  # Steps
             shop_for_ingredients,
         ],
         next_scene=SceneNames.PREPARATION,
@@ -212,8 +212,8 @@ PLAY_CATALOG = PlayCatalog(
     ),
     Scene(
         name=SceneNames.PREPARATION,
-        actions=[
-            get_correct_amount_fo_ingredients,
+        steps=[
+            prepare_correct_amount_fo_ingredients,
             mix_ingredients,
         ],
         next_scene=SceneNames.BAKING,
@@ -221,7 +221,7 @@ PLAY_CATALOG = PlayCatalog(
     ),
     Scene(
         name=SceneNames.BAKING,
-        actions=[
+        steps=[
             butter_tin,
             bake_cake_in_oven,
             check_bake_result,
@@ -231,7 +231,7 @@ PLAY_CATALOG = PlayCatalog(
     ),
     Scene(
         name=SceneNames.EAT_CAKE,
-        actions=[
+        steps=[
             take_picture_of_cake,
             eat_cake,
         ],
@@ -240,7 +240,7 @@ PLAY_CATALOG = PlayCatalog(
     ),
     Scene(
         name=SceneNames.ERROR_CAKE_BURNT,
-        actions=[
+        steps=[
             take_note_of_the_error,
         ],
         next_scene=SceneNames.PREPARATION,
@@ -248,7 +248,7 @@ PLAY_CATALOG = PlayCatalog(
     ),
     Scene(
         name=SceneNames.ERROR_OUT_OF_INGREDIENTS,
-        actions=[
+        steps=[
             check_if_still_have_time,
         ],
         next_scene=SceneNames.INITIAL_SETUP,
@@ -344,7 +344,9 @@ async def test_bake_cake_cancelled_by_external_event(
     # Emulating that a technician just rang the dor bell
     # to fix the faulty oven. Cancelling current task
     assert play_name in player_manager._player_tasks
-    await player_manager.cancel_scene_player(play_name)
+    await player_manager.cancel_scene_player(
+        play_name
+    )  # somehting that watis for cancellation cancel_and_wait
     assert play_name not in player_manager._player_tasks
 
     # Technician fixes oven, a new task or the same one can

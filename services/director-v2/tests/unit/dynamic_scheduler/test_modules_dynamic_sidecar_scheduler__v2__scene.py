@@ -6,7 +6,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors i
     OnErrorSceneNotInPlayCatalogException,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
-    mark_action,
+    mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._scene import (
     PlayCatalog,
@@ -15,12 +15,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._scene im
 
 
 async def test_scene_ok():
-    @mark_action
+    @mark_step
     async def print_info() -> dict[str, Any]:
         print("some info")
         return {}
 
-    @mark_action
+    @mark_step
     async def verify(x: float, y: int) -> dict[str, Any]:
         assert type(x) == float
         assert type(y) == int
@@ -28,7 +28,7 @@ async def test_scene_ok():
 
     INFO_CHECK = Scene(
         name="test",
-        actions=[
+        steps=[
             print_info,
             verify,
         ],
@@ -44,10 +44,10 @@ def test_play_catalog():
     SCENE_MISSING_NAME = "not_existing_scene"
 
     scene_one = Scene(
-        name=SCENE_ONE_NAME, actions=[], next_scene=None, on_error_scene=None
+        name=SCENE_ONE_NAME, steps=[], next_scene=None, on_error_scene=None
     )
     scene_two = Scene(
-        name=SCENE_TWO_NAME, actions=[], next_scene=None, on_error_scene=None
+        name=SCENE_TWO_NAME, steps=[], next_scene=None, on_error_scene=None
     )
 
     play_catalog = PlayCatalog(
@@ -70,7 +70,7 @@ def test_play_catalog():
 def test_play_catalog_missing_next_scene():
     scene = Scene(
         name="some_name",
-        actions=[],
+        steps=[],
         next_scene="missing_next_scene",
         on_error_scene=None,
     )
@@ -81,7 +81,7 @@ def test_play_catalog_missing_next_scene():
 def test_play_catalog_missing_on_error_scene():
     scene = Scene(
         name="some_name",
-        actions=[],
+        steps=[],
         next_scene=None,
         on_error_scene="missing_on_error_scene",
     )

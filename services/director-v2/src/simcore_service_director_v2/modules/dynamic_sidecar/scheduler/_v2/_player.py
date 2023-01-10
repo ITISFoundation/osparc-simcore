@@ -76,26 +76,24 @@ async def scene_player(
         await play_context.set(
             ReservedContextKeys.PLAY_SCENE_NAME, scene_name, set_reserved=True
         )
-        logger.debug("Running scene='%s', actions=%s", scene_name, scene.actions_names)
+        logger.debug("Running scene='%s', actions=%s", scene_name, scene.steps_names)
         try:
-            for index, action in _iter_index_action(
-                scene.actions, index=start_from_index
-            ):
-                action_name = action.__name__
+            for index, step in _iter_index_action(scene.steps, index=start_from_index):
+                action_name = step.__name__
 
                 if before_action_hook:
                     await before_action_hook(scene_name, action_name)
 
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
-                if action.input_types:
+                if step.input_types:
                     get_inputs_results = await asyncio.gather(
                         *[
                             play_context.get(var_name, var_type)
-                            for var_name, var_type in action.input_types.items()
+                            for var_name, var_type in step.input_types.items()
                         ]
                     )
-                    inputs = dict(zip(action.input_types, get_inputs_results))
+                    inputs = dict(zip(step.input_types, get_inputs_results))
                 logger.debug("action='%s' inputs=%s", action_name, inputs)
 
                 # running event handler
@@ -109,7 +107,7 @@ async def scene_player(
                     index,
                     set_reserved=True,
                 )
-                result = await action(**inputs)
+                result = await step(**inputs)
 
                 # saving outputs to context
                 logger.debug("action='%s' result=%s", action_name, result)

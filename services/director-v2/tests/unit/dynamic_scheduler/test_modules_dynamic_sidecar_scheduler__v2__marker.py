@@ -2,15 +2,15 @@ from typing import Any
 
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
-    UnexpectedActionReturnTypeError,
+    UnexpectedStepReturnTypeError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
-    mark_action,
+    mark_step,
 )
 
 
 async def test_register_action_with_return_value():
-    @mark_action
+    @mark_step
     async def return_inputs(x: str, y: float, z: dict[str, int]) -> dict[str, Any]:
         return {"x": x, "y": y, "z": z}
 
@@ -20,13 +20,13 @@ async def test_register_action_with_return_value():
 
 
 async def test_register_action_wrong_return_type():
-    with pytest.raises(UnexpectedActionReturnTypeError) as exec_info:
+    with pytest.raises(UnexpectedStepReturnTypeError) as exec_info:
 
-        @mark_action
+        @mark_step
         async def wrong_return_type(x: str, y: float, z: dict[str, int]) -> str:
             return {"x": x, "y": y, "z": z}
 
     assert (
         f"{exec_info.value}"
-        == "Action should always return `dict[str, Any]`, returning: <class 'str'>"
+        == "Step should always return `dict[str, Any]`, returning: <class 'str'>"
     )

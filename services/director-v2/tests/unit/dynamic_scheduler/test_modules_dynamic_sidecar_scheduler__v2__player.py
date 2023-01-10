@@ -16,7 +16,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors i
     PlayNotFoundException,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
-    mark_action,
+    mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
     ActionName,
@@ -100,25 +100,25 @@ async def play_context(
 async def test_scene_player(
     play_context: PlayContext, caplog_info_level: LogCaptureFixture
 ):
-    @mark_action
+    @mark_step
     async def initial() -> dict[str, Any]:
         print("initial")
         return {"x": 10, "y": 12.3}
 
-    @mark_action
+    @mark_step
     async def verify(x: int, y: float) -> dict[str, Any]:
         assert type(x) == int
         assert type(y) == float
         return {"z": x + y}
 
-    @mark_action
+    @mark_step
     async def print_second() -> dict[str, Any]:
         print("SECOND")
         return {}
 
     FIRST_STATE = Scene(
         name="first",
-        actions=[
+        steps=[
             initial,
             verify,
         ],
@@ -127,7 +127,7 @@ async def test_scene_player(
     )
     SECOND_STATE = Scene(
         name="second",
-        actions=[
+        steps=[
             print_second,
             verify,
             verify,
@@ -157,25 +157,25 @@ async def test_scene_player(
 
 
 async def test_player_manager(context: ContextIOInterface):
-    @mark_action
+    @mark_step
     async def initial_state() -> dict[str, Any]:
         print("initial state")
         return {"x": 10, "y": 12.3}
 
-    @mark_action
+    @mark_step
     async def verify(x: int, y: float) -> dict[str, Any]:
         assert type(x) == int
         assert type(y) == float
         return {"z": x + y}
 
-    @mark_action
+    @mark_step
     async def print_second() -> dict[str, Any]:
         print("SECOND")
         return {}
 
     FIRST_SCENE = Scene(
         name="first",
-        actions=[
+        steps=[
             initial_state,
             verify,
         ],
@@ -184,7 +184,7 @@ async def test_player_manager(context: ContextIOInterface):
     )
     SECOND_SCENE = Scene(
         name="second",
-        actions=[
+        steps=[
             print_second,
             verify,
             verify,
@@ -225,11 +225,11 @@ async def test_scene_player_error_handling(
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
 
-    @mark_action
+    @mark_step
     async def error_raiser() -> dict[str, Any]:
         raise RuntimeError(ERROR_MARKER_IN_TB)
 
-    @mark_action
+    @mark_step
     async def graceful_error_handler(_exception: ExceptionInfo) -> dict[str, Any]:
         assert _exception.exception_class == RuntimeError
         assert _exception.scene_name in {"case_1_rasing_error", "case_2_rasing_error"}
@@ -242,7 +242,7 @@ async def test_scene_player_error_handling(
     # error is raised by first state, second state handles it -> no error raised
     CASE_1_RAISING_ERROR = Scene(
         name="case_1_rasing_error",
-        actions=[
+        steps=[
             error_raiser,
         ],
         next_scene=None,
@@ -250,7 +250,7 @@ async def test_scene_player_error_handling(
     )
     CASE_1_HANDLING_ERROR = Scene(
         name="case_1_handling_error",
-        actions=[
+        steps=[
             graceful_error_handler,
         ],
         next_scene=None,
@@ -261,7 +261,7 @@ async def test_scene_player_error_handling(
     # error is raised by first state -> raises error
     CASE_2_RASING_ERROR = Scene(
         name="case_2_raising_error",
-        actions=[
+        steps=[
             error_raiser,
         ],
         next_scene=None,

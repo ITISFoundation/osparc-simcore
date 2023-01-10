@@ -2,12 +2,12 @@ import inspect
 from functools import wraps
 from typing import Any, Callable
 
-from ._errors import UnexpectedActionReturnTypeError
+from ._errors import UnexpectedStepReturnTypeError
 
 
-def mark_action(func: Callable) -> Callable:
+def mark_step(func: Callable) -> Callable:
     """
-    Decorate a coroutine as an action.
+    Decorate a coroutine as an step.
     Return type must always be of type `dict[str, Any]`
     Stores input types in `.input_types` and return type
     in `.return_type` for later usage.
@@ -18,7 +18,7 @@ def mark_action(func: Callable) -> Callable:
     # ensure output type is correct, only support sone
     return_type = func_annotations.pop("return", None)
     if return_type != dict[str, Any]:
-        raise UnexpectedActionReturnTypeError(type=return_type)
+        raise UnexpectedStepReturnTypeError(type=return_type)
 
     @wraps(func)
     async def wrapped(*args, **kwargs) -> Any:
