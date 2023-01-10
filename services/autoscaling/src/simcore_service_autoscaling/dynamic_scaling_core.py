@@ -268,7 +268,7 @@ async def _find_needed_instances(
 
 
 async def _start_instances(
-    app: FastAPI, monitored_nodes: list[Node], needed_instances: dict[EC2Instance, int]
+    app: FastAPI, needed_instances: dict[EC2Instance, int]
 ) -> list[str]:
     ec2_client = get_ec2_client(app)
     app_settings: ApplicationSettings = app.state.settings
@@ -372,9 +372,7 @@ async def _scale_up_cluster(
     )
 
     # let's start these
-    if started_instances_node_names := await _start_instances(
-        app, monitored_nodes, needed_instances
-    ):
+    if started_instances_node_names := await _start_instances(app, needed_instances):
         await _log_tasks_message(
             app,
             pending_tasks,
