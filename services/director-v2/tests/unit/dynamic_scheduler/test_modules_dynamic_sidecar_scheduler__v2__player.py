@@ -5,9 +5,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
-from fastapi import FastAPI
 from pytest import LogCaptureFixture
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextIOInterface,
@@ -90,7 +90,7 @@ async def play_context(
     context: ContextIOInterface,
 ) -> PlayContext:
     play_context = PlayContext(
-        context=context, app=FastAPI(), play_name="unique", scene_name="first"
+        context=context, app=AsyncMock(), play_name="unique", scene_name="first"
     )
     await play_context.setup()
     yield play_context
@@ -196,7 +196,7 @@ async def test_player_manager(context: ContextIOInterface):
     play_catalog = PlayCatalog(FIRST_SCENE, SECOND_SCENE)
 
     play_manager = PlayerManager(
-        context=context, app=FastAPI(), play_catalog=play_catalog
+        context=context, app=AsyncMock(), play_catalog=play_catalog
     )
     async with _player_manager_lifecycle(play_manager):
         # ok scene_player
@@ -277,7 +277,7 @@ async def test_scene_player_error_handling(
     play_name = "test_play"
     # CASE 1
     player_manager = PlayerManager(
-        context=context, app=FastAPI(), play_catalog=play_catalog
+        context=context, app=AsyncMock(), play_catalog=play_catalog
     )
     async with _player_manager_lifecycle(player_manager):
         await player_manager.start_scene_player(
@@ -287,7 +287,7 @@ async def test_scene_player_error_handling(
 
     # CASE 2
     player_manager = PlayerManager(
-        context=context, app=FastAPI(), play_catalog=play_catalog
+        context=context, app=AsyncMock(), play_catalog=play_catalog
     )
     async with _player_manager_lifecycle(player_manager):
         await player_manager.start_scene_player(

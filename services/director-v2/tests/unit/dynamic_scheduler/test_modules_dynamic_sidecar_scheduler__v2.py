@@ -83,9 +83,9 @@ import asyncio
 import logging
 import random
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
-from fastapi import FastAPI
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2 import (
     PlayCatalog,
     PlayerManager,
@@ -260,8 +260,8 @@ PLAY_CATALOG = PlayCatalog(
 
 
 @pytest.fixture
-def app() -> FastAPI:
-    return FastAPI()
+def app() -> AsyncMock:
+    return AsyncMock()
 
 
 @pytest.fixture
@@ -270,7 +270,7 @@ def play_name() -> PlayName:
 
 
 @pytest.fixture
-async def player_manager(app: FastAPI, context: ContextInterface) -> PlayerManager:
+async def player_manager(app: AsyncMock, context: ContextInterface) -> PlayerManager:
     player_manager = PlayerManager(context=context, app=app, play_catalog=PLAY_CATALOG)
     await player_manager.setup()
     yield player_manager
