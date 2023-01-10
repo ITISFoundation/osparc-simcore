@@ -283,12 +283,18 @@ async def player_manager(app: AsyncMock, context: ContextInterface) -> PlayerMan
 async def test_bake_cake_ok_eventually(
     player_manager: PlayerManager, context: ContextInterface, play_name: PlayName
 ):
+    # Before the baking, initiate some vars in the context
+    # to be available (this is just a convenient place do to it)
     await context.save("available_time_hours", 10.0)
     await context.save("oven_fail_probability", 0.65)
 
+    # With an over fail probability of 65% and 10 tries to bake a cake
+    # we expect for the procedure to eventually finish without issues
     await player_manager.start_scene_player(
         play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
     )
+
+    # waiting here is done for convenience, normally you would not do this
     await player_manager.wait_scene_player(play_name)
 
 
@@ -298,6 +304,9 @@ async def test_bake_cake_fails(
     await context.save("available_time_hours", 10.0)
     await context.save("oven_fail_probability", 1.0)
 
+    # With an over fail probability of 100% it is not possible to
+    # finish baking the cake in time, after 10 tries it will give up
+    # and raise an error.
     await player_manager.start_scene_player(
         play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
     )
@@ -311,19 +320,24 @@ async def test_bake_cake_cancelled_by_external_event(
     await context.save("available_time_hours", 1e10)
     await context.save("oven_fail_probability", 1.0)
 
+    # With a virtually infinite time to spend for retries
+    # event if the over fail probability is 100% this process
+    # will last a very long time before failing.
     await player_manager.start_scene_player(
         play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
     )
-
-    # receive phone call from technician
     ENSURE_IT_IS_RUNNING = 0.1
     await asyncio.sleep(ENSURE_IT_IS_RUNNING)
 
+    # Emulating that a technician just rang the dor bell
+    # to fix the faulty oven. Cancelling current task
     assert play_name in player_manager._player_tasks
     await player_manager.cancel_scene_player(play_name)
     assert play_name not in player_manager._player_tasks
 
-    # technician fixes oven
+    # Technician fixes oven, a new task or the same one can
+    # be started again. Expect to finish immediately since
+    # there is a 0% probability of oven failure.
     await context.save("oven_fail_probability", 0.0)
     await player_manager.start_scene_player(
         play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
