@@ -10,15 +10,15 @@ const {
   pass,
   newUser,
   startTimeout,
-  enableDemoMode,
-  basicauth_username,
-  basicauth_password
+  basicauthUsername,
+  basicauthPassword,
+  enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
 const templateName = "JupyterLabs";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode,basicauth_username, basicauth_password);
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();
