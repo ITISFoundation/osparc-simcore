@@ -255,6 +255,18 @@ PLAY_CATALOG = PlayCatalog(
         on_error_scene=None,
     ),
 )
+# Form above PLAY_CATALOG the code execution path excepted
+# under normal circumstances is the following composed by
+# the following actions:
+# - shop_for_ingredients (from INITIAL_SETUP)
+# - get_correct_amount_fo_ingredients (from PREPARATION)
+# - mix_ingredients (from PREPARATION)
+# - butter_tin (from BAKING)
+# - bake_cake_in_oven (from BAKING)
+# - check_bake_result (from BAKING)
+# - take_picture_of_cake (from EAT_CAKE)
+# - eat_cake (from EAT_CAKE)
+
 
 # FIXTURES
 
