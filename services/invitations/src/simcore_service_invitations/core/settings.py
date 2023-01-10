@@ -1,6 +1,7 @@
-from typing import Optional
+from functools import cached_property
+from typing import Optional, cast
 
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr
+from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
@@ -37,6 +38,16 @@ class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     INVITATIONS_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
+
+    @cached_property
+    def LOG_LEVEL(self):
+        return self.INVITATIONS_LOGLEVEL
+
+    @validator("INVITATIONS_LOGLEVEL")
+    @classmethod
+    def valid_log_level(cls, value: str) -> str:
+        # NOTE: mypy is not happy without the cast
+        return cast(str, cls.validate_log_level(value))
 
 
 class DesktopApplicationSettings(BaseApplicationSettings):

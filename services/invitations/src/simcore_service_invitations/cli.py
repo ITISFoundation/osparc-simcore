@@ -86,7 +86,10 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     assert ctx  # nosec
 
     def _generate_password(length: int) -> str:
-        alphabet = string.digits + string.ascii_letters + string.punctuation
+        alphabet = (
+            string.digits + string.ascii_letters + string.punctuation.replace('"', "")
+        )
+
         return "".join(
             secrets.choice(random.sample(alphabet, len(alphabet)))
             for _ in range(length)

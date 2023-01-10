@@ -1,9 +1,7 @@
 import logging
-from datetime import datetime
 from typing import Callable
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, HttpUrl
 
 from .._meta import API_VERSION, PROJECT_NAME
@@ -29,11 +27,6 @@ class Meta(BaseModel):
 # ROUTE HANDLERS
 #
 router = APIRouter()
-
-
-@router.get("/", response_class=PlainTextResponse)
-async def healthcheck():
-    return f"{__name__}@{datetime.utcnow().isoformat()}"
 
 
 @router.get("/meta", response_model=Meta)

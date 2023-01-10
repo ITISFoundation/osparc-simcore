@@ -10,10 +10,10 @@ from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._meta import Meta
 
 
-def test_root(client: TestClient):
-    response = client.get(f"/{API_VTAG}/")
+def test_healthcheck(client: TestClient):
+    response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith("simcore_service_invitations.api._meta@")
+    assert response.text.startswith("simcore_service_invitations.api._health@")
 
 
 def test_meta(client: TestClient):
