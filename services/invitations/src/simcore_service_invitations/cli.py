@@ -97,12 +97,13 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     )
 
     for name, value in settings.dict().items():
-        value = (
-            f'"{value.get_secret_value()}"'
-            if isinstance(value, SecretStr)
-            else f"{value}"
-        )
-        print(f"{name}={value}")
+        if name.startswith("INVITATIONS_"):
+            value = (
+                f'"{value.get_secret_value()}"'
+                if isinstance(value, SecretStr)
+                else f"{value}"
+            )
+            print(f"{name}={value}")
 
 
 @app.command()

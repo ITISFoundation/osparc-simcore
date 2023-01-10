@@ -1,23 +1,33 @@
 # invitations
 
-[![image-size]](https://microbadger.com/images/itisfoundation/invitations. "More on itisfoundation/invitations.:staging-latest image")
 
-[![image-badge]](https://microbadger.com/images/itisfoundation/invitations "More on invitations image in registry")
-[![image-version]](https://microbadger.com/images/itisfoundation/invitations "More on invitations image in registry")
-[![image-commit]](https://microbadger.com/images/itisfoundation/invitations "More on invitations image in registry")
+``invitations`` is a service that can create invitations via CLI or via an http API .
 
-Service that manages creation and validation of registration invitations
 
-<!-- Add badges urls here-->
-[image-size]:https://img.shields.io/microbadger/image-size/itisfoundation/invitations./staging-latest.svg?label=invitations.&style=flat
-[image-badge]:https://images.microbadger.com/badges/image/itisfoundation/invitations.svg
-[image-version]https://images.microbadger.com/badges/version/itisfoundation/invitations.svg
-[image-commit]:https://images.microbadger.com/badges/commit/itisfoundation/invitations.svg
-<!------------------------->
+## Setup
 
-To develop this project, just
-
-```cmd
-make help
-
+Create ``.env`` file
 ```
+$ make install-ci
+$ simcore-service-invitations generate-dotenv > .env
+```
+and modify the ``.env`` if needed
+
+
+## Creating invitations via CLI
+
+1. create a invitation for ``guest@company.com`` as
+```
+$ simcore-service-invitations invite guest@company.com --issuer=me
+```
+and will produce a link
+
+
+
+## Invitations via HTTP API
+
+start it as a web app as
+```
+# simcore-service-invitations serve
+```
+and then open http://127.0.0.1:8000/dev/doc
