@@ -97,7 +97,8 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
                 if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
                   clustersBtn.show();
                 }
-              });
+              })
+              .catch(err => console.error(err));
           }
         });
     }

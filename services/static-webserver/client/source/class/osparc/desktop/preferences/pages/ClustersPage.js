@@ -252,7 +252,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
                     }
                   });
                 }
-              });
+              })
+              .catch(err => console.error(err));
           }
         });
     },

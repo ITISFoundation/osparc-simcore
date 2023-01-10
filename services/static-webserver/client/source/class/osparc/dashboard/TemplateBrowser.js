@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const cards = this._resourcesContainer.reloadCards("templatesList");
       cards.forEach(card => {
         card.addListener("execute", () => this.__itemClicked(card), this);
-        this._populateCardMenu(card.getMenu(), card.getResourceData());
+        this._populateCardMenu(card);
       });
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
@@ -173,11 +173,19 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // LAYOUT //
 
     // MENU //
-    _populateCardMenu: function(menu, studyData) {
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const studyData = card.getResourceData();
+
       const editButton = this.__getEditTemplateMenuButton(studyData);
       if (editButton) {
         menu.add(editButton);
         menu.addSeparator();
+      }
+
+      const shareButton = this._getShareMenuButton(card);
+      if (shareButton) {
+        menu.add(shareButton);
       }
 
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
