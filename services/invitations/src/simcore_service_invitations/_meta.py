@@ -13,7 +13,7 @@ __version__: str = _current_distribution.version
 
 PROJECT_NAME: Final[str] = _current_distribution.project_name
 API_VERSION: str = __version__
-VERSION: Final[str] = Version(__version__)
+VERSION: Final[Version] = Version(__version__)
 API_VTAG: str = f"v{VERSION.major}"
 
 

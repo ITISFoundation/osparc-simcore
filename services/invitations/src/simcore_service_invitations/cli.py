@@ -83,8 +83,10 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
 
     def _generate_password(length: int) -> str:
         alphabet = string.digits + string.ascii_letters + string.punctuation
-        source = random.sample(alphabet, len(alphabet))
-        return "".join(secrets.choice(source) for _ in range(length))
+        return "".join(
+            secrets.choice(random.sample(alphabet, len(alphabet)))
+            for _ in range(length)
+        )
 
     password: str = (
         getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
@@ -93,10 +95,10 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or _generate_password(length=32)
 
     settings = WebApplicationSettings(
-        INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",  # type: ignore
+        INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",
         INVITATIONS_MAKER_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=getpass.getuser(),
-        INVITATIONS_PASSWORD=password,  # type: ignore
+        INVITATIONS_PASSWORD=password,
     )
 
     for name, value in settings.dict().items():
