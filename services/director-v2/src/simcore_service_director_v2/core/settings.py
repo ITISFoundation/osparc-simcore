@@ -479,9 +479,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         None,
         description="Name of the docker secret containing the self-signed certificate",
     )
-    DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: Optional[str] = Field(
-        None,
-        description="Filepath to self-signed osparc.crt file *as mounted inside the container*",
+    DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: str = Field(
+        "",
+        description="Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it",
     )
 
     # extras

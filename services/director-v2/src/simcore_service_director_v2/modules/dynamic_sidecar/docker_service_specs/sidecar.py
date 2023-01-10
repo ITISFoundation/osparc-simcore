@@ -80,7 +80,6 @@ def _get_environment_variables(
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         # For background info on this special env-var above, see
-        # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847#
         # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
