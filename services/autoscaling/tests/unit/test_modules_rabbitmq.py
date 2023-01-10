@@ -49,7 +49,7 @@ def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingIdleMessage:
         origin=faker.pystr(),
         nodes_total=faker.pyint(),
         nodes_active=faker.pyint(),
-        nodes_reserved=faker.pyint(),
+        nodes_drained=faker.pyint(),
         cluster_total_resources=faker.pydict(),
         cluster_used_resources=faker.pydict(),
     )

@@ -72,7 +72,7 @@ class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
 class _RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     nodes_total: int
     nodes_active: int
-    nodes_reserved: int
+    nodes_drained: int
 
     cluster_total_resources: dict[str, Any]
     cluster_used_resources: dict[str, Any]

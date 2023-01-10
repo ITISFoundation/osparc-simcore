@@ -460,7 +460,7 @@ async def _create_rabbit_message_from_nodes(
                 if n.Spec and (n.Spec.Availability is Availability.active)
             ]
         ),
-        nodes_reserved=len(
+        nodes_drained=len(
             [
                 n
                 for n in monitored_nodes
