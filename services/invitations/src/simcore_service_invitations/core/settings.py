@@ -1,13 +1,8 @@
 from typing import Optional
 
-from models_library.basic_types import (
-    BootModeEnum,
-    BuildTargetEnum,
-    LogLevel,
-    VersionTag,
-)
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -27,7 +22,6 @@ class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_VCS_URL: Optional[str] = None
 
     # @Dockerfile
-    SC_BOOT_MODE: Optional[BootModeEnum] = None
     SC_BOOT_TARGET: Optional[BuildTargetEnum] = None
     SC_HEALTHCHECK_TIMEOUT: Optional[PositiveInt] = Field(
         None,
