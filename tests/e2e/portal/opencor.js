@@ -8,7 +8,9 @@ const {
   urlPrefix,
   templateUuid,
   startTimeout,
-  enableDemoMode
+  enableDemoMode,
+  basicauth_username,
+  basicauth_password
 } = utils.parseCommandLineArgumentsAnonymous(args);
 
 const anonURL = urlPrefix + templateUuid + "?stimulation_mode=1&stimulation_level=0.5";
@@ -16,7 +18,7 @@ const screenshotPrefix = "Opencor_";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode, basicauth_username, basicauth_password);
 
   try {
     const page = await tutorial.beforeScript();
