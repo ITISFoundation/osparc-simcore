@@ -1,30 +1,28 @@
 import logging
 
+from api.routes import router
 from fastapi import FastAPI
 
-from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
-from ..api.routes import setup_api_routes
-from .settings import ApplicationSettings
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
+from .settings import WebApplicationSettings
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
-
-    logger.debug("app settings: %s", settings.json(indent=1))
+def create_app() -> FastAPI:
 
     app = FastAPI(
-        debug=settings.debug,
-        title=PROJECT_NAME,
-        description="Service that manages creation and validation of registration invitations",
+        title=f"{PROJECT_NAME} web API",
+        description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
-        redoc_url=None,  # default disabled
+        redoc_url=None,  # default disabled, see below
     )
+    # states
+    app.state.settings = WebApplicationSettings()
 
-    app.state.settings = settings
-
-    setup_api_routes(app)
+    # routes
+    app.router.include_router(router)
 
     return app

@@ -11,7 +11,7 @@ _current_distribution = pkg_resources.get_distribution("simcore-service-invitati
 __version__: str = _current_distribution.version
 
 
-APP_NAME: Final[str] = _current_distribution.project_name
+PROJECT_NAME: Final[str] = _current_distribution.project_name
 API_VERSION: str = __version__
 VERSION: Final[str] = Version(__version__)
 API_VTAG: str = f"v{VERSION.major}"
@@ -40,5 +40,5 @@ APP_STARTED_BANNER_MSG = r"""
 
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format(
-    f"🎉 App {APP_NAME}=={__version__} shutdown completed 🎉"
+    f"🎉 App {PROJECT_NAME}=={__version__} shutdown completed 🎉"
 )

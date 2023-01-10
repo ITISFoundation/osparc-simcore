@@ -12,16 +12,16 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_invitations.api._invitations import (
+    INVALID_INVITATION_URL_MSG,
+    InvitationGet,
+)
+from simcore_service_invitations.api._meta import Meta
+from simcore_service_invitations.core.application import create_app
 from simcore_service_invitations.invitations import (
     InvitationData,
     create_invitation_link,
 )
-from simcore_service_invitations.web_api import (
-    INVALID_INVITATION_URL_MSG,
-    InvitationGet,
-    Meta,
-)
-from simcore_service_invitations.web_application import create_app
 
 
 @pytest.fixture

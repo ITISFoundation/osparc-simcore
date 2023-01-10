@@ -5,13 +5,13 @@ from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME
+from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
 
 
 class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
-    APP_NAME: str = APP_NAME
+    APP_NAME: str = PROJECT_NAME
     API_VTAG: VersionTag = API_VTAG
 
     # IMAGE BUILDTIME ------------------------------------------------------
