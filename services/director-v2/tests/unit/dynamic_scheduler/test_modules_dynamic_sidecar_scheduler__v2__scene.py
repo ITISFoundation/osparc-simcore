@@ -3,7 +3,6 @@ from typing import Any
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
     Action,
-    Workflow,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
     NextActionNotInPlayCatalogException,
@@ -11,6 +10,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors i
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
     mark_step,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
+    Workflow,
 )
 
 

@@ -11,7 +11,6 @@ import pytest
 from pytest import LogCaptureFixture
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
     Action,
-    Workflow,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextIOInterface,
@@ -34,6 +33,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player i
     PlayerManager,
     _iter_index_step,
     action_player,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
+    Workflow,
 )
 
 logger = logging.getLogger(__name__)

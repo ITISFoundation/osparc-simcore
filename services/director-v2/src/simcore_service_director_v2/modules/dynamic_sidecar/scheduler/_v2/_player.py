@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable, Iterable, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, NonNegativeInt
 
-from ._action import Action, Workflow
+from ._action import Action
 from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
     ActionNotRegisteredException,
@@ -19,6 +19,7 @@ from ._errors import (
 )
 from ._models import ActionName, PlayName, StepName
 from ._play_context import PlayContext
+from ._workflow import Workflow
 
 logger = logging.getLogger(__name__)
 
