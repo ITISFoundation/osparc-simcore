@@ -55,11 +55,6 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
     result: Optional[RunningState] = None
 
 
-class AutoscalingStatus(str, Enum):
-    IDLE = "IDLE"
-    SCALING_UP = "SCALING_UP"
-
-
 class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.autoscaling"] = Field(
         default="io.simcore.autoscaling", const=True
