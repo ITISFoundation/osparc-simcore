@@ -70,12 +70,27 @@ class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
 
 
 class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
-    nodes_total: int
-    nodes_active: int
-    nodes_drained: int
+    nodes_total: int = Field(
+        ..., description="total number of usable nodes (machines) in the cluster"
+    )
+    nodes_active: int = Field(
+        ..., description="number of active nodes (curently in use)"
+    )
+    nodes_drained: int = Field(
+        ...,
+        description="number of drained nodes (currently empty but ready for use if needed)",
+    )
 
-    cluster_total_resources: dict[str, Any]
-    cluster_used_resources: dict[str, Any]
+    cluster_total_resources: dict[str, Any] = Field(
+        ..., description="the total available resources in the cluster (cpu, ram, ...)"
+    )
+    cluster_used_resources: dict[str, Any] = Field(
+        ..., description="the used resources in the cluster (cpu, ram, ...)"
+    )
 
-    instances_pending: int
-    instances_running: int
+    instances_pending: int = Field(
+        ..., description="the number of EC2 instances currently in pending state in AWS"
+    )
+    instances_running: int = Field(
+        ..., description="the number of EC2 instances currently in running state in AWS"
+    )
