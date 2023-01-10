@@ -6,12 +6,14 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.settings.base import BaseCustomSettings
-from pydantic import Field, PositiveInt
+from pydantic import Field, HttpUrl, PositiveInt, SecretStr
+from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from .._meta import API_VERSION, API_VTAG, APP_NAME
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+
+class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
@@ -40,4 +42,32 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     INVITATIONS_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+    )
+
+
+class DesktopApplicationSettings(BaseApplicationSettings):
+    """Desktop app's environs"""
+
+    INVITATIONS_MAKER_SECRET_KEY: SecretStr = Field(
+        ...,
+        description="Secret key to generate invitations"
+        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+        min_length=44,
+    )
+
+    INVITATIONS_MAKER_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
+
+
+class WebApplicationSettings(DesktopApplicationSettings):
+    """Web app's environs"""
+
+    INVITATIONS_USERNAME: str = Field(
+        ...,
+        description="Username for HTTP Basic Auth. Required if started as a web app.",
+        min_length=3,
+    )
+    INVITATIONS_PASSWORD: SecretStr = Field(
+        ...,
+        description="Password for HTTP Basic Auth. Required if started as a web app.",
+        min_length=10,
     )
