@@ -43,9 +43,9 @@ async def play_context(app: FastAPI, context: ContextIOInterface) -> PlayContext
     play_context = PlayContext(
         context=context, app=app, play_name=PLAY_NAME, scene_name=PLAY_SCENE_NAME
     )
-    await play_context.start()
+    await play_context.setup()
     yield play_context
-    await play_context.shutdown()
+    await play_context.teardown()
 
 
 async def test_play_context_local_values(app: FastAPI, play_context: PlayContext):

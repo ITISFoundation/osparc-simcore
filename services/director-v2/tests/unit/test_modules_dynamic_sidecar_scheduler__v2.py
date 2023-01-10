@@ -272,9 +272,9 @@ def play_name() -> PlayName:
 @pytest.fixture
 async def player_manager(app: FastAPI, context: ContextInterface) -> PlayerManager:
     player_manager = PlayerManager(context=context, app=app, play_catalog=PLAY_CATALOG)
-    await player_manager.start()
+    await player_manager.setup()
     yield player_manager
-    await player_manager.shutdown()
+    await player_manager.teardown()
 
 
 # TESTS

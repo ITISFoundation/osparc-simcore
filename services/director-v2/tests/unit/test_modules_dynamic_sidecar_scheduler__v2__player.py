@@ -42,10 +42,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def _player_manager_lifecycle(player_manager: PlayerManager) -> None:
     try:
-        await player_manager.start()
+        await player_manager.setup()
         yield None
     finally:
-        await player_manager.shutdown()
+        await player_manager.teardown()
 
 
 async def test_iter_index_action():
@@ -92,9 +92,9 @@ async def play_context(
     play_context = PlayContext(
         context=context, app=FastAPI(), play_name="unique", scene_name="first"
     )
-    await play_context.start()
+    await play_context.setup()
     yield play_context
-    await play_context.shutdown()
+    await play_context.teardown()
 
 
 async def test_scene_player(

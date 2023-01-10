@@ -29,8 +29,8 @@ class InMemoryContext(ContextInterface):
     async def from_dict(self, incoming: dict[str, Any]) -> None:
         self._context.update(incoming)
 
-    async def start(self) -> None:
+    async def setup(self) -> None:
         """nothing to do here"""
 
-    async def shutdown(self) -> None:
+    async def teardown(self) -> None:
         """nothing to do here"""

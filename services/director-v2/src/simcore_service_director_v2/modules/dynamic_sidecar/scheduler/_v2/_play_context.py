@@ -99,7 +99,7 @@ class PlayContext(ContextIOInterface):
     async def from_dict(self, incoming: dict[str, Any]) -> None:
         return await self._context.from_dict(incoming)
 
-    async def start(self) -> None:
+    async def setup(self) -> None:
         # adding app to context
         await self.set(key=ReservedContextKeys.APP, value=self._app, set_reserved=True)
         await self.set(
@@ -114,5 +114,5 @@ class PlayContext(ContextIOInterface):
             ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX, 0, set_reserved=True
         )
 
-    async def shutdown(self) -> None:
+    async def teardown(self) -> None:
         """no action required here"""

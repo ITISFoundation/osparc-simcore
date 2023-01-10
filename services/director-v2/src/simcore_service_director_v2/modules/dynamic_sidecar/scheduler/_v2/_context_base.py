@@ -63,11 +63,11 @@ class ContextStorageInterface(ABC):
         """is True if key is in store"""
 
     @abstractmethod
-    async def start(self) -> None:
+    async def setup(self) -> None:
         """run storage specific initializers"""
 
     @abstractmethod
-    async def shutdown(self) -> None:
+    async def teardown(self) -> None:
         """run storage specific halt and cleanup"""
 
 

@@ -207,7 +207,7 @@ class PlayerManager:
             play_name=play_name,
             scene_name=scene_name,
         )
-        await play_context.start()
+        await play_context.setup()
 
         scene_player_awaitable: Awaitable = scene_player(
             play_catalog=self.play_catalog,
@@ -249,7 +249,7 @@ class PlayerManager:
                 # shutting down context resolver and ensure task will not be pending
                 task = self._shutdown_tasks_play_context[
                     play_name
-                ] = asyncio.create_task(play_context.shutdown())
+                ] = asyncio.create_task(play_context.teardown())
                 task.add_done_callback(
                     partial(
                         lambda s, _: self._shutdown_tasks_play_context.pop(s, None),
@@ -293,17 +293,17 @@ class PlayerManager:
         task = self._player_tasks[play_name]
         await self.__cancel_task(task)
 
-    async def shutdown(self) -> None:
+    async def teardown(self) -> None:
         # NOTE: content can change while iterating
         for key in set(self._play_context.keys()):
             play_context: Optional[PlayContext] = self._play_context.get(key, None)
             if play_context:
-                await play_context.shutdown()
+                await play_context.teardown()
 
         # NOTE: content can change while iterating
         for key in set(self._shutdown_tasks_play_context.keys()):
             task: Optional[Task] = self._shutdown_tasks_play_context.get(key, None)
             await self.__cancel_task(task)
 
-    async def start(self) -> None:
+    async def setup(self) -> None:
         """currently not required"""
