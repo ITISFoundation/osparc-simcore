@@ -28,22 +28,6 @@ services:
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
 
-  invitations-maker:
-    image: local/invitations-maker:${BUILD_TARGET:?build_target_required}
-    build:
-      context: ../
-      dockerfile: packages/invitations-maker/Dockerfile
-      cache_from:
-        - local/invitations-maker:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/invitations-maker:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/invitations-maker:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/invitations-maker:release-github-latest
-      target: ${BUILD_TARGET:?build_target_required}
-      labels:
-        org.opencontainers.image.created: "${BUILD_DATE}"
-        org.opencontainers.image.source: "${VCS_URL}"
-        org.opencontainers.image.revision: "${VCS_REF}"
-
   # STACK ---------------------------
 
   api-server:
@@ -232,6 +216,24 @@ services:
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
+
+  invitations:
+    image: local/invitations:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/invitations/Dockerfile
+      cache_from:
+        - local/invitations:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/invitations:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/invitations:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/invitations:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "${VCS_URL}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+        io.osparc.api-version: "${INVITATIONS_API_VERSION}"
 
   datcore-adapter:
     image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}

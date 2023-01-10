@@ -162,6 +162,17 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
 
+  invitations:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/autoscinvitationsaling:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+    env_file:
+      - ../.env
+
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
