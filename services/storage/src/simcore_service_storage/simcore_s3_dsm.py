@@ -100,7 +100,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     dataset_id=prj_data.uuid,
                     display_name=prj_data.name,
                 )
-                async for prj_data in db_projects.list_projects(
+                async for prj_data in db_projects.list_valid_projects_in(
                     conn, readable_projects_ids
                 )
             ]
@@ -144,7 +144,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
             # now parse the project to search for node/project names
             prj_names_mapping: dict[Union[ProjectID, NodeID], str] = {}
-            async for proj_data in db_projects.list_projects(
+            async for proj_data in db_projects.list_valid_projects_in(
                 conn, accesible_projects_ids
             ):
                 prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
