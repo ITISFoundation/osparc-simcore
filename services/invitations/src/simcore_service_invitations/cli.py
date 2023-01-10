@@ -1,8 +1,5 @@
 import getpass
 import logging
-import random
-import secrets
-import string
 from typing import Optional
 
 import rich
@@ -10,6 +7,7 @@ import typer
 from cryptography.fernet import Fernet
 from pydantic import EmailStr, HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
+from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import create_settings_command
 
 from . import web_server
@@ -85,21 +83,11 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     """
     assert ctx  # nosec
 
-    def _generate_password(length: int) -> str:
-        alphabet = (
-            string.digits + string.ascii_letters + string.punctuation.replace('"', "")
-        )
-
-        return "".join(
-            secrets.choice(random.sample(alphabet, len(alphabet)))
-            for _ in range(length)
-        )
-
     password: str = (
         getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
         if not auto_password
         else None
-    ) or _generate_password(length=32)
+    ) or generate_password(length=32)
 
     settings = WebApplicationSettings(
         INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",
