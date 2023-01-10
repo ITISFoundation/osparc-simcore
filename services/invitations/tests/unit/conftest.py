@@ -23,7 +23,6 @@ pytest_plugins = [
 # pylint:disable=redefined-outer-name
 
 
-
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # fixtures in pytest_simcore.environs

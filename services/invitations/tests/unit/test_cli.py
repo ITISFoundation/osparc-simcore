@@ -8,6 +8,7 @@ import os
 
 from faker import Faker
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
 from simcore_service_invitations.cli import app
@@ -76,3 +77,12 @@ def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: MonkeyPatch):
     settings_from_envs = WebApplicationSettings()
 
     assert settings_from_envs == settings_from_obj
+
+
+def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
+    result = cli_runner.invoke(app, ["settings", "--show-secrets", "--as-json"])
+    assert result.exit_code == os.EX_OK, result.output
+
+    print(result.output)
+    settings = WebApplicationSettings.parse_raw(result.output)
+    assert settings == WebApplicationSettings.create_from_envs()

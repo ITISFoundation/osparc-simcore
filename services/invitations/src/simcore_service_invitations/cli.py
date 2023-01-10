@@ -1,4 +1,5 @@
 import getpass
+import logging
 import random
 import secrets
 import string
@@ -9,6 +10,7 @@ import typer
 from cryptography.fernet import Fernet
 from pydantic import EmailStr, HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
+from settings_library.utils_cli import create_settings_command
 
 from . import web_server
 from ._meta import PROJECT_NAME, __version__
@@ -23,6 +25,8 @@ from .invitations import (
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:app'
 app = typer.Typer(name=PROJECT_NAME)
+log = logging.getLogger(__name__)
+
 err_console = Console(stderr=True)
 
 
@@ -164,7 +168,7 @@ def check(ctx: typer.Context, invitation_url: str):
         err_console.print("[bold red]Invalid code[/bold red]")
 
 
-# app.command()(create_settings_command(settings_cls=WebApplicationSettings, logger=log))
+app.command()(create_settings_command(settings_cls=WebApplicationSettings, logger=log))
 
 
 @app.command()
@@ -175,14 +179,3 @@ def serve(
     """Starts server with http API"""
     assert ctx  # nosec
     web_server.start(log_level="info", reload=reload)
-
-
-# @app.command()
-# def run(ctx: typer.Context):
-#     """Runs application"""
-#     assert ctx  # nosec
-#     typer.secho("Sorry, this entrypoint is intentionally disabled. Use instead")
-#     typer.secho(
-#         "$ uvicorn simcore_service_invitations.main:the_app",
-#         fg=typer.colors.BLUE,
-#     )
