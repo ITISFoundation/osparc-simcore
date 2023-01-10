@@ -1,23 +1,34 @@
-from typing import AsyncGenerator
+from contextlib import suppress
+from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from models_library.projects import ProjectAtDB, ProjectID
+from pydantic import ValidationError
 from simcore_postgres_database.storage_models import projects
 
 
-async def list_projects(
-    conn: SAConnection, project_uuids: list[ProjectID]
-) -> AsyncGenerator[ProjectAtDB, None]:
+async def list_valid_projects_in(
+    conn: SAConnection,
+    include_uuids: list[ProjectID],
+) -> AsyncIterator[ProjectAtDB]:
+    """
+
+    NOTE that it lists ONLY validated projects in 'project_uuids'
+    """
     async for row in conn.execute(
         sa.select([projects]).where(
-            projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
+            projects.c.uuid.in_(f"{pid}" for pid in include_uuids)
         )
     ):
-        yield ProjectAtDB.from_orm(row)
+        with suppress(ValidationError):
+            yield ProjectAtDB.from_orm(row)
 
 
-async def project_exists(conn: SAConnection, project_uuid: ProjectID) -> bool:
+async def project_exists(
+    conn: SAConnection,
+    project_uuid: ProjectID,
+) -> bool:
     return (
         await conn.scalar(
             sa.select([sa.func.count()])
