@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Any, Callable
 from urllib import parse
 
-import cryptography.fernet
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -12,7 +11,12 @@ from pydantic import AnyHttpUrl, BaseModel, Field
 from starlette.datastructures import URL
 
 from ._meta import API_VERSION, PROJECT_NAME
-from .invitations import InvitationData, create_invitation_link, decrypt_invitation
+from .invitations import (
+    InvalidInvitationCode,
+    InvitationData,
+    create_invitation_link,
+    extract_invitation_data,
+)
 from .settings import WebApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -181,12 +185,11 @@ async def check_invitation(
     assert username == settings.INVITATIONS_USERNAME  # nosec
 
     try:
-
-        invitation = decrypt_invitation(
+        invitation = extract_invitation_data(
             invitation_code=invitation_check.get_invitation_code(),
             secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         )
-    except cryptography.fernet.InvalidToken as err:
+    except InvalidInvitationCode as err:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=INVALID_INVITATION_URL_MSG,

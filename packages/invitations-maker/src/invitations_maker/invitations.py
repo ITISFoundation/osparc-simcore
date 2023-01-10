@@ -1,9 +1,22 @@
 import base64
+import binascii
 from typing import Optional, cast
 
-from cryptography.fernet import Fernet
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, PositiveInt, parse_obj_as
+from cryptography.fernet import Fernet, InvalidToken
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    ValidationError,
+    parse_obj_as,
+)
 from starlette.datastructures import URL
+
+
+class InvalidInvitationCode(Exception):
+    ...
 
 
 class InvitationData(BaseModel):
@@ -33,9 +46,15 @@ class InvitationData(BaseModel):
 
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
         fields = {
-            "issuer": {"alias": "i"},
-            "guest": {"alias": "g"},
-            "trial_account_days": {"alias": "t"},
+            "issuer": {
+                "alias": "i",
+            },
+            "guest": {
+                "alias": "g",
+            },
+            "trial_account_days": {
+                "alias": "t",
+            },
         }
 
 
@@ -84,8 +103,9 @@ def create_invitation_link(
 def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationData:
     """
 
-    raises cryptography.fernet.InvalidToken if code has a different secret_key
-
+    raises cryptography.fernet.InvalidToken if code has a different secret_key (see test_invalid_invitation_secret)
+    raises pydantic.ValidationError if sent invalid data (see test_invalid_invitation_data)
+    raises binascii.Error if code is not fernet (binascii.Error))
     """
     # decode urlsafe (symmetric from base64.urlsafe_b64encode(encrypted))
     code: bytes = base64.urlsafe_b64decode(invitation_code)
@@ -95,3 +115,13 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationDat
 
     # parses serialized invitation
     return InvitationData.parse_raw(decryted.decode())
+
+
+def extract_invitation_data(invitation_code: str, secret_key: bytes) -> InvitationData:
+    """As decrypt_invitation but raises InvalidInvitationCode if fails"""
+    try:
+        return decrypt_invitation(
+            invitation_code=invitation_code, secret_key=secret_key
+        )
+    except (InvalidToken, ValidationError, binascii.Error) as err:
+        raise InvalidInvitationCode from err

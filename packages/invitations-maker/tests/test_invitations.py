@@ -10,11 +10,14 @@ import cryptography.fernet
 import pytest
 from faker import Faker
 from invitations_maker.invitations import (
+    InvalidInvitationCode,
     InvitationData,
     _create_invitation_code,
     create_invitation_link,
     decrypt_invitation,
+    extract_invitation_data,
 )
+from pydantic import BaseModel, ValidationError
 from starlette.datastructures import URL
 
 
@@ -80,19 +83,58 @@ def test_valid_invitation_code(
 
 
 def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
-    wrong_code = invitation_code[:-1]  # strip last
+    my_invitation_code = invitation_code[:-1]  # strip last (wrong code!)
+    my_secret_key = secret_key.encode()
+
     with pytest.raises(binascii.Error) as error_info:
         decrypt_invitation(
-            invitation_code=wrong_code,
-            secret_key=secret_key.encode(),
+            invitation_code=my_invitation_code,
+            secret_key=my_secret_key,
         )
 
     assert f"{error_info.value}" == "Incorrect padding"
 
+    with pytest.raises(InvalidInvitationCode):
+        extract_invitation_data(
+            invitation_code=my_invitation_code,
+            secret_key=my_secret_key,
+        )
 
-def test_invalid_invation_secret(another_secret_key: str, invitation_code: str):
-    with pytest.raises(cryptography.fernet.InvalidToken) as error_info:
+
+def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str):
+    my_invitation_code = invitation_code
+    my_secret_key = another_secret_key.encode()
+
+    with pytest.raises(cryptography.fernet.InvalidToken):
         decrypt_invitation(
-            invitation_code=invitation_code,
-            secret_key=another_secret_key.encode(),
+            invitation_code=my_invitation_code,
+            secret_key=my_secret_key,
+        )
+
+    with pytest.raises(InvalidInvitationCode):
+        extract_invitation_data(
+            invitation_code=my_invitation_code,
+            secret_key=my_secret_key,
+        )
+
+
+def test_invalid_invitation_data(secret_key: str):
+    class OtherData(BaseModel):
+        foo: int = 123
+
+    my_invitation_code = _create_invitation_code(
+        invitation_data=OtherData(), secret_key=secret_key.encode()
+    ).decode()
+    my_secret_key = secret_key.encode()
+
+    with pytest.raises(ValidationError):
+        decrypt_invitation(
+            invitation_code=my_invitation_code,
+            secret_key=my_secret_key,
+        )
+
+    with pytest.raises(InvalidInvitationCode):
+        extract_invitation_data(
+            invitation_code=my_invitation_code,
+            secret_key=my_secret_key,
         )
