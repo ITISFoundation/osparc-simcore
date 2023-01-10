@@ -303,6 +303,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         });
       }, this);
       return moreOptsButton;
+    },
+
+    _getShareMenuButton: function(card) {
+      const resourceData = card.getResourceData();
+      const isCurrentUserOwner = osparc.data.model.Study.canIWrite(resourceData["accessRights"]);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+      shareButton.addListener("tap", () => card.openAccessRights(), this);
+      return shareButton;
     }
   }
 });

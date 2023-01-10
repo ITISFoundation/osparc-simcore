@@ -538,7 +538,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return moreOpts;
     },
 
-    _openAccessRights: function() {
+    openAccessRights: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openAccessRights();
     },
@@ -557,7 +557,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _evaluateShareIcon: function(shareIcon, accessRights) {
       shareIcon.addListener("tap", e => {
         e.stopPropagation();
-        this._openAccessRights();
+        this.openAccessRights();
       }, this);
       shareIcon.addListener("pointerdown", e => e.stopPropagation());
 

@@ -183,6 +183,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         menu.addSeparator();
       }
 
+      const shareButton = this._getShareMenuButton(card);
+      if (shareButton) {
+        menu.add(shareButton);
+      }
+
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);

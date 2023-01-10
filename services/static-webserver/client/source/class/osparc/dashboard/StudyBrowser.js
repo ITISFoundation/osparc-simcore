@@ -691,7 +691,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDataButton = this.__getStudyDataMenuButton(studyData);
       menu.add(studyDataButton);
 
-      const shareButton = this.__getShareMenuButton(studyData);
+      const shareButton = this._getShareMenuButton(card);
       menu.add(shareButton);
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
@@ -744,7 +744,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(studyData) {
-      const text = osparc.utils.Utils.isProduct("s4llite") ? this.tr("Project data") : this.tr("Study data");
+      const text = (osparc.utils.Utils.isProduct("s4llite") ? this.tr("Project") : this.tr("Study")) + this.tr(" data...");
       const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
@@ -753,12 +753,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
       }, this);
       return studyDataButton;
-    },
-
-    __getShareMenuButton: function(studyData) {
-      const shareButton = new qx.ui.menu.Button(this.tr("Share"));
-      shareButton.addListener("tap", e => this._openAccessRights(), this);
-      return shareButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {
