@@ -27,7 +27,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models i
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player import (
     ExceptionInfo,
-    PlayerManager,
+    WorkflowRunnerManager,
     _iter_index_step,
     workflow_runner,
 )
@@ -42,12 +42,14 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def _player_manager_lifecycle(player_manager: PlayerManager) -> None:
+async def _workflow_runner_manager_lifecycle(
+    workflow_runner_manager: WorkflowRunnerManager,
+) -> None:
     try:
-        await player_manager.setup()
+        await workflow_runner_manager.setup()
         yield None
     finally:
-        await player_manager.teardown()
+        await workflow_runner_manager.teardown()
 
 
 async def test_iter_index_step():
@@ -156,7 +158,7 @@ async def test_workflow_runner(
     assert "hook_after action='first' step='initial'" in caplog_info_level.messages
 
 
-async def test_player_manager(context: ContextIOInterface):
+async def test_workflow_runner_manager(context: ContextIOInterface):
     @mark_step
     async def initial_state() -> dict[str, Any]:
         print("initial state")
@@ -195,8 +197,10 @@ async def test_player_manager(context: ContextIOInterface):
 
     workflow = Workflow(FIRST_ACTION, SECOND_ACTION)
 
-    play_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
-    async with _player_manager_lifecycle(play_manager):
+    play_manager = WorkflowRunnerManager(
+        context=context, app=AsyncMock(), workflow=workflow
+    )
+    async with _workflow_runner_manager_lifecycle(play_manager):
         # ok workflow_runner
         await play_manager.start_workflow_runner(
             play_name="start_first", action_name="first"
@@ -274,18 +278,22 @@ async def test_workflow_runner_error_handling(
 
     play_name = "test_play"
     # CASE 1
-    player_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
-    async with _player_manager_lifecycle(player_manager):
-        await player_manager.start_workflow_runner(
+    workflow_runner_manager = WorkflowRunnerManager(
+        context=context, app=AsyncMock(), workflow=workflow
+    )
+    async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
+        await workflow_runner_manager.start_workflow_runner(
             play_name=play_name, action_name="case_1_rasing_error"
         )
-        await player_manager.wait_workflow_runner(play_name)
+        await workflow_runner_manager.wait_workflow_runner(play_name)
 
     # CASE 2
-    player_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
-    async with _player_manager_lifecycle(player_manager):
-        await player_manager.start_workflow_runner(
+    workflow_runner_manager = WorkflowRunnerManager(
+        context=context, app=AsyncMock(), workflow=workflow
+    )
+    async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
+        await workflow_runner_manager.start_workflow_runner(
             play_name=play_name, action_name="case_2_raising_error"
         )
         with pytest.raises(RuntimeError):
-            await player_manager.wait_workflow_runner(play_name)
+            await workflow_runner_manager.wait_workflow_runner(play_name)

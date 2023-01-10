@@ -88,8 +88,8 @@ from unittest.mock import AsyncMock
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2 import (
     Action,
-    PlayerManager,
     Workflow,
+    WorkflowRunnerManager,
     mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
@@ -285,18 +285,24 @@ def play_name() -> WorkflowName:
 
 
 @pytest.fixture
-async def player_manager(app: AsyncMock, context: ContextInterface) -> PlayerManager:
-    player_manager = PlayerManager(context=context, app=app, workflow=WORKFLOW)
-    await player_manager.setup()
-    yield player_manager
-    await player_manager.teardown()
+async def workflow_runner_manager(
+    app: AsyncMock, context: ContextInterface
+) -> WorkflowRunnerManager:
+    workflow_runner_manager = WorkflowRunnerManager(
+        context=context, app=app, workflow=WORKFLOW
+    )
+    await workflow_runner_manager.setup()
+    yield workflow_runner_manager
+    await workflow_runner_manager.teardown()
 
 
 # TESTS
 
 
 async def test_bake_cake_ok_eventually(
-    player_manager: PlayerManager, context: ContextInterface, play_name: WorkflowName
+    workflow_runner_manager: WorkflowRunnerManager,
+    context: ContextInterface,
+    play_name: WorkflowName,
 ):
     # Before the baking, initiate some vars in the context
     # to be available (this is just a convenient place do to it)
@@ -305,16 +311,18 @@ async def test_bake_cake_ok_eventually(
 
     # With an over fail probability of 65% and 10 tries to bake a cake
     # we expect for the procedure to eventually finish without issues
-    await player_manager.start_workflow_runner(
+    await workflow_runner_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
 
     # waiting here is done for convenience, normally you would not do this
-    await player_manager.wait_workflow_runner(play_name)
+    await workflow_runner_manager.wait_workflow_runner(play_name)
 
 
 async def test_bake_cake_fails(
-    player_manager: PlayerManager, context: ContextInterface, play_name: WorkflowName
+    workflow_runner_manager: WorkflowRunnerManager,
+    context: ContextInterface,
+    play_name: WorkflowName,
 ):
     await context.save("available_time_hours", 10.0)
     await context.save("oven_fail_probability", 1.0)
@@ -322,15 +330,17 @@ async def test_bake_cake_fails(
     # With an over fail probability of 100% it is not possible to
     # finish baking the cake in time, after 10 tries it will give up
     # and raise an error.
-    await player_manager.start_workflow_runner(
+    await workflow_runner_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
     with pytest.raises(NotEnoughIngredientsError):
-        await player_manager.wait_workflow_runner(play_name)
+        await workflow_runner_manager.wait_workflow_runner(play_name)
 
 
 async def test_bake_cake_cancelled_by_external_event(
-    player_manager: PlayerManager, context: ContextInterface, play_name: WorkflowName
+    workflow_runner_manager: WorkflowRunnerManager,
+    context: ContextInterface,
+    play_name: WorkflowName,
 ):
     await context.save("available_time_hours", 1e10)
     await context.save("oven_fail_probability", 1.0)
@@ -338,7 +348,7 @@ async def test_bake_cake_cancelled_by_external_event(
     # With a virtually infinite time to spend for retries
     # event if the over fail probability is 100% this process
     # will last a very long time before failing.
-    await player_manager.start_workflow_runner(
+    await workflow_runner_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
     ENSURE_IT_IS_RUNNING = 0.1
@@ -346,17 +356,17 @@ async def test_bake_cake_cancelled_by_external_event(
 
     # Emulating that a technician just rang the dor bell
     # to fix the faulty oven. Cancelling current task
-    assert play_name in player_manager._player_tasks
-    await player_manager.cancel_and_wait_workflow_runner(
+    assert play_name in workflow_runner_manager._player_tasks
+    await workflow_runner_manager.cancel_and_wait_workflow_runner(
         play_name
     )  # somehting that watis for cancellation cancel_and_wait
-    assert play_name not in player_manager._player_tasks
+    assert play_name not in workflow_runner_manager._player_tasks
 
     # Technician fixes oven, a new task or the same one can
     # be started again. Expect to finish immediately since
     # there is a 0% probability of oven failure.
     await context.save("oven_fail_probability", 0.0)
-    await player_manager.start_workflow_runner(
+    await workflow_runner_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
-    await player_manager.wait_workflow_runner(play_name)
+    await workflow_runner_manager.wait_workflow_runner(play_name)

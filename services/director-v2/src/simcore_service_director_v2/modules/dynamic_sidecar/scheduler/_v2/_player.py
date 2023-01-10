@@ -159,7 +159,7 @@ async def workflow_runner(
             start_from_index = 0
 
 
-class PlayerManager:
+class WorkflowRunnerManager:
     """
     Keeps track of running `workflow_runner`s and is responsible for:
     starting, stopping and cancelling them.
