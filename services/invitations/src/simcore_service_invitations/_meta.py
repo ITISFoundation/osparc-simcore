@@ -31,12 +31,10 @@ def get_summary() -> str:
 SUMMARY: Final[str] = get_summary()
 
 
-APP_STARTED_BANNER_MSG = """ SEE
-
-    https://patorjk.com/software/taag/#p=testall&f=Avatar&t=MyServiceName
-
-    {}
-    """.format(
+APP_STARTED_BANNER_MSG = r"""
+. _   ._|_ _ _|_. _  _  _
+|| |\/| | (_| | |(_)| |_\    {}
+""".format(
     f"v{__version__}"
 )
 
