@@ -17,7 +17,7 @@ def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
     # ensure it has the same type
     existing_type = type(existing_value)
     value_type = type(value)
-    if existing_type != value_type:
+    if not isinstance(existing_value, value_type):
         raise SetTypeMismatchError(
             key=key,
             existing_value=existing_value,
@@ -84,7 +84,7 @@ class PlayContext(ContextIOInterface):
             else await self._context.load(key)
         )
         exiting_type = type(existing_value)
-        if exiting_type != expected_type:
+        if not isinstance(existing_value, expected_type):
             raise GetTypeMismatchError(
                 key=key,
                 existing_value=existing_value,
