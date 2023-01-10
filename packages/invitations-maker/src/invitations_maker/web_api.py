@@ -2,13 +2,11 @@ import logging
 import secrets
 from datetime import datetime
 from typing import Any, Callable
-from urllib import parse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from pydantic import AnyHttpUrl, BaseModel, Field
-from starlette.datastructures import URL
+from pydantic import BaseModel, Field, HttpUrl
 
 from ._meta import API_VERSION, PROJECT_NAME
 from .invitations import (
@@ -16,6 +14,7 @@ from .invitations import (
     InvitationData,
     create_invitation_link,
     extract_invitation_data,
+    parse_invitation_code,
 )
 from .settings import WebApplicationSettings
 
@@ -79,7 +78,7 @@ INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 class Meta(BaseModel):
     name: str
     version: str
-    docs_url: AnyHttpUrl
+    docs_url: HttpUrl
 
 
 class InvitationCreate(InvitationData):
@@ -95,7 +94,7 @@ class InvitationCreate(InvitationData):
 
 
 class InvitationGet(InvitationCreate):
-    invitation_url: AnyHttpUrl = Field(..., description="Resulting invitation link")
+    invitation_url: HttpUrl = Field(..., description="Resulting invitation link")
 
     class Config:
         schema_extra = {
@@ -109,22 +108,7 @@ class InvitationGet(InvitationCreate):
 
 
 class InvitationCheck(BaseModel):
-    invitation_url: AnyHttpUrl = Field(..., description="Full Invitation link")
-
-    def get_invitation_code(self):
-        try:
-
-            query_params = dict(
-                parse.parse_qsl(URL(self.invitation_url.fragment).query)
-            )
-            invitation_code = query_params["invitation"]
-            return invitation_code
-
-        except KeyError as err:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=INVALID_INVITATION_URL_MSG,
-            ) from err
+    invitation_url: HttpUrl = Field(..., description="Full Invitation link")
 
 
 #
@@ -186,7 +170,7 @@ async def check_invitation(
 
     try:
         invitation = extract_invitation_data(
-            invitation_code=invitation_check.get_invitation_code(),
+            invitation_code=parse_invitation_code(invitation_check.invitation_url),
             secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         )
     except InvalidInvitationCode as err:

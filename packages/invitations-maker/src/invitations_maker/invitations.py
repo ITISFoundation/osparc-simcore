@@ -1,6 +1,8 @@
 import base64
 import binascii
+import logging
 from typing import Optional, cast
+from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import (
@@ -14,9 +16,20 @@ from pydantic import (
 )
 from starlette.datastructures import URL
 
+logger = logging.getLogger(__name__)
+
+#
+# Errors
+#
+
 
 class InvalidInvitationCode(Exception):
     ...
+
+
+#
+# Models
+#
 
 
 class InvitationData(BaseModel):
@@ -58,6 +71,11 @@ class InvitationData(BaseModel):
         }
 
 
+#
+# Utils
+#
+
+
 def _build_link(
     base_url: str,
     code_url_safe: str,
@@ -69,6 +87,16 @@ def _build_link(
     base_url = f"{base_url.rstrip('/')}/"
     url = URL(base_url).replace(fragment=f"{r}")
     return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
+
+
+def parse_invitation_code(invitation_url: HttpUrl) -> str:
+    try:
+        query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
+        invitation_code: str = query_params["invitation"]
+        return invitation_code
+    except KeyError as err:
+        logger.debug("Invalid invitation: %s", err)
+        raise InvalidInvitationCode from err
 
 
 def _create_invitation_code(
@@ -83,6 +111,11 @@ def _create_invitation_code(
     fernet = Fernet(secret_key)
     code: bytes = fernet.encrypt(serialized.encode())
     return base64.urlsafe_b64encode(code)
+
+
+#
+# API
+#
 
 
 def create_invitation_link(
@@ -102,6 +135,8 @@ def create_invitation_link(
 
 def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationData:
     """
+
+    WARNING: invitation_code should not be taken directly from the url fragment without 'parse_invitation_code'
 
     raises cryptography.fernet.InvalidToken if code has a different secret_key (see test_invalid_invitation_secret)
     raises pydantic.ValidationError if sent invalid data (see test_invalid_invitation_data)
@@ -124,4 +159,5 @@ def extract_invitation_data(invitation_code: str, secret_key: bytes) -> Invitati
             invitation_code=invitation_code, secret_key=secret_key
         )
     except (InvalidToken, ValidationError, binascii.Error) as err:
+        logger.debug("Invalid code: %s", err)
         raise InvalidInvitationCode from err

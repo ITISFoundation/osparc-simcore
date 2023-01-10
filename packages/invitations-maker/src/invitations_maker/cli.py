@@ -8,12 +8,17 @@ import rich
 import typer
 from cryptography.fernet import Fernet
 from invitations_maker.invitations import extract_invitation_data
-from pydantic import EmailStr, SecretStr, parse_obj_as
+from pydantic import EmailStr, HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
 
 from . import web_server
 from ._meta import __version__
-from .invitations import InvalidInvitationCode, InvitationData, create_invitation_link
+from .invitations import (
+    InvalidInvitationCode,
+    InvitationData,
+    create_invitation_link,
+    parse_invitation_code,
+)
 from .settings import DesktopApplicationSettings, WebApplicationSettings
 
 app = typer.Typer()
@@ -141,7 +146,7 @@ def invite(
 
 
 @app.command()
-def check(ctx: typer.Context, invitation_code: str):
+def check(ctx: typer.Context, invitation_url: str):
     """Check invitation code and prints invitation"""
 
     assert ctx  # nosec
@@ -149,10 +154,12 @@ def check(ctx: typer.Context, invitation_code: str):
 
     try:
         invitation_data = extract_invitation_data(
-            invitation_code=invitation_code,
+            invitation_code=parse_invitation_code(
+                parse_obj_as(HttpUrl, invitation_url)
+            ),
             secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         )
 
-        rich.print(invitation_data)
-    except InvalidInvitationCode:
+        rich.print(invitation_data.dict())
+    except (InvalidInvitationCode, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
