@@ -164,16 +164,15 @@ def test_check_valid_invitation(
     assert invitation.trial_account_days == invitation_data.trial_account_days
 
 
-def test_check_invalid_invitation_different_secret(
+def test_check_invalid_invitation_with_different_secret(
     client: TestClient,
     basic_auth: httpx.BasicAuth,
     invitation_data: InvitationData,
     another_secret_key: str,
 ):
-
     invitation_url = create_invitation_link(
         invitation_data=invitation_data,
-        secret_key=another_secret_key,
+        secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
         base_url=f"{client.base_url}",
     )
 
@@ -181,6 +180,52 @@ def test_check_invalid_invitation_different_secret(
     response = client.post(
         "/invitation:check",
         json={"invitation_url": invitation_url},
+        auth=basic_auth,
+    )
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), f"{response.json()=}"
+
+    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+
+
+def test_check_invalid_invitation_with_wrong_fragment(
+    client: TestClient,
+    basic_auth: httpx.BasicAuth,
+):
+    # check invitation_url
+    response = client.post(
+        "/invitation:check",
+        json={
+            "invitation_url": "https://foo.com#/page?some_value=True"
+        },  # <-- NOTE: DIFFERENT fragment
+        auth=basic_auth,
+    )
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), f"{response.json()=}"
+
+    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+
+
+def test_check_invalid_invitation_with_wrong_code(
+    client: TestClient,
+    basic_auth: httpx.BasicAuth,
+    invitation_data: InvitationData,
+    another_secret_key: str,
+):
+    invitation_url = create_invitation_link(
+        invitation_data=invitation_data,
+        secret_key=another_secret_key,  # <-- NOTE: DIFFERENT secret
+        base_url=f"{client.base_url}",
+    )
+
+    invitation_url_with_invalid_code = invitation_url[:-3]
+
+    # check invitation_url
+    response = client.post(
+        "/invitation:check",
+        json={"invitation_url": invitation_url_with_invalid_code},
         auth=basic_auth,
     )
     assert (
