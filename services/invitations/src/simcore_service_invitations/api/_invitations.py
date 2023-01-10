@@ -84,7 +84,7 @@ async def create_invitation(
 
 
 @router.post(
-    "/invitation:check", response_model=InvitationGet, response_model_by_alias=False
+    "/invitation:check", response_model=InvitationData, response_model_by_alias=False
 )
 async def check_invitation(
     invitation_check: InvitationCheck,
@@ -105,8 +105,7 @@ async def check_invitation(
             detail=INVALID_INVITATION_URL_MSG,
         ) from err
 
-    invitation = InvitationGet(
-        invitation_url=invitation_check.invitation_url,
+    invitation = InvitationData(
         **invitation.dict(),
     )
 

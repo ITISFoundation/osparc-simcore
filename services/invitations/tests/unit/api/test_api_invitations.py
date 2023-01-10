@@ -69,7 +69,7 @@ def test_check_invitation(
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationGet.parse_obj(response.json())
+    invitation = InvitationData.parse_obj(response.json())
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
     assert invitation.trial_account_days == invitation_data.trial_account_days
@@ -96,7 +96,7 @@ def test_check_valid_invitation(
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationGet.parse_obj(response.json())
+    invitation = InvitationData.parse_obj(response.json())
 
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest

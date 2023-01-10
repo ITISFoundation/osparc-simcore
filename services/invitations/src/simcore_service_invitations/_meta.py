@@ -31,9 +31,12 @@ def get_summary() -> str:
 SUMMARY: Final[str] = get_summary()
 
 
+# NOTE: https://texteditor.com/ascii-frames/
 APP_STARTED_BANNER_MSG = r"""
-. _   ._|_ _ _|_. _  _  _
-|| |\/| | (_| | |(_)| |_\    {}
+         ()()                ____
+         (..)               /|o  |
+         /\/\  Invitations /o|  o|
+        c\db/o............/o_|_o_|  {}
 """.format(
     f"v{__version__}"
 )
