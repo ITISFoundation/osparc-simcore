@@ -341,9 +341,7 @@ async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> N
     )
 
 
-async def _scale_up_cluster(
-    app: FastAPI, monitored_nodes: list[Node], pending_tasks: list[Task]
-) -> None:
+async def _scale_up_cluster(app: FastAPI, pending_tasks: list[Task]) -> None:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -427,7 +425,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
             app, monitored_nodes, pending_tasks
         ):
             # no? then scale up
-            await _scale_up_cluster(app, monitored_nodes, pending_tasks)
+            await _scale_up_cluster(app, pending_tasks)
     else:
         await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
         await _try_scale_down_cluster(app, monitored_nodes)

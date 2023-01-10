@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from models_library.generated_models.docker_rest_api import Task
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -64,17 +62,3 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-
-
-@dataclass(order=True)
-class StartedInstancesData:
-    num_launched: int = 0
-    num_booting: int = 0
-    num_running: int = 0
-
-    def __add__(self, other: "StartedInstancesData") -> "StartedInstancesData":
-        return StartedInstancesData(
-            self.num_launched + other.num_launched,
-            self.num_booting + other.num_booting,
-            self.num_running + other.num_running,
-        )
