@@ -14,9 +14,9 @@ codecov
 coverage
 coveralls
 faker
+httpx
 pytest
-pytest-asyncio
 pytest-cov
-pytest-mock
 pytest-runner
-respx
+pytest-sugar
+python-dotenv

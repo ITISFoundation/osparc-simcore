@@ -12,4 +12,8 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+cryptography~=39.0.0 # security
 fastapi
+pydantic[email]
+typer[all]
+uvicorn[standard]
