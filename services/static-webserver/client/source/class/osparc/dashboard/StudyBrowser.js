@@ -156,9 +156,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const services = values[1];
               if (templates.length === 0 && Object.keys(services).length === 0) {
                 const noAccessText = new qx.ui.basic.Label().set({
+                  selectable: true,
                   rich: true,
                   font: "title-16",
-                  padding: 10
+                  paddingTop: 20
                 });
                 let msg = this.tr("It seems you don't have access to this product.");
                 msg += "</br>";
