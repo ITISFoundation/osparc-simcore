@@ -143,14 +143,45 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addResourcesToList(resources);
 
+          const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
+          // Show "Contact Us" message if studies.length === 0 && templates.length === 0 && services.length === 0
+          // Most probably is a product-stranger user (it can also be that the catalog is down)
+          if (nStudies === 0) {
+            const store = osparc.store.Store.getInstance();
+            Promise.all([
+              store.getTemplates(),
+              store.getAllServices()
+            ]).then(values => {
+              const templates = values[0];
+              const services = values[1];
+              if (templates.length === 0 && Object.keys(services).length === 0) {
+                const noAccessText = new qx.ui.basic.Label().set({
+                  rich: true,
+                  font: "title-16",
+                  padding: 10
+                });
+                let msg = this.tr("It seems you don't have access to this product.");
+                msg += "</br>";
+                msg += "</br>";
+                msg += this.tr("Please, contact us:");
+                msg += "</br>";
+                osparc.store.VendorInfo.getInstance().getSupportEmail()
+                  .then(supportEmail => {
+                    noAccessText.setValue(msg + supportEmail);
+                  });
+                this._addAt(noAccessText, 2);
+              }
+            });
+          }
+
+          // Show Quick Start if studies.length === 0
           const tutorial = osparc.component.tutorial.Utils.getTutorial();
           if (tutorial) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
               return;
             }
-            if ("_meta" in resp && resp["_meta"]["total"] === 0) {
-              // there are no studies
+            if (nStudies === 0) {
               const tutorialWindow = tutorial.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
