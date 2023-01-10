@@ -9,7 +9,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker i
 )
 
 
-async def test_register_action_with_return_value():
+async def test_register_step_with_return_value():
     @mark_step
     async def return_inputs(x: str, y: float, z: dict[str, int]) -> dict[str, Any]:
         return {"x": x, "y": y, "z": z}
@@ -19,7 +19,7 @@ async def test_register_action_with_return_value():
     assert await return_inputs(1, 2, {"a": 3}) == dict(x=1, y=2, z={"a": 3})
 
 
-async def test_register_action_wrong_return_type():
+async def test_register_step_wrong_return_type():
     with pytest.raises(UnexpectedStepReturnTypeError) as exec_info:
 
         @mark_step

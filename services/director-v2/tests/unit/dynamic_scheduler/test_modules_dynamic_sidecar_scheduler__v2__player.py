@@ -19,8 +19,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker i
     mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
-    ActionName,
     SceneName,
+    StepName,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._play_context import (
     PlayContext,
@@ -28,7 +28,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._play_con
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player import (
     ExceptionInfo,
     PlayerManager,
-    _iter_index_action,
+    _iter_index_step,
     scene_player,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._scene import (
@@ -48,7 +48,7 @@ async def _player_manager_lifecycle(player_manager: PlayerManager) -> None:
         await player_manager.teardown()
 
 
-async def test_iter_index_action():
+async def test_iter_index_step():
     async def first():
         pass
 
@@ -59,29 +59,27 @@ async def test_iter_index_action():
         pass
 
     awaitables = [first, second, third]
-    action_sequence = list(enumerate(awaitables))
+    step_sequence = list(enumerate(awaitables))
 
-    three_element_list = list(_iter_index_action(awaitables))
-    assert three_element_list == action_sequence
+    three_element_list = list(_iter_index_step(awaitables))
+    assert three_element_list == step_sequence
     assert len(three_element_list) == 3
 
-    three_element_list = list(_iter_index_action(awaitables, index=0))
-    assert three_element_list == action_sequence
+    three_element_list = list(_iter_index_step(awaitables, index=0))
+    assert three_element_list == step_sequence
     assert len(three_element_list) == 3
 
-    two_element_list = list(_iter_index_action(awaitables, index=1))
-    assert two_element_list == action_sequence[1:]
+    two_element_list = list(_iter_index_step(awaitables, index=1))
+    assert two_element_list == step_sequence[1:]
     assert len(two_element_list) == 2
 
-    one_element_list = list(_iter_index_action(awaitables, index=2))
-    assert one_element_list == action_sequence[2:]
+    one_element_list = list(_iter_index_step(awaitables, index=2))
+    assert one_element_list == step_sequence[2:]
     assert len(one_element_list) == 1
 
     for out_of_bound_index in range(3, 10):
-        zero_element_list = list(
-            _iter_index_action(awaitables, index=out_of_bound_index)
-        )
-        assert zero_element_list == action_sequence[out_of_bound_index:]
+        zero_element_list = list(_iter_index_step(awaitables, index=out_of_bound_index))
+        assert zero_element_list == step_sequence[out_of_bound_index:]
         assert len(zero_element_list) == 0
 
 
@@ -138,22 +136,22 @@ async def test_scene_player(
 
     play_catalog = PlayCatalog(FIRST_STATE, SECOND_STATE)
 
-    async def hook_before(scene: SceneName, action: ActionName) -> None:
-        logger.info("hook_before %s %s", f"{scene=}", f"{action=}")
+    async def hook_before(scene: SceneName, step: StepName) -> None:
+        logger.info("hook_before %s %s", f"{scene=}", f"{step=}")
 
-    async def hook_after(scene: SceneName, action: ActionName) -> None:
-        logger.info("hook_after %s %s", f"{scene=}", f"{action=}")
+    async def hook_after(scene: SceneName, step: StepName) -> None:
+        logger.info("hook_after %s %s", f"{scene=}", f"{step=}")
 
     await scene_player(
         play_catalog=play_catalog,
         play_context=play_context,
-        before_action_hook=hook_before,
-        after_action_hook=hook_after,
+        before_step_hook=hook_before,
+        after_step_hook=hook_after,
     )
 
     # check hooks are working as expected
-    assert "hook_before scene='first' action='initial'" in caplog_info_level.messages
-    assert "hook_after scene='first' action='initial'" in caplog_info_level.messages
+    assert "hook_before scene='first' step='initial'" in caplog_info_level.messages
+    assert "hook_after scene='first' step='initial'" in caplog_info_level.messages
 
 
 async def test_player_manager(context: ContextIOInterface):
@@ -233,7 +231,7 @@ async def test_scene_player_error_handling(
     async def graceful_error_handler(_exception: ExceptionInfo) -> dict[str, Any]:
         assert _exception.exception_class == RuntimeError
         assert _exception.scene_name in {"case_1_rasing_error", "case_2_rasing_error"}
-        assert _exception.action_name == error_raiser.__name__
+        assert _exception.step_name == error_raiser.__name__
         assert ERROR_MARKER_IN_TB in _exception.serialized_traceback
         await asyncio.sleep(0.1)
         return {}

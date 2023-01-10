@@ -7,8 +7,8 @@ class ReservedContextKeys:
 
     PLAY_NAME: str = "__play_name"
     PLAY_SCENE_NAME: str = "__play_scene_name"
-    PLAY_CURRENT_ACTION_NAME: str = "__play_current_action_name"
-    PLAY_CURRENT_ACTION_INDEX: str = "__play_current_action_index"
+    PLAY_CURRENT_STEP_NAME: str = "__play_current_step_name"
+    PLAY_CURRENT_STEP_INDEX: str = "__play_current_step_index"
 
     EXCEPTION: str = "_exception"
 
@@ -18,8 +18,8 @@ class ReservedContextKeys:
         EXCEPTION,
         PLAY_NAME,
         PLAY_SCENE_NAME,
-        PLAY_CURRENT_ACTION_NAME,
-        PLAY_CURRENT_ACTION_INDEX,
+        PLAY_CURRENT_STEP_NAME,
+        PLAY_CURRENT_STEP_INDEX,
     }
 
     # NOTE: objects pointed by these keys are just references

@@ -16,7 +16,7 @@ from ._errors import (
     PlayNotFoundException,
     SceneNotRegisteredException,
 )
-from ._models import ActionName, PlayName, SceneName
+from ._models import PlayName, SceneName, StepName
 from ._play_context import PlayContext
 from ._scene import PlayCatalog, Scene
 
@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 class ExceptionInfo(BaseModel):
     exception_class: type
     scene_name: SceneName
-    action_name: ActionName
+    step_name: StepName
     serialized_traceback: str
 
 
-def _iter_index_action(
+def _iter_index_step(
     iterable: Iterable[Callable], *, index: NonNegativeInt = 0
 ) -> Iterable[tuple[NonNegativeInt, Callable]]:
     for i, value in enumerate(iterable):
@@ -42,12 +42,8 @@ async def scene_player(
     play_catalog: PlayCatalog,
     play_context: PlayContext,
     *,
-    before_action_hook: Optional[
-        Callable[[SceneName, ActionName], Awaitable[None]]
-    ] = None,
-    after_action_hook: Optional[
-        Callable[[SceneName, ActionName], Awaitable[None]]
-    ] = None,
+    before_step_hook: Optional[Callable[[SceneName, StepName], Awaitable[None]]] = None,
+    after_step_hook: Optional[Callable[[SceneName, StepName], Awaitable[None]]] = None,
 ) -> None:
     """
     Given a `PlayCatalog` and a `PlayContext` runs from a given
@@ -66,7 +62,7 @@ async def scene_player(
     start_from_index: int = 0
     try:
         start_from_index = await play_context.get(
-            ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX, int
+            ReservedContextKeys.PLAY_CURRENT_STEP_INDEX, int
         )
     except NotInContextError:
         pass
@@ -76,13 +72,13 @@ async def scene_player(
         await play_context.set(
             ReservedContextKeys.PLAY_SCENE_NAME, scene_name, set_reserved=True
         )
-        logger.debug("Running scene='%s', actions=%s", scene_name, scene.steps_names)
+        logger.debug("Running scene='%s', step=%s", scene_name, scene.steps_names)
         try:
-            for index, step in _iter_index_action(scene.steps, index=start_from_index):
-                action_name = step.__name__
+            for index, step in _iter_index_step(scene.steps, index=start_from_index):
+                step_name = step.__name__
 
-                if before_action_hook:
-                    await before_action_hook(scene_name, action_name)
+                if before_step_hook:
+                    await before_step_hook(scene_name, step_name)
 
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
@@ -94,23 +90,23 @@ async def scene_player(
                         ]
                     )
                     inputs = dict(zip(step.input_types, get_inputs_results))
-                logger.debug("action='%s' inputs=%s", action_name, inputs)
+                logger.debug("step='%s' inputs=%s", step_name, inputs)
 
                 # running event handler
                 await play_context.set(
-                    ReservedContextKeys.PLAY_CURRENT_ACTION_NAME,
-                    action_name,
+                    ReservedContextKeys.PLAY_CURRENT_STEP_NAME,
+                    step_name,
                     set_reserved=True,
                 )
                 await play_context.set(
-                    ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX,
+                    ReservedContextKeys.PLAY_CURRENT_STEP_INDEX,
                     index,
                     set_reserved=True,
                 )
                 result = await step(**inputs)
 
                 # saving outputs to context
-                logger.debug("action='%s' result=%s", action_name, result)
+                logger.debug("step='%s' result=%s", step_name, result)
                 await asyncio.gather(
                     *[
                         play_context.set(key=var_name, value=var_value)
@@ -118,8 +114,8 @@ async def scene_player(
                     ]
                 )
 
-                if after_action_hook:
-                    await after_action_hook(scene_name, action_name)
+                if after_step_hook:
+                    await after_step_hook(scene_name, step_name)
         except Exception as e:  # pylint: disable=broad-except
             logger.exception(
                 "Unexpected exception, deferring handling to scene='%s'",
@@ -138,8 +134,8 @@ async def scene_player(
                 scene_name=await play_context.get(
                     ReservedContextKeys.PLAY_SCENE_NAME, PlayName
                 ),
-                action_name=await play_context.get(
-                    ReservedContextKeys.PLAY_CURRENT_ACTION_NAME, SceneName
+                step_name=await play_context.get(
+                    ReservedContextKeys.PLAY_CURRENT_STEP_NAME, SceneName
                 ),
                 serialized_traceback=traceback.format_exc(),
             )
@@ -170,18 +166,18 @@ class PlayerManager:
         app: FastAPI,
         play_catalog: PlayCatalog,
         *,
-        before_action_hook: Optional[
-            Callable[[SceneName, ActionName], Awaitable[None]]
+        before_step_hook: Optional[
+            Callable[[SceneName, StepName], Awaitable[None]]
         ] = None,
-        after_action_hook: Optional[
-            Callable[[SceneName, ActionName], Awaitable[None]]
+        after_step_hook: Optional[
+            Callable[[SceneName, StepName], Awaitable[None]]
         ] = None,
     ) -> None:
         self.context = context
         self.app = app
         self.play_catalog = play_catalog
-        self.before_action_hook = before_action_hook
-        self.after_action_hook = after_action_hook
+        self.before_step_hook = before_step_hook
+        self.after_step_hook = after_step_hook
 
         self._player_tasks: dict[PlayName, Task] = {}
         self._play_context: dict[PlayName, PlayContext] = {}
@@ -210,8 +206,8 @@ class PlayerManager:
         scene_player_awaitable: Awaitable = scene_player(
             play_catalog=self.play_catalog,
             play_context=play_context,
-            before_action_hook=self.before_action_hook,
-            after_action_hook=self.after_action_hook,
+            before_step_hook=self.before_step_hook,
+            after_step_hook=self.after_step_hook,
         )
 
         self._create_scene_player_task(scene_player_awaitable, play_name)
@@ -222,8 +218,8 @@ class PlayerManager:
         scene_player_awaitable: Awaitable = scene_player(
             play_catalog=self.play_catalog,
             play_context=play_context,
-            before_action_hook=self.before_action_hook,
-            after_action_hook=self.after_action_hook,
+            before_step_hook=self.before_step_hook,
+            after_step_hook=self.after_step_hook,
         )
 
         play_name: PlayName = await play_context.get(

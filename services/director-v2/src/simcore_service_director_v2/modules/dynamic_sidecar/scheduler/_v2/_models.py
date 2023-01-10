@@ -1,3 +1,3 @@
 PlayName = str
 SceneName = str
-ActionName = str
+StepName = str

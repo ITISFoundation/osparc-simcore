@@ -39,26 +39,26 @@ class NotAllowedContextKeyError(BaseContextException):
     )
 
 
-class BaseActionException(BaseV2SchedulerException):
+class BaseStepException(BaseV2SchedulerException):
     """use as base for all context related errors"""
 
 
-class UnexpectedStepReturnTypeError(BaseActionException):
+class UnexpectedStepReturnTypeError(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.unexpected_step_return_type"
     msg_template = "Step should always return `dict[str, Any]`, returning: {type}"
 
 
-class PlayAlreadyRunningException(BaseActionException):
+class PlayAlreadyRunningException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.play_already_running"
     msg_template = "Another play named '{play_name}' is already running"
 
 
-class PlayNotFoundException(BaseActionException):
+class PlayNotFoundException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.play_not_found"
     msg_template = "Play '{play_name}' not found"
 
 
-class SceneNotRegisteredException(BaseActionException):
+class SceneNotRegisteredException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.scene_not_registered"
     msg_template = (
         "Trying to start scene '{scene_name}' but these are the only"
@@ -66,7 +66,7 @@ class SceneNotRegisteredException(BaseActionException):
     )
 
 
-class OnErrorSceneNotInPlayCatalogException(BaseActionException):
+class OnErrorSceneNotInPlayCatalogException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.on_error_scene_not_in_play_catalog"
     msg_template = (
         "Scene '{scene_name}' defines an on_error_scene '{on_error_scene}'"
@@ -74,7 +74,7 @@ class OnErrorSceneNotInPlayCatalogException(BaseActionException):
     )
 
 
-class NextSceneNotInPlayCatalogException(BaseActionException):
+class NextSceneNotInPlayCatalogException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.next_scene_not_in_play_catalog"
     msg_template = (
         "Scene '{scene_name}' defines an next_scene '{next_scene}'"

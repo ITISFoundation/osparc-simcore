@@ -111,8 +111,8 @@ class PlayContext(ContextIOInterface):
             set_reserved=True,
         )
         await self.set(
-            ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX, 0, set_reserved=True
+            ReservedContextKeys.PLAY_CURRENT_STEP_INDEX, 0, set_reserved=True
         )
 
     async def teardown(self) -> None:
-        """no action required here"""
+        """nothing code required here"""

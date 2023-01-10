@@ -22,7 +22,7 @@ PLAY_NAME = "test_play"
 PLAY_SCENE_NAME = "test_play_scene_name"
 
 EXTRA_PLAY_DATA: dict[str, str] = {
-    ReservedContextKeys.PLAY_CURRENT_ACTION_INDEX: 0,
+    ReservedContextKeys.PLAY_CURRENT_STEP_INDEX: 0,
     ReservedContextKeys.PLAY_NAME: PLAY_NAME,
     ReservedContextKeys.PLAY_SCENE_NAME: PLAY_SCENE_NAME,
 }

@@ -33,43 +33,43 @@ Expected outcomes:
 3. get interrupted by an urgent phone call and have to cancel
 
 ---
-`Scenes` and `actions` required to describe above:
+`Scenes` and `steps` required to describe above:
 
 Scene `initial_setup`:
-- `actions`:
+- `steps`:
     - shop for ingredients
 - `next_scene`: `preparation`
 - `on_error_scene`: None
 
 Scene `preparation`:
-- `actions`:
+- `steps`:
     - get correct amounts of ingredients
     - mix ingredients
 - `next_scene`: `baking`
 - `on_error_scene`: `error_out_of_ingredients`
 
 Scene `baking`:
-- `actions`:
+- `steps`:
     - butter tin
     - bake in faulty oven (probability of fail 65%)
 - `next_scene`: `eat_cake`
 - `on_error_scene`: `error_cake_burned`
 
 Scene `eat_cake`:
-- `actions`:
+- `steps`:
     - take picture of cake
     - eat it (finished successfully) :+1:
 - `next_scene`: None
 - `on_error_scene`: None
 
 Scene `error_cake_burned`:
-- `actions`:
+- `steps`:
     - take note of your error
     - `next_scene`: `preparation` (try to bake cake again with remaining ingredients)
 - `on_error_scene`: None
 
 Scene `error_out_of_ingredients`:
-- `actions`:
+- `steps`:
     - if no more time remains raise an error and stop here :-1:
 - `next_scene`: `initial_setup` (start form scratch again)
 - `on_error_scene`: None
@@ -204,7 +204,7 @@ async def check_if_still_have_time(available_time_hours: float) -> dict[str, Any
 PLAY_CATALOG = PlayCatalog(  # Workflow
     Scene(  # Actions
         name=SceneNames.INITIAL_SETUP,
-        steps=[  # Steps
+        steps=[
             shop_for_ingredients,
         ],
         next_scene=SceneNames.PREPARATION,
@@ -257,7 +257,7 @@ PLAY_CATALOG = PlayCatalog(  # Workflow
 )
 # Form above PLAY_CATALOG the code execution path excepted
 # under normal circumstances is the following composed by
-# the following actions:
+# the following steps:
 # - shop_for_ingredients (from INITIAL_SETUP)
 # - get_correct_amount_fo_ingredients (from PREPARATION)
 # - mix_ingredients (from PREPARATION)
