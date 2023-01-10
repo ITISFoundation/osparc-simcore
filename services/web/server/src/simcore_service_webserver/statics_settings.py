@@ -22,13 +22,13 @@ THIRD_PARTY_REFERENCES = [
         name="dask",
         version="-",
         url="https://docs.dask.org/en/latest/scheduler-overview.html",
-        thumbnail="https://dask.org/_images/dask_horizontal_white_no_pad.svg",
+        thumbnail="https://docs.dask.org/en/stable/_static/images/dask-horizontal-white.svg",
     ),
     dict(
         name="docker",
         version="-",
         url="https://www.docker.com/",
-        thumbnail="https://www.docker.com/sites/default/files/d8/2019-07/horizontal-logo-monochromatic-white.png",
+        thumbnail="https://upload.wikimedia.org/wikipedia/en/thumb/f/f4/Docker_logo.svg/120px-Docker_logo.svg.png",
     ),
     dict(
         name="github",
@@ -52,13 +52,13 @@ THIRD_PARTY_REFERENCES = [
         name="postgres",
         version="10.11",
         url="https://www.postgresql.org/",
-        thumbnail="https://www.postgresql.org/media/img/about/press/elephant.png",
+        thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/120px-Postgresql_elephant.svg.png",
     ),
     dict(
         name="redis",
         version="-",
         url="https://redis.io/",
-        thumbnail="https://redis.io/images/redis-white.png",
+        thumbnail="https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Redis_Logo.svg/200px-Redis_Logo.svg.png",
     ),
 ]
 
