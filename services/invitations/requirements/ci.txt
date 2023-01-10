@@ -11,7 +11,6 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../packages/models-library
 ../../packages/pytest-simcore
 ../../packages/service-library[fastapi]
 ../../packages/settings-library
