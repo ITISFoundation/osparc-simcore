@@ -14,6 +14,7 @@ from .core.settings import ApplicationSettings
 from .models import EC2Instance, Resources
 from .modules.docker import get_docker_client
 from .modules.ec2 import EC2InstanceData, get_ec2_client
+from .modules.rabbitmq import post_message
 from .utils import ec2, rabbitmq, utils_docker
 from .utils.rabbitmq import create_autoscaling_status_message
 
@@ -430,7 +431,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
         await _try_scale_down_cluster(app, monitored_nodes)
 
-    await rabbitmq.post_message(
+    await post_message(
         app,
         await create_autoscaling_status_message(
             docker_client, get_ec2_client(app), app_settings, monitored_nodes
