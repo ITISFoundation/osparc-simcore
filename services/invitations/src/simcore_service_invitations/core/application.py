@@ -1,9 +1,9 @@
 import logging
 
-from api.routes import router
 from fastapi import FastAPI
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
+from ..api.routes import setup_api_routes
 from .settings import WebApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,6 @@ def create_app() -> FastAPI:
     # states
     app.state.settings = WebApplicationSettings()
 
-    # routes
-    app.router.include_router(router)
+    setup_api_routes(app)
 
     return app

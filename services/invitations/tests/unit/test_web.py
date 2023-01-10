@@ -12,6 +12,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._invitations import (
     INVALID_INVITATION_URL_MSG,
     InvitationGet,
@@ -35,13 +36,13 @@ def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
 
 
 def test_root(client: TestClient):
-    response = client.get("/")
+    response = client.get(f"/{API_VTAG}/")
     assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith("simcore_service_invitations.web_api@")
+    assert response.text.startswith("simcore_service_invitations.api._meta@")
 
 
 def test_meta(client: TestClient):
-    response = client.get("/meta")
+    response = client.get(f"/{API_VTAG}/meta")
     assert response.status_code == status.HTTP_200_OK
     meta = Meta.parse_obj(response.json())
 
@@ -74,7 +75,7 @@ def test_invalid_http_basic_auth(
     invitation_data: InvitationData,
 ):
     response = client.post(
-        "/invitation",
+        f"/{API_VTAG}/invitation",
         json=invitation_data.dict(),
         auth=invalid_basic_auth,
     )
@@ -92,7 +93,7 @@ def test_create_invitation(
     invitation_data: InvitationData,
 ):
     response = client.post(
-        "/invitation",
+        f"/{API_VTAG}/invitation",
         json={
             "issuer": invitation_data.issuer,
             "guest": invitation_data.guest,
@@ -114,7 +115,7 @@ def test_check_invitation(
     invitation_data: InvitationData,
 ):
     response = client.post(
-        "/invitation",
+        f"/{API_VTAG}/invitation",
         json={
             "issuer": invitation_data.issuer,
             "guest": invitation_data.guest,
@@ -130,7 +131,7 @@ def test_check_invitation(
 
     # check invitation_url
     response = client.post(
-        "/invitation:check",
+        f"/{API_VTAG}/invitation:check",
         json={"invitation_url": invitation_url},
         auth=basic_auth,
     )
@@ -157,7 +158,7 @@ def test_check_valid_invitation(
 
     # check invitation_url
     response = client.post(
-        "/invitation:check",
+        f"/{API_VTAG}/invitation:check",
         json={"invitation_url": invitation_url},
         auth=basic_auth,
     )
@@ -185,7 +186,7 @@ def test_check_invalid_invitation_with_different_secret(
 
     # check invitation_url
     response = client.post(
-        "/invitation:check",
+        f"/{API_VTAG}/invitation:check",
         json={"invitation_url": invitation_url},
         auth=basic_auth,
     )
@@ -202,7 +203,7 @@ def test_check_invalid_invitation_with_wrong_fragment(
 ):
     # check invitation_url
     response = client.post(
-        "/invitation:check",
+        f"/{API_VTAG}/invitation:check",
         json={
             "invitation_url": "https://foo.com#/page?some_value=True"
         },  # <-- NOTE: DIFFERENT fragment
@@ -231,7 +232,7 @@ def test_check_invalid_invitation_with_wrong_code(
 
     # check invitation_url
     response = client.post(
-        "/invitation:check",
+        f"/{API_VTAG}/invitation:check",
         json={"invitation_url": invitation_url_with_invalid_code},
         auth=basic_auth,
     )
