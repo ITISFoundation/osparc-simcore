@@ -1,34 +1,23 @@
 """ Application's metadata
 
 """
-from contextlib import suppress
 from typing import Final
 
 import pkg_resources
 from packaging.version import Version
+from servicelib.utils_meta import get_summary, get_version_flavours
 
 _current_distribution = pkg_resources.get_distribution("simcore-service-invitations")
-__version__: str = _current_distribution.version
 
 
 PROJECT_NAME: Final[str] = _current_distribution.project_name
-API_VERSION: str = __version__
-VERSION: Final[Version] = Version(__version__)
-API_VTAG: str = f"v{VERSION.major}"
+VERSION: Final[Version]
+API_VTAG: Final[str]
 
+API_VERSION, VERSION, API_VTAG = get_version_flavours(_current_distribution)
+__version__: Final[str] = API_VERSION
 
-def get_summary() -> str:
-    with suppress(Exception):
-        try:
-            metadata = _current_distribution.get_metadata_lines("METADATA")
-        except FileNotFoundError:
-            metadata = _current_distribution.get_metadata_lines("PKG-INFO")
-
-        return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
-    return ""
-
-
-SUMMARY: Final[str] = get_summary()
+SUMMARY: Final[str] = get_summary(_current_distribution)
 
 
 # NOTE: https://texteditor.com/ascii-frames/

@@ -20,7 +20,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/invitations
-  make tests-ci
+  make test-ci-unit
   popd
 }
 

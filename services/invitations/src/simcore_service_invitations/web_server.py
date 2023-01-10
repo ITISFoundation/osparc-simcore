@@ -8,7 +8,7 @@ def start(
 ):
     uvicorn.run(
         "simcore_service_invitations.web_main:the_app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec
         port=8000,
         log_level=log_level,
         reload=reload,
