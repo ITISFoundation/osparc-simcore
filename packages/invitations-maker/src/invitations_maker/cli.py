@@ -160,6 +160,6 @@ def check(ctx: typer.Context, invitation_url: str):
             secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         )
 
-        rich.print(invitation_data.dict())
+        rich.print(invitation_data.json(indent=1))
     except (InvalidInvitationCode, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
