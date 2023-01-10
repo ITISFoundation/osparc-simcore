@@ -7,14 +7,17 @@ from typing import Optional
 import rich
 import typer
 from cryptography.fernet import Fernet
+from invitations_maker.invitations import extract_invitation_data
 from pydantic import EmailStr, SecretStr, parse_obj_as
+from rich.console import Console
 
 from . import web_server
 from ._meta import __version__
-from .invitations import InvitationData, create_invitation_link
+from .invitations import InvalidInvitationCode, InvitationData, create_invitation_link
 from .settings import DesktopApplicationSettings, WebApplicationSettings
 
 app = typer.Typer()
+err_console = Console(stderr=True)
 
 
 def version_callback(value: bool):
@@ -67,10 +70,12 @@ def generate_key(
 def generate_dotenv(ctx: typer.Context):
     """Generates an example of environment variables file (or dot-envfile)
 
-    Example of usage:
+    Usage sample:
 
     $ invitations-maker generate-dotenv > .env
+
     $ cat .env
+
     $ set -o allexport; source .env; set +o allexport
     """
     assert ctx  # nosec
@@ -133,3 +138,21 @@ def invite(
         base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
     )
     print(invitation_link)
+
+
+@app.command()
+def check(ctx: typer.Context, invitation_code: str):
+    """Check invitation code and prints invitation"""
+
+    assert ctx  # nosec
+    settings = DesktopApplicationSettings()
+
+    try:
+        invitation_data = extract_invitation_data(
+            invitation_code=invitation_code,
+            secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
+        )
+
+        rich.print(invitation_data)
+    except InvalidInvitationCode:
+        err_console.print("[bold red]Invalid code[/bold red]")
