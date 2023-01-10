@@ -18,7 +18,7 @@ const {
 const tutorialName = "Dipole Antenna";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, tutorialName, user, pass, newUser, basicauth_username, basicauth_password, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, tutorialName, user, pass, newUser, enableDemoMode, basicauth_username, basicauth_password);
   let studyId;
   try {
     await tutorial.start();
