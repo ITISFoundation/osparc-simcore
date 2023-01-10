@@ -3,88 +3,19 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import json
-from typing import Iterator, Optional
 
 import httpx
-import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from pytest import FixtureRequest
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._invitations import (
     INVALID_INVITATION_URL_MSG,
     InvitationGet,
 )
-from simcore_service_invitations.api._meta import Meta
-from simcore_service_invitations.core.application import create_app
 from simcore_service_invitations.invitations import (
     InvitationData,
     create_invitation_link,
 )
-
-
-@pytest.fixture
-def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
-    print(f"app_environment={json.dumps(app_environment)}")
-
-    app = create_app()
-    print("settings:\n", app.state.settings.json(indent=1))
-    with TestClient(app, base_url="http://testserver.test") as client:
-        yield client
-
-
-def test_root(client: TestClient):
-    response = client.get(f"/{API_VTAG}/")
-    assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith("simcore_service_invitations.api._meta@")
-
-
-def test_meta(client: TestClient):
-    response = client.get(f"/{API_VTAG}/meta")
-    assert response.status_code == status.HTTP_200_OK
-    meta = Meta.parse_obj(response.json())
-
-    response = client.get(meta.docs_url)
-    assert response.status_code == status.HTTP_200_OK
-
-
-@pytest.fixture(params=["username", "password", "both", None])
-def invalid_basic_auth(
-    request: FixtureRequest, fake_user_name: str, fake_password: str
-) -> Optional[httpx.BasicAuth]:
-    invalid_case = request.param
-
-    if invalid_case is None:
-        return None
-
-    kwargs = {"username": fake_user_name, "password": fake_password}
-
-    if invalid_case == "both":
-        kwargs = {key: "wrong" for key in kwargs}
-    else:
-        kwargs[invalid_case] = "wronggg"
-
-    return httpx.BasicAuth(**kwargs)
-
-
-def test_invalid_http_basic_auth(
-    client: TestClient,
-    invalid_basic_auth: Optional[httpx.BasicAuth],
-    invitation_data: InvitationData,
-):
-    response = client.post(
-        f"/{API_VTAG}/invitation",
-        json=invitation_data.dict(),
-        auth=invalid_basic_auth,
-    )
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED, f"{response.json()=}"
-
-
-@pytest.fixture
-def basic_auth(fake_user_name: str, fake_password: str) -> httpx.BasicAuth:
-    return httpx.BasicAuth(username=fake_user_name, password=fake_password)
 
 
 def test_create_invitation(
