@@ -72,7 +72,7 @@ def generate_key(
 
 
 @app.command()
-def generate_dotenv(ctx: typer.Context):
+def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     """Generates an example of environment variables file (or dot-envfile)
 
     Usage sample:
@@ -92,8 +92,9 @@ def generate_dotenv(ctx: typer.Context):
 
     password: str = (
         getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
-        or _generate_password()
-    )
+        if not auto_password
+        else None
+    ) or _generate_password()
 
     settings = WebApplicationSettings(
         INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",  # type: ignore
