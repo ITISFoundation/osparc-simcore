@@ -8,7 +8,7 @@ from typing import AsyncIterable, AsyncIterator, Awaitable, Callable
 
 import pytest
 from aiobotocore.session import AioBaseClient, get_session
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientResponse, ClientSession, TCPConnector
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_storage import (
@@ -30,7 +30,7 @@ A_TEST_ROUTE = "http://a-fake-address:1249/test-route"
 
 @pytest.fixture
 async def client_session() -> AsyncIterable[ClientSession]:
-    async with ClientSession() as session:
+    async with ClientSession(connector=TCPConnector(force_close=True)) as session:
         yield session
 
 
@@ -191,7 +191,7 @@ async def create_upload_links(
 @pytest.mark.skip(reason="this will allow to reproduce an issue")
 @pytest.mark.parametrize(
     "file_size,used_chunk_size",
-    [(parse_obj_as(ByteSize, "8.78Gib"), parse_obj_as(ByteSize, "10Mib"))],
+    [(parse_obj_as(ByteSize, 21800510238), parse_obj_as(ByteSize, 10485760))],
 )
 async def test_upload_file_to_presigned_links(
     client_session: ClientSession,
@@ -212,7 +212,7 @@ async def test_upload_file_to_presigned_links(
     in bytes of the problematic file were added.
     """
     local_file = create_file_of_size(file_size)
-    num_links = 900
+    num_links = 2080
     effective_chunk_size = parse_obj_as(ByteSize, local_file.stat().st_size / num_links)
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
