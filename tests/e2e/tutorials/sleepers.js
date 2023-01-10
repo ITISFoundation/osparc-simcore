@@ -10,13 +10,15 @@ const {
   pass,
   newUser,
   startTimeout,
-  enableDemoMode
+  enableDemoMode,
+  basicauth_username,
+  basicauth_password
 } = utils.parseCommandLineArguments(args)
 
 const templateName = "Sleepers";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode,basicauth_username, basicauth_password);
   let studyId;
   try {
     await tutorial.start();

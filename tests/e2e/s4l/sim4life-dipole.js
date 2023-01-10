@@ -10,13 +10,15 @@ const {
   pass,
   newUser,
   startTimeout,
-  enableDemoMode
+  enableDemoMode,
+  basicauth_username,
+  basicauth_password
 } = utils.parseCommandLineArguments(args)
 
 const tutorialName = "Dipole Antenna";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, tutorialName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, tutorialName, user, pass, newUser, basicauth_username, basicauth_password, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();
