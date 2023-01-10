@@ -9,7 +9,7 @@ from ._errors import (
     NotInContextError,
     SetTypeMismatchError,
 )
-from ._models import ActionName, PlayName
+from ._models import ActionName, WorkflowName
 
 
 def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
@@ -27,7 +27,7 @@ def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
         )
 
 
-class PlayContext(ContextIOInterface):
+class WorkflowContext(ContextIOInterface):
     """
     Data container responsible for keeping track of the state of a play.
     """
@@ -36,7 +36,7 @@ class PlayContext(ContextIOInterface):
         self,
         context: ContextInterface,
         app: FastAPI,
-        play_name: PlayName,
+        play_name: WorkflowName,
         action_name: ActionName,
     ) -> None:
         self._context = context

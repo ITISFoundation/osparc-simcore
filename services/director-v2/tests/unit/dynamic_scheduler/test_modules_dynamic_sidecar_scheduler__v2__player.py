@@ -25,9 +25,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models i
     ActionName,
     StepName,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._play_context import (
-    PlayContext,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player import (
     ExceptionInfo,
     PlayerManager,
@@ -36,6 +33,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player i
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
     Workflow,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context import (
+    WorkflowContext,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,19 +86,19 @@ async def test_iter_index_step():
 
 
 @pytest.fixture
-async def play_context(
+async def workflow_context(
     context: ContextIOInterface,
-) -> PlayContext:
-    play_context = PlayContext(
+) -> WorkflowContext:
+    workflow_context = WorkflowContext(
         context=context, app=AsyncMock(), play_name="unique", action_name="first"
     )
-    await play_context.setup()
-    yield play_context
-    await play_context.teardown()
+    await workflow_context.setup()
+    yield workflow_context
+    await workflow_context.teardown()
 
 
 async def test_action_player(
-    play_context: PlayContext, caplog_info_level: LogCaptureFixture
+    workflow_context: WorkflowContext, caplog_info_level: LogCaptureFixture
 ):
     @mark_step
     async def initial() -> dict[str, Any]:
@@ -146,7 +146,7 @@ async def test_action_player(
 
     await action_player(
         workflow=workflow,
-        play_context=play_context,
+        workflow_context=workflow_context,
         before_step_hook=hook_before,
         after_step_hook=hook_after,
     )
@@ -201,10 +201,10 @@ async def test_player_manager(context: ContextIOInterface):
         await play_manager.start_action_player(
             play_name="start_first", action_name="first"
         )
-        assert "start_first" in play_manager._play_context
+        assert "start_first" in play_manager._workflow_context
         assert "start_first" in play_manager._player_tasks
         await play_manager.wait_action_player("start_first")
-        assert "start_first" not in play_manager._play_context
+        assert "start_first" not in play_manager._workflow_context
         assert "start_first" not in play_manager._player_tasks
 
         # cancel action_player
@@ -212,7 +212,7 @@ async def test_player_manager(context: ContextIOInterface):
             play_name="start_first", action_name="first"
         )
         await play_manager.cancel_action_player("start_first")
-        assert "start_first" not in play_manager._play_context
+        assert "start_first" not in play_manager._workflow_context
         assert "start_first" not in play_manager._player_tasks
         with pytest.raises(PlayNotFoundException):
             await play_manager.wait_action_player("start_first")

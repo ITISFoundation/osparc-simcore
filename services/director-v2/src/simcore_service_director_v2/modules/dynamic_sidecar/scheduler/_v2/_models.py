@@ -1,3 +1,3 @@
-PlayName = str
-ActionName = str
 StepName = str
+ActionName = str
+WorkflowName = str

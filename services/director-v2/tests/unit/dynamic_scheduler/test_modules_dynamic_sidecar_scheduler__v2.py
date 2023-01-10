@@ -96,7 +96,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_
     ContextInterface,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
-    PlayName,
+    WorkflowName,
 )
 
 logger = logging.getLogger(__name__)
@@ -277,8 +277,11 @@ def app() -> AsyncMock:
 
 
 @pytest.fixture
-def play_name() -> PlayName:
+def play_name() -> WorkflowName:
     return "test_play_name"
+
+
+# TODO: finish renaming all the below
 
 
 @pytest.fixture
@@ -293,7 +296,7 @@ async def player_manager(app: AsyncMock, context: ContextInterface) -> PlayerMan
 
 
 async def test_bake_cake_ok_eventually(
-    player_manager: PlayerManager, context: ContextInterface, play_name: PlayName
+    player_manager: PlayerManager, context: ContextInterface, play_name: WorkflowName
 ):
     # Before the baking, initiate some vars in the context
     # to be available (this is just a convenient place do to it)
@@ -311,7 +314,7 @@ async def test_bake_cake_ok_eventually(
 
 
 async def test_bake_cake_fails(
-    player_manager: PlayerManager, context: ContextInterface, play_name: PlayName
+    player_manager: PlayerManager, context: ContextInterface, play_name: WorkflowName
 ):
     await context.save("available_time_hours", 10.0)
     await context.save("oven_fail_probability", 1.0)
@@ -327,7 +330,7 @@ async def test_bake_cake_fails(
 
 
 async def test_bake_cake_cancelled_by_external_event(
-    player_manager: PlayerManager, context: ContextInterface, play_name: PlayName
+    player_manager: PlayerManager, context: ContextInterface, play_name: WorkflowName
 ):
     await context.save("available_time_hours", 1e10)
     await context.save("oven_fail_probability", 1.0)
