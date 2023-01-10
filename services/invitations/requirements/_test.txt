@@ -32,7 +32,7 @@ docopt==0.6.2
     # via coveralls
 exceptiongroup==1.1.0
     # via pytest
-faker==16.1.0
+faker==16.3.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -54,6 +54,7 @@ iniconfig==2.0.0
     # via pytest
 packaging==23.0
     # via
+    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.0.0

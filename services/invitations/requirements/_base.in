@@ -14,6 +14,7 @@
 
 cryptography~=39.0.0 # security
 fastapi
+packaging
 pydantic[email]
 typer[all]
 uvicorn[standard]
