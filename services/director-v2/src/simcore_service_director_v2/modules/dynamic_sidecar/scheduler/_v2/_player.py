@@ -9,23 +9,23 @@ from typing import Any, Awaitable, Callable, Iterable, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, NonNegativeInt
 
+from ._action import Action, PlayCatalog
 from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
+    ActionNotRegisteredException,
     NotInContextError,
     PlayAlreadyRunningException,
     PlayNotFoundException,
-    SceneNotRegisteredException,
 )
-from ._models import PlayName, SceneName, StepName
+from ._models import ActionName, PlayName, StepName
 from ._play_context import PlayContext
-from ._scene import PlayCatalog, Scene
 
 logger = logging.getLogger(__name__)
 
 
 class ExceptionInfo(BaseModel):
     exception_class: type
-    scene_name: SceneName
+    action_name: ActionName
     step_name: StepName
     serialized_traceback: str
 
@@ -38,26 +38,28 @@ def _iter_index_step(
             yield i, value
 
 
-async def scene_player(
+async def action_player(
     play_catalog: PlayCatalog,
     play_context: PlayContext,
     *,
-    before_step_hook: Optional[Callable[[SceneName, StepName], Awaitable[None]]] = None,
-    after_step_hook: Optional[Callable[[SceneName, StepName], Awaitable[None]]] = None,
+    before_step_hook: Optional[
+        Callable[[ActionName, StepName], Awaitable[None]]
+    ] = None,
+    after_step_hook: Optional[Callable[[ActionName, StepName], Awaitable[None]]] = None,
 ) -> None:
     """
     Given a `PlayCatalog` and a `PlayContext` runs from a given
-    starting scene.
+    starting action.
     Can also recover from an already initialized `PlayContext`.
     """
 
     # goes through all the states defined and does tuff right?
     # not in some cases this needs to end, these are ran as tasks
     #
-    scene_name: SceneName = await play_context.get(
-        ReservedContextKeys.PLAY_SCENE_NAME, SceneName
+    action_name: ActionName = await play_context.get(
+        ReservedContextKeys.PLAY_ACTION_NAME, ActionName
     )
-    scene: Optional[Scene] = play_catalog[scene_name]
+    action: Optional[Action] = play_catalog[action_name]
 
     start_from_index: int = 0
     try:
@@ -67,18 +69,18 @@ async def scene_player(
     except NotInContextError:
         pass
 
-    while scene is not None:
-        scene_name = scene.name
+    while action is not None:
+        action_name = action.name
         await play_context.set(
-            ReservedContextKeys.PLAY_SCENE_NAME, scene_name, set_reserved=True
+            ReservedContextKeys.PLAY_ACTION_NAME, action_name, set_reserved=True
         )
-        logger.debug("Running scene='%s', step=%s", scene_name, scene.steps_names)
+        logger.debug("Running action='%s', step=%s", action_name, action.steps_names)
         try:
-            for index, step in _iter_index_step(scene.steps, index=start_from_index):
+            for index, step in _iter_index_step(action.steps, index=start_from_index):
                 step_name = step.__name__
 
                 if before_step_hook:
-                    await before_step_hook(scene_name, step_name)
+                    await before_step_hook(action_name, step_name)
 
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
@@ -115,14 +117,14 @@ async def scene_player(
                 )
 
                 if after_step_hook:
-                    await after_step_hook(scene_name, step_name)
+                    await after_step_hook(action_name, step_name)
         except Exception as e:  # pylint: disable=broad-except
             logger.exception(
-                "Unexpected exception, deferring handling to scene='%s'",
-                scene.on_error_scene,
+                "Unexpected exception, deferring handling to action='%s'",
+                action.on_error_action,
             )
 
-            if scene.on_error_scene is None:
+            if action.on_error_action is None:
                 # NOTE: since there is no state that takes care of the error
                 # just raise it here and halt the task
                 logger.error("play_context=%s", await play_context.to_dict())
@@ -131,11 +133,11 @@ async def scene_player(
             # Storing exception to be possibly handled by the error state
             exception_info = ExceptionInfo(
                 exception_class=e.__class__,
-                scene_name=await play_context.get(
-                    ReservedContextKeys.PLAY_SCENE_NAME, PlayName
+                action_name=await play_context.get(
+                    ReservedContextKeys.PLAY_ACTION_NAME, PlayName
                 ),
                 step_name=await play_context.get(
-                    ReservedContextKeys.PLAY_CURRENT_STEP_NAME, SceneName
+                    ReservedContextKeys.PLAY_CURRENT_STEP_NAME, ActionName
                 ),
                 serialized_traceback=traceback.format_exc(),
             )
@@ -143,20 +145,22 @@ async def scene_player(
                 ReservedContextKeys.EXCEPTION, exception_info, set_reserved=True
             )
 
-            scene = (
+            action = (
                 None
-                if scene.on_error_scene is None
-                else play_catalog[scene.on_error_scene]
+                if action.on_error_action is None
+                else play_catalog[action.on_error_action]
             )
         else:
-            scene = None if scene.next_scene is None else play_catalog[scene.next_scene]
+            action = (
+                None if action.next_action is None else play_catalog[action.next_action]
+            )
         finally:
             start_from_index = 0
 
 
 class PlayerManager:
     """
-    Keeps track of running `scene_player`s and is responsible for:
+    Keeps track of running `action_player`s and is responsible for:
     starting, stopping and cancelling them.
     """
 
@@ -167,10 +171,10 @@ class PlayerManager:
         play_catalog: PlayCatalog,
         *,
         before_step_hook: Optional[
-            Callable[[SceneName, StepName], Awaitable[None]]
+            Callable[[ActionName, StepName], Awaitable[None]]
         ] = None,
         after_step_hook: Optional[
-            Callable[[SceneName, StepName], Awaitable[None]]
+            Callable[[ActionName, StepName], Awaitable[None]]
         ] = None,
     ) -> None:
         self.context = context
@@ -183,39 +187,39 @@ class PlayerManager:
         self._play_context: dict[PlayName, PlayContext] = {}
         self._shutdown_tasks_play_context: dict[PlayName, Task] = {}
 
-    async def start_scene_player(
-        self, play_name: PlayName, scene_name: SceneName
+    async def start_action_player(
+        self, play_name: PlayName, action_name: ActionName
     ) -> None:
         """starts a new workflow with a unique name"""
 
         if play_name in self._play_context:
             raise PlayAlreadyRunningException(play_name=play_name)
-        if scene_name not in self.play_catalog:
-            raise SceneNotRegisteredException(
-                scene_name=scene_name, play_catalog=self.play_catalog
+        if action_name not in self.play_catalog:
+            raise ActionNotRegisteredException(
+                action_name=action_name, play_catalog=self.play_catalog
             )
 
         self._play_context[play_name] = play_context = PlayContext(
             context=self.context,
             app=self.app,
             play_name=play_name,
-            scene_name=scene_name,
+            action_name=action_name,
         )
         await play_context.setup()
 
-        scene_player_awaitable: Awaitable = scene_player(
+        action_player_awaitable: Awaitable = action_player(
             play_catalog=self.play_catalog,
             play_context=play_context,
             before_step_hook=self.before_step_hook,
             after_step_hook=self.after_step_hook,
         )
 
-        self._create_scene_player_task(scene_player_awaitable, play_name)
+        self._create_action_player_task(action_player_awaitable, play_name)
 
-    async def resume_scene_player(self, play_context: PlayContext) -> None:
+    async def resume_action_player(self, play_context: PlayContext) -> None:
         # NOTE: expecting `await play_context.start()` to have already been ran
 
-        scene_player_awaitable: Awaitable = scene_player(
+        action_player_awaitable: Awaitable = action_player(
             play_catalog=self.play_catalog,
             play_context=play_context,
             before_step_hook=self.before_step_hook,
@@ -225,16 +229,16 @@ class PlayerManager:
         play_name: PlayName = await play_context.get(
             ReservedContextKeys.PLAY_NAME, PlayName
         )
-        self._create_scene_player_task(scene_player_awaitable, play_name)
+        self._create_action_player_task(action_player_awaitable, play_name)
 
-    def _create_scene_player_task(
-        self, scene_player_awaitable: Awaitable, play_name: PlayName
+    def _create_action_player_task(
+        self, action_player_awaitable: Awaitable, play_name: PlayName
     ) -> None:
         play_task = self._player_tasks[play_name] = asyncio.create_task(
-            scene_player_awaitable, name=play_name
+            action_player_awaitable, name=play_name
         )
 
-        def scene_player_complete(_: Task) -> None:
+        def action_player_complete(_: Task) -> None:
             self._player_tasks.pop(play_name, None)
             play_context: Optional[PlayContext] = self._play_context.pop(
                 play_name, None
@@ -252,10 +256,10 @@ class PlayerManager:
                 )
 
         # remove when task is done
-        play_task.add_done_callback(scene_player_complete)
+        play_task.add_done_callback(action_player_complete)
 
-    async def wait_scene_player(self, play_name: PlayName) -> None:
-        """waits for scene play task to finish"""
+    async def wait_action_player(self, play_name: PlayName) -> None:
+        """waits for action play task to finish"""
         if play_name not in self._player_tasks:
             raise PlayNotFoundException(workflow_name=play_name)
 
@@ -279,8 +283,8 @@ class PlayerManager:
                     "Timed out while awaiting for cancellation of '%s'", task.get_name()
                 )
 
-    async def cancel_scene_player(self, play_name: PlayName) -> None:
-        """cancels current scene player Task"""
+    async def cancel_action_player(self, play_name: PlayName) -> None:
+        """cancels current action player Task"""
         if play_name not in self._player_tasks:
             raise PlayNotFoundException(workflow_name=play_name)
 

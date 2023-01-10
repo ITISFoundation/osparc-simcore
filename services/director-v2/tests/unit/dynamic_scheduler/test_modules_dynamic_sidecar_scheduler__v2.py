@@ -33,46 +33,46 @@ Expected outcomes:
 3. get interrupted by an urgent phone call and have to cancel
 
 ---
-`Scenes` and `steps` required to describe above:
+`Actions` and `steps` required to describe above:
 
-Scene `initial_setup`:
+Action `initial_setup`:
 - `steps`:
     - shop for ingredients
-- `next_scene`: `preparation`
-- `on_error_scene`: None
+- `next_action`: `preparation`
+- `on_error_action`: None
 
-Scene `preparation`:
+Action `preparation`:
 - `steps`:
     - get correct amounts of ingredients
     - mix ingredients
-- `next_scene`: `baking`
-- `on_error_scene`: `error_out_of_ingredients`
+- `next_action`: `baking`
+- `on_error_action`: `error_out_of_ingredients`
 
-Scene `baking`:
+Action `baking`:
 - `steps`:
     - butter tin
     - bake in faulty oven (probability of fail 65%)
-- `next_scene`: `eat_cake`
-- `on_error_scene`: `error_cake_burned`
+- `next_action`: `eat_cake`
+- `on_error_action`: `error_cake_burned`
 
-Scene `eat_cake`:
+Action `eat_cake`:
 - `steps`:
     - take picture of cake
     - eat it (finished successfully) :+1:
-- `next_scene`: None
-- `on_error_scene`: None
+- `next_action`: None
+- `on_error_action`: None
 
-Scene `error_cake_burned`:
+Action `error_cake_burned`:
 - `steps`:
     - take note of your error
-    - `next_scene`: `preparation` (try to bake cake again with remaining ingredients)
-- `on_error_scene`: None
+    - `next_action`: `preparation` (try to bake cake again with remaining ingredients)
+- `on_error_action`: None
 
-Scene `error_out_of_ingredients`:
+Action `error_out_of_ingredients`:
 - `steps`:
     - if no more time remains raise an error and stop here :-1:
-- `next_scene`: `initial_setup` (start form scratch again)
-- `on_error_scene`: None
+- `next_action`: `initial_setup` (start form scratch again)
+- `on_error_action`: None
 
 """
 
@@ -87,9 +87,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2 import (
+    Action,
     PlayCatalog,
     PlayerManager,
-    Scene,
     mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
@@ -113,7 +113,7 @@ class NotEnoughIngredientsError(Exception):
     ...
 
 
-class SceneNames:
+class ActionNames:
     INITIAL_SETUP = "initial_setup"
     PREPARATION = "preparation"
     BAKING = "baking"
@@ -202,57 +202,57 @@ async def check_if_still_have_time(available_time_hours: float) -> dict[str, Any
 
 
 PLAY_CATALOG = PlayCatalog(  # Workflow
-    Scene(  # Actions
-        name=SceneNames.INITIAL_SETUP,
+    Action(
+        name=ActionNames.INITIAL_SETUP,
         steps=[
             shop_for_ingredients,
         ],
-        next_scene=SceneNames.PREPARATION,
-        on_error_scene=None,
+        next_action=ActionNames.PREPARATION,
+        on_error_action=None,
     ),
-    Scene(
-        name=SceneNames.PREPARATION,
+    Action(
+        name=ActionNames.PREPARATION,
         steps=[
             prepare_correct_amount_fo_ingredients,
             mix_ingredients,
         ],
-        next_scene=SceneNames.BAKING,
-        on_error_scene=SceneNames.ERROR_OUT_OF_INGREDIENTS,
+        next_action=ActionNames.BAKING,
+        on_error_action=ActionNames.ERROR_OUT_OF_INGREDIENTS,
     ),
-    Scene(
-        name=SceneNames.BAKING,
+    Action(
+        name=ActionNames.BAKING,
         steps=[
             butter_tin,
             bake_cake_in_oven,
             check_bake_result,
         ],
-        next_scene=SceneNames.EAT_CAKE,
-        on_error_scene=SceneNames.ERROR_CAKE_BURNT,
+        next_action=ActionNames.EAT_CAKE,
+        on_error_action=ActionNames.ERROR_CAKE_BURNT,
     ),
-    Scene(
-        name=SceneNames.EAT_CAKE,
+    Action(
+        name=ActionNames.EAT_CAKE,
         steps=[
             take_picture_of_cake,
             eat_cake,
         ],
-        next_scene=None,
-        on_error_scene=None,
+        next_action=None,
+        on_error_action=None,
     ),
-    Scene(
-        name=SceneNames.ERROR_CAKE_BURNT,
+    Action(
+        name=ActionNames.ERROR_CAKE_BURNT,
         steps=[
             take_note_of_the_error,
         ],
-        next_scene=SceneNames.PREPARATION,
-        on_error_scene=None,
+        next_action=ActionNames.PREPARATION,
+        on_error_action=None,
     ),
-    Scene(
-        name=SceneNames.ERROR_OUT_OF_INGREDIENTS,
+    Action(
+        name=ActionNames.ERROR_OUT_OF_INGREDIENTS,
         steps=[
             check_if_still_have_time,
         ],
-        next_scene=SceneNames.INITIAL_SETUP,
-        on_error_scene=None,
+        next_action=ActionNames.INITIAL_SETUP,
+        on_error_action=None,
     ),
 )
 # Form above PLAY_CATALOG the code execution path excepted
@@ -302,12 +302,12 @@ async def test_bake_cake_ok_eventually(
 
     # With an over fail probability of 65% and 10 tries to bake a cake
     # we expect for the procedure to eventually finish without issues
-    await player_manager.start_scene_player(
-        play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
+    await player_manager.start_action_player(
+        play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
 
     # waiting here is done for convenience, normally you would not do this
-    await player_manager.wait_scene_player(play_name)
+    await player_manager.wait_action_player(play_name)
 
 
 async def test_bake_cake_fails(
@@ -319,11 +319,11 @@ async def test_bake_cake_fails(
     # With an over fail probability of 100% it is not possible to
     # finish baking the cake in time, after 10 tries it will give up
     # and raise an error.
-    await player_manager.start_scene_player(
-        play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
+    await player_manager.start_action_player(
+        play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
     with pytest.raises(NotEnoughIngredientsError):
-        await player_manager.wait_scene_player(play_name)
+        await player_manager.wait_action_player(play_name)
 
 
 async def test_bake_cake_cancelled_by_external_event(
@@ -335,8 +335,8 @@ async def test_bake_cake_cancelled_by_external_event(
     # With a virtually infinite time to spend for retries
     # event if the over fail probability is 100% this process
     # will last a very long time before failing.
-    await player_manager.start_scene_player(
-        play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
+    await player_manager.start_action_player(
+        play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
     ENSURE_IT_IS_RUNNING = 0.1
     await asyncio.sleep(ENSURE_IT_IS_RUNNING)
@@ -344,7 +344,7 @@ async def test_bake_cake_cancelled_by_external_event(
     # Emulating that a technician just rang the dor bell
     # to fix the faulty oven. Cancelling current task
     assert play_name in player_manager._player_tasks
-    await player_manager.cancel_scene_player(
+    await player_manager.cancel_action_player(
         play_name
     )  # somehting that watis for cancellation cancel_and_wait
     assert play_name not in player_manager._player_tasks
@@ -353,7 +353,7 @@ async def test_bake_cake_cancelled_by_external_event(
     # be started again. Expect to finish immediately since
     # there is a 0% probability of oven failure.
     await context.save("oven_fail_probability", 0.0)
-    await player_manager.start_scene_player(
-        play_name=play_name, scene_name=SceneNames.INITIAL_SETUP
+    await player_manager.start_action_player(
+        play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
-    await player_manager.wait_scene_player(play_name)
+    await player_manager.wait_action_player(play_name)

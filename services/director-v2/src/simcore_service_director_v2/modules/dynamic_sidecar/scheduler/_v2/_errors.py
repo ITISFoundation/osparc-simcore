@@ -58,25 +58,25 @@ class PlayNotFoundException(BaseStepException):
     msg_template = "Play '{play_name}' not found"
 
 
-class SceneNotRegisteredException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.scene_not_registered"
+class ActionNotRegisteredException(BaseStepException):
+    code = "dynamic_sidecar.scheduler.v2.action_not_registered"
     msg_template = (
-        "Trying to start scene '{scene_name}' but these are the only"
-        "available scenes {play_catalog}"
+        "Trying to start action '{action_name}' but these are the only"
+        "available actions {play_catalog}"
     )
 
 
-class OnErrorSceneNotInPlayCatalogException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.on_error_scene_not_in_play_catalog"
+class OnErrorActionNotInPlayCatalogException(BaseStepException):
+    code = "dynamic_sidecar.scheduler.v2.on_error_action_not_in_play_catalog"
     msg_template = (
-        "Scene '{scene_name}' defines an on_error_scene '{on_error_scene}'"
+        "Action '{action_name}' defines an on_error_action '{on_error_action}'"
         "that is not in the present in the play catalog {play_catalog}"
     )
 
 
-class NextSceneNotInPlayCatalogException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.next_scene_not_in_play_catalog"
+class NextActionNotInPlayCatalogException(BaseStepException):
+    code = "dynamic_sidecar.scheduler.v2.next_action_not_in_play_catalog"
     msg_template = (
-        "Scene '{scene_name}' defines an next_scene '{next_scene}'"
+        "Action '{action_name}' defines an next_action '{next_action}'"
         "that is not in the present in the play catalog {play_catalog}"
     )

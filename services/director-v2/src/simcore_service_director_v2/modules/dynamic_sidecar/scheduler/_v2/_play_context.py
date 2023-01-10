@@ -9,7 +9,7 @@ from ._errors import (
     NotInContextError,
     SetTypeMismatchError,
 )
-from ._models import PlayName, SceneName
+from ._models import ActionName, PlayName
 
 
 def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
@@ -37,12 +37,12 @@ class PlayContext(ContextIOInterface):
         context: ContextInterface,
         app: FastAPI,
         play_name: PlayName,
-        scene_name: SceneName,
+        action_name: ActionName,
     ) -> None:
         self._context = context
         self._app = app
         self._play_name = play_name
-        self._scene_name = scene_name
+        self._action_name = action_name
 
         self._local_storage: dict[str, Any] = {}
 
@@ -106,8 +106,8 @@ class PlayContext(ContextIOInterface):
             key=ReservedContextKeys.PLAY_NAME, value=self._play_name, set_reserved=True
         )
         await self.set(
-            key=ReservedContextKeys.PLAY_SCENE_NAME,
-            value=self._scene_name,
+            key=ReservedContextKeys.PLAY_ACTION_NAME,
+            value=self._action_name,
             set_reserved=True,
         )
         await self.set(

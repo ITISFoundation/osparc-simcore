@@ -9,6 +9,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pytest import LogCaptureFixture
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
+    Action,
+    PlayCatalog,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextIOInterface,
 )
@@ -19,7 +23,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker i
     mark_step,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
-    SceneName,
+    ActionName,
     StepName,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._play_context import (
@@ -29,11 +33,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player i
     ExceptionInfo,
     PlayerManager,
     _iter_index_step,
-    scene_player,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._scene import (
-    PlayCatalog,
-    Scene,
+    action_player,
 )
 
 logger = logging.getLogger(__name__)
@@ -88,14 +88,14 @@ async def play_context(
     context: ContextIOInterface,
 ) -> PlayContext:
     play_context = PlayContext(
-        context=context, app=AsyncMock(), play_name="unique", scene_name="first"
+        context=context, app=AsyncMock(), play_name="unique", action_name="first"
     )
     await play_context.setup()
     yield play_context
     await play_context.teardown()
 
 
-async def test_scene_player(
+async def test_action_player(
     play_context: PlayContext, caplog_info_level: LogCaptureFixture
 ):
     @mark_step
@@ -114,35 +114,35 @@ async def test_scene_player(
         print("SECOND")
         return {}
 
-    FIRST_STATE = Scene(
+    FIRST_STATE = Action(
         name="first",
         steps=[
             initial,
             verify,
         ],
-        next_scene="second",
-        on_error_scene=None,
+        next_action="second",
+        on_error_action=None,
     )
-    SECOND_STATE = Scene(
+    SECOND_STATE = Action(
         name="second",
         steps=[
             print_second,
             verify,
             verify,
         ],
-        next_scene=None,
-        on_error_scene=None,
+        next_action=None,
+        on_error_action=None,
     )
 
     play_catalog = PlayCatalog(FIRST_STATE, SECOND_STATE)
 
-    async def hook_before(scene: SceneName, step: StepName) -> None:
-        logger.info("hook_before %s %s", f"{scene=}", f"{step=}")
+    async def hook_before(action: ActionName, step: StepName) -> None:
+        logger.info("hook_before %s %s", f"{action=}", f"{step=}")
 
-    async def hook_after(scene: SceneName, step: StepName) -> None:
-        logger.info("hook_after %s %s", f"{scene=}", f"{step=}")
+    async def hook_after(action: ActionName, step: StepName) -> None:
+        logger.info("hook_after %s %s", f"{action=}", f"{step=}")
 
-    await scene_player(
+    await action_player(
         play_catalog=play_catalog,
         play_context=play_context,
         before_step_hook=hook_before,
@@ -150,8 +150,8 @@ async def test_scene_player(
     )
 
     # check hooks are working as expected
-    assert "hook_before scene='first' step='initial'" in caplog_info_level.messages
-    assert "hook_after scene='first' step='initial'" in caplog_info_level.messages
+    assert "hook_before action='first' step='initial'" in caplog_info_level.messages
+    assert "hook_after action='first' step='initial'" in caplog_info_level.messages
 
 
 async def test_player_manager(context: ContextIOInterface):
@@ -171,54 +171,54 @@ async def test_player_manager(context: ContextIOInterface):
         print("SECOND")
         return {}
 
-    FIRST_SCENE = Scene(
+    FIRST_ACTION = Action(
         name="first",
         steps=[
             initial_state,
             verify,
         ],
-        next_scene="second",
-        on_error_scene=None,
+        next_action="second",
+        on_error_action=None,
     )
-    SECOND_SCENE = Scene(
+    SECOND_ACTION = Action(
         name="second",
         steps=[
             print_second,
             verify,
             verify,
         ],
-        next_scene=None,
-        on_error_scene=None,
+        next_action=None,
+        on_error_action=None,
     )
 
-    play_catalog = PlayCatalog(FIRST_SCENE, SECOND_SCENE)
+    play_catalog = PlayCatalog(FIRST_ACTION, SECOND_ACTION)
 
     play_manager = PlayerManager(
         context=context, app=AsyncMock(), play_catalog=play_catalog
     )
     async with _player_manager_lifecycle(play_manager):
-        # ok scene_player
-        await play_manager.start_scene_player(
-            play_name="start_first", scene_name="first"
+        # ok action_player
+        await play_manager.start_action_player(
+            play_name="start_first", action_name="first"
         )
         assert "start_first" in play_manager._play_context
         assert "start_first" in play_manager._player_tasks
-        await play_manager.wait_scene_player("start_first")
+        await play_manager.wait_action_player("start_first")
         assert "start_first" not in play_manager._play_context
         assert "start_first" not in play_manager._player_tasks
 
-        # cancel scene_player
-        await play_manager.start_scene_player(
-            play_name="start_first", scene_name="first"
+        # cancel action_player
+        await play_manager.start_action_player(
+            play_name="start_first", action_name="first"
         )
-        await play_manager.cancel_scene_player("start_first")
+        await play_manager.cancel_action_player("start_first")
         assert "start_first" not in play_manager._play_context
         assert "start_first" not in play_manager._player_tasks
         with pytest.raises(PlayNotFoundException):
-            await play_manager.wait_scene_player("start_first")
+            await play_manager.wait_action_player("start_first")
 
 
-async def test_scene_player_error_handling(
+async def test_action_player_error_handling(
     context: ContextIOInterface,
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
@@ -230,7 +230,7 @@ async def test_scene_player_error_handling(
     @mark_step
     async def graceful_error_handler(_exception: ExceptionInfo) -> dict[str, Any]:
         assert _exception.exception_class == RuntimeError
-        assert _exception.scene_name in {"case_1_rasing_error", "case_2_rasing_error"}
+        assert _exception.action_name in {"case_1_rasing_error", "case_2_rasing_error"}
         assert _exception.step_name == error_raiser.__name__
         assert ERROR_MARKER_IN_TB in _exception.serialized_traceback
         await asyncio.sleep(0.1)
@@ -238,32 +238,32 @@ async def test_scene_player_error_handling(
 
     # CASE 1
     # error is raised by first state, second state handles it -> no error raised
-    CASE_1_RAISING_ERROR = Scene(
+    CASE_1_RAISING_ERROR = Action(
         name="case_1_rasing_error",
         steps=[
             error_raiser,
         ],
-        next_scene=None,
-        on_error_scene="case_1_handling_error",
+        next_action=None,
+        on_error_action="case_1_handling_error",
     )
-    CASE_1_HANDLING_ERROR = Scene(
+    CASE_1_HANDLING_ERROR = Action(
         name="case_1_handling_error",
         steps=[
             graceful_error_handler,
         ],
-        next_scene=None,
-        on_error_scene=None,
+        next_action=None,
+        on_error_action=None,
     )
 
     # CASE 2
     # error is raised by first state -> raises error
-    CASE_2_RASING_ERROR = Scene(
+    CASE_2_RASING_ERROR = Action(
         name="case_2_raising_error",
         steps=[
             error_raiser,
         ],
-        next_scene=None,
-        on_error_scene=None,
+        next_action=None,
+        on_error_action=None,
     )
 
     play_catalog = PlayCatalog(
@@ -278,18 +278,18 @@ async def test_scene_player_error_handling(
         context=context, app=AsyncMock(), play_catalog=play_catalog
     )
     async with _player_manager_lifecycle(player_manager):
-        await player_manager.start_scene_player(
-            play_name=play_name, scene_name="case_1_rasing_error"
+        await player_manager.start_action_player(
+            play_name=play_name, action_name="case_1_rasing_error"
         )
-        await player_manager.wait_scene_player(play_name)
+        await player_manager.wait_action_player(play_name)
 
     # CASE 2
     player_manager = PlayerManager(
         context=context, app=AsyncMock(), play_catalog=play_catalog
     )
     async with _player_manager_lifecycle(player_manager):
-        await player_manager.start_scene_player(
-            play_name=play_name, scene_name="case_2_raising_error"
+        await player_manager.start_action_player(
+            play_name=play_name, action_name="case_2_raising_error"
         )
         with pytest.raises(RuntimeError):
-            await player_manager.wait_scene_player(play_name)
+            await player_manager.wait_action_player(play_name)

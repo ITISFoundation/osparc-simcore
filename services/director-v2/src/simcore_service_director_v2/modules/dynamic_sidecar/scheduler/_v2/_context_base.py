@@ -6,7 +6,7 @@ class ReservedContextKeys:
     APP: str = "app"
 
     PLAY_NAME: str = "__play_name"
-    PLAY_SCENE_NAME: str = "__play_scene_name"
+    PLAY_ACTION_NAME: str = "__play_action_name"
     PLAY_CURRENT_STEP_NAME: str = "__play_current_step_name"
     PLAY_CURRENT_STEP_INDEX: str = "__play_current_step_index"
 
@@ -17,7 +17,7 @@ class ReservedContextKeys:
         APP,
         EXCEPTION,
         PLAY_NAME,
-        PLAY_SCENE_NAME,
+        PLAY_ACTION_NAME,
         PLAY_CURRENT_STEP_NAME,
         PLAY_CURRENT_STEP_INDEX,
     }

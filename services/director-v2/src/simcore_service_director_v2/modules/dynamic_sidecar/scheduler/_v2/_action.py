@@ -3,18 +3,18 @@ from typing import Any, Callable, Optional
 from pydantic import BaseModel, Field, validator
 
 from ._errors import (
-    NextSceneNotInPlayCatalogException,
-    OnErrorSceneNotInPlayCatalogException,
+    NextActionNotInPlayCatalogException,
+    OnErrorActionNotInPlayCatalogException,
 )
-from ._models import SceneName
+from ._models import ActionName
 
 
-class Scene(BaseModel):
+class Action(BaseModel):
     """
     A sequence of steps (functions)
     """
 
-    name: SceneName
+    name: ActionName
     steps: list[Callable] = Field(
         ...,
         description=(
@@ -23,13 +23,13 @@ class Scene(BaseModel):
         ),
     )
 
-    next_scene: Optional[SceneName] = Field(
+    next_action: Optional[ActionName] = Field(
         ...,
-        description="optional, name of the scene to run after this one",
+        description="optional, name of the action to run after this one",
     )
-    on_error_scene: Optional[SceneName] = Field(
+    on_error_action: Optional[ActionName] = Field(
         ...,
-        description="optional, name of the scene to run after this one raises an unexpected error",
+        description="optional, name of the action to run after this one raises an unexpected error",
     )
 
     @property
@@ -58,29 +58,32 @@ class Scene(BaseModel):
 
 
 class PlayCatalog:
-    """contains Scene entries which define links to `next_scene` and `on_error_scene`"""
+    """contains Action entries which define links to `next_action` and `on_error_action`"""
 
-    def __init__(self, *scenes: Scene) -> None:
-        self._registry: dict[SceneName, Scene] = {s.name: s for s in scenes}
-        for scene in scenes:
+    def __init__(self, *actions: Action) -> None:
+        self._registry: dict[ActionName, Action] = {s.name: s for s in actions}
+        for action in actions:
             if (
-                scene.on_error_scene is not None
-                and scene.on_error_scene not in self._registry
+                action.on_error_action is not None
+                and action.on_error_action not in self._registry
             ):
-                raise OnErrorSceneNotInPlayCatalogException(
-                    scene_name=scene.name,
-                    on_error_scene=scene.on_error_scene,
+                raise OnErrorActionNotInPlayCatalogException(
+                    action_name=action.name,
+                    on_error_action=action.on_error_action,
                     play_catalog=self._registry,
                 )
-            if scene.next_scene is not None and scene.next_scene not in self._registry:
-                raise NextSceneNotInPlayCatalogException(
-                    scene_name=scene.name,
-                    next_scene=scene.next_scene,
+            if (
+                action.next_action is not None
+                and action.next_action not in self._registry
+            ):
+                raise NextActionNotInPlayCatalogException(
+                    action_name=action.name,
+                    next_action=action.next_action,
                     play_catalog=self._registry,
                 )
 
-    def __contains__(self, item: SceneName) -> bool:
+    def __contains__(self, item: ActionName) -> bool:
         return item in self._registry
 
-    def __getitem__(self, key: SceneName) -> Scene:
+    def __getitem__(self, key: ActionName) -> Action:
         return self._registry[key]
