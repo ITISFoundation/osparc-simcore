@@ -305,12 +305,12 @@ async def test_bake_cake_ok_eventually(
 
     # With an over fail probability of 65% and 10 tries to bake a cake
     # we expect for the procedure to eventually finish without issues
-    await player_manager.start_action_player(
+    await player_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
 
     # waiting here is done for convenience, normally you would not do this
-    await player_manager.wait_action_player(play_name)
+    await player_manager.wait_workflow_runner(play_name)
 
 
 async def test_bake_cake_fails(
@@ -322,11 +322,11 @@ async def test_bake_cake_fails(
     # With an over fail probability of 100% it is not possible to
     # finish baking the cake in time, after 10 tries it will give up
     # and raise an error.
-    await player_manager.start_action_player(
+    await player_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
     with pytest.raises(NotEnoughIngredientsError):
-        await player_manager.wait_action_player(play_name)
+        await player_manager.wait_workflow_runner(play_name)
 
 
 async def test_bake_cake_cancelled_by_external_event(
@@ -338,7 +338,7 @@ async def test_bake_cake_cancelled_by_external_event(
     # With a virtually infinite time to spend for retries
     # event if the over fail probability is 100% this process
     # will last a very long time before failing.
-    await player_manager.start_action_player(
+    await player_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
     ENSURE_IT_IS_RUNNING = 0.1
@@ -347,7 +347,7 @@ async def test_bake_cake_cancelled_by_external_event(
     # Emulating that a technician just rang the dor bell
     # to fix the faulty oven. Cancelling current task
     assert play_name in player_manager._player_tasks
-    await player_manager.cancel_action_player(
+    await player_manager.cancel_and_wait_workflow_runner(
         play_name
     )  # somehting that watis for cancellation cancel_and_wait
     assert play_name not in player_manager._player_tasks
@@ -356,7 +356,7 @@ async def test_bake_cake_cancelled_by_external_event(
     # be started again. Expect to finish immediately since
     # there is a 0% probability of oven failure.
     await context.save("oven_fail_probability", 0.0)
-    await player_manager.start_action_player(
+    await player_manager.start_workflow_runner(
         play_name=play_name, action_name=ActionNames.INITIAL_SETUP
     )
-    await player_manager.wait_action_player(play_name)
+    await player_manager.wait_workflow_runner(play_name)

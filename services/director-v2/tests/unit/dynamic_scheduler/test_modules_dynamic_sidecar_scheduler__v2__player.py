@@ -29,7 +29,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._player i
     ExceptionInfo,
     PlayerManager,
     _iter_index_step,
-    action_player,
+    workflow_runner,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
     Workflow,
@@ -97,7 +97,7 @@ async def workflow_context(
     await workflow_context.teardown()
 
 
-async def test_action_player(
+async def test_workflow_runner(
     workflow_context: WorkflowContext, caplog_info_level: LogCaptureFixture
 ):
     @mark_step
@@ -144,7 +144,7 @@ async def test_action_player(
     async def hook_after(action: ActionName, step: StepName) -> None:
         logger.info("hook_after %s %s", f"{action=}", f"{step=}")
 
-    await action_player(
+    await workflow_runner(
         workflow=workflow,
         workflow_context=workflow_context,
         before_step_hook=hook_before,
@@ -197,28 +197,28 @@ async def test_player_manager(context: ContextIOInterface):
 
     play_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
     async with _player_manager_lifecycle(play_manager):
-        # ok action_player
-        await play_manager.start_action_player(
+        # ok workflow_runner
+        await play_manager.start_workflow_runner(
             play_name="start_first", action_name="first"
         )
         assert "start_first" in play_manager._workflow_context
         assert "start_first" in play_manager._player_tasks
-        await play_manager.wait_action_player("start_first")
+        await play_manager.wait_workflow_runner("start_first")
         assert "start_first" not in play_manager._workflow_context
         assert "start_first" not in play_manager._player_tasks
 
-        # cancel action_player
-        await play_manager.start_action_player(
+        # cancel workflow_runner
+        await play_manager.start_workflow_runner(
             play_name="start_first", action_name="first"
         )
-        await play_manager.cancel_action_player("start_first")
+        await play_manager.cancel_and_wait_workflow_runner("start_first")
         assert "start_first" not in play_manager._workflow_context
         assert "start_first" not in play_manager._player_tasks
         with pytest.raises(PlayNotFoundException):
-            await play_manager.wait_action_player("start_first")
+            await play_manager.wait_workflow_runner("start_first")
 
 
-async def test_action_player_error_handling(
+async def test_workflow_runner_error_handling(
     context: ContextIOInterface,
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
@@ -276,16 +276,16 @@ async def test_action_player_error_handling(
     # CASE 1
     player_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
     async with _player_manager_lifecycle(player_manager):
-        await player_manager.start_action_player(
+        await player_manager.start_workflow_runner(
             play_name=play_name, action_name="case_1_rasing_error"
         )
-        await player_manager.wait_action_player(play_name)
+        await player_manager.wait_workflow_runner(play_name)
 
     # CASE 2
     player_manager = PlayerManager(context=context, app=AsyncMock(), workflow=workflow)
     async with _player_manager_lifecycle(player_manager):
-        await player_manager.start_action_player(
+        await player_manager.start_workflow_runner(
             play_name=play_name, action_name="case_2_raising_error"
         )
         with pytest.raises(RuntimeError):
-            await player_manager.wait_action_player(play_name)
+            await player_manager.wait_workflow_runner(play_name)
