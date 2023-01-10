@@ -56,7 +56,7 @@ SETUP = dict(
     extras_require={"test": TEST_REQUIREMENTS},
     entry_points={
         "console_scripts": [
-            "simcore-service-invitations = simcore_service_invitations.cli:main",
+            "simcore-service-invitations = simcore_service_invitations.cli:app",
         ],
     },
 )

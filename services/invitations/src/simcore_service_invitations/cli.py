@@ -21,11 +21,12 @@ from .invitations import (
     parse_invitation_code,
 )
 
+# SEE setup entrypoint 'simcore_service_invitations.cli:app'
 app = typer.Typer(name=PROJECT_NAME)
 err_console = Console(stderr=True)
 
 
-def version_callback(value: bool):
+def _version_callback(value: bool):
     if value:
         rich.print(__version__)
         raise typer.Exit()
@@ -38,7 +39,7 @@ def main(
         typer.Option(
             None,
             "--version",
-            callback=version_callback,
+            callback=_version_callback,
             is_eager=True,
         )
     ),
@@ -48,28 +49,9 @@ def main(
     assert version or not version  # nosec
 
 
-# app.command()(create_settings_command(settings_cls=WebApplicationSettings, logger=log))
-
-
-@app.command()
-def serve(
-    ctx: typer.Context,
-    reload: bool = False,
-):
-    """Starts server with http API"""
-    assert ctx  # nosec
-    web_server.start(log_level="info", reload=reload)
-
-
-@app.command()
-def run(ctx: typer.Context):
-    """Runs application"""
-    assert ctx  # nosec
-    typer.secho("Sorry, this entrypoint is intentionally disabled. Use instead")
-    typer.secho(
-        "$ uvicorn simcore_service_invitations.main:the_app",
-        fg=typer.colors.BLUE,
-    )
+#
+# COMMANDS
+#
 
 
 @app.command()
@@ -99,16 +81,16 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     """
     assert ctx  # nosec
 
-    def _generate_password() -> str:
+    def _generate_password(length: int) -> str:
         alphabet = string.digits + string.ascii_letters + string.punctuation
         source = random.sample(alphabet, len(alphabet))
-        return "".join(secrets.choice(source) for _ in range(32))
+        return "".join(secrets.choice(source) for _ in range(length))
 
     password: str = (
         getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
         if not auto_password
         else None
-    ) or _generate_password()
+    ) or _generate_password(length=32)
 
     settings = WebApplicationSettings(
         INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",  # type: ignore
@@ -178,3 +160,27 @@ def check(ctx: typer.Context, invitation_url: str):
         rich.print(invitation_data.json(indent=1))
     except (InvalidInvitationCode, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
+
+
+# app.command()(create_settings_command(settings_cls=WebApplicationSettings, logger=log))
+
+
+@app.command()
+def serve(
+    ctx: typer.Context,
+    reload: bool = False,
+):
+    """Starts server with http API"""
+    assert ctx  # nosec
+    web_server.start(log_level="info", reload=reload)
+
+
+# @app.command()
+# def run(ctx: typer.Context):
+#     """Runs application"""
+#     assert ctx  # nosec
+#     typer.secho("Sorry, this entrypoint is intentionally disabled. Use instead")
+#     typer.secho(
+#         "$ uvicorn simcore_service_invitations.main:the_app",
+#         fg=typer.colors.BLUE,
+#     )
