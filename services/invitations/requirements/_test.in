@@ -16,6 +16,7 @@ coveralls
 faker
 httpx
 pytest
+pytest-asyncio
 pytest-cov
 pytest-runner
 pytest-sugar
