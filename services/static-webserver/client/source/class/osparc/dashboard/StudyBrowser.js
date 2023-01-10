@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         }, this);
         card.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
-        this._populateCardMenu(card.getMenu(), card.getResourceData());
+        this._populateCardMenu(card);
       });
     },
 
@@ -681,12 +681,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.removeCard(studyId);
     },
 
-    _populateCardMenu: function(menu, studyData) {
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const studyData = card.getResourceData();
+
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
       const studyDataButton = this.__getStudyDataMenuButton(studyData);
       menu.add(studyDataButton);
+
+      const shareButton = this.__getShareMenuButton(studyData);
+      menu.add(shareButton);
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
@@ -738,7 +744,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(studyData) {
-      const studyDataButton = new qx.ui.menu.Button(this.tr("Study data"));
+      const text = osparc.utils.Utils.isProduct("s4llite") ? this.tr("Project data") : this.tr("Study data");
+      const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
         osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({
@@ -746,6 +753,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
       }, this);
       return studyDataButton;
+    },
+
+    __getShareMenuButton: function(studyData) {
+      const shareButton = new qx.ui.menu.Button(this.tr("Share"));
+      shareButton.addListener("tap", e => this._openAccessRights(), this);
+      return shareButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {
