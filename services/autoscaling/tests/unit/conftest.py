@@ -602,6 +602,7 @@ def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2Instanc
         id=faker.uuid4(),
         aws_private_dns=aws_instance_private_dns,
         type=faker.pystr(),
+        state="running",
     )
 
 

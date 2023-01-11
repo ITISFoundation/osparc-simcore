@@ -268,7 +268,8 @@ qx.Class.define("osparc.auth.Manager", {
           if (isDisabled === false) {
             osparc.data.Resources.get("clusters");
           }
-        });
+        })
+        .catch(err => console.error(err));
     },
 
     __logoutUser: function() {

@@ -127,7 +127,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         case "hits-service": {
           control = new qx.ui.basic.Label().set({
             alignY: "middle",
-            toolTipText: this.tr("Number of times it was instantiated")
+            toolTipText: this.tr("Number of times you instantiated it")
           });
           this._add(control, {
             row: 0,

@@ -1,6 +1,5 @@
 import asyncio
 import collections
-import json
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -10,13 +9,14 @@ from models_library.generated_models.docker_rest_api import Availability, Node, 
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ._meta import VERSION
 from .core.errors import Ec2InstanceNotFoundError
 from .core.settings import ApplicationSettings
 from .models import EC2Instance, Resources
 from .modules.docker import get_docker_client
 from .modules.ec2 import EC2InstanceData, get_ec2_client
+from .modules.rabbitmq import post_message
 from .utils import ec2, rabbitmq, utils_docker
+from .utils.rabbitmq import create_autoscaling_status_message
 
 logger = logging.getLogger(__name__)
 
@@ -277,20 +277,13 @@ async def _start_instances(
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
 
     startup_script = await utils_docker.get_docker_swarm_join_bash_command()
+
     results = await asyncio.gather(
         *(
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(InstanceTypeType, instance.name),
-                tags={
-                    "io.simcore.autoscaling.version": f"{VERSION}",
-                    "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-                    ),
-                    "io.simcore.autoscaling.monitored_services_labels": json.dumps(
-                        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-                    ),
-                },
+                tags=ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING),
                 startup_script=startup_script,
                 number_of_instances=instance_num,
             )
@@ -420,16 +413,6 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         docker_client,
         node_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
     )
-    cluster_total_resources = await utils_docker.compute_cluster_total_resources(
-        monitored_nodes
-    )
-    cluster_used_resources = await utils_docker.compute_cluster_used_resources(
-        docker_client, monitored_nodes
-    )
-    logger.info("Monitored nodes total resources: %s", f"{cluster_total_resources}")
-    logger.info(
-        "Monitored nodes current used resources: %s", f"{cluster_used_resources}"
-    )
 
     # 2. Cleanup nodes that are gone
     await utils_docker.remove_nodes(docker_client, monitored_nodes)
@@ -447,3 +430,10 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     else:
         await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
         await _try_scale_down_cluster(app, monitored_nodes)
+
+    await post_message(
+        app,
+        await create_autoscaling_status_message(
+            docker_client, get_ec2_client(app), app_settings, monitored_nodes
+        ),
+    )
