@@ -15,7 +15,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 from ..core.errors import (
     ConfigurationError,
@@ -38,6 +38,7 @@ class EC2InstanceData:
     id: str
     aws_private_dns: InstancePrivateDNSName
     type: InstanceTypeType
+    state: InstanceStateNameType
 
 
 @dataclass(frozen=True)
@@ -147,6 +148,7 @@ class AutoscalingEC2:
                 "New instances launched: %s, waiting for them to start now...",
                 instance_ids,
             )
+
             # wait for the instance to be in a running state
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
             waiter = self.client.get_waiter("instance_exists")
@@ -154,7 +156,6 @@ class AutoscalingEC2:
             logger.info(
                 "instances %s exists now, waiting for running state...", instance_ids
             )
-
             waiter = self.client.get_waiter("instance_running")
             await waiter.wait(InstanceIds=instance_ids)
             logger.info("instances %s is now running", instance_ids)
@@ -167,6 +168,7 @@ class AutoscalingEC2:
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
                     type=instance["InstanceType"],
+                    state=instance["State"]["Name"],
                 )
                 for instance in instances["Reservations"][0]["Instances"]
             ]
@@ -199,12 +201,15 @@ class AutoscalingEC2:
                 assert "InstanceId" in instance  # nosec
                 assert "PrivateDnsName" in instance  # nosec
                 assert "InstanceType" in instance  # nosec
+                assert "State" in instance  # nosec
+                assert "Name" in instance["State"]  # nosec
                 all_instances.append(
                     EC2InstanceData(
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
                         type=instance["InstanceType"],
+                        state=instance["State"]["Name"],
                     )
                 )
         return all_instances
@@ -240,11 +245,14 @@ class AutoscalingEC2:
         assert "InstanceId" in instance  # nosec
         assert "PrivateDnsName" in instance  # nosec
         assert "InstanceType" in instance  # nosec
+        assert "State" in instance  # nosec
+        assert "Name" in instance["State"]  # nosec
         return EC2InstanceData(
             launch_time=instance["LaunchTime"],
             id=instance["InstanceId"],
             aws_private_dns=instance["PrivateDnsName"],
             type=instance["InstanceType"],
+            state=instance["State"]["Name"],
         )
 
     async def terminate_instance(self, instance_data: EC2InstanceData) -> None:
