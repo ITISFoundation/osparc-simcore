@@ -273,7 +273,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
-        const win = this.__createConfirmWindow(templateData.name);
+        const rUSure = this.tr("Are you sure you want to delete ");
+        const msg = rUSure + "<b>" + templateData.name + "</b>?";
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Delete"),
+          confirmAction: "delete"
+        });
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -285,19 +290,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       return deleteButton;
     },
 
-    __createConfirmWindow: function(templateName) {
-      const rUSure = this.tr("Are you sure you want to delete ");
-      const msg = rUSure + "<b>" + templateName + "</b>?";
-      const confWin = new osparc.ui.window.Confirmation(msg).set({
-        confirmText: this.tr("Delete"),
-        confirmAction: "delete"
-      });
-      return confWin;
-    },
     __editTemplate: function(studyData) {
-      // osparc.data.Resources.fetch("studies", "open", params);
       this.__startStudy(studyData.uuid);
     },
+
     __deleteTemplate: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
