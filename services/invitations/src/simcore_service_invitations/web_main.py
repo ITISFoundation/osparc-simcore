@@ -8,7 +8,9 @@ from simcore_service_invitations.core.application import create_app
 from simcore_service_invitations.core.settings import WebApplicationSettings
 
 the_settings = WebApplicationSettings.create_from_envs()
-logging.basicConfig(level=the_settings.log_level)
+
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
+logging.basicConfig(level=the_settings.log_level)  # NOSONAR
 logging.root.setLevel(the_settings.log_level)
 
 # SINGLETON FastAPI app
