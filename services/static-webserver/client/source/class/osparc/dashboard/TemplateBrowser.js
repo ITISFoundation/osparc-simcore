@@ -227,9 +227,34 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           }
           return false;
         });
-        console.log(uniqueTemplatesData);
+        this.__updateTemplates(uniqueTemplatesData);
+
         this.__updateAllButton.setFetching(false);
       }
+    },
+
+    __updateTemplates: function(uniqueTemplatesData) {
+      uniqueTemplatesData.forEach(uniqueTemplateData => {
+        const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
+        osparc.component.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
+        const params = {
+          url: {
+            "studyId": studyData["uuid"]
+          },
+          data: studyData
+        };
+        osparc.data.Resources.fetch("studies", "put", params)
+          .then(updatedData => {
+            console.log("update card", updatedData["uuid"]);
+          })
+          .catch(err => {
+            if ("message" in err) {
+              osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            } else {
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
+            }
+          });
+      });
     },
     // LAYOUT //
 
