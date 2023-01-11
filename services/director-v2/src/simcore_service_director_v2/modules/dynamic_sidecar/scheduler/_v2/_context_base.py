@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from fastapi import FastAPI
-
 
 class ReservedContextKeys:
     APP: str = "app"
@@ -29,7 +27,7 @@ class ReservedContextKeys:
     STORED_LOCALLY: set[str] = {APP}
 
 
-class ContextIOInterface(ABC):
+class _ContextIOInterface(ABC):
     """
     Used to save/load the context in bulk.
     Useful for those types of stores which are not capable of guaranteeing
@@ -44,13 +42,11 @@ class ContextIOInterface(ABC):
 
     @classmethod
     @abstractmethod
-    async def from_dict(
-        cls, context: "ContextInterface", app: FastAPI, incoming: dict[str, Any]
-    ) -> "ContextIOInterface":
+    async def from_dict(cls, incoming: dict[str, Any]) -> "_ContextIOInterface":
         """returns an instance from incoming deserialized data"""
 
 
-class ContextStorageInterface(ABC):
+class _ContextStorageInterface(ABC):
     """
     Base interface for saving and loading data from a store.
     """
@@ -76,7 +72,7 @@ class ContextStorageInterface(ABC):
         """run storage specific halt and cleanup"""
 
 
-class ContextInterface(ContextStorageInterface, ContextIOInterface):
+class ContextInterface(_ContextStorageInterface, _ContextIOInterface):
     """
     This should be inherited when defining a new type of Context.
     """

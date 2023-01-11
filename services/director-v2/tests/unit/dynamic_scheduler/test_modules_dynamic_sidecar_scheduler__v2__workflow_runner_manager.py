@@ -13,7 +13,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action i
     Action,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
-    ContextIOInterface,
+    ContextInterface,
     ReservedContextKeys,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
@@ -92,7 +92,7 @@ async def test_iter_index_step():
 
 @pytest.fixture
 async def workflow_context(
-    context: ContextIOInterface,
+    context: ContextInterface,
 ) -> WorkflowContext:
     workflow_context = WorkflowContext(
         context=context, app=AsyncMock(), workflow_name="unique", action_name="first"
@@ -161,7 +161,7 @@ async def test_workflow_runner(
     assert "hook_after action='first' step='initial'" in caplog_info_level.messages
 
 
-async def test_workflow_runner_manager(context: ContextIOInterface):
+async def test_workflow_runner_manager(context: ContextInterface):
     @mark_step
     async def initial_state() -> dict[str, Any]:
         print("initial state")
@@ -226,7 +226,7 @@ async def test_workflow_runner_manager(context: ContextIOInterface):
 
 
 async def test_workflow_runner_error_handling(
-    context: ContextIOInterface,
+    context: ContextInterface,
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
 
@@ -308,7 +308,7 @@ async def test_workflow_runner_error_handling(
 
 
 async def test_resume_workflow_runner_workflow(
-    context_io_interface_type: type[ContextIOInterface],
+    context_io_interface_type: type[ContextInterface],
 ):
     call_tracker_1 = AsyncMock()
     call_tracker_2 = AsyncMock()

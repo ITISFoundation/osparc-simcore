@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
-    ContextIOInterface,
+    ContextInterface,
     ReservedContextKeys,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
@@ -39,9 +39,7 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-async def workflow_context(
-    app: FastAPI, context: ContextIOInterface
-) -> WorkflowContext:
+async def workflow_context(app: FastAPI, context: ContextInterface) -> WorkflowContext:
     workflow_context = WorkflowContext(
         context=context,
         app=app,
@@ -102,7 +100,7 @@ async def test_to_dict(key_1: str, workflow_context: WorkflowContext):
     assert await workflow_context.to_dict() == {key_1: 4} | EXTRA_WORKFLOW_CONTEXT_DATA
 
 
-async def test_from_dict(app: FastAPI, context: ContextIOInterface):
+async def test_from_dict(app: FastAPI, context: ContextInterface):
     serialized_workflow_context: dict[str, Any] = {
         "1": 1,
         "d": dict(me=1.1),

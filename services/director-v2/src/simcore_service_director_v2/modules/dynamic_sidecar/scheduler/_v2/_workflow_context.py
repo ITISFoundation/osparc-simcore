@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from fastapi import FastAPI
 
-from ._context_base import ContextInterface, ContextIOInterface, ReservedContextKeys
+from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
     GetTypeMismatchError,
     NotAllowedContextKeyError,
@@ -26,7 +26,7 @@ def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
         )
 
 
-class WorkflowContext(ContextIOInterface):
+class WorkflowContext:
     """
     Data container responsible for keeping track of the state of a workflow.
     """

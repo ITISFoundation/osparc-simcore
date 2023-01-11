@@ -31,6 +31,5 @@ async def test_in_memory_context(key_1: str, value: Any):
 
     # ensure serialization is working
     serialized_context = await context.to_dict()
-    new_context = InMemoryContext()
-    await new_context.from_dict(serialized_context)
+    new_context = await InMemoryContext.from_dict(incoming=serialized_context)
     assert serialized_context == await new_context.to_dict()
