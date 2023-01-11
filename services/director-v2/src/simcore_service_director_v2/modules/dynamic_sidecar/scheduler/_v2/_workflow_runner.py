@@ -116,7 +116,10 @@ async def workflow_runner(
             if action.on_error_action is None:
                 # NOTE: since there is no state that takes care of the error
                 # just raise it here and halt the task
-                logger.error("workflow_context=%s", await workflow_context.to_dict())
+                logger.error(
+                    "workflow_context=%s",
+                    await workflow_context.get_serialized_context(),
+                )
                 raise
 
             # Storing exception to be possibly handled by the error state

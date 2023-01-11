@@ -97,7 +97,10 @@ async def test_set_and_get_non_local(key_1: str, workflow_context: WorkflowConte
 
 async def test_to_dict(key_1: str, workflow_context: WorkflowContext):
     await workflow_context.set(key_1, 4)
-    assert await workflow_context.to_dict() == {key_1: 4} | EXTRA_WORKFLOW_CONTEXT_DATA
+    assert (
+        await workflow_context.get_serialized_context()
+        == {key_1: 4} | EXTRA_WORKFLOW_CONTEXT_DATA
+    )
 
 
 async def test_from_dict(
@@ -110,4 +113,6 @@ async def test_from_dict(
 
     context = await context_io_interface_type.from_dict(serialized_workflow_context)
     workflow_context = await WorkflowContext.from_context(context=context, app=app)
-    assert await workflow_context.to_dict() == serialized_workflow_context
+    assert (
+        await workflow_context.get_serialized_context() == serialized_workflow_context
+    )

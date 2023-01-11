@@ -91,7 +91,7 @@ class WorkflowContext:
             )
         return existing_value
 
-    async def to_dict(self) -> dict[str, Any]:
+    async def get_serialized_context(self) -> dict[str, Any]:
         return await self._context.to_dict()
 
     @classmethod
