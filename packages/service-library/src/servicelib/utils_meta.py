@@ -58,5 +58,5 @@ class PackageInfo:
 
     def get_finished_banner(self) -> str:
         return "{:=^100}".format(
-            f"🎉 App {self.project_name}=={self.project_name} shutdown completed 🎉"
+            f"🎉 App {self.project_name}=={self.__version__} shutdown completed 🎉"
         )

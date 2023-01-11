@@ -28,4 +28,6 @@ def test_meta_module_implementation():
     assert "/" not in API_VTAG
 
     assert any(SUMMARY)
-    assert any(APP_FINISHED_BANNER_MSG)
+
+    assert __version__ in APP_FINISHED_BANNER_MSG
+    assert PROJECT_NAME in APP_FINISHED_BANNER_MSG
