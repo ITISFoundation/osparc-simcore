@@ -3,21 +3,18 @@
 """
 from typing import Final
 
-import pkg_resources
 from packaging.version import Version
-from servicelib.utils_meta import get_summary, get_version_flavours
+from servicelib.utils_meta import PackageMetadata
 
-_current_distribution = pkg_resources.get_distribution("simcore-service-invitations")
+info: Final = PackageMetadata(package_name="simcore-service-invitations")
+__version__: Final[str] = info.__version__
 
 
-PROJECT_NAME: Final[str] = _current_distribution.project_name
-VERSION: Final[Version]
-API_VTAG: Final[str]
-
-API_VERSION, VERSION, API_VTAG = get_version_flavours(_current_distribution)
-__version__: Final[str] = API_VERSION
-
-SUMMARY: Final[str] = get_summary(_current_distribution)
+PROJECT_NAME: Final[str] = info.project_name
+VERSION: Final[Version] = info.version
+API_VERSION: Final[str] = info.__version__
+API_VTAG: Final[str] = info.api_prefix_path_tag
+SUMMARY: Final[str] = info.get_summary()
 
 
 # NOTE: https://texteditor.com/ascii-frames/
