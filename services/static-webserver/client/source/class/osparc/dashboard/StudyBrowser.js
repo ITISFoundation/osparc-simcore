@@ -143,14 +143,46 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addResourcesToList(resources);
 
+          const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
+          // Show "Contact Us" message if studies.length === 0 && templates.length === 0 && services.length === 0
+          // Most probably is a product-stranger user (it can also be that the catalog is down)
+          if (nStudies === 0) {
+            const store = osparc.store.Store.getInstance();
+            Promise.all([
+              store.getTemplates(),
+              store.getAllServices()
+            ]).then(values => {
+              const templates = values[0];
+              const services = values[1];
+              if (templates.length === 0 && Object.keys(services).length === 0) {
+                const noAccessText = new qx.ui.basic.Label().set({
+                  selectable: true,
+                  rich: true,
+                  font: "title-16",
+                  paddingTop: 20
+                });
+                let msg = this.tr("It seems you don't have access to this product.");
+                msg += "</br>";
+                msg += "</br>";
+                msg += this.tr("Please, contact us:");
+                msg += "</br>";
+                osparc.store.VendorInfo.getInstance().getSupportEmail()
+                  .then(supportEmail => {
+                    noAccessText.setValue(msg + supportEmail);
+                  });
+                this._addAt(noAccessText, 2);
+              }
+            });
+          }
+
+          // Show Quick Start if studies.length === 0
           const tutorial = osparc.component.tutorial.Utils.getTutorial();
           if (tutorial) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(tutorial.localStorageStr);
             if (dontShow === "true") {
               return;
             }
-            if ("_meta" in resp && resp["_meta"]["total"] === 0) {
-              // there are no studies
+            if (nStudies === 0) {
               const tutorialWindow = tutorial.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
@@ -224,7 +256,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         }, this);
         card.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
-        this._populateCardMenu(card.getMenu(), card.getResourceData());
+        this._populateCardMenu(card);
       });
     },
 
@@ -681,12 +713,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.removeCard(studyId);
     },
 
-    _populateCardMenu: function(menu, studyData) {
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const studyData = card.getResourceData();
+
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
       const studyDataButton = this.__getStudyDataMenuButton(studyData);
       menu.add(studyDataButton);
+
+      const shareButton = this._getShareMenuButton(card);
+      menu.add(shareButton);
 
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
@@ -738,7 +776,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(studyData) {
-      const studyDataButton = new qx.ui.menu.Button(this.tr("Study data"));
+      const text = (osparc.utils.Utils.isProduct("s4llite") ? this.tr("Project") : this.tr("Study")) + this.tr(" data...");
+      const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
         osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({

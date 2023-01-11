@@ -102,7 +102,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const cards = this._resourcesContainer.reloadCards("servicesList");
       cards.forEach(card => {
         card.addListener("execute", () => this.__itemClicked(card), this);
-        this._populateCardMenu(card.getMenu(), card.getResourceData());
+        this._populateCardMenu(card);
       });
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
@@ -193,7 +193,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // LAYOUT //
 
     // MENU //
-    _populateCardMenu: function(menu, studyData) {
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const studyData = card.getResourceData();
+
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
