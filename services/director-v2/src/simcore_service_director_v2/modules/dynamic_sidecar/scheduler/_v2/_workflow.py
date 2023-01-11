@@ -9,7 +9,10 @@ from ._models import ActionName
 
 
 class Workflow:
-    """contains Action entries which define links to `next_action` and `on_error_action`"""
+    """
+    contains `Action` entries which define links to `next_action` and `on_error_action`
+    Links must exist, otherwise an error is raised upon creation.
+    """
 
     def __init__(self, *actions: Action) -> None:
         self._registry: dict[ActionName, Action] = {s.name: s for s in actions}
