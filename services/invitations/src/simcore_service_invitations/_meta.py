@@ -4,9 +4,9 @@
 from typing import Final
 
 from packaging.version import Version
-from servicelib.utils_meta import PackageMetadata
+from servicelib.utils_meta import PackageInfo
 
-info: Final = PackageMetadata(package_name="simcore-service-invitations")
+info: Final = PackageInfo(package_name="simcore-service-invitations")
 __version__: Final[str] = info.__version__
 
 
@@ -28,6 +28,4 @@ APP_STARTED_BANNER_MSG = r"""
 )
 
 
-APP_FINISHED_BANNER_MSG = "{:=^100}".format(
-    f"🎉 App {PROJECT_NAME}=={__version__} shutdown completed 🎉"
-)
+APP_FINISHED_BANNER_MSG = info.get_finished_banner()

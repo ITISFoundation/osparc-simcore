@@ -8,7 +8,7 @@ from packaging.version import Version
 from pkg_resources import Distribution
 
 
-class PackageMetadata:
+class PackageInfo:
     """Thin wrapper around pgk_resources.Distribution to access package distribution metadata
 
     Usage example:
@@ -55,3 +55,8 @@ class PackageMetadata:
 
             return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
         return ""
+
+    def get_finished_banner(self) -> str:
+        return "{:=^100}".format(
+            f"🎉 App {self.project_name}=={self.project_name} shutdown completed 🎉"
+        )
