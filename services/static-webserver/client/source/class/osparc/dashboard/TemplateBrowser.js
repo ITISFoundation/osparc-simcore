@@ -184,7 +184,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __createUpdateAllButton: function() {
-      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update All"));
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"));
       updateAllButton.exclude();
       updateAllButton.addListener("tap", () => {
         const templatesText = osparc.utils.Utils.isProduct("s4llite") ? this.tr("tutorials") : this.tr("templates");
@@ -212,7 +212,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
     },
 
-    __updateAllTemplates: function() {
+    __updateAllTemplates: async function() {
       if (this._resourcesContainer) {
         this.__updateAllButton.setFetching(true);
         const visibleCards = this._resourcesContainer.getCards().filter(card => card.isVisible());
@@ -227,14 +227,14 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           }
           return false;
         });
-        this.__updateTemplates(uniqueTemplatesData);
+        await this.__updateTemplates(uniqueTemplatesData);
 
         this.__updateAllButton.setFetching(false);
       }
     },
 
-    __updateTemplates: function(uniqueTemplatesData) {
-      uniqueTemplatesData.forEach(uniqueTemplateData => {
+    __updateTemplates: async function(uniqueTemplatesData) {
+      for (const uniqueTemplateData of uniqueTemplatesData) {
         const studyData = osparc.data.model.Study.deepCloneStudyObject(uniqueTemplateData);
         osparc.component.metadata.ServicesInStudyUpdate.updateAllServices(studyData);
         const params = {
@@ -243,9 +243,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           },
           data: studyData
         };
-        osparc.data.Resources.fetch("studies", "put", params)
+        await osparc.data.Resources.fetch("studies", "put", params)
           .then(updatedData => {
-            console.log("update card", updatedData["uuid"]);
+            this._updateTemplateData(updatedData);
           })
           .catch(err => {
             if ("message" in err) {
@@ -254,7 +254,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
               osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
             }
           });
-      });
+      }
     },
     // LAYOUT //
 
