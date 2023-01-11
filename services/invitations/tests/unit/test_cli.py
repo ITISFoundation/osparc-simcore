@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import json
 import os
 
 from faker import Faker
@@ -13,7 +12,7 @@ from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
 from simcore_service_invitations.cli import app
 from simcore_service_invitations.core.settings import WebApplicationSettings
-from simcore_service_invitations.invitations import InvitationData
+from simcore_service_invitations.invitations import InvitationInputs
 from typer.testing import CliRunner
 
 
@@ -28,7 +27,7 @@ def test_cli_help_and_version(cli_runner: CliRunner):
 
 
 def test_invite_user_and_check_invitation(
-    cli_runner: CliRunner, faker: Faker, invitation_data: InvitationData
+    cli_runner: CliRunner, faker: Faker, invitation_data: InvitationInputs
 ):
     # invitations-maker generate-key
     result = cli_runner.invoke(app, "generate-key")
@@ -62,7 +61,7 @@ def test_invite_user_and_check_invitation(
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
-    assert invitation_data.dict() == json.loads(result.stdout)
+    assert invitation_data == InvitationInputs.parse_raw(result.stdout)
 
 
 def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: MonkeyPatch):

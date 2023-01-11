@@ -1,6 +1,7 @@
 import base64
 import binascii
 import logging
+from datetime import datetime
 from typing import Optional, cast
 from urllib import parse
 
@@ -32,8 +33,8 @@ class InvalidInvitationCode(Exception):
 #
 
 
-class InvitationData(BaseModel):
-    """Data in an invitation"""
+class InvitationInputs(BaseModel):
+    """Input data necessary to create an invitation"""
 
     issuer: str = Field(
         ...,
@@ -51,6 +52,17 @@ class InvitationData(BaseModel):
         "Sets the number of days from creation until the account expires",
     )
 
+
+class InvitationContent(InvitationInputs):
+    """Data encoded inside an invitation"""
+
+    created: datetime = Field(
+        default_factory=datetime.utcnow, description="Timestamp for creation"
+    )
+
+    def as_invitation_inputs(self) -> InvitationInputs:
+        return self.copy(exclude={"created"})
+
     class Config:
 
         allow_population_by_field_name = True  # NOTE: can parse using field names
@@ -67,6 +79,9 @@ class InvitationData(BaseModel):
             },
             "trial_account_days": {
                 "alias": "t",
+            },
+            "created": {
+                "alias": "c",
             },
         }
 
@@ -99,18 +114,35 @@ def parse_invitation_code(invitation_url: HttpUrl) -> str:
         raise InvalidInvitationCode from err
 
 
-def _create_invitation_code(
-    invitation_data: InvitationData, secret_key: bytes
+def _fernet_encrypt_as_urlsafe_code(
+    data: bytes,
+    secret_key: bytes,
 ) -> bytes:
-    """Produces url-save  invitation code in bytes"""
-    # creates message
-    # NOTE: export using short aliasa and values in order to produce shorter messages
-    serialized: str = invitation_data.json(exclude_unset=True, by_alias=True)
-
-    # encrypts message
     fernet = Fernet(secret_key)
-    code: bytes = fernet.encrypt(serialized.encode())
+    code: bytes = fernet.encrypt(data)
     return base64.urlsafe_b64encode(code)
+
+
+def _create_invitation_code(
+    invitation_data: InvitationInputs, secret_key: bytes
+) -> bytes:
+    """Produces url-safe invitation code in bytes"""
+
+    # builds content
+    content = InvitationContent(
+        **invitation_data.dict(),
+        created=datetime.utcnow(),
+    )
+
+    # NOTE: export using short aliases and values in order to produce shorter messages
+    content_jsonstr: str = content.json(exclude_unset=True, by_alias=True)
+    assert "\n" not in content_jsonstr  # nosec
+
+    # encrypts contents
+    return _fernet_encrypt_as_urlsafe_code(
+        data=content_jsonstr.encode(),
+        secret_key=secret_key,
+    )
 
 
 #
@@ -119,7 +151,7 @@ def _create_invitation_code(
 
 
 def create_invitation_link(
-    invitation_data: InvitationData, secret_key: bytes, base_url: HttpUrl
+    invitation_data: InvitationInputs, secret_key: bytes, base_url: HttpUrl
 ) -> HttpUrl:
 
     invitation_code = _create_invitation_code(
@@ -133,7 +165,7 @@ def create_invitation_link(
     return url
 
 
-def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationData:
+def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationContent:
     """
 
     WARNING: invitation_code should not be taken directly from the url fragment without 'parse_invitation_code'
@@ -149,10 +181,12 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationDat
     decryted: bytes = fernet.decrypt(token=code)
 
     # parses serialized invitation
-    return InvitationData.parse_raw(decryted.decode())
+    return InvitationContent.parse_raw(decryted.decode())
 
 
-def extract_invitation_data(invitation_code: str, secret_key: bytes) -> InvitationData:
+def extract_invitation_content(
+    invitation_code: str, secret_key: bytes
+) -> InvitationContent:
     """As decrypt_invitation but raises InvalidInvitationCode if fails"""
     try:
         return decrypt_invitation(

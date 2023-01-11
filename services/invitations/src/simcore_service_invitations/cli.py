@@ -15,9 +15,10 @@ from ._meta import PROJECT_NAME, __version__
 from .core.settings import DesktopApplicationSettings, WebApplicationSettings
 from .invitations import (
     InvalidInvitationCode,
-    InvitationData,
+    InvitationContent,
+    InvitationInputs,
     create_invitation_link,
-    extract_invitation_data,
+    extract_invitation_content,
     parse_invitation_code,
 )
 
@@ -115,18 +116,18 @@ def invite(
         help="Custom invitation for a given guest",
     ),
     issuer: str = typer.Option(
-        ..., help=InvitationData.__fields__["issuer"].field_info.description
+        ..., help=InvitationInputs.__fields__["issuer"].field_info.description
     ),
     trial_account_days: Optional[int] = typer.Option(
         None,
-        help=InvitationData.__fields__["trial_account_days"].field_info.description,
+        help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
     ),
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
     settings = DesktopApplicationSettings()
 
-    invitation_data = InvitationData(
+    invitation_data = InvitationInputs(
         issuer=issuer,
         guest=email,  # type: ignore
         trial_account_days=trial_account_days,
@@ -148,14 +149,14 @@ def check(ctx: typer.Context, invitation_url: str):
     settings = DesktopApplicationSettings()
 
     try:
-        invitation_data = extract_invitation_data(
+        invitation: InvitationContent = extract_invitation_content(
             invitation_code=parse_invitation_code(
                 parse_obj_as(HttpUrl, invitation_url)
             ),
             secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         )
 
-        rich.print(invitation_data.json(indent=1))
+        rich.print(invitation.json(indent=1))
     except (InvalidInvitationCode, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
 

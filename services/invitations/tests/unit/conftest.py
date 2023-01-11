@@ -1,9 +1,10 @@
-from pathlib import Path
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+
+from pathlib import Path
+
 import pytest
 import simcore_service_invitations
 from cryptography.fernet import Fernet
@@ -11,16 +12,12 @@ from faker import Faker
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_invitations.invitations import InvitationData
+from simcore_service_invitations.invitations import InvitationInputs
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
 ]
-
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 
 
 @pytest.fixture(scope="session")
@@ -89,8 +86,8 @@ def is_trial_account(request: FixtureRequest) -> bool:
 
 
 @pytest.fixture
-def invitation_data(is_trial_account: bool, faker: Faker) -> InvitationData:
-    return InvitationData(
+def invitation_data(is_trial_account: bool, faker: Faker) -> InvitationInputs:
+    return InvitationInputs(
         issuer="LicenseRequestID=123456789",
         guest=faker.email(),
         trial_account_days=faker.pyint(min_value=1) if is_trial_account else None,

@@ -13,7 +13,8 @@ from simcore_service_invitations.api._invitations import (
     InvitationGet,
 )
 from simcore_service_invitations.invitations import (
-    InvitationData,
+    InvitationContent,
+    InvitationInputs,
     create_invitation_link,
 )
 
@@ -21,7 +22,7 @@ from simcore_service_invitations.invitations import (
 def test_create_invitation(
     client: TestClient,
     basic_auth: httpx.BasicAuth,
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
 ):
     response = client.post(
         f"/{API_VTAG}/invitation",
@@ -43,7 +44,7 @@ def test_create_invitation(
 def test_check_invitation(
     client: TestClient,
     basic_auth: httpx.BasicAuth,
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
 ):
     response = client.post(
         f"/{API_VTAG}/invitation",
@@ -69,7 +70,7 @@ def test_check_invitation(
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationData.parse_obj(response.json())
+    invitation = InvitationContent.parse_obj(response.json())
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
     assert invitation.trial_account_days == invitation_data.trial_account_days
@@ -78,7 +79,7 @@ def test_check_invitation(
 def test_check_valid_invitation(
     client: TestClient,
     basic_auth: httpx.BasicAuth,
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
     secret_key: str,
 ):
     invitation_url = create_invitation_link(
@@ -96,7 +97,7 @@ def test_check_valid_invitation(
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationData.parse_obj(response.json())
+    invitation = InvitationContent.parse_obj(response.json())
 
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
@@ -106,7 +107,7 @@ def test_check_valid_invitation(
 def test_check_invalid_invitation_with_different_secret(
     client: TestClient,
     basic_auth: httpx.BasicAuth,
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
     another_secret_key: str,
 ):
     invitation_url = create_invitation_link(
@@ -150,7 +151,7 @@ def test_check_invalid_invitation_with_wrong_fragment(
 def test_check_invalid_invitation_with_wrong_code(
     client: TestClient,
     basic_auth: httpx.BasicAuth,
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
     another_secret_key: str,
 ):
     invitation_url = create_invitation_link(

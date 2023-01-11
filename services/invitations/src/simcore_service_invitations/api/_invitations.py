@@ -6,9 +6,10 @@ from pydantic import BaseModel, Field, HttpUrl
 from ..core.settings import WebApplicationSettings
 from ..invitations import (
     InvalidInvitationCode,
-    InvitationData,
+    InvitationContent,
+    InvitationInputs,
     create_invitation_link,
-    extract_invitation_data,
+    extract_invitation_content,
     parse_invitation_code,
 )
 from ._dependencies import get_current_username, get_settings
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 
-class InvitationCreate(InvitationData):
+class InvitationCreate(InvitationInputs):
     class Config:
         # Same as InvitationData but WITHOUT alias
         schema_extra = {
@@ -35,7 +36,7 @@ class InvitationCreate(InvitationData):
         }
 
 
-class InvitationGet(InvitationCreate):
+class InvitationGet(InvitationContent):
     invitation_url: HttpUrl = Field(..., description="Resulting invitation link")
 
     class Config:
@@ -44,6 +45,7 @@ class InvitationGet(InvitationCreate):
                 "issuer": "issuerid",
                 "guest": "invitedguest@company.com",
                 "trial_account_days": None,
+                "created": "2023-01-11 13:11:47.293595",
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
         }
@@ -84,7 +86,9 @@ async def create_invitation(
 
 
 @router.post(
-    "/invitation:check", response_model=InvitationData, response_model_by_alias=False
+    "/invitation:check",
+    response_model=InvitationContent,
+    response_model_by_alias=False,
 )
 async def check_invitation(
     invitation_check: InvitationCheck,
@@ -95,7 +99,7 @@ async def check_invitation(
     assert username == settings.INVITATIONS_USERNAME  # nosec
 
     try:
-        invitation = extract_invitation_data(
+        invitation = extract_invitation_content(
             invitation_code=parse_invitation_code(invitation_check.invitation_url),
             secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
         )
@@ -104,9 +108,5 @@ async def check_invitation(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=INVALID_INVITATION_URL_MSG,
         ) from err
-
-    invitation = InvitationData(
-        **invitation.dict(),
-    )
 
     return invitation

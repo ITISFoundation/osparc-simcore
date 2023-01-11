@@ -12,32 +12,51 @@ from faker import Faker
 from pydantic import BaseModel, ValidationError
 from simcore_service_invitations.invitations import (
     InvalidInvitationCode,
-    InvitationData,
+    InvitationContent,
+    InvitationInputs,
     _create_invitation_code,
+    _fernet_encrypt_as_urlsafe_code,
     create_invitation_link,
     decrypt_invitation,
-    extract_invitation_data,
+    extract_invitation_content,
 )
 from starlette.datastructures import URL
 
 
-def test_import_and_export_invitation_alias_by_alias(invitation_data: InvitationData):
+def test_all_invitation_fields_have_short_and_unique_aliases():
+    # all have short alias
+    all_alias = []
+    for field in InvitationContent.__fields__.values():
+        assert field.alias
+        assert field.alias not in all_alias
+        all_alias.append(field.alias)
+
+
+def test_import_and_export_invitation_alias_by_alias(
+    invitation_data: InvitationInputs,
+):
+    content = InvitationContent(**invitation_data.dict())
 
     # export by alias
-    data_w_alias = invitation_data.dict(by_alias=True)
+    data_w_alias = content.dict(by_alias=True)
 
     # parse/import by alias
-    invitation_data2 = InvitationData.parse_obj(data_w_alias)
-    assert invitation_data == invitation_data2
+    model_from_alias = InvitationContent.parse_obj(data_w_alias)
+    assert content == model_from_alias
+
+
+def test_export_by_alias_produces_smaller_strings(
+    invitation_data: InvitationInputs,
+):
+    content = InvitationContent(**invitation_data.dict())
 
     # export by alias produces smaller strings
-    assert len(invitation_data.json(by_alias=True)) < len(
-        invitation_data.json(by_alias=False)
-    )
+    assert len(content.json(by_alias=True)) < len(content.json(by_alias=False))
 
 
+@pytest.mark.testit
 def test_create_and_decrypt_invitation(
-    invitation_data: InvitationData, faker: Faker, secret_key: str
+    invitation_data: InvitationInputs, faker: Faker, secret_key: str
 ):
 
     invitation_link = create_invitation_link(
@@ -49,19 +68,13 @@ def test_create_and_decrypt_invitation(
     query_params = dict(parse.parse_qsl(URL(invitation_link.fragment).query))
 
     # will raise TokenError or ValidationError
-    received_invitation_data = decrypt_invitation(
+    invitation = decrypt_invitation(
         invitation_code=query_params["invitation"],
         secret_key=secret_key.encode(),
     )
 
-    assert received_invitation_data == invitation_data
-
-
-@pytest.fixture
-def invitation_code(invitation_data: InvitationData, secret_key: str) -> str:
-    return _create_invitation_code(
-        invitation_data, secret_key=secret_key.encode()
-    ).decode()
+    assert isinstance(invitation, InvitationContent)
+    assert invitation.dict(exclude={"created"}) == invitation_data.dict()
 
 
 #
@@ -69,17 +82,24 @@ def invitation_code(invitation_data: InvitationData, secret_key: str) -> str:
 #
 
 
+@pytest.fixture
+def invitation_code(invitation_data: InvitationInputs, secret_key: str) -> str:
+    return _create_invitation_code(
+        invitation_data, secret_key=secret_key.encode()
+    ).decode()
+
+
 def test_valid_invitation_code(
     secret_key: str,
     invitation_code: str,
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
 ):
-    decrypted_invitation_data = decrypt_invitation(
+    invitation = decrypt_invitation(
         invitation_code=invitation_code,
         secret_key=secret_key.encode(),
     )
 
-    assert decrypted_invitation_data == invitation_data
+    assert invitation.dict(exclude={"created"}) == invitation_data.dict()
 
 
 def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
@@ -95,7 +115,7 @@ def test_invalid_invitation_encoding(secret_key: str, invitation_code: str):
     assert f"{error_info.value}" == "Incorrect padding"
 
     with pytest.raises(InvalidInvitationCode):
-        extract_invitation_data(
+        extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
         )
@@ -112,20 +132,21 @@ def test_invalid_invitation_secret(another_secret_key: str, invitation_code: str
         )
 
     with pytest.raises(InvalidInvitationCode):
-        extract_invitation_data(
+        extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
         )
 
 
 def test_invalid_invitation_data(secret_key: str):
+    # encrypts contents
     class OtherData(BaseModel):
         foo: int = 123
 
-    my_invitation_code = _create_invitation_code(
-        invitation_data=OtherData(), secret_key=secret_key.encode()
-    ).decode()
     my_secret_key = secret_key.encode()
+    my_invitation_code = _fernet_encrypt_as_urlsafe_code(
+        data=OtherData().json().encode(), secret_key=my_secret_key
+    )
 
     with pytest.raises(ValidationError):
         decrypt_invitation(
@@ -134,7 +155,7 @@ def test_invalid_invitation_data(secret_key: str):
         )
 
     with pytest.raises(InvalidInvitationCode):
-        extract_invitation_data(
+        extract_invitation_content(
             invitation_code=my_invitation_code,
             secret_key=my_secret_key,
         )

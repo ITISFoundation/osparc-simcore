@@ -9,13 +9,13 @@ import httpx
 from fastapi import status
 from fastapi.testclient import TestClient
 from simcore_service_invitations._meta import API_VTAG
-from simcore_service_invitations.invitations import InvitationData
+from simcore_service_invitations.invitations import InvitationInputs
 
 
 def test_invalid_http_basic_auth(
     client: TestClient,
     invalid_basic_auth: Optional[httpx.BasicAuth],
-    invitation_data: InvitationData,
+    invitation_data: InvitationInputs,
 ):
     response = client.post(
         f"/{API_VTAG}/invitation",
