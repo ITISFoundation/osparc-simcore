@@ -13,8 +13,7 @@ from ._models import ActionName, WorkflowName
 
 
 def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
-    # if a value previously existed,
-    # ensure it has the same type
+    # if a value previously existed, ensure it has a compatible type
     existing_type = type(existing_value)
     value_type = type(value)
     if not isinstance(existing_value, value_type):
@@ -48,9 +47,8 @@ class WorkflowContext(ContextIOInterface):
 
     async def set(self, key: str, value: Any, *, set_reserved: bool = False) -> None:
         """
-        Saves a value. Note the type of the value is forced
-        at the same type as the first time this was set.
-
+        Stores a value.
+        NOTE: the type of the value is deduced the first time this was set.
         """
         if key in ReservedContextKeys.RESERVED and not set_reserved:
             raise NotAllowedContextKeyError(key=key)
@@ -70,7 +68,7 @@ class WorkflowContext(ContextIOInterface):
 
     async def get(self, key: str, expected_type: type) -> Optional[Any]:
         """
-        returns an existing value ora raises an error
+        Loads a value. Raises an error if value is missing.
         """
         if (
             key not in ReservedContextKeys.STORED_LOCALLY
@@ -117,4 +115,4 @@ class WorkflowContext(ContextIOInterface):
         )
 
     async def teardown(self) -> None:
-        """nothing code required here"""
+        """no code required here"""

@@ -1,9 +1,9 @@
-import asyncio
 import logging
 import traceback
 from typing import Any, Awaitable, Callable, Iterable, Optional
 
 from pydantic import BaseModel, NonNegativeInt
+from servicelib.utils import logged_gather
 
 from ._action import Action
 from ._context_base import ReservedContextKeys
@@ -40,14 +40,11 @@ async def workflow_runner(
     after_step_hook: Optional[Callable[[ActionName, StepName], Awaitable[None]]] = None,
 ) -> None:
     """
-    Given a `Workflow` and a `WorkflowContext` runs from a given
-    starting action.
-    Can also recover from an already initialized `WorkflowContext`.
+    Given a `Workflow` and a `WorkflowContext`:
+    - runs from a given starting action
+    - recovers from an already initialized `WorkflowContext`
     """
 
-    # goes through all the states defined and does tuff right?
-    # not in some cases this needs to end, these are ran as tasks
-    #
     action_name: ActionName = await workflow_context.get(
         ReservedContextKeys.WORKFLOW_ACTION_NAME, ActionName
     )
@@ -77,7 +74,7 @@ async def workflow_runner(
                 # fetching inputs from context
                 inputs: dict[str, Any] = {}
                 if step.input_types:
-                    get_inputs_results = await asyncio.gather(
+                    get_inputs_results = await logged_gather(
                         *[
                             workflow_context.get(var_name, var_type)
                             for var_name, var_type in step.input_types.items()
@@ -101,7 +98,7 @@ async def workflow_runner(
 
                 # saving outputs to context
                 logger.debug("step='%s' result=%s", step_name, result)
-                await asyncio.gather(
+                await logged_gather(
                     *[
                         workflow_context.set(key=var_name, value=var_value)
                         for var_name, var_value in result.items()
