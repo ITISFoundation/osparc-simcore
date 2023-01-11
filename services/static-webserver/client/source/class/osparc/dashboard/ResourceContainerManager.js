@@ -325,6 +325,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                       headerIcon: icon,
                       headerLabel: org.label
                     });
+                  } else {
+                    // unknown org/user: show email address instead
+                    groupContainer.set({
+                      headerIcon: "@FontAwesome5Solid/user/24",
+                      headerLabel: resourceData["prjOwner"]
+                    });
                   }
                 });
               const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
