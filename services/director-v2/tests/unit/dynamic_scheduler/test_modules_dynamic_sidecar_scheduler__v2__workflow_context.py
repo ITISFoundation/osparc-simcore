@@ -18,13 +18,13 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow
     WorkflowContext,
 )
 
-PLAY_NAME = "test_play"
-PLAY_ACTION_NAME = "test_play_action_name"
+WORKFLOW_NAME = "test_workflow"
+WORKFLOW_ACTION_NAME = "test_workflow_action_name"
 
-EXTRA_PLAY_DATA: dict[str, str] = {
+EXTRA_WORKFLOW_CONTEXT_DATA: dict[str, str] = {
     ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX: 0,
-    ReservedContextKeys.WORKFLOW_NAME: PLAY_NAME,
-    ReservedContextKeys.WORKFLOW_ACTION_NAME: PLAY_ACTION_NAME,
+    ReservedContextKeys.WORKFLOW_NAME: WORKFLOW_NAME,
+    ReservedContextKeys.WORKFLOW_ACTION_NAME: WORKFLOW_ACTION_NAME,
 }
 
 
@@ -43,7 +43,10 @@ async def workflow_context(
     app: FastAPI, context: ContextIOInterface
 ) -> WorkflowContext:
     workflow_context = WorkflowContext(
-        context=context, app=app, workflow_name=PLAY_NAME, action_name=PLAY_ACTION_NAME
+        context=context,
+        app=app,
+        workflow_name=WORKFLOW_NAME,
+        action_name=WORKFLOW_ACTION_NAME,
     )
     await workflow_context.setup()
     yield workflow_context
@@ -96,10 +99,10 @@ async def test_set_and_get_non_local(key_1: str, workflow_context: WorkflowConte
 
 async def test_to_dict(key_1: str, workflow_context: WorkflowContext):
     await workflow_context.set(key_1, 4)
-    assert await workflow_context.to_dict() == {key_1: 4} | EXTRA_PLAY_DATA
+    assert await workflow_context.to_dict() == {key_1: 4} | EXTRA_WORKFLOW_CONTEXT_DATA
 
 
 async def test_from_dict(workflow_context: WorkflowContext):
     in_dict: dict[str, Any] = {"1": 1, "d": dict(me=1.1)}
     await workflow_context.from_dict(in_dict)
-    assert await workflow_context.to_dict() == in_dict | EXTRA_PLAY_DATA
+    assert await workflow_context.to_dict() == in_dict | EXTRA_WORKFLOW_CONTEXT_DATA

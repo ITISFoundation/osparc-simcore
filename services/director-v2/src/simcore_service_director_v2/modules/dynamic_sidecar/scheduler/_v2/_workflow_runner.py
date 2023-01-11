@@ -40,9 +40,9 @@ async def workflow_runner(
     after_step_hook: Optional[Callable[[ActionName, StepName], Awaitable[None]]] = None,
 ) -> None:
     """
-    Given a `PlayCatalog` and a `PlayContext` runs from a given
+    Given a `Workflow` and a `WorkflowContext` runs from a given
     starting action.
-    Can also recover from an already initialized `PlayContext`.
+    Can also recover from an already initialized `WorkflowContext`.
     """
 
     # goes through all the states defined and does tuff right?

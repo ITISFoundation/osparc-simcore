@@ -199,29 +199,29 @@ async def test_workflow_runner_manager(context: ContextIOInterface):
 
     workflow = Workflow(FIRST_ACTION, SECOND_ACTION)
 
-    play_manager = WorkflowRunnerManager(
+    workflow_runner_manager = WorkflowRunnerManager(
         context=context, app=AsyncMock(), workflow=workflow
     )
-    async with _workflow_runner_manager_lifecycle(play_manager):
+    async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
         # ok workflow_runner
-        await play_manager.start_workflow_runner(
+        await workflow_runner_manager.start_workflow_runner(
             workflow_name="start_first", action_name="first"
         )
-        assert "start_first" in play_manager._workflow_context
-        assert "start_first" in play_manager._workflow_tasks
-        await play_manager.wait_workflow_runner("start_first")
-        assert "start_first" not in play_manager._workflow_context
-        assert "start_first" not in play_manager._workflow_tasks
+        assert "start_first" in workflow_runner_manager._workflow_context
+        assert "start_first" in workflow_runner_manager._workflow_tasks
+        await workflow_runner_manager.wait_workflow_runner("start_first")
+        assert "start_first" not in workflow_runner_manager._workflow_context
+        assert "start_first" not in workflow_runner_manager._workflow_tasks
 
         # cancel workflow_runner
-        await play_manager.start_workflow_runner(
+        await workflow_runner_manager.start_workflow_runner(
             workflow_name="start_first", action_name="first"
         )
-        await play_manager.cancel_and_wait_workflow_runner("start_first")
-        assert "start_first" not in play_manager._workflow_context
-        assert "start_first" not in play_manager._workflow_tasks
+        await workflow_runner_manager.cancel_and_wait_workflow_runner("start_first")
+        assert "start_first" not in workflow_runner_manager._workflow_context
+        assert "start_first" not in workflow_runner_manager._workflow_tasks
         with pytest.raises(WorkflowNotFoundException):
-            await play_manager.wait_workflow_runner("start_first")
+            await workflow_runner_manager.wait_workflow_runner("start_first")
 
 
 async def test_workflow_runner_error_handling(
@@ -283,7 +283,7 @@ async def test_workflow_runner_error_handling(
         CASE_2_RASING_ERROR,
     )
 
-    workflow_name = "test_play"
+    workflow_name = "test_workflow_name"
     # CASE 1
     workflow_runner_manager = WorkflowRunnerManager(
         context=context, app=AsyncMock(), workflow=workflow
