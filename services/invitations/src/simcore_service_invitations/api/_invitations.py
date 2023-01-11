@@ -26,7 +26,18 @@ INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 class InvitationCreate(InvitationInputs):
     class Config:
-        # Same as InvitationData but WITHOUT alias
+        # Same as InvitationInputs but WITHOUT alias
+        fields = {
+            "issuer": {
+                "alias": None,
+            },
+            "guest": {
+                "alias": None,
+            },
+            "trial_account_days": {
+                "alias": None,
+            },
+        }
         schema_extra = {
             "example": {
                 "issuer": "issuerid",

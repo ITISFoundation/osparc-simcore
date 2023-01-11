@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-invitations web API",
     "description": " Service that manages creation and validation of registration invitations",
-    "version": "0.1.0a0"
+    "version": "1.0.0"
   },
   "paths": {
     "/": {
@@ -24,13 +24,13 @@
         }
       }
     },
-    "/v0/meta": {
+    "/v1/meta": {
       "get": {
         "tags": [
           "meta"
         ],
         "summary": "Get Service Metadata",
-        "operationId": "get_service_metadata_v0_meta_get",
+        "operationId": "get_service_metadata_v1_meta_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -45,14 +45,14 @@
         }
       }
     },
-    "/v0/invitation": {
+    "/v1/invitation": {
       "post": {
         "tags": [
           "invitations"
         ],
         "summary": "Create Invitation",
         "description": "Generates a new invitation link",
-        "operationId": "create_invitation_v0_invitation_post",
+        "operationId": "create_invitation_v1_invitation_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -92,14 +92,14 @@
         ]
       }
     },
-    "/v0/invitation:check": {
+    "/v1/invitation:check": {
       "post": {
         "tags": [
           "invitations"
         ],
         "summary": "Check Invitation",
         "description": "Generates a new invitation link",
-        "operationId": "check_invitation_v0_invitation_check_post",
+        "operationId": "check_invitation_v1_invitation_check_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -116,7 +116,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvitationData"
+                  "$ref": "#/components/schemas/InvitationContent"
                 }
               }
             }
@@ -172,8 +172,8 @@
           }
         }
       },
-      "InvitationCreate": {
-        "title": "InvitationCreate",
+      "InvitationContent": {
+        "title": "InvitationContent",
         "required": [
           "i",
           "g"
@@ -195,46 +195,54 @@
           },
           "t": {
             "title": "T",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires"
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          },
+          "c": {
+            "title": "C",
+            "type": "string",
+            "description": "Timestamp for creation",
+            "format": "date-time"
           }
         },
-        "description": "Data in an invitation",
+        "description": "Data encoded inside an invitation"
+      },
+      "InvitationCreate": {
+        "title": "InvitationCreate",
+        "required": [
+          "issuer",
+          "guest"
+        ],
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "title": "Issuer",
+            "maxLength": 30,
+            "minLength": 1,
+            "type": "string",
+            "description": "Who issued this invitation? Some identifier such as LicenseRequestID"
+          },
+          "guest": {
+            "title": "Guest",
+            "type": "string",
+            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
+            "format": "email"
+          },
+          "trial_account_days": {
+            "title": "Trial Account Days",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          }
+        },
+        "description": "Input data necessary to create an invitation",
         "example": {
           "issuer": "issuerid",
           "guest": "invitedguest@company.com"
         }
-      },
-      "InvitationData": {
-        "title": "InvitationData",
-        "required": [
-          "i",
-          "g"
-        ],
-        "type": "object",
-        "properties": {
-          "i": {
-            "title": "I",
-            "maxLength": 30,
-            "minLength": 1,
-            "type": "string",
-            "description": "Who issued this invitation? Some identifier such as LicenseRequestID"
-          },
-          "g": {
-            "title": "G",
-            "type": "string",
-            "description": "Invitee's email. Note that the registration can ONLY be used with this email",
-            "format": "email"
-          },
-          "t": {
-            "title": "T",
-            "exclusiveMinimum": 0.0,
-            "type": "integer",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires"
-          }
-        },
-        "description": "Data in an invitation"
       },
       "InvitationGet": {
         "title": "InvitationGet",
@@ -260,9 +268,16 @@
           },
           "t": {
             "title": "T",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": true,
             "type": "integer",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires"
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
+            "minimum": 0
+          },
+          "c": {
+            "title": "C",
+            "type": "string",
+            "description": "Timestamp for creation",
+            "format": "date-time"
           },
           "invitation_url": {
             "title": "Invitation Url",
@@ -273,10 +288,11 @@
             "format": "uri"
           }
         },
-        "description": "Data in an invitation",
+        "description": "Data encoded inside an invitation",
         "example": {
           "issuer": "issuerid",
           "guest": "invitedguest@company.com",
+          "created": "2023-01-11 13:11:47.293595",
           "invitation_url": "https://foo.com/#/registration?invitation=1234"
         }
       },

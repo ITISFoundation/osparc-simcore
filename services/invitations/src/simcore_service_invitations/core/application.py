@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .._meta import (
     API_VERSION,
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below
     )
+    override_fastapi_openapi_method(app)
 
     # STATE
     app.state.settings = WebApplicationSettings()
