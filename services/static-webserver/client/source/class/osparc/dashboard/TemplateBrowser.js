@@ -184,10 +184,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __createUpdateAllButton: function() {
-      const updateAllButton = this.__updateAllButton = new qx.ui.form.Button(this.tr("Update All"));
+      const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update All"));
       updateAllButton.exclude();
       updateAllButton.addListener("tap", () => {
-        const msg = this.tr("Are you sure you want to update all templates?");
+        const templatesText = osparc.utils.Utils.isProduct("s4llite") ? this.tr("tutorials") : this.tr("templates");
+        const msg = this.tr("Are you sure you want to update all ") + templatesText + "?";
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmText: this.tr("Update all"),
           confirmAction: "create"
@@ -211,16 +212,24 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
     },
 
-    __updateAllServices: function(nodeIds, button) {
-      this.setEnabled(false);
-      for (const nodeId in this._studyData["workbench"]) {
-        if (nodeIds.includes(nodeId)) {
-          const node = this._studyData["workbench"][nodeId];
-          const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
-          this._studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata["version"];
-        }
+    __updateAllTemplates: function() {
+      if (this._resourcesContainer) {
+        this.__updateAllButton.setFetching(true);
+        const visibleCards = this._resourcesContainer.getCards().filter(card => card.isVisible());
+        const templatesData = [];
+        visibleCards.forEach(card => templatesData.push(card.getResourceData()));
+        const uniqueTemplatesUuids = [];
+        const uniqueTemplatesData = templatesData.filter(templateData => {
+          const isDuplicate = uniqueTemplatesUuids.includes(templateData.uuid);
+          if (!isDuplicate) {
+            uniqueTemplatesUuids.push(templateData.uuid);
+            return true;
+          }
+          return false;
+        });
+        console.log(uniqueTemplatesData);
+        this.__updateAllButton.setFetching(false);
       }
-      this._updateStudy(button);
     },
     // LAYOUT //
 
