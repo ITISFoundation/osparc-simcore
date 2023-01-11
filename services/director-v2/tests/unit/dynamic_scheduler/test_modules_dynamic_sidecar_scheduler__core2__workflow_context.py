@@ -5,16 +5,16 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._context_base import (
     ContextInterface,
     ReservedContextKeys,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._errors import (
     GetTypeMismatchError,
     NotAllowedContextKeyError,
     NotInContextError,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow_context import (
     WorkflowContext,
 )
 

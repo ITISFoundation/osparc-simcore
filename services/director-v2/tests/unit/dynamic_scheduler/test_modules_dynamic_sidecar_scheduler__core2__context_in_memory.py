@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from pytest import FixtureRequest
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_in_memory import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._context_in_memory import (
     InMemoryContext,
 )
 

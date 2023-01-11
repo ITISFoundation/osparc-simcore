@@ -1,9 +1,9 @@
 from typing import Any
 
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._action import (
     Action,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._marker import (
     mark_step,
 )
 

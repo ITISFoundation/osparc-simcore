@@ -7,17 +7,17 @@ from typing import Any, AsyncIterator
 from unittest.mock import AsyncMock, call
 
 import pytest
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2 import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2 import (
     Action,
     ExceptionInfo,
     Workflow,
     WorkflowRunnerManager,
     mark_step,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._context_base import (
     ContextInterface,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._models import (
     WorkflowName,
 )
 

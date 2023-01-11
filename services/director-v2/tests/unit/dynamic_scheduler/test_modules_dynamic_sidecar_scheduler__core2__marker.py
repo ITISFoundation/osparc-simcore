@@ -1,10 +1,10 @@
 from typing import Any
 
 import pytest
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._errors import (
     UnexpectedStepReturnTypeError,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._marker import (
     mark_step,
 )
 

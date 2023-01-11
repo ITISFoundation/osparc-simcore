@@ -1,4 +1,4 @@
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._context_base import (
     ReservedContextKeys,
 )
 

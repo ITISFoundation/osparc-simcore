@@ -9,35 +9,35 @@ from unittest.mock import AsyncMock, call
 
 import pytest
 from pytest import LogCaptureFixture
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._action import (
     Action,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._context_base import (
     ContextInterface,
     ReservedContextKeys,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._errors import (
     WorkflowNotFoundException,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._marker import (
     mark_step,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._models import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._models import (
     ActionName,
     StepName,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow import (
     Workflow,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_context import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow_context import (
     WorkflowContext,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_runner import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow_runner import (
     ExceptionInfo,
     _iter_index_step,
     workflow_runner,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._workflow_runner_manager import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow_runner_manager import (
     WorkflowRunnerManager,
 )
 
