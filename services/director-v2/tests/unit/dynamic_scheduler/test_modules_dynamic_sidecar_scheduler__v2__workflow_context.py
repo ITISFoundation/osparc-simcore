@@ -22,9 +22,9 @@ PLAY_NAME = "test_play"
 PLAY_ACTION_NAME = "test_play_action_name"
 
 EXTRA_PLAY_DATA: dict[str, str] = {
-    ReservedContextKeys.PLAY_CURRENT_STEP_INDEX: 0,
-    ReservedContextKeys.PLAY_NAME: PLAY_NAME,
-    ReservedContextKeys.PLAY_ACTION_NAME: PLAY_ACTION_NAME,
+    ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX: 0,
+    ReservedContextKeys.WORKFLOW_NAME: PLAY_NAME,
+    ReservedContextKeys.WORKFLOW_ACTION_NAME: PLAY_ACTION_NAME,
 }
 
 
@@ -43,7 +43,7 @@ async def workflow_context(
     app: FastAPI, context: ContextIOInterface
 ) -> WorkflowContext:
     workflow_context = WorkflowContext(
-        context=context, app=app, play_name=PLAY_NAME, action_name=PLAY_ACTION_NAME
+        context=context, app=app, workflow_name=PLAY_NAME, action_name=PLAY_ACTION_NAME
     )
     await workflow_context.setup()
     yield workflow_context

@@ -49,14 +49,14 @@ async def workflow_runner(
     # not in some cases this needs to end, these are ran as tasks
     #
     action_name: ActionName = await workflow_context.get(
-        ReservedContextKeys.PLAY_ACTION_NAME, ActionName
+        ReservedContextKeys.WORKFLOW_ACTION_NAME, ActionName
     )
     action: Optional[Action] = workflow[action_name]
 
     start_from_index: int = 0
     try:
         start_from_index = await workflow_context.get(
-            ReservedContextKeys.PLAY_CURRENT_STEP_INDEX, int
+            ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX, int
         )
     except NotInContextError:
         pass
@@ -64,7 +64,7 @@ async def workflow_runner(
     while action is not None:
         action_name = action.name
         await workflow_context.set(
-            ReservedContextKeys.PLAY_ACTION_NAME, action_name, set_reserved=True
+            ReservedContextKeys.WORKFLOW_ACTION_NAME, action_name, set_reserved=True
         )
         logger.debug("Running action='%s', step=%s", action_name, action.steps_names)
         try:
@@ -88,12 +88,12 @@ async def workflow_runner(
 
                 # running event handler
                 await workflow_context.set(
-                    ReservedContextKeys.PLAY_CURRENT_STEP_NAME,
+                    ReservedContextKeys.WORKFLOW_CURRENT_STEP_NAME,
                     step_name,
                     set_reserved=True,
                 )
                 await workflow_context.set(
-                    ReservedContextKeys.PLAY_CURRENT_STEP_INDEX,
+                    ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX,
                     index,
                     set_reserved=True,
                 )
@@ -126,10 +126,10 @@ async def workflow_runner(
             exception_info = ExceptionInfo(
                 exception_class=e.__class__,
                 action_name=await workflow_context.get(
-                    ReservedContextKeys.PLAY_ACTION_NAME, WorkflowName
+                    ReservedContextKeys.WORKFLOW_ACTION_NAME, WorkflowName
                 ),
                 step_name=await workflow_context.get(
-                    ReservedContextKeys.PLAY_CURRENT_STEP_NAME, ActionName
+                    ReservedContextKeys.WORKFLOW_CURRENT_STEP_NAME, ActionName
                 ),
                 serialized_traceback=traceback.format_exc(),
             )

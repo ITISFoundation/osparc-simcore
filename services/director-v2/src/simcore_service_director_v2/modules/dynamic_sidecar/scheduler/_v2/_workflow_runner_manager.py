@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
     ActionNotRegisteredException,
-    PlayAlreadyRunningException,
-    PlayNotFoundException,
+    WorkflowAlreadyRunningException,
+    WorkflowNotFoundException,
 )
 from ._models import ActionName, StepName, WorkflowName
 from ._workflow import Workflow
@@ -46,26 +46,26 @@ class WorkflowRunnerManager:
         self.before_step_hook = before_step_hook
         self.after_step_hook = after_step_hook
 
-        self._player_tasks: dict[WorkflowName, Task] = {}
+        self._workflow_tasks: dict[WorkflowName, Task] = {}
         self._workflow_context: dict[WorkflowName, WorkflowContext] = {}
         self._shutdown_tasks_workflow_context: dict[WorkflowName, Task] = {}
 
     async def start_workflow_runner(
-        self, play_name: WorkflowName, action_name: ActionName
+        self, workflow_name: WorkflowName, action_name: ActionName
     ) -> None:
         """starts a new workflow with a unique name"""
 
-        if play_name in self._workflow_context:
-            raise PlayAlreadyRunningException(play_name=play_name)
+        if workflow_name in self._workflow_context:
+            raise WorkflowAlreadyRunningException(workflow_name=workflow_name)
         if action_name not in self.workflow:
             raise ActionNotRegisteredException(
                 action_name=action_name, workflow=self.workflow
             )
 
-        self._workflow_context[play_name] = workflow_context = WorkflowContext(
+        self._workflow_context[workflow_name] = workflow_context = WorkflowContext(
             context=self.context,
             app=self.app,
-            play_name=play_name,
+            workflow_name=workflow_name,
             action_name=action_name,
         )
         await workflow_context.setup()
@@ -77,7 +77,7 @@ class WorkflowRunnerManager:
             after_step_hook=self.after_step_hook,
         )
 
-        self._create_workflow_runner_task(workflow_runner_awaitable, play_name)
+        self._create_workflow_runner_task(workflow_runner_awaitable, workflow_name)
 
     async def resume_workflow_runner(self, workflow_context: WorkflowContext) -> None:
         # NOTE: expecting `await workflow_context.start()` to have already been ran
@@ -89,45 +89,45 @@ class WorkflowRunnerManager:
             after_step_hook=self.after_step_hook,
         )
 
-        play_name: WorkflowName = await workflow_context.get(
-            ReservedContextKeys.PLAY_NAME, WorkflowName
+        workflow_name: WorkflowName = await workflow_context.get(
+            ReservedContextKeys.WORKFLOW_NAME, WorkflowName
         )
-        self._create_workflow_runner_task(workflow_runner_awaitable, play_name)
+        self._create_workflow_runner_task(workflow_runner_awaitable, workflow_name)
 
     def _create_workflow_runner_task(
-        self, workflow_runner_awaitable: Awaitable, play_name: WorkflowName
+        self, workflow_runner_awaitable: Awaitable, workflow_name: WorkflowName
     ) -> None:
-        play_task = self._player_tasks[play_name] = asyncio.create_task(
-            workflow_runner_awaitable, name=play_name
+        workflow_task = self._workflow_tasks[workflow_name] = asyncio.create_task(
+            workflow_runner_awaitable, name=workflow_name
         )
 
         def workflow_runner_complete(_: Task) -> None:
-            self._player_tasks.pop(play_name, None)
+            self._workflow_tasks.pop(workflow_name, None)
             workflow_context: Optional[WorkflowContext] = self._workflow_context.pop(
-                play_name, None
+                workflow_name, None
             )
             if workflow_context:
                 # shutting down context resolver and ensure task will not be pending
                 task = self._shutdown_tasks_workflow_context[
-                    play_name
+                    workflow_name
                 ] = asyncio.create_task(workflow_context.teardown())
                 task.add_done_callback(
                     partial(
                         lambda s, _: self._shutdown_tasks_workflow_context.pop(s, None),
-                        play_name,
+                        workflow_name,
                     )
                 )
 
         # remove when task is done
-        play_task.add_done_callback(workflow_runner_complete)
+        workflow_task.add_done_callback(workflow_runner_complete)
 
-    async def wait_workflow_runner(self, play_name: WorkflowName) -> None:
-        """waits for action play task to finish"""
-        if play_name not in self._player_tasks:
-            raise PlayNotFoundException(workflow_name=play_name)
+    async def wait_workflow_runner(self, workflow_name: WorkflowName) -> None:
+        """waits for action workflow task to finish"""
+        if workflow_name not in self._workflow_tasks:
+            raise WorkflowNotFoundException(workflow_name=workflow_name)
 
-        player_task = self._player_tasks[play_name]
-        await player_task
+        workflow_task = self._workflow_tasks[workflow_name]
+        await workflow_task
 
     @staticmethod
     async def __cancel_task(task: Optional[Task]) -> None:
@@ -146,12 +146,14 @@ class WorkflowRunnerManager:
                     "Timed out while awaiting for cancellation of '%s'", task.get_name()
                 )
 
-    async def cancel_and_wait_workflow_runner(self, play_name: WorkflowName) -> None:
-        """cancels current action player Task"""
-        if play_name not in self._player_tasks:
-            raise PlayNotFoundException(workflow_name=play_name)
+    async def cancel_and_wait_workflow_runner(
+        self, workflow_name: WorkflowName
+    ) -> None:
+        """cancels current action workflow Task"""
+        if workflow_name not in self._workflow_tasks:
+            raise WorkflowNotFoundException(workflow_name=workflow_name)
 
-        task = self._player_tasks[play_name]
+        task = self._workflow_tasks[workflow_name]
         await self.__cancel_task(task)
 
     async def teardown(self) -> None:

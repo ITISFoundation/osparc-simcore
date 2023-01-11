@@ -1,7 +1,9 @@
+from itertools import chain
+
 from ._action import Action
 from ._errors import (
-    NextActionNotInPlayCatalogException,
-    OnErrorActionNotInPlayCatalogException,
+    NextActionNotInWorkflowException,
+    OnErrorActionNotInWorkflowException,
 )
 from ._models import ActionName
 
@@ -16,7 +18,7 @@ class Workflow:
                 action.on_error_action is not None
                 and action.on_error_action not in self._registry
             ):
-                raise OnErrorActionNotInPlayCatalogException(
+                raise OnErrorActionNotInWorkflowException(
                     action_name=action.name,
                     on_error_action=action.on_error_action,
                     workflow=self._registry,
@@ -25,7 +27,7 @@ class Workflow:
                 action.next_action is not None
                 and action.next_action not in self._registry
             ):
-                raise NextActionNotInPlayCatalogException(
+                raise NextActionNotInWorkflowException(
                     action_name=action.name,
                     next_action=action.next_action,
                     workflow=self._registry,
@@ -36,3 +38,6 @@ class Workflow:
 
     def __getitem__(self, key: ActionName) -> Action:
         return self._registry[key]
+
+    def __add__(self, other: "Workflow") -> "Workflow":
+        return Workflow(*(chain(self._registry.values(), other._registry.values())))

@@ -29,19 +29,19 @@ def _ensure_type_matches(key: str, existing_value: Any, value: Any) -> None:
 
 class WorkflowContext(ContextIOInterface):
     """
-    Data container responsible for keeping track of the state of a play.
+    Data container responsible for keeping track of the state of a workflow.
     """
 
     def __init__(
         self,
         context: ContextInterface,
         app: FastAPI,
-        play_name: WorkflowName,
+        workflow_name: WorkflowName,
         action_name: ActionName,
     ) -> None:
         self._context = context
         self._app = app
-        self._play_name = play_name
+        self._workflow_name = workflow_name
         self._action_name = action_name
 
         self._local_storage: dict[str, Any] = {}
@@ -103,15 +103,17 @@ class WorkflowContext(ContextIOInterface):
         # adding app to context
         await self.set(key=ReservedContextKeys.APP, value=self._app, set_reserved=True)
         await self.set(
-            key=ReservedContextKeys.PLAY_NAME, value=self._play_name, set_reserved=True
+            key=ReservedContextKeys.WORKFLOW_NAME,
+            value=self._workflow_name,
+            set_reserved=True,
         )
         await self.set(
-            key=ReservedContextKeys.PLAY_ACTION_NAME,
+            key=ReservedContextKeys.WORKFLOW_ACTION_NAME,
             value=self._action_name,
             set_reserved=True,
         )
         await self.set(
-            ReservedContextKeys.PLAY_CURRENT_STEP_INDEX, 0, set_reserved=True
+            ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX, 0, set_reserved=True
         )
 
     async def teardown(self) -> None:

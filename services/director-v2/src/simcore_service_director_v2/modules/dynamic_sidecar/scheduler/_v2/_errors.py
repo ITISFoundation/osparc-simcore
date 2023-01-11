@@ -48,14 +48,14 @@ class UnexpectedStepReturnTypeError(BaseStepException):
     msg_template = "Step should always return `dict[str, Any]`, returning: {type}"
 
 
-class PlayAlreadyRunningException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.play_already_running"
-    msg_template = "Another play named '{play_name}' is already running"
+class WorkflowAlreadyRunningException(BaseStepException):
+    code = "dynamic_sidecar.scheduler.v2.workflow_already_running"
+    msg_template = "Another workflow named '{workflow_name}' is already running"
 
 
-class PlayNotFoundException(BaseStepException):
-    code = "dynamic_sidecar.scheduler.v2.play_not_found"
-    msg_template = "Play '{play_name}' not found"
+class WorkflowNotFoundException(BaseStepException):
+    code = "dynamic_sidecar.scheduler.v2.workflow_not_found"
+    msg_template = "Workflow '{workflow_name}' not found"
 
 
 class ActionNotRegisteredException(BaseStepException):
@@ -66,17 +66,17 @@ class ActionNotRegisteredException(BaseStepException):
     )
 
 
-class OnErrorActionNotInPlayCatalogException(BaseStepException):
+class OnErrorActionNotInWorkflowException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.on_error_action_not_in_workflow"
     msg_template = (
         "Action '{action_name}' defines an on_error_action '{on_error_action}'"
-        "that is not in the present in the play catalog {workflow}"
+        "that is not in the present in the workflow {workflow}"
     )
 
 
-class NextActionNotInPlayCatalogException(BaseStepException):
+class NextActionNotInWorkflowException(BaseStepException):
     code = "dynamic_sidecar.scheduler.v2.next_action_not_in_workflow"
     msg_template = (
         "Action '{action_name}' defines an next_action '{next_action}'"
-        "that is not in the present in the play catalog {workflow}"
+        "that is not in the present in the workflow {workflow}"
     )

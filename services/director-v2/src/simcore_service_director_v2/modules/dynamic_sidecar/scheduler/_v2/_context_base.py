@@ -5,21 +5,21 @@ from typing import Any, Optional
 class ReservedContextKeys:
     APP: str = "app"
 
-    PLAY_NAME: str = "__play_name"
-    PLAY_ACTION_NAME: str = "__play_action_name"
-    PLAY_CURRENT_STEP_NAME: str = "__play_current_step_name"
-    PLAY_CURRENT_STEP_INDEX: str = "__play_current_step_index"
+    WORKFLOW_NAME: str = "__workflow_name"
+    WORKFLOW_ACTION_NAME: str = "__workflow_action_name"
+    WORKFLOW_CURRENT_STEP_NAME: str = "__workflow_current_step_name"
+    WORKFLOW_CURRENT_STEP_INDEX: str = "__workflow_current_step_index"
 
-    EXCEPTION: str = "_exception"
+    EXCEPTION: str = "unexpected_runtime_exception"
 
     # reserved keys cannot be overwritten by the events
     RESERVED: set[str] = {
         APP,
         EXCEPTION,
-        PLAY_NAME,
-        PLAY_ACTION_NAME,
-        PLAY_CURRENT_STEP_NAME,
-        PLAY_CURRENT_STEP_INDEX,
+        WORKFLOW_NAME,
+        WORKFLOW_ACTION_NAME,
+        WORKFLOW_CURRENT_STEP_NAME,
+        WORKFLOW_CURRENT_STEP_INDEX,
     }
 
     # NOTE: objects pointed by these keys are just references

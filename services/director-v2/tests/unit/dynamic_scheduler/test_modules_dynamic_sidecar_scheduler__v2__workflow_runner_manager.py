@@ -16,7 +16,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_
     ContextIOInterface,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
-    PlayNotFoundException,
+    WorkflowNotFoundException,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._marker import (
     mark_step,
@@ -94,7 +94,7 @@ async def workflow_context(
     context: ContextIOInterface,
 ) -> WorkflowContext:
     workflow_context = WorkflowContext(
-        context=context, app=AsyncMock(), play_name="unique", action_name="first"
+        context=context, app=AsyncMock(), workflow_name="unique", action_name="first"
     )
     await workflow_context.setup()
     yield workflow_context
@@ -205,22 +205,22 @@ async def test_workflow_runner_manager(context: ContextIOInterface):
     async with _workflow_runner_manager_lifecycle(play_manager):
         # ok workflow_runner
         await play_manager.start_workflow_runner(
-            play_name="start_first", action_name="first"
+            workflow_name="start_first", action_name="first"
         )
         assert "start_first" in play_manager._workflow_context
-        assert "start_first" in play_manager._player_tasks
+        assert "start_first" in play_manager._workflow_tasks
         await play_manager.wait_workflow_runner("start_first")
         assert "start_first" not in play_manager._workflow_context
-        assert "start_first" not in play_manager._player_tasks
+        assert "start_first" not in play_manager._workflow_tasks
 
         # cancel workflow_runner
         await play_manager.start_workflow_runner(
-            play_name="start_first", action_name="first"
+            workflow_name="start_first", action_name="first"
         )
         await play_manager.cancel_and_wait_workflow_runner("start_first")
         assert "start_first" not in play_manager._workflow_context
-        assert "start_first" not in play_manager._player_tasks
-        with pytest.raises(PlayNotFoundException):
+        assert "start_first" not in play_manager._workflow_tasks
+        with pytest.raises(WorkflowNotFoundException):
             await play_manager.wait_workflow_runner("start_first")
 
 
@@ -234,11 +234,16 @@ async def test_workflow_runner_error_handling(
         raise RuntimeError(ERROR_MARKER_IN_TB)
 
     @mark_step
-    async def graceful_error_handler(_exception: ExceptionInfo) -> dict[str, Any]:
-        assert _exception.exception_class == RuntimeError
-        assert _exception.action_name in {"case_1_rasing_error", "case_2_rasing_error"}
-        assert _exception.step_name == error_raiser.__name__
-        assert ERROR_MARKER_IN_TB in _exception.serialized_traceback
+    async def graceful_error_handler(
+        unexpected_runtime_exception: ExceptionInfo,
+    ) -> dict[str, Any]:
+        assert unexpected_runtime_exception.exception_class == RuntimeError
+        assert unexpected_runtime_exception.action_name in {
+            "case_1_rasing_error",
+            "case_2_rasing_error",
+        }
+        assert unexpected_runtime_exception.step_name == error_raiser.__name__
+        assert ERROR_MARKER_IN_TB in unexpected_runtime_exception.serialized_traceback
         await asyncio.sleep(0.1)
         return {}
 
@@ -278,16 +283,16 @@ async def test_workflow_runner_error_handling(
         CASE_2_RASING_ERROR,
     )
 
-    play_name = "test_play"
+    workflow_name = "test_play"
     # CASE 1
     workflow_runner_manager = WorkflowRunnerManager(
         context=context, app=AsyncMock(), workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
         await workflow_runner_manager.start_workflow_runner(
-            play_name=play_name, action_name="case_1_rasing_error"
+            workflow_name=workflow_name, action_name="case_1_rasing_error"
         )
-        await workflow_runner_manager.wait_workflow_runner(play_name)
+        await workflow_runner_manager.wait_workflow_runner(workflow_name)
 
     # CASE 2
     workflow_runner_manager = WorkflowRunnerManager(
@@ -295,7 +300,7 @@ async def test_workflow_runner_error_handling(
     )
     async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
         await workflow_runner_manager.start_workflow_runner(
-            play_name=play_name, action_name="case_2_raising_error"
+            workflow_name=workflow_name, action_name="case_2_raising_error"
         )
         with pytest.raises(RuntimeError):
-            await workflow_runner_manager.wait_workflow_runner(play_name)
+            await workflow_runner_manager.wait_workflow_runner(workflow_name)
