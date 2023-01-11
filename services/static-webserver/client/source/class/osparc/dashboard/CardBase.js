@@ -415,28 +415,28 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.__openUpdateServices();
       }, this);
 
+      let toolTipText = null;
+      let textColor = null;
       switch (updatable) {
         case "retired":
-          updateStudy.show();
-          updateStudy.set({
-            toolTipText: this.tr("Service(s) retired, please update"),
-            textColor: osparc.utils.StatusUI.getColor("retired")
-          });
+          toolTipText = this.tr("Service(s) retired, please update");
+          textColor = osparc.utils.StatusUI.getColor("retired");
           break;
         case "deprecated":
-          updateStudy.show();
-          updateStudy.set({
-            toolTipText: this.tr("Service(s) deprecated, please update"),
-            textColor: osparc.utils.StatusUI.getColor("deprecated")
-          });
+          toolTipText = this.tr("Service(s) deprecated, please update");
+          textColor = osparc.utils.StatusUI.getColor("deprecated");
           break;
         case "updatable":
-          updateStudy.show();
-          updateStudy.set({
-            toolTipText: this.tr("Update available"),
-            textColor: "text"
-          });
+          toolTipText = this.tr("Update available");
+          textColor = "text";
           break;
+      }
+      if (toolTipText || textColor) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText,
+          textColor
+        });
       }
     },
 
