@@ -216,8 +216,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (this._resourcesContainer) {
         this.__updateAllButton.setFetching(true);
         const visibleCards = this._resourcesContainer.getCards().filter(card => card.isVisible());
+        const updatableCards = visibleCards.filter(card => (card.getUpdatable() !== null && osparc.data.model.Study.canIWrite(card.getResourceData()["accessRights"])));
         const templatesData = [];
-        visibleCards.forEach(card => templatesData.push(card.getResourceData()));
+        updatableCards.forEach(card => templatesData.push(card.getResourceData()));
         const uniqueTemplatesUuids = [];
         const uniqueTemplatesData = templatesData.filter(templateData => {
           const isDuplicate = uniqueTemplatesUuids.includes(templateData.uuid);
