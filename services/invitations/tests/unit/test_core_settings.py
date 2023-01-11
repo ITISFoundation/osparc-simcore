@@ -17,8 +17,8 @@ def test_valid_cli_application_settings(monkeypatch: MonkeyPatch, secret_key: st
     setenvs_from_dict(
         monkeypatch,
         {
-            "INVITATIONS_MAKER_SECRET_KEY": secret_key,
-            "INVITATIONS_MAKER_OSPARC_URL": "https://myosparc.org",
+            "INVITATIONS_SECRET_KEY": secret_key,
+            "INVITATIONS_OSPARC_URL": "https://myosparc.org",
         },
     )
 

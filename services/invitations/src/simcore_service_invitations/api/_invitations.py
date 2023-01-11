@@ -72,8 +72,8 @@ async def create_invitation(
 
     invitation_link = create_invitation_link(
         invitation_create,
-        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
-        base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
+        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+        base_url=settings.INVITATIONS_OSPARC_URL,
     )
     invitation = InvitationGet(
         invitation_url=invitation_link,
@@ -101,7 +101,7 @@ async def check_invitation(
     try:
         invitation = extract_invitation_content(
             invitation_code=parse_invitation_code(invitation_check.invitation_url),
-            secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
+            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         )
     except InvalidInvitationCode as err:
         raise HTTPException(

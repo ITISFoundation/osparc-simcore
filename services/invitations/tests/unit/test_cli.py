@@ -33,10 +33,10 @@ def test_invite_user_and_check_invitation(
     result = cli_runner.invoke(app, "generate-key")
     assert result.exit_code == os.EX_OK, result.output
 
-    # export INVITATIONS_MAKER_SECRET_KEY=$(invitations-maker generate-key)
+    # export INVITATIONS_SECRET_KEY=$(invitations-maker generate-key)
     environs = dict(
-        INVITATIONS_MAKER_SECRET_KEY=result.stdout.strip(),
-        INVITATIONS_MAKER_OSPARC_URL=faker.url(),
+        INVITATIONS_SECRET_KEY=result.stdout.strip(),
+        INVITATIONS_OSPARC_URL=faker.url(),
     )
 
     # invitations-maker invite guest@email.com --issuer=me --trial-account-days=3

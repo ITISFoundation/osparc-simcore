@@ -53,14 +53,14 @@ class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 class DesktopApplicationSettings(BaseApplicationSettings):
     """Desktop app's environs"""
 
-    INVITATIONS_MAKER_SECRET_KEY: SecretStr = Field(
+    INVITATIONS_SECRET_KEY: SecretStr = Field(
         ...,
         description="Secret key to generate invitations"
         'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
         min_length=44,
     )
 
-    INVITATIONS_MAKER_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
+    INVITATIONS_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
 
 
 class WebApplicationSettings(DesktopApplicationSettings):

@@ -22,22 +22,27 @@ $ simcore-service-invitations --help
 
 Create ``.env`` file
 ```
-$ simcore-service-invitations generate-dotenv > .env
+$ simcore-service-invitations generate-dotenv --auto-password > .env
+$ set -o allexport; source .env; set +o allexport
 ```
 and modify the ``.env`` if needed
 
 
 ### Creating invitations via CLI
 
-1. create a invitation for ``guest@company.com`` as
+Create an invitation for ``guest@company.com`` as
 ```
 $ simcore-service-invitations invite guest@company.com --issuer=me
 ```
 and will produce a link
 
+### Validating invitations via CLI
 
+```
+$ simcore-service-invitations check http://my-invitation-link
+```
 
-### Invitations via HTTP API
+### Starting HTTP API
 
 Start it as a web app as
 ```
@@ -60,7 +65,7 @@ $ docker run -it itisfoundation/invitations:latest simcore-service-invitations -
 
 Create ``.env`` file
 ```
-$ docker run -it itisfoundation/invitations:latest simcore-service-invitations generate-dotenv > .env
+$ docker run -it itisfoundation/invitations:latest simcore-service-invitations generate-dotenv --auto-password > .env
 ```
 and modify the ``.env`` if needed
 
@@ -68,7 +73,7 @@ and modify the ``.env`` if needed
 
 ### Creating invitations via CLI
 
-1. create a invitation for ``guest@company.com`` as
+Create an invitation for ``guest@company.com`` as
 ```
 $ docker run -it --env-file .env  itisfoundation/invitations:latest simcore-service-invitations invite guest@company.com --issuer=me
 ```
@@ -76,7 +81,7 @@ and will produce a link
 
 
 
-### Invitations via HTTP API
+### Starting  HTTP API
 
 Start it as a web app as
 ```

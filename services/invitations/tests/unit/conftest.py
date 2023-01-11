@@ -70,8 +70,8 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "INVITATIONS_MAKER_SECRET_KEY": secret_key,
-            "INVITATIONS_MAKER_OSPARC_URL": "https://myosparc.org",
+            "INVITATIONS_SECRET_KEY": secret_key,
+            "INVITATIONS_OSPARC_URL": "https://myosparc.org",
             "INVITATIONS_USERNAME": fake_user_name,
             "INVITATIONS_PASSWORD": fake_password,
         },

@@ -64,7 +64,7 @@ def generate_key(
     """Generates secret key
 
     Example:
-        export INVITATIONS_MAKER_SECRET_KEY=$(invitations-maker generate-key)
+        export INVITATIONS_SECRET_KEY=$(invitations-maker generate-key)
     """
     assert ctx  # nosec
     print(Fernet.generate_key().decode())
@@ -91,8 +91,8 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = WebApplicationSettings(
-        INVITATIONS_MAKER_OSPARC_URL="https://osparc.io",
-        INVITATIONS_MAKER_SECRET_KEY=Fernet.generate_key().decode(),
+        INVITATIONS_OSPARC_URL="https://osparc.io",
+        INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=getpass.getuser(),
         INVITATIONS_PASSWORD=password,
     )
@@ -135,8 +135,8 @@ def invite(
 
     invitation_link = create_invitation_link(
         invitation_data=invitation_data,
-        secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
-        base_url=settings.INVITATIONS_MAKER_OSPARC_URL,
+        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+        base_url=settings.INVITATIONS_OSPARC_URL,
     )
     print(invitation_link)
 
@@ -153,7 +153,7 @@ def check(ctx: typer.Context, invitation_url: str):
             invitation_code=parse_invitation_code(
                 parse_obj_as(HttpUrl, invitation_url)
             ),
-            secret_key=settings.INVITATIONS_MAKER_SECRET_KEY.get_secret_value().encode(),
+            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         )
 
         rich.print(invitation.json(indent=1))
