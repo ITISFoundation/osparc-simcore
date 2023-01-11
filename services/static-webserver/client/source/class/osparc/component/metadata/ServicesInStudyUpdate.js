@@ -61,10 +61,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       this._updateStudy(button);
     },
 
-    __updateAllServices: function(nodeIds, button) {
+    __updateAllServices: function(updatableNodeIds, button) {
       this.setEnabled(false);
       for (const nodeId in this._studyData["workbench"]) {
-        if (nodeIds.includes(nodeId)) {
+        if (updatableNodeIds.includes(nodeId)) {
           const node = this._studyData["workbench"][nodeId];
           const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
           this._studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata["version"];
