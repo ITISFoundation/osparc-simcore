@@ -5,7 +5,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, call
 
 import pytest
 from pytest import LogCaptureFixture
@@ -14,6 +14,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._action i
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
     ContextIOInterface,
+    ReservedContextKeys,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._errors import (
     WorkflowNotFoundException,
@@ -304,3 +305,106 @@ async def test_workflow_runner_error_handling(
         )
         with pytest.raises(RuntimeError):
             await workflow_runner_manager.wait_workflow_runner(workflow_name)
+
+
+async def test_resume_workflow_runner_workflow(
+    context_io_interface_type: type[ContextIOInterface],
+):
+    call_tracker_1 = AsyncMock()
+    call_tracker_2 = AsyncMock()
+
+    @mark_step
+    async def first_step() -> dict[str, Any]:
+        await call_tracker_1(first_step)
+        return {}
+
+    @mark_step
+    async def optionally_long_sleep(sleep: bool) -> dict[str, Any]:
+        if sleep:
+            await call_tracker_1(optionally_long_sleep)
+            await asyncio.sleep(1e10)
+        await call_tracker_2(optionally_long_sleep)
+        return {}
+
+    @mark_step
+    async def third_step() -> dict[str, Any]:
+        await call_tracker_2(third_step)
+        return {}
+
+    workflow = Workflow(
+        Action(
+            name="initial",
+            steps=[
+                first_step,
+                optionally_long_sleep,
+                third_step,
+            ],
+            next_action=None,
+            on_error_action=None,
+        )
+    )
+
+    # start workflow which will wait forever on step `optionally_long_sleep`
+    first_context = context_io_interface_type()
+    second_workflow_runner_manager = WorkflowRunnerManager(
+        context=first_context, app=AsyncMock(), workflow=workflow
+    )
+    async with _workflow_runner_manager_lifecycle(second_workflow_runner_manager):
+        # NOTE: allows the workflow to wait for forever
+        await first_context.save("sleep", True)
+        await second_workflow_runner_manager.start_workflow_runner(
+            "test", action_name="initial"
+        )
+
+        WAIT_TO_REACH_SECOND_STEP = 0.1
+        await asyncio.sleep(WAIT_TO_REACH_SECOND_STEP)
+        await second_workflow_runner_manager.cancel_and_wait_workflow_runner("test")
+
+    # ensure state as expected, stopped while handling `optionally_long_sleep``
+    assert call_tracker_1.call_args_list == [
+        call(first_step),
+        call(optionally_long_sleep),
+    ]
+    serialized_first_context_data = await first_context.to_dict()
+    assert serialized_first_context_data == {
+        "sleep": True,
+        ReservedContextKeys.WORKFLOW_ACTION_NAME: "initial",
+        ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX: 1,
+        ReservedContextKeys.WORKFLOW_CURRENT_STEP_NAME: "optionally_long_sleep",
+        ReservedContextKeys.WORKFLOW_NAME: "test",
+    }
+
+    # resume workflow which rune from step `optionally_long_sleep` and finish
+    second_context = context_io_interface_type()
+    mock_app = AsyncMock()
+
+    second_workflow_runner_manager = WorkflowRunnerManager(
+        context=second_context, app=mock_app, workflow=workflow
+    )
+    async with _workflow_runner_manager_lifecycle(second_workflow_runner_manager):
+        # NOTE: allows the workflow to finish
+        serialized_first_context_data["sleep"] = False
+        await second_workflow_runner_manager.resume_workflow_runner(
+            workflow_context=await WorkflowContext.from_dict(
+                context=second_context,
+                app=mock_app,
+                incoming=serialized_first_context_data,
+            )
+        )
+
+        workflow_name = await second_context.load(ReservedContextKeys.WORKFLOW_NAME)
+        await second_workflow_runner_manager.wait_workflow_runner(workflow_name)
+
+    # ensure state as expected, finished on `third_step`
+    assert call_tracker_2.call_args_list == [
+        call(optionally_long_sleep),
+        call(third_step),
+    ]
+    new_context_data = await second_context.to_dict()
+    assert new_context_data == {
+        "sleep": False,
+        ReservedContextKeys.WORKFLOW_ACTION_NAME: "initial",
+        ReservedContextKeys.WORKFLOW_CURRENT_STEP_INDEX: 2,
+        ReservedContextKeys.WORKFLOW_CURRENT_STEP_NAME: "third_step",
+        ReservedContextKeys.WORKFLOW_NAME: "test",
+    }

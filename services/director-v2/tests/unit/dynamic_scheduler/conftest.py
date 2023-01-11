@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import pytest
 from pytest import FixtureRequest
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_base import (
@@ -9,5 +11,10 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._v2._context_
 
 
 @pytest.fixture(params=[InMemoryContext])
-def context(request: FixtureRequest) -> ContextIOInterface:
-    return request.param()
+def context_io_interface_type(request: FixtureRequest) -> type[ContextIOInterface]:
+    return request.param
+
+
+@pytest.fixture
+def context(context_io_interface_type: type[ContextIOInterface]) -> ContextIOInterface:
+    return context_io_interface_type()

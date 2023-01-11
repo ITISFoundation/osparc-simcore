@@ -102,7 +102,18 @@ async def test_to_dict(key_1: str, workflow_context: WorkflowContext):
     assert await workflow_context.to_dict() == {key_1: 4} | EXTRA_WORKFLOW_CONTEXT_DATA
 
 
-async def test_from_dict(workflow_context: WorkflowContext):
-    in_dict: dict[str, Any] = {"1": 1, "d": dict(me=1.1)}
-    await workflow_context.from_dict(in_dict)
-    assert await workflow_context.to_dict() == in_dict | EXTRA_WORKFLOW_CONTEXT_DATA
+async def test_from_dict(app: FastAPI, context: ContextIOInterface):
+    serialized_workflow_context: dict[str, Any] = {
+        "1": 1,
+        "d": dict(me=1.1),
+        # required to be defined by the incoming serialized workflow context
+        ReservedContextKeys.WORKFLOW_NAME: WORKFLOW_NAME,
+        ReservedContextKeys.WORKFLOW_ACTION_NAME: WORKFLOW_ACTION_NAME,
+    }
+    workflow_context = await WorkflowContext.from_dict(
+        context=context, app=app, incoming=serialized_workflow_context
+    )
+    assert (
+        await workflow_context.to_dict()
+        == serialized_workflow_context | EXTRA_WORKFLOW_CONTEXT_DATA
+    )

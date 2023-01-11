@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from fastapi import FastAPI
+
 
 class ReservedContextKeys:
     APP: str = "app"
@@ -40,9 +42,12 @@ class ContextIOInterface(ABC):
     async def to_dict(self) -> dict[str, Any]:
         """returns the context of a store as a dictionary"""
 
+    @classmethod
     @abstractmethod
-    async def from_dict(self, incoming: dict[str, Any]) -> None:
-        """parses the incoming context and sends it to the store"""
+    async def from_dict(
+        cls, context: "ContextInterface", app: FastAPI, incoming: dict[str, Any]
+    ) -> "ContextIOInterface":
+        """returns an instance from incoming deserialized data"""
 
 
 class ContextStorageInterface(ABC):

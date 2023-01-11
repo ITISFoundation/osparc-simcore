@@ -21,9 +21,26 @@ from ._workflow_runner import workflow_runner
 logger = logging.getLogger(__name__)
 
 
+async def _cancel_task(task: Optional[Task]) -> None:
+    if task is None:
+        return
+
+    async def _await_task(task: Task) -> None:
+        await task
+
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        try:
+            await asyncio.wait_for(_await_task(task), timeout=10)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Timed out while awaiting for cancellation of '%s'", task.get_name()
+            )
+
+
 class WorkflowRunnerManager:
     """
-    Keeps track of running `workflow_runner`s and is responsible for:
+    Keeps track of `workflow_runner` tasks and is responsible for:
     starting, stopping and cancelling them.
     """
 
@@ -49,6 +66,33 @@ class WorkflowRunnerManager:
         self._workflow_tasks: dict[WorkflowName, Task] = {}
         self._workflow_context: dict[WorkflowName, WorkflowContext] = {}
         self._shutdown_tasks_workflow_context: dict[WorkflowName, Task] = {}
+
+    def _add_workflow_runner_task(
+        self, workflow_runner_awaitable: Awaitable, workflow_name: WorkflowName
+    ) -> None:
+        workflow_task = self._workflow_tasks[workflow_name] = asyncio.create_task(
+            workflow_runner_awaitable, name=f"workflow_task_{workflow_name}"
+        )
+
+        def workflow_runner_complete(_: Task) -> None:
+            self._workflow_tasks.pop(workflow_name, None)
+            workflow_context: Optional[WorkflowContext] = self._workflow_context.pop(
+                workflow_name, None
+            )
+            if workflow_context:
+                # shutting down context resolver and ensure task will not be pending
+                task = self._shutdown_tasks_workflow_context[
+                    workflow_name
+                ] = asyncio.create_task(workflow_context.teardown())
+                task.add_done_callback(
+                    partial(
+                        lambda s, _: self._shutdown_tasks_workflow_context.pop(s, None),
+                        workflow_name,
+                    )
+                )
+
+        # remove when task is done
+        workflow_task.add_done_callback(workflow_runner_complete)
 
     async def start_workflow_runner(
         self, workflow_name: WorkflowName, action_name: ActionName
@@ -77,7 +121,7 @@ class WorkflowRunnerManager:
             after_step_hook=self.after_step_hook,
         )
 
-        self._create_workflow_runner_task(workflow_runner_awaitable, workflow_name)
+        self._add_workflow_runner_task(workflow_runner_awaitable, workflow_name)
 
     async def resume_workflow_runner(self, workflow_context: WorkflowContext) -> None:
         # NOTE: expecting `await workflow_context.start()` to have already been ran
@@ -92,34 +136,7 @@ class WorkflowRunnerManager:
         workflow_name: WorkflowName = await workflow_context.get(
             ReservedContextKeys.WORKFLOW_NAME, WorkflowName
         )
-        self._create_workflow_runner_task(workflow_runner_awaitable, workflow_name)
-
-    def _create_workflow_runner_task(
-        self, workflow_runner_awaitable: Awaitable, workflow_name: WorkflowName
-    ) -> None:
-        workflow_task = self._workflow_tasks[workflow_name] = asyncio.create_task(
-            workflow_runner_awaitable, name=workflow_name
-        )
-
-        def workflow_runner_complete(_: Task) -> None:
-            self._workflow_tasks.pop(workflow_name, None)
-            workflow_context: Optional[WorkflowContext] = self._workflow_context.pop(
-                workflow_name, None
-            )
-            if workflow_context:
-                # shutting down context resolver and ensure task will not be pending
-                task = self._shutdown_tasks_workflow_context[
-                    workflow_name
-                ] = asyncio.create_task(workflow_context.teardown())
-                task.add_done_callback(
-                    partial(
-                        lambda s, _: self._shutdown_tasks_workflow_context.pop(s, None),
-                        workflow_name,
-                    )
-                )
-
-        # remove when task is done
-        workflow_task.add_done_callback(workflow_runner_complete)
+        self._add_workflow_runner_task(workflow_runner_awaitable, workflow_name)
 
     async def wait_workflow_runner(self, workflow_name: WorkflowName) -> None:
         """waits for action workflow task to finish"""
@@ -129,23 +146,6 @@ class WorkflowRunnerManager:
         workflow_task = self._workflow_tasks[workflow_name]
         await workflow_task
 
-    @staticmethod
-    async def __cancel_task(task: Optional[Task]) -> None:
-        if task is None:
-            return
-
-        async def _await_task(task: Task) -> None:
-            await task
-
-        task.cancel()
-        with suppress(asyncio.CancelledError):
-            try:
-                await asyncio.wait_for(_await_task(task), timeout=10)
-            except asyncio.TimeoutError:
-                logger.warning(
-                    "Timed out while awaiting for cancellation of '%s'", task.get_name()
-                )
-
     async def cancel_and_wait_workflow_runner(
         self, workflow_name: WorkflowName
     ) -> None:
@@ -154,7 +154,7 @@ class WorkflowRunnerManager:
             raise WorkflowNotFoundException(workflow_name=workflow_name)
 
         task = self._workflow_tasks[workflow_name]
-        await self.__cancel_task(task)
+        await _cancel_task(task)
 
     async def teardown(self) -> None:
         # NOTE: content can change while iterating
@@ -168,7 +168,7 @@ class WorkflowRunnerManager:
         # NOTE: content can change while iterating
         for key in set(self._shutdown_tasks_workflow_context.keys()):
             task: Optional[Task] = self._shutdown_tasks_workflow_context.get(key, None)
-            await self.__cancel_task(task)
+            await _cancel_task(task)
 
     async def setup(self) -> None:
-        """currently not required"""
+        """no code required"""
