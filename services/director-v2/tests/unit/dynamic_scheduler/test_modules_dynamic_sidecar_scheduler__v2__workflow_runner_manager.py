@@ -375,7 +375,9 @@ async def test_resume_workflow_runner_workflow(
     }
 
     # resume workflow which rune from step `optionally_long_sleep` and finish
-    second_context = context_io_interface_type()
+    second_context = await context_io_interface_type.from_dict(
+        serialized_first_context_data
+    )
     mock_app = AsyncMock()
 
     second_workflow_runner_manager = WorkflowRunnerManager(
@@ -383,12 +385,10 @@ async def test_resume_workflow_runner_workflow(
     )
     async with _workflow_runner_manager_lifecycle(second_workflow_runner_manager):
         # NOTE: allows the workflow to finish
-        serialized_first_context_data["sleep"] = False
+        await second_context.save("sleep", False)
         await second_workflow_runner_manager.resume_workflow_runner(
-            workflow_context=await WorkflowContext.from_dict(
-                context=second_context,
-                app=mock_app,
-                incoming=serialized_first_context_data,
+            workflow_context=await WorkflowContext.from_context(
+                context=second_context, app=mock_app
             )
         )
 

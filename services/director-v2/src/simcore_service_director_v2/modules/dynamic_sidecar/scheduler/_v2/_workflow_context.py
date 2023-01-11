@@ -95,16 +95,14 @@ class WorkflowContext:
         return await self._context.to_dict()
 
     @classmethod
-    async def from_dict(
-        cls, context: ContextInterface, app: FastAPI, incoming: dict[str, Any]
+    async def from_context(
+        cls, context: ContextInterface, app: FastAPI
     ) -> "WorkflowContext":
-        for key, value in incoming.items():
-            await context.save(key, value)
         workflow_context = cls(
             context=context,
             app=app,
-            workflow_name=incoming[ReservedContextKeys.WORKFLOW_NAME],
-            action_name=incoming[ReservedContextKeys.WORKFLOW_ACTION_NAME],
+            workflow_name=await context.load(ReservedContextKeys.WORKFLOW_NAME),
+            action_name=await context.load(ReservedContextKeys.WORKFLOW_ACTION_NAME),
         )
         await workflow_context.setup()
         return workflow_context
