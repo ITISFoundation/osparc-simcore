@@ -6,6 +6,7 @@ import asyncio
 import collections
 import logging
 import re
+from datetime import datetime
 from typing import Final, Optional
 
 from models_library.docker import DockerLabelKey
@@ -16,6 +17,7 @@ from models_library.generated_models.docker_rest_api import (
     TaskState,
 )
 from pydantic import ByteSize, parse_obj_as
+from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from tenacity import TryAgain, retry
@@ -118,7 +120,13 @@ async def pending_service_tasks_with_insufficient_resources(
             and "insufficient resources on" in task.Status.Err
         )
 
-    pending_tasks = [task for task in tasks if _is_task_waiting_for_resources(task)]
+    sorted_tasks = sorted(
+        tasks, key=lambda task: to_datetime(task.CreatedAt or f"{datetime.utcnow()}")
+    )
+
+    pending_tasks = [
+        task for task in sorted_tasks if _is_task_waiting_for_resources(task)
+    ]
 
     return pending_tasks
 

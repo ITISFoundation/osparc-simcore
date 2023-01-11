@@ -6,6 +6,7 @@ import asyncio
 import itertools
 import random
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
@@ -21,6 +22,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from servicelib.docker_utils import to_datetime
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
@@ -281,7 +283,7 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         )
         == []
     )
-
+    # start a service with the correct labels
     service_with_labels = await create_service(
         task_template_with_too_many_resource, service_labels, "pending"
     )
@@ -311,6 +313,41 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         },
     )
     assert not diff, f"{diff}"
+
+
+async def test_pending_service_task_with_insufficient_resources_properly_sorts_tasks(
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    faker: Faker,
+):
+    service_labels: dict[DockerLabelKey, str] = faker.pydict(allowed_types=(str,))
+    task_template_with_too_many_resource = task_template | create_task_reservations(
+        1000, 0
+    )
+    services = await asyncio.gather(
+        *(
+            create_service(
+                task_template_with_too_many_resource, service_labels, "pending"
+            )
+            for _ in range(190)
+        )
+    )
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(
+        autoscaling_docker, service_labels=list(service_labels)
+    )
+
+    assert len(pending_tasks) == len(services)
+    # check sorting is done by creation date
+    last_date = datetime.utcnow() - timedelta(days=1)
+    for task in pending_tasks:
+        assert task.CreatedAt
+        assert to_datetime(task.CreatedAt) > last_date
+        last_date = to_datetime(task.CreatedAt)
 
 
 def test_get_node_total_resources(host_node: Node):
