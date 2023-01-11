@@ -148,6 +148,7 @@ qx.Class.define("osparc.store.Support", {
               });
           }
         });
+      createAccountWindow.center();
       createAccountWindow.open();
     }
   }
