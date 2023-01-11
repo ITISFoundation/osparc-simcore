@@ -181,6 +181,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: [null, "retired", "deprecated", "updatable"],
       nullable: false,
       init: null,
+      event: "changeUpdatable",
       apply: "__applyUpdatable"
     },
 

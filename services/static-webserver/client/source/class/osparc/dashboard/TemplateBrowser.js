@@ -108,8 +108,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       const cards = this._resourcesContainer.reloadCards("templatesList");
       cards.forEach(card => {
         card.addListener("execute", () => this.__itemClicked(card), this);
+        card.addListener("changeUpdatable", () => this.__evaluateUpdateAllButton(), this);
+        card.addListener("changeVisibility", () => this.__evaluateUpdateAllButton(), this);
         this._populateCardMenu(card);
       });
+      this.__evaluateUpdateAllButton();
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
@@ -202,12 +205,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __evaluateUpdateAllButton: function() {
       if (this._resourcesContainer) {
-        const anyUpdatable = this._resourcesContainer.getCards().some(card => {
-          if (card.getUpdatable() !== null && osparc.data.model.Study.canIWrite(card.getResourceData()["accessRights"])) {
-            return true;
-          }
-          return false;
-        });
+        const visibleCards = this._resourcesContainer.getCards().filter(card => card.isVisible());
+        const anyUpdatable = visibleCards.some(card => (card.getUpdatable() !== null && osparc.data.model.Study.canIWrite(card.getResourceData()["accessRights"])));
         this.__updateAllButton.setVisibility(anyUpdatable ? "visible" : "excluded");
       }
     },
