@@ -19,6 +19,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   members: {
+    __updateAllButton: null,
+
     // overridden
     initResources: function() {
       this._resourcesList = [];
@@ -162,13 +164,64 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         osparc.utils.Utils.setIdToWidget(list, "templatesList");
       }
 
+      const updateAllButton = this.__createUpdateAllButton();
+      if (updateAllButton) {
+        this._secondaryBar.add(updateAllButton);
+      }
+
       this._secondaryBar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
       this._addGroupByButton();
       this._addViewModeButton();
 
+      this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
+
       return this._resourcesContainer;
+    },
+
+    __createUpdateAllButton: function() {
+      const updateAllButton = this.__updateAllButton = new qx.ui.form.Button(this.tr("Update All"));
+      updateAllButton.exclude();
+      updateAllButton.addListener("tap", () => {
+        const msg = this.tr("Are you sure you want to update all templates?");
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          confirmText: this.tr("Update all"),
+          confirmAction: "create"
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__updateAllTemplates();
+          }
+        }, this);
+      });
+      return updateAllButton;
+    },
+
+    __evaluateUpdateAllButton: function() {
+      if (this._resourcesContainer) {
+        const anyUpdatable = this._resourcesContainer.getCards().some(card => {
+          if (card.getUpdatable() !== null && osparc.data.model.Study.canIWrite(card.getResourceData()["accessRights"])) {
+            return true;
+          }
+          return false;
+        });
+        this.__updateAllButton.setVisibility(anyUpdatable ? "visible" : "excluded");
+      }
+    },
+
+    __updateAllServices: function(nodeIds, button) {
+      this.setEnabled(false);
+      for (const nodeId in this._studyData["workbench"]) {
+        if (nodeIds.includes(nodeId)) {
+          const node = this._studyData["workbench"][nodeId];
+          const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
+          this._studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata["version"];
+        }
+      }
+      this._updateStudy(button);
     },
     // LAYOUT //
 
