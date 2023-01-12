@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import binascii
+from datetime import datetime
 from urllib import parse
 
 import cryptography.fernet
@@ -14,6 +15,7 @@ from simcore_service_invitations.invitations import (
     InvalidInvitationCode,
     InvitationContent,
     InvitationInputs,
+    _ContentWithShortNames,
     _create_invitation_code,
     _fernet_encrypt_as_urlsafe_code,
     create_invitation_link,
@@ -26,7 +28,7 @@ from starlette.datastructures import URL
 def test_all_invitation_fields_have_short_and_unique_aliases():
     # all have short alias
     all_alias = []
-    for field in InvitationContent.__fields__.values():
+    for field in _ContentWithShortNames.__fields__.values():
         assert field.alias
         assert field.alias not in all_alias
         all_alias.append(field.alias)
@@ -35,23 +37,27 @@ def test_all_invitation_fields_have_short_and_unique_aliases():
 def test_import_and_export_invitation_alias_by_alias(
     invitation_data: InvitationInputs,
 ):
-    content = InvitationContent(**invitation_data.dict())
+    expected_content = InvitationContent(
+        **invitation_data.dict(),
+        created=datetime.utcnow(),
+    )
+    raw_data = _ContentWithShortNames.serialize(expected_content)
 
-    # export by alias
-    data_w_alias = content.dict(by_alias=True)
-
-    # parse/import by alias
-    model_from_alias = InvitationContent.parse_obj(data_w_alias)
-    assert content == model_from_alias
+    got_content = _ContentWithShortNames.deserialize(raw_data)
+    assert got_content == expected_content
 
 
 def test_export_by_alias_produces_smaller_strings(
     invitation_data: InvitationInputs,
 ):
-    content = InvitationContent(**invitation_data.dict())
+    content = InvitationContent(
+        **invitation_data.dict(),
+        created=datetime.utcnow(),
+    )
+    raw_data = _ContentWithShortNames.serialize(content)
 
     # export by alias produces smaller strings
-    assert len(content.json(by_alias=True)) < len(content.json(by_alias=False))
+    assert len(raw_data) < len(content.json())
 
 
 @pytest.mark.testit

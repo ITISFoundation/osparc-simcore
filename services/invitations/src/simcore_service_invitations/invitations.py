@@ -56,19 +56,34 @@ class InvitationInputs(BaseModel):
 class InvitationContent(InvitationInputs):
     """Data in an invitation"""
 
-    created: datetime = Field(
-        default_factory=datetime.utcnow, description="Timestamp for creation"
-    )
+    # avoid using default to mark exactly the time
+    created: datetime = Field(..., description="Timestamp for creation")
 
     def as_invitation_inputs(self) -> InvitationInputs:
         return self.copy(exclude={"created"})
 
-    class Config:
 
+class _ContentWithShortNames(InvitationContent):
+    """Helper model to serialize/deserialize to json using shorter field names"""
+
+    @classmethod
+    def serialize(cls, model_data: InvitationContent) -> str:
+        """Exports to json using *short* aliases and values in order to produce shorter codes"""
+        model_w_short_aliases = cls.construct(**model_data.dict(exclude_unset=True))
+        return model_w_short_aliases.json(exclude_unset=True, by_alias=True)
+
+    @classmethod
+    def deserialize(cls, raw_data: str) -> InvitationContent:
+        """Parses a json string and returns InvitationContent model"""
+        model_w_short_aliases = cls.parse_raw(raw_data)
+        return InvitationContent.construct(
+            **model_w_short_aliases.dict(exclude_unset=True)
+        )
+
+    class Config:
         allow_population_by_field_name = True  # NOTE: can parse using field names
         allow_mutation = False
         anystr_strip_whitespace = True
-
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
         fields = {
             "issuer": {
@@ -134,8 +149,7 @@ def _create_invitation_code(
         created=datetime.utcnow(),
     )
 
-    # NOTE: export using short aliases and values in order to produce shorter messages
-    content_jsonstr: str = content.json(exclude_unset=True, by_alias=True)
+    content_jsonstr: str = _ContentWithShortNames.serialize(content)
     assert "\n" not in content_jsonstr  # nosec
 
     # encrypts contents
@@ -181,7 +195,8 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationCon
     decryted: bytes = fernet.decrypt(token=code)
 
     # parses serialized invitation
-    return InvitationContent.parse_raw(decryted.decode())
+    content = _ContentWithShortNames.deserialize(raw_data=decryted.decode())
+    return content
 
 
 def extract_invitation_content(

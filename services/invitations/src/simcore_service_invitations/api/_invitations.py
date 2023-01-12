@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, HttpUrl
@@ -92,6 +93,7 @@ async def create_invitation(
     )
     invitation = _InvitationContentAndLink(
         invitation_url=invitation_link,
+        created=datetime.utcnow(),
         **invitation_inputs.dict(),
     )
 
