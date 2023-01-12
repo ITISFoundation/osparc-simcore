@@ -506,7 +506,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "gid": this.__currentOrg.getKey(),
           "uid": orgMember["key"]
         },
-        data: this.self().getNoReadAccessRight()
+        data: {
+          "accessRights": this.self().getNoReadAccessRight()
+        }
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {

@@ -131,7 +131,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
             });
           });
           menu.add(promoteButton);
-          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to Reader"));
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to User"));
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToReader", {
               key: this.getKey(),
