@@ -25,14 +25,14 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
   properties: {
     accessRights: {
       check: "Object",
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAccessRights",
       nullable: true
     },
 
     showOptions: {
       check: "Boolean",
-      apply: "_applyShowOptions",
+      apply: "__applyShowOptions",
       event: "changeShowOptions",
       nullable: true
     }
@@ -71,7 +71,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyAccessRights: function(value) {
+    __applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
@@ -85,15 +85,15 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       } else {
         subtitle.setValue(this.tr("No Read access"));
       }
+
+      const menu = this.__getOptionsMenu();
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setMenu(menu);
     },
 
-    _applyShowOptions: function(value) {
+    __applyShowOptions: function(value) {
       const optionsMenu = this.getChildControl("options");
       optionsMenu.setVisibility(value ? "visible" : "excluded");
-      if (value) {
-        const menu = this.__getOptionsMenu();
-        optionsMenu.setMenu(menu);
-      }
     },
 
     __getOptionsMenu: function() {
