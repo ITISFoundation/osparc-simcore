@@ -23,26 +23,23 @@ logger = logging.getLogger(__name__)
 #
 
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
+EXAMPLE = {
+    "issuer": "issuerid",
+    "guest": "invitedguest@company.com",
+    "trial_account_days": 2,
+}
 
 
 class _ApiInvitationInputs(InvitationInputs):
     class Config:
-        schema_extra = {
-            "example": {
-                "issuer": "issuerid",
-                "guest": "invitedguest@company.com",
-                "trial_account_days": 2,
-            }
-        }
+        schema_extra = {"example": EXAMPLE}
 
 
 class _ApiInvitationContent(InvitationContent):
     class Config:
         schema_extra = {
             "example": {
-                "issuer": "issuerid",
-                "guest": "invitedguest@company.com",
-                "trial_account_days": 2,
+                **EXAMPLE,
                 "created": "2023-01-11 13:11:47.293595",
             }
         }
@@ -54,10 +51,8 @@ class _InvitationContentAndLink(_ApiInvitationContent):
     class Config:
         schema_extra = {
             "example": {
-                "issuer": "issuerid",
-                "guest": "invitedguest@company.com",
-                "trial_account_days": None,
-                "created": "2023-01-11 13:11:47.293595",
+                **EXAMPLE,
+                "created": "2023-01-11 12:11:47.293595",
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
         }
