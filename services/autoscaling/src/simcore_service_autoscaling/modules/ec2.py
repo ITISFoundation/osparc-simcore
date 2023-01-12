@@ -142,18 +142,16 @@ class AutoscalingEC2:
                 SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
-            # logger.info(
-            #     "New instances launched: %s, waiting for them to start now...",
-            #     instance_ids,
-            # )
+            logger.info(
+                "New instances launched: %s, waiting for them to start now...",
+                instance_ids,
+            )
 
-            # # wait for the instance to be in a running state
-            # # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
-            # waiter = self.client.get_waiter("instance_exists")
-            # await waiter.wait(InstanceIds=instance_ids)
-            # logger.info(
-            #     "instances %s exists now, waiting for running state...", instance_ids
-            # )
+            # wait for the instance to be in a pending state
+            # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+            waiter = self.client.get_waiter("instance_exists")
+            await waiter.wait(InstanceIds=instance_ids)
+            logger.info("instances %s exists now.", instance_ids)
             # waiter = self.client.get_waiter("instance_running")
             # await waiter.wait(InstanceIds=instance_ids)
             # logger.info("instances %s is now running", instance_ids)
