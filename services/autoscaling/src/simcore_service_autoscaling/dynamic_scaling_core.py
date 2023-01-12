@@ -398,15 +398,15 @@ async def _scale_up_cluster(
         app, pending_tasks, allowed_instance_types, pending_ec2_instances
     )
 
-    await _log_tasks_message(
-        app,
-        pending_tasks,
-        "service is pending due to missing resources, scaling up cluster now\n"
-        f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
-    )
-
     # let's start these
-    await _start_instances(app, needed_ec2_instances, pending_tasks)
+    if needed_ec2_instances:
+        await _log_tasks_message(
+            app,
+            pending_tasks,
+            "service is pending due to missing resources, scaling up cluster now\n"
+            f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
+        )
+        await _start_instances(app, needed_ec2_instances, pending_tasks)
 
 
 async def _attach_new_ec2_instances(
@@ -443,7 +443,7 @@ async def _attach_new_ec2_instances(
             get_docker_client(app), docker_node_name
         ):
             # it is attached, let's label it, but keep it as drained
-            await utils_docker.tag_node(
+            new_node = await utils_docker.tag_node(
                 get_docker_client(app),
                 new_node,
                 tags=_get_docker_tags(app_settings),
