@@ -9,8 +9,8 @@ from ..invitations import (
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
+    extract_invitation_code,
     extract_invitation_content,
-    parse_invitation_code,
 )
 from ._dependencies import get_current_username, get_settings
 
@@ -116,7 +116,7 @@ async def validate_and_decrypt_invitation(
 
     try:
         invitation = extract_invitation_content(
-            invitation_code=parse_invitation_code(invitation_check.invitation_url),
+            invitation_code=extract_invitation_code(invitation_check.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         )
     except InvalidInvitationCode as err:

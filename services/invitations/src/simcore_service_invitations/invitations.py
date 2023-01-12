@@ -54,7 +54,7 @@ class InvitationInputs(BaseModel):
 
 
 class InvitationContent(InvitationInputs):
-    """Data encoded inside an invitation"""
+    """Data in an invitation"""
 
     created: datetime = Field(
         default_factory=datetime.utcnow, description="Timestamp for creation"
@@ -103,7 +103,8 @@ def _build_link(
     return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
 
 
-def parse_invitation_code(invitation_url: HttpUrl) -> str:
+def extract_invitation_code(invitation_url: HttpUrl) -> str:
+    """Parses url and extracts invitation"""
     try:
         query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
         invitation_code: str = query_params["invitation"]

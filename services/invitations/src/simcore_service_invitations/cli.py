@@ -18,8 +18,8 @@ from .invitations import (
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
+    extract_invitation_code,
     extract_invitation_content,
-    parse_invitation_code,
 )
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:app'
@@ -150,7 +150,7 @@ def check(ctx: typer.Context, invitation_url: str):
 
     try:
         invitation: InvitationContent = extract_invitation_content(
-            invitation_code=parse_invitation_code(
+            invitation_code=extract_invitation_code(
                 parse_obj_as(HttpUrl, invitation_url)
             ),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
