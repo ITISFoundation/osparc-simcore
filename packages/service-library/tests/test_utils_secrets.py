@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 from servicelib.utils_secrets import MIN_PASSWORD_LENGTH, generate_password
 
 
