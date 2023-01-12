@@ -117,8 +117,8 @@ async def test_get_ec2_instance_capabilities(
     assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     instance_types = await autoscaling_ec2.get_ec2_instance_capabilities(
         cast(
-            list[InstanceTypeType],
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
+            set[InstanceTypeType],
+            set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES),
         )
     )
     assert instance_types
