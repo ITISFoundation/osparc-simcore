@@ -1,30 +1,33 @@
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 from typing import Any, Optional
 
 
-class ReservedContextKeys:
-    APP: str = "app"
+class ReservedContextKeys(str, Enum):
+    def _generate_next_value_(name, start, count, last_values) -> Any:
+        return name.lower()
 
-    WORKFLOW_NAME: str = "__workflow_name"
-    WORKFLOW_ACTION_NAME: str = "__workflow_action_name"
-    WORKFLOW_CURRENT_STEP_NAME: str = "__workflow_current_step_name"
-    WORKFLOW_CURRENT_STEP_INDEX: str = "__workflow_current_step_index"
+    APP = auto()
 
-    EXCEPTION: str = "unexpected_runtime_exception"
+    WORKFLOW_NAME = auto()
+    WORKFLOW_ACTION_NAME = auto()
+    WORKFLOW_CURRENT_STEP_NAME = auto()
+    WORKFLOW_CURRENT_STEP_INDEX = auto()
 
-    # reserved keys cannot be overwritten by the events
-    RESERVED: set[str] = {
-        APP,
-        EXCEPTION,
-        WORKFLOW_NAME,
-        WORKFLOW_ACTION_NAME,
-        WORKFLOW_CURRENT_STEP_NAME,
-        WORKFLOW_CURRENT_STEP_INDEX,
-    }
+    UNEXPECTED_RUNTIME_EXCEPTION = auto()
 
-    # NOTE: objects pointed by these keys are just references
-    # to local global values and never serialized
-    STORED_LOCALLY: set[str] = {APP}
+    @classmethod
+    def is_reserved(cls, key: str) -> bool:
+        return key.upper() in cls.__members__
+
+    @classmethod
+    def is_stored_locally(cls, key: str) -> bool:
+        return key in _STORED_LOCALLY
+
+
+_STORED_LOCALLY: set[str] = {
+    f"{ReservedContextKeys.APP}",
+}
 
 
 class _ContextIOInterface(ABC):

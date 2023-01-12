@@ -50,10 +50,11 @@ class WorkflowContext:
         Stores a value.
         NOTE: the type of the value is deduced the first time this was set.
         """
-        if key in ReservedContextKeys.RESERVED and not set_reserved:
+        key = f"{key}"
+        if ReservedContextKeys.is_reserved(key) and not set_reserved:
             raise NotAllowedContextKeyError(key=key)
 
-        if key in ReservedContextKeys.STORED_LOCALLY:
+        if ReservedContextKeys.is_stored_locally(key):
             if key in self._local_storage:
                 _ensure_type_matches(
                     key=key, existing_value=self._local_storage[key], value=value
@@ -70,15 +71,15 @@ class WorkflowContext:
         """
         Loads a value. Raises an error if value is missing.
         """
-        if (
-            key not in ReservedContextKeys.STORED_LOCALLY
-            and not await self._context.has_key(key)
-        ):
+        key = f"{key}"
+        if not ReservedContextKeys.is_stored_locally(
+            key
+        ) and not await self._context.has_key(key):
             raise NotInContextError(key=key, context=await self._context.to_dict())
 
         existing_value = (
             self._local_storage[key]
-            if key in ReservedContextKeys.STORED_LOCALLY
+            if ReservedContextKeys.is_stored_locally(key)
             else await self._context.load(key)
         )
         exiting_type = type(existing_value)

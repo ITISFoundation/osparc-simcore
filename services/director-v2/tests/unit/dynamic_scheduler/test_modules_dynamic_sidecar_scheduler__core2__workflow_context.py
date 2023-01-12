@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._context_base import (
+    _STORED_LOCALLY,
     ContextInterface,
     ReservedContextKeys,
 )
@@ -55,7 +56,7 @@ async def test_workflow_context_local_values(
     app: FastAPI, workflow_context: WorkflowContext
 ):
     # check all locally stored values are available
-    for key in ReservedContextKeys.STORED_LOCALLY:
+    for key in _STORED_LOCALLY:
         assert key in workflow_context._local_storage
 
     for local_key, value_1, value_2, value_type in [
@@ -72,10 +73,12 @@ async def test_workflow_context_local_values(
 
 async def test_workflow_context_reserved_key(workflow_context: WorkflowContext):
     with pytest.raises(NotAllowedContextKeyError):
-        await workflow_context.set(ReservedContextKeys.EXCEPTION, "value")
+        await workflow_context.set(
+            ReservedContextKeys.UNEXPECTED_RUNTIME_EXCEPTION, "value"
+        )
 
     await workflow_context.set(
-        ReservedContextKeys.EXCEPTION, "value", set_reserved=True
+        ReservedContextKeys.UNEXPECTED_RUNTIME_EXCEPTION, "value", set_reserved=True
     )
 
 

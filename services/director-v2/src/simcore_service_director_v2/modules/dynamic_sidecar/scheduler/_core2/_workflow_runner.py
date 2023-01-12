@@ -127,7 +127,9 @@ async def workflow_runner(
                 serialized_traceback=traceback.format_exc(),
             )
             await workflow_context.set(
-                ReservedContextKeys.EXCEPTION, exception_info, set_reserved=True
+                ReservedContextKeys.UNEXPECTED_RUNTIME_EXCEPTION,
+                exception_info,
+                set_reserved=True,
             )
 
             action = (
