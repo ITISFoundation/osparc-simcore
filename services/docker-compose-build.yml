@@ -27,6 +27,8 @@ services:
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
 
+  # Services below are part of the osparc-simcore stack ---------------------------
+
   api-server:
     image: local/api-server:${BUILD_TARGET:?build_target_required}
     build:
@@ -213,6 +215,24 @@ services:
         org.label-schema.build-date: "${BUILD_DATE}"
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
+
+  invitations:
+    image: local/invitations:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/invitations/Dockerfile
+      cache_from:
+        - local/invitations:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/invitations:master-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/invitations:staging-github-latest
+        - ${DOCKER_REGISTRY:-itisfoundation}/invitations:release-github-latest
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "${VCS_URL}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+        io.osparc.api-version: "${INVITATIONS_API_VERSION}"
 
   datcore-adapter:
     image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}

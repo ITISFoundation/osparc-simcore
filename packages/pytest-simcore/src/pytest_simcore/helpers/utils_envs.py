@@ -49,7 +49,7 @@ def load_dotenv(envfile_content_or_path: Union[Path, str], **options) -> EnvVars
 
 
 def setenvs_from_envfile(
-    monkeypatch: MonkeyPatch, content_or_path: str, **dotenv_kwags
+    monkeypatch: MonkeyPatch, content_or_path: Union[str, Path], **dotenv_kwags
 ) -> EnvVarsDict:
     """Batch monkeypatch.setenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)
@@ -60,7 +60,10 @@ def setenvs_from_envfile(
 
 
 def delenvs_from_envfile(
-    monkeypatch: MonkeyPatch, content_or_path: str, raising: bool, **dotenv_kwags
+    monkeypatch: MonkeyPatch,
+    content_or_path: Union[str, Path],
+    raising: bool,
+    **dotenv_kwags
 ) -> EnvVarsDict:
     """Batch monkeypatch.delenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)
