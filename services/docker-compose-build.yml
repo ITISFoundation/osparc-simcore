@@ -6,7 +6,6 @@
 # NOTE: linter error 'missing image' happens with the file is called 'docker-compose.build.yml'
 #
 # NOTE: service-integration is NOT a stack service but an executable of the service-integration library
-# NOTE: invitations-maker is NOT a stack service but an executable of the invitations-maker library
 #
 # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 #
@@ -28,7 +27,7 @@ services:
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
 
-  # STACK ---------------------------
+  # Services below are part of the osparc-simcore stack ---------------------------
 
   api-server:
     image: local/api-server:${BUILD_TARGET:?build_target_required}
