@@ -82,7 +82,7 @@ def mock_get_running_instance(
 @pytest.fixture
 def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mocked_post_message = mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling_core.post_message", autospec=True
+        "simcore_service_autoscaling.utils.rabbitmq.post_message", autospec=True
     )
     yield mocked_post_message
 
