@@ -286,7 +286,7 @@ async def tag_node(
     *,
     tags: dict[DockerLabelKey, str],
     available: bool,
-) -> None:
+) -> Node:
     with log_context(
         logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
     ):
@@ -304,11 +304,12 @@ async def tag_node(
                 "Role": node.Spec.Role.value,
             },
         )
+        return parse_obj_as(Node, await docker_client.nodes.inspect(node_id=node.ID))
 
 
 async def set_node_availability(
     docker_client: AutoscalingDocker, node: Node, *, available: bool
-) -> None:
+) -> Node:
     assert node.Spec  # nosec
     return await tag_node(
         docker_client,
