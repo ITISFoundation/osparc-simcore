@@ -4,8 +4,8 @@ from typing import Any, Optional
 
 
 class ReservedContextKeys(str, Enum):
-    def _generate_next_value_(name, start, count, last_values) -> Any:
-        return name.lower()
+    def _generate_next_value_(self, *_: Any) -> str:  # pylint:disable=arguments-differ
+        return self.lower()
 
     APP = auto()
 
