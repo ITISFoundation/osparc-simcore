@@ -38,7 +38,7 @@ class InvitationInputs(BaseModel):
 
     issuer: str = Field(
         ...,
-        description="Who issued this invitation? Some identifier such as LicenseRequestID",
+        description="Identifies who issued the invitation. E.g. an email, a service name etc",
         min_length=1,
         max_length=30,
     )
@@ -103,7 +103,7 @@ def _build_link(
     return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
 
 
-def extract_invitation_code(invitation_url: HttpUrl) -> str:
+def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
     """Parses url and extracts invitation"""
     try:
         query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))

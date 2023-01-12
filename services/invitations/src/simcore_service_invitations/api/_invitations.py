@@ -9,7 +9,7 @@ from ..invitations import (
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
-    extract_invitation_code,
+    extract_invitation_code_from,
     extract_invitation_content,
 )
 from ._dependencies import get_current_username, get_settings
@@ -62,8 +62,8 @@ class _InvitationContentAndLink(InvitationContent):
         }
 
 
-class _InvitationCheck(BaseModel):
-    invitation_url: HttpUrl = Field(..., description="Full Invitation link")
+class _EncryptedInvitation(BaseModel):
+    invitation_url: HttpUrl = Field(..., description="Invitation link")
 
 
 #
@@ -73,11 +73,11 @@ router = APIRouter()
 
 
 @router.post(
-    "/invitation",
+    "/invitations",
     response_model=_InvitationContentAndLink,
     response_model_by_alias=False,
 )
-async def generate_invitation(
+async def create_invitation(
     invitation_inputs: _InvitationInputs,
     settings: ApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
@@ -101,12 +101,12 @@ async def generate_invitation(
 
 
 @router.post(
-    "/invitation:check",
+    "/invitations:extract",
     response_model=InvitationContent,
     response_model_by_alias=False,
 )
-async def validate_and_decrypt_invitation(
-    invitation_check: _InvitationCheck,
+async def extracts_invitation_from_code(
+    encrypted: _EncryptedInvitation,
     settings: ApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
@@ -116,7 +116,7 @@ async def validate_and_decrypt_invitation(
 
     try:
         invitation = extract_invitation_content(
-            invitation_code=extract_invitation_code(invitation_check.invitation_url),
+            invitation_code=extract_invitation_code_from(encrypted.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         )
     except InvalidInvitationCode as err:

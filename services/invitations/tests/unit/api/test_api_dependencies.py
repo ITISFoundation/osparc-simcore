@@ -18,7 +18,7 @@ def test_invalid_http_basic_auth(
     invitation_data: InvitationInputs,
 ):
     response = client.post(
-        f"/{API_VTAG}/invitation",
+        f"/{API_VTAG}/invitations",
         json=invitation_data.dict(),
         auth=invalid_basic_auth,
     )

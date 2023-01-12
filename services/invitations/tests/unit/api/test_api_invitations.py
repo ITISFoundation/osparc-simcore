@@ -25,7 +25,7 @@ def test_create_invitation(
     invitation_data: InvitationInputs,
 ):
     response = client.post(
-        f"/{API_VTAG}/invitation",
+        f"/{API_VTAG}/invitations",
         json={
             "issuer": invitation_data.issuer,
             "guest": invitation_data.guest,
@@ -47,7 +47,7 @@ def test_check_invitation(
     invitation_data: InvitationInputs,
 ):
     response = client.post(
-        f"/{API_VTAG}/invitation",
+        f"/{API_VTAG}/invitations",
         json={
             "issuer": invitation_data.issuer,
             "guest": invitation_data.guest,
@@ -63,7 +63,7 @@ def test_check_invitation(
 
     # check invitation_url
     response = client.post(
-        f"/{API_VTAG}/invitation:check",
+        f"/{API_VTAG}/invitations:extract",
         json={"invitation_url": invitation_url},
         auth=basic_auth,
     )
@@ -90,7 +90,7 @@ def test_check_valid_invitation(
 
     # check invitation_url
     response = client.post(
-        f"/{API_VTAG}/invitation:check",
+        f"/{API_VTAG}/invitations:extract",
         json={"invitation_url": invitation_url},
         auth=basic_auth,
     )
@@ -118,7 +118,7 @@ def test_check_invalid_invitation_with_different_secret(
 
     # check invitation_url
     response = client.post(
-        f"/{API_VTAG}/invitation:check",
+        f"/{API_VTAG}/invitations:extract",
         json={"invitation_url": invitation_url},
         auth=basic_auth,
     )
@@ -135,7 +135,7 @@ def test_check_invalid_invitation_with_wrong_fragment(
 ):
     # check invitation_url
     response = client.post(
-        f"/{API_VTAG}/invitation:check",
+        f"/{API_VTAG}/invitations:extract",
         json={
             "invitation_url": "https://foo.com#/page?some_value=True"
         },  # <-- NOTE: DIFFERENT fragment
@@ -164,7 +164,7 @@ def test_check_invalid_invitation_with_wrong_code(
 
     # check invitation_url
     response = client.post(
-        f"/{API_VTAG}/invitation:check",
+        f"/{API_VTAG}/invitations:extract",
         json={"invitation_url": invitation_url_with_invalid_code},
         auth=basic_auth,
     )

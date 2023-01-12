@@ -18,7 +18,7 @@ from .invitations import (
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
-    extract_invitation_code,
+    extract_invitation_code_from,
     extract_invitation_content,
 )
 
@@ -150,7 +150,7 @@ def check(ctx: typer.Context, invitation_url: str):
 
     try:
         invitation: InvitationContent = extract_invitation_content(
-            invitation_code=extract_invitation_code(
+            invitation_code=extract_invitation_code_from(
                 parse_obj_as(HttpUrl, invitation_url)
             ),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
