@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
         case "hits-service": {
           control = new qx.ui.basic.Label().set({
-            toolTipText: this.tr("Number of times it was instantiated"),
+            toolTipText: this.tr("Number of times you instantiated it"),
             alignY: "middle"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
