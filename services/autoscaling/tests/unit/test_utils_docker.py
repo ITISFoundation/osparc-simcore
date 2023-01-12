@@ -38,7 +38,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     tag_node,
-    wait_for_node,
+    try_get_node_with_name,
 )
 
 
@@ -689,14 +689,28 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     await asyncio.sleep(2)
 
 
-async def test_wait_for_node(autoscaling_docker: AutoscalingDocker, host_node: Node):
+async def test_try_get_node_with_name(
+    autoscaling_docker: AutoscalingDocker, host_node: Node
+):
     assert host_node.Description
     assert host_node.Description.Hostname
 
-    received_node = await wait_for_node(
+    received_node = await try_get_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert received_node == host_node
+
+
+async def test_try_get_node_with_name_fake(
+    autoscaling_docker: AutoscalingDocker, fake_node: Node
+):
+    assert fake_node.Description
+    assert fake_node.Description.Hostname
+
+    received_node = await try_get_node_with_name(
+        autoscaling_docker, fake_node.Description.Hostname
+    )
+    assert received_node is None
 
 
 async def test_tag_node(
@@ -706,17 +720,19 @@ async def test_tag_node(
     assert host_node.Description.Hostname
     tags = faker.pydict(allowed_types=(str,))
     await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
-    updated_node = await wait_for_node(
+    updated_node = await try_get_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
+    assert updated_node
     assert updated_node.Spec
     assert updated_node.Spec.Availability == Availability.drain
     assert updated_node.Spec.Labels == tags
 
     await tag_node(autoscaling_docker, updated_node, tags={}, available=True)
-    updated_node = await wait_for_node(
+    updated_node = await try_get_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
+    assert updated_node
     assert updated_node.Spec
     assert updated_node.Spec.Availability == Availability.active
     assert updated_node.Spec.Labels == {}
