@@ -7,7 +7,7 @@ import collections
 import logging
 import re
 from datetime import datetime
-from typing import Final, Optional
+from typing import Final, Optional, cast
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
@@ -311,5 +311,8 @@ async def set_node_availability(
 ) -> None:
     assert node.Spec  # nosec
     return await tag_node(
-        docker_client, node, tags=node.Spec.Labels, available=available
+        docker_client,
+        node,
+        tags=cast(dict[DockerLabelKey, str], node.Spec.Labels),
+        available=available,
     )

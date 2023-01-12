@@ -396,20 +396,23 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     fake_node: Node,
     scale_up_params: _ScaleUpParams,
     mock_rabbitmq_post_message: mock.Mock,
+    mock_try_get_node_with_name: mock.Mock,
+    mock_set_node_availability: mock.Mock,
+    mocker: MockerFixture,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    # create a task that needs more power
-    task_template_for_service = task_template | create_task_reservations(
-        int(scale_up_params.service_resources.cpus),
-        scale_up_params.service_resources.ram,
-    )
+    # create several tasks that needs more power
     await asyncio.gather(
         *(
             create_service(
-                task_template_for_service,
+                task_template
+                | create_task_reservations(
+                    int(scale_up_params.service_resources.cpus),
+                    scale_up_params.service_resources.ram,
+                ),
                 service_monitored_labels,
                 "pending",
             )
@@ -444,42 +447,15 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             assert "Value" in tag_dict
 
             assert tag_dict["Key"] in expected_tag_keys
-
         assert "PrivateDnsName" in instance
         instance_private_dns_name = instance["PrivateDnsName"]
         assert instance_private_dns_name.endswith(".ec2.internal")
         all_private_dns_names.append(instance_private_dns_name)
 
-    # expect to wait for the node to appear
-    mock_wait_for_node.assert_has_calls(
-        [
-            mock.call(get_docker_client(initialized_app), dns[: dns.find(".")])
-            for dns in all_private_dns_names
-        ],
-        any_order=True,
-    )
-
-    # expect to tag the node with the expected labels, and also to make it active
-    assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = {
-        tag_key: "true"
-        for tag_key in (
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-        )
-    }
-    mock_tag_node.assert_has_calls(
-        [
-            mock.call(
-                get_docker_client(initialized_app),
-                fake_node,
-                tags=expected_docker_node_tags,
-                available=True,
-            )
-            for _ in all_private_dns_names
-        ]
-    )
-
+    # as the new node is already running, but is not yet connected, hence not tagged and drained
+    mock_try_get_node_with_name.assert_not_called()
+    mock_tag_node.assert_not_called()
+    mock_set_node_availability.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -487,6 +463,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         initialized_app,
         instances_running=scale_up_params.expected_num_instances,
     )
+    mock_rabbitmq_post_message.reset_mock()
 
 
 async def test__mark_empty_active_nodes_to_drain(

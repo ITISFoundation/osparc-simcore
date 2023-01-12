@@ -323,7 +323,7 @@ async def _start_instances(
             continue
     log_message = f"{sum(n for n in needed_instances.values())} new machines launched, it might take up to 3 minutes to start, Please wait..."
     if last_issue:
-        log_message += f"\nUnexpected issues detected, probably due to high load, please contact support"
+        log_message += "\nUnexpected issues detected, probably due to high load, please contact support"
     await _log_tasks_message(
         app,
         tasks,

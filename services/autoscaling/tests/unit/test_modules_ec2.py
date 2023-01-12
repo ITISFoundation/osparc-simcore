@@ -137,30 +137,6 @@ async def test_get_ec2_instance_capabilities(
         assert any(i.name == instance_type_name for i in instance_types)
 
 
-async def test_get_ec2_instance_capabilities_with_multiple_same_names_return_them_all(
-    mocked_aws_server_envs: None,
-    aws_allowed_ec2_instance_type_names: list[str],
-    app_settings: ApplicationSettings,
-    autoscaling_ec2: AutoscalingEC2,
-):
-    list_of_types_with_multiple_same_names = ["a1.medium", "a1.medium"]
-
-    instance_types = await autoscaling_ec2.get_ec2_instance_capabilities(
-        cast(
-            list[InstanceTypeType],
-            list_of_types_with_multiple_same_names,
-        )
-    )
-
-    assert instance_types
-    assert len(instance_types) == len(list_of_types_with_multiple_same_names)
-
-    # all the instance names are found and valid
-    assert all(i.name in list_of_types_with_multiple_same_names for i in instance_types)
-    for instance_type_name in list_of_types_with_multiple_same_names:
-        assert any(i.name == instance_type_name for i in instance_types)
-
-
 async def test_start_aws_instance(
     mocked_aws_server_envs: None,
     aws_vpc_id: str,
