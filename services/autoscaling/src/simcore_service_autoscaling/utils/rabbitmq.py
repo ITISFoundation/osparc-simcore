@@ -11,8 +11,8 @@ from servicelib.logging_utils import log_catch
 
 from ..core.settings import ApplicationSettings
 from ..models import SimcoreServiceDockerLabelKeys
-from ..modules.docker import AutoscalingDocker
-from ..modules.ec2 import AutoscalingEC2
+from ..modules.docker import AutoscalingDocker, get_docker_client
+from ..modules.ec2 import AutoscalingEC2, get_ec2_client
 from ..modules.rabbitmq import post_message
 from . import ec2, utils_docker
 
@@ -40,7 +40,12 @@ async def create_autoscaling_status_message(
 ) -> RabbitAutoscalingStatusMessage:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    total_resources, used_resources, all_ec2_instances = await asyncio.gather(
+    (
+        total_resources,
+        used_resources,
+        pending_ec2_instances,
+        running_ec2_instances,
+    ) = await asyncio.gather(
         *(
             utils_docker.compute_cluster_total_resources(monitored_nodes),
             utils_docker.compute_cluster_used_resources(docker_client, monitored_nodes),
@@ -49,10 +54,17 @@ async def create_autoscaling_status_message(
                 list(
                     ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()
                 ),
+                state_names=["pending"],
+            ),
+            ec2_client.get_instances(
+                app_settings.AUTOSCALING_EC2_INSTANCES,
+                list(
+                    ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()
+                ),
+                state_names=["running"],
             ),
         )
     )
-    pending_instances = [i for i in all_ec2_instances if i.state == "pending"]
     return RabbitAutoscalingStatusMessage.construct(
         origin=f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}",
         nodes_total=len(monitored_nodes),
@@ -72,6 +84,20 @@ async def create_autoscaling_status_message(
         ),
         cluster_total_resources=total_resources.dict(),
         cluster_used_resources=used_resources.dict(),
-        instances_pending=len(pending_instances),
-        instances_running=len(all_ec2_instances) - len(pending_instances),
+        instances_pending=len(pending_ec2_instances),
+        instances_running=len(running_ec2_instances),
+    )
+
+
+async def post_autoscaling_status_message(
+    app: FastAPI, monitored_nodes: list[Node]
+) -> None:
+    await post_message(
+        app,
+        await create_autoscaling_status_message(
+            get_docker_client(app),
+            get_ec2_client(app),
+            app.state.settings,
+            monitored_nodes,
+        ),
     )
