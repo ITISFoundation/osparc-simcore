@@ -319,7 +319,7 @@ async def _start_instances(
         if isinstance(r, Exception):
             logger.error("Unexpected error happened when starting EC2 instance: %s", r)
             last_issue = f"{r}"
-            continue
+
     log_message = f"{sum(n for n in needed_instances.values())} new machines launched, it might take up to 3 minutes to start, Please wait..."
     if last_issue:
         log_message += "\nUnexpected issues detected, probably due to high load, please contact support"
