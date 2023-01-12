@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, HttpUrl
@@ -17,13 +18,14 @@ from ._dependencies import get_current_username, get_settings
 
 logger = logging.getLogger(__name__)
 
+INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 #
 # API SCHEMA MODELS
 #
 
-INVALID_INVITATION_URL_MSG = "Invalid invitation link"
-EXAMPLE = {
+
+_INPUTS_EXAMPLE: dict[str, Any] = {
     "issuer": "issuerid",
     "guest": "invitedguest@company.com",
     "trial_account_days": 2,
@@ -32,14 +34,14 @@ EXAMPLE = {
 
 class _ApiInvitationInputs(InvitationInputs):
     class Config:
-        schema_extra = {"example": EXAMPLE}
+        schema_extra = {"example": _INPUTS_EXAMPLE}
 
 
 class _ApiInvitationContent(InvitationContent):
     class Config:
         schema_extra = {
             "example": {
-                **EXAMPLE,
+                **_INPUTS_EXAMPLE,
                 "created": "2023-01-11 13:11:47.293595",
             }
         }
@@ -51,7 +53,7 @@ class _InvitationContentAndLink(_ApiInvitationContent):
     class Config:
         schema_extra = {
             "example": {
-                **EXAMPLE,
+                **_INPUTS_EXAMPLE,
                 "created": "2023-01-11 12:11:47.293595",
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
