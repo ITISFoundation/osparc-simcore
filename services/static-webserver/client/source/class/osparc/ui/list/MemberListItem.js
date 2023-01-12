@@ -39,6 +39,8 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
   },
 
   events: {
+    "promoteToMember": "qx.event.type.Data",
+    "demoteToReader": "qx.event.type.Data",
     "promoteToManager": "qx.event.type.Data",
     "removeMember": "qx.event.type.Data"
   },
@@ -100,15 +102,44 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (accessRights && !accessRights.getDelete() && !accessRights.getWrite()) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
-        promoteButton.addListener("execute", () => {
-          this.fireDataEvent("promoteToManager", {
-            key: this.getKey(),
-            name: this.getTitle()
+      if (accessRights) {
+        if (
+          !accessRights.getRead() &&
+          !accessRights.getDelete() &&
+          !accessRights.getWrite()
+        ) {
+          // no read access
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Member"));
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToMember", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
           });
-        });
-        menu.add(promoteButton);
+          menu.add(promoteButton);
+        } else if (
+          accessRights.getRead() &&
+          !accessRights.getDelete() &&
+          !accessRights.getWrite()
+        ) {
+          // member
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToManager", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(promoteButton);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to Reader"));
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToReader", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+        }
       }
 
       const removeButton = new qx.ui.menu.Button(this.tr("Remove Member"));

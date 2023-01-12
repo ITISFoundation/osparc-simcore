@@ -39,6 +39,32 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     this.__reloadOrganizations();
   },
 
+  statics: {
+    getNoReadAccessRight: function() {
+      return {
+        "read": false,
+        "write": false,
+        "delete": false
+      };
+    },
+
+    getMemberAccessRight: function() {
+      return {
+        "read": true,
+        "write": false,
+        "delete": false
+      };
+    },
+
+    getManagerAccessRight: function() {
+      return {
+        "read": true,
+        "write": true,
+        "delete": false
+      };
+    }
+  },
+
   members: {
     __currentOrg: null,
     __orgsModel: null,
@@ -183,6 +209,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             .setStyles({
               "border-radius": "16px"
             });
+          item.addListener("promoteToMember", e => {
+            const clusterMember = e.getData();
+            this.__promoteToMember(clusterMember);
+          });
+          item.addListener("demoteToReader", e => {
+            const clusterMember = e.getData();
+            this.__demoteToReader(clusterMember);
+          });
           item.addListener("promoteToManager", e => {
             const orgMember = e.getData();
             this.__promoteToManager(orgMember);
@@ -438,6 +472,54 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
+    __promoteToMember: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMember["key"]
+        },
+        data: this.self().getMemberAccessRight()
+      };
+      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
+          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
+          console.error(err);
+        });
+    },
+
+    __demoteToReader: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMember["key"]
+        },
+        data: this.self().getNoReadAccessRight()
+      };
+      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
+          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
+          console.error(err);
+        });
+    },
+
     __promoteToManager: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
@@ -448,13 +530,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "gid": this.__currentOrg.getKey(),
           "uid": orgMember["key"]
         },
-        data: {
-          "accessRights": {
-            "read": true,
-            "write": true,
-            "delete": false
-          }
-        }
+        data: this.self().getManagerAccessRight()
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
