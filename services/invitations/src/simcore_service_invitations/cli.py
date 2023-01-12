@@ -142,8 +142,8 @@ def invite(
 
 
 @app.command()
-def check(ctx: typer.Context, invitation_url: str):
-    """Check invitation code and prints invitation"""
+def extract(ctx: typer.Context, invitation_url: str):
+    """Validates code and extracts invitation's content"""
 
     assert ctx  # nosec
     settings = MinimalApplicationSettings()

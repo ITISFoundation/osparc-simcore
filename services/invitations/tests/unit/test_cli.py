@@ -54,10 +54,10 @@ def test_invite_user_and_check_invitation(
     invitation_url = result.stdout
     print(invitation_url)
 
-    # invitations-maker check https://foo#invitation=123
+    # invitations-maker extrac https://foo#invitation=123
     result = cli_runner.invoke(
         app,
-        f"check {invitation_url}",
+        f"extract {invitation_url}",
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
