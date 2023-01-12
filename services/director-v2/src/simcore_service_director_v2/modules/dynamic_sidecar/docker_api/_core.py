@@ -95,6 +95,7 @@ async def create_service_and_get_id(
         kwargs = jsonable_encoder(
             create_service_data, by_alias=True, exclude_unset=True
         )
+        logging.debug("Creating service with\n%s", json.dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
 
         log.debug(
