@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
   },
 
   statics: {
-    getNoReadAccessRight: function() {
+    getNoReadAccess: function() {
       return {
         "read": false,
         "write": false,
@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
     },
 
-    getMemberAccessRight: function() {
+    getReadAccess: function() {
       return {
         "read": true,
         "write": false,
@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
     },
 
-    getManagerAccessRight: function() {
+    getWriteAccess: function() {
       return {
         "read": true,
         "write": true,
@@ -482,7 +482,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "gid": this.__currentOrg.getKey(),
           "uid": orgMember["key"]
         },
-        data: this.self().getMemberAccessRight()
+        data: this.self().getReadAccess()
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
@@ -507,7 +507,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "uid": orgMember["key"]
         },
         data: {
-          "accessRights": this.self().getNoReadAccessRight()
+          "accessRights": this.self().getNoReadAccess()
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
@@ -532,7 +532,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           "gid": this.__currentOrg.getKey(),
           "uid": orgMember["key"]
         },
-        data: this.self().getManagerAccessRight()
+        data: this.self().getWriteAccess()
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
