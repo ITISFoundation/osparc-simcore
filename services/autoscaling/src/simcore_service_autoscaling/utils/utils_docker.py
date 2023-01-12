@@ -20,10 +20,6 @@ from pydantic import ByteSize, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
-from tenacity import TryAgain, retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..models import Resources
 from ..modules.docker import AutoscalingDocker
@@ -275,18 +271,12 @@ async def get_docker_swarm_join_bash_command() -> str:
     )
 
 
-@retry(
-    stop=stop_after_delay(_TIMEOUT_WAITING_FOR_NODES_S),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
-    wait=wait_fixed(5),
-)
-async def wait_for_node(
-    docker_client: AutoscalingDocker,
-    node_name: str,
-) -> Node:
-    list_of_nodes = await docker_client.nodes.list(filters={"name": node_name})
+async def try_get_node_with_name(
+    docker_client: AutoscalingDocker, name: str
+) -> Optional[Node]:
+    list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
-        raise TryAgain
+        return
     return parse_obj_as(Node, list_of_nodes[0])
 
 

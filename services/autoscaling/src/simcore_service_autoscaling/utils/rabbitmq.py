@@ -44,7 +44,7 @@ async def create_autoscaling_status_message(
         *(
             utils_docker.compute_cluster_total_resources(monitored_nodes),
             utils_docker.compute_cluster_used_resources(docker_client, monitored_nodes),
-            ec2_client.get_all_pending_running_instances(
+            ec2_client.get_instances(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 list(
                     ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()
