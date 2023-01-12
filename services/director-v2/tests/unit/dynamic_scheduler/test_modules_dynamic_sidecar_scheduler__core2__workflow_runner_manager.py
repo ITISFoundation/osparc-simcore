@@ -24,6 +24,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._marke
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._models import (
     ActionName,
+    ExceptionInfo,
     StepName,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow import (
@@ -33,7 +34,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workf
     WorkflowContext,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workflow_runner import (
-    ExceptionInfo,
     _iter_index_step,
     workflow_runner,
 )

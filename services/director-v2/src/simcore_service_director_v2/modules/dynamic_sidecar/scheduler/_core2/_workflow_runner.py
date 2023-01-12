@@ -2,24 +2,17 @@ import logging
 import traceback
 from typing import Any, Awaitable, Callable, Iterable, Optional
 
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 
 from ._action import Action
 from ._context_base import ReservedContextKeys
 from ._errors import NotInContextError
-from ._models import ActionName, StepName, WorkflowName
+from ._models import ActionName, ExceptionInfo, StepName, WorkflowName
 from ._workflow import Workflow
 from ._workflow_context import WorkflowContext
 
 logger = logging.getLogger(__name__)
-
-
-class ExceptionInfo(BaseModel):
-    exception_class: type
-    action_name: ActionName
-    step_name: StepName
-    serialized_traceback: str
 
 
 def _iter_index_step(
