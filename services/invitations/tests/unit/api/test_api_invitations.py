@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from simcore_service_invitations._meta import API_VTAG
 from simcore_service_invitations.api._invitations import (
     INVALID_INVITATION_URL_MSG,
-    InvitationGet,
+    _InvitationContentAndLink,
 )
 from simcore_service_invitations.invitations import (
     InvitationContent,
@@ -35,7 +35,7 @@ def test_create_invitation(
     )
     assert response.status_code == status.HTTP_200_OK, f"{response.json()=}"
 
-    invitation = InvitationGet(**response.json())
+    invitation = _InvitationContentAndLink(**response.json())
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
     assert invitation.trial_account_days == invitation_data.trial_account_days
@@ -59,7 +59,7 @@ def test_check_invitation(
 
     # up ot here, identifcal to above.
     # Let's use invitation link
-    invitation_url = InvitationGet.parse_obj(response.json()).invitation_url
+    invitation_url = _InvitationContentAndLink.parse_obj(response.json()).invitation_url
 
     # check invitation_url
     response = client.post(

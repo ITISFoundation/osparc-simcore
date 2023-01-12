@@ -7,7 +7,7 @@
 from fastapi import status
 from fastapi.testclient import TestClient
 from simcore_service_invitations._meta import API_VTAG
-from simcore_service_invitations.api._meta import Meta
+from simcore_service_invitations.api._meta import _Meta
 
 
 def test_healthcheck(client: TestClient):
@@ -19,7 +19,7 @@ def test_healthcheck(client: TestClient):
 def test_meta(client: TestClient):
     response = client.get(f"/{API_VTAG}/meta")
     assert response.status_code == status.HTTP_200_OK
-    meta = Meta.parse_obj(response.json())
+    meta = _Meta.parse_obj(response.json())
 
     response = client.get(meta.docs_url)
     assert response.status_code == status.HTTP_200_OK

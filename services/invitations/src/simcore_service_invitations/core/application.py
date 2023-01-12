@@ -10,7 +10,7 @@ from .._meta import (
     SUMMARY,
 )
 from ..api.routes import setup_api_routes
-from .settings import WebApplicationSettings
+from .settings import ApplicationSettings
 
 
 def create_app() -> FastAPI:
@@ -26,7 +26,7 @@ def create_app() -> FastAPI:
     override_fastapi_openapi_method(app)
 
     # STATE
-    app.state.settings = WebApplicationSettings()
+    app.state.settings = ApplicationSettings()
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP

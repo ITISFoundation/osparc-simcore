@@ -11,7 +11,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
 from simcore_service_invitations.cli import app
-from simcore_service_invitations.core.settings import WebApplicationSettings
+from simcore_service_invitations.core.settings import ApplicationSettings
 from simcore_service_invitations.invitations import InvitationInputs
 from typer.testing import CliRunner
 
@@ -72,8 +72,8 @@ def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: MonkeyPatch):
     environs = load_dotenv(result.stdout)
 
     envs = setenvs_from_dict(monkeypatch, environs)
-    settings_from_obj = WebApplicationSettings.parse_obj(envs)
-    settings_from_envs = WebApplicationSettings()
+    settings_from_obj = ApplicationSettings.parse_obj(envs)
+    settings_from_envs = ApplicationSettings()
 
     assert settings_from_envs == settings_from_obj
 
@@ -83,5 +83,5 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     assert result.exit_code == os.EX_OK, result.output
 
     print(result.output)
-    settings = WebApplicationSettings.parse_raw(result.output)
-    assert settings == WebApplicationSettings.create_from_envs()
+    settings = ApplicationSettings.parse_raw(result.output)
+    assert settings == ApplicationSettings.create_from_envs()

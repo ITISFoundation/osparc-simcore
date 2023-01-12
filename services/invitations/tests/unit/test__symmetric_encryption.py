@@ -49,7 +49,7 @@ def consume(url):
         raise
 
 
-def test_produce_and_consume(monkeypatch: MonkeyPatch):
+def test_encrypt_and_decrypt(monkeypatch: MonkeyPatch):
     secret_key = Fernet.generate_key()
     monkeypatch.setenv("SECRET_KEY", secret_key.decode())
 

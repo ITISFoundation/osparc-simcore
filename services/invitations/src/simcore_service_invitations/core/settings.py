@@ -9,7 +9,9 @@ from settings_library.utils_logging import MixinLoggingSettings
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
 
 
-class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+    """Base settings of any osparc service's app"""
+
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = PROJECT_NAME
@@ -50,8 +52,12 @@ class BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return cast(str, cls.validate_log_level(value))
 
 
-class DesktopApplicationSettings(BaseApplicationSettings):
-    """Desktop app's environs"""
+class MinimalApplicationSettings(_BaseApplicationSettings):
+    """Extends base settings with the settings needed to create invitation links
+
+    Separated for convenience to run some commands of the CLI that
+    are not related to the web server.
+    """
 
     INVITATIONS_SECRET_KEY: SecretStr = Field(
         ...,
@@ -63,8 +69,11 @@ class DesktopApplicationSettings(BaseApplicationSettings):
     INVITATIONS_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
 
 
-class WebApplicationSettings(DesktopApplicationSettings):
-    """Web app's environs"""
+class ApplicationSettings(MinimalApplicationSettings):
+    """Web app's environment variables
+
+    These settings includes extra configuration for the http-API
+    """
 
     INVITATIONS_USERNAME: str = Field(
         ...,

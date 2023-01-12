@@ -5,7 +5,7 @@ from typing import Any, Callable
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from ..core.settings import WebApplicationSettings
+from ..core.settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
 
@@ -24,15 +24,15 @@ def get_reverse_url_mapper(request: Request) -> Callable:
     return _reverse_url_mapper
 
 
-def get_settings(request: Request) -> WebApplicationSettings:
-    app_settings: WebApplicationSettings = request.app.state.settings
+def get_settings(request: Request) -> ApplicationSettings:
+    app_settings: ApplicationSettings = request.app.state.settings
     assert app_settings  # nosec
     return app_settings
 
 
 def get_current_username(
     credentials: HTTPBasicCredentials = Depends(get_basic_credentials),
-    settings: WebApplicationSettings = Depends(get_settings),
+    settings: ApplicationSettings = Depends(get_settings),
 ) -> str:
     def _is_valid(current: str, expected: str) -> bool:
         return secrets.compare_digest(current.encode("utf8"), expected.encode("utf8"))

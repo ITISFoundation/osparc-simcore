@@ -8,8 +8,8 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_invitations.core.settings import (
-    DesktopApplicationSettings,
-    WebApplicationSettings,
+    ApplicationSettings,
+    MinimalApplicationSettings,
 )
 
 
@@ -22,10 +22,10 @@ def test_valid_cli_application_settings(monkeypatch: MonkeyPatch, secret_key: st
         },
     )
 
-    settings = DesktopApplicationSettings()
+    settings = MinimalApplicationSettings()
     assert settings
 
 
 def test_valid_web_application_settings(app_environment: EnvVarsDict):
-    settings = WebApplicationSettings()
+    settings = ApplicationSettings()
     assert settings

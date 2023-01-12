@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, HttpUrl
 
-from ..core.settings import WebApplicationSettings
+from ..core.settings import ApplicationSettings
 from ..invitations import (
     InvalidInvitationCode,
     InvitationContent,
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 
-class InvitationCreate(InvitationInputs):
+class _InvitationInputs(InvitationInputs):
     class Config:
         # Same as InvitationInputs but WITHOUT alias
         fields = {
@@ -47,8 +47,8 @@ class InvitationCreate(InvitationInputs):
         }
 
 
-class InvitationGet(InvitationContent):
-    invitation_url: HttpUrl = Field(..., description="Resulting invitation link")
+class _InvitationContentAndLink(InvitationContent):
+    invitation_url: HttpUrl = Field(..., description="Invitation link")
 
     class Config:
         schema_extra = {
@@ -62,7 +62,7 @@ class InvitationGet(InvitationContent):
         }
 
 
-class InvitationCheck(BaseModel):
+class _InvitationCheck(BaseModel):
     invitation_url: HttpUrl = Field(..., description="Full Invitation link")
 
 
@@ -72,23 +72,27 @@ class InvitationCheck(BaseModel):
 router = APIRouter()
 
 
-@router.post("/invitation", response_model=InvitationGet, response_model_by_alias=False)
-async def create_invitation(
-    invitation_create: InvitationCreate,
-    settings: WebApplicationSettings = Depends(get_settings),
+@router.post(
+    "/invitation",
+    response_model=_InvitationContentAndLink,
+    response_model_by_alias=False,
+)
+async def generate_invitation(
+    invitation_inputs: _InvitationInputs,
+    settings: ApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
-    """Generates a new invitation link"""
+    """Generates a new invitation code and returns its content and an invitation link"""
     assert username == settings.INVITATIONS_USERNAME  # nosec
 
     invitation_link = create_invitation_link(
-        invitation_create,
+        invitation_inputs,
         secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         base_url=settings.INVITATIONS_OSPARC_URL,
     )
-    invitation = InvitationGet(
+    invitation = _InvitationContentAndLink(
         invitation_url=invitation_link,
-        **invitation_create.dict(),
+        **invitation_inputs.dict(),
     )
 
     logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
@@ -101,12 +105,13 @@ async def create_invitation(
     response_model=InvitationContent,
     response_model_by_alias=False,
 )
-async def check_invitation(
-    invitation_check: InvitationCheck,
-    settings: WebApplicationSettings = Depends(get_settings),
+async def validate_and_decrypt_invitation(
+    invitation_check: _InvitationCheck,
+    settings: ApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
-    """Generates a new invitation link"""
+    """Decrypts the invitation code and returns its content"""
+
     assert username == settings.INVITATIONS_USERNAME  # nosec
 
     try:

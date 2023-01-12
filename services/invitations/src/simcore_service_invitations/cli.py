@@ -12,7 +12,7 @@ from settings_library.utils_cli import create_settings_command
 
 from . import web_server
 from ._meta import PROJECT_NAME, __version__
-from .core.settings import DesktopApplicationSettings, WebApplicationSettings
+from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .invitations import (
     InvalidInvitationCode,
     InvitationContent,
@@ -90,7 +90,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
         else None
     ) or generate_password(length=32)
 
-    settings = WebApplicationSettings(
+    settings = ApplicationSettings(
         INVITATIONS_OSPARC_URL="https://osparc.io",
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=getpass.getuser(),
@@ -125,7 +125,7 @@ def invite(
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
-    settings = DesktopApplicationSettings()
+    settings = MinimalApplicationSettings()
 
     invitation_data = InvitationInputs(
         issuer=issuer,
@@ -146,7 +146,7 @@ def check(ctx: typer.Context, invitation_url: str):
     """Check invitation code and prints invitation"""
 
     assert ctx  # nosec
-    settings = DesktopApplicationSettings()
+    settings = MinimalApplicationSettings()
 
     try:
         invitation: InvitationContent = extract_invitation_content(
@@ -161,7 +161,7 @@ def check(ctx: typer.Context, invitation_url: str):
         err_console.print("[bold red]Invalid code[/bold red]")
 
 
-app.command()(create_settings_command(settings_cls=WebApplicationSettings, logger=log))
+app.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
 
 
 @app.command()
