@@ -45,7 +45,7 @@ class ResetPasswordBody(InputSchema):
 
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 @routes.post("/v0/auth/reset-password", name="auth_reset_password")
-async def reset_password(request: web.Request):
+async def submit_request_to_reset_password(request: web.Request):
     """
         1. confirm user exists
         2. check user status
@@ -132,7 +132,7 @@ class ChangeEmailBody(InputSchema):
 
 @routes.post("/v0/auth/change-email", name="auth_change_email")
 @login_required
-async def change_email(request: web.Request):
+async def submit_request_to_change_email(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
