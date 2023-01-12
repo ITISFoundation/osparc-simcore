@@ -56,7 +56,6 @@ services:
   invitations:
     ports:
       - "8008:8000"
-      - "3013:3000"
 
   storage:
     environment:
