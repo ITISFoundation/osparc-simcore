@@ -14,4 +14,4 @@ logging.basicConfig(level=the_settings.log_level)  # NOSONAR
 logging.root.setLevel(the_settings.log_level)
 
 # SINGLETON FastAPI app
-the_app: FastAPI = create_app()
+the_app: FastAPI = create_app(the_settings)
