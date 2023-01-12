@@ -24,30 +24,30 @@ logger = logging.getLogger(__name__)
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
 
-class _InvitationInputs(InvitationInputs):
+class _ApiInvitationInputs(InvitationInputs):
     class Config:
-        # Same as InvitationInputs but WITHOUT alias
-        fields = {
-            "issuer": {
-                "alias": None,
-            },
-            "guest": {
-                "alias": None,
-            },
-            "trial_account_days": {
-                "alias": None,
-            },
-        }
         schema_extra = {
             "example": {
                 "issuer": "issuerid",
                 "guest": "invitedguest@company.com",
-                "trial_account_days": None,
+                "trial_account_days": 2,
             }
         }
 
 
-class _InvitationContentAndLink(InvitationContent):
+class _ApiInvitationContent(InvitationContent):
+    class Config:
+        schema_extra = {
+            "example": {
+                "issuer": "issuerid",
+                "guest": "invitedguest@company.com",
+                "trial_account_days": 2,
+                "created": "2023-01-11 13:11:47.293595",
+            }
+        }
+
+
+class _InvitationContentAndLink(_ApiInvitationContent):
     invitation_url: HttpUrl = Field(..., description="Invitation link")
 
     class Config:
@@ -78,7 +78,7 @@ router = APIRouter()
     response_model_by_alias=False,
 )
 async def create_invitation(
-    invitation_inputs: _InvitationInputs,
+    invitation_inputs: _ApiInvitationInputs,
     settings: ApplicationSettings = Depends(get_settings),
     username: str = Depends(get_current_username),
 ):
@@ -102,7 +102,7 @@ async def create_invitation(
 
 @router.post(
     "/invitations:extract",
-    response_model=InvitationContent,
+    response_model=_ApiInvitationContent,
     response_model_by_alias=False,
 )
 async def extracts_invitation_from_code(
