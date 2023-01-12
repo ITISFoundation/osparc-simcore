@@ -44,7 +44,7 @@ def get_current_username(
         )
         and _is_valid(
             credentials.password,
-            expected=settings.INVITATIONS_PASSWORD,
+            expected=settings.INVITATIONS_PASSWORD.get_secret_value(),
         )
     ):
         raise HTTPException(
