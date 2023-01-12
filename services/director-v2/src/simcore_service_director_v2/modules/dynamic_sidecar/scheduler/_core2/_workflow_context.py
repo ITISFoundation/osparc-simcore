@@ -50,7 +50,6 @@ class WorkflowContext:
         Stores a value.
         NOTE: the type of the value is deduced the first time this was set.
         """
-        key = f"{key}"
         if ReservedContextKeys.is_reserved(key) and not set_reserved:
             raise NotAllowedContextKeyError(key=key)
 
@@ -71,7 +70,6 @@ class WorkflowContext:
         """
         Loads a value. Raises an error if value is missing.
         """
-        key = f"{key}"
         if not ReservedContextKeys.is_stored_locally(
             key
         ) and not await self._context.has_key(key):
