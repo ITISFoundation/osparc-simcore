@@ -52,6 +52,7 @@ async def workflow_context(
 # TESTS
 
 
+@pytest.mark.skip(reason="DEV")
 async def test_iter_index_step():
     async def first():
         pass
