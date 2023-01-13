@@ -53,6 +53,10 @@ services:
       - "8000"
       - "3010:3000"
 
+  invitations:
+    ports:
+      - "8008:8000"
+
   storage:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}

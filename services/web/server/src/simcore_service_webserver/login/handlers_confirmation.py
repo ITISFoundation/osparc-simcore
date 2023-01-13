@@ -20,7 +20,7 @@ from ..utils_aiohttp import create_redirect_response
 from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
-from ._constants import MSG_PASSWORD_CHANGED
+from ._constants import MSG_PASSWORD_CHANGE_NOT_ALLOWED, MSG_PASSWORD_CHANGED
 from ._models import InputSchema, check_confirm_password_match
 from ._security import login_granted_response
 from .settings import LoginOptions, get_plugin_options
@@ -38,7 +38,7 @@ class _PathParam(BaseModel):
 
 
 @routes.get("/auth/confirmation/{code}", name="auth_confirmation")
-async def email_confirmation(request: web.Request):
+async def validate_confirmation_and_redirect(request: web.Request):
     """Handles email confirmation by checking a code passed as query parameter
 
     Retrieves confirmation key and redirects back to some location front-end
@@ -93,7 +93,7 @@ async def email_confirmation(request: web.Request):
                 # the browser does NOT reloads page
                 #
                 redirect_to_login_url = redirect_to_login_url.with_fragment(
-                    f"reset-password?code={path_params.code}"
+                    f"reset-password?code={path_params.code.get_secret_value()}"
                 )
 
             log.debug(
@@ -180,16 +180,20 @@ class ResetPasswordConfirmation(InputSchema):
 
 
 @routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")
-async def reset_password_allowed(request: web.Request):
-    """Changes password using a token code without being logged in"""
+async def reset_password(request: web.Request):
+    """Changes password using a token code without being logged in
+
+    Code is provided via email by calling first submit_request_to_reset_password
+    """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
+    product: Product = get_current_product(request)
 
     path_params = parse_request_path_parameters_as(_PathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
     confirmation = await validate_confirmation_code(
-        path_params.code.get_secret_value(), db, cfg
+        code=path_params.code.get_secret_value(), db=db, cfg=cfg
     )
 
     if confirmation:
@@ -210,6 +214,8 @@ async def reset_password_allowed(request: web.Request):
         return response
 
     raise web.HTTPUnauthorized(
-        reason="Cannot reset password. Invalid token or user",
+        reason=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(
+            support_email=product.support_email
+        ),
         content_type=MIMETYPE_APPLICATION_JSON,
     )  # 401
