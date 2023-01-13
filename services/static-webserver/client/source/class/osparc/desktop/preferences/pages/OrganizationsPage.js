@@ -213,9 +213,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             const clusterMember = e.getData();
             this.__promoteToMember(clusterMember);
           });
-          item.addListener("demoteToReader", e => {
+          item.addListener("demoteToUser", e => {
             const clusterMember = e.getData();
-            this.__demoteToReader(clusterMember);
+            this.__demoteToUser(clusterMember);
           });
           item.addListener("promoteToManager", e => {
             const orgMember = e.getData();
@@ -452,9 +452,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         return;
       }
 
+      const orgId = this.__currentOrg.getKey();
       const params = {
         url: {
-          "gid": this.__currentOrg.getKey()
+          "gid": orgId
         },
         data: {
           "email": orgMemberEmail
@@ -462,9 +463,29 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadOrgMembers();
+          const store = osparc.store.Store.getInstance();
+          store.getProductEveryone()
+            .then(productEveryone => {
+              if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
+                // demote the new member to user
+                const params2 = {
+                  url: {
+                    "gid": orgId
+                  }
+                };
+                osparc.data.Resources.get("organizationMembers", params2)
+                  .then(respOrgMembers => {
+                    const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
+                    if (newMember) {
+                      this.__demoteToUser(orgMemberEmail);
+                    }
+                  });
+              } else {
+                osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
+                osparc.store.Store.getInstance().reset("organizationMembers");
+                this.__reloadOrgMembers();
+              }
+            });
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
@@ -496,7 +517,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __demoteToReader: function(orgMember) {
+    __demoteToUser: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
       }
@@ -512,7 +533,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })

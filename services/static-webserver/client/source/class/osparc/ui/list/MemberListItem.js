@@ -40,7 +40,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
 
   events: {
     "promoteToMember": "qx.event.type.Data",
-    "demoteToReader": "qx.event.type.Data",
+    "demoteToUser": "qx.event.type.Data",
     "promoteToManager": "qx.event.type.Data",
     "removeMember": "qx.event.type.Data"
   },
@@ -133,7 +133,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
           menu.add(promoteButton);
           const demoteButton = new qx.ui.menu.Button(this.tr("Demote to User"));
           demoteButton.addListener("execute", () => {
-            this.fireDataEvent("demoteToReader", {
+            this.fireDataEvent("demoteToUser", {
               key: this.getKey(),
               name: this.getTitle()
             });
