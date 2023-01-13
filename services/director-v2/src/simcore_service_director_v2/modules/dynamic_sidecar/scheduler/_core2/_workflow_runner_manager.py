@@ -11,7 +11,7 @@ from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
     ActionNotRegisteredException,
     InvalidSerializedContextException,
-    WorkflowAlreadyRunningException,
+    WorkflowAlreadyExistingException,
     WorkflowNotFoundException,
     WorkflowNotInitializedException,
 )
@@ -102,7 +102,7 @@ class WorkflowRunnerManager:
         """initializes a new workflow with a unique name"""
 
         if workflow_name in self._workflow_context:
-            raise WorkflowAlreadyRunningException(workflow_name=workflow_name)
+            raise WorkflowAlreadyExistingException(workflow_name=workflow_name)
         if action_name not in self.workflow:
             raise ActionNotRegisteredException(
                 action_name=action_name, workflow=self.workflow
@@ -144,7 +144,8 @@ class WorkflowRunnerManager:
         if (
             ReservedContextKeys.WORKFLOW_NAME not in serialized_context
             and ReservedContextKeys.WORKFLOW_ACTION_NAME not in serialized_context
-            and serialized_context[ReservedContextKeys.WORKFLOW_NAME] != workflow_name
+            and serialized_context.get(ReservedContextKeys.WORKFLOW_NAME)
+            != workflow_name
         ):
             raise InvalidSerializedContextException(
                 workflow_name=workflow_name, serialized_context=serialized_context

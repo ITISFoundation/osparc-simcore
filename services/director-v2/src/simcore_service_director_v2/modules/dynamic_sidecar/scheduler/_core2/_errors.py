@@ -48,9 +48,9 @@ class BaseWorkflowException(BaseSchedulerException):
     """use as base for all workflow related errors"""
 
 
-class WorkflowAlreadyRunningException(BaseWorkflowException):
-    code = "dynamic_sidecar.scheduler.v2.workflow_already_running"
-    msg_template = "Another workflow named '{workflow_name}' is already running"
+class WorkflowAlreadyExistingException(BaseWorkflowException):
+    code = "dynamic_sidecar.scheduler.v2.workflow_already_exists"
+    msg_template = "Another workflow named '{workflow_name}' already exists"
 
 
 class WorkflowNotFoundException(BaseWorkflowException):

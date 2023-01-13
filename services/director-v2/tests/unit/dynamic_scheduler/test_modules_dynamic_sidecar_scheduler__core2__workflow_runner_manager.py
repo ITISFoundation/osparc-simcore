@@ -3,7 +3,7 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any, Awaitable
+from typing import Any, AsyncIterable, Awaitable
 from unittest.mock import AsyncMock, call
 
 import pytest
@@ -15,7 +15,11 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._conte
     ReservedContextKeys,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._errors import (
+    ActionNotRegisteredException,
+    InvalidSerializedContextException,
+    WorkflowAlreadyExistingException,
     WorkflowNotFoundException,
+    WorkflowNotInitializedException,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._marker import (
     mark_step,
@@ -47,7 +51,92 @@ async def _workflow_runner_manager_lifecycle(
         await workflow_runner_manager.teardown()
 
 
+# FIXTURES
+
+
+@pytest.fixture
+async def simple_workflow_runner_manager(
+    context_interface_factory: Awaitable[ContextInterface],
+) -> AsyncIterable[WorkflowRunnerManager]:
+    workflow = Workflow(
+        Action(name="", steps=[], next_action=None, on_error_action=None)
+    )
+    workflow_runner_manager = WorkflowRunnerManager(
+        context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
+    )
+    async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
+        yield workflow_runner_manager
+
+
 # TESTS
+
+
+async def test_initialize_workflow_runner_exceptions(
+    simple_workflow_runner_manager: WorkflowRunnerManager,
+):
+    await simple_workflow_runner_manager.initialize_workflow_runner(
+        workflow_name="first", action_name=""
+    )
+    with pytest.raises(WorkflowAlreadyExistingException):
+        await simple_workflow_runner_manager.initialize_workflow_runner(
+            workflow_name="first", action_name=""
+        )
+
+    with pytest.raises(ActionNotRegisteredException):
+        await simple_workflow_runner_manager.initialize_workflow_runner(
+            workflow_name="second", action_name="not_registered"
+        )
+
+
+async def test_get_workflow_context_exception(
+    simple_workflow_runner_manager: WorkflowRunnerManager,
+):
+    with pytest.raises(WorkflowNotInitializedException):
+        simple_workflow_runner_manager.get_workflow_context("not_existing_workflow")
+
+
+async def test_start_workflow_runner_exception(
+    simple_workflow_runner_manager: WorkflowRunnerManager,
+):
+    with pytest.raises(WorkflowNotInitializedException):
+        await simple_workflow_runner_manager.start_workflow_runner("first")
+
+
+async def test_resume_workflow_runner_exceptions(
+    simple_workflow_runner_manager: WorkflowRunnerManager,
+):
+    invalid_serialized_context = {}
+
+    with pytest.raises(WorkflowNotInitializedException):
+        await simple_workflow_runner_manager.resume_workflow_runner(
+            "first", invalid_serialized_context
+        )
+
+    await simple_workflow_runner_manager.initialize_workflow_runner(
+        workflow_name="first", action_name=""
+    )
+    with pytest.raises(InvalidSerializedContextException):
+        await simple_workflow_runner_manager.resume_workflow_runner(
+            "first", invalid_serialized_context
+        )
+
+
+async def test_wait_workflow_runner_exception(
+    simple_workflow_runner_manager: WorkflowRunnerManager,
+):
+    with pytest.raises(WorkflowNotFoundException):
+        await simple_workflow_runner_manager.wait_workflow_runner(
+            "not_started_workflow"
+        )
+
+
+async def test_cancel_and_wait_workflow_runner_exception(
+    simple_workflow_runner_manager: WorkflowRunnerManager,
+):
+    with pytest.raises(WorkflowNotFoundException):
+        await simple_workflow_runner_manager.cancel_and_wait_workflow_runner(
+            "not_started_workflow"
+        )
 
 
 async def test_workflow_runner_manager(
