@@ -244,16 +244,18 @@ async def test_resume_workflow_runner_workflow(
         context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(first_workflow_runner_manager):
-
         await first_workflow_runner_manager.initialize_workflow_runner(
             "test", action_name="initial"
         )
+
+        # NOTE: allows the workflow to wait for forever
+        # this is also a way to initialize some data before
+        # starting the workflow_runner
+        # NOTE: after calling `cancel_and_wait_workflow_runner`, `WorkflowRunnerManager`
+        # will no longer keep track of the context of the workflow
         first_context: WorkflowContext = (
             first_workflow_runner_manager.get_workflow_context("test")
         )
-        # NOTE: allows the workflow to wait for forever
-        # this is also a way to initialize some data before starting
-        # the workflow_runner
         await first_context.set("sleep", True)
         await first_workflow_runner_manager.start_workflow_runner("test")
 
@@ -277,15 +279,15 @@ async def test_resume_workflow_runner_workflow(
 
     # resume workflow which rune from step `optionally_long_sleep` and finish
 
-    mock_app = AsyncMock()
-
     second_workflow_runner_manager = WorkflowRunnerManager(
-        context_factory=context_interface_factory, app=mock_app, workflow=workflow
+        context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(second_workflow_runner_manager):
         await second_workflow_runner_manager.initialize_workflow_runner(
             "test", action_name="initial"
         )
+        # NOTE: after calling `wait_workflow_runner`, `WorkflowRunnerManager`
+        # will no longer keep track of the context of the workflow
         second_context: WorkflowContext = (
             second_workflow_runner_manager.get_workflow_context("test")
         )

@@ -66,7 +66,7 @@ class WorkflowRunnerManager:
         self.after_step_hook = after_step_hook
 
         self._workflow_tasks: dict[WorkflowName, Task] = {}
-        self._workflow_contexts: dict[WorkflowName, WorkflowContext] = {}
+        self._workflow_context: dict[WorkflowName, WorkflowContext] = {}
         self._workflow_context_shutdown_tasks: dict[WorkflowName, Task] = {}
 
     def _add_workflow_runner_task(
@@ -78,7 +78,7 @@ class WorkflowRunnerManager:
 
         def workflow_runner_complete(_: Task) -> None:
             self._workflow_tasks.pop(workflow_name, None)
-            workflow_context: Optional[WorkflowContext] = self._workflow_contexts.pop(
+            workflow_context: Optional[WorkflowContext] = self._workflow_context.pop(
                 workflow_name, None
             )
             if workflow_context:
@@ -101,14 +101,14 @@ class WorkflowRunnerManager:
     ) -> None:
         """initializes a new workflow with a unique name"""
 
-        if workflow_name in self._workflow_contexts:
+        if workflow_name in self._workflow_context:
             raise WorkflowAlreadyRunningException(workflow_name=workflow_name)
         if action_name not in self.workflow:
             raise ActionNotRegisteredException(
                 action_name=action_name, workflow=self.workflow
             )
 
-        self._workflow_contexts[workflow_name] = workflow_context = WorkflowContext(
+        self._workflow_context[workflow_name] = workflow_context = WorkflowContext(
             context=await self.context_factory(),
             app=self.app,
             workflow_name=workflow_name,
@@ -117,19 +117,19 @@ class WorkflowRunnerManager:
         await workflow_context.setup()
 
     def get_workflow_context(self, workflow_name: WorkflowName) -> WorkflowContext:
-        if workflow_name not in self._workflow_contexts:
+        if workflow_name not in self._workflow_context:
             raise WorkflowNotInitializedException(workflow_name=workflow_name)
 
-        return self._workflow_contexts[workflow_name]
+        return self._workflow_context[workflow_name]
 
     async def start_workflow_runner(self, workflow_name: WorkflowName) -> None:
         """starts an initialized workflow"""
-        if workflow_name not in self._workflow_contexts:
+        if workflow_name not in self._workflow_context:
             raise WorkflowNotInitializedException(workflow_name=workflow_name)
 
         workflow_runner_awaitable: Awaitable = workflow_runner(
             workflow=self.workflow,
-            workflow_context=self._workflow_contexts[workflow_name],
+            workflow_context=self._workflow_context[workflow_name],
             before_step_hook=self.before_step_hook,
             after_step_hook=self.after_step_hook,
         )
@@ -139,7 +139,7 @@ class WorkflowRunnerManager:
     async def resume_workflow_runner(
         self, workflow_name: WorkflowName, serialized_context: dict[str, Any]
     ) -> None:
-        if workflow_name not in self._workflow_contexts:
+        if workflow_name not in self._workflow_context:
             raise WorkflowNotInitializedException(workflow_name=workflow_name)
         if (
             ReservedContextKeys.WORKFLOW_NAME not in serialized_context
@@ -150,7 +150,7 @@ class WorkflowRunnerManager:
                 workflow_name=workflow_name, serialized_context=serialized_context
             )
 
-        await self._workflow_contexts[workflow_name].import_from_serialized_context(
+        await self._workflow_context[workflow_name].import_from_serialized_context(
             serialized_context
         )
         await self.start_workflow_runner(workflow_name)
@@ -175,8 +175,8 @@ class WorkflowRunnerManager:
 
     async def teardown(self) -> None:
         # NOTE: content can change while iterating
-        for key in set(self._workflow_contexts.keys()):
-            workflow_context: Optional[WorkflowContext] = self._workflow_contexts.get(
+        for key in set(self._workflow_context.keys()):
+            workflow_context: Optional[WorkflowContext] = self._workflow_context.get(
                 key, None
             )
             if workflow_context:
