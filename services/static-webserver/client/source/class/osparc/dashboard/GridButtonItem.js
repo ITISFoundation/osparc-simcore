@@ -179,7 +179,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     // overridden
     _applyLastChangeDate: function(value, old) {
-      if (value && this.isResourceType("study")) {
+      if (value && (this.isResourceType("study") || this.isResourceType("template"))) {
         const label = this.getChildControl("subtitle-text");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     // overridden
     _applyOwner: function(value, old) {
-      if (this.isResourceType("service") || this.isResourceType("template")) {
+      if (this.isResourceType("service")) {
         const label = this.getChildControl("subtitle-text");
         if (value === osparc.auth.Data.getInstance().getEmail()) {
           label.setValue(this.tr("me"));

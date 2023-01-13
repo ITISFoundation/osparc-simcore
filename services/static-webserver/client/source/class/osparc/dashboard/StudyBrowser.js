@@ -661,9 +661,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __newStudyFromServiceBtnClicked: function(button, key, version) {
       button.setValue(false);
-      console.log(key, version);
       this._showLoadingPage(this.tr("Creating Study"));
-      osparc.utils.Study.createStudyFromService(key, version)
+      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
         .then(studyId => {
           this._hideLoadingPage();
           this.__startStudyById(studyId);
