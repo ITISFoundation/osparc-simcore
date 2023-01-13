@@ -477,7 +477,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
                   .then(respOrgMembers => {
                     const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
                     if (newMember) {
-                      this.__demoteToUser(orgMemberEmail);
+                      this.__demoteToUser(newMember);
                     }
                   });
               } else {
@@ -501,7 +501,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["key"]
+          "uid": orgMember["id"]
         },
         data: this.self().getReadAccess()
       };
@@ -525,7 +525,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["key"]
+          "uid": orgMember["id"]
         },
         data: {
           "accessRights": this.self().getNoReadAccess()
@@ -551,7 +551,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["key"]
+          "uid": orgMember["id"]
         },
         data: this.self().getWriteAccess()
       };
@@ -575,7 +575,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["key"]
+          "uid": orgMember["id"]
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "delete", params)
