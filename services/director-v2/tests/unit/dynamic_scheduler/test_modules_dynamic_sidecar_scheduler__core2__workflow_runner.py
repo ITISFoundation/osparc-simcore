@@ -33,7 +33,23 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core2._workf
 
 logger = logging.getLogger(__name__)
 
-# UTILS
+
+# FIXTURES
+
+
+@pytest.fixture
+async def workflow_context(
+    context: ContextInterface,
+) -> WorkflowContext:
+    workflow_context = WorkflowContext(
+        context=context, app=AsyncMock(), workflow_name="unique", action_name="first"
+    )
+    await workflow_context.setup()
+    yield workflow_context
+    await workflow_context.teardown()
+
+
+# TESTS
 
 
 async def test_iter_index_step():
@@ -69,21 +85,6 @@ async def test_iter_index_step():
         zero_element_list = list(_iter_index_step(awaitables, index=out_of_bound_index))
         assert zero_element_list == step_sequence[out_of_bound_index:]
         assert len(zero_element_list) == 0
-
-
-# FIXTURES
-
-
-@pytest.fixture
-async def workflow_context(
-    context: ContextInterface,
-) -> WorkflowContext:
-    workflow_context = WorkflowContext(
-        context=context, app=AsyncMock(), workflow_name="unique", action_name="first"
-    )
-    await workflow_context.setup()
-    yield workflow_context
-    await workflow_context.teardown()
 
 
 # TESTS
