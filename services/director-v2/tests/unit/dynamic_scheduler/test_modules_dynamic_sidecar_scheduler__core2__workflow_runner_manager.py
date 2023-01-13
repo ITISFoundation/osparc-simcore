@@ -4,7 +4,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Awaitable
 from unittest.mock import AsyncMock, call
 
 import pytest
@@ -161,7 +161,9 @@ async def test_workflow_runner(
     assert "hook_after action='first' step='initial'" in caplog_info_level.messages
 
 
-async def test_workflow_runner_manager(context: ContextInterface):
+async def test_workflow_runner_manager(
+    context_interface_factory: Awaitable[ContextInterface],
+):
     @mark_step
     async def initial_state() -> dict[str, Any]:
         print("initial state")
@@ -201,13 +203,14 @@ async def test_workflow_runner_manager(context: ContextInterface):
     workflow = Workflow(FIRST_ACTION, SECOND_ACTION)
 
     workflow_runner_manager = WorkflowRunnerManager(
-        context=context, app=AsyncMock(), workflow=workflow
+        context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
         # ok workflow_runner
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name="start_first", action_name="first"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name="start_first")
         assert "start_first" in workflow_runner_manager._workflow_context
         assert "start_first" in workflow_runner_manager._workflow_tasks
         await workflow_runner_manager.wait_workflow_runner("start_first")
@@ -215,9 +218,10 @@ async def test_workflow_runner_manager(context: ContextInterface):
         assert "start_first" not in workflow_runner_manager._workflow_tasks
 
         # cancel workflow_runner
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name="start_first", action_name="first"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name="start_first")
         await workflow_runner_manager.cancel_and_wait_workflow_runner("start_first")
         assert "start_first" not in workflow_runner_manager._workflow_context
         assert "start_first" not in workflow_runner_manager._workflow_tasks
@@ -226,7 +230,7 @@ async def test_workflow_runner_manager(context: ContextInterface):
 
 
 async def test_workflow_runner_error_handling(
-    context: ContextInterface,
+    context_interface_factory: Awaitable[ContextInterface],
 ):
     ERROR_MARKER_IN_TB = "__this message must be present in the traceback__"
 
@@ -287,28 +291,30 @@ async def test_workflow_runner_error_handling(
     workflow_name = "test_workflow_name"
     # CASE 1
     workflow_runner_manager = WorkflowRunnerManager(
-        context=context, app=AsyncMock(), workflow=workflow
+        context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name=workflow_name, action_name="case_1_rasing_error"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name=workflow_name)
         await workflow_runner_manager.wait_workflow_runner(workflow_name)
 
     # CASE 2
     workflow_runner_manager = WorkflowRunnerManager(
-        context=context, app=AsyncMock(), workflow=workflow
+        context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(workflow_runner_manager):
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name=workflow_name, action_name="case_2_raising_error"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name=workflow_name)
         with pytest.raises(RuntimeError):
             await workflow_runner_manager.wait_workflow_runner(workflow_name)
 
 
 async def test_resume_workflow_runner_workflow(
-    context_io_interface_type: type[ContextInterface],
+    context_interface_factory: Awaitable[ContextInterface],
 ):
     call_tracker_1 = AsyncMock()
     call_tracker_2 = AsyncMock()
@@ -345,27 +351,33 @@ async def test_resume_workflow_runner_workflow(
     )
 
     # start workflow which will wait forever on step `optionally_long_sleep`
-    first_context = context_io_interface_type()
-    second_workflow_runner_manager = WorkflowRunnerManager(
-        context=first_context, app=AsyncMock(), workflow=workflow
+    first_workflow_runner_manager = WorkflowRunnerManager(
+        context_factory=context_interface_factory, app=AsyncMock(), workflow=workflow
     )
-    async with _workflow_runner_manager_lifecycle(second_workflow_runner_manager):
-        # NOTE: allows the workflow to wait for forever
-        await first_context.save("sleep", True)
-        await second_workflow_runner_manager.start_workflow_runner(
+    async with _workflow_runner_manager_lifecycle(first_workflow_runner_manager):
+
+        await first_workflow_runner_manager.initialize_workflow_runner(
             "test", action_name="initial"
         )
+        first_context: WorkflowContext = (
+            first_workflow_runner_manager.get_workflow_context("test")
+        )
+        # NOTE: allows the workflow to wait for forever
+        # this is also a way to initialize some data before starting
+        # the workflow_runner
+        await first_context.set("sleep", True)
+        await first_workflow_runner_manager.start_workflow_runner("test")
 
         WAIT_TO_REACH_SECOND_STEP = 0.1
         await asyncio.sleep(WAIT_TO_REACH_SECOND_STEP)
-        await second_workflow_runner_manager.cancel_and_wait_workflow_runner("test")
+        await first_workflow_runner_manager.cancel_and_wait_workflow_runner("test")
 
     # ensure state as expected, stopped while handling `optionally_long_sleep``
     assert call_tracker_1.call_args_list == [
         call(first_step),
         call(optionally_long_sleep),
     ]
-    serialized_first_context_data = await first_context.to_dict()
+    serialized_first_context_data = await first_context.get_serialized_context()
     assert serialized_first_context_data == {
         "sleep": True,
         ReservedContextKeys.WORKFLOW_ACTION_NAME: "initial",
@@ -375,24 +387,27 @@ async def test_resume_workflow_runner_workflow(
     }
 
     # resume workflow which rune from step `optionally_long_sleep` and finish
-    second_context = await context_io_interface_type.from_dict(
-        serialized_first_context_data
-    )
+
     mock_app = AsyncMock()
 
     second_workflow_runner_manager = WorkflowRunnerManager(
-        context=second_context, app=mock_app, workflow=workflow
+        context_factory=context_interface_factory, app=mock_app, workflow=workflow
     )
     async with _workflow_runner_manager_lifecycle(second_workflow_runner_manager):
-        # NOTE: allows the workflow to finish
-        await second_context.save("sleep", False)
-        await second_workflow_runner_manager.resume_workflow_runner(
-            workflow_context=await WorkflowContext.from_context(
-                context=second_context, app=mock_app
-            )
+        await second_workflow_runner_manager.initialize_workflow_runner(
+            "test", action_name="initial"
+        )
+        second_context: WorkflowContext = (
+            second_workflow_runner_manager.get_workflow_context("test")
         )
 
-        workflow_name = await second_context.load(ReservedContextKeys.WORKFLOW_NAME)
+        # NOTE: allows the workflow to finish, normally you will nto do this
+        serialized_first_context_data["sleep"] = False
+        workflow_name = serialized_first_context_data[ReservedContextKeys.WORKFLOW_NAME]
+        await second_workflow_runner_manager.resume_workflow_runner(
+            workflow_name=workflow_name,
+            serialized_context=serialized_first_context_data,
+        )
         await second_workflow_runner_manager.wait_workflow_runner(workflow_name)
 
     # ensure state as expected, finished on `third_step`
@@ -400,7 +415,7 @@ async def test_resume_workflow_runner_workflow(
         call(optionally_long_sleep),
         call(third_step),
     ]
-    new_context_data = await second_context.to_dict()
+    new_context_data = await second_context.get_serialized_context()
     assert new_context_data == {
         "sleep": False,
         ReservedContextKeys.WORKFLOW_ACTION_NAME: "initial",

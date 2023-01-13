@@ -26,11 +26,8 @@ class InMemoryContext(ContextInterface):
     async def to_dict(self) -> dict[str, Any]:
         return deepcopy(self._context)
 
-    @classmethod
-    async def from_dict(cls, incoming: dict[str, Any]) -> "InMemoryContext":
-        in_memory_context = cls()
-        in_memory_context._context.update(incoming)
-        return in_memory_context
+    async def from_dict(self, incoming: dict[str, Any]) -> None:
+        self._context.update(incoming)
 
     async def setup(self) -> None:
         """nothing to do here"""

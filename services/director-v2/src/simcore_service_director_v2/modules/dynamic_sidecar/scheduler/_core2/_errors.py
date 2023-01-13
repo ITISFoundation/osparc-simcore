@@ -58,6 +58,19 @@ class WorkflowNotFoundException(BaseWorkflowException):
     msg_template = "Workflow '{workflow_name}' not found"
 
 
+class WorkflowNotInitializedException(BaseWorkflowException):
+    code = "dynamic_sidecar.scheduler.v2.workflow_not_initialized_found"
+    msg_template = "Workflow '{workflow_name}' has to be initialized before using this."
+
+
+class InvalidSerializedContextException(BaseWorkflowException):
+    code = "dynamic_sidecar.scheduler.v2.invalid_serialized_context_for_workflow"
+    msg_template = (
+        "Trying to resume workflow '{workflow_name}' from an invalid "
+        "context '{serialized_context}'"
+    )
+
+
 class BaseActionException(BaseSchedulerException):
     """use as base for all action related errors"""
 

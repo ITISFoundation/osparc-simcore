@@ -3,15 +3,17 @@ import logging
 from asyncio import Task
 from contextlib import suppress
 from functools import partial
-from typing import Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Optional
 
 from fastapi import FastAPI
 
 from ._context_base import ContextInterface, ReservedContextKeys
 from ._errors import (
     ActionNotRegisteredException,
+    InvalidSerializedContextException,
     WorkflowAlreadyRunningException,
     WorkflowNotFoundException,
+    WorkflowNotInitializedException,
 )
 from ._models import ActionName, StepName, WorkflowName
 from ._workflow import Workflow
@@ -46,7 +48,7 @@ class WorkflowRunnerManager:
 
     def __init__(
         self,
-        context: ContextInterface,
+        context_factory: Awaitable[ContextInterface],
         app: FastAPI,
         workflow: Workflow,
         *,
@@ -57,7 +59,7 @@ class WorkflowRunnerManager:
             Callable[[ActionName, StepName], Awaitable[None]]
         ] = None,
     ) -> None:
-        self.context = context
+        self.context_factory = context_factory
         self.app = app
         self.workflow = workflow
         self.before_step_hook = before_step_hook
@@ -94,10 +96,10 @@ class WorkflowRunnerManager:
         # remove when task is done
         workflow_task.add_done_callback(workflow_runner_complete)
 
-    async def start_workflow_runner(
+    async def initialize_workflow_runner(
         self, workflow_name: WorkflowName, action_name: ActionName
     ) -> None:
-        """starts a new workflow with a unique name"""
+        """initializes a new workflow with a unique name"""
 
         if workflow_name in self._workflow_context:
             raise WorkflowAlreadyRunningException(workflow_name=workflow_name)
@@ -107,36 +109,51 @@ class WorkflowRunnerManager:
             )
 
         self._workflow_context[workflow_name] = workflow_context = WorkflowContext(
-            context=self.context,
+            context=await self.context_factory(),
             app=self.app,
             workflow_name=workflow_name,
             action_name=action_name,
         )
         await workflow_context.setup()
 
+    def get_workflow_context(self, workflow_name: WorkflowName) -> WorkflowContext:
+        if workflow_name not in self._workflow_context:
+            raise WorkflowNotInitializedException(workflow_name=workflow_name)
+
+        return self._workflow_context[workflow_name]
+
+    async def start_workflow_runner(self, workflow_name: WorkflowName) -> None:
+        """starts an initialized workflow"""
+        if workflow_name not in self._workflow_context:
+            raise WorkflowNotInitializedException(workflow_name=workflow_name)
+
         workflow_runner_awaitable: Awaitable = workflow_runner(
             workflow=self.workflow,
-            workflow_context=workflow_context,
+            workflow_context=self._workflow_context[workflow_name],
             before_step_hook=self.before_step_hook,
             after_step_hook=self.after_step_hook,
         )
 
         self._add_workflow_runner_task(workflow_runner_awaitable, workflow_name)
 
-    async def resume_workflow_runner(self, workflow_context: WorkflowContext) -> None:
-        # NOTE: expecting `await workflow_context.start()` to have already been ran
+    async def resume_workflow_runner(
+        self, workflow_name: WorkflowName, serialized_context: dict[str, Any]
+    ) -> None:
+        if workflow_name not in self._workflow_context:
+            raise WorkflowNotInitializedException(workflow_name=workflow_name)
+        if (
+            ReservedContextKeys.WORKFLOW_NAME not in serialized_context
+            and ReservedContextKeys.WORKFLOW_ACTION_NAME not in serialized_context
+            and serialized_context[ReservedContextKeys.WORKFLOW_NAME] != workflow_name
+        ):
+            raise InvalidSerializedContextException(
+                workflow_name=workflow_name, serialized_context=serialized_context
+            )
 
-        workflow_runner_awaitable: Awaitable = workflow_runner(
-            workflow=self.workflow,
-            workflow_context=workflow_context,
-            before_step_hook=self.before_step_hook,
-            after_step_hook=self.after_step_hook,
+        await self._workflow_context[workflow_name].import_from_serialized_context(
+            serialized_context
         )
-
-        workflow_name: WorkflowName = await workflow_context.get(
-            ReservedContextKeys.WORKFLOW_NAME, WorkflowName
-        )
-        self._add_workflow_runner_task(workflow_runner_awaitable, workflow_name)
+        await self.start_workflow_runner(workflow_name)
 
     async def wait_workflow_runner(self, workflow_name: WorkflowName) -> None:
         """waits for action workflow task to finish"""
@@ -172,3 +189,6 @@ class WorkflowRunnerManager:
 
     async def setup(self) -> None:
         """no code required"""
+
+
+# TODO: the context managemt is worng each workflow has its own context, not a shared one like it is now!

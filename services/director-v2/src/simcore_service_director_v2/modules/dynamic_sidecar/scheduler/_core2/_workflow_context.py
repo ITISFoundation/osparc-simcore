@@ -93,18 +93,10 @@ class WorkflowContext:
     async def get_serialized_context(self) -> dict[str, Any]:
         return await self._context.to_dict()
 
-    @classmethod
-    async def from_context(
-        cls, context: ContextInterface, app: FastAPI
-    ) -> "WorkflowContext":
-        workflow_context = cls(
-            context=context,
-            app=app,
-            workflow_name=await context.load(ReservedContextKeys.WORKFLOW_NAME),
-            action_name=await context.load(ReservedContextKeys.WORKFLOW_ACTION_NAME),
-        )
-        await workflow_context.setup()
-        return workflow_context
+    async def import_from_serialized_context(
+        self, serialized_context: dict[str, Any]
+    ) -> None:
+        await self._context.from_dict(serialized_context)
 
     async def setup(self) -> None:
         # adding app to context
