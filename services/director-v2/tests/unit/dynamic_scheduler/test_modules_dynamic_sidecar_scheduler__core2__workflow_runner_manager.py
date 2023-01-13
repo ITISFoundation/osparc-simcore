@@ -401,8 +401,11 @@ async def test_resume_workflow_runner_workflow(
             second_workflow_runner_manager.get_workflow_context("test")
         )
 
-        # NOTE: allows the workflow to finish, normally you will nto do this
+        # NOTE: allows the workflow to finish, normally the incoming
+        # serialized_context would not be touched,
+        # this is just required for the test
         serialized_first_context_data["sleep"] = False
+
         workflow_name = serialized_first_context_data[ReservedContextKeys.WORKFLOW_NAME]
         await second_workflow_runner_manager.resume_workflow_runner(
             workflow_name=workflow_name,
