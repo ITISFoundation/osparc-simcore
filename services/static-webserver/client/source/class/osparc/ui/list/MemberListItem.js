@@ -83,7 +83,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       } else if (value.getRead()) {
         subtitle.setValue(this.tr("Member"));
       } else {
-        subtitle.setValue(this.tr("No Read access"));
+        subtitle.setValue(this.tr("User: no Read access"));
       }
 
       const menu = this.__getOptionsMenu();
