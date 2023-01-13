@@ -501,7 +501,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["id"]
+          "uid": orgMember["key"]
         },
         data: this.self().getReadAccess()
       };
@@ -525,7 +525,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["id"]
+          "uid": "id" in orgMember ? orgMember["id"] : orgMember["key"]
         },
         data: {
           "accessRights": this.self().getNoReadAccess()
@@ -575,7 +575,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const params = {
         url: {
           "gid": this.__currentOrg.getKey(),
-          "uid": orgMember["id"]
+          "uid": orgMember["key"]
         }
       };
       osparc.data.Resources.fetch("organizationMembers", "delete", params)
