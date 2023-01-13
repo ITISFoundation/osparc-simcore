@@ -47,21 +47,6 @@ async def _workflow_runner_manager_lifecycle(
         await workflow_runner_manager.teardown()
 
 
-# FIXTURES
-
-
-@pytest.fixture
-async def workflow_context(
-    context: ContextInterface,
-) -> WorkflowContext:
-    workflow_context = WorkflowContext(
-        context=context, app=AsyncMock(), workflow_name="unique", action_name="first"
-    )
-    await workflow_context.setup()
-    yield workflow_context
-    await workflow_context.teardown()
-
-
 # TESTS
 
 
