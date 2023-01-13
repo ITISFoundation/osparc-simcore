@@ -477,7 +477,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
                   .then(respOrgMembers => {
                     const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
                     if (newMember) {
-                      this.__demoteToUser(newMember);
+                      this.__demoteToUser(newMember, false);
                     }
                   });
               } else {
@@ -517,7 +517,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
-    __demoteToUser: function(orgMember) {
+    __demoteToUser: function(orgMember, showMsg = true) {
       if (this.__currentOrg === null) {
         return;
       }
@@ -533,7 +533,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted"));
+          if (showMsg) {
+            osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted"));
+          }
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
