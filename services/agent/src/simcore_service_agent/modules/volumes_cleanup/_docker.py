@@ -18,10 +18,10 @@ async def get_dyv_volumes(docker: Docker, target_swarm_stack_name: str) -> list[
     dyv_volumes: deque[dict] = deque()
     volumes = await docker.volumes.list()
     for volume in volumes["Volumes"]:
+        volume_labels = volume.get("Labels", {}) or {}
         if (
             volume["Name"].startswith(f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_")
-            and volume.get("Labels", {}).get("swarm_stack_name")
-            == target_swarm_stack_name
+            and volume_labels.get("swarm_stack_name") == target_swarm_stack_name
         ):
             dyv_volumes.append(volume)
     return list(dyv_volumes)
