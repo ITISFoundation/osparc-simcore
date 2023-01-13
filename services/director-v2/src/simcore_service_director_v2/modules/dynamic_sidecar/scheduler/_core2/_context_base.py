@@ -44,7 +44,7 @@ class _ContextIOInterface(ABC):
         """returns the context of a store as a dictionary"""
 
     @abstractmethod
-    async def from_dict(self, incoming: dict[str, Any]) -> None:
+    async def update(self, incoming: dict[str, Any]) -> None:
         """stores data from incoming deserialized data"""
 
 

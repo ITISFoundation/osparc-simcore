@@ -96,7 +96,7 @@ class WorkflowContext:
     async def import_from_serialized_context(
         self, serialized_context: dict[str, Any]
     ) -> None:
-        await self._context.from_dict(serialized_context)
+        await self._context.update(serialized_context)
 
     async def setup(self) -> None:
         # adding app to context
