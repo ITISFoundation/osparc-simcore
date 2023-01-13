@@ -21,6 +21,10 @@ MSG_OFTEN_RESET_PASSWORD: Final[str] = (
     "You can not request of restoring your password so often. Please, use"
     " the link we sent you recently"
 )
+MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = (
+    "Cannot reset password: permissions were expired or were removed"
+    "Please retry and if the problem persist contact {support_email}"
+)
 MSG_PASSWORD_CHANGED: Final[str] = "Your password is changed"
 MSG_PASSWORD_MISMATCH: Final[str] = "Password and confirmation do not match"
 MSG_PHONE_MISSING: Final[str] = "No phone was registered for this user"

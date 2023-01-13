@@ -25,6 +25,8 @@ async def validate_confirmation_code(
     """
     Returns None if validation fails
     """
+    assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
+
     confirmation: Optional[ConfirmationTokenDict] = await db.get_confirmation(
         {"code": code}
     )
