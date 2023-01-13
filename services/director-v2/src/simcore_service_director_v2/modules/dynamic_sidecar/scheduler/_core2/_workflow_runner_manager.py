@@ -189,6 +189,3 @@ class WorkflowRunnerManager:
 
     async def setup(self) -> None:
         """no code required"""
-
-
-# TODO: the context managemt is worng each workflow has its own context, not a shared one like it is now!
