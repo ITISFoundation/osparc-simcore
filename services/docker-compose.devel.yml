@@ -24,6 +24,15 @@ services:
       - ./autoscaling:/devel/services/autoscaling
       - ../packages:/devel/packages
 
+  invitations:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - INVITATIONS_LOGLEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./invitations:/devel/services/invitations
+      - ../packages:/devel/packages
+
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
