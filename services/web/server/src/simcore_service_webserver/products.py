@@ -27,7 +27,7 @@ from .products_events import (
     setup_product_templates,
 )
 from .products_middlewares import discover_product_middleware
-from .products_model import Product
+from .products_model import Product, ProductName
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def get_product_name(request: web.Request) -> str:
 
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
-    product_name = get_product_name(request)
+    product_name: ProductName = get_product_name(request)
     return request.app[APP_PRODUCTS_KEY][product_name]
 
 
@@ -85,12 +85,16 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
             template_dir = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
             template_path = template_dir / template_name
             if not template_path.exists():
-                # cached
+                # cache
+                repo = ProductRepository(request)
+                content = await repo.get_template_content(template_name)
+                if not content:
+                    raise ValueError(f"Missing template {template_name} for product")
                 try:
-                    repo = ProductRepository(request)
                     async with aiofiles.open(template_path, "wt") as fh:
-                        await fh.write(await repo.get_template_content(template_name))
+                        await fh.write(content)
                 except Exception:
+                    # fails to write
                     if template_path.exists():
                         template_path.unlink()
                     raise
@@ -117,7 +121,8 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
 __all__: tuple[str, ...] = (
     "get_current_product",
     "get_product_name",
-    "Product",
-    "setup_products",
     "get_product_template_path",
+    "Product",
+    "ProductName",
+    "setup_products",
 )
