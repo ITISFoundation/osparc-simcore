@@ -28,4 +28,4 @@ def generate_passcode(number_of_digits: int = MIN_PASSCODE_LENGTH) -> str:
     """
     number_of_digits = max(number_of_digits, MIN_PASSCODE_LENGTH)
     passcode = secrets.randbelow(10**number_of_digits)
-    return f"{passcode}".zfill(passcode)
+    return f"{passcode}".zfill(number_of_digits)
