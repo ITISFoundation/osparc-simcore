@@ -75,7 +75,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     """Resolves login settings by composing app and product configurations
     for the login plugin. Note that product settings override app settings.
     """
-    settings: LoginSettings = get_plugin_settings(app)
+    app_login_settings: LoginSettings = get_plugin_settings(app)
 
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
     errors = {}
@@ -84,7 +84,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
             login_settings_per_product[
                 product.name
             ] = LoginSettingsForProduct.create_from_merge(
-                app_login_settings=settings,
+                app_login_settings=app_login_settings,
                 product_login_settings=product.login_settings,
             )
         except ValidationError as err:

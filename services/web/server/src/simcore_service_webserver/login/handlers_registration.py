@@ -250,8 +250,11 @@ async def register_phone(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
-        code = await create_2fa_code(request.app, registration.email)
-
+        code = await create_2fa_code(
+            app=request.app,
+            user_email=registration.email,
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
         await send_sms_code(
             phone_number=registration.phone,
             code=code,

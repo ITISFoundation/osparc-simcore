@@ -130,7 +130,11 @@ async def login(request: web.Request):
     assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
 
     try:
-        code = await create_2fa_code(app=request.app, user_email=user["email"])
+        code = await create_2fa_code(
+            app=request.app,
+            user_email=user["email"],
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
 
         await send_sms_code(
             phone_number=user["phone"],

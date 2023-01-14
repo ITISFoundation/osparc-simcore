@@ -105,8 +105,17 @@ async def resend_2fa_code(request: web.Request):
         )
 
     with handling_send_errors(user):
-        # produces
-        code = await create_2fa_code(request.app, user["email"])
+        # guaranteed by LoginSettingsForProduct
+        assert settings.LOGIN_2FA_REQUIRED  # nosec
+        assert settings.LOGIN_TWILIO  # nosec
+        assert product.twilio_messaging_sid  # nosec
+
+        # creates and stores code
+        code = await create_2fa_code(
+            request.app,
+            user_email=user["email"],
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
 
         # sends via SMS
         if resend_2fa_.via == "SMS":

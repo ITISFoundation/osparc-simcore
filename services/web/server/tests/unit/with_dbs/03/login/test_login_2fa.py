@@ -79,7 +79,8 @@ async def test_2fa_code_operations(client: TestClient):
 
     # set/get/delete
     email = "foo@bar.com"
-    code = await create_2fa_code(client.app, email)
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+
     assert await get_2fa_code(client.app, email) == code
     await delete_2fa_code(client.app, email)
 
