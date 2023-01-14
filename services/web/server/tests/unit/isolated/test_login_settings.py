@@ -105,7 +105,7 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
 ):
     # cannot enable 2fa w/o email confirmation
     plugin_settings = LoginSettings.create_from_envs()
-    product_settings = ProductLoginSettingsDict(two_factor_enabled=True)
+    product_settings = ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True)
 
     with pytest.raises(ValidationError) as exc_info:
         LoginSettingsForProduct.create_from_composition(
