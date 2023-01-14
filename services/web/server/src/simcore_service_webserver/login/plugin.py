@@ -6,7 +6,7 @@ from aiohttp import web
 from pydantic import ValidationError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import APP_OPENAPI_SPECS_KEY, INDEX_RESOURCE_NAME
+from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY, INDEX_RESOURCE_NAME
 from ..db import setup_db
 from ..db_settings import PostgresSettings
 from ..db_settings import get_plugin_settings as get_db_plugin_settings
@@ -23,7 +23,6 @@ from .settings import (
     LoginOptions,
     LoginSettings,
     LoginSettingsForProduct,
-    get_plugin_settings,
 )
 from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 
@@ -75,15 +74,19 @@ async def _resolve_login_settings_per_product(app: web.Application):
     """Resolves login settings by composing app and product configurations
     for the login plugin. Note that product settings override app settings.
     """
-    app_login_settings: LoginSettings = get_plugin_settings(app)
+    # app plugin settings
+    app_login_settings: LoginSettings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
+    assert app_login_settings, "setup_settings not called?"  # nosec
+    assert isinstance(app_login_settings, LoginSettings)  # nosec
 
+    # compose app and product settings
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
     errors = {}
     for product in list_products(app):
         try:
             login_settings_per_product[
                 product.name
-            ] = LoginSettingsForProduct.create_from_merge(
+            ] = LoginSettingsForProduct.create_from_composition(
                 app_login_settings=app_login_settings,
                 product_login_settings=product.login_settings,
             )
@@ -93,6 +96,8 @@ async def _resolve_login_settings_per_product(app: web.Application):
     if errors:
         msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
         raise ValueError(f"Invalid product.login_settings:\n{msg}")
+
+    # store in app
     app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
 
 

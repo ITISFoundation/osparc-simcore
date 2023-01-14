@@ -10,7 +10,6 @@ from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
-from .._constants import APP_SETTINGS_KEY
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 
 _DAYS: Final[float] = 1.0  # in days
@@ -67,7 +66,7 @@ class LoginSettingsForProduct(LoginSettings):
     )
 
     @classmethod
-    def create_from_merge(
+    def create_from_composition(
         cls,
         app_login_settings: LoginSettings,
         product_login_settings: ProductLoginSettingsDict,
@@ -133,17 +132,10 @@ class LoginOptions(BaseModel):
         return timedelta(days=value)
 
 
-def get_plugin_settings(app: web.Application) -> LoginSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
-    assert settings, "setup_settings not called?"  # nosec
-    assert isinstance(settings, LoginSettings)  # nosec
-    return settings
-
-
-def get_plugin_settings_for_product(
+def get_plugin_settings(
     app: web.Application, product_name: str
 ) -> LoginSettingsForProduct:
-    """When a product is defined, these are the settings of a"""
+    """login plugin's settings are customized per product"""
     settings = app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY][product_name]
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, LoginSettingsForProduct)  # nosec

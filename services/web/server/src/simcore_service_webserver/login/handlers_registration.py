@@ -31,7 +31,7 @@ from .settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,
-    get_plugin_settings_for_product,
+    get_plugin_settings,
 )
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
@@ -89,7 +89,7 @@ async def register(request: web.Request):
     An email with a link to 'email_confirmation' is sent to complete registration
     """
     product: Product = get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings_for_product(
+    settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -223,7 +223,7 @@ async def register_phone(request: web.Request):
     - registration is completed requesting to 'phone_confirmation' route with the code received
     """
     product: Product = get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings_for_product(
+    settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)

@@ -108,7 +108,7 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
     product_settings = ProductLoginSettingsDict(two_factor_enabled=True)
 
     with pytest.raises(ValidationError) as exc_info:
-        LoginSettingsForProduct.create_from_merge(
+        LoginSettingsForProduct.create_from_composition(
             app_login_settings=plugin_settings,
             product_login_settings=product_settings,
         )

@@ -27,7 +27,7 @@ from .settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,
-    get_plugin_settings_for_product,
+    get_plugin_settings,
 )
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_response
@@ -139,7 +139,7 @@ class PhoneConfirmationBody(InputSchema):
 @routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
     product: Product = get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings_for_product(
+    settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
 

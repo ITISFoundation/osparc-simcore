@@ -35,7 +35,7 @@ from ._constants import (
 from ._models import InputSchema
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
-from .settings import LoginSettingsForProduct, get_plugin_settings_for_product
+from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
     ACTIVE,
@@ -75,7 +75,7 @@ async def login(request: web.Request):
     If 2FA is enabled, then the login continues with a second request to login_2fa
     """
     product: Product = get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings_for_product(
+    settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -192,7 +192,7 @@ class LoginTwoFactorAuthBody(InputSchema):
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
     product: Product = get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings_for_product(
+    settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)

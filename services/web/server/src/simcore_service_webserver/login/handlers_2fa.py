@@ -25,7 +25,7 @@ from ._constants import (
     MSG_UNKNOWN_EMAIL,
 )
 from ._models import InputSchema
-from .settings import LoginSettingsForProduct, get_plugin_settings_for_product
+from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import envelope_response
 
@@ -78,7 +78,7 @@ async def resend_2fa_code(request: web.Request):
     -
     """
     product: Product = get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings_for_product(
+    settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)

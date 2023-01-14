@@ -150,8 +150,18 @@ products = sa.Table(
         "The SID of the Messaging Service you want to associate with the message."
         "When set to None, this feature is disabled.",
     ),
-    sa.Column("vendor", JSONB, nullable=True, doc="Info about the Vendor"),
-    sa.Column("issues", JSONB, nullable=True, doc="Issue trackers: list[IssueTracker]"),
+    sa.Column(
+        "vendor",
+        JSONB,
+        nullable=True,
+        doc="Info about the Vendor",
+    ),
+    sa.Column(
+        "issues",
+        JSONB,
+        nullable=True,
+        doc="Issue trackers: list[IssueTracker]",
+    ),
     sa.Column(
         "manuals",
         JSONB,
