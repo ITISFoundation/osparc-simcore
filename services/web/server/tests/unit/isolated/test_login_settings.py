@@ -120,7 +120,7 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
 
 def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 
-    settings = SMTPSettings()
+    settings = SMTPSettings.create_from_envs()
 
     cfg = settings.dict(exclude_unset=True)
 
@@ -133,3 +133,11 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
     print(config.json(indent=1))
 
     assert not hasattr(config, "SMTP_SENDER"), "was deprecated and now we use product"
+
+
+def test_product_login_settings_in_plugin_settings():
+
+    customizable_attributes = set(ProductLoginSettingsDict.__annotations__.keys())
+    settings_atrributes = set(LoginSettingsForProduct.__fields__.keys())
+
+    assert customizable_attributes.issubset(settings_atrributes)

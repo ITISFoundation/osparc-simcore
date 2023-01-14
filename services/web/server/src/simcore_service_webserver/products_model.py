@@ -128,7 +128,7 @@ class Product(BaseModel):
                     "twilio_messaging_sid": "1" * 34,
                     "registration_email_template": "osparc_registration_email",
                     "login_settings": {
-                        "two_factor_enabled": False,
+                        "LOGIN_2FA_REQUIRED": False,
                     },
                     # defaults from sqlalchemy table
                     **{
@@ -149,7 +149,7 @@ class Product(BaseModel):
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
                     "login_settings": {
-                        "two_factor_enabled": False,
+                        "LOGIN_2FA_REQUIRED": False,
                     },
                 },
                 # full example
@@ -199,7 +199,7 @@ class Product(BaseModel):
                         },
                     ],
                     "login_settings": {
-                        "two_factor_enabled": False,
+                        "LOGIN_2FA_REQUIRED": False,
                     },
                     "group_id": 12345,
                 },

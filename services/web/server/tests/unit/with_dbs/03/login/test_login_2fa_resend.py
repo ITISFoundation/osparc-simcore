@@ -12,7 +12,7 @@ from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login._constants import CODE_2FA_CODE_REQUIRED
 from simcore_service_webserver.login.handlers_auth import LoginNextPage
@@ -41,7 +41,9 @@ def postgres_db(postgres_db: sa.engine.Engine):
         products.update()
         .values(
             twilio_messaging_sid="x" * 34,
-            login_settings={"two_factor_enabled": True},  # <--- 2FA Enabled
+            login_settings=ProductLoginSettingsDict(
+                LOGIN_2FA_REQUIRED=True
+            ),  # <--- 2FA Enabled for product
         )
         .where(products.c.name == "osparc")
     )

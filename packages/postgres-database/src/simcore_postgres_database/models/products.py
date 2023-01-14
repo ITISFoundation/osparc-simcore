@@ -84,11 +84,13 @@ class ProductLoginSettingsDict(TypedDict, total=False):
 
     Overrides simcore_service_webserver.login.settings.LoginSettings
     (i.e. if not defined, the values of LoginSettings apply)
+
+    NOTE: These attributes need to match those of LoginSettings
     """
 
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
-    two_factor_enabled: bool  # = LOGIN_2FA_REQUIRED
+    LOGIN_2FA_REQUIRED: bool  # previously 'two_factor_enabled'
 
 
 #

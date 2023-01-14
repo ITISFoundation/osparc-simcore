@@ -16,7 +16,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
 from servicelib.utils_secrets import generate_passcode
-from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
     _do_create_2fa_code,
@@ -48,7 +48,9 @@ def postgres_db(postgres_db: sa.engine.Engine):
         products.update()
         .values(
             twilio_messaging_sid="x" * 34,
-            login_settings={"two_factor_enabled": True},  # <--- 2FA Enabled
+            login_settings=ProductLoginSettingsDict(
+                LOGIN_2FA_REQUIRED=True
+            ),  # <--- 2FA Enabled for product
         )
         .where(products.c.name == "osparc")
     )
