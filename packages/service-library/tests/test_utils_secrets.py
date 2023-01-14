@@ -47,3 +47,6 @@ def test_generate_passcode():
 
     passcode = generate_passcode(number_of_digits=0)
     assert len(passcode) == MIN_PASSCODE_LENGTH
+
+    # passcode is a number
+    assert int(generate_passcode()) >= 0
