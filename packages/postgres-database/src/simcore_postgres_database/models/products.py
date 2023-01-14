@@ -5,6 +5,7 @@
     - Every product has a front-end with exactly the same name
 """
 
+import json
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
@@ -93,6 +94,11 @@ class ProductLoginSettingsDict(TypedDict, total=False):
     LOGIN_2FA_REQUIRED: bool  # previously 'two_factor_enabled'
 
 
+# NOTE: defaults affects migration!!
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettingsDict()  # = {}
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(LOGIN_SETTINGS_DEFAULT)
+
+
 #
 # Table
 #
@@ -174,7 +180,7 @@ products = sa.Table(
         "login_settings",
         JSONB,
         nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
+        server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
         doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
         "SEE LoginSettingsForProduct",
     ),
