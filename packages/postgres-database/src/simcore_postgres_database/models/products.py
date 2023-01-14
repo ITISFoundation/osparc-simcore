@@ -173,8 +173,10 @@ products = sa.Table(
     sa.Column(
         "login_settings",
         JSONB,
-        nullable=True,
-        doc="Overrides simcore_service_webserver.login.settings.LoginSettings. SEE LoginSettingsForProduct",
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
+        "SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "registration_email_template",
