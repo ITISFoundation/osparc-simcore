@@ -23,12 +23,11 @@ def upgrade():
     conn = op.get_bind()
     rows = conn.execute("SELECT name, login_settings FROM products").fetchall()
     for row in rows:
-        data = row["login_settings"] or "{}"
-        data = json.loads(data)
+        data = row["login_settings"] or {}
         data["LOGIN_2FA_REQUIRED"] = data.pop("two_factor_enabled")
         data = json.dumps(data)
         conn.execute(
-            "UPDATE products SET login_settings = '{}' WHERE name = {}".format(  # nosec
+            "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
                 data, row["name"]
             )
         )
@@ -47,12 +46,11 @@ def downgrade():
     conn = op.get_bind()
     rows = conn.execute("SELECT name, login_settings FROM products").fetchall()
     for row in rows:
-        data = row["login_settings"] or "{}"
-        data = json.loads(data)
+        data = row["login_settings"] or {}
         data["two_factor_enabled"] = data.pop("LOGIN_2FA_REQUIRED")
         data = json.dumps(data)
         conn.execute(
-            "UPDATE products SET login_settings = '{}' WHERE name = {}".format(  # nosec
+            "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
                 data, row["name"]
             )
         )
