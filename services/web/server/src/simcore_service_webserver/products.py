@@ -81,7 +81,7 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
     try:
         product: Product = get_current_product(request)
 
-        if template_name := product.get_template_name_for(filename):
+        if template_name := product.get_template_name_for(filename):  # type: ignore
             template_dir = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
             template_path = template_dir / template_name
             if not template_path.exists():
