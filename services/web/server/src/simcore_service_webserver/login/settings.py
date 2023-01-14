@@ -94,7 +94,7 @@ class LoginSettingsForProduct(LoginSettings):
         composed_settings = {**app_login_settings.dict(), **product_login_settings}
 
         if "two_factor_enabled" in composed_settings:
-            # legacy
+            # legacy safe
             composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop(
                 "two_factor_enabled"
             )

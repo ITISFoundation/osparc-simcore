@@ -92,6 +92,14 @@ class Product(BaseModel):
         default=None, description="Groups associated to this product"
     )
 
+    @validator("*", pre=True)
+    @classmethod
+    def parse_empty_string_as_null(cls, v):
+        """Safe measure: database entries are sometimes left blank instead of null"""
+        if isinstance(v, str) and len(v.strip()) == 0:
+            return None
+        return v
+
     @validator("name", pre=True, always=True)
     @classmethod
     def validate_name(cls, v):
@@ -99,14 +107,6 @@ class Product(BaseModel):
             raise ValueError(
                 f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             )
-        return v
-
-    @validator("*", pre=True)
-    @classmethod
-    def parse_empty_string_as_null(cls, v):
-        """Safe measure: database entries are sometimes left blank instead of null"""
-        if isinstance(v, str) and len(v.strip()) == 0:
-            return None
         return v
 
     @property
