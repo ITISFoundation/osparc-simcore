@@ -15,11 +15,11 @@ from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
+from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
     _do_create_2fa_code,
-    _generage_2fa_code,
     create_2fa_code,
     delete_2fa_code,
     get_2fa_code,
@@ -269,7 +269,7 @@ async def test_send_email_code(
 
     user_email = faker.email()
     support_email = faker.email()
-    code = _generage_2fa_code()
+    code = generate_passcode()
     user_name = faker.user_name()
 
     await send_email_code(

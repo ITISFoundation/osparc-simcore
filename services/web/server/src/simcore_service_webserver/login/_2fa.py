@@ -9,12 +9,12 @@ Currently includes two parts:
 
 import asyncio
 import logging
-import secrets
 from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
+from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
@@ -35,10 +35,6 @@ class ValidationCode(BaseModel):
 # SEE https://redis-py.readthedocs.io/en/stable/index.html
 
 
-def _generage_2fa_code() -> str:
-    return f"{1000 + secrets.randbelow(8999)}"  # code between [1000, 9999)
-
-
 @log_decorator(log, level=logging.DEBUG)
 async def _do_create_2fa_code(
     redis_client,
@@ -46,7 +42,7 @@ async def _do_create_2fa_code(
     *,
     expiration_seconds: int,
 ) -> str:
-    hash_key, code = user_email, _generage_2fa_code()
+    hash_key, code = user_email, generate_passcode()
     await redis_client.set(hash_key, value=code, ex=expiration_seconds)
     return code
 
