@@ -195,7 +195,6 @@ async def login_2fa(request: web.Request):
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
