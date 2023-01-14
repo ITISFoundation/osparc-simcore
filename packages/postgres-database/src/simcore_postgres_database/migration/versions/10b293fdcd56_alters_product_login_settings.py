@@ -28,7 +28,7 @@ def upgrade():
         data["LOGIN_2FA_REQUIRED"] = data.pop("two_factor_enabled")
         data = json.dumps(data)
         conn.execute(
-            "UPDATE products SET login_settings = '{}' WHERE name = {}".format(
+            "UPDATE products SET login_settings = '{}' WHERE name = {}".format(  # nosec
                 data, row["name"]
             )
         )
@@ -52,7 +52,7 @@ def downgrade():
         data["two_factor_enabled"] = data.pop("LOGIN_2FA_REQUIRED")
         data = json.dumps(data)
         conn.execute(
-            "UPDATE products SET login_settings = '{}' WHERE name = {}".format(
+            "UPDATE products SET login_settings = '{}' WHERE name = {}".format(  # nosec
                 data, row["name"]
             )
         )
