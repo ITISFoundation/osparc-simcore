@@ -79,7 +79,6 @@ async def login(request: web.Request):
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    product: Product = get_current_product(request)
 
     login_ = await parse_request_body_as(LoginBody, request)
 

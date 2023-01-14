@@ -78,6 +78,13 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
     def _themed(dirname, template) -> Path:
         return resources.get_path(os.path.join(dirname, template))
 
+    async def _get_content(template_name: str):
+        repo = ProductRepository(request)
+        content = await repo.get_template_content(template_name)
+        if not content:
+            raise ValueError(f"Missing template {template_name} for product")
+        return content
+
     try:
         product: Product = get_current_product(request)
 
@@ -86,10 +93,7 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
             template_path = template_dir / template_name
             if not template_path.exists():
                 # cache
-                repo = ProductRepository(request)
-                content = await repo.get_template_content(template_name)
-                if not content:
-                    raise ValueError(f"Missing template {template_name} for product")
+                content = await _get_content(template_name)
                 try:
                     async with aiofiles.open(template_path, "wt") as fh:
                         await fh.write(content)

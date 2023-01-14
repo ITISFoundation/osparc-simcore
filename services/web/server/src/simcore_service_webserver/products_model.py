@@ -74,8 +74,10 @@ class Product(BaseModel):
     support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
 
     login_settings: ProductLoginSettingsDict = Field(
-        ...
-    )  # FIXME: move this to login instead of here
+        ...,
+        description="Product customization of login settings. "
+        "Note that these are NOT the final plugin settings bug those are obtained from login.settings.get_plugin_settings",
+    )
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"

@@ -46,43 +46,10 @@ class LoginSettings(BaseCustomSettings):
         default=60.0, description="Expiration time for code [sec]"
     )
 
-
-class LoginSettingsForProduct(LoginSettings):
-    """
-    It extends LoginSettings with product-specific settings (see ProductLoginSettings)
-
-    While LoginSettings is initialized as part of the application settings (and frozen) and available
-    to the plugin upon starting the setup, LoginSettingsForProduct needs the
-    product's settings in the database. Therefore it is initialized later at the plugin setup itself.
-
-    Used to validate and sync product.login_settings and app's login settings
-    SEE plugin._validate_products_login_settings event
-    """
-
-    # TODO: can move to LoginSettings now
     LOGIN_2FA_REQUIRED: bool = Field(
         default=False,
-        description="Use products.login.two_factor_enabled instead",
+        description="If true, it enables two-factor authentication (2FA)",
     )
-
-    @classmethod
-    def create_from_composition(
-        cls,
-        app_login_settings: LoginSettings,
-        product_login_settings: ProductLoginSettingsDict,
-    ) -> "LoginSettingsForProduct":
-        """
-        For the LoginSettings, product-specific settings override app-specifics settings
-        """
-        merged_settings = {**app_login_settings.dict(), **product_login_settings}
-
-        if "two_factor_enabled" in merged_settings:
-            # Guarantees backwards compatibility
-            merged_settings["LOGIN_2FA_REQUIRED"] = merged_settings.pop(
-                "two_factor_enabled"
-            )
-        # NOTE that this constructor will also capture values from env vars!
-        return cls(**merged_settings)
 
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod
@@ -100,6 +67,38 @@ class LoginSettingsForProduct(LoginSettings):
                 "Cannot enable 2FA w/o twilio settings which is used to send SMS"
             )
         return v
+
+
+class LoginSettingsForProduct(LoginSettings):
+    """
+    Customization of these plugin settings for a product
+
+    LoginSettings are created (and frozen) upon creation of the app and available
+    to the plugin for setup_login.
+
+    LoginSettingsForProduct is obtained composing those with the overrides defined for each
+    product in the  database.
+
+    This is initialized for each product during on_startup events at tje setup_login
+    """
+
+    @classmethod
+    def create_from_composition(
+        cls,
+        app_login_settings: LoginSettings,
+        product_login_settings: ProductLoginSettingsDict,
+    ) -> "LoginSettingsForProduct":
+        """
+        For the LoginSettings, product-specific settings override app-specifics settings
+        """
+        composed_settings = {**app_login_settings.dict(), **product_login_settings}
+
+        if "two_factor_enabled" in composed_settings:
+            # legacy
+            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop(
+                "two_factor_enabled"
+            )
+        return cls(**composed_settings)
 
 
 class LoginOptions(BaseModel):
