@@ -53,3 +53,8 @@ MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
 #  - The frontend uses them alwo to determine what page/form has to display to the user for next step
 CODE_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
 CODE_2FA_CODE_REQUIRED = "SMS_CODE_REQUIRED"
+
+
+# App keys for login plugin
+# Naming convention: APP_LOGIN_...KEY
+APP_LOGIN_SETTINGS_PER_PRODUCT_KEY = "{__name__}.LOGIN_SETTINGS_PER_PRODUCT"

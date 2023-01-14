@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
-from simcore_postgres_database.models.products import ProductLoginSettings
+from simcore_postgres_database.models.products import ProductLoginSettingsDict
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettings,
@@ -105,11 +105,11 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
 ):
     # cannot enable 2fa w/o email confirmation
     plugin_settings = LoginSettings.create_from_envs()
-    product_settings = ProductLoginSettings(two_factor_enabled=True)
+    product_settings = ProductLoginSettingsDict(two_factor_enabled=True)
 
     with pytest.raises(ValidationError) as exc_info:
         LoginSettingsForProduct.create_from_merge(
-            plugin_login_settings=plugin_settings,
+            app_login_settings=plugin_settings,
             product_login_settings=product_settings,
         )
 

@@ -8,9 +8,10 @@ from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
-from simcore_postgres_database.models.products import ProductLoginSettings
+from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
 from .._constants import APP_SETTINGS_KEY
+from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 
 _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
@@ -48,13 +49,18 @@ class LoginSettings(BaseCustomSettings):
 
 
 class LoginSettingsForProduct(LoginSettings):
-    """It extends LoginSettings with ProductLoginSettings values
+    """
+    It extends LoginSettings with product-specific settings (see ProductLoginSettings)
 
+    While LoginSettings is initialized as part of the application settings (and frozen) and available
+    to the plugin upon starting the setup, LoginSettingsForProduct needs the
+    product's settings in the database. Therefore it is initialized later at the plugin setup itself.
 
     Used to validate and sync product.login_settings and app's login settings
     SEE plugin._validate_products_login_settings event
     """
 
+    # TODO: can move to LoginSettings now
     LOGIN_2FA_REQUIRED: bool = Field(
         default=False,
         description="Use products.login.two_factor_enabled instead",
@@ -63,13 +69,21 @@ class LoginSettingsForProduct(LoginSettings):
     @classmethod
     def create_from_merge(
         cls,
-        plugin_login_settings: LoginSettings,
-        product_login_settings: ProductLoginSettings,
+        app_login_settings: LoginSettings,
+        product_login_settings: ProductLoginSettingsDict,
     ) -> "LoginSettingsForProduct":
-        return cls(
-            LOGIN_2FA_REQUIRED=product_login_settings.two_factor_enabled,
-            **plugin_login_settings.dict(),
-        )
+        """
+        For the LoginSettings, product-specific settings override app-specifics settings
+        """
+        merged_settings = {**app_login_settings.dict(), **product_login_settings}
+
+        if "two_factor_enabled" in merged_settings:
+            # Guarantees backwards compatibility
+            merged_settings["LOGIN_2FA_REQUIRED"] = merged_settings.pop(
+                "two_factor_enabled"
+            )
+        # NOTE that this constructor will also capture values from env vars!
+        return cls(**merged_settings)
 
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod
@@ -123,6 +137,16 @@ def get_plugin_settings(app: web.Application) -> LoginSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, LoginSettings)  # nosec
+    return settings
+
+
+def get_plugin_settings_for_product(
+    app: web.Application, product_name: str
+) -> LoginSettingsForProduct:
+    """When a product is defined, these are the settings of a"""
+    settings = app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY][product_name]
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, LoginSettingsForProduct)  # nosec
     return settings
 
 

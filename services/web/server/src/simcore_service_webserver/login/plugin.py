@@ -13,9 +13,10 @@ from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email
 from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
-from ..products import list_products, setup_products
+from ..products import ProductName, list_products, setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest
+from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .routes import create_routes
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
@@ -70,18 +71,20 @@ def _setup_login_options(app: web.Application):
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
 
-async def _validate_products_login_settings(app: web.Application):
-    """
-    - Some of the LoginSettings need to be in sync with product.login_settings. This is validated here
-
-    - Needs products plugin initialized (otherwise list_products does not work)
+async def _resolve_login_settings_per_product(app: web.Application):
+    """Resolves login settings by composing app and product configurations
+    for the login plugin. Note that product settings override app settings.
     """
     settings: LoginSettings = get_plugin_settings(app)
+
+    login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
     errors = {}
     for product in list_products(app):
         try:
-            _ = LoginSettingsForProduct.create_from_merge(
-                plugin_login_settings=settings,
+            login_settings_per_product[
+                product.name
+            ] = LoginSettingsForProduct.create_from_merge(
+                app_login_settings=settings,
                 product_login_settings=product.login_settings,
             )
         except ValidationError as err:
@@ -90,6 +93,7 @@ async def _validate_products_login_settings(app: web.Application):
     if errors:
         msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
         raise ValueError(f"Invalid product.login_settings:\n{msg}")
+    app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
 
 
 @app_module_setup(
@@ -115,6 +119,6 @@ def setup_login(app: web.Application):
     _setup_login_options(app)
     setup_login_storage(app)
 
-    app.on_startup.append(_validate_products_login_settings)
+    app.on_startup.append(_resolve_login_settings_per_product)
 
     return True

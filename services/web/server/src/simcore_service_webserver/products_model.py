@@ -13,7 +13,7 @@ from simcore_postgres_database.models.products import (
     Forum,
     IssueTracker,
     Manual,
-    ProductLoginSettings,
+    ProductLoginSettingsDict,
     Vendor,
     WebFeedback,
 )
@@ -28,6 +28,8 @@ log = logging.getLogger(__name__)
 # MODEL
 #
 
+ProductName = str
+
 
 class Product(BaseModel):
     """Model used to parse a row of pg product's table
@@ -37,7 +39,7 @@ class Product(BaseModel):
     SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
     """
 
-    name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
+    name: ProductName = Field(regex=PUBLIC_VARIABLE_NAME_RE)
 
     display_name: str = Field(..., description="Long display name")
     short_name: Optional[str] = Field(
@@ -71,7 +73,9 @@ class Product(BaseModel):
 
     support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
 
-    login_settings: ProductLoginSettings = Field(...)
+    login_settings: ProductLoginSettingsDict = Field(
+        ...
+    )  # FIXME: move this to login instead of here
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
