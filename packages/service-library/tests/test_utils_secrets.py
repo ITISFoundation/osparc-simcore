@@ -3,7 +3,12 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from servicelib.utils_secrets import MIN_PASSWORD_LENGTH, generate_password
+from servicelib.utils_secrets import (
+    MIN_PASSCODE_LENGTH,
+    MIN_PASSWORD_LENGTH,
+    generate_passcode,
+    generate_password,
+)
 
 
 def test_generate_password():
@@ -23,3 +28,22 @@ def test_generate_password():
 
     password = generate_password(length=0)
     assert len(password) == MIN_PASSWORD_LENGTH
+
+
+def test_generate_passcode():
+    # NOT idempotent
+    assert generate_passcode() != generate_passcode()
+
+    # Avoids '"' so that we can save quoted passwords in envfiles without complications
+    passcode = generate_passcode()
+    assert '"' not in passcode
+
+    # min lenght
+    passcode = generate_passcode(number_of_digits=MIN_PASSCODE_LENGTH + 2)
+    assert len(passcode) == MIN_PASSCODE_LENGTH + 2
+
+    passcode = generate_passcode(number_of_digits=2)
+    assert len(passcode) == MIN_PASSCODE_LENGTH
+
+    passcode = generate_passcode(number_of_digits=0)
+    assert len(passcode) == MIN_PASSCODE_LENGTH
