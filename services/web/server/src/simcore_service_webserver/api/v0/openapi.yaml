@@ -4731,106 +4731,108 @@ paths:
     get:
       tags:
         - tag
-      summary: List all tags for the current user
+      summary: List Tags
       operationId: list_tags
       responses:
         '200':
-          description: List of tags
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
-                    type: object
-                    required:
-                      - tags
-                    properties:
-                      tags:
-                        type: array
-                        items:
-                          $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1tags~1%7Btag_id%7D/patch/responses/200/content/application~1json/schema/properties/data'
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-    post:
-      tags:
-        - tag
-      summary: Creates a new tag
-      operationId: create_tag
-      responses:
-        '200':
-          description: The created tag
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - name
-                      - color
-                      - accessRights
-                    properties:
-                      id:
-                        type: integer
-                      name:
-                        type: string
-                      description:
-                        type: string
-                      color:
-                        type: string
-                        pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
-                      accessRights:
-                        type: object
-                        properties:
-                          read:
-                            type: boolean
-                          write:
-                            type: boolean
-                          delete:
-                            type: boolean
-                  error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
   '/tags/{tag_id}':
-    parameters:
-      - name: tag_id
-        in: path
-        required: true
-        schema:
-          type: integer
-    patch:
-      tags:
-        - tag
-      summary: Updates a tag
-      operationId: update_tag
-      responses:
-        '200':
-          description: The updated tag
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
     delete:
       tags:
         - tag
-      summary: Deletes an existing tag
+      summary: Delete Tag
       operationId: delete_tag
       responses:
         '204':
-          description: The tag has been successfully deleted
+          description: Successful Response
+    patch:
+      tags:
+        - tag
+      summary: Update Tag
+      operationId: update_tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TagUpdate
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                description:
+                  title: Description
+                  type: string
+                color:
+                  title: Color
+                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  type: string
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[TagGet]'
+                type: object
+                properties:
+                  data:
+                    title: TagGet
+                    required:
+                      - id
+                      - name
+                      - color
+                      - accessRights
+                    type: object
+                    properties:
+                      id:
+                        title: Id
+                        exclusiveMinimum: true
+                        type: integer
+                        minimum: 0
+                      name:
+                        title: Name
+                        type: string
+                      description:
+                        title: Description
+                        type: string
+                      color:
+                        title: Color
+                        type: string
+                      accessRights:
+                        title: TagAccessRights
+                        required:
+                          - read
+                          - write
+                          - delete
+                        type: object
+                        properties:
+                          read:
+                            title: Read
+                            type: boolean
+                          write:
+                            title: Write
+                            type: boolean
+                          delete:
+                            title: Delete
+                            type: boolean
+                  error:
+                    title: Error
   /publications/service-submission:
     post:
       tags:
