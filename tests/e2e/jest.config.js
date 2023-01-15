@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   preset: "jest-puppeteer",
   verbose: true,
   collectCoverage: true,
@@ -9,3 +9,5 @@ module.exports = {
     ourTimeout: 40000,
   }
 }
+
+module.exports = config;

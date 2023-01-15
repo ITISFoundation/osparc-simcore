@@ -1,4 +1,13 @@
-// node sim4life-lite.js [url] [user] [password] [timeout] [--demo]
+// node sim4life-lite.js url
+// [--user user]
+// [--pass pass]
+// [--n_users nUsers]
+// [--user_prefix userPrefix]
+// [--user_suffix userSuffix]
+// [--start_timeout startTimeout]
+// [--basicauth_user basicauthUsername]
+// [--basicauth_pass basicauthPassword]
+// [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('../tutorials/tutorialBase');
