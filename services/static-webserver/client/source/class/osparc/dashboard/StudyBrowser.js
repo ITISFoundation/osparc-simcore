@@ -89,7 +89,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__attachEventHandlers();
           this.__getActiveStudy()
             .then(() => {
-              this._hideLoadingPage();
               // given by the url or active study
               const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
               if (loadStudyId) {
@@ -97,6 +96,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               } else {
                 this.reloadResources();
               }
+              this._hideLoadingPage();
             });
         })
         .catch(console.error);
