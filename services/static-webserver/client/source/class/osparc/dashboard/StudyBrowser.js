@@ -89,7 +89,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__attachEventHandlers();
           this.__getActiveStudy()
             .then(() => {
-              // given by the url or active study
+              // set by the url or active study
               const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
               if (loadStudyId) {
                 this.__startStudyById(loadStudyId);
