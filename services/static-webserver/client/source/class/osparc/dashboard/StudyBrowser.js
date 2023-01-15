@@ -89,13 +89,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__attachEventHandlers();
           this.__getActiveStudy()
             .then(() => {
+              this._hideLoadingPage();
               // given by the url or active study
               const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
               if (loadStudyId) {
                 this.__getStudyAndStart(loadStudyId);
               } else {
                 this.reloadResources();
-                this._hideLoadingPage();
               }
             });
         })
@@ -299,7 +299,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      this._hideLoadingPage();
       const data = {
         studyId,
         pageContext
