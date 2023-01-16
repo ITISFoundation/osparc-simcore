@@ -29,7 +29,7 @@ from ._registration import check_and_consume_invitation, check_other_registratio
 from ._security import login_granted_response
 from .settings import (
     LoginOptions,
-    LoginSettings,
+    LoginSettingsForProduct,
     get_plugin_options,
     get_plugin_settings,
 )
@@ -88,8 +88,10 @@ async def register(request: web.Request):
 
     An email with a link to 'email_confirmation' is sent to complete registration
     """
-    settings: LoginSettings = get_plugin_settings(request.app)
     product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
     db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
 
@@ -184,7 +186,7 @@ async def register(request: web.Request):
     else:
         # No confirmation required: authorize login
         assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
-        assert not product.login_settings.two_factor_enabled  # nosec
+        assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
         response = await login_granted_response(request=request, user=user)
         return response
@@ -220,11 +222,13 @@ async def register_phone(request: web.Request):
     - sends a code
     - registration is completed requesting to 'phone_confirmation' route with the code received
     """
-    settings: LoginSettings = get_plugin_settings(request.app)
     product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
     db: AsyncpgStorage = get_plugin_storage(request.app)
 
-    if not product.login_settings.two_factor_enabled:
+    if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -233,9 +237,7 @@ async def register_phone(request: web.Request):
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
     try:
-        assert (  # nosec
-            product.login_settings.two_factor_enabled and settings.LOGIN_TWILIO
-        )
+        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
         if not product.twilio_messaging_sid:
             raise ValueError(
                 f"Messaging SID is not configured in {product}. "
@@ -248,8 +250,11 @@ async def register_phone(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
-        code = await create_2fa_code(request.app, registration.email)
-
+        code = await create_2fa_code(
+            app=request.app,
+            user_email=registration.email,
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
         await send_sms_code(
             phone_number=registration.phone,
             code=code,
