@@ -18,6 +18,13 @@ paths:
       - tag
       summary: Delete Tag
       operationId: delete_tag
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          type: integer
+        name: tag_id
+        in: path
       responses:
         '204':
           description: Successful Response
@@ -26,6 +33,13 @@ paths:
       - tag
       summary: Update Tag
       operationId: update_tag
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          type: integer
+        name: tag_id
+        in: path
       requestBody:
         content:
           application/json:

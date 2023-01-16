@@ -47,7 +47,7 @@ async def list_tags():
     tags=TAGS,
     operation_id="update_tag",
 )
-async def update_tag(update: TagUpdate):
+async def update_tag(tag_id: int, update: TagUpdate):
     ...
 
 
@@ -57,7 +57,7 @@ async def update_tag(update: TagUpdate):
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="delete_tag",
 )
-async def delete_tag():
+async def delete_tag(tag_id: int):
     ...
 
 
