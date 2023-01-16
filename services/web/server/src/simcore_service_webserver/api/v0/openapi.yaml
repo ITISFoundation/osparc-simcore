@@ -4742,42 +4742,22 @@ paths:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1tags~1%7Btag_id%7D/patch/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
                   error:
                     title: Error
-  '/tags/{tag_id}':
-    delete:
+    post:
       tags:
         - tag
-      summary: Delete Tag
-      operationId: delete_tag
-      parameters:
-        - required: true
-          schema:
-            title: Tag Id
-            type: integer
-          name: tag_id
-          in: path
-      responses:
-        '204':
-          description: Successful Response
-    patch:
-      tags:
-        - tag
-      summary: Update Tag
-      operationId: update_tag
-      parameters:
-        - required: true
-          schema:
-            title: Tag Id
-            type: integer
-          name: tag_id
-          in: path
+      summary: Create Tag
+      operationId: create_tag
       requestBody:
         content:
           application/json:
             schema:
-              title: TagUpdate
+              title: TagCreate
+              required:
+                - name
+                - color
               type: object
               properties:
                 name:
@@ -4843,6 +4823,60 @@ paths:
                             type: boolean
                   error:
                     title: Error
+  '/tags/{tag_id}':
+    delete:
+      tags:
+        - tag
+      summary: Delete Tag
+      operationId: delete_tag
+      parameters:
+        - required: true
+          schema:
+            title: Tag Id
+            type: integer
+          name: tag_id
+          in: path
+      responses:
+        '204':
+          description: Successful Response
+    patch:
+      tags:
+        - tag
+      summary: Update Tag
+      operationId: update_tag
+      parameters:
+        - required: true
+          schema:
+            title: Tag Id
+            type: integer
+          name: tag_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TagUpdate
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                description:
+                  title: Description
+                  type: string
+                color:
+                  title: Color
+                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  type: string
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
   /publications/service-submission:
     post:
       tags:

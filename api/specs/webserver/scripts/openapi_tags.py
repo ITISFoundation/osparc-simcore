@@ -21,7 +21,7 @@ TAGS: list[Union[str, Enum]] = [
 ]
 
 
-@app.get(
+@app.post(
     "/tags",
     response_model=Envelope[TagGet],
     tags=TAGS,

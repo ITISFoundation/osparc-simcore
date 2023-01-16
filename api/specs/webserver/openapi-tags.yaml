@@ -12,6 +12,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags_handlers.TagGet__'
+    post:
+      tags:
+      - tag
+      summary: Create Tag
+      operationId: create_tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TagGet_'
   /tags/{tag_id}:
     delete:
       tags:
