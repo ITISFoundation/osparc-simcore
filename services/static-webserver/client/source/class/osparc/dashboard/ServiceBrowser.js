@@ -122,7 +122,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudy(studyId);
+          this.__startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -131,16 +131,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
     },
 
-    __startStudy: function(studyId) {
+    __startStudyById: function(studyId) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      const data = {
-        studyId,
-        pageContext: "workbench"
-      };
-      this.fireDataEvent("startStudy", data);
+      this.fireDataEvent("startStudy", studyId);
     },
 
     // LAYOUT //

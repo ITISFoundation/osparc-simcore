@@ -83,21 +83,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
+      preResourcePromises.push(this.__getActiveStudy());
       Promise.all(preResourcePromises)
         .then(() => {
           this.getChildControl("resources-layout");
           this.__attachEventHandlers();
-          this.__getActiveStudy()
-            .then(() => {
-              // set by the url or active study
-              const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
-              if (loadStudyId) {
-                this.__startStudyById(loadStudyId);
-              } else {
-                this.reloadResources();
-              }
-              this._hideLoadingPage();
-            });
+          // set by the url or active study
+          const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
+          if (loadStudyId) {
+            this.__startStudyById(loadStudyId);
+          } else {
+            this.reloadResources();
+          }
+          // "Starting..." page
+          this._hideLoadingPage();
         })
         .catch(console.error);
     },
@@ -283,27 +282,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this.__startStudy(studyData);
+        this.__startStudyById(studyData["uuid"]);
       }
     },
 
-    __startStudy: function(studyData, pageContext) {
-      if (pageContext === undefined) {
-        pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
-      }
-      this.__startStudyById(studyData["uuid"], pageContext);
-    },
-
-    __startStudyById: function(studyId, pageContext = "workbench") {
+    __startStudyById: function(studyId) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      const data = {
-        studyId,
-        pageContext
-      };
-      this.fireDataEvent("startStudy", data);
+      this.fireDataEvent("startStudy", studyId);
     },
 
     __attachEventHandlers: function() {
@@ -637,7 +625,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       templateData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
-        .then(studyId => this.__startStudyById(studyId))
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudyById(studyId);
+        })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -649,7 +640,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating Study"));
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
-        .then(studyId => this.__startStudyById(studyId))
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudyById(studyId);
+        })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -664,7 +658,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         data: minStudyData
       };
       osparc.utils.Study.createStudyAndPoll(params)
-        .then(studyData => this.__startStudy(studyData))
+        .then(studyData => {
+          this._hideLoadingPage();
+          this.__startStudyById(studyData["uuid"]);
+        })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
