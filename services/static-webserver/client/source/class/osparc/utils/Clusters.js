@@ -113,7 +113,7 @@ qx.Class.define("osparc.utils.Clusters", {
         })
         .finally(() => {
           if (this.__clusterIds.includes(cid)) {
-            const interval = 5000;
+            const interval = 10000;
             qx.event.Timer.once(() => this.__fetchDetails(cid), this, interval);
           }
         });
