@@ -29,7 +29,7 @@ from .projects.projects_api import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
-from .projects.projects_db import APP_PROJECT_DBAPI
+from .projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
@@ -294,10 +294,14 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
+def _get_project_db_api(app: web.Application) -> ProjectDBAPI:
+    return app[APP_PROJECT_DBAPI]
+
+
 async def _remove_single_orphaned_service(
     app: web.Application,
     interactive_service: dict[str, Any],
-    currently_opened_projects_node_ids: set[str],
+    currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
     service_host = interactive_service["service_host"]
     # if not present in DB or not part of currently opened projects, can be removed
@@ -350,17 +354,19 @@ async def _remove_single_orphaned_service(
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
 
-            # TODO: logic around save_state is not ideal, but it remains
-            # with the same logic as before until it is properly refactored
+            user_id = int(interactive_service.get("user_id", -1))
+
             user_role: Optional[UserRole] = None
             try:
-                user_role = await get_user_role(
-                    app, user_id=int(interactive_service.get("user_id", -1))
-                )
+                user_role = await get_user_role(app, user_id)
             except (UserNotFoundError, ValueError):
                 user_role = None
 
-            save_state = True
+            project_uuid = currently_opened_projects_node_ids[service_uuid]
+
+            save_state = await _get_project_db_api(app).has_permission(
+                user_id, project_uuid, "write"
+            )
             if user_role is None or user_role <= UserRole.GUEST:
                 save_state = False
             # -------------------------------------------
@@ -385,7 +391,7 @@ async def remove_orphaned_services(
     """
     logger.debug("Starting orphaned services removal...")
 
-    currently_opened_projects_node_ids: set[str] = set()
+    currently_opened_projects_node_ids: dict[str, str] = {}
     alive_keys, _ = await registry.get_all_resource_keys()
     for alive_key in alive_keys:
         resources = await registry.get_resources(alive_key)
@@ -394,7 +400,7 @@ async def remove_orphaned_services(
 
         project_uuid = resources["project_id"]
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
-        currently_opened_projects_node_ids.update(node_ids)
+        currently_opened_projects_node_ids[node_ids] = project_uuid
 
     running_interactive_services: list[dict[str, Any]] = []
     try:
@@ -452,9 +458,9 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
-    user_project_uuids = await app[
-        APP_PROJECT_DBAPI
-    ].list_all_projects_by_uuid_for_user(user_id=user_id)
+    user_project_uuids = await _get_project_db_api(
+        app
+    ).list_all_projects_by_uuid_for_user(user_id=user_id)
 
     logger.info(
         "Removing or transfering projects of user with %s, %s: %s",

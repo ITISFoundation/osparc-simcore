@@ -963,6 +963,18 @@ class ProjectDBAPI:
                 return row[projects.c.type]
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
+    async def has_permission(
+        self, user_id: UserID, project_uuid: ProjectID, permission: str
+    ) -> bool:
+        async with self.engine.acquire() as conn:
+            project = await self._get_project(conn, user_id, project_uuid)
+            user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
+            try:
+                _check_project_permissions(project, user_id, user_groups, permission)
+                return True
+            except ProjectInvalidRightsError:
+                return False
+
 
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
