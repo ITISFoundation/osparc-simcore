@@ -176,7 +176,7 @@ class AutoscalingEC2:
         instance_settings: EC2InstancesSettings,
         tag_keys: list[str],
         *,
-        state_names: Optional[list[str]] = None,
+        state_names: Optional[list[InstanceStateNameType]] = None,
     ) -> list[EC2InstanceData]:
         if state_names is None:
             state_names = ["pending", "running"]
