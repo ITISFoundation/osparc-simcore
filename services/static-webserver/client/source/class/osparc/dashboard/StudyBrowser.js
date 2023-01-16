@@ -83,22 +83,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
+      preResourcePromises.push(this.__getActiveStudy());
       Promise.all(preResourcePromises)
         .then(() => {
-          this.__getActiveStudy()
-            .then(() => {
-              this.getChildControl("resources-layout");
-              this.__attachEventHandlers();
-              // set by the url or active study
-              const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
-              if (loadStudyId) {
-                this.__startStudyById(loadStudyId);
-              } else {
-                this.reloadResources();
-              }
-              // "Starting..." page
-              this._hideLoadingPage();
-            });
+          this.getChildControl("resources-layout");
+          this.__attachEventHandlers();
+          // set by the url or active study
+          const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
+          if (loadStudyId) {
+            this.__startStudyById(loadStudyId);
+          } else {
+            this.reloadResources();
+          }
+          // "Starting..." page
+          this._hideLoadingPage();
         })
         .catch(console.error);
     },
