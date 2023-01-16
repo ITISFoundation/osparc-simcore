@@ -637,7 +637,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       templateData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
-        .then(studyId => this.__startStudyById(studyId))
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudyById(studyId);
+        })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -649,7 +652,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating Study"));
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
-        .then(studyId => this.__startStudyById(studyId))
+        .then(studyId => {
+          this._hideLoadingPage();
+          this.__startStudyById(studyId);
+        })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -664,7 +670,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         data: minStudyData
       };
       osparc.utils.Study.createStudyAndPoll(params)
-        .then(studyData => this.__startStudy(studyData))
+        .then(studyData => {
+          this._hideLoadingPage();
+          this.__startStudy(studyData);
+        })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
