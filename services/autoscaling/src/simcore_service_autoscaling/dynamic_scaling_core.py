@@ -393,7 +393,7 @@ async def _scale_up_cluster(
         pending_ec2_instances.append(instance_data)
 
     allowed_instance_types = await ec2_client.get_ec2_instance_capabilities(
-        cast(
+        cast(  # type: ignore
             set[InstanceTypeType],
             set(
                 app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,

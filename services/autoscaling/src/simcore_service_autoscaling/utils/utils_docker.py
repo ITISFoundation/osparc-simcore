@@ -157,7 +157,10 @@ async def pending_service_tasks_with_insufficient_resources(
     )
 
     sorted_tasks = sorted(
-        tasks, key=lambda task: to_datetime(task.CreatedAt or f"{datetime.utcnow()}")
+        tasks,
+        key=lambda task: cast(  # NOTE: some mypy fun here
+            datetime, (to_datetime(task.CreatedAt or f"{datetime.utcnow()}"))
+        ),
     )
 
     pending_tasks = [
@@ -323,7 +326,7 @@ async def try_get_node_with_name(
 ) -> Optional[Node]:
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
-        return
+        return None
     return parse_obj_as(Node, list_of_nodes[0])
 
 
