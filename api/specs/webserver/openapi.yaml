@@ -32,10 +32,6 @@ tags:
   - name: storage
   - name: activity
   - name: tag
-    description: |
-      Grouping the paths and operations that perform changes on the TAG entity.
-      Tags are customized visual elements that help the user group and quickly identify different items
-      on the interface. They can also be used for searching and filtering purposes.
   - name: tasks
     description: |
       Asynchronously running tasks
