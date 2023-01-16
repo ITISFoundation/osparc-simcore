@@ -33,6 +33,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     },
     description: {
       check: "String",
+      nullable: true,
       event: "changeDescription",
       init: ""
     },

@@ -86,35 +86,40 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       Promise.all(preResourcePromises)
         .then(() => {
           this.getChildControl("resources-layout");
-          this.__getActiveStudy();
-          this.reloadResources();
           this.__attachEventHandlers();
-          const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
-          if (loadStudyId) {
-            this.__getStudyAndStart(loadStudyId);
-          }
-          this._hideLoadingPage();
+          this.__getActiveStudy()
+            .then(() => {
+              // set by the url or active study
+              const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
+              if (loadStudyId) {
+                this.__startStudyById(loadStudyId);
+              } else {
+                this.reloadResources();
+              }
+              this._hideLoadingPage();
+            });
         })
         .catch(console.error);
     },
 
     __getActiveStudy: function() {
-      const params = {
-        url: {
-          tabId: osparc.utils.Utils.getClientSessionID()
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getActive", params)
-        .then(studyData => {
-          if (studyData) {
-            this.__startStudy(studyData);
-          } else {
-            osparc.store.Store.getInstance().setCurrentStudyId(null);
+      return new Promise(resolve => {
+        const params = {
+          url: {
+            tabId: osparc.utils.Utils.getClientSessionID()
           }
-        })
-        .catch(err => {
-          console.error(err);
-        });
+        };
+        osparc.data.Resources.fetch("studies", "getActive", params)
+          .then(studyData => {
+            if (studyData) {
+              osparc.store.Store.getInstance().setCurrentStudyId(studyData["uuid"]);
+              resolve(studyData["uuid"]);
+            } else {
+              resolve(null);
+            }
+          })
+          .catch(err => console.error(err));
+      });
     },
 
     reloadResources: function() {
@@ -602,22 +607,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // LAYOUT //
 
-    __getStudyAndStart: function(loadStudyId) {
-      const params = {
-        url: {
-          "studyId": loadStudyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params)
-        .then(studyData => {
-          this.__startStudy(studyData);
-        })
-        .catch(() => {
-          const msg = this.tr("Study unavailable or inaccessible");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
-    },
-
     __studyStateReceived: function(studyId, state, errors) {
       osparc.store.Store.getInstance().setStudyState(studyId, state);
       const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
@@ -648,10 +637,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       templateData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
-        .then(studyId => {
-          this._hideLoadingPage();
-          this.__getStudyAndStart(studyId);
-        })
+        .then(studyId => this.__startStudyById(studyId))
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -661,13 +647,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __newStudyFromServiceBtnClicked: function(button, key, version) {
       button.setValue(false);
-      console.log(key, version);
       this._showLoadingPage(this.tr("Creating Study"));
-      osparc.utils.Study.createStudyFromService(key, version)
-        .then(studyId => {
-          this._hideLoadingPage();
-          this.__startStudyById(studyId);
-        })
+      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList)
+        .then(studyId => this.__startStudyById(studyId))
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -682,10 +664,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         data: minStudyData
       };
       osparc.utils.Study.createStudyAndPoll(params)
-        .then(studyData => {
-          this._hideLoadingPage();
-          this.__startStudy(studyData);
-        })
+        .then(studyData => this.__startStudy(studyData))
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
@@ -940,7 +919,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.data.Resources.getOne("studies", params)
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => {
-              console.log(err);
+              console.error(err);
               const msg = this.tr("Something went wrong Fetching the study");
               osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
             })
