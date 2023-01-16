@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.14.0
+  version: 0.14.1
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
