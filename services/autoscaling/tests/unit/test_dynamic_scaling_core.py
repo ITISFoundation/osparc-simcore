@@ -16,16 +16,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import (
-    Availability,
-    Node,
-    NodeDescription,
-    NodeSpec,
-    ObjectVersion,
-    ResourceObject,
-    Service,
-    Task,
-)
+from models_library.generated_models.docker_rest_api import Node, Service, Task
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -85,28 +76,6 @@ def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
         "simcore_service_autoscaling.utils.rabbitmq.post_message", autospec=True
     )
     yield mocked_post_message
-
-
-@pytest.fixture
-def fake_node(faker: Faker) -> Node:
-    return Node(
-        ID=faker.uuid4(),
-        Version=ObjectVersion(Index=faker.pyint()),
-        CreatedAt=faker.date_time().isoformat(),
-        UpdatedAt=faker.date_time().isoformat(),
-        Description=NodeDescription(
-            Hostname=faker.pystr(),
-            Resources=ResourceObject(
-                NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
-            ),
-        ),
-        Spec=NodeSpec(
-            Name=None,
-            Labels=None,
-            Role=None,
-            Availability=Availability.drain,
-        ),
-    )
 
 
 @pytest.fixture
@@ -676,9 +645,9 @@ async def test__try_scale_up_with_drained_nodes_with_no_tasks(
     mock_tag_node: mock.Mock,
 ):
     # no tasks, does nothing and returns True
-    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) is True
+    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) == []
     assert (
-        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) is True
+        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) == []
     )
     mock_tag_node.assert_not_called()
 
@@ -716,7 +685,7 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
         await _try_scale_up_with_drained_nodes(
             initialized_app, [host_node], service_tasks
         )
-        is False
+        == []
     )
     mock_tag_node.assert_not_called()
 
@@ -803,7 +772,7 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
         await _try_scale_up_with_drained_nodes(
             initialized_app, [drained_host_node], service_tasks
         )
-        is True
+        == service_tasks
     )
     mock_tag_node.assert_called_once_with(
         mock.ANY, drained_host_node, tags={}, available=True
