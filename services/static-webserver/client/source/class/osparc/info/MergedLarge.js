@@ -192,27 +192,25 @@ qx.Class.define("osparc.info.MergedLarge", {
       }
 
       let i = 0;
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.splice(i++, 0, {
-          label: this.tr("Study ID"),
-          view: this.__createStudyId(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyUuidToClipboard,
-            ctx: this
-          }
-        });
+      extraInfo.splice(i++, 0, {
+        label: osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + " ID",
+        view: this.__createStudyId(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyUuidToClipboard,
+          ctx: this
+        }
+      });
 
-        extraInfo.splice(i++, 0, {
-          label: this.tr("Service ID"),
-          view: this.__createNodeId(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyNodeIdToClipboard,
-            ctx: this
-          }
-        });
-      }
+      extraInfo.splice(i++, 0, {
+        label: this.tr("Service ID"),
+        view: this.__createNodeId(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyNodeIdToClipboard,
+          ctx: this
+        }
+      });
 
       extraInfo.splice(i++, 0, {
         label: this.tr("Service Key"),

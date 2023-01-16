@@ -100,12 +100,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
       box.add(cbConfirmBackToDashboard);
 
-      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a Study"));
+      const studyLabel = osparc.utils.Utils.getStudyLabel();
+      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a ") + studyLabel);
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.bind("value", preferencesSettings, "confirmDeleteStudy");
       cbConfirmDeleteStudy.addListener("changeValue", e => {
         if (!e.getData()) {
-          const msg = this.tr("Warning: deleting a study cannot be undone");
+          const msg = this.tr("Warning: deleting a ") + studyLabel + this.tr("cannot be undone");
           const win = new osparc.ui.window.Confirmation(msg).set({
             confirmText: this.tr("Understood"),
             confirmAction: "delete"
