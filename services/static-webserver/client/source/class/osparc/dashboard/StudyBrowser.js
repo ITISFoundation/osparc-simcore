@@ -85,10 +85,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       Promise.all(preResourcePromises)
         .then(() => {
-          this.getChildControl("resources-layout");
-          this.__attachEventHandlers();
           this.__getActiveStudy()
             .then(() => {
+              this.getChildControl("resources-layout");
+              this.__attachEventHandlers();
               // set by the url or active study
               const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
               if (loadStudyId) {
@@ -96,6 +96,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               } else {
                 this.reloadResources();
               }
+              // "Starting..." page
               this._hideLoadingPage();
             });
         })
