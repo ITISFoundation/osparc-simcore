@@ -1,6 +1,5 @@
 import contextlib
 import logging
-from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -52,9 +51,11 @@ class InvitationsServiceApi:
         await self.exit_stack.aclose()
 
     async def ping(self) -> bool:
-        with suppress(ClientError):
+        try:
             response = await self.client.get(self.healthcheck_path)
             return response.status == web.HTTPOk.status_code
+        except ClientError as err:
+            logger.debug("failed to connect %s", err)
         return False
 
     is_responsive = ping
@@ -66,7 +67,7 @@ class InvitationsServiceApi:
     async def extract_invitation(self, invitation_url: str) -> InvitationContent:
         response = await self.client.post(
             url=f"/{self.settings.INVITATIONS_VTAG}/invitations:extract",
-            data={"invitation_url": invitation_url},
+            json={"invitation_url": invitation_url},
         )
         invitation = parse_obj_as(InvitationContent, await response.json())
         return invitation

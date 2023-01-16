@@ -37,6 +37,13 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     return app_environment
 
 
+@pytest.fixture
+def app_invitation_plugin_settings(client: TestClient) -> InvitationsSettings:
+    settings = get_plugin_settings(app=client.app)
+    assert settings
+    return settings
+
+
 @pytest.fixture(scope="module")
 def invitations_service_openapi_specs(
     osparc_simcore_services_dir: Path,
@@ -47,17 +54,10 @@ def invitations_service_openapi_specs(
 
 
 @pytest.fixture
-def app_invitation_plugin_settings(client: TestClient) -> InvitationsSettings:
-    settings = get_plugin_settings(app=client.app)
-    assert settings
-    return settings
-
-
-@pytest.fixture
 def mock_invitations_service_http_api(
     aioresponses_mocker: AioResponsesMock,
-    app_invitation_plugin_settings: InvitationsSettings,
     invitations_service_openapi_specs: dict[str, Any],
+    app_invitation_plugin_settings: InvitationsSettings,
 ) -> AioResponsesMock:
     oas = deepcopy(invitations_service_openapi_specs)
     base_url = URL(app_invitation_plugin_settings.base_url)
@@ -107,11 +107,17 @@ async def test_invitation_service_api_ping(
 ):
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
+    print(mock_invitations_service_http_api)
+
     assert await invitations_api.ping()
+
+    invitation = await validate_invitation_url(
+        app=client.app, invitation_url="https://osparc.io#register?invitation=1234"
+    )
+    assert invitation
 
 
 # create fake invitation service
-
 
 # valid invitation
 
