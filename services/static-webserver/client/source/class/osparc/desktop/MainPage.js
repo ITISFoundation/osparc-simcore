@@ -198,8 +198,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       ].forEach(browser => {
         if (browser) {
           browser.addListener("startStudy", e => {
-            const startStudyData = e.getData();
-            this.__startStudy(startStudyData);
+            const startStudyId = e.getData();
+            this.__startStudy(startStudyId);
           }, this);
         }
       });
@@ -265,11 +265,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__mainStack.setSelection([this.__studyEditor]);
     },
 
-    __startStudy: function(startStudyData) {
-      const {
-        studyId,
-        pageContext
-      } = startStudyData;
+    __startStudy: function(studyId) {
       this.__showLoadingPage(this.tr("Loading Study"));
 
       const params = {
@@ -283,6 +279,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("Study not found");
             throw new Error(msg);
           }
+          const pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
           this.__loadStudy(studyData, pageContext);
         })
         .catch(err => {

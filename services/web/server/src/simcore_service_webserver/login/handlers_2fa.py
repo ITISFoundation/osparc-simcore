@@ -25,7 +25,7 @@ from ._constants import (
     MSG_UNKNOWN_EMAIL,
 )
 from ._models import InputSchema
-from .settings import LoginSettings, get_plugin_settings
+from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import envelope_response
 
@@ -77,11 +77,13 @@ async def resend_2fa_code(request: web.Request):
     - Protected by on-time access [ONE_TIME_ACCESS_TO_RESEND_2FA_KEY]
     -
     """
-    settings: LoginSettings = get_plugin_settings(request.app)
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+    db: AsyncpgStorage = get_plugin_storage(request.app)
 
-    if not product.login_settings.two_factor_enabled:
+    if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -103,8 +105,17 @@ async def resend_2fa_code(request: web.Request):
         )
 
     with handling_send_errors(user):
-        # produces
-        code = await create_2fa_code(request.app, user["email"])
+        # guaranteed by LoginSettingsForProduct
+        assert settings.LOGIN_2FA_REQUIRED  # nosec
+        assert settings.LOGIN_TWILIO  # nosec
+        assert product.twilio_messaging_sid  # nosec
+
+        # creates and stores code
+        code = await create_2fa_code(
+            request.app,
+            user_email=user["email"],
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
 
         # sends via SMS
         if resend_2fa_.via == "SMS":
