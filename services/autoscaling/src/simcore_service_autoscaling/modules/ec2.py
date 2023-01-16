@@ -152,9 +152,6 @@ class AutoscalingEC2:
             waiter = self.client.get_waiter("instance_exists")
             await waiter.wait(InstanceIds=instance_ids)
             logger.info("instances %s exists now.", instance_ids)
-            # waiter = self.client.get_waiter("instance_running")
-            # await waiter.wait(InstanceIds=instance_ids)
-            # logger.info("instances %s is now running", instance_ids)
 
             # get the private IPs
             instances = await self.client.describe_instances(InstanceIds=instance_ids)
