@@ -187,28 +187,6 @@ async def check_and_consume_invitation(
     )
 
 
-def get_confirmation_info(
-    cfg: LoginOptions, confirmation: ConfirmationTokenDict
-) -> ConfirmationTokenInfoDict:
-    """
-    Extends ConfirmationTokenDict by adding extra info and
-    deserializing action's data entry
-    """
-    info = ConfirmationTokenInfoDict(**confirmation)
-
-    action = ConfirmationAction(confirmation["action"])
-    if (data_type := ACTION_TO_DATA_TYPE[action]) and (data := confirmation["data"]):
-        info["data"] = parse_raw_as(data_type, data)
-
-    # extra
-    info["expires"] = get_expiration_date(cfg, confirmation)
-
-    if confirmation["action"] == ConfirmationAction.INVITATION.name:
-        info["url"] = f"{get_invitation_url(confirmation)}"
-
-    return info
-
-
 def get_invitation_url(
     confirmation: ConfirmationTokenDict, origin: Optional[URL] = None
 ) -> URL:
@@ -230,3 +208,26 @@ def get_invitation_url(
     # https://some-web-url.io/#/registration/?invitation={code}
     # NOTE: Uniform encoding in front-end fragments https://github.com/ITISFoundation/osparc-simcore/issues/1975
     return origin.with_fragment(f"/registration/?invitation={code}")
+
+
+def get_confirmation_info(
+    cfg: LoginOptions, confirmation: ConfirmationTokenDict
+) -> ConfirmationTokenInfoDict:
+    """
+    Extends ConfirmationTokenDict by adding extra info and
+    deserializing action's data entry
+    """
+    # TODO: move to _confirmation.py??
+    info = ConfirmationTokenInfoDict(**confirmation)
+
+    action = ConfirmationAction(confirmation["action"])
+    if (data_type := ACTION_TO_DATA_TYPE[action]) and (data := confirmation["data"]):
+        info["data"] = parse_raw_as(data_type, data)
+
+    # extra
+    info["expires"] = get_expiration_date(cfg, confirmation)
+
+    if confirmation["action"] == ConfirmationAction.INVITATION.name:
+        info["url"] = f"{get_invitation_url(confirmation)}"
+
+    return info
