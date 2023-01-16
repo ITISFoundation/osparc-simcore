@@ -76,14 +76,16 @@ class InvitationsServiceApi:
 # EVENTS
 #
 
-_APP_KEY = f"{__name__}.{InvitationsServiceApi.__name__}"
+_APP_INVITATIONS_SERVICE_API_KEY = f"{__name__}.{InvitationsServiceApi.__name__}"
 
 
 async def invitations_service_api_cleanup_ctx(app: web.Application):
 
-    app[_APP_KEY] = service_api = InvitationsServiceApi.create(
+    service_api = await InvitationsServiceApi.create(
         settings=app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS
     )
+
+    app[_APP_INVITATIONS_SERVICE_API_KEY] = service_api
 
     yield
 
@@ -91,5 +93,5 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
 
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:
-    assert app[_APP_KEY]  # nosec
-    return app[_APP_KEY]
+    assert app[_APP_INVITATIONS_SERVICE_API_KEY]  # nosec
+    return app[_APP_INVITATIONS_SERVICE_API_KEY]

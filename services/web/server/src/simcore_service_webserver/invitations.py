@@ -40,11 +40,9 @@ class InvitationServiceUnavailable(InvitationsErrors):
 #
 
 
-async def validate_invitation_url(request: web.Request, invitation_url: str):
+async def validate_invitation_url(app: web.Application, invitation_url: str):
     # extract invitation
-    invitations_api: InvitationsServiceApi = get_invitations_service_api(
-        app=request.app
-    )
+    invitations_api: InvitationsServiceApi = get_invitations_service_api(app=app)
 
     # check possible errors
     try:
