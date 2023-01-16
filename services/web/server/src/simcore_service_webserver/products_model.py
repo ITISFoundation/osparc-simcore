@@ -76,7 +76,7 @@ class Product(BaseModel):
     login_settings: ProductLoginSettingsDict = Field(
         ...,
         description="Product customization of login settings. "
-        "Note that these are NOT the final plugin settings bug those are obtained from login.settings.get_plugin_settings",
+        "Note that these are NOT the final plugin settings but those are obtained from login.settings.get_plugin_settings",
     )
 
     registration_email_template: Optional[str] = Field(

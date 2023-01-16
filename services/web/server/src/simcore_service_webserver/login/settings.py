@@ -79,7 +79,7 @@ class LoginSettingsForProduct(LoginSettings):
     LoginSettingsForProduct is obtained composing those with the overrides defined for each
     product in the  database.
 
-    This is initialized for each product during on_startup events at tje setup_login
+    This is initialized for each product during on_startup events at the setup_login
     """
 
     @classmethod
