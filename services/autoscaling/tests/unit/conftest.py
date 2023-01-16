@@ -32,7 +32,15 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import Node, Service
+from models_library.generated_models.docker_rest_api import (
+    Availability,
+    Node,
+    NodeDescription,
+    NodeSpec,
+    ObjectVersion,
+    ResourceObject,
+    Service,
+)
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize, PositiveInt, parse_obj_as
 from pytest import MonkeyPatch
@@ -208,6 +216,28 @@ async def host_node(
     nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
     assert len(nodes) == 1
     return nodes[0]
+
+
+@pytest.fixture
+def fake_node(faker: Faker) -> Node:
+    return Node(
+        ID=faker.uuid4(),
+        Version=ObjectVersion(Index=faker.pyint()),
+        CreatedAt=faker.date_time().isoformat(),
+        UpdatedAt=faker.date_time().isoformat(),
+        Description=NodeDescription(
+            Hostname=faker.pystr(),
+            Resources=ResourceObject(
+                NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
+            ),
+        ),
+        Spec=NodeSpec(
+            Name=None,
+            Labels=None,
+            Role=None,
+            Availability=Availability.drain,
+        ),
+    )
 
 
 @pytest.fixture
