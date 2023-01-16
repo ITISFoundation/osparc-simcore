@@ -98,7 +98,7 @@ async def test_set_and_get_non_local(key_1: str, workflow_context: WorkflowConte
     assert await workflow_context.get(key_1, int) == 4
 
 
-async def test_to_dict(key_1: str, workflow_context: WorkflowContext):
+async def test_get_serialized_context(key_1: str, workflow_context: WorkflowContext):
     await workflow_context.set(key_1, 4)
     assert (
         await workflow_context.get_serialized_context()
@@ -106,16 +106,11 @@ async def test_to_dict(key_1: str, workflow_context: WorkflowContext):
     )
 
 
-async def test_from_dict(
-    app: FastAPI, context_io_interface_type: type[ContextInterface]
-):
-    serialized_workflow_context: dict[str, Any] = {
-        "1": 1,
-        "d": dict(me=1.1),
-    } | EXTRA_WORKFLOW_CONTEXT_DATA
+async def test_import_from_serialized_context(workflow_context: WorkflowContext):
+    serialized_workflow_context: dict[str, Any] = {"1": 1, "d": dict(me=1.1)}
 
-    context = await context_io_interface_type.from_dict(serialized_workflow_context)
-    workflow_context = await WorkflowContext.from_context(context=context, app=app)
+    await workflow_context.import_from_serialized_context(serialized_workflow_context)
     assert (
-        await workflow_context.get_serialized_context() == serialized_workflow_context
+        await workflow_context.get_serialized_context()
+        == serialized_workflow_context | EXTRA_WORKFLOW_CONTEXT_DATA
     )
