@@ -123,9 +123,13 @@ def mock_try_get_node_with_name(
 
 @pytest.fixture
 def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    async def fake_tag_node(*args, **kwargs) -> Node:
+        return args[1]
+
     mocked_tag_node = mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.tag_node",
         autospec=True,
+        side_effect=fake_tag_node,
     )
     yield mocked_tag_node
 
@@ -250,6 +254,7 @@ async def test_cluster_scaling_up(
     mock_try_get_node_with_name: mock.Mock,
     mock_set_node_availability: mock.Mock,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -262,7 +267,7 @@ async def test_cluster_scaling_up(
         "pending",
     )
 
-    # this should trigger a scaling up
+    # this should trigger a scaling up as we have no nodes
     await cluster_scaling_from_labelled_services(initialized_app)
 
     # check the instance was started and we have exactly 1
@@ -301,10 +306,13 @@ async def test_cluster_scaling_up(
     mock_rabbitmq_post_message.reset_mock()
 
     # 2. running this again should not scale again, but tag the node and make it available
+    fake_cluster_used_resource = Resources(
+        cpus=faker.pyint(min_value=1), ram=ByteSize(faker.pyint(min_value=1000))
+    )
     mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.compute_cluster_used_resources",
         autospec=True,
-        return_value=Resources(cpus=423, ram=ByteSize(122222222)),
+        return_value=fake_cluster_used_resource,
     )
     await cluster_scaling_from_labelled_services(initialized_app)
     all_instances = await ec2_client.describe_instances()
@@ -351,7 +359,10 @@ async def test_cluster_scaling_up(
             "cpus": fake_node.Description.Resources.NanoCPUs / 1e9,
             "ram": fake_node.Description.Resources.MemoryBytes,
         },
-        cluster_used_resources={"cpus": 423.0, "ram": 122222222},
+        cluster_used_resources={
+            "cpus": float(fake_cluster_used_resource.cpus),
+            "ram": fake_cluster_used_resource.ram,
+        },
         instances_running=1,
     )
     mock_rabbitmq_post_message.reset_mock()
