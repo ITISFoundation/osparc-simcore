@@ -9,6 +9,7 @@ from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._constants import APP_SETTINGS_KEY
+from .db import setup_db
 from .invitations_client import (
     InvitationsServiceApi,
     get_invitations_service_api,
@@ -76,6 +77,8 @@ async def validate_invitation_url(request: web.Request, invitation_url: str):
 )
 def setup_invitations(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS  # nosec
+
+    setup_db(app)
 
     app.cleanup_ctx.append(invitations_service_api_cleanup_ctx)
 
