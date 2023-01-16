@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.14.0
+  version: 0.14.1
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -32,10 +32,6 @@ tags:
   - name: storage
   - name: activity
   - name: tag
-    description: |
-      Grouping the paths and operations that perform changes on the TAG entity.
-      Tags are customized visual elements that help the user group and quickly identify different items
-      on the interface. They can also be used for searching and filtering purposes.
   - name: tasks
     description: |
       Asynchronously running tasks
@@ -4731,106 +4727,156 @@ paths:
     get:
       tags:
         - tag
-      summary: List all tags for the current user
+      summary: List Tags
       operationId: list_tags
       responses:
         '200':
-          description: List of tags
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
-                    type: object
-                    required:
-                      - tags
-                    properties:
-                      tags:
-                        type: array
-                        items:
-                          $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
     post:
       tags:
         - tag
-      summary: Creates a new tag
+      summary: Create Tag
       operationId: create_tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TagCreate
+              required:
+                - name
+                - color
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                description:
+                  title: Description
+                  type: string
+                color:
+                  title: Color
+                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  type: string
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: The created tag
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[TagGet]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
-                    type: object
+                    title: TagGet
                     required:
+                      - id
                       - name
                       - color
                       - accessRights
+                    type: object
                     properties:
                       id:
+                        title: Id
+                        exclusiveMinimum: true
                         type: integer
+                        minimum: 0
                       name:
+                        title: Name
                         type: string
                       description:
+                        title: Description
                         type: string
                       color:
+                        title: Color
                         type: string
-                        pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
                       accessRights:
+                        title: TagAccessRights
+                        required:
+                          - read
+                          - write
+                          - delete
                         type: object
                         properties:
                           read:
+                            title: Read
                             type: boolean
                           write:
+                            title: Write
                             type: boolean
                           delete:
+                            title: Delete
                             type: boolean
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
   '/tags/{tag_id}':
-    parameters:
-      - name: tag_id
-        in: path
-        required: true
-        schema:
-          type: integer
+    delete:
+      tags:
+        - tag
+      summary: Delete Tag
+      operationId: delete_tag
+      parameters:
+        - required: true
+          schema:
+            title: Tag Id
+            type: integer
+          name: tag_id
+          in: path
+      responses:
+        '204':
+          description: Successful Response
     patch:
       tags:
         - tag
-      summary: Updates a tag
+      summary: Update Tag
       operationId: update_tag
+      parameters:
+        - required: true
+          schema:
+            title: Tag Id
+            type: integer
+          name: tag_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TagUpdate
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                description:
+                  title: Description
+                  type: string
+                color:
+                  title: Color
+                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  type: string
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: The updated tag
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-    delete:
-      tags:
-        - tag
-      summary: Deletes an existing tag
-      operationId: delete_tag
-      responses:
-        '204':
-          description: The tag has been successfully deleted
   /publications/service-submission:
     post:
       tags:
