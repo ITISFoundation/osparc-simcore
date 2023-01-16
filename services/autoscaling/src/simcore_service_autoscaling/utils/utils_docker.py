@@ -109,13 +109,13 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
 async def _associated_service_has_no_node_placement_contraints(
     docker_client: AutoscalingDocker, task: Task
 ) -> bool:
-    if not task.ServiceID:
-        return False
+    assert task.ServiceID  # nosec
     service_inspect = parse_obj_as(
         Service, await docker_client.services.inspect(task.ServiceID)
     )
-    if not service_inspect.Spec or not service_inspect.Spec.TaskTemplate:
-        return False
+    assert service_inspect.Spec  # nosec
+    assert service_inspect.Spec.TaskTemplate  # nosec
+
     if (
         not service_inspect.Spec.TaskTemplate.Placement
         or not service_inspect.Spec.TaskTemplate.Placement.Constraints

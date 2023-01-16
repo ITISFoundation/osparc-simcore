@@ -192,6 +192,54 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
     )
 
 
+@pytest.mark.parametrize(
+    "placement_constraint, expected_pending_tasks",
+    [
+        ([], True),
+        (["node.id==20398jsdlkjfs"], False),
+        (["node.hostname==fake_name"], False),
+        (["node.role==manager"], False),
+        (["node.platform.os==linux"], True),
+        (["node.platform.arch==amd64"], True),
+        (["node.labels==amd64"], True),
+        (["engine.labels==amd64"], True),
+    ],
+    ids=str,
+)
+async def test_pending_service_task_with_placement_constrain_is_skipped(
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    placement_constraint: list[str],
+    expected_pending_tasks: bool,
+    faker: Faker,
+):
+    task_template_with_too_many_resource = task_template | create_task_reservations(
+        1000, 0
+    )
+    if placement_constraint:
+        task_template_with_too_many_resource["Placement"] = {
+            "Constraints": placement_constraint
+        }
+    # a service will complain only once its task reaches the pending state
+    service_with_too_many_resources = await create_service(
+        task_template_with_too_many_resource, {}, "pending"
+    )
+    assert service_with_too_many_resources.Spec
+
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(
+        autoscaling_docker, service_labels=[]
+    )
+    if expected_pending_tasks:
+        assert pending_tasks
+    else:
+        assert pending_tasks == []
+
+
 async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
