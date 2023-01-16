@@ -31,12 +31,14 @@ class InvalidInvitationError(InvitationsErrors):
 
 
 class InvitationServiceUnavailable(InvitationsErrors):
-    msg_template = "Invitations service currently unavailable"
+    msg_template = "Invitations service is currently unavailable"
 
 
 #
 # API plugin calls
 #
+
+
 async def validate_invitation_url(request: web.Request, invitation_url: str):
     # extract invitation
     invitations_api: InvitationsServiceApi = get_invitations_service_api(
@@ -75,13 +77,10 @@ async def validate_invitation_url(request: web.Request, invitation_url: str):
 def setup_invitations(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS  # nosec
 
-    # TODO: might be a client ONLY for this??
     app.cleanup_ctx.append(invitations_service_api_cleanup_ctx)
 
 
-# module to setup_invitations service
-# client API class to trigger calls
-#
+# TODO:
 # login plugin ensures setup_invitations are in place (if not, deactivates invitations?)
 # - ``check_and_consume_invitation``: Check in this order:
 #     - invitation in confirmation table
@@ -89,9 +88,12 @@ def setup_invitations(app: web.Application):
 #
 #
 
-
-# API
-__all__ = tuple[str, ...] = (
+#
+# API plugin
+#
+__all__: tuple[str, ...] = (
     "setup_invitations",
     "validate_invitation_url",
+    "InvalidInvitationError",
+    "InvitationServiceUnavailable",
 )
