@@ -90,6 +90,50 @@ _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 
 
+def _is_task_waiting_for_resources(task: Task) -> bool:
+    # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
+    if (
+        not task.Status
+        or not task.Status.State
+        or not task.Status.Message
+        or not task.Status.Err
+    ):
+        return False
+    return (
+        task.Status.State == TaskState.pending
+        and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
+        and _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+    )
+
+
+async def _associated_service_has_no_node_placement_contraints(
+    docker_client: AutoscalingDocker, task: Task
+) -> bool:
+    if not task.ServiceID:
+        return False
+    service_inspect = parse_obj_as(
+        Service, await docker_client.services.inspect(task.ServiceID)
+    )
+    if not service_inspect.Spec or not service_inspect.Spec.TaskTemplate:
+        return False
+    if (
+        not service_inspect.Spec.TaskTemplate.Placement
+        or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+    ):
+        return True
+    # parse the placement contraints
+    service_placement_constraints = (
+        service_inspect.Spec.TaskTemplate.Placement.Constraints
+    )
+    for constraint in service_placement_constraints:
+        # is of type node.id==alskjladskjs or node.hostname==thiscomputerhostname or node.role==manager, sometimes with spaces...
+        if any(
+            constraint.startswith(c) for c in _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS
+        ):
+            return False
+    return True
+
+
 async def pending_service_tasks_with_insufficient_resources(
     docker_client: AutoscalingDocker,
     service_labels: list[DockerLabelKey],
@@ -112,47 +156,6 @@ async def pending_service_tasks_with_insufficient_resources(
         ),
     )
 
-    def _is_task_waiting_for_resources(task: Task) -> bool:
-        # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-        if (
-            not task.Status
-            or not task.Status.State
-            or not task.Status.Message
-            or not task.Status.Err
-        ):
-            return False
-        return (
-            task.Status.State == TaskState.pending
-            and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
-            and _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
-        )
-
-    async def _associated_service_has_no_node_placement_contraints(task: Task) -> bool:
-        if not task.ServiceID:
-            return False
-        service_inspect = parse_obj_as(
-            Service, await docker_client.services.inspect(task.ServiceID)
-        )
-        if not service_inspect.Spec or not service_inspect.Spec.TaskTemplate:
-            return False
-        if (
-            not service_inspect.Spec.TaskTemplate.Placement
-            or not service_inspect.Spec.TaskTemplate.Placement.Constraints
-        ):
-            return True
-        # parse the placement contraints
-        service_placement_constraints = (
-            service_inspect.Spec.TaskTemplate.Placement.Constraints
-        )
-        for constraint in service_placement_constraints:
-            # is of type node.id==alskjladskjs or node.hostname==thiscomputerhostname or node.role==manager, sometimes with spaces...
-            if any(
-                constraint.startswith(c)
-                for c in _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS
-            ):
-                return False
-        return True
-
     sorted_tasks = sorted(
         tasks, key=lambda task: to_datetime(task.CreatedAt or f"{datetime.utcnow()}")
     )
@@ -162,7 +165,9 @@ async def pending_service_tasks_with_insufficient_resources(
         for task in sorted_tasks
         if (
             _is_task_waiting_for_resources(task)
-            and await _associated_service_has_no_node_placement_contraints(task)
+            and await _associated_service_has_no_node_placement_contraints(
+                docker_client, task
+            )
         )
     ]
 
