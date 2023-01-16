@@ -168,7 +168,9 @@ class Workbench(BaseModel):
             int | bool | str | float | None | Input | Input1 | Input2,
         ]
     ) = Field(None, description="values of input properties")
-    input_access: None | (dict[constr(regex=r"^[-_a-zA-Z0-9]+$"), InputAccess]) = Field(
+    input_access: None | (
+        dict[constr(regex=r"^[-_a-zA-Z0-9]+$"), InputAccess]
+    ) = Field(
         None, alias="inputAccess", description="map with key - access level pairs"
     )
     input_nodes: list[UUID] | None = Field(
@@ -224,8 +226,8 @@ class Slideshow(BaseModel):
         description="Instructions about what to do in this step",
         examples=[
             "This is a **sleeper**",
-            "Please, select the config file defined [in this link](asdf)",
-        ],
+            "Please, select the config file defined [in this link](asdf)"
+        ]
     )
 
 
