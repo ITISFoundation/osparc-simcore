@@ -206,6 +206,32 @@ qx.Class.define("osparc.utils.Utils", {
       return (productName === product);
     },
 
+    getStudyLabel(plural = false) {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        if (plural) {
+          return qx.locale.Manager.tr("projects");
+        }
+        return qx.locale.Manager.tr("project");
+      }
+      if (plural) {
+        return qx.locale.Manager.tr("studies");
+      }
+      return qx.locale.Manager.tr("study");
+    },
+
+    getTemplateLabel(plural = false) {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        if (plural) {
+          return qx.locale.Manager.tr("tutorials");
+        }
+        return qx.locale.Manager.tr("tutorial");
+      }
+      if (plural) {
+        return qx.locale.Manager.tr("templates");
+      }
+      return qx.locale.Manager.tr("template");
+    },
+
     getEditButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         allowGrowY: false,
