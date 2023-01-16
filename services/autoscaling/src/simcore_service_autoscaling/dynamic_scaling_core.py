@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import itertools
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -180,10 +181,11 @@ async def _try_scale_up_with_drained_nodes(
     app: FastAPI,
     monitored_nodes: list[Node],
     pending_tasks: list[Task],
-) -> bool:
+) -> list[Task]:
+    """returns the tasks that were assigned to the drained nodes"""
     docker_client = get_docker_client(app)
     if not pending_tasks:
-        return True
+        return []
     activatable_nodes: list[tuple[Node, list[Task]]] = [
         (
             node,
@@ -203,7 +205,7 @@ async def _try_scale_up_with_drained_nodes(
         if assigned_tasks
     ]
 
-    async def _activate_and_notify(node: Node, tasks: list[Task]) -> None:
+    async def _activate_and_notify(node: Node, tasks: list[Task]) -> list[Task]:
         await asyncio.gather(
             *(
                 utils_docker.set_node_availability(docker_client, node, available=True),
@@ -214,13 +216,14 @@ async def _try_scale_up_with_drained_nodes(
                 ),
             )
         )
+        return tasks
 
     # scale up
-    await asyncio.gather(
+    list_treated_tasks = await asyncio.gather(
         *(_activate_and_notify(node, tasks) for node, tasks in nodes_to_activate)
     )
 
-    return len(nodes_to_activate) > 0
+    return list(itertools.chain(*list_treated_tasks))
 
 
 def _try_assigning_task_to_instances(
@@ -481,15 +484,15 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
     ):
         # we have a number of pending tasks, try to resolve them with drained nodes if possible
-        await _try_scale_up_with_drained_nodes(app, monitored_nodes, pending_tasks)
-        # give the swarm tasks some time to adjust
-        await asyncio.sleep(2)
+        treated_tasks = await _try_scale_up_with_drained_nodes(
+            app, monitored_nodes, pending_tasks
+        )
+        treated_task_ids = [t.ID for t in treated_tasks]
+        # clean the pending tasks with the ones that were treated
+        pending_tasks = [t for t in pending_tasks if t.ID not in treated_task_ids]
 
         # let's check if there are still pending tasks
-        if pending_tasks := await utils_docker.pending_service_tasks_with_insufficient_resources(
-            docker_client,
-            service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-        ):
+        if pending_tasks:
             # yes? then scale up
             await _scale_up_cluster(app, monitored_nodes, pending_tasks)
     else:
