@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Awaitable
 from unittest.mock import AsyncMock, call
 
 import pytest
@@ -29,10 +29,12 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def workflow_runner_manager_lifecycle(
-    app: AsyncMock, context: ContextInterface, workflow: Workflow
+    app: AsyncMock,
+    context_interface_factory: Awaitable[ContextInterface],
+    workflow: Workflow,
 ) -> AsyncIterator[WorkflowRunnerManager]:
     workflow_runner_manager = WorkflowRunnerManager(
-        context=context, app=app, workflow=workflow
+        context_factory=context_interface_factory, app=app, workflow=workflow
     )
     await workflow_runner_manager.setup()
     yield workflow_runner_manager
@@ -56,7 +58,9 @@ def workflow_name() -> WorkflowName:
 
 
 async def test_workflow_runs_in_expected_order_without_errors(
-    app: AsyncMock, context: ContextInterface, workflow_name: WorkflowName
+    app: AsyncMock,
+    context_interface_factory: Awaitable[ContextInterface],
+    workflow_name: WorkflowName,
 ):
     call_tracker = AsyncMock()
 
@@ -105,12 +109,13 @@ async def test_workflow_runs_in_expected_order_without_errors(
     )
 
     async with workflow_runner_manager_lifecycle(
-        app, context, workflow
+        app, context_interface_factory, workflow
     ) as workflow_runner_manager:
 
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name=workflow_name, action_name="initialize"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name=workflow_name)
         await workflow_runner_manager.wait_workflow_runner(workflow_name)
 
         assert call_tracker.call_args_list == [
@@ -121,7 +126,9 @@ async def test_workflow_runs_in_expected_order_without_errors(
 
 
 async def test_error_raised_but_handled_by_on_error_action(
-    app: AsyncMock, context: ContextInterface, workflow_name: WorkflowName
+    app: AsyncMock,
+    context_interface_factory: Awaitable[ContextInterface],
+    workflow_name: WorkflowName,
 ):
     call_tracker = AsyncMock()
 
@@ -158,11 +165,12 @@ async def test_error_raised_but_handled_by_on_error_action(
         ),
     )
     async with workflow_runner_manager_lifecycle(
-        app, context, workflow
+        app, context_interface_factory, workflow
     ) as workflow_runner_manager:
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name=workflow_name, action_name="raising_error"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name=workflow_name)
         await workflow_runner_manager.wait_workflow_runner(workflow_name)
 
         assert call_tracker.call_args_list == [
@@ -172,7 +180,9 @@ async def test_error_raised_but_handled_by_on_error_action(
 
 
 async def test_error_raised_but_not_handled(
-    app: AsyncMock, context: ContextInterface, workflow_name: WorkflowName
+    app: AsyncMock,
+    context_interface_factory: Awaitable[ContextInterface],
+    workflow_name: WorkflowName,
 ):
     call_tracker = AsyncMock()
 
@@ -193,12 +203,12 @@ async def test_error_raised_but_not_handled(
         )
     )
     async with workflow_runner_manager_lifecycle(
-        app, context, workflow
+        app, context_interface_factory, workflow
     ) as workflow_runner_manager:
-
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name=workflow_name, action_name="raising_error"
         )
+        await workflow_runner_manager.start_workflow_runner(workflow_name=workflow_name)
         with pytest.raises(UnhandledError):
             await workflow_runner_manager.wait_workflow_runner(workflow_name)
 
@@ -209,7 +219,7 @@ async def test_error_raised_but_not_handled(
 
 # TEST 4: test cancellation of very long pending event and schedule a new workflow which will finish
 async def test_cancellation_of_current_workflow_and_changing_to_a_different_one(
-    app: AsyncMock, context: ContextInterface
+    app: AsyncMock, context_interface_factory: Awaitable[ContextInterface]
 ):
     call_tracker = AsyncMock()
 
@@ -248,12 +258,17 @@ async def test_cancellation_of_current_workflow_and_changing_to_a_different_one(
     )
 
     async with workflow_runner_manager_lifecycle(
-        app=app, context=context, workflow=workflow_pending + workflow_finishing
+        app=app,
+        context_interface_factory=context_interface_factory,
+        workflow=workflow_pending + workflow_finishing,
     ) as workflow_runner_manager:
 
         # start the first workflow and cancel it immediately
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name="pending_workflow", action_name="pending"
+        )
+        await workflow_runner_manager.start_workflow_runner(
+            workflow_name="pending_workflow"
         )
         WAIT_FOR_STEP_TO_START = 0.1
         await asyncio.sleep(WAIT_FOR_STEP_TO_START)
@@ -262,8 +277,11 @@ async def test_cancellation_of_current_workflow_and_changing_to_a_different_one(
         )
 
         # start second workflow which wil finish afterwards
-        await workflow_runner_manager.start_workflow_runner(
+        await workflow_runner_manager.initialize_workflow_runner(
             workflow_name="finishing_workflow", action_name="finishing"
+        )
+        await workflow_runner_manager.start_workflow_runner(
+            workflow_name="finishing_workflow"
         )
         await workflow_runner_manager.wait_workflow_runner("finishing_workflow")
 

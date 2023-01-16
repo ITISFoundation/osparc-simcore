@@ -43,10 +43,9 @@ class _ContextIOInterface(ABC):
     async def to_dict(self) -> dict[str, Any]:
         """returns the context of a store as a dictionary"""
 
-    @classmethod
     @abstractmethod
-    async def from_dict(cls, incoming: dict[str, Any]) -> "_ContextIOInterface":
-        """returns an instance from incoming deserialized data"""
+    async def update(self, incoming: dict[str, Any]) -> None:
+        """stores data from incoming deserialized data"""
 
 
 class _ContextStorageInterface(ABC):
