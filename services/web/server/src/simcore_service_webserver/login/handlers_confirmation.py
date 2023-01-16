@@ -23,7 +23,12 @@ from ._confirmation import validate_confirmation_code
 from ._constants import MSG_PASSWORD_CHANGE_NOT_ALLOWED, MSG_PASSWORD_CHANGED
 from ._models import InputSchema, check_confirm_password_match
 from ._security import login_granted_response
-from .settings import LoginOptions, get_plugin_options
+from .settings import (
+    LoginOptions,
+    LoginSettingsForProduct,
+    get_plugin_options,
+    get_plugin_settings,
+)
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import ACTIVE, CHANGE_EMAIL, REGISTRATION, RESET_PASSWORD, flash_response
 
@@ -133,10 +138,15 @@ class PhoneConfirmationBody(InputSchema):
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
+    product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
-    if not product.login_settings.two_factor_enabled:
+    if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,

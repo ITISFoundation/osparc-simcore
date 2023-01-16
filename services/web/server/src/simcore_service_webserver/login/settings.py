@@ -8,9 +8,9 @@ from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
-from simcore_postgres_database.models.products import ProductLoginSettings
+from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
-from .._constants import APP_SETTINGS_KEY
+from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 
 _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
@@ -46,30 +46,10 @@ class LoginSettings(BaseCustomSettings):
         default=60.0, description="Expiration time for code [sec]"
     )
 
-
-class LoginSettingsForProduct(LoginSettings):
-    """It extends LoginSettings with ProductLoginSettings values
-
-
-    Used to validate and sync product.login_settings and app's login settings
-    SEE plugin._validate_products_login_settings event
-    """
-
     LOGIN_2FA_REQUIRED: bool = Field(
         default=False,
-        description="Use products.login.two_factor_enabled instead",
+        description="If true, it enables two-factor authentication (2FA)",
     )
-
-    @classmethod
-    def create_from_merge(
-        cls,
-        plugin_login_settings: LoginSettings,
-        product_login_settings: ProductLoginSettings,
-    ) -> "LoginSettingsForProduct":
-        return cls(
-            LOGIN_2FA_REQUIRED=product_login_settings.two_factor_enabled,
-            **plugin_login_settings.dict(),
-        )
 
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod
@@ -87,6 +67,38 @@ class LoginSettingsForProduct(LoginSettings):
                 "Cannot enable 2FA w/o twilio settings which is used to send SMS"
             )
         return v
+
+
+class LoginSettingsForProduct(LoginSettings):
+    """
+    Customization of these plugin settings for a product
+
+    LoginSettings are created (and frozen) upon creation of the app and available
+    to the plugin for setup_login.
+
+    LoginSettingsForProduct is obtained composing those with the overrides defined for each
+    product in the  database.
+
+    This is initialized for each product during on_startup events at the setup_login
+    """
+
+    @classmethod
+    def create_from_composition(
+        cls,
+        app_login_settings: LoginSettings,
+        product_login_settings: ProductLoginSettingsDict,
+    ) -> "LoginSettingsForProduct":
+        """
+        For the LoginSettings, product-specific settings override app-specifics settings
+        """
+        composed_settings = {**app_login_settings.dict(), **product_login_settings}
+
+        if "two_factor_enabled" in composed_settings:
+            # legacy safe
+            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop(
+                "two_factor_enabled"
+            )
+        return cls(**composed_settings)
 
 
 class LoginOptions(BaseModel):
@@ -119,10 +131,13 @@ class LoginOptions(BaseModel):
         return timedelta(days=value)
 
 
-def get_plugin_settings(app: web.Application) -> LoginSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
+def get_plugin_settings(
+    app: web.Application, product_name: str
+) -> LoginSettingsForProduct:
+    """login plugin's settings are customized per product"""
+    settings = app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY][product_name]
     assert settings, "setup_settings not called?"  # nosec
-    assert isinstance(settings, LoginSettings)  # nosec
+    assert isinstance(settings, LoginSettingsForProduct)  # nosec
     return settings
 
 

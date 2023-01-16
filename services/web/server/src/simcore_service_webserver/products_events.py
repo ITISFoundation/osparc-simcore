@@ -36,7 +36,7 @@ async def setup_product_templates(app: web.Application):
         # cleanup
 
 
-async def auto_create_products_groups(app: web.Application) -> int:
+async def auto_create_products_groups(app: web.Application) -> None:
     """Ensures all products have associated group ids
 
     Avoids having undefined groups in products with new products.group_id column
@@ -46,10 +46,12 @@ async def auto_create_products_groups(app: web.Application) -> int:
     """
     engine: Engine = app[APP_DB_ENGINE_KEY]
 
-    async with engine.acquire() as conn:
-        async for row in iter_products(conn):
+    async with engine.acquire() as connection:
+        async for row in iter_products(connection):
             product_name = row.name
-            product_group_id = await get_or_create_product_group(conn, product_name)
+            product_group_id = await get_or_create_product_group(
+                connection, product_name
+            )
             log.debug(
                 "Product with %s has an associated group with %s",
                 f"{product_name=}",
