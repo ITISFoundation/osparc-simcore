@@ -259,6 +259,11 @@ async def _find_needed_instances(
     list_of_new_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
         if _try_assigning_task_to_instances(task, list_of_existing_instance_to_tasks):
+            await _log_tasks_message(
+                app,
+                [task],
+                f"scaling up of cluster in progress...awaiting {len(pending_ec2_instances)} new machines...please wait...",
+            )
             continue
 
         if _try_assigning_task_to_instances(task, list_of_new_instance_to_tasks):
