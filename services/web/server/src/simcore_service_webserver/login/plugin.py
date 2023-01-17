@@ -7,7 +7,12 @@ from aiohttp import web
 from pydantic import ValidationError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY, INDEX_RESOURCE_NAME
+from .._constants import (
+    APP_OPENAPI_SPECS_KEY,
+    APP_PUBLIC_CONFIG_PER_PRODUCT,
+    APP_SETTINGS_KEY,
+    INDEX_RESOURCE_NAME,
+)
 from ..db import setup_db
 from ..db_settings import PostgresSettings
 from ..db_settings import get_plugin_settings as get_db_plugin_settings
@@ -101,8 +106,8 @@ async def _resolve_login_settings_per_product(app: web.Application):
     # store in app
     app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
 
-    log.debug(
-        "app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY]= %s",
+    log.info(
+        "Captured products login settings:\n%s",
         json.dumps(
             {
                 product_name: login_settings.dict()
@@ -111,6 +116,15 @@ async def _resolve_login_settings_per_product(app: web.Application):
             indent=1,
         ),
     )
+
+    # product config
+    public_data_per_product = {}
+    for product_name, settings in login_settings_per_product.items():
+        public_data_per_product[product_name] = {
+            "invitation_required": settings.LOGIN_REGISTRATION_INVITATION_REQUIRED
+        }
+
+    app.setdefault(APP_PUBLIC_CONFIG_PER_PRODUCT, public_data_per_product)
 
 
 @app_module_setup(
