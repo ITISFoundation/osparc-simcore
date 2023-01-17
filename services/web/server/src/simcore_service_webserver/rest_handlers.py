@@ -71,7 +71,9 @@ async def get_config(request: web.Request):
     register but the server has been setup to require an invitation. This option is setup
     at runtime and the front-end can only get it upon request to /config
     """
-    app_public_config: dict[str, Any] = request.app[APP_SETTINGS_KEY].public_dict()
+    app_public_config: dict[str, Any] = request.app[
+        APP_SETTINGS_KEY
+    ].public_config_dict()
 
     product_name = get_product_name(request=request)
     product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT, {}).get(

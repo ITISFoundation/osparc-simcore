@@ -286,7 +286,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 data[new_key] = data.pop(key)
         return data
 
-    def public_dict(self) -> dict[str, Any]:
+    def public_config_dict(self) -> dict[str, Any]:
         """Config publicaly available"""
 
         config = {"invitation_required": False}
