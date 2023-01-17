@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from typing import Optional
 
 import asyncpg
 from aiohttp import web
@@ -81,27 +82,30 @@ async def _resolve_login_settings_per_product(app: web.Application):
     for the login plugin. Note that product settings override app settings.
     """
     # app plugin settings
-    app_login_settings: LoginSettings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
-    assert app_login_settings, "setup_settings not called?"  # nosec
-    assert isinstance(app_login_settings, LoginSettings)  # nosec
-
-    # compose app and product settings
+    app_login_settings: Optional[LoginSettings]
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
-    errors = {}
-    for product in list_products(app):
-        try:
-            login_settings_per_product[
-                product.name
-            ] = LoginSettingsForProduct.create_from_composition(
-                app_login_settings=app_login_settings,
-                product_login_settings=product.login_settings,
-            )
-        except ValidationError as err:
-            errors[product.name] = err
 
-    if errors:
-        msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
-        raise ValueError(f"Invalid product.login_settings:\n{msg}")
+    if app_login_settings := app[APP_SETTINGS_KEY].WEBSERVER_LOGIN:
+        assert app_login_settings, "setup_settings not called?"  # nosec
+        assert isinstance(app_login_settings, LoginSettings)  # nosec
+
+        # compose app and product settings
+
+        errors = {}
+        for product in list_products(app):
+            try:
+                login_settings_per_product[
+                    product.name
+                ] = LoginSettingsForProduct.create_from_composition(
+                    app_login_settings=app_login_settings,
+                    product_login_settings=product.login_settings,
+                )
+            except ValidationError as err:
+                errors[product.name] = err
+
+        if errors:
+            msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
+            raise ValueError(f"Invalid product.login_settings:\n{msg}")
 
     # store in app
     app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
@@ -117,7 +121,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
         ),
     )
 
-    # product config
+    # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}
     for product_name, settings in login_settings_per_product.items():
         public_data_per_product[product_name] = {
