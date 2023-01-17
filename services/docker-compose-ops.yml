@@ -86,7 +86,7 @@ services:
     image: rediscommander/redis-commander:latest
     init: true
     environment:
-      - REDIS_HOSTS=resources:${REDIS_HOST}:${REDIS_PORT}:0,locks:${REDIS_HOST}:${REDIS_PORT}:1,validation_codes:${REDIS_HOST}:${REDIS_PORT}:2
+      - REDIS_HOSTS=resources:${REDIS_HOST}:${REDIS_PORT}:0,locks:${REDIS_HOST}:${REDIS_PORT}:1,validation_codes:${REDIS_HOST}:${REDIS_PORT}:2,scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:2
     ports:
       - "18081:8081"
     networks:
