@@ -30,7 +30,6 @@ from ..login.decorators import login_required
 from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from ..security_decorators import permission_required
 from ..users_api import get_user_role
-from ..users_exceptions import UserNotFoundError
 from . import projects_api
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -272,10 +271,8 @@ async def stop_node(request: web.Request) -> web.Response:
     save_state = await project_db_api.has_permission(
         user_id=req_ctx.user_id, project_uuid=path_params.project_id, permission="write"
     )
-    try:
-        user_role = await get_user_role(request.app, req_ctx.user_id)
-    except UserNotFoundError:
-        user_role = None
+
+    user_role = await get_user_role(request.app, req_ctx.user_id)
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
 
