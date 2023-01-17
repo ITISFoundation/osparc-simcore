@@ -56,9 +56,9 @@ async def get_running_containers_count_from_names(
         return len(containers)
 
 
-def get_docker_service_images(compose_spec_yaml: str) -> list[str]:
+def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
     docker_compose_spec = yaml.safe_load(compose_spec_yaml)
-    return [
+    return {
         service_data["image"]
         for service_data in docker_compose_spec["services"].values()
-    ]
+    }
