@@ -967,14 +967,16 @@ async def remove_project_dynamic_services(
     try:
         user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
 
-        project_db_api: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-        save_state = await project_db_api.has_permission(
-            user_id=user_id, project_uuid=project_uuid, permission="write"
-        )
+        user_role: Optional[UserRole] = None
         try:
             user_role = await get_user_role(app, user_id)
         except UserNotFoundError:
             user_role = None
+
+        project_db_api: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        save_state = await project_db_api.has_permission(
+            user_id=user_id, project_uuid=UUID(project_uuid), permission="write"
+        )
         if user_role is None or user_role <= UserRole.GUEST:
             save_state = False
         # -------------------
