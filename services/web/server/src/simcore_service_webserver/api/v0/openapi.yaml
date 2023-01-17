@@ -168,7 +168,7 @@ paths:
       operationId: get_scheduled_maintenance
       responses:
         '200':
-          description: Successful Response
+          description: Maintenance scheduled
           content:
             application/json:
               schema:
@@ -189,7 +189,7 @@ paths:
                     description: What the purpose of the Maintenance is
                 additionalProperties: false
         '204':
-          description: api key successfully deleted
+          description: No maintenance scheduled
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/register:
