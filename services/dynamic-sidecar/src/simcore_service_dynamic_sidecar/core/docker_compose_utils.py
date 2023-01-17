@@ -85,24 +85,28 @@ async def docker_compose_config(
     return result  # type: ignore
 
 
-async def docker_compose_pull(
-    app: FastAPI, compose_spec_yaml: str, settings: ApplicationSettings
-) -> None:
+async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     """
     Pulls all images required by the service.
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_pull/)
     """
+    app_settings: ApplicationSettings = app.state.settings
+    registry_settings = app_settings.REGISTRY_SETTINGS
 
-    async def _pull_image_with_progress(
-        docker_client: aiodocker.Docker, image: str
-    ) -> None:
-        async for pull_progress in docker_client.images.pull(
+    async def _pull_image_with_progress(client: aiodocker.Docker, image: str) -> None:
+        simplified_image_name = image.rsplit("/", maxsplit=1)[-1]
+        async for pull_progress in client.images.pull(
             image,
             stream=True,
+            auth={
+                "username": registry_settings.REGISTRY_USER,
+                "password": registry_settings.REGISTRY_PW.get_secret_value(),
+            },
         ):
-            await post_sidecar_log_message(app, f"pulling {image}: {pull_progress}...")
-        await post_sidecar_log_message(app, f"Docker image for {image} ready.")
+            await post_sidecar_log_message(
+                app, f"{pull_progress['status']}, id: {pull_progress['id']}..."
+            )
 
     list_of_images = get_docker_service_images(compose_spec_yaml)
     async with docker_client() as docker:
