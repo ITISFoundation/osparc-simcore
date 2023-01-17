@@ -21,7 +21,12 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
   construct: function(text) {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.HBox(5).set({
+    this.set({
+      maxWidth: this.self().MAX_WIDTH,
+      padding: 10
+    });
+
+    const layout = new qx.ui.layout.HBox().set({
       alignY: "middle"
     });
     this._setLayout(layout);
@@ -30,8 +35,13 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       this.setText(text);
     }
 
+    this.getContentElement().setStyles({
+      "border-width": "1px",
+      "border-color": qx.theme.manager.Color.getInstance().resolve("background-main-5")
+    });
+
     this.bind("read", this, "backgroundColor", {
-      converter: read => read ? "red" : "blue"
+      converter: read => read ? "background-main-2" : "background-main-4"
     });
   },
 
@@ -61,7 +71,10 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       let control;
       switch (id) {
         case "text":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            font: "text-16",
+            rich: true
+          });
           this.bind("text", control, "value");
           this._add(control);
           break;

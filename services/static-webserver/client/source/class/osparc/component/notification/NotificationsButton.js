@@ -58,6 +58,9 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
+          control.bind("value", control, "visibility", {
+            converter: value => value === "0" ? "excluded" : "visible"
+          });
           this._add(control, {
             bottom: 8,
             right: 4
@@ -74,12 +77,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
 
       const number = this.getChildControl("number");
       const unreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
-      if (unreadNotifications) {
-        number.show();
-        number.setValue(unreadNotifications.toString());
-      } else {
-        number.exclude();
-      }
+      number.setValue(unreadNotifications.toString());
     },
 
     __showNotifications: function() {
@@ -108,6 +106,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       const notifications = osparc.component.notification.Notifications.getInstance();
       notifications.setNotificationsContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
       notifications.getNotificationsContainer().show();
+
       document.addEventListener("mousedown", tapListener);
     },
 
@@ -115,6 +114,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       const notifications = osparc.component.notification.Notifications.getInstance();
       notifications.getNotificationsContainer().exclude();
 
+      this.getChildControl("number").setValue("0");
       notifications.getNotifications().forEach(notification => notification.setRead(true));
     }
   }
