@@ -40,6 +40,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
+    CHECK_INTERVAL: 60*60*1000, // Check hourly
     WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
   },
 
@@ -60,8 +61,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
           .catch(err => console.error(err));
       };
       checkMaintenance();
-      const interval = 2*1000;
-      this.__checkInternval = setInterval(checkMaintenance, interval);
+      this.__checkInternval = setInterval(checkMaintenance, this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {
