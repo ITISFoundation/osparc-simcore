@@ -5,11 +5,13 @@ docker_compose_* coroutines are implemented such that they can only
 run sequentially by this service
 
 """
+import asyncio
 import logging
 from copy import deepcopy
 from pprint import pformat
 from typing import Optional
 
+import aiodocker
 from fastapi import FastAPI
 from servicelib.async_utils import run_sequentially_in_context
 from settings_library.basic_types import LogLevel
@@ -91,18 +93,22 @@ async def docker_compose_pull(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_pull/)
     """
-    # TODO: should replace this one with the aiodocker version,
+
+    async def _pull_image_with_progress(
+        docker_client: aiodocker.Docker, image: str
+    ) -> None:
+        async for pull_progress in docker_client.images.pull(
+            image,
+            stream=True,
+        ):
+            await post_sidecar_log_message(app, f"pulling {image}: {pull_progress}...")
+        await post_sidecar_log_message(app, f"Docker image for {image} ready.")
+
     list_of_images = get_docker_service_images(compose_spec_yaml)
     async with docker_client() as docker:
-        for image in list_of_images:
-            async for pull_progress in docker.images.pull(
-                image,
-                stream=True,
-            ):
-                await post_sidecar_log_message(
-                    app, f"pulling {image}: {pull_progress}..."
-                )
-            await post_sidecar_log_message(app, f"Docker image for {image} ready.")
+        await asyncio.gather(
+            *(_pull_image_with_progress(docker, image) for image in list_of_images)
+        )
 
 
 async def docker_compose_create(
