@@ -70,7 +70,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     },
 
     duration: {
-      check: "String",
+      check: "Number",
       nullable: true
     }
   },
