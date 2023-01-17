@@ -287,15 +287,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return data
 
     def public_dict(self) -> dict[str, Any]:
-        """Data publicaly available"""
+        """Config publicaly available"""
 
-        data = {"invitation_required": False}
-        if self.WEBSERVER_LOGIN:
-            data[
-                "invitation_required"
-            ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
-
-        data.update(
+        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT
+        config.update(
             self._export_by_alias(
                 include={
                     "API_VERSION",
@@ -307,7 +302,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 exclude_none=True,
             )
         )
-        return data
+        return config
 
     def to_client_statics(self) -> dict[str, Any]:
         data = self._export_by_alias(
