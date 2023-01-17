@@ -39,6 +39,10 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     }
   },
 
+  statics: {
+    WARN_IN_ADVANCE: 20*60*100
+  },
+
   members: {
     __checkInternval: null,
 
@@ -49,13 +53,14 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
           return;
         }
         // getMaintenance()
-        if (Math.random() < 0.5) {
+        if (Math.random() < 0.3) {
           const maintenanceData = {
             start: "2023-01-17T12:00:00.000Z",
             end: "2023-01-17T13:00:00.000Z",
             reason: "Release"
           };
-          this.addMaintenance(maintenanceData);
+          this.__setMaintenance(maintenanceData);
+          this.stopTracker();
         }
       };
       checkMaintenance();
@@ -69,27 +74,75 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
-    addMaintenance: function(maintenanceData) {
+    __getText: function() {
+      if (this.getStart() === null) {
+        return null;
+      }
+
       let text = qx.locale.Manager.tr("Maintenance scheduled");
+      if (this.getStart()) {
+        text += "<br>";
+        text += osparc.utils.Utils.formatDateAndTime(this.getStart());
+      }
+      if (this.getEnd()) {
+        text += " - ";
+        text += osparc.utils.Utils.formatDateAndTime(this.getEnd());
+      }
+      if (this.getReason()) {
+        text += ": " + this.getReason();
+      }
+      text += "<br>";
+      text += qx.locale.Manager.tr("Please, save your work and logout");
+      return text;
+    },
+
+    __setMaintenance: function(maintenanceData) {
       if ("start" in maintenanceData) {
         const startDate = new Date(maintenanceData.start);
         this.setStart(startDate);
-        text += "<br>";
-        text += osparc.utils.Utils.formatDateAndTime(startDate);
       }
       if ("end" in maintenanceData) {
         const endDate = new Date(maintenanceData.end);
         this.setEnd(new Date(endDate));
-        text += " - ";
-        text += osparc.utils.Utils.formatDateAndTime(endDate);
       }
       if ("reason" in maintenanceData) {
         const reason = maintenanceData.reason;
         this.setReason(reason);
-        text += ": " + reason;
       }
+
+      const text = this.__getText();
       const notification = new osparc.component.notification.NotificationUI(text);
       osparc.component.notification.Notifications.getInstance().addNotification(notification);
+
+      this.__scheduleMaintenance();
+    },
+
+    __scheduleMaintenance: function() {
+      this.__scheduleFlashMessage();
+      this.__scheduleLogout();
+    },
+
+    __scheduleFlashMessage: function() {
+      const popupMessage = () => {
+        const text = this.__getText();
+        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING");
+      };
+      const now = new Date();
+      const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
+      if (diff < 0) {
+        popupMessage();
+      } else {
+        setTimeout(popupMessage(), diff);
+      }
+    },
+
+    __scheduleLogout: function() {
+      const logoutUser = () => {
+        qx.core.Init.getApplication().logout();
+      };
+      const now = new Date();
+      const diff = this.getStart().getTime() - now.getTime();
+      setTimeout(logoutUser(), diff);
     }
   }
 });

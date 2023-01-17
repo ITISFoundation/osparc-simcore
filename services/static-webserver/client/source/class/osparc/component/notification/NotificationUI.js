@@ -68,7 +68,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
         case "text":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
-            rich: true
+            rich: true,
+            wrap: true
           });
           this.bind("text", control, "value");
           this._add(control);
