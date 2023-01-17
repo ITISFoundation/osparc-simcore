@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.notifications.NotificationsButton", {
+qx.Class.define("osparc.component.notification.NotificationsButton", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -30,7 +30,7 @@ qx.Class.define("osparc.component.notifications.NotificationsButton", {
       visibility: "excluded"
     });
 
-    const notifications = osparc.component.notifications.Notifications.getInstance();
+    const notifications = osparc.component.notification.Notifications.getInstance();
     notifications.getNotifications().addListener("change", () => this.__updateNotificationsButton(), this);
     this.addListener("tap", () => this.__showNotifications(), this);
   },
@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.notifications.NotificationsButton", {
     __updateNotificationsButton: function() {
       const number = this.getChildControl("number");
 
-      const notifications = osparc.component.notifications.Notifications.getInstance();
+      const notifications = osparc.component.notification.Notifications.getInstance();
       const nNotifications = notifications.getNotifications().length;
       number.setValue(nNotifications.toString());
       nNotifications ? this.show() : this.exclude();
@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.notifications.NotificationsButton", {
     __showNotifications: function() {
       const that = this;
       const tapListener = event => {
-        const notifications = osparc.component.notifications.Notifications.getInstance();
+        const notifications = osparc.component.notification.Notifications.getInstance();
         const notificationsContainer = notifications.getNotificationsContainer();
         if (osparc.utils.Utils.isMouseOnElement(notificationsContainer, event)) {
           return;
@@ -95,14 +95,14 @@ qx.Class.define("osparc.component.notifications.NotificationsButton", {
           bounds.top = parseInt(rect.y);
         }
       }
-      const notifications = osparc.component.notifications.Notifications.getInstance();
+      const notifications = osparc.component.notification.Notifications.getInstance();
       notifications.setNotificationsContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
       notifications.getNotificationsContainer().show();
       document.addEventListener("mousedown", tapListener);
     },
 
     __hideNotifications: function() {
-      const notifications = osparc.component.notifications.Notifications.getInstance();
+      const notifications = osparc.component.notification.Notifications.getInstance();
       notifications.getNotificationsContainer().exclude();
     }
   }

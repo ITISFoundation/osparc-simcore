@@ -15,9 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.notifications.Notifications", {
+qx.Class.define("osparc.component.notification.Notification", {
   extend: qx.core.Object,
-  type: "singleton",
 
   construct: function() {
     this.base(arguments);

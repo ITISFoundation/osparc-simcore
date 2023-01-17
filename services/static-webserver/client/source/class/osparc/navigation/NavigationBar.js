@@ -246,7 +246,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         case "notifications-button":
-          control = new osparc.component.notifications.NotificationsButton();
+          control = new osparc.component.notification.NotificationsButton();
           this.getChildControl("right-items").add(control);
           break;
         case "expiration-icon":
