@@ -53,20 +53,11 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         }
         osparc.data.Resources.get("maintenance")
           .then(scheduledMaintenance => {
-            console.log("scheduledMaintenance", scheduledMaintenance);
-          })
-          .catch(err => console.error(err))
-          .finally(() => {
-            if (Math.random() < 0.3) {
-              const maintenanceData = {
-                start: "2023-01-17T19:55:00.000Z",
-                end: "2023-01-17T23:00:00.000Z",
-                reason: "Release"
-              };
-              this.__setMaintenance(maintenanceData);
-              this.stopTracker();
+            if (scheduledMaintenance) {
+              this.__setMaintenance(scheduledMaintenance);
             }
-          });
+          })
+          .catch(err => console.error(err));
       };
       checkMaintenance();
       const interval = 2*1000;
@@ -120,6 +111,8 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       osparc.component.notification.Notifications.getInstance().addNotification(notification);
 
       this.__scheduleMaintenance();
+
+      this.stopTracker();
     },
 
     __scheduleMaintenance: function() {
