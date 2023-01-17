@@ -964,7 +964,7 @@ class ProjectDBAPI:
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
     async def has_permission(
-        self, user_id: UserID, project_uuid: ProjectID, permission: str
+        self, user_id: UserID, project_uuid: str, permission: str
     ) -> bool:
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
