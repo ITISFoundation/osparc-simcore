@@ -966,6 +966,8 @@ class ProjectDBAPI:
     async def has_permission(
         self, user_id: UserID, project_uuid: str, permission: str
     ) -> bool:
+        # NOTE: user_id is invalid does nor raise
+
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
