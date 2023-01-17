@@ -370,10 +370,12 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      /*
+       * SCHEDULED MAINTENANCE
+       */
       "maintenance": {
-        useCache: true,
         endpoints: {
-          getOne: {
+          get: {
             method: "GET",
             url: statics.API + "/scheduled_maintenance"
           }
