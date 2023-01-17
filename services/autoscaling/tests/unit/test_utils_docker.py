@@ -6,6 +6,7 @@ import asyncio
 import itertools
 import random
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
@@ -21,6 +22,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from servicelib.docker_utils import to_datetime
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
@@ -36,7 +38,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     tag_node,
-    wait_for_node,
+    try_get_node_with_name,
 )
 
 
@@ -190,6 +192,54 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
     )
 
 
+@pytest.mark.parametrize(
+    "placement_constraint, expected_pending_tasks",
+    [
+        ([], True),
+        (["node.id==20398jsdlkjfs"], False),
+        (["node.hostname==fake_name"], False),
+        (["node.role==manager"], False),
+        (["node.platform.os==linux"], True),
+        (["node.platform.arch==amd64"], True),
+        (["node.labels==amd64"], True),
+        (["engine.labels==amd64"], True),
+    ],
+    ids=str,
+)
+async def test_pending_service_task_with_placement_constrain_is_skipped(
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    placement_constraint: list[str],
+    expected_pending_tasks: bool,
+    faker: Faker,
+):
+    task_template_with_too_many_resource = task_template | create_task_reservations(
+        1000, 0
+    )
+    if placement_constraint:
+        task_template_with_too_many_resource["Placement"] = {
+            "Constraints": placement_constraint
+        }
+    # a service will complain only once its task reaches the pending state
+    service_with_too_many_resources = await create_service(
+        task_template_with_too_many_resource, {}, "pending"
+    )
+    assert service_with_too_many_resources.Spec
+
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(
+        autoscaling_docker, service_labels=[]
+    )
+    if expected_pending_tasks:
+        assert pending_tasks
+    else:
+        assert pending_tasks == []
+
+
 async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
@@ -281,7 +331,7 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         )
         == []
     )
-
+    # start a service with the correct labels
     service_with_labels = await create_service(
         task_template_with_too_many_resource, service_labels, "pending"
     )
@@ -311,6 +361,41 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         },
     )
     assert not diff, f"{diff}"
+
+
+async def test_pending_service_task_with_insufficient_resources_properly_sorts_tasks(
+    host_node: Node,
+    autoscaling_docker: AutoscalingDocker,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    faker: Faker,
+):
+    service_labels: dict[DockerLabelKey, str] = faker.pydict(allowed_types=(str,))
+    task_template_with_too_many_resource = task_template | create_task_reservations(
+        1000, 0
+    )
+    services = await asyncio.gather(
+        *(
+            create_service(
+                task_template_with_too_many_resource, service_labels, "pending"
+            )
+            for _ in range(190)
+        )
+    )
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(
+        autoscaling_docker, service_labels=list(service_labels)
+    )
+
+    assert len(pending_tasks) == len(services)
+    # check sorting is done by creation date
+    last_date = datetime.utcnow() - timedelta(days=1)
+    for task in pending_tasks:
+        assert task.CreatedAt
+        assert to_datetime(task.CreatedAt) > last_date
+        last_date = to_datetime(task.CreatedAt)
 
 
 def test_get_node_total_resources(host_node: Node):
@@ -652,14 +737,28 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     await asyncio.sleep(2)
 
 
-async def test_wait_for_node(autoscaling_docker: AutoscalingDocker, host_node: Node):
+async def test_try_get_node_with_name(
+    autoscaling_docker: AutoscalingDocker, host_node: Node
+):
     assert host_node.Description
     assert host_node.Description.Hostname
 
-    received_node = await wait_for_node(
+    received_node = await try_get_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert received_node == host_node
+
+
+async def test_try_get_node_with_name_fake(
+    autoscaling_docker: AutoscalingDocker, fake_node: Node
+):
+    assert fake_node.Description
+    assert fake_node.Description.Hostname
+
+    received_node = await try_get_node_with_name(
+        autoscaling_docker, fake_node.Description.Hostname
+    )
+    assert received_node is None
 
 
 async def test_tag_node(
@@ -669,17 +768,19 @@ async def test_tag_node(
     assert host_node.Description.Hostname
     tags = faker.pydict(allowed_types=(str,))
     await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
-    updated_node = await wait_for_node(
+    updated_node = await try_get_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
+    assert updated_node
     assert updated_node.Spec
     assert updated_node.Spec.Availability == Availability.drain
     assert updated_node.Spec.Labels == tags
 
     await tag_node(autoscaling_docker, updated_node, tags={}, available=True)
-    updated_node = await wait_for_node(
+    updated_node = await try_get_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
+    assert updated_node
     assert updated_node.Spec
     assert updated_node.Spec.Availability == Availability.active
     assert updated_node.Spec.Labels == {}
