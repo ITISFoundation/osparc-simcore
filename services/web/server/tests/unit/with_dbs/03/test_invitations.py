@@ -14,7 +14,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest import MonkeyPatch
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations import (
     InvitationServiceUnavailable,
     validate_invitation_url,
@@ -31,10 +32,47 @@ from yarl import URL
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    plugin_settings = InvitationsSettings.create_from_envs()
-    print("InvitationsSettings=", plugin_settings.json(indent=1))
-    return app_environment
+def app_environment(
+    app_environment: EnvVarsDict, env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+):
+
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_COMPUTATION": "null",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_DIRECTOR": "null",
+            "WEBSERVER_EXPORTER": "null",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_REMOTE_DEBUG": "0",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
+            "WEBSERVER_TAGS": "0",
+            "WEBSERVER_TRACING": "null",
+            "WEBSERVER_VERSION_CONTROL": "0",
+        },
+    )
+
+    # undefine WEBSERVER_INVITATIONS
+    app_environment.pop("WEBSERVER_INVITATIONS", None)
+    monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
+
+    # set INVITATIONS_* variables using those in .devel-env
+    envs_invitations = setenvs_from_dict(
+        monkeypatch,
+        envs={
+            name: value
+            for name, value in env_devel_dict.items()
+            if name.startswith("INVITATIONS_")
+        },
+    )
+
+    print(ApplicationSettings.create_from_envs().json(indent=2))
+    return app_environment | envs_plugins | envs_invitations
 
 
 @pytest.fixture
