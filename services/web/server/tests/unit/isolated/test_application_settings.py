@@ -193,14 +193,14 @@ def test_app_settings_with_prod_config(
 
 
 def test_settings_constructs(app_settings: ApplicationSettings):
-    assert "vcs_url" in app_settings.public_config_dict()
+    assert "vcs_url" in app_settings.public_dict()
     assert (
-        app_settings.public_config_dict()["vcs_url"]
+        app_settings.public_dict()["vcs_url"]
         == "git@github.com:ITISFoundation/osparc-simcore.git"
     )
 
-    assert "app_name" in app_settings.public_config_dict()
-    assert "api_version" in app_settings.public_config_dict()
+    assert "app_name" in app_settings.public_dict()
+    assert "api_version" in app_settings.public_dict()
 
 
 def test_settings_to_client_statics(app_settings: ApplicationSettings):
@@ -240,6 +240,6 @@ def test_settings_to_client_statics_plugins(
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
-    assert not any("pass" in key for key in app_settings.public_config_dict().keys())
-    assert not any("token" in key for key in app_settings.public_config_dict().keys())
-    assert not any("secret" in key for key in app_settings.public_config_dict().keys())
+    assert not any("pass" in key for key in app_settings.public_dict().keys())
+    assert not any("token" in key for key in app_settings.public_dict().keys())
+    assert not any("secret" in key for key in app_settings.public_dict().keys())
