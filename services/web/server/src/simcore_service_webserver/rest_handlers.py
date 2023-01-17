@@ -77,13 +77,7 @@ async def get_scheduled_maintenance(request: web.Request):
 
     redis_client = get_redis_scheduled_maintenance_client(request.app)
     hash_key = "maintenance"
-    maintenance = await redis_client.get(hash_key)
-    log.warning("%s", maintenance)
-    if maintenance is not None:
-        maintenance_data = {
-            "start": maintenance.start,
-            "end": maintenance.end,
-            "reason": maintenance.reason,
-        }
-        return web.json_response(data={"data": maintenance_data})
+    maintenance_str = await redis_client.get(hash_key)
+    if maintenance_str is not None:
+        return web.json_response(data={"data": maintenance_str})
     return web.json_response(status=204)
