@@ -35,13 +35,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       this.setText(text);
     }
 
-    this.getContentElement().setStyles({
-      "border-width": "1px",
-      "border-color": qx.theme.manager.Color.getInstance().resolve("background-main-5")
-    });
-
     this.bind("read", this, "backgroundColor", {
-      converter: read => read ? "background-main-2" : "background-main-4"
+      converter: read => read ? "background-main-3" : "background-main-4"
     });
   },
 
@@ -72,7 +67,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
       switch (id) {
         case "text":
           control = new qx.ui.basic.Label().set({
-            font: "text-16",
+            font: "text-14",
             rich: true
           });
           this.bind("text", control, "value");
