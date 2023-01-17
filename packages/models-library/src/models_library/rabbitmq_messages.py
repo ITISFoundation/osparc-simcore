@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import Any, Literal, Optional
 
 from models_library.projects import ProjectID
@@ -38,8 +38,22 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
     action: RabbitEventMessageType
 
 
+class ProgressType(Enum):
+    COMPUTATION_RUNNING = auto()
+    SIDECARS_PULLING = auto()
+    SERVICE_IMAGES_PULLING = auto()
+    SERVICE_INPUTS_PULLING = auto()
+    SERVICE_OUTPUTS_PUSHING = auto()
+    SERVICE_STATE_PULLING = auto()
+    SERVICE_STATE_PUSHING = auto()
+    CLUSTER_UP_SCALING = auto()
+
+
 class ProgressRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.progress"] = "simcore.services.progress"
+    progress_type: ProgressType = (
+        ProgressType.COMPUTATION_RUNNING
+    )  # NOTE: backwards compatible
     progress: NonNegativeFloat
 
 
