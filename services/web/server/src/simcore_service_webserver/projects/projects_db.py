@@ -969,11 +969,11 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
-            try:
-                _check_project_permissions(project, user_id, user_groups, permission)
-                return True
-            except ProjectInvalidRightsError:
-                return False
+        try:
+            _check_project_permissions(project, user_id, user_groups, permission)
+            return True
+        except ProjectInvalidRightsError:
+            return False
 
 
 def setup_projects_db(app: web.Application):
