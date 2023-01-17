@@ -436,7 +436,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     """
     Goes through all the projects and will try to remove them but first it will check if
     the project is shared with others.
-    Based on the given access rights it will deltermine the action to take:
+    Based on the given access rights it will determine the action to take:
     - if other users have read access & execute access it will get deleted
     - if other users have write access the project's owner will be changed to a new owner:
         - if the project is directly shared with a one or more users, one of these
@@ -463,7 +463,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     ).list_all_projects_by_uuid_for_user(user_id=user_id)
 
     logger.info(
-        "Removing or transfering projects of user with %s, %s: %s",
+        "Removing or transferring projects of user with %s, %s: %s",
         f"{user_id=}",
         f"{project_owner=}",
         f"{user_project_uuids=}",
@@ -501,7 +501,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
             # when no new owner is found just remove the project
             try:
                 logger.debug(
-                    "Removing or transfering ownership of project with %s from user with %s",
+                    "Removing or transferring ownership of project with %s from user with %s",
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
@@ -519,7 +519,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
 
             # Try to change the project owner and remove access rights from the current owner
             logger.debug(
-                "Transfering ownership of project %s from user %s to %s.",
+                "Transferring ownership of project %s from user %s to %s.",
                 "This project cannot be removed since it is shared with other users"
                 f"{project_uuid=}",
                 f"{user_id}",
