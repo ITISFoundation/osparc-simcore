@@ -8,6 +8,7 @@ from aiohttp import web
 
 from ._meta import api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
+from .redis import get_redis_scheduled_maintenance_client
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
 
 log = logging.getLogger(__name__)
@@ -68,3 +69,15 @@ async def get_config(request: web.Request):
     at runtime and the front-end can only get it upon request to /config
     """
     return web.json_response(data={"data": request.app[APP_SETTINGS_KEY].public_dict()})
+
+
+@routes.get(f"/{api_version_prefix}/scheduled_maintenance", name="get_scheduled_maintenance")
+async def get_scheduled_maintenance(request: web.Request):
+    """Check scheduled_maintenance table in redis"""
+
+    redis_client = get_redis_scheduled_maintenance_client(request.app)
+    hash_key = "maintenance"
+    # {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
+    if maintenance_str := await redis_client.get(hash_key):
+        return web.json_response(data={"data": maintenance_str})
+    return web.json_response(status=204)

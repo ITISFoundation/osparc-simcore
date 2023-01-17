@@ -351,11 +351,15 @@ qx.Class.define("osparc.Application", {
     },
 
     __loadMainPage: function(studyId = null) {
+      // logged in
+
       // Invalidate the entire cache
       osparc.store.Store.getInstance().invalidate();
 
       osparc.data.Resources.getOne("profile")
         .then(profile => {
+          this.__connectWebSocket();
+
           if ("expirationDate" in profile) {
             const now = new Date();
             const today = new Date(now.toISOString().slice(0, 10));
@@ -366,10 +370,11 @@ qx.Class.define("osparc.Application", {
                 .then(msg => osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING"));
             }
           }
+
           if (studyId) {
             osparc.store.Store.getInstance().setCurrentStudyId(studyId);
           }
-          this.__connectWebSocket();
+
           const mainPage = this.__mainPage = new osparc.desktop.MainPage();
           this.__loadView(mainPage);
         });
@@ -428,9 +433,11 @@ qx.Class.define("osparc.Application", {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
 
       osparc.data.PollTasks.getInstance().removeTasks();
+      osparc.data.MaintenanceTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
+        this.__mainPage.closeStudy();
       }
       osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();
