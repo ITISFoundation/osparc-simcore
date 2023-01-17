@@ -360,8 +360,6 @@ qx.Class.define("osparc.Application", {
         .then(profile => {
           this.__connectWebSocket();
 
-          osparc.data.MaintenanceTracker.getInstance().startTracker();
-
           if ("expirationDate" in profile) {
             const now = new Date();
             const today = new Date(now.toISOString().slice(0, 10));

@@ -70,15 +70,26 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     },
 
     addMaintenance: function(maintenanceData) {
+      let text = qx.locale.Manager.tr("Maintenance scheduled");
       if ("start" in maintenanceData) {
-        this.setStart(new Date(maintenanceData.start));
+        const startDate = new Date(maintenanceData.start);
+        this.setStart(startDate);
+        text += "<br>";
+        text += osparc.utils.Utils.formatDateAndTime(startDate);
       }
       if ("end" in maintenanceData) {
-        this.setEnd(new Date(maintenanceData.end));
+        const endDate = new Date(maintenanceData.end);
+        this.setEnd(new Date(endDate));
+        text += "-";
+        text += osparc.utils.Utils.formatDateAndTime(endDate);
       }
       if ("reason" in maintenanceData) {
-        this.setReason(maintenanceData.reason);
+        const reason = maintenanceData.reason;
+        this.setReason(reason);
+        text += ": " + reason;
       }
+      const notification = new osparc.component.notification.NotificationUI(text);
+      osparc.component.notification.Notifications.getInstance().addNotification(notification);
     }
   }
 });

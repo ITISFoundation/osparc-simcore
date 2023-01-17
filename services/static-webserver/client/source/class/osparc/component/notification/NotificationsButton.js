@@ -40,7 +40,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/bell/24");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/paw/24");
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
           }));
@@ -64,12 +64,17 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
     },
 
     __updateNotificationsButton: function() {
-      const number = this.getChildControl("number");
+      const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
+      notifications.length ? this.show() : this.exclude();
 
-      const notifications = osparc.component.notification.Notifications.getInstance();
-      const nNotifications = notifications.getNotifications().length;
-      number.setValue(nNotifications.toString());
-      nNotifications ? this.show() : this.exclude();
+      const number = this.getChildControl("number");
+      const unreadNotifications = notifications.filter(notification => notification.getRead() === false);
+      if (unreadNotifications) {
+        number.show();
+        number.setValue(unreadNotifications.toString());
+      } else {
+        number.exclude();
+      }
     },
 
     __showNotifications: function() {
