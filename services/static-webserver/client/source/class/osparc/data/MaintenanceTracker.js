@@ -70,6 +70,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     },
 
     addMaintenance: function(maintenanceData) {
+      console.log("addMaintenance", maintenanceData);
       let text = qx.locale.Manager.tr("Maintenance scheduled");
       if ("start" in maintenanceData) {
         const startDate = new Date(maintenanceData.start);

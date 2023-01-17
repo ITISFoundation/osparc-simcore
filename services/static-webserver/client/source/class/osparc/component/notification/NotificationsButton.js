@@ -30,9 +30,13 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       visibility: "excluded"
     });
 
+    this._createChildControlImpl("icon");
+    this._createChildControlImpl("number");
+
     const notifications = osparc.component.notification.Notifications.getInstance();
     notifications.getNotifications().addListener("change", () => this.__updateNotificationsButton(), this);
     this.addListener("tap", () => this.__showNotifications(), this);
+    this.__updateNotificationsButton();
   },
 
   members: {
@@ -40,7 +44,7 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/paw/24");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/bell/20");
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
           }));
@@ -55,8 +59,8 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
             font: "text-12"
           });
           this._add(control, {
-            bottom: 3,
-            right: 0
+            bottom: 8,
+            right: 4
           });
           break;
       }
@@ -65,10 +69,11 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
 
     __updateNotificationsButton: function() {
       const notifications = osparc.component.notification.Notifications.getInstance().getNotifications();
+      console.log("Maintenance updateNotificationsButton", notifications);
       notifications.length ? this.show() : this.exclude();
 
       const number = this.getChildControl("number");
-      const unreadNotifications = notifications.filter(notification => notification.getRead() === false);
+      const unreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
       if (unreadNotifications) {
         number.show();
         number.setValue(unreadNotifications.toString());
@@ -109,6 +114,8 @@ qx.Class.define("osparc.component.notification.NotificationsButton", {
     __hideNotifications: function() {
       const notifications = osparc.component.notification.Notifications.getInstance();
       notifications.getNotificationsContainer().exclude();
+
+      notifications.getNotifications().forEach(notification => notification.setRead(true));
     }
   }
 });

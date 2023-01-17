@@ -35,10 +35,6 @@ qx.Class.define("osparc.component.notification.Notifications", {
     });
   },
 
-  statics: {
-    MAX_WIDTH: 300
-  },
-
   members: {
     __notifications: null,
     __notificationsContainer: null,
@@ -60,7 +56,7 @@ qx.Class.define("osparc.component.notification.Notifications", {
       const root = qx.core.Init.getApplication().getRoot();
       if (root && root.getBounds()) {
         this.__notificationsContainer.setLayoutProperties({
-          left: x - this.self().MAX_WIDTH,
+          left: x - osparc.component.notification.NotificationUI.MAX_WIDTH,
           top: y
         });
       }
