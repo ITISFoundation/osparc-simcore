@@ -250,17 +250,21 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             await update_scheduler_data_label(current)
 
             # cancel current observation task
-            service_task: Optional[
-                Union[asyncio.Task, object]
-            ] = self._service_observation_task[service_name]
-            if isinstance(service_task, asyncio.Task):
-                service_task.cancel()
+            if service_name in self._service_observation_task:
+                service_task: Optional[
+                    Union[asyncio.Task, object]
+                ] = self._service_observation_task[service_name]
+                if isinstance(service_task, asyncio.Task):
+                    service_task.cancel()
 
-                async def wait_for(task: asyncio.Task) -> None:
-                    await task
+                    async def _wait_task(task: asyncio.Task) -> None:
+                        await task
 
-                with suppress(asyncio.CancelledError):
-                    await asyncio.wait_for(wait_for(service_task), timeout=10)
+                    with suppress(asyncio.CancelledError):
+                        try:
+                            await asyncio.wait_for(_wait_task(service_task), timeout=10)
+                        except asyncio.TimeoutError:
+                            pass
 
             # recreate new observation
             dynamic_sidecar_settings: DynamicSidecarSettings = (
