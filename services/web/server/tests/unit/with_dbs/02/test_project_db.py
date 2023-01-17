@@ -12,7 +12,7 @@ from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Iterator, Optional
+from typing import Any, AsyncIterator, Iterator, Optional, get_args
 from uuid import UUID, uuid5
 
 import pytest
@@ -32,6 +32,7 @@ from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
+    Permission,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -941,12 +942,16 @@ async def test_has_permission(
         product_name=osparc_product_name,
     )
 
-    for permission in ("read", "write", "delete"):
+    for permission in get_args(Permission):
         assert permission in access_rights
 
         # owner always is allowed to do everything
         assert await db_api.has_permission(owner_id, project_id, permission) is True
 
+        # user does not exits
+        assert await db_api.has_permission(-1, project_id, permission) is False
+
+        # other user
         assert (
             await db_api.has_permission(second_user["id"], project_id, permission)
             is access_rights[permission]
