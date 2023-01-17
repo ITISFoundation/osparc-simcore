@@ -105,7 +105,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             },
         ):
             await post_sidecar_log_message(
-                app, f"{pull_progress['status']}, id: {pull_progress['id']}..."
+                app, f"pulling {simplified_image_name}: {pull_progress}..."
             )
 
     list_of_images = get_docker_service_images(compose_spec_yaml)
