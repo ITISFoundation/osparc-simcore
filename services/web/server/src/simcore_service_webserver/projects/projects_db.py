@@ -453,6 +453,9 @@ class ProjectDBAPI:
         only_published: bool = False,
         check_permissions: str = "read",
     ) -> dict:
+        """
+        raises: ProjectNotFoundError
+        """
         exclude_foreign = exclude_foreign or []
 
         # this retrieves the projects where user is owner
@@ -966,10 +969,17 @@ class ProjectDBAPI:
     async def has_permission(
         self, user_id: UserID, project_uuid: str, permission: str
     ) -> bool:
-        # NOTE: user_id is invalid does nor raise
+        """
+        NOTE: this function should never raise
+        NOTE: if user_id does not exist it is not an issue
+        """
 
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            try:
+                project = await self._get_project(conn, user_id, project_uuid)
+            except ProjectNotFoundError:
+                return False
+
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
         try:
             _check_project_permissions(project, user_id, user_groups, permission)
