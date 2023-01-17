@@ -17,8 +17,9 @@ import asyncio
 import functools
 import logging
 from asyncio import sleep
+from contextlib import suppress
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -248,6 +249,30 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
             current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
             await update_scheduler_data_label(current)
 
+            # cancel current observation task
+            service_task: Optional[
+                Union[asyncio.Task, object]
+            ] = self._service_observation_task[service_name]
+            if isinstance(service_task, asyncio.Task):
+                service_task.cancel()
+
+                async def wait_for(task: asyncio.Task) -> None:
+                    await task
+
+                with suppress(asyncio.CancelledError):
+                    await asyncio.wait_for(wait_for(service_task), timeout=10)
+
+            # recreate new observation
+            dynamic_sidecar_settings: DynamicSidecarSettings = (
+                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            )
+            dynamic_scheduler: DynamicServicesSchedulerSettings = (
+                self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+            )
+            self._service_observation_task[service_name] = self.__get_observation_task(
+                dynamic_sidecar_settings, dynamic_scheduler, service_name
+            )
+
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def remove_service_from_observation(self, node_uuid: NodeID) -> None:
@@ -430,6 +455,32 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
 
+    def __get_observation_task(
+        self,
+        dynamic_sidecar_settings: DynamicSidecarSettings,
+        dynamic_scheduler: DynamicServicesSchedulerSettings,
+        service_name: str,
+    ) -> asyncio.Task:
+        scheduler_data: SchedulerData = self._to_observe[service_name]
+        observation_task = asyncio.create_task(
+            observing_single_service(
+                scheduler=self,
+                service_name=service_name,
+                scheduler_data=scheduler_data,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                dynamic_scheduler=dynamic_scheduler,
+            ),
+            name=f"observe_{service_name}",
+        )
+        observation_task.add_done_callback(
+            functools.partial(
+                lambda s, _: self._service_observation_task.pop(s, None),
+                service_name,
+            )
+        )
+        logger.debug("created %s for %s", f"{observation_task=}", f"{service_name=}")
+        return observation_task
+
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
         dynamic_sidecar_settings: DynamicSidecarSettings = (
@@ -450,27 +501,10 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 continue
 
             if self._service_observation_task.get(service_name) is None:
-                scheduler_data: SchedulerData = self._to_observe[service_name]
                 self._service_observation_task[
                     service_name
-                ] = observation_task = asyncio.create_task(
-                    observing_single_service(
-                        scheduler=self,
-                        service_name=service_name,
-                        scheduler_data=scheduler_data,
-                        dynamic_sidecar_settings=dynamic_sidecar_settings,
-                        dynamic_scheduler=dynamic_scheduler,
-                    ),
-                    name=f"observe_{service_name}",
-                )
-                observation_task.add_done_callback(
-                    functools.partial(
-                        lambda s, _: self._service_observation_task.pop(s, None),
-                        service_name,
-                    )
-                )
-                logger.debug(
-                    "created %s for %s", f"{observation_task=}", f"{service_name=}"
+                ] = self.__get_observation_task(
+                    dynamic_sidecar_settings, dynamic_scheduler, service_name
                 )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
