@@ -44,14 +44,22 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
     startTracker: function() {
       const checkMaintenance = () => {
+        console.log("checkMaintenance");
         if (this.getStart()) {
           return;
         }
         // getMaintenance()
-        console.log("getMaintenance");
+        if (Math.random() < 0.5) {
+          const maintenanceData = {
+            start: "2023-01-17T12:00:00.000Z",
+            end: "2023-01-17T13:00:00.000Z",
+            reason: "Release"
+          };
+          this.addMaintenance(maintenanceData);
+        }
       };
       checkMaintenance();
-      const interval = 60*1000;
+      const interval = 2*1000;
       this.__checkInternval = setInterval(checkMaintenance, interval);
     },
 
@@ -62,7 +70,15 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     },
 
     addMaintenance: function(maintenanceData) {
-      console.log("addMaintenance", maintenanceData);
+      if ("start" in maintenanceData) {
+        this.setStart(new Date(maintenanceData.start));
+      }
+      if ("end" in maintenanceData) {
+        this.setEnd(new Date(maintenanceData.end));
+      }
+      if ("reason" in maintenanceData) {
+        this.setReason(maintenanceData.reason);
+      }
     }
   }
 });
