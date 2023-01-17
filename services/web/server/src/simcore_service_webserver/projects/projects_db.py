@@ -12,7 +12,7 @@ from contextlib import AsyncExitStack
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Literal, Mapping, Optional, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -54,6 +54,8 @@ APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
+Permission = Literal["read", "write", "delete"]
+
 
 class ProjectAccessRights(Enum):
     OWNER = {"read": True, "write": True, "delete": True}
@@ -65,7 +67,7 @@ def _check_project_permissions(
     project: Union[ProjectProxy, ProjectDict],
     user_id: int,
     user_groups: list[RowProxy],
-    permission: str,
+    permission: Permission,
 ) -> None:
     if not permission:
         return
@@ -451,7 +453,7 @@ class ProjectDBAPI:
         for_update: bool = False,
         only_templates: bool = False,
         only_published: bool = False,
-        check_permissions: str = "read",
+        check_permissions: Permission = "read",
     ) -> dict:
         """
         raises: ProjectNotFoundError
@@ -544,7 +546,7 @@ class ProjectDBAPI:
         *,
         only_published: bool = False,
         only_templates: bool = False,
-        check_permissions: str = "read",
+        check_permissions: Permission = "read",
     ) -> tuple[ProjectDict, ProjectType]:
         """Returns all projects *owned* by the user
 
@@ -967,7 +969,7 @@ class ProjectDBAPI:
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
     async def has_permission(
-        self, user_id: UserID, project_uuid: str, permission: str
+        self, user_id: UserID, project_uuid: str, permission: Permission
     ) -> bool:
         """
         NOTE: this function should never raise
@@ -977,15 +979,13 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             try:
                 project = await self._get_project(conn, user_id, project_uuid)
-            except ProjectNotFoundError:
+                user_groups: list[RowProxy] = await self.__load_user_groups(
+                    conn, user_id
+                )
+                _check_project_permissions(project, user_id, user_groups, permission)
+                return True
+            except (ProjectInvalidRightsError, ProjectNotFoundError):
                 return False
-
-            user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
-        try:
-            _check_project_permissions(project, user_id, user_groups, permission)
-            return True
-        except ProjectInvalidRightsError:
-            return False
 
 
 def setup_projects_db(app: web.Application):
