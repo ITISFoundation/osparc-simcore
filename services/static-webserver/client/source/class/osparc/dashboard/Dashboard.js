@@ -89,13 +89,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const permissions = osparc.data.Permissions.getInstance();
       const tabs = [{
         id: "studiesTabBtn",
-        label: osparc.utils.Utils.isProduct("s4llite") ? this.tr("PROJECTS") : this.tr("STUDIES"),
+        label: osparc.utils.Utils.getStudyLabel(true).toUpperCase(),
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         const templatesTab = {
           id: "templatesTabBtn",
-          label: osparc.utils.Utils.isProduct("s4llite") ? this.tr("TUTORIALS") : this.tr("TEMPLATES"),
+          label: osparc.utils.Utils.getTemplateLabel(true).toUpperCase(),
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);

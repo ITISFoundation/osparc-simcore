@@ -397,7 +397,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const title = this.tr("Save as Template");
+        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getTemplateLabel());
         const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplate = new osparc.component.study.SaveAsTemplate(this.__resourceData);
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
