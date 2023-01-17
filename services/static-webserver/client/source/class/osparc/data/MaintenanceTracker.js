@@ -55,7 +55,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         // getMaintenance()
         if (Math.random() < 0.3) {
           const maintenanceData = {
-            start: "2023-01-17T09:46:00.000Z",
+            start: "2023-01-17T09:55:00.000Z",
             end: "2023-01-17T13:00:00.000Z",
             reason: "Release"
           };
