@@ -5,11 +5,13 @@ from typing import AsyncIterable, AsyncIterator
 
 import aiodocker
 import pytest
+import yaml
 from faker import Faker
 from models_library.services import RunID
 from pydantic import PositiveInt
 from pytest import FixtureRequest
 from simcore_service_dynamic_sidecar.core.docker_utils import (
+    get_docker_service_images,
     get_running_containers_count_from_names,
     get_volume_by_label,
 )
@@ -92,3 +94,38 @@ async def test_get_running_containers_count_from_names(
 ):
     found_containers = await get_running_containers_count_from_names(container_names)
     assert found_containers == container_count
+
+
+COMPOSE_SPEC_SAMPLE = {
+    "version": "3.8",
+    "services": {
+        "my-test-container": {
+            "environment": [
+                "DY_SIDECAR_PATH_INPUTS=/work/inputs",
+                "DY_SIDECAR_PATH_OUTPUTS=/work/outputs",
+                'DY_SIDECAR_STATE_PATHS=["/work/workspace"]',
+            ],
+            "working_dir": "/work",
+            "image": "busybox:latest",
+        },
+        "my-test-container2": {
+            "image": "nginx:latest",
+        },
+        "my-test-container3": {
+            "image": "simcore/services/dynamic/jupyter-math:2.1.3",
+        },
+    },
+}
+
+
+@pytest.fixture
+def compose_spec_yaml() -> str:
+    return yaml.safe_dump(COMPOSE_SPEC_SAMPLE, indent=1)
+
+
+def test_get_docker_service_images(compose_spec_yaml: str):
+    assert get_docker_service_images(compose_spec_yaml) == [
+        "busybox:latest",
+        "nginx:latest",
+        "simcore/services/dynamic/jupyter-math:2.1.3",
+    ]
