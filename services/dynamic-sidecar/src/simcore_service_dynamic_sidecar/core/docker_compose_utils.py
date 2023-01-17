@@ -10,9 +10,12 @@ from copy import deepcopy
 from pprint import pformat
 from typing import Optional
 
+from fastapi import FastAPI
 from servicelib.async_utils import run_sequentially_in_context
 from settings_library.basic_types import LogLevel
+from simcore_service_dynamic_sidecar.core.rabbitmq import post_sidecar_log_message
 
+from .docker_utils import docker_client, get_docker_service_images
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
@@ -81,21 +84,25 @@ async def docker_compose_config(
 
 
 async def docker_compose_pull(
-    compose_spec_yaml: str, settings: ApplicationSettings
-) -> CommandResult:
+    app: FastAPI, compose_spec_yaml: str, settings: ApplicationSettings
+) -> None:
     """
     Pulls all images required by the service.
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_pull/)
     """
     # TODO: should replace this one with the aiodocker version,
-    # can easily get progress out of it and report it back to the UI
-    result = await _write_file_and_spawn_process(
-        compose_spec_yaml,
-        command=f'docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" pull',
-        process_termination_timeout=None,
-    )
-    return result  # type: ignore
+    list_of_images = get_docker_service_images(compose_spec_yaml)
+    async with docker_client() as docker:
+        for image in list_of_images:
+            async for pull_progress in docker.images.pull(
+                image,
+                stream=True,
+            ):
+                await post_sidecar_log_message(
+                    app, f"pulling {image}: {pull_progress}..."
+                )
+            await post_sidecar_log_message(app, f"Docker image for {image} ready.")
 
 
 async def docker_compose_create(

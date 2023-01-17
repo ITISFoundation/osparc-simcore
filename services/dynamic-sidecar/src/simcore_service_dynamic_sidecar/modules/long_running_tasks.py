@@ -110,9 +110,11 @@ async def task_create_service_containers(
         await docker_compose_rm(shared_store.compose_spec, settings)
 
         progress.update(message="pulling images", percent=0.01)
-        await docker_compose_pull(shared_store.compose_spec, settings)
+        await post_sidecar_log_message(app, "pulling service images")
+        await docker_compose_pull(app, shared_store.compose_spec, settings)
 
         progress.update(message="creating and starting containers", percent=0.90)
+        await post_sidecar_log_message(app, "starting service containers")
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
 
         progress.update(message="ensure containers are started", percent=0.95)
