@@ -289,13 +289,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def public_dict(self) -> dict[str, Any]:
         """Config publicaly available"""
 
-        config = {"invitation_required": False}
-        if self.WEBSERVER_LOGIN:
-            # NOTE: overriden in _resolve_login_settings_per_product (I know ... :-( )
-            config[
-                "invitation_required"
-            ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
-
+        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT
         config.update(
             self._export_by_alias(
                 include={

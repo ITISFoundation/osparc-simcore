@@ -62,6 +62,8 @@ def client(
 
 
 async def test_frontend_config(client: TestClient, api_version_prefix: str):
+    assert client.app
+
     url = client.app.router["get_config"].url_for()
     assert str(url) == f"/{api_version_prefix}/config"
 
