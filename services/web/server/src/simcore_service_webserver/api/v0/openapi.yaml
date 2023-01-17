@@ -182,7 +182,7 @@ paths:
                   end:
                     title: End
                     type: string
-                    description: At what time the Maintenance end (UTC)
+                    description: At what time the Maintenance ends (UTC)
                   reason:
                     title: Reason
                     type: string
