@@ -177,6 +177,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    updatable: {
+      check: [null, "retired", "deprecated", "updatable"],
+      nullable: false,
+      init: null,
+      event: "changeUpdatable",
+      apply: "__applyUpdatable"
+    },
+
     hits: {
       check: "Number",
       nullable: true,
@@ -371,37 +379,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return;
       }
 
-      const updateStudy = this.getChildControl("update-study");
-      updateStudy.addListener("pointerdown", e => e.stopPropagation());
-      updateStudy.addListener("tap", e => {
-        e.stopPropagation();
-        this.__openUpdateServices();
-      }, this);
+      // Updatable study
       if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
-        updateStudy.show();
-        updateStudy.set({
-          toolTipText: this.tr("Service(s) retired, please update"),
-          textColor: osparc.utils.StatusUI.getColor("retired")
-        });
+        this.setUpdatable("retired");
       } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
-        updateStudy.show();
-        updateStudy.set({
-          toolTipText: this.tr("Service(s) deprecated, please update"),
-          textColor: osparc.utils.StatusUI.getColor("deprecated")
-        });
+        this.setUpdatable("deprecated");
       } else {
         osparc.utils.Study.isWorkbenchUpdatable(workbench)
           .then(updatable => {
             if (updatable) {
-              updateStudy.show();
-              updateStudy.set({
-                toolTipText: this.tr("Update available"),
-                textColor: "text"
-              });
+              this.setUpdatable("updatable");
             }
           });
       }
 
+      // Block card
       osparc.utils.Study.getUnaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
@@ -414,6 +406,39 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__blockCard(image, toolTipText);
           }
         });
+    },
+
+    __applyUpdatable: function(updatable) {
+      const updateStudy = this.getChildControl("update-study");
+      updateStudy.addListener("pointerdown", e => e.stopPropagation());
+      updateStudy.addListener("tap", e => {
+        e.stopPropagation();
+        this.__openUpdateServices();
+      }, this);
+
+      let toolTipText = null;
+      let textColor = null;
+      switch (updatable) {
+        case "retired":
+          toolTipText = this.tr("Service(s) retired, please update");
+          textColor = osparc.utils.StatusUI.getColor("retired");
+          break;
+        case "deprecated":
+          toolTipText = this.tr("Service(s) deprecated, please update");
+          textColor = osparc.utils.StatusUI.getColor("deprecated");
+          break;
+        case "updatable":
+          toolTipText = this.tr("Update available");
+          textColor = "text";
+          break;
+      }
+      if (toolTipText || textColor) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText,
+          textColor
+        });
+      }
     },
 
     _applyState: function(state) {
@@ -538,7 +563,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return moreOpts;
     },
 
-    _openAccessRights: function() {
+    openAccessRights: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openAccessRights();
     },
@@ -557,7 +582,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _evaluateShareIcon: function(shareIcon, accessRights) {
       shareIcon.addListener("tap", e => {
         e.stopPropagation();
-        this._openAccessRights();
+        this.openAccessRights();
       }, this);
       shareIcon.addListener("pointerdown", e => e.stopPropagation());
 

@@ -29,6 +29,35 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       UPDATE_BUTTON: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+3
     },
 
+    updateService: function(studyData, nodeId, newVersion) {
+      if (nodeId in studyData["workbench"]) {
+        if (newVersion === undefined) {
+          const services = osparc.utils.Services.servicesCached;
+          const node = studyData["workbench"][nodeId];
+          newVersion = osparc.utils.Services.getLatestCompatible(services, node["key"], node["version"]);
+        }
+        for (const id in studyData["workbench"]) {
+          if (id === nodeId) {
+            studyData["workbench"][nodeId]["version"] = newVersion;
+          }
+        }
+      }
+    },
+
+    updateAllServices: function(studyData, updatableNodeIds) {
+      for (const nodeId in studyData["workbench"]) {
+        if (updatableNodeIds && !updatableNodeIds.includes(nodeId)) {
+          continue;
+        }
+        const node = studyData["workbench"][nodeId];
+        const services = osparc.utils.Services.servicesCached;
+        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(services, node["key"], node["version"]);
+        if (latestCompatibleMetadata["version"] !== node["version"]) {
+          this.self().updateService(studyData, nodeId, latestCompatibleMetadata["version"]);
+        }
+      }
+    },
+
     colorVersionLabel: function(versionLabel, metadata) {
       const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
       const isRetired = osparc.utils.Services.isRetired(metadata);
@@ -53,23 +82,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
 
     __updateService: function(nodeId, newVersion, button) {
       this.setEnabled(false);
-      for (const id in this._studyData["workbench"]) {
-        if (id === nodeId) {
-          this._studyData["workbench"][nodeId]["version"] = newVersion;
-        }
-      }
+      this.self().updateService(this._studyData, nodeId, newVersion);
       this._updateStudy(button);
     },
 
-    __updateAllServices: function(nodeIds, button) {
+    __updateAllServices: function(updatableNodeIds, button) {
       this.setEnabled(false);
-      for (const nodeId in this._studyData["workbench"]) {
-        if (nodeIds.includes(nodeId)) {
-          const node = this._studyData["workbench"][nodeId];
-          const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
-          this._studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata["version"];
-        }
-      }
+      this.self().updateAllServices(this._studyData, updatableNodeIds);
       this._updateStudy(button);
     },
 

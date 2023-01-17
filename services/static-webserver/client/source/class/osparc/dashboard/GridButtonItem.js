@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         }
         case "hits-service": {
           control = new qx.ui.basic.Label().set({
-            toolTipText: this.tr("Number of times it was instantiated"),
+            toolTipText: this.tr("Number of times you instantiated it"),
             alignY: "middle"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.UPDATES);
@@ -179,7 +179,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     // overridden
     _applyLastChangeDate: function(value, old) {
-      if (value && this.isResourceType("study")) {
+      if (value && (this.isResourceType("study") || this.isResourceType("template"))) {
         const label = this.getChildControl("subtitle-text");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     // overridden
     _applyOwner: function(value, old) {
-      if (this.isResourceType("service") || this.isResourceType("template")) {
+      if (this.isResourceType("service")) {
         const label = this.getChildControl("subtitle-text");
         if (value === osparc.auth.Data.getInstance().getEmail()) {
           label.setValue(this.tr("me"));

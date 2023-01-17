@@ -225,7 +225,7 @@ async def test_acquire_all_available_node_locks_stress_test(
     # acquiring and releasing locks in parallel with high concurrency
 
     # adds more stress with lower lock_timeout_s
-    node_rights_manager.lock_timeout_s = 1.0
+    node_rights_manager.lock_timeout_s = 0.5
 
     node_rights_manager.concurrent_resource_slots = locks_per_node
 
@@ -241,7 +241,7 @@ async def test_acquire_all_available_node_locks_stress_test(
                 node_rights_manager,
                 docker_node_id,
                 TEST_RESOURCE,
-                sleep_before_release=node_rights_manager.lock_timeout_s / 2,
+                sleep_before_release=node_rights_manager.lock_timeout_s * 2,
             )
             for _ in range(total_node_slots)
         ]

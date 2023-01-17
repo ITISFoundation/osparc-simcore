@@ -65,6 +65,9 @@ class ExtendLock:
     def name(self) -> str:
         return self._redis_lock.name
 
+    async def initialize(self) -> None:
+        await self._redis_lock.do_reacquire()
+
     async def release(self) -> None:
         await self._redis_lock.release()
 
@@ -222,6 +225,7 @@ class NodeRightsManager:
             timeout_s=self.lock_timeout_s,
             extend_interval_s=self.lock_timeout_s / 2,
         )
+        await extend_lock.initialize()
 
         try:
             yield extend_lock

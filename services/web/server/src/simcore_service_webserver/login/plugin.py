@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 
 import asyncpg
@@ -6,23 +7,23 @@ from aiohttp import web
 from pydantic import ValidationError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._constants import APP_OPENAPI_SPECS_KEY, INDEX_RESOURCE_NAME
+from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY, INDEX_RESOURCE_NAME
 from ..db import setup_db
 from ..db_settings import PostgresSettings
 from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email
 from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
-from ..products import list_products, setup_products
+from ..products import ProductName, list_products, setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest
+from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .routes import create_routes
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
     LoginSettings,
     LoginSettingsForProduct,
-    get_plugin_settings,
 )
 from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 
@@ -70,18 +71,24 @@ def _setup_login_options(app: web.Application):
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
 
-async def _validate_products_login_settings(app: web.Application):
+async def _resolve_login_settings_per_product(app: web.Application):
+    """Resolves login settings by composing app and product configurations
+    for the login plugin. Note that product settings override app settings.
     """
-    - Some of the LoginSettings need to be in sync with product.login_settings. This is validated here
+    # app plugin settings
+    app_login_settings: LoginSettings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
+    assert app_login_settings, "setup_settings not called?"  # nosec
+    assert isinstance(app_login_settings, LoginSettings)  # nosec
 
-    - Needs products plugin initialized (otherwise list_products does not work)
-    """
-    settings: LoginSettings = get_plugin_settings(app)
+    # compose app and product settings
+    login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
     errors = {}
     for product in list_products(app):
         try:
-            _ = LoginSettingsForProduct.create_from_merge(
-                plugin_login_settings=settings,
+            login_settings_per_product[
+                product.name
+            ] = LoginSettingsForProduct.create_from_composition(
+                app_login_settings=app_login_settings,
                 product_login_settings=product.login_settings,
             )
         except ValidationError as err:
@@ -90,6 +97,20 @@ async def _validate_products_login_settings(app: web.Application):
     if errors:
         msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
         raise ValueError(f"Invalid product.login_settings:\n{msg}")
+
+    # store in app
+    app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
+
+    log.debug(
+        "app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY]= %s",
+        json.dumps(
+            {
+                product_name: login_settings.dict()
+                for product_name, login_settings in login_settings_per_product.items()
+            },
+            indent=1,
+        ),
+    )
 
 
 @app_module_setup(
@@ -115,6 +136,6 @@ def setup_login(app: web.Application):
     _setup_login_options(app)
     setup_login_storage(app)
 
-    app.on_startup.append(_validate_products_login_settings)
+    app.on_startup.append(_resolve_login_settings_per_product)
 
     return True

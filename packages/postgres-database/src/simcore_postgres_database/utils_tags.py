@@ -142,7 +142,7 @@ class TagsRepo:
         *,
         name: str,
         color: str,
-        description: Optional[str] = None,
+        description: Optional[str] = None,  # =nullable
         read: bool = True,
         write: bool = True,
         delete: bool = True,
@@ -206,18 +206,18 @@ class TagsRepo:
         self,
         conn: SAConnection,
         tag_id: int,
-        *,
-        name: Optional[str] = None,
-        color: Optional[str] = None,
-        description: Optional[str] = None,
+        **fields,
     ) -> TagDict:
-        updates = {}
-        if name:
-            updates["name"] = name
-        if color:
-            updates["color"] = color
-        if description:
-            updates["description"] = description
+
+        updates = {
+            name: value
+            for name, value in fields.items()
+            if name in {"name", "color", "description"}
+        }
+
+        if not updates:
+            # no updates == get
+            return await self.get(conn, tag_id=tag_id)
 
         update_stmt = (
             tags.update()

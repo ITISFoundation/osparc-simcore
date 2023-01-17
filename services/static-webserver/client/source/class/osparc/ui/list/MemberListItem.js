@@ -25,20 +25,22 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
   properties: {
     accessRights: {
       check: "Object",
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAccessRights",
       nullable: true
     },
 
     showOptions: {
       check: "Boolean",
-      apply: "_applyShowOptions",
+      apply: "__applyShowOptions",
       event: "changeShowOptions",
       nullable: true
     }
   },
 
   events: {
+    "promoteToMember": "qx.event.type.Data",
+    "demoteToUser": "qx.event.type.Data",
     "promoteToManager": "qx.event.type.Data",
     "removeMember": "qx.event.type.Data"
   },
@@ -69,7 +71,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyAccessRights: function(value) {
+    __applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
@@ -81,17 +83,17 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       } else if (value.getRead()) {
         subtitle.setValue(this.tr("Member"));
       } else {
-        subtitle.setValue(this.tr("No Read access"));
+        subtitle.setValue(this.tr("User: no Read access"));
       }
+
+      const menu = this.__getOptionsMenu();
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setMenu(menu);
     },
 
-    _applyShowOptions: function(value) {
+    __applyShowOptions: function(value) {
       const optionsMenu = this.getChildControl("options");
       optionsMenu.setVisibility(value ? "visible" : "excluded");
-      if (value) {
-        const menu = this.__getOptionsMenu();
-        optionsMenu.setMenu(menu);
-      }
     },
 
     __getOptionsMenu: function() {
@@ -100,15 +102,44 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (accessRights && !accessRights.getDelete() && !accessRights.getWrite()) {
-        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
-        promoteButton.addListener("execute", () => {
-          this.fireDataEvent("promoteToManager", {
-            key: this.getKey(),
-            name: this.getTitle()
+      if (accessRights) {
+        if (
+          !accessRights.getRead() &&
+          !accessRights.getDelete() &&
+          !accessRights.getWrite()
+        ) {
+          // no read access
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Member"));
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToMember", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
           });
-        });
-        menu.add(promoteButton);
+          menu.add(promoteButton);
+        } else if (
+          accessRights.getRead() &&
+          !accessRights.getDelete() &&
+          !accessRights.getWrite()
+        ) {
+          // member
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to Manager"));
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToManager", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(promoteButton);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to User"));
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToUser", {
+              key: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+        }
       }
 
       const removeButton = new qx.ui.menu.Button(this.tr("Remove Member"));

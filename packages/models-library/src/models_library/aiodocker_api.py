@@ -13,7 +13,7 @@ from .utils.converters import to_snake_case
 
 
 class AioDockerContainerSpec(ContainerSpec):
-    Env: Optional[dict[str, str]] = Field(
+    Env: Optional[dict[str, Optional[str]]] = Field(
         None,
         description="aiodocker expects here a dictionary and re-convert it back internally`.\n",
     )

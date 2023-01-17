@@ -26,7 +26,10 @@ from simcore_service_webserver.login._registration import (
     InvitationData,
     get_confirmation_info,
 )
-from simcore_service_webserver.login.settings import LoginOptions, LoginSettings
+from simcore_service_webserver.login.settings import (
+    LoginOptions,
+    LoginSettingsForProduct,
+)
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.users_models import ProfileGet
 
@@ -131,7 +134,7 @@ async def test_registration_with_expired_confirmation(
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettings(
+        return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,  # <----- invitation REQUIRED
             LOGIN_TWILIO=None,
@@ -170,7 +173,7 @@ async def test_registration_with_invalid_confirmation_code(
     mocker.patch(
         "simcore_service_webserver.login.settings.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettings(
+        return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
             LOGIN_TWILIO=None,
@@ -199,7 +202,7 @@ async def test_registration_without_confirmation(
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettings(
+        return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
@@ -237,7 +240,7 @@ async def test_registration_with_confirmation(
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettings(
+        return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
@@ -307,7 +310,7 @@ async def test_registration_with_invitation(
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettings(
+        return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
             LOGIN_TWILIO=None,
@@ -368,7 +371,7 @@ async def test_registraton_with_invitation_for_trial_account(
     mocker.patch(
         "simcore_service_webserver.login.handlers_registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettings(
+        return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,

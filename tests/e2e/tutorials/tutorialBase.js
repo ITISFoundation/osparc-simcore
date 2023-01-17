@@ -6,7 +6,7 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, templateName, user, pass, newUser, enableDemoMode = false, parallelUserIdx = null) {
+  constructor(url, templateName, user, pass, newUser, basicauthuser = "", basicauthpass= "", enableDemoMode = false, parallelUserIdx = null) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
     this.__screenshotText = templateName;
@@ -17,6 +17,8 @@ class TutorialBase {
     this.__url = url;
     this.__user = user;
     this.__pass = pass;
+    this.__basicauthuser = basicauthuser;
+    this.__basicauthpass = basicauthpass;
     this.__newUser = newUser;
 
     this.__browser = null;
@@ -56,6 +58,12 @@ class TutorialBase {
     this.__page.setExtraHTTPHeaders({
       "X-Simcore-User-Agent": "puppeteer"
     });
+    if (this.__basicauthuser != "" && this.__basicauthpass != "") {
+      await this.__page.authenticate({
+        "username": this.__basicauthuser,
+        "password": this.__basicauthpass
+      });
+    }
     this.__responsesQueue = new responses.ResponsesQueue(this.__page);
 
     return this.__page;

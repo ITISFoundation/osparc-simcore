@@ -16,12 +16,8 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import (
-    Node,
-    ObjectVersion,
-    Service,
-    Task,
-)
+from models_library.generated_models.docker_rest_api import Node, Service, Task
+from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -75,19 +71,19 @@ def mock_get_running_instance(
 
 
 @pytest.fixture
-def fake_node(faker: Faker) -> Node:
-    return Node(
-        ID=faker.uuid4(),
-        Version=ObjectVersion(Index=faker.pyint()),
-        CreatedAt=faker.date_time().isoformat(),
-        UpdatedAt=faker.date_time().isoformat(),
+def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_post_message = mocker.patch(
+        "simcore_service_autoscaling.utils.rabbitmq.post_message", autospec=True
     )
+    yield mocked_post_message
 
 
 @pytest.fixture
-def mock_wait_for_node(mocker: MockerFixture, fake_node: Node) -> Iterator[mock.Mock]:
+def mock_try_get_node_with_name(
+    mocker: MockerFixture, fake_node: Node
+) -> Iterator[mock.Mock]:
     mocked_wait_for_node = mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.wait_for_node",
+        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.try_get_node_with_name",
         autospec=True,
         return_value=fake_node,
     )
@@ -96,8 +92,21 @@ def mock_wait_for_node(mocker: MockerFixture, fake_node: Node) -> Iterator[mock.
 
 @pytest.fixture
 def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    async def fake_tag_node(*args, **kwargs) -> Node:
+        return args[1]
+
     mocked_tag_node = mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.tag_node",
+        autospec=True,
+        side_effect=fake_tag_node,
+    )
+    yield mocked_tag_node
+
+
+@pytest.fixture
+def mock_set_node_availability(mocker: MockerFixture) -> Iterator[mock.Mock]:
+    mocked_tag_node = mocker.patch(
+        "simcore_service_autoscaling.utils.utils_docker.set_node_availability",
         autospec=True,
     )
     yield mocked_tag_node
@@ -126,20 +135,50 @@ def minimal_configuration(
     yield
 
 
+def _assert_rabbit_autoscaling_message_sent(
+    mock_rabbitmq_post_message: mock.Mock,
+    app_settings: ApplicationSettings,
+    app: FastAPI,
+    **message_update_kwargs,
+):
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    default_message = RabbitAutoscalingStatusMessage(
+        origin=f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}",
+        nodes_total=0,
+        nodes_active=0,
+        nodes_drained=0,
+        cluster_total_resources=Resources.create_as_empty().dict(),
+        cluster_used_resources=Resources.create_as_empty().dict(),
+        instances_pending=0,
+        instances_running=0,
+    )
+    expected_message = default_message.copy(update=message_update_kwargs)
+    mock_rabbitmq_post_message.assert_called_once_with(
+        app,
+        expected_message,
+    )
+
+
 async def test_cluster_scaling_from_labelled_services_with_no_services_does_nothing(
     minimal_configuration: None,
+    app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_start_aws_instance: mock.Mock,
     mock_terminate_instance: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
 ):
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instance.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app
+    )
 
 
 async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
+    app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
@@ -148,6 +187,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     mock_start_aws_instance: mock.Mock,
     mock_terminate_instance: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
 ):
     task_template_with_too_many_resource = task_template | create_task_reservations(
         1000, 0
@@ -161,6 +201,9 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instance.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app
+    )
 
 
 async def test_cluster_scaling_up(
@@ -174,25 +217,26 @@ async def test_cluster_scaling_up(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
-    mock_wait_for_node: mock.Mock,
     mock_tag_node: mock.Mock,
     fake_node: Node,
+    mock_rabbitmq_post_message: mock.Mock,
+    mock_try_get_node_with_name: mock.Mock,
+    mock_set_node_availability: mock.Mock,
+    mocker: MockerFixture,
+    faker: Faker,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    task_template_for_r5n_8x_large_with_256Gib = (
-        task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB"))
-    )
     await create_service(
-        task_template_for_r5n_8x_large_with_256Gib,
+        task_template | create_task_reservations(4, parse_obj_as(ByteSize, "128GiB")),
         service_monitored_labels,
         "pending",
     )
 
-    # run the code
+    # this should trigger a scaling up as we have no nodes
     await cluster_scaling_from_labelled_services(initialized_app)
 
     # check the instance was started and we have exactly 1
@@ -216,15 +260,37 @@ async def test_cluster_scaling_up(
         assert "Value" in tag_dict
 
         assert tag_dict["Key"] in expected_tag_keys
-
     assert "PrivateDnsName" in running_instance
     instance_private_dns_name = running_instance["PrivateDnsName"]
     assert instance_private_dns_name.endswith(".ec2.internal")
 
-    # expect to wait for the node to appear
-    mock_wait_for_node.assert_called_once_with(
+    # as the new node is already running, but is not yet connected, hence not tagged and drained
+    mock_try_get_node_with_name.assert_not_called()
+    mock_tag_node.assert_not_called()
+    mock_set_node_availability.assert_not_called()
+    # check rabbit messages were sent
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app, instances_running=1
+    )
+    mock_rabbitmq_post_message.reset_mock()
+
+    # 2. running this again should not scale again, but tag the node and make it available
+    fake_cluster_used_resource = Resources(
+        cpus=faker.pyint(min_value=1), ram=ByteSize(faker.pyint(min_value=1000))
+    )
+    mocker.patch(
+        "simcore_service_autoscaling.utils.utils_docker.compute_cluster_used_resources",
+        autospec=True,
+        return_value=fake_cluster_used_resource,
+    )
+    await cluster_scaling_from_labelled_services(initialized_app)
+    all_instances = await ec2_client.describe_instances()
+    assert (
+        len(all_instances["Reservations"]) == 1
+    ), "the cluster was scaled up again, that is bad!"
+    mock_try_get_node_with_name.assert_called_once_with(
         get_docker_client(initialized_app),
-        instance_private_dns_name[: instance_private_dns_name.find(".")],
+        instance_private_dns_name.rstrip(".ec2.internal"),
     )
 
     # expect to tag the node with the expected labels, and also to make it active
@@ -240,8 +306,35 @@ async def test_cluster_scaling_up(
         get_docker_client(initialized_app),
         fake_node,
         tags=expected_docker_node_tags,
-        available=True,
+        available=False,
     )
+
+    # expect the node to be set available
+    mock_set_node_availability.assert_called_once_with(
+        get_docker_client(initialized_app), fake_node, available=True
+    )
+
+    # check rabbit messages were sent
+    assert fake_node.Description
+    assert fake_node.Description.Resources
+    assert fake_node.Description.Resources.NanoCPUs
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        nodes_total=1,
+        nodes_drained=1,  # NOTE: this value is wrong, but that is only a test artifact as we do not have a docker swarm mock
+        cluster_total_resources={
+            "cpus": fake_node.Description.Resources.NanoCPUs / 1e9,
+            "ram": fake_node.Description.Resources.MemoryBytes,
+        },
+        cluster_used_resources={
+            "cpus": float(fake_cluster_used_resource.cpus),
+            "ram": fake_cluster_used_resource.ram,
+        },
+        instances_running=1,
+    )
+    mock_rabbitmq_post_message.reset_mock()
 
 
 @dataclass(frozen=True)
@@ -279,24 +372,27 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
-    mock_wait_for_node: mock.Mock,
     mock_tag_node: mock.Mock,
     fake_node: Node,
     scale_up_params: _ScaleUpParams,
+    mock_rabbitmq_post_message: mock.Mock,
+    mock_try_get_node_with_name: mock.Mock,
+    mock_set_node_availability: mock.Mock,
+    mocker: MockerFixture,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    # create a task that needs more power
-    task_template_for_service = task_template | create_task_reservations(
-        int(scale_up_params.service_resources.cpus),
-        scale_up_params.service_resources.ram,
-    )
+    # create several tasks that needs more power
     await asyncio.gather(
         *(
             create_service(
-                task_template_for_service,
+                task_template
+                | create_task_reservations(
+                    int(scale_up_params.service_resources.cpus),
+                    scale_up_params.service_resources.ram,
+                ),
                 service_monitored_labels,
                 "pending",
             )
@@ -331,41 +427,23 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             assert "Value" in tag_dict
 
             assert tag_dict["Key"] in expected_tag_keys
-
         assert "PrivateDnsName" in instance
         instance_private_dns_name = instance["PrivateDnsName"]
         assert instance_private_dns_name.endswith(".ec2.internal")
         all_private_dns_names.append(instance_private_dns_name)
 
-    # expect to wait for the node to appear
-    mock_wait_for_node.assert_has_calls(
-        [
-            mock.call(get_docker_client(initialized_app), dns[: dns.find(".")])
-            for dns in all_private_dns_names
-        ],
-        any_order=True,
+    # as the new node is already running, but is not yet connected, hence not tagged and drained
+    mock_try_get_node_with_name.assert_not_called()
+    mock_tag_node.assert_not_called()
+    mock_set_node_availability.assert_not_called()
+    # check rabbit messages were sent
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        instances_running=scale_up_params.expected_num_instances,
     )
-
-    # expect to tag the node with the expected labels, and also to make it active
-    assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = {
-        tag_key: "true"
-        for tag_key in (
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-        )
-    }
-    mock_tag_node.assert_has_calls(
-        [
-            mock.call(
-                get_docker_client(initialized_app),
-                fake_node,
-                tags=expected_docker_node_tags,
-                available=True,
-            )
-            for _ in all_private_dns_names
-        ]
-    )
+    mock_rabbitmq_post_message.reset_mock()
 
 
 async def test__mark_empty_active_nodes_to_drain(
@@ -567,9 +645,9 @@ async def test__try_scale_up_with_drained_nodes_with_no_tasks(
     mock_tag_node: mock.Mock,
 ):
     # no tasks, does nothing and returns True
-    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) is True
+    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) == []
     assert (
-        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) is True
+        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) == []
     )
     mock_tag_node.assert_not_called()
 
@@ -607,7 +685,7 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
         await _try_scale_up_with_drained_nodes(
             initialized_app, [host_node], service_tasks
         )
-        is False
+        == []
     )
     mock_tag_node.assert_not_called()
 
@@ -694,7 +772,7 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
         await _try_scale_up_with_drained_nodes(
             initialized_app, [drained_host_node], service_tasks
         )
-        is True
+        == service_tasks
     )
     mock_tag_node.assert_called_once_with(
         mock.ANY, drained_host_node, tags={}, available=True

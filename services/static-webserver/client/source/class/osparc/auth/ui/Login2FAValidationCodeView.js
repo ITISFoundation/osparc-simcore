@@ -42,7 +42,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
 
     _buildPage: function() {
       const introText = new qx.ui.basic.Label();
-      const justSentText = this.tr("We just sent a 4-digit code to ");
+      const justSentText = this.tr("We just sent a 6-digit code to ");
       this.bind("userPhoneNumber", introText, "value", {
         converter: pNumber => justSentText + (pNumber ? pNumber : this.getUserEmail())
       });

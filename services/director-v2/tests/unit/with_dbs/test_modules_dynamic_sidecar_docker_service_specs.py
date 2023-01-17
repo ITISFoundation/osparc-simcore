@@ -207,6 +207,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     "S3_SECURE": "False",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "SSL_CERT_FILE": "",
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
                 },

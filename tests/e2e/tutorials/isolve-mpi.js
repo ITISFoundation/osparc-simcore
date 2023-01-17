@@ -10,13 +10,15 @@ const {
   pass,
   newUser,
   startTimeout,
+  basicauthUsername,
+  basicauthPassword,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
 const templateName = "isolve-mpi";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
   let studyId;
   try {
     await tutorial.start();

@@ -26,7 +26,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     accessRights: {
       check: "Object",
       nullable: false,
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAccessRights"
     }
   },
@@ -67,33 +67,37 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyAccessRights: function(value) {
-      if (value === null) {
+    __applyAccessRights: function(accessRights) {
+      if (accessRights === null) {
         return;
       }
-      if (value.getDelete()) {
+      if (accessRights.getWrite()) {
         const optionsMenu = this.getChildControl("options");
-        const menu = this.__getOptionsMenu();
+        const menu = this.__getOptionsMenu(accessRights);
         optionsMenu.setMenu(menu);
       }
     },
 
-    __getOptionsMenu: function() {
+    __getOptionsMenu: function(accessRights) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
-      const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details"));
-      editOrgButton.addListener("execute", () => {
-        this.fireDataEvent("openEditOrganization", this.getKey());
-      });
-      menu.add(editOrgButton);
+      if (accessRights.getWrite()) {
+        const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details..."));
+        editOrgButton.addListener("execute", () => {
+          this.fireDataEvent("openEditOrganization", this.getKey());
+        });
+        menu.add(editOrgButton);
+      }
 
-      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
-      deleteOrgButton.addListener("execute", () => {
-        this.fireDataEvent("deleteOrganization", this.getKey());
-      });
-      menu.add(deleteOrgButton);
+      if (accessRights.getDelete()) {
+        const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
+        deleteOrgButton.addListener("execute", () => {
+          this.fireDataEvent("deleteOrganization", this.getKey());
+        });
+        menu.add(deleteOrgButton);
+      }
 
       return menu;
     },
