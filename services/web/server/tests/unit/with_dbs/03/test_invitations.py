@@ -162,3 +162,18 @@ async def test_invitation_service_api_ping(
 # invalid invitation
 
 # confirmation-type of invitations
+
+
+@pytest.mark.testit
+async def test_it(
+    # client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
+):
+    # invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
+
+    from aiohttp import ClientSession
+
+    async with ClientSession(base_url="http://invitations:8000") as session:
+        async with session.get("/v1/meta") as response:
+            body = await response.text()
+            assert response.status == 200
