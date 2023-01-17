@@ -40,7 +40,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
-    WARN_IN_ADVANCE: 20*60*100
+    WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
   },
 
   members: {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         // getMaintenance()
         if (Math.random() < 0.3) {
           const maintenanceData = {
-            start: "2023-01-17T12:00:00.000Z",
+            start: "2023-01-17T09:30:00.000Z",
             end: "2023-01-17T13:00:00.000Z",
             reason: "Release"
           };
@@ -132,7 +132,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       if (diff < 0) {
         popupMessage();
       } else {
-        setTimeout(popupMessage(), diff);
+        setTimeout(() => popupMessage(), diff);
       }
     },
 
@@ -142,7 +142,8 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime();
-      setTimeout(logoutUser(), diff);
+      console.log("logout scheduled: ", this.getStart());
+      setTimeout(() => logoutUser(), diff);
     }
   }
 });

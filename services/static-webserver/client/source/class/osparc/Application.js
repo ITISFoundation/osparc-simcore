@@ -437,6 +437,7 @@ qx.Class.define("osparc.Application", {
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
+        this.__mainPage.closeStudy();
       }
       osparc.utils.Utils.closeHangingWindows();
       osparc.store.Store.getInstance().dispose();
