@@ -55,7 +55,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         // getMaintenance()
         if (Math.random() < 0.3) {
           const maintenanceData = {
-            start: "2023-01-17T09:44:00.000Z",
+            start: "2023-01-17T09:46:00.000Z",
             end: "2023-01-17T13:00:00.000Z",
             reason: "Release"
           };
@@ -124,8 +124,10 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
     __scheduleFlashMessage: function() {
       const popupMessage = () => {
+        const now = new Date();
+        const duration = this.getStart().getTime() - now.getTime();
         const text = this.__getText();
-        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING");
+        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;

@@ -55,8 +55,8 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
 
   statics: {
     MAX_DISPLAYED: 3,
-    logAs: function(message, level, logger) {
-      return this.getInstance().logAs(message, level, logger);
+    logAs: function(message, level, logger, duration) {
+      return this.getInstance().logAs(message, level, logger, duration);
     }
   },
 
