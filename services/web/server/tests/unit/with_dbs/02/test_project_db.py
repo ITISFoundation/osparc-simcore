@@ -12,7 +12,7 @@ from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Iterator, Optional
+from typing import Any, AsyncIterator, Iterator, Optional, get_args
 from uuid import UUID, uuid5
 
 import pytest
@@ -23,15 +23,16 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
-from simcore_service_webserver.db_models import UserRole
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
+    Permission,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -908,3 +909,50 @@ async def test_replace_user_project(
     assert copy_from_dict_ex(
         working_project, PROJECT_DICT_IGNORE_FIELDS
     ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.ANONYMOUS])  # worst case
+@pytest.mark.parametrize("access_rights", [x.value for x in ProjectAccessRights])
+async def test_has_permission(
+    faker: Faker,
+    logged_user: dict[str, Any],
+    fake_project: dict[str, Any],
+    db_api: ProjectDBAPI,
+    osparc_product_name: str,
+    access_rights: dict[str, bool],
+    user_role: UserRole,
+    client: TestClient,
+):
+    project_id = faker.uuid4(cast_to=None)
+    owner_id = logged_user["id"]
+
+    second_user: UserInfoDict = await log_client_in(
+        client=client, user_data={"role": UserRole.USER.name}
+    )
+
+    new_project = deepcopy(fake_project)
+    new_project.update(
+        uuid=project_id,
+        access_rights={second_user["primary_gid"]: access_rights},
+    )
+
+    await db_api.add_project(
+        prj=new_project,
+        user_id=owner_id,
+        product_name=osparc_product_name,
+    )
+
+    for permission in get_args(Permission):
+        assert permission in access_rights
+
+        # owner always is allowed to do everything
+        assert await db_api.has_permission(owner_id, project_id, permission) is True
+
+        # user does not exits
+        assert await db_api.has_permission(-1, project_id, permission) is False
+
+        # other user
+        assert (
+            await db_api.has_permission(second_user["id"], project_id, permission)
+            is access_rights[permission]
+        ), f"Found unexpected {permission=} for {access_rights=} of {user_role=} and {project_id=}"
