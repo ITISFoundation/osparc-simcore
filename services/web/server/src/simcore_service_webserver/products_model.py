@@ -13,6 +13,7 @@ from simcore_postgres_database.models.products import (
     Forum,
     IssueTracker,
     Manual,
+    ProductLoginSettingsDict,
     Vendor,
     WebFeedback,
 )
@@ -27,6 +28,8 @@ log = logging.getLogger(__name__)
 # MODEL
 #
 
+ProductName = str
+
 
 class Product(BaseModel):
     """Model used to parse a row of pg product's table
@@ -36,7 +39,7 @@ class Product(BaseModel):
     SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
     """
 
-    name: str = Field(regex=PUBLIC_VARIABLE_NAME_RE)
+    name: ProductName = Field(regex=PUBLIC_VARIABLE_NAME_RE)
 
     display_name: str = Field(..., description="Long display name")
     short_name: Optional[str] = Field(
@@ -68,7 +71,13 @@ class Product(BaseModel):
 
     manuals: Optional[list[Manual]] = None
 
-    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = None
+    support: Optional[list[Union[Forum, EmailFeedback, WebFeedback]]] = Field(None)
+
+    login_settings: ProductLoginSettingsDict = Field(
+        ...,
+        description="Product customization of login settings. "
+        "Note that these are NOT the final plugin settings but those are obtained from login.settings.get_plugin_settings",
+    )
 
     registration_email_template: Optional[str] = Field(
         None, x_template_name="registration_email"
@@ -79,14 +88,9 @@ class Product(BaseModel):
         description="Limits the number of studies a user may have open concurently (disabled if NULL)",
     )
 
-    @validator("name", pre=True, always=True)
-    @classmethod
-    def validate_name(cls, v):
-        if v not in FRONTEND_APPS_AVAILABLE:
-            raise ValueError(
-                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
-            )
-        return v
+    group_id: Optional[int] = Field(
+        default=None, description="Groups associated to this product"
+    )
 
     @validator("*", pre=True)
     @classmethod
@@ -94,6 +98,15 @@ class Product(BaseModel):
         """Safe measure: database entries are sometimes left blank instead of null"""
         if isinstance(v, str) and len(v.strip()) == 0:
             return None
+        return v
+
+    @validator("name", pre=True, always=True)
+    @classmethod
+    def validate_name(cls, v):
+        if v not in FRONTEND_APPS_AVAILABLE:
+            raise ValueError(
+                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
+            )
         return v
 
     @property
@@ -114,6 +127,9 @@ class Product(BaseModel):
                     "host_regex": r"([\.-]{0,1}osparc[\.-])",
                     "twilio_messaging_sid": "1" * 34,
                     "registration_email_template": "osparc_registration_email",
+                    "login_settings": {
+                        "LOGIN_2FA_REQUIRED": False,
+                    },
                     # defaults from sqlalchemy table
                     **{
                         c.name: c.server_default.arg
@@ -132,6 +148,9 @@ class Product(BaseModel):
                     "issues_login_url": None,
                     "issues_new_url": "https://foo.com/new",
                     "feedback_form_url": "",  # <-- blanks
+                    "login_settings": {
+                        "LOGIN_2FA_REQUIRED": False,
+                    },
                 },
                 # full example
                 {
@@ -179,6 +198,10 @@ class Product(BaseModel):
                             "label": "web-form",
                         },
                     ],
+                    "login_settings": {
+                        "LOGIN_2FA_REQUIRED": False,
+                    },
+                    "group_id": 12345,
                 },
             ]
         }

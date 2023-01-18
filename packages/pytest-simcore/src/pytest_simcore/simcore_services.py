@@ -43,6 +43,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
+    "invitations": "/",
 }
 AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000

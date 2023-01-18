@@ -6,7 +6,10 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
-from simcore_postgres_database.utils_products import get_default_product_name
+from simcore_postgres_database.utils_products import (
+    get_default_product_name,
+    get_or_create_product_group,
+)
 
 from ._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
 from .products_db import iter_products
@@ -31,6 +34,29 @@ async def setup_product_templates(app: web.Application):
         yield
 
         # cleanup
+
+
+async def auto_create_products_groups(app: web.Application) -> None:
+    """Ensures all products have associated group ids
+
+    Avoids having undefined groups in products with new products.group_id column
+
+    NOTE: could not add this in 'setup_groups' (groups plugin)
+    since it has to be executed BEFORE 'load_products_on_startup'
+    """
+    engine: Engine = app[APP_DB_ENGINE_KEY]
+
+    async with engine.acquire() as connection:
+        async for row in iter_products(connection):
+            product_name = row.name
+            product_group_id = await get_or_create_product_group(
+                connection, product_name
+            )
+            log.debug(
+                "Product with %s has an associated group with %s",
+                f"{product_name=}",
+                f"{product_group_id=}",
+            )
 
 
 def _set_app_state(

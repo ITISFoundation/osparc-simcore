@@ -112,6 +112,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-icon");
 
       this.getChildControl("tasks-button");
+      this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
       this.getChildControl("manual");
       this.getChildControl("feedback");
@@ -242,6 +243,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
+          this.getChildControl("right-items").add(control);
+          break;
+        case "notifications-button":
+          control = new osparc.component.notification.NotificationsButton();
           this.getChildControl("right-items").add(control);
           break;
         case "expiration-icon":

@@ -102,7 +102,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const cards = this._resourcesContainer.reloadCards("servicesList");
       cards.forEach(card => {
         card.addListener("execute", () => this.__itemClicked(card), this);
-        this._populateCardMenu(card.getMenu(), card.getResourceData());
+        this._populateCardMenu(card);
       });
       osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
@@ -122,7 +122,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudy(studyId);
+          this.__startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -131,16 +131,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         });
     },
 
-    __startStudy: function(studyId) {
+    __startStudyById: function(studyId) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      const data = {
-        studyId,
-        pageContext: "workbench"
-      };
-      this.fireDataEvent("startStudy", data);
+      this.fireDataEvent("startStudy", studyId);
     },
 
     // LAYOUT //
@@ -193,7 +189,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // LAYOUT //
 
     // MENU //
-    _populateCardMenu: function(menu, studyData) {
+    _populateCardMenu: function(card) {
+      const menu = card.getMenu();
+      const studyData = card.getResourceData();
+
       const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);

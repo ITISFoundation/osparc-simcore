@@ -6,22 +6,21 @@ import asyncio
 import collections
 import logging
 import re
-from typing import Final, Optional
+from datetime import datetime
+from typing import Final, Optional, cast
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Node,
     NodeState,
+    Service,
     Task,
     TaskState,
 )
 from pydantic import ByteSize, parse_obj_as
+from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
-from tenacity import TryAgain, retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..models import Resources
 from ..modules.docker import AutoscalingDocker
@@ -81,6 +80,60 @@ async def remove_nodes(
     return nodes_that_need_removal
 
 
+_DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
+    "node.id",
+    "node.hostname",
+    "node.role",
+]
+
+_PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
+_INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
+
+
+def _is_task_waiting_for_resources(task: Task) -> bool:
+    # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
+    if (
+        not task.Status
+        or not task.Status.State
+        or not task.Status.Message
+        or not task.Status.Err
+    ):
+        return False
+    return (
+        task.Status.State == TaskState.pending
+        and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
+        and _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
+    )
+
+
+async def _associated_service_has_no_node_placement_contraints(
+    docker_client: AutoscalingDocker, task: Task
+) -> bool:
+    assert task.ServiceID  # nosec
+    service_inspect = parse_obj_as(
+        Service, await docker_client.services.inspect(task.ServiceID)
+    )
+    assert service_inspect.Spec  # nosec
+    assert service_inspect.Spec.TaskTemplate  # nosec
+
+    if (
+        not service_inspect.Spec.TaskTemplate.Placement
+        or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+    ):
+        return True
+    # parse the placement contraints
+    service_placement_constraints = (
+        service_inspect.Spec.TaskTemplate.Placement.Constraints
+    )
+    for constraint in service_placement_constraints:
+        # is of type node.id==alskjladskjs or node.hostname==thiscomputerhostname or node.role==manager, sometimes with spaces...
+        if any(
+            constraint.startswith(c) for c in _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS
+        ):
+            return False
+    return True
+
+
 async def pending_service_tasks_with_insufficient_resources(
     docker_client: AutoscalingDocker,
     service_labels: list[DockerLabelKey],
@@ -103,22 +156,23 @@ async def pending_service_tasks_with_insufficient_resources(
         ),
     )
 
-    def _is_task_waiting_for_resources(task: Task) -> bool:
-        # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-        if (
-            not task.Status
-            or not task.Status.State
-            or not task.Status.Message
-            or not task.Status.Err
-        ):
-            return False
-        return (
-            task.Status.State == TaskState.pending
-            and task.Status.Message == "pending task scheduling"
-            and "insufficient resources on" in task.Status.Err
-        )
+    sorted_tasks = sorted(
+        tasks,
+        key=lambda task: cast(  # NOTE: some mypy fun here
+            datetime, (to_datetime(task.CreatedAt or f"{datetime.utcnow()}"))
+        ),
+    )
 
-    pending_tasks = [task for task in tasks if _is_task_waiting_for_resources(task)]
+    pending_tasks = [
+        task
+        for task in sorted_tasks
+        if (
+            _is_task_waiting_for_resources(task)
+            and await _associated_service_has_no_node_placement_contraints(
+                docker_client, task
+            )
+        )
+    ]
 
     return pending_tasks
 
@@ -267,18 +321,12 @@ async def get_docker_swarm_join_bash_command() -> str:
     )
 
 
-@retry(
-    stop=stop_after_delay(_TIMEOUT_WAITING_FOR_NODES_S),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
-    wait=wait_fixed(5),
-)
-async def wait_for_node(
-    docker_client: AutoscalingDocker,
-    node_name: str,
-) -> Node:
-    list_of_nodes = await docker_client.nodes.list(filters={"name": node_name})
+async def try_get_node_with_name(
+    docker_client: AutoscalingDocker, name: str
+) -> Optional[Node]:
+    list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
-        raise TryAgain
+        return None
     return parse_obj_as(Node, list_of_nodes[0])
 
 
@@ -288,7 +336,7 @@ async def tag_node(
     *,
     tags: dict[DockerLabelKey, str],
     available: bool,
-) -> None:
+) -> Node:
     with log_context(
         logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
     ):
@@ -306,12 +354,16 @@ async def tag_node(
                 "Role": node.Spec.Role.value,
             },
         )
+        return parse_obj_as(Node, await docker_client.nodes.inspect(node_id=node.ID))
 
 
 async def set_node_availability(
     docker_client: AutoscalingDocker, node: Node, *, available: bool
-) -> None:
+) -> Node:
     assert node.Spec  # nosec
     return await tag_node(
-        docker_client, node, tags=node.Spec.Labels, available=available
+        docker_client,
+        node,
+        tags=cast(dict[DockerLabelKey, str], node.Spec.Labels),
+        available=available,
     )

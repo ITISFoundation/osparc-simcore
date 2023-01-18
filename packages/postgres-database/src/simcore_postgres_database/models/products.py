@@ -5,6 +5,7 @@
     - Every product has a front-end with exactly the same name
 """
 
+import json
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
@@ -22,6 +23,8 @@ from .jinja2_templates import jinja2_templates
 #
 # Layout of the data in the JSONB columns
 #
+
+
 class Vendor(TypedDict, total=False):
     """
         Brand information about the vendor
@@ -31,7 +34,8 @@ class Vendor(TypedDict, total=False):
     name: str
     copyright: str
     url: str
-    license_url: str
+    license_url: str  # Which are the license terms? (if applies)
+    invitation_url: str  # How to request a trial invitation? (if applies)
 
 
 class IssueTracker(TypedDict, total=True):
@@ -74,6 +78,25 @@ class Forum(TypedDict, total=True):
     kind: Literal["forum"]
     label: str
     url: str
+
+
+class ProductLoginSettingsDict(TypedDict, total=False):
+    """Login plugin settings customized for this product
+
+    Overrides simcore_service_webserver.login.settings.LoginSettings
+    (i.e. if not defined, the values of LoginSettings apply)
+
+    NOTE: These attributes need to match those of LoginSettings
+    """
+
+    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool
+    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
+    LOGIN_2FA_REQUIRED: bool  # previously 'two_factor_enabled'
+
+
+# NOTE: defaults affects migration!!
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettingsDict()  # = {}
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(LOGIN_SETTINGS_DEFAULT)
 
 
 #
@@ -129,8 +152,18 @@ products = sa.Table(
         "The SID of the Messaging Service you want to associate with the message."
         "When set to None, this feature is disabled.",
     ),
-    sa.Column("vendor", JSONB, nullable=True, doc="Info about the Vendor"),
-    sa.Column("issues", JSONB, nullable=True, doc="Issue trackers: list[IssueTracker]"),
+    sa.Column(
+        "vendor",
+        JSONB,
+        nullable=True,
+        doc="Info about the Vendor",
+    ),
+    sa.Column(
+        "issues",
+        JSONB,
+        nullable=True,
+        doc="Issue trackers: list[IssueTracker]",
+    ),
     sa.Column(
         "manuals",
         JSONB,
@@ -142,6 +175,14 @@ products = sa.Table(
         JSONB,
         nullable=True,
         doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
+    ),
+    sa.Column(
+        "login_settings",
+        JSONB,
+        nullable=False,
+        server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
+        "SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "registration_email_template",

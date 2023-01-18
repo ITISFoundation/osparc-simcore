@@ -86,6 +86,8 @@ async def product_repository(
                 name="ACME",
                 copyright="© ACME correcaminos",
                 url="https://acme.com",
+                license_url="http://docs.acme.app/#/license-terms",
+                invitation_url="http://docs.acme.app/#/how-to-request-invitation",
             ),
             "issues": [
                 IssueTracker(

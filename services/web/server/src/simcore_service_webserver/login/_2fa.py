@@ -9,17 +9,16 @@ Currently includes two parts:
 
 import asyncio
 import logging
-import secrets
 from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
+from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
-from .settings import LoginSettings, get_plugin_settings
 from .utils_email import get_template_path, render_and_send_mail
 
 log = logging.getLogger(__name__)
@@ -36,10 +35,6 @@ class ValidationCode(BaseModel):
 # SEE https://redis-py.readthedocs.io/en/stable/index.html
 
 
-def _generage_2fa_code() -> str:
-    return f"{1000 + secrets.randbelow(8999)}"  # code between [1000, 9999)
-
-
 @log_decorator(log, level=logging.DEBUG)
 async def _do_create_2fa_code(
     redis_client,
@@ -47,22 +42,20 @@ async def _do_create_2fa_code(
     *,
     expiration_seconds: int,
 ) -> str:
-    hash_key, code = user_email, _generage_2fa_code()
+    hash_key, code = user_email, generate_passcode()
     await redis_client.set(hash_key, value=code, ex=expiration_seconds)
     return code
 
 
 async def create_2fa_code(
-    app: web.Application,
-    user_email: str,
+    app: web.Application, *, user_email: str, expiration_in_seconds: int
 ) -> str:
     """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
-    settings: LoginSettings = get_plugin_settings(app)
     redis_client = get_redis_validation_code_client(app)
     code = await _do_create_2fa_code(
         redis_client=redis_client,
         user_email=user_email,
-        expiration_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        expiration_seconds=expiration_in_seconds,
     )
     return code
 

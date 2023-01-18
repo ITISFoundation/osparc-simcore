@@ -89,7 +89,6 @@ async def unused_volume(
     run_id: str,
     unused_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
-
     async with aiodocker.Docker() as docker_client:
         source = _get_source(run_id, node_uuid, unused_volume_path)
         volume = await docker_client.volumes.create(

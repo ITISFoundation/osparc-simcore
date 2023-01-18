@@ -78,6 +78,9 @@ def _get_environment_variables(
         "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
         "S3_SECURE": f"{r_clone_settings.R_CLONE_S3.S3_SECURE}",
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
+        "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
+        # For background info on this special env-var above, see
+        # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
         "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
@@ -248,6 +251,25 @@ def get_dynamic_sidecar_spec(
                     "uuid": f"{scheduler_data.node_uuid}",
                 },
                 "Mounts": mounts,
+                "Secrets": [
+                    {
+                        "SecretID": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID,
+                        "SecretName": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME,
+                        "File": {
+                            "Name": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
+                            "Mode": 444,
+                            "UID": "0",
+                            "GID": "0",
+                        },
+                    }
+                ]
+                if (
+                    app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME
+                    and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID
+                    and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME
+                    and app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+                )
+                else None,
             },
             "Placement": {
                 "Constraints": deepcopy(

@@ -85,6 +85,8 @@ AllUsersGroups:
         $ref: "#/UsersGroup"
     all:
       $ref: "#/UsersGroup"
+    product:
+      $ref: "#/UsersGroup"
 
 AllUsersGroupsEnveloped:
   type: object

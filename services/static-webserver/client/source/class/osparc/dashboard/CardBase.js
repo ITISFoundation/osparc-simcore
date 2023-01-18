@@ -177,6 +177,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    updatable: {
+      check: [null, "retired", "deprecated", "updatable"],
+      nullable: false,
+      init: null,
+      event: "changeUpdatable",
+      apply: "__applyUpdatable"
+    },
+
     hits: {
       check: "Number",
       nullable: true,
@@ -371,37 +379,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return;
       }
 
-      const updateStudy = this.getChildControl("update-study");
-      updateStudy.addListener("pointerdown", e => e.stopPropagation());
-      updateStudy.addListener("tap", e => {
-        e.stopPropagation();
-        this.__openUpdateServices();
-      }, this);
+      // Updatable study
       if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
-        updateStudy.show();
-        updateStudy.set({
-          toolTipText: this.tr("Service(s) retired, please update"),
-          textColor: osparc.utils.StatusUI.getColor("retired")
-        });
+        this.setUpdatable("retired");
       } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
-        updateStudy.show();
-        updateStudy.set({
-          toolTipText: this.tr("Service(s) deprecated, please update"),
-          textColor: osparc.utils.StatusUI.getColor("deprecated")
-        });
+        this.setUpdatable("deprecated");
       } else {
         osparc.utils.Study.isWorkbenchUpdatable(workbench)
           .then(updatable => {
             if (updatable) {
-              updateStudy.show();
-              updateStudy.set({
-                toolTipText: this.tr("Update available"),
-                textColor: "text"
-              });
+              this.setUpdatable("updatable");
             }
           });
       }
 
+      // Block card
       osparc.utils.Study.getUnaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
@@ -414,6 +406,39 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__blockCard(image, toolTipText);
           }
         });
+    },
+
+    __applyUpdatable: function(updatable) {
+      const updateStudy = this.getChildControl("update-study");
+      updateStudy.addListener("pointerdown", e => e.stopPropagation());
+      updateStudy.addListener("tap", e => {
+        e.stopPropagation();
+        this.__openUpdateServices();
+      }, this);
+
+      let toolTipText = null;
+      let textColor = null;
+      switch (updatable) {
+        case "retired":
+          toolTipText = this.tr("Service(s) retired, please update");
+          textColor = osparc.utils.StatusUI.getColor("retired");
+          break;
+        case "deprecated":
+          toolTipText = this.tr("Service(s) deprecated, please update");
+          textColor = osparc.utils.StatusUI.getColor("deprecated");
+          break;
+        case "updatable":
+          toolTipText = this.tr("Update available");
+          textColor = "text";
+          break;
+      }
+      if (toolTipText || textColor) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText,
+          textColor
+        });
+      }
     },
 
     _applyState: function(state) {
@@ -538,7 +563,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return moreOpts;
     },
 
-    _openAccessRights: function() {
+    openAccessRights: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openAccessRights();
     },
@@ -551,6 +576,107 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __openUpdateServices: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openUpdateServices();
+    },
+
+    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    _evaluateShareIcon: function(shareIcon, accessRights) {
+      shareIcon.addListener("tap", e => {
+        e.stopPropagation();
+        this.openAccessRights();
+      }, this);
+      shareIcon.addListener("pointerdown", e => e.stopPropagation());
+
+      const store = osparc.store.Store.getInstance();
+      Promise.all([
+        store.getGroupEveryone(),
+        store.getProductEveryone(),
+        store.getVisibleMembers(),
+        store.getGroupsOrganizations()
+      ])
+        .then(values => {
+          const everyone = values[0] ? [values[0]] : [];
+          const productEveryone = values[1] ? [values[1]] : [];
+          const orgMembs = [];
+          const orgMembers = values[2];
+          for (const gid of Object.keys(orgMembers)) {
+            orgMembs.push(orgMembers[gid]);
+          }
+          const orgs = values.length === 4 ? values[3] : [];
+          const groups = [orgMembs, orgs, productEveryone, everyone];
+          this.__setIconAndTooltip(shareIcon, accessRights, groups);
+        });
+
+      if (this.isResourceType("study")) {
+        this._setStudyPermissions(accessRights);
+      }
+    },
+
+    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    __setIconAndTooltip: function(shareIcon, accessRights, groups) {
+      if (osparc.data.model.Study.canIWrite(accessRights)) {
+        shareIcon.set({
+          source: osparc.dashboard.CardBase.SHARE_ICON,
+          toolTipText: this.tr("Share")
+        });
+      }
+      let sharedGrps = [];
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      for (let i=0; i<groups.length; i++) {
+        if (groups[i].length === 0) {
+          // user has no read access to the productEveryone
+          continue;
+        }
+        const sharedGrp = [];
+        const gids = Object.keys(accessRights);
+        for (let j=0; j<gids.length; j++) {
+          const gid = parseInt(gids[j]);
+          if (this.isResourceType("study") && (gid === myGroupId)) {
+            continue;
+          }
+          const grp = groups[i].find(group => group["gid"] === gid);
+          if (grp) {
+            sharedGrp.push(grp);
+          }
+        }
+        if (sharedGrp.length === 0) {
+          continue;
+        } else {
+          sharedGrps = sharedGrps.concat(sharedGrp);
+        }
+        switch (i) {
+          case 0:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
+            break;
+          case 1:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+            break;
+          case 2:
+          case 3:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+            break;
+        }
+      }
+
+      // tooltip
+      if (sharedGrps.length === 0) {
+        return;
+      }
+      const sharedGrpLabels = [];
+      const maxItems = 6;
+      for (let i=0; i<sharedGrps.length; i++) {
+        if (i > maxItems) {
+          sharedGrpLabels.push("...");
+          break;
+        }
+        const sharedGrpLabel = sharedGrps[i]["label"];
+        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+          sharedGrpLabels.push(sharedGrpLabel);
+        }
+      }
+      const hintText = sharedGrpLabels.join("<br>");
+      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
+      shareIcon.addListener("mouseover", () => hint.show(), this);
+      shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
     /**

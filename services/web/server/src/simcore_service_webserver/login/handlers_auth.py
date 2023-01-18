@@ -35,7 +35,7 @@ from ._constants import (
 from ._models import InputSchema
 from ._security import login_granted_response
 from .decorators import RQT_USERID_KEY, login_required
-from .settings import LoginSettings, get_plugin_settings
+from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
     ACTIVE,
@@ -74,9 +74,11 @@ async def login(request: web.Request):
 
     If 2FA is enabled, then the login continues with a second request to login_2fa
     """
-    settings: LoginSettings = get_plugin_settings(request.app)
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+    db: AsyncpgStorage = get_plugin_storage(request.app)
 
     login_ = await parse_request_body_as(LoginBody, request)
 
@@ -127,7 +129,11 @@ async def login(request: web.Request):
     assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
 
     try:
-        code = await create_2fa_code(app=request.app, user_email=user["email"])
+        code = await create_2fa_code(
+            app=request.app,
+            user_email=user["email"],
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        )
 
         await send_sms_code(
             phone_number=user["phone"],
@@ -184,15 +190,17 @@ class LoginTwoFactorAuthBody(InputSchema):
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
-    # validates input context
-    settings: LoginSettings = get_plugin_settings(request.app)
+    product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             reason="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
 
     # validates input params
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)

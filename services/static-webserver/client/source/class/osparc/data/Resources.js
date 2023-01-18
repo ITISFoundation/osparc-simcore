@@ -371,6 +371,17 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * SCHEDULED MAINTENANCE
+       */
+      "maintenance": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/scheduled_maintenance"
+          }
+        }
+      },
+      /*
        * PROFILE
        */
       "profile": {

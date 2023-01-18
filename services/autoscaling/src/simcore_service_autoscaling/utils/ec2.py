@@ -2,15 +2,30 @@
 
 """
 
+import json
 import logging
 from collections import OrderedDict
 from textwrap import dedent
 from typing import Callable
 
+from .._meta import VERSION
 from ..core.errors import ConfigurationError, Ec2InstanceNotFoundError
+from ..core.settings import NodesMonitoringSettings
 from ..models import EC2Instance, Resources
 
 logger = logging.getLogger(__name__)
+
+
+def get_ec2_tags(nodes_monitoring_settings: NodesMonitoringSettings) -> dict[str, str]:
+    return {
+        "io.simcore.autoscaling.version": f"{VERSION}",
+        "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
+            nodes_monitoring_settings.NODES_MONITORING_NODE_LABELS
+        ),
+        "io.simcore.autoscaling.monitored_services_labels": json.dumps(
+            nodes_monitoring_settings.NODES_MONITORING_SERVICE_LABELS
+        ),
+    }
 
 
 def compose_user_data(docker_join_bash_command: str) -> str:

@@ -8,6 +8,8 @@ const {
   urlPrefix,
   templateUuid,
   startTimeout,
+  basicauthUsername,
+  basicauthPassword,
   enableDemoMode
 } = utils.parseCommandLineArgumentsAnonymous(args);
 
@@ -16,7 +18,7 @@ const screenshotPrefix = "Voila";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, basicauthUsername, basicauthPassword, enableDemoMode);
 
   try {
     const page = await tutorial.beforeScript();

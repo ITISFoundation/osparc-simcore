@@ -123,19 +123,32 @@ qx.Class.define("osparc.store.Support", {
       giveEmailFeedbackWindow.open();
     },
 
-    openCreateAccountDialog: function() {
-      let text = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
-      text += "<br>";
-      text += qx.locale.Manager.tr("Please contact:");
-      const createAccountWindow = new osparc.ui.window.Dialog("Create Account", null, text).set({
+    openInvitationRequiredDialog: function() {
+      const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
         maxWidth: 380
       });
-      osparc.store.VendorInfo.getInstance().getSupportEmail()
-        .then(supportEmail => {
-          const productName = osparc.utils.Utils.getProductName();
-          const mailto = this.getMailToLabel(supportEmail, "Request Account " + productName);
-          createAccountWindow.addWidget(mailto);
+      let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
+      message += "<br>";
+      osparc.store.VendorInfo.getInstance().getVendor()
+        .then(vendor => {
+          if ("invitation_url" in vendor) {
+            message += qx.locale.Manager.tr("Please request:");
+            message += "<br>";
+            createAccountWindow.setMessage(message);
+            const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
+            createAccountWindow.addWidget(linkLabel);
+          } else {
+            message += qx.locale.Manager.tr("Please contact:");
+            createAccountWindow.setMessage(message);
+            osparc.store.VendorInfo.getInstance().getSupportEmail()
+              .then(supportEmail => {
+                const productName = osparc.utils.Utils.getProductName();
+                const mailto = this.getMailToLabel(supportEmail, "Request Account " + productName);
+                createAccountWindow.addWidget(mailto);
+              });
+          }
         });
+      createAccountWindow.center();
       createAccountWindow.open();
     }
   }

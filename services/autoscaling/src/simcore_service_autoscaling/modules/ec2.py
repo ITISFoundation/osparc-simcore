@@ -15,7 +15,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 from ..core.errors import (
     ConfigurationError,
@@ -38,6 +38,7 @@ class EC2InstanceData:
     id: str
     aws_private_dns: InstancePrivateDNSName
     type: InstanceTypeType
+    state: InstanceStateNameType
 
 
 @dataclass(frozen=True)
@@ -75,14 +76,12 @@ class AutoscalingEC2:
 
     async def get_ec2_instance_capabilities(
         self,
-        instance_settings: EC2InstancesSettings,
+        instance_type_names: set[InstanceTypeType],
     ) -> list[EC2Instance]:
+        """instance_type_names must be a set of unique values"""
         instance_types = await self.client.describe_instance_types(
-            InstanceTypes=cast(
-                list[InstanceTypeType], instance_settings.EC2_INSTANCES_ALLOWED_TYPES
-            )
+            InstanceTypes=list(instance_type_names)
         )
-
         list_instances: list[EC2Instance] = []
         for instance in instance_types.get("InstanceTypes", []):
             with contextlib.suppress(KeyError):
@@ -111,7 +110,7 @@ class AutoscalingEC2:
             msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_all_pending_running_instances(
+            current_instances = await self.get_instances(
                 instance_settings, list(tags.keys())
             )
             if (
@@ -147,17 +146,12 @@ class AutoscalingEC2:
                 "New instances launched: %s, waiting for them to start now...",
                 instance_ids,
             )
-            # wait for the instance to be in a running state
+
+            # wait for the instance to be in a pending state
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
             waiter = self.client.get_waiter("instance_exists")
             await waiter.wait(InstanceIds=instance_ids)
-            logger.info(
-                "instances %s exists now, waiting for running state...", instance_ids
-            )
-
-            waiter = self.client.get_waiter("instance_running")
-            await waiter.wait(InstanceIds=instance_ids)
-            logger.info("instances %s is now running", instance_ids)
+            logger.info("instances %s exists now.", instance_ids)
 
             # get the private IPs
             instances = await self.client.describe_instances(InstanceIds=instance_ids)
@@ -167,6 +161,7 @@ class AutoscalingEC2:
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
                     type=instance["InstanceType"],
+                    state=instance["State"]["Name"],
                 )
                 for instance in instances["Reservations"][0]["Instances"]
             ]
@@ -176,18 +171,23 @@ class AutoscalingEC2:
             )
             return instance_datas
 
-    async def get_all_pending_running_instances(
+    async def get_instances(
         self,
         instance_settings: EC2InstancesSettings,
         tag_keys: list[str],
+        *,
+        state_names: Optional[list[InstanceStateNameType]] = None,
     ) -> list[EC2InstanceData]:
+        if state_names is None:
+            state_names = ["pending", "running"]
+
         instances = await self.client.describe_instances(
             Filters=[
                 {
                     "Name": "key-name",
                     "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
                 },
-                {"Name": "instance-state-name", "Values": ["pending", "running"]},
+                {"Name": "instance-state-name", "Values": state_names},
                 {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
             ]
         )
@@ -199,12 +199,15 @@ class AutoscalingEC2:
                 assert "InstanceId" in instance  # nosec
                 assert "PrivateDnsName" in instance  # nosec
                 assert "InstanceType" in instance  # nosec
+                assert "State" in instance  # nosec
+                assert "Name" in instance["State"]  # nosec
                 all_instances.append(
                     EC2InstanceData(
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
                         type=instance["InstanceType"],
+                        state=instance["State"]["Name"],
                     )
                 )
         return all_instances
@@ -240,11 +243,14 @@ class AutoscalingEC2:
         assert "InstanceId" in instance  # nosec
         assert "PrivateDnsName" in instance  # nosec
         assert "InstanceType" in instance  # nosec
+        assert "State" in instance  # nosec
+        assert "Name" in instance["State"]  # nosec
         return EC2InstanceData(
             launch_time=instance["LaunchTime"],
             id=instance["InstanceId"],
             aws_private_dns=instance["PrivateDnsName"],
             type=instance["InstanceType"],
+            state=instance["State"]["Name"],
         )
 
     async def terminate_instance(self, instance_data: EC2InstanceData) -> None:

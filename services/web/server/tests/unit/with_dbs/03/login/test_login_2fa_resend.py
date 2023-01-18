@@ -12,7 +12,7 @@ from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login._constants import CODE_2FA_CODE_REQUIRED
 from simcore_service_webserver.login.handlers_auth import LoginNextPage
@@ -25,7 +25,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",  # <--- Enabled 2FA
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
@@ -40,7 +39,12 @@ def postgres_db(postgres_db: sa.engine.Engine):
     # adds fake twilio_messaging_sid in osparc product (pre-initialized)
     stmt = (
         products.update()
-        .values(twilio_messaging_sid="x" * 34)
+        .values(
+            twilio_messaging_sid="x" * 34,
+            login_settings=ProductLoginSettingsDict(
+                LOGIN_2FA_REQUIRED=True
+            ),  # <--- 2FA Enabled for product
+        )
         .where(products.c.name == "osparc")
     )
     postgres_db.execute(stmt)
@@ -66,7 +70,6 @@ async def test_resend_2fa_entrypoint_is_protected(
     assert response.status == web.HTTPUnauthorized.status_code
 
 
-@pytest.mark.testit
 async def test_resend_2fa_workflow(
     client: TestClient,
     registered_user: UserInfoDict,

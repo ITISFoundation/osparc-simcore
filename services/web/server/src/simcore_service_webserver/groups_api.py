@@ -58,6 +58,7 @@ async def list_user_groups(
     primary_group = {}
     user_groups = []
     all_group = {}
+
     async with engine.acquire() as conn:
         query = (
             sa.select([groups, user_to_groups.c.access_rights])
@@ -66,12 +67,18 @@ async def list_user_groups(
             )
             .where(user_to_groups.c.uid == user_id)
         )
+        row: RowProxy
         async for row in conn.execute(query):
-            if row["type"] == GroupType.EVERYONE:
+            if row.type == GroupType.EVERYONE:
+                assert row.access_rights["read"]  # nosec
                 all_group = convert_groups_db_to_schema(row)
-            elif row["type"] == GroupType.PRIMARY:
+
+            elif row.type == GroupType.PRIMARY:
+                assert row.access_rights["read"]  # nosec
                 primary_group = convert_groups_db_to_schema(row)
+
             else:
+                assert row.type == GroupType.STANDARD  # nosec
                 # only add if user has read access
                 if row.access_rights["read"]:
                     user_groups.append(convert_groups_db_to_schema(row))
@@ -104,10 +111,29 @@ async def _get_user_from_email(app: web.Application, email: str) -> RowProxy:
 async def get_user_group(
     app: web.Application, user_id: int, gid: int
 ) -> dict[str, str]:
+    """
+    Gets group gid if user associated to it and has read access
+
+    raises GroupNotFoundError
+    raises UserInsufficientRightsError
+    """
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         group: RowProxy = await _get_user_group(conn, user_id, gid)
         check_group_permissions(group, user_id, gid, "read")
+        return convert_groups_db_to_schema(group)
+
+
+async def get_product_group_for_user(
+    app: web.Application, user_id: int, product_gid: int
+) -> dict[str, str]:
+    """
+    Returns product's group if user belongs to it, otherwise it
+    raises GroupNotFoundError
+    """
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        group: RowProxy = await _get_user_group(conn, user_id, product_gid)
         return convert_groups_db_to_schema(group)
 
 
