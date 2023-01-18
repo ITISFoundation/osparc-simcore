@@ -257,12 +257,14 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 if isinstance(service_task, asyncio.Task):
                     service_task.cancel()
 
-                    async def _wait_task(task: asyncio.Task) -> None:
+                    async def _await_task(task: asyncio.Task) -> None:
                         await task
 
                     with suppress(asyncio.CancelledError):
                         try:
-                            await asyncio.wait_for(_wait_task(service_task), timeout=10)
+                            await asyncio.wait_for(
+                                _await_task(service_task), timeout=10
+                            )
                         except asyncio.TimeoutError:
                             pass
 
@@ -474,7 +476,7 @@ class Scheduler(SchedulerInternalsMixin, SchedulerPublicInterface):
                 dynamic_sidecar_settings=dynamic_sidecar_settings,
                 dynamic_scheduler=dynamic_scheduler,
             ),
-            name=f"observe_{service_name}",
+            name=f"{__name__}.observe_{service_name}",
         )
         observation_task.add_done_callback(
             functools.partial(
