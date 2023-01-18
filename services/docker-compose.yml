@@ -500,7 +500,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "3",
+        "4",
         "--appendonly",
         "yes"
       ]

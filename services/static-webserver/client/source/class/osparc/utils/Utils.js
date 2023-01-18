@@ -206,6 +206,32 @@ qx.Class.define("osparc.utils.Utils", {
       return (productName === product);
     },
 
+    getStudyLabel(plural = false) {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        if (plural) {
+          return qx.locale.Manager.tr("projects");
+        }
+        return qx.locale.Manager.tr("project");
+      }
+      if (plural) {
+        return qx.locale.Manager.tr("studies");
+      }
+      return qx.locale.Manager.tr("study");
+    },
+
+    getTemplateLabel(plural = false) {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
+        if (plural) {
+          return qx.locale.Manager.tr("tutorials");
+        }
+        return qx.locale.Manager.tr("tutorial");
+      }
+      if (plural) {
+        return qx.locale.Manager.tr("templates");
+      }
+      return qx.locale.Manager.tr("template");
+    },
+
     getEditButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         allowGrowY: false,
@@ -535,11 +561,15 @@ qx.Class.define("osparc.utils.Utils", {
     capitalize: function() {
       let res = "";
       for (let i=0; i<arguments.length; i++) {
-        if (typeof arguments[i] !== "string" && arguments[i] instanceof String === false) {
-          continue;
+        if (typeof arguments[i] === "string" || arguments[i] instanceof String !== false) {
+          const capitalized = arguments[i].charAt(0).toUpperCase() + arguments[i].slice(1);
+          res = res.concat(capitalized);
+        } else if (typeof arguments[i] === "object" && "classname" in arguments[i] && arguments[i]["classname"] === "qx.locale.LocalizedString") {
+          // qx.locale.Manager
+          // eslint-disable-next-line no-underscore-dangle
+          const capitalized = arguments[i].__txt.charAt(0).toUpperCase() + arguments[i].__txt.slice(1);
+          res = res.concat(capitalized);
         }
-        const capitalized = arguments[i].charAt(0).toUpperCase() + arguments[i].slice(1);
-        res = res.concat(capitalized);
       }
       return res;
     },

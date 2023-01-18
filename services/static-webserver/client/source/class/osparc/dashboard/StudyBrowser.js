@@ -752,7 +752,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(studyData) {
-      const text = (osparc.utils.Utils.isProduct("s4llite") ? this.tr("Project") : this.tr("Study")) + this.tr(" data...");
+      const text = osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + this.tr(" data...");
       const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("execute", () => {
         const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
