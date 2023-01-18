@@ -4,57 +4,105 @@
 # pylint: disable=too-many-arguments
 
 
+from typing import Optional, Protocol
+
 import pytest
-from aiohttp import web
+from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
+from simcore_service_webserver.login._constants import (
+    MAX_2FA_CODE_RESEND,
+    MAX_2FA_CODE_TRIALS,
+    MSG_UNAUTHORIZED_LOGIN_2FA,
+    MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
+    MSG_UNAUTHORIZED_REGISTER_PHONE,
+)
 from simcore_service_webserver.session import (
     _setup_encrypted_cookie_sessions,
     generate_fernet_secret_key,
 )
 from simcore_service_webserver.session_access import (
-    session_access_constraint,
-    session_access_trace,
+    on_success_grant_session_access_to,
+    session_access_required,
 )
 
 
 @pytest.fixture
-def contraint_max_access_count() -> int:
-    return 1
-
-
-@pytest.fixture
-def client(event_loop, aiohttp_client, contraint_max_access_count: int) -> TestClient:
+def client(event_loop, aiohttp_client) -> TestClient:
     routes = web.RouteTableDef()
 
-    @routes.get("/a", name="get_a")
-    @session_access_trace("get_a")  # <---- TRACE
-    async def get_a(request: web.Request):
-        return web.Response(text="A")
+    def _handler_impl(request: web.Request, name: str):
+        return_status = int(request.query.get("return_status", 200))
+        ok = return_status < 400
+        if ok:
+            return web.Response(text=f"{name} ok", status=return_status)
 
-    @routes.get("/b", name="get_b")
-    @session_access_trace("get_b")  # <---- TRACE
-    async def get_b(request: web.Request):
-        return web.Response(text="B")
+        # failse
+        error = web.HTTPException()
+        error.set_status(status=return_status, reason=f"{name} failed")
+        raise error
 
-    @routes.get("/c", name="get_c")
-    @session_access_constraint(  # <---- CONTRAINT
-        allow_access_after=["get_a", "get_b"],
-        max_number_of_access=contraint_max_access_count,
+    # auth_login -------------------------------------------------
+    @routes.post("/v0/auth/login", name="auth_login")
+    @on_success_grant_session_access_to(
+        name="auth_register_phone",
+        max_access_count=MAX_2FA_CODE_TRIALS,
     )
-    async def get_c(request: web.Request):
-        return web.Response(text="C")
+    @on_success_grant_session_access_to(
+        name="auth_login_2fa",
+        max_access_count=MAX_2FA_CODE_TRIALS,
+    )
+    @on_success_grant_session_access_to(
+        name="auth_resend_2fa_code",
+        max_access_count=MAX_2FA_CODE_RESEND,
+    )
+    async def login(request: web.Request):
+        return _handler_impl(request, "login")
 
-    @routes.get("/d", name="get_d")
-    async def get_d(request: web.Request):
-        return web.Response(text="D")
+    # auth_register_phone -------------------------------------------------
+    @routes.post("/v0/auth/verify-phone-number", name="auth_register_phone")
+    @session_access_required(
+        name="auth_register_phone",
+        unauthorized_reason=MSG_UNAUTHORIZED_REGISTER_PHONE,
+    )
+    @on_success_grant_session_access_to(
+        name="auth_phone_confirmation",
+        max_access_count=MAX_2FA_CODE_TRIALS,
+    )
+    @on_success_grant_session_access_to(
+        name="auth_resend_2fa_code",
+        max_access_count=MAX_2FA_CODE_RESEND,
+    )
+    async def register_phone(request: web.Request):
+        return _handler_impl(request, "register_phone")
 
-    #
-    # get_a ---->|
-    #            | get_C
-    # get_b ---->|
-    #
-    # get_d ---->
-    #
+    # auth_resend_2fa_code -------------------------------------------------
+    @routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
+    @session_access_required(
+        name="auth_resend_2fa_code",
+        one_time_access=False,
+    )
+    async def resend_2fa_code(request: web.Request):
+        return _handler_impl(request, "resend_2fa_code")
+
+    # auth_login_2fa -------------------------------------------------
+    @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
+    @session_access_required(
+        "auth_login_2fa",
+        unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
+    )
+    async def login_2fa(request: web.Request):
+        return _handler_impl(request, "login_2fa")
+
+    # auth_phone_confirmation -------------------------------------------------
+    @routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
+    @session_access_required(
+        name="auth_phone_confirmation",
+        unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
+    )
+    async def phone_confirmation(request: web.Request):
+        return _handler_impl(request, "phone_confirmation")
+
+    # build app with session -------------------------------------------------
     app = web.Application()
 
     _setup_encrypted_cookie_sessions(
@@ -66,86 +114,118 @@ def client(event_loop, aiohttp_client, contraint_max_access_count: int) -> TestC
     return event_loop.run_until_complete(aiohttp_client(app))
 
 
-async def test_c_grants_access_after_a(client: TestClient):
-    response = await client.get("/a")  # produces
-    assert response.ok
-
-    response = await client.get("/c")  # consumes
-    assert response.ok
-
-
-async def test_c_grants_access_after_b(client: TestClient):
-    response = await client.get("/b")  # produces
-    assert response.ok
-
-    response = await client.get("/c")  # consumes
-    assert response.ok
+class ClientRequestCallable(Protocol):
+    async def __call__(
+        self, client: TestClient, name: str, return_status: Optional[int] = None
+    ) -> ClientResponse:
+        ...
 
 
-async def test_c_grants_access_after_b_and_then_ba(client: TestClient):
-    response = await client.get("/b")  # produces
-    assert response.ok
+@pytest.fixture
+def do_request() -> ClientRequestCallable:
+    # SEE from mypy_extensions import Arg, VarArg, KwArg
 
-    response = await client.get("/c")  # consumes
-    assert response.ok
+    async def _request(client: TestClient, name, return_status=None) -> ClientResponse:
+        assert client.app
+        url = client.app.router[name].url_for()
+        params = {"return_status": f"{return_status}"} if return_status else None
+        response = await client.post(f"{url}", params=params)
+        print(response.request_info.method, url, response.status)
+        return response
 
-    response = await client.get("/b")  # produces
-    assert response.ok
-    response = await client.get("/a")  # produces
-    assert response.ok
-
-    response = await client.get("/c")  # consumes
-    assert response.ok
-
-
-async def test_c_grants_access_after_b_and_non_traced(client: TestClient):
-    response = await client.get("/b")  # produces
-    assert response.ok
-
-    # can have calls in the middle that are not traced?
-    for _ in range(3):
-        response = await client.get("/d")
-        assert response.ok
-
-    response = await client.get("/c")  # consumes
-    assert response.ok
+    return _request
 
 
-async def test_c_fails_access_alone(client: TestClient):
-    response = await client.get("/c")
-    assert not response.ok
-
-
-async def test_c_fails_access_after_d(client: TestClient):
-    response = await client.get("/d")
-    assert response.ok
-
-    response = await client.get("/c")
-    assert not response.ok
-
-
-async def test_c_fails_access_after_once(client: TestClient):
-    response = await client.get("/a")
-    assert response.ok
-
-    response = await client.get("/c")
-    assert response.ok
-
-    for _ in range(3):
-        response = await client.get("/c")
-        assert not response.ok
-
-
-@pytest.mark.parametrize("contraint_max_access_count", (1, 2, 5))
-async def test_max_access_count_option(
-    client: TestClient, contraint_max_access_count: int
+async def test_login_then_submit_code(
+    client: TestClient, do_request: ClientRequestCallable
 ):
-    response = await client.get("/a")
+    response = await do_request(client, "auth_login")
     assert response.ok
 
-    for _ in range(contraint_max_access_count):
-        response = await client.get("/c")
+    response = await do_request(client, "auth_login_2fa")
+    assert response.ok
+
+    # one_time_access=True, then after success is not auth
+    response = await do_request(client, "auth_login_2fa")
+    assert response.status == 401
+
+
+@pytest.mark.testit
+async def test_login_fails_then_no_access(
+    client: TestClient, do_request: ClientRequestCallable
+):
+
+    response = await do_request(client, "auth_login", return_status=500)
+    assert response.status == 500
+
+    response = await do_request(client, "auth_login_2fa")
+    assert response.status == 401
+
+
+async def test_login_then_multiple_resend_and_submit_code(
+    client: TestClient,
+    do_request: ClientRequestCallable,
+):
+    response = await do_request(client, "auth_login")
+    assert response.ok
+
+    for _ in range(MAX_2FA_CODE_RESEND):
+        response = await do_request(client, "auth_resend_2fa_code")
         assert response.ok
 
-    response = await client.get("/c")
-    assert not response.ok
+    response = await do_request(client, "auth_login_2fa")
+    assert response.ok
+
+    # one_time_access=True, then after success is not auth
+    response = await do_request(client, "auth_login_2fa")
+    assert response.status == 401
+
+
+async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
+    client: TestClient,
+    do_request: ClientRequestCallable,
+):
+    response = await do_request(client, "auth_login")
+    assert response.ok
+
+    response = await do_request(client, "auth_register_phone")
+    assert response.ok
+
+    for _ in range(MAX_2FA_CODE_RESEND):
+        response = await do_request(client, "auth_resend_2fa_code")
+        assert response.ok
+
+    response = await do_request(client, "auth_phone_confirmation")
+    assert response.ok
+
+    # one_time_access=True, then after success is not auth
+    response = await do_request(client, "auth_phone_confirmation")
+    assert response.status == 401
+
+
+@pytest.mark.testit
+@pytest.mark.parametrize(
+    "route_name,granted_at",
+    [
+        ("auth_register_phone", "auth_login"),
+        ("auth_resend_2fa_code", "auth_login"),
+        ("auth_login_2fa", "auth_login"),
+    ],
+)
+async def test_routes_with_session_access_required(
+    client: TestClient,
+    do_request: ClientRequestCallable,
+    route_name: str,
+    granted_at: str,
+):
+    # no access
+    response = await do_request(client, route_name)
+    assert response.status == 401
+
+    # grant access after this request
+    response = await do_request(client, granted_at)
+    assert response.ok
+
+    # has access
+    response = await do_request(client, route_name)
+    assert response.ok
