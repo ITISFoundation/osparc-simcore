@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-function-args
 
 import asyncio
 from typing import Any
