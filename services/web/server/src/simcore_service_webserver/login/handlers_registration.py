@@ -12,14 +12,14 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..groups_api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ..products import Product, get_current_product
 from ..security_api import encrypt_password
-from ..session_access import session_access_constraint, session_access_trace
-from ..utils import MINUTE
+from ..session_access import on_success_grant_session_access_to, session_access_required
 from ..utils_aiohttp import NextPage
-from ..utils_rate_limiting import global_rate_limit_route
 from ._2fa import create_2fa_code, mask_phone_number, send_sms_code
 from ._confirmation import make_confirmation_link
 from ._constants import (
     CODE_2FA_CODE_REQUIRED,
+    MAX_2FA_CODE_RESEND,
+    MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
     MSG_CANT_SEND_MAIL,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
@@ -79,7 +79,6 @@ class RegisterBody(InputSchema):
         }
 
 
-@session_access_trace(route_name="auth_register")
 @routes.post("/v0/auth/register", name="auth_register")
 async def register(request: web.Request):
     """
@@ -209,13 +208,19 @@ class RegisterPhoneNextPage(NextPage[_PageParams]):
     message: str
 
 
-@global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
-@session_access_constraint(
-    allow_access_after=["auth_register", "auth_login"],
-    max_number_of_access=1,
+@session_access_required(
+    name="auth_register_phone",
     unauthorized_reason=MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
-@routes.post("/auth/verify-phone-number", name="auth_register_phone")
+@on_success_grant_session_access_to(
+    name="auth_phone_confirmation",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_resend_2fa_code",
+    max_access_count=MAX_2FA_CODE_RESEND,
+)
+@routes.post("/v0/auth/verify-phone-number", name="auth_register_phone")
 async def register_phone(request: web.Request):
     """
     Submits phone registration

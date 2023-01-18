@@ -12,7 +12,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from ..products import Product, get_current_product
 from ..security_api import check_password, forget
-from ..session_access import session_access_constraint, session_access_trace
+from ..session_access import on_success_grant_session_access_to, session_access_required
 from ..utils_aiohttp import NextPage
 from ._2fa import (
     create_2fa_code,
@@ -24,6 +24,8 @@ from ._2fa import (
 from ._constants import (
     CODE_2FA_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
+    MAX_2FA_CODE_RESEND,
+    MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
@@ -67,7 +69,18 @@ class LoginNextPage(NextPage[CodePageParams]):
     reason: str = Field(deprecated=True)
 
 
-@session_access_trace(route_name="auth_login")
+@on_success_grant_session_access_to(
+    name="auth_register_phone",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_login_2fa",
+    max_access_count=MAX_2FA_CODE_TRIALS,
+)
+@on_success_grant_session_access_to(
+    name="auth_resend_2fa_code",
+    max_access_count=MAX_2FA_CODE_RESEND,
+)
 @routes.post("/v0/auth/login", name="auth_login")
 async def login(request: web.Request):
     """Login: user submits an email (identification) and a password
@@ -182,9 +195,8 @@ class LoginTwoFactorAuthBody(InputSchema):
     code: SecretStr
 
 
-@session_access_constraint(
-    allow_access_after=["auth_login", "auth_resend_2fa_code"],
-    max_number_of_access=3,
+@session_access_required(
+    "auth_login_2fa",
     unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
 @routes.post("/v0/auth/validate-code-login", name="auth_login_2fa")
