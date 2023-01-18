@@ -10,7 +10,7 @@ describe('Calls after logging in', () => {
   beforeAll(async () => {
     await page.goto(url);
     await auto.register(page, user, pass);
-    await page.waitFor(1000);
+    await utils.sleep(1000);
   }, ourTimeout);
   
   afterAll(async () => {

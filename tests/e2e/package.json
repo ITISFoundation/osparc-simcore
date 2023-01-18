@@ -7,12 +7,12 @@
     "test": "tests"
   },
   "dependencies": {
-    "jest": "^24.9.0",
-    "jest-puppeteer": "^4.4.0",
+    "jest": "^29.3.1",
+    "jest-puppeteer": "^6.2.0",
     "log-timestamp": "^0.3.0",
-    "log4js": "^6.4.0",
-    "node-fetch": "^2.6.1",
-    "puppeteer": "^2.1.1"
+    "log4js": "^6.7.1",
+    "node-fetch": "^3.3.0",
+    "puppeteer": "^19.5.2"
   },
   "scripts": {
     "test": "jest --debug --runInBand --colors",
