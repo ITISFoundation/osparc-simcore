@@ -1,7 +1,7 @@
 import inspect
 from functools import wraps
 from types import ModuleType
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Awaitable, Callable, TypedDict, Union
 
 from aiohttp import web
 
@@ -10,7 +10,7 @@ from .server import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
 # The socket ID that was assigned to the client
 SocketID = str
 # The environ argument is a dictionary in standard WSGI format containing the request information, including HTTP headers
-EnvironDict = dict[str, Any]
+EnvironDict = TypedDict("EnvironDict", {"aiohttp.request": web.Request})
 # Connect event
 SocketioConnectEventHandler = Callable[
     [SocketID, EnvironDict, web.Application], Awaitable[None]
