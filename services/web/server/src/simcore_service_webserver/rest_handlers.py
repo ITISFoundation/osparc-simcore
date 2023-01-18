@@ -10,6 +10,7 @@ from aiohttp import web
 from ._constants import APP_PUBLIC_CONFIG_PER_PRODUCT
 from ._meta import API_VTAG
 from .application_settings import APP_SETTINGS_KEY
+from .login.decorators import login_required
 from .products import get_product_name
 from .redis import get_redis_scheduled_maintenance_client
 from .rest_healthcheck import HealthCheck, HealthCheckFailed
@@ -82,6 +83,7 @@ async def get_config(request: web.Request):
 
 
 @routes.get(f"/{API_VTAG}/scheduled_maintenance", name="get_scheduled_maintenance")
+@login_required
 async def get_scheduled_maintenance(request: web.Request):
     """Check scheduled_maintenance table in redis"""
 
