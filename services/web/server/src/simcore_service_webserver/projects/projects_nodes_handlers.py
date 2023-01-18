@@ -27,7 +27,7 @@ from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
-from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from ..projects.projects_db import ProjectDBAPI
 from ..security_decorators import permission_required
 from ..users_api import get_user_role
 from . import projects_api
@@ -266,9 +266,8 @@ async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
-    project_db_api: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
 
-    save_state = await project_db_api.has_permission(
+    save_state = await ProjectDBAPI.get_from_app_context(request.app).has_permission(
         user_id=req_ctx.user_id, project_uuid=path_params.project_id, permission="write"
     )
 

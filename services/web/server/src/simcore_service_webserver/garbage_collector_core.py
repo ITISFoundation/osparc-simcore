@@ -29,7 +29,7 @@ from .projects.projects_api import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
-from .projects.projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects.projects_db import ProjectDBAPI
 from .projects.projects_exceptions import ProjectDeleteError, ProjectNotFoundError
 from .redis import get_redis_lock_manager_client
 from .resource_manager.registry import RedisResourceRegistry, get_registry
@@ -294,10 +294,6 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
-def _get_project_db_api(app: web.Application) -> ProjectDBAPI:
-    return app[APP_PROJECT_DBAPI]
-
-
 async def _remove_single_orphaned_service(
     app: web.Application,
     interactive_service: dict[str, Any],
@@ -364,7 +360,7 @@ async def _remove_single_orphaned_service(
 
             project_uuid = currently_opened_projects_node_ids[service_uuid]
 
-            save_state = await _get_project_db_api(app).has_permission(
+            save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
                 user_id, project_uuid, "write"
             )
             if user_role is None or user_role <= UserRole.GUEST:
@@ -458,7 +454,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
-    user_project_uuids = await _get_project_db_api(
+    user_project_uuids = await ProjectDBAPI.get_from_app_context(
         app
     ).list_all_projects_by_uuid_for_user(user_id=user_id)
 
