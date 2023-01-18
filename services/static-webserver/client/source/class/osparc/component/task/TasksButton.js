@@ -66,19 +66,12 @@ qx.Class.define("osparc.component.task.TasksButton", {
     },
 
     __updateTasksButton: function() {
-      const icon = this.getChildControl("icon");
       const number = this.getChildControl("number");
 
       const tasks = osparc.component.task.Tasks.getInstance();
       const nTasks = tasks.getTasks().length;
       number.setValue(nTasks.toString());
-      if (nTasks) {
-        this.show();
-        icon.getContentElement().addClass("rotate");
-      } else {
-        this.exclude();
-        icon.getContentElement().removeClass("rotate");
-      }
+      nTasks ? this.show() : this.exclude();
     },
 
     __showTasks: function() {

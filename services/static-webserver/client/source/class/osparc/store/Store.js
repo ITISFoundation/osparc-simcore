@@ -84,6 +84,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    maintenance: {
+      check: "Object",
+      init: {}
+    },
     templates: {
       check: "Array",
       init: []
