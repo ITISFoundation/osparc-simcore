@@ -10,6 +10,9 @@ from typing import Any
 
 import pytest
 from models_library.service_settings_labels import (
+    DEFAULT_DNS_SERVER_ADDRESS,
+    DEFAULT_DNS_SERVER_PORT,
+    DNResolver,
     DynamicSidecarServiceLabels,
     HostWhitelistPolicy,
     PathMappingsLabel,
@@ -176,25 +179,63 @@ def test_host_whitelist_policy():
     assert set(host_whitelist_policy.iter_tcp_ports()) == set(range(1, 12 + 1)) | {22}
 
 
-def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_spec():
+@pytest.mark.parametrize(
+    "container_whitelist, expected_host_whitelist_policy",
+    [
+        pytest.param(
+            [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                }
+            ],
+            HostWhitelistPolicy(
+                hostname="a-host",
+                tcp_ports=[12132, PortRange(lower=12, upper=2334)],
+                dns_resolver=DNResolver(
+                    address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
+                ),
+            ),
+            id="default_dns_resolver",
+        ),
+        pytest.param(
+            [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    "dns_resolver": {"address": "3.4.6.7", "port": 123},
+                }
+            ],
+            HostWhitelistPolicy(
+                hostname="a-host",
+                tcp_ports=[12132, PortRange(lower=12, upper=2334)],
+                dns_resolver=DNResolver(address="3.4.6.7", port=123),
+            ),
+            id="with_dns_resolver",
+        ),
+    ],
+)
+def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_spec(
+    container_whitelist: dict[str, Any],
+    expected_host_whitelist_policy: HostWhitelistPolicy,
+):
     container_name = "test_container"
     compose_spec: dict[str, Any] = {"services": {container_name: None}}
 
     dict_data = {
         "simcore.service.containers-allowed-outgoing-whitelist": {
-            container_name: [
-                {
-                    "hostname": "a-host",
-                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
-                }
-            ]
+            container_name: container_whitelist
         },
         "simcore.service.containers-allowed-outgoing-internet": [container_name],
         "simcore.service.compose-spec": json.dumps(compose_spec),
         "simcore.service.container-http-entrypoint": container_name,
     }
 
-    assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    instance = DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    assert (
+        instance.containers_allowed_outgoing_whitelist[container_name][0]
+        == expected_host_whitelist_policy
+    )
 
 
 def test_container_outgoing_whitelist_and_container_allow_internet_without_compose_spec():

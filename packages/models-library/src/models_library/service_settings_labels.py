@@ -4,13 +4,16 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterator, Literal, Optional, Union
+from typing import Any, Final, Iterator, Literal, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
 from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+
+DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
 
 
 class _BaseConfig:
@@ -186,9 +189,20 @@ class PortRange(BaseModel):
         return v
 
 
+class DNResolver(BaseModel):
+    address: str
+    port: PortInt
+
+
 class HostWhitelistPolicy(BaseModel):
     hostname: str
     tcp_ports: list[Union[PortRange, PortInt]]
+    dns_resolver: DNResolver = Field(
+        default_factory=lambda: DNResolver(
+            address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
+        ),
+        description="specify a DNS resolver, by default you get one",
+    )
 
     def iter_tcp_ports(self) -> Iterator[PortInt]:
         for port in self.tcp_ports:
@@ -274,7 +288,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("containers_allowed_outgoing_whitelist")
     @classmethod
-    def containers_allowed_outgoing_whitelist_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_whitelist_in_compose_spec(cls, v, values):
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
@@ -294,7 +308,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("containers_allowed_outgoing_internet")
     @classmethod
-    def containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
