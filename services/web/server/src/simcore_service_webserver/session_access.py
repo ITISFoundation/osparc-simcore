@@ -105,18 +105,16 @@ def on_success_grant_session_access_to(
     def _decorator(handler: Handler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request):
+            session = await get_session(request)
 
             response = await handler(request)
 
-            # success 2XX ---
-            session = await get_session(request)
-            # TODO: what if raises non-error?
-            routes_granted_acess = session.setdefault(
-                SESSION_GRANTED_ACCESS_TOKENS_KEY, {}
-            )
-            # NOTE: does NOT add up access counts but resets to max_access_count
-            routes_granted_acess[name] = max_access_count
-            # ----
+            if response.status < 400:  # success
+                granted_access_tokens = session.setdefault(
+                    SESSION_GRANTED_ACCESS_TOKENS_KEY, {}
+                )
+                # NOTE: does NOT add up access counts but re-assigns to max_access_count
+                granted_access_tokens[name] = max_access_count
 
             return response
 
@@ -133,7 +131,6 @@ def session_access_required(
     def _decorator(handler: Handler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request):
-
             session = await get_session(request)
             granted_access_tokens = session.get(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
 
@@ -149,9 +146,10 @@ def session_access_required(
                 # Access granted to this handler
                 response = await handler(request)
 
-                if one_time_access:
-                    # avoids future accesses by clearing all tokens
-                    granted_access_tokens.pop(name, None)
+                if response.status < 400:  # success
+                    if one_time_access:
+                        # avoids future accesses by clearing all tokens
+                        granted_access_tokens.pop(name, None)
 
                 return response
 
