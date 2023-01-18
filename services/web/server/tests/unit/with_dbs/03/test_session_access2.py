@@ -116,17 +116,16 @@ def client(event_loop, aiohttp_client) -> TestClient:
 
 class ClientRequestCallable(Protocol):
     async def __call__(
-        self, name: str, return_status: Optional[int] = None
+        self, client: TestClient, name: str, return_status: Optional[int] = None
     ) -> ClientResponse:
         ...
 
 
 @pytest.fixture
-def client_request(client: TestClient) -> ClientRequestCallable:
-    assert client.app
+def do_request() -> ClientRequestCallable:
     # SEE from mypy_extensions import Arg, VarArg, KwArg
 
-    async def _request(name, return_status=None) -> ClientResponse:
+    async def _request(client: TestClient, name, return_status=None) -> ClientResponse:
         assert client.app
         url = client.app.router[name].url_for()
         params = {"return_status": f"{return_status}"} if return_status else None
@@ -137,64 +136,70 @@ def client_request(client: TestClient) -> ClientRequestCallable:
     return _request
 
 
-async def test_login_then_submit_code(client_request: ClientRequestCallable):
-    response = await client_request("auth_login")
+async def test_login_then_submit_code(
+    client: TestClient, do_request: ClientRequestCallable
+):
+    response = await do_request(client, "auth_login")
     assert response.ok
 
-    response = await client_request("auth_login_2fa")
+    response = await do_request(client, "auth_login_2fa")
     assert response.ok
 
     # one_time_access=True, then after success is not auth
-    response = await client_request("auth_login_2fa")
+    response = await do_request(client, "auth_login_2fa")
     assert response.status == 401
 
 
 @pytest.mark.testit
-async def test_login_fails_then_no_access(client_request: ClientRequestCallable):
+async def test_login_fails_then_no_access(
+    client: TestClient, do_request: ClientRequestCallable
+):
 
-    response = await client_request("auth_login", return_status=500)
+    response = await do_request(client, "auth_login", return_status=500)
     assert response.status == 500
 
-    response = await client_request("auth_login_2fa")
+    response = await do_request(client, "auth_login_2fa")
     assert response.status == 401
 
 
 async def test_login_then_multiple_resend_and_submit_code(
-    client_request: ClientRequestCallable,
+    client: TestClient,
+    do_request: ClientRequestCallable,
 ):
-    response = await client_request("auth_login")
+    response = await do_request(client, "auth_login")
     assert response.ok
 
     for _ in range(MAX_2FA_CODE_RESEND):
-        response = await client_request("auth_resend_2fa_code")
+        response = await do_request(client, "auth_resend_2fa_code")
         assert response.ok
 
-    response = await client_request("auth_login_2fa")
+    response = await do_request(client, "auth_login_2fa")
     assert response.ok
 
     # one_time_access=True, then after success is not auth
-    response = await client_request("auth_login_2fa")
+    response = await do_request(client, "auth_login_2fa")
     assert response.status == 401
 
 
 async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
-    client_request: ClientRequestCallable,
+    client: TestClient,
+    do_request: ClientRequestCallable,
 ):
-    response = await client_request("auth_login")
+    response = await do_request(client, "auth_login")
     assert response.ok
 
-    response = await client_request("auth_register_phone")
+    response = await do_request(client, "auth_register_phone")
     assert response.ok
 
     for _ in range(MAX_2FA_CODE_RESEND):
-        response = await client_request("auth_resend_2fa_code")
+        response = await do_request(client, "auth_resend_2fa_code")
         assert response.ok
 
-    response = await client_request("auth_phone_confirmation")
+    response = await do_request(client, "auth_phone_confirmation")
     assert response.ok
 
     # one_time_access=True, then after success is not auth
-    response = await client_request("auth_phone_confirmation")
+    response = await do_request(client, "auth_phone_confirmation")
     assert response.status == 401
 
 
@@ -208,18 +213,19 @@ async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
     ],
 )
 async def test_routes_with_session_access_required(
+    client: TestClient,
+    do_request: ClientRequestCallable,
     route_name: str,
     granted_at: str,
-    client_request: ClientRequestCallable,
 ):
     # no access
-    # response = await client_request(route_name)
-    # assert response.status == 401
+    response = await do_request(client, route_name)
+    assert response.status == 401
 
     # grant access after this request
-    response = await client_request(granted_at)
+    response = await do_request(client, granted_at)
     assert response.ok
 
     # has access
-    response = await client_request(route_name)
+    response = await do_request(client, route_name)
     assert response.ok
