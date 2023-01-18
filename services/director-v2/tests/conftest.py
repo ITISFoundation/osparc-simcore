@@ -161,7 +161,7 @@ def mock_env(
 
 
 @pytest.fixture(scope="function")
-def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
+async def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", settings.json(indent=2))

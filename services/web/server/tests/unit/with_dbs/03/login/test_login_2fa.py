@@ -15,11 +15,12 @@ from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
-from simcore_postgres_database.models.products import products
+from servicelib.utils_secrets import generate_passcode
+from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login._2fa import (
     _do_create_2fa_code,
-    _generage_2fa_code,
     create_2fa_code,
     delete_2fa_code,
     get_2fa_code,
@@ -27,11 +28,12 @@ from simcore_service_webserver.login._2fa import (
     send_email_code,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
+from simcore_service_webserver.products import get_current_product
 
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
-    setenvs_from_dict(
+    envs_login = setenvs_from_dict(
         monkeypatch,
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
@@ -39,6 +41,9 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
+    print(ApplicationSettings.create_from_envs().json(indent=1))
+
+    return {**app_environment, **envs_login}
 
 
 @pytest.fixture
@@ -48,7 +53,9 @@ def postgres_db(postgres_db: sa.engine.Engine):
         products.update()
         .values(
             twilio_messaging_sid="x" * 34,
-            login_settings={"two_factor_enabled": True},  # <--- 2FA Enabled
+            login_settings=ProductLoginSettingsDict(
+                LOGIN_2FA_REQUIRED=True
+            ),  # <--- 2FA Enabled for product
         )
         .where(products.c.name == "osparc")
     )
@@ -79,7 +86,8 @@ async def test_2fa_code_operations(client: TestClient):
 
     # set/get/delete
     email = "foo@bar.com"
-    code = await create_2fa_code(client.app, email)
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+
     assert await get_2fa_code(client.app, email) == code
     await delete_2fa_code(client.app, email)
 
@@ -261,14 +269,19 @@ async def test_register_phone_fails_with_used_number(
     assert "phone" in error["message"]
 
 
+@pytest.mark.testit
 async def test_send_email_code(
     client: TestClient, faker: Faker, capsys: CaptureFixture
 ):
     request = make_mocked_request("GET", "/dummy", app=client.app)
 
+    with pytest.raises(KeyError):
+        # NOTE: this is a fake request and did not go through middlewares
+        get_current_product(request)
+
     user_email = faker.email()
     support_email = faker.email()
-    code = _generage_2fa_code()
+    code = generate_passcode()
     user_name = faker.user_name()
 
     await send_email_code(

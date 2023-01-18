@@ -6,12 +6,11 @@
 """
 
 import json
-from dataclasses import asdict, dataclass
 from typing import Literal, TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import func
 
 from .base import metadata
 from .groups import groups
@@ -81,19 +80,23 @@ class Forum(TypedDict, total=True):
     url: str
 
 
-@dataclass(frozen=True)
-class ProductLoginSettings:
+class ProductLoginSettingsDict(TypedDict, total=False):
     """Login plugin settings customized for this product
 
-    Extends simcore_service_webserver.login.settings.LoginSettings
+    Overrides simcore_service_webserver.login.settings.LoginSettings
+    (i.e. if not defined, the values of LoginSettings apply)
+
+    NOTE: These attributes need to match those of LoginSettings
     """
 
-    two_factor_enabled: bool = False
+    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool
+    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
+    LOGIN_2FA_REQUIRED: bool  # previously 'two_factor_enabled'
 
 
 # NOTE: defaults affects migration!!
-LOGIN_SETTINGS_DEFAULT = ProductLoginSettings()
-_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(asdict(LOGIN_SETTINGS_DEFAULT))
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettingsDict()  # = {}
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(LOGIN_SETTINGS_DEFAULT)
 
 
 #
@@ -149,8 +152,18 @@ products = sa.Table(
         "The SID of the Messaging Service you want to associate with the message."
         "When set to None, this feature is disabled.",
     ),
-    sa.Column("vendor", JSONB, nullable=True, doc="Info about the Vendor"),
-    sa.Column("issues", JSONB, nullable=True, doc="Issue trackers: list[IssueTracker]"),
+    sa.Column(
+        "vendor",
+        JSONB,
+        nullable=True,
+        doc="Info about the Vendor",
+    ),
+    sa.Column(
+        "issues",
+        JSONB,
+        nullable=True,
+        doc="Issue trackers: list[IssueTracker]",
+    ),
     sa.Column(
         "manuals",
         JSONB,
@@ -167,8 +180,9 @@ products = sa.Table(
         "login_settings",
         JSONB,
         nullable=False,
-        server_default=text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
-        doc="Overrides values of simcore_service_webserver.login.settings.LoginSettings",
+        server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
+        "SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "registration_email_template",

@@ -29,6 +29,9 @@ class RedisSettings(BaseCustomSettings):
     REDIS_VALIDATION_CODES_DB: int = Field(
         default=2, description="This redis table is used to store SMS validation codes"
     )
+    REDIS_SCHEDULED_MAINTENANCE_DB: int = Field(
+        default=3, description="This redis table is used for handling scheduled maintenance"
+    )
 
     def _build_redis_dsn(self, db_index: int):
         return RedisDsn.build(
@@ -53,3 +56,7 @@ class RedisSettings(BaseCustomSettings):
     @cached_property
     def dsn_validation_codes(self) -> str:
         return self._build_redis_dsn(self.REDIS_VALIDATION_CODES_DB)
+
+    @cached_property
+    def dsn_scheduled_maintenance(self) -> str:
+        return self._build_redis_dsn(self.REDIS_SCHEDULED_MAINTENANCE_DB)

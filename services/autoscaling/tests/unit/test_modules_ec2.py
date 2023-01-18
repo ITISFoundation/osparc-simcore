@@ -2,6 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import cast
+
 import botocore.exceptions
 import pytest
 from faker import Faker
@@ -21,6 +23,7 @@ from simcore_service_autoscaling.modules.ec2 import (
     get_ec2_client,
 )
 from types_aiobotocore_ec2 import EC2Client
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 @pytest.fixture
@@ -111,8 +114,12 @@ async def test_get_ec2_instance_capabilities(
     autoscaling_ec2: AutoscalingEC2,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     instance_types = await autoscaling_ec2.get_ec2_instance_capabilities(
-        app_settings.AUTOSCALING_EC2_INSTANCES
+        cast(
+            set[InstanceTypeType],
+            set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES),
+        )
     )
     assert instance_types
     assert len(instance_types) == len(

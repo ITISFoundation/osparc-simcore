@@ -210,17 +210,16 @@ qx.Class.define("osparc.info.StudyLarge", {
         });
       }
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.splice(0, 0, {
-          label: this.tr("Study ID"),
-          view: this.__createStudyId(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyUuidToClipboard,
-            ctx: this
-          }
-        });
-      }
+      extraInfo.splice(0, 0, {
+        label: osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel()) + " ID",
+        view: this.__createStudyId(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyUuidToClipboard,
+          ctx: this
+        }
+      });
+
       return extraInfo;
     },
 
