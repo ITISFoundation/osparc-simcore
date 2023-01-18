@@ -128,7 +128,9 @@ def _merge_env_vars(
 _DEFAULT_USER_SERVICES_NETWORK_NAME = "back----end"
 
 
-def _connect_user_services(parsed_compose_spec: dict[str, Any]) -> None:
+def _connect_user_services(
+    parsed_compose_spec: dict[str, Any], allow_internet_access: bool
+) -> None:
     """
     Put all containers in the compose spec in the same network.
     The `network_name` must only be unique inside the user defined spec;
@@ -140,7 +142,7 @@ def _connect_user_services(parsed_compose_spec: dict[str, Any]) -> None:
     else:
         networks[_DEFAULT_USER_SERVICES_NETWORK_NAME] = {
             "driver": "overlay",
-            "internal": True,
+            "internal": not allow_internet_access,
         }
 
     for service_content in parsed_compose_spec["services"].values():
@@ -237,9 +239,10 @@ async def validate_compose_spec(
 
         service_content["volumes"] = service_volumes
 
-    # if more then one container is defined, put them on the same network
-    if len(spec_services) > 1:
-        _connect_user_services(parsed_compose_spec)
+    _connect_user_services(
+        parsed_compose_spec,
+        allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+    )
 
     # replace service_key with the container_name int the dict
     for service_key in list(spec_services.keys()):
