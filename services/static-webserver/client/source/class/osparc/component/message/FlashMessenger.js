@@ -55,8 +55,8 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
 
   statics: {
     MAX_DISPLAYED: 3,
-    logAs: function(message, level, logger) {
-      return this.getInstance().logAs(message, level, logger);
+    logAs: function(message, level, logger, duration) {
+      return this.getInstance().logAs(message, level, logger, duration);
     }
   },
 
@@ -71,35 +71,29 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
      * @param {String} message Message that the message will show.
      * @param {String="INFO","DEBUG","WARNING","ERROR"} level Level of the warning. The color of the badge will change accordingly.
      * @param {*} logger IDK
+     * @param {Number} duration
      */
-    logAs: function(message, level="INFO", logger=null) {
+    logAs: function(message, level="INFO", logger=null, duration=null) {
       this.log({
-        message: message,
+        message,
         level: level.toUpperCase(),
-        logger: logger
+        logger,
+        duration
       });
     },
 
-    /**
-     * Public function to log a FlashMessage to the user.
-     *
-     * @param {Object} logMessage Constructed message to log.
-     * @param {String} logMessage.message Message that the message will show.
-     * @param {String="INFO","DEBUG","WARNING","ERROR"} logMessage.level Level of the warning. The color of the badge will change accordingly.
-     * @param {*} logMessage.logger IDK
-     */
     log: function(logMessage) {
       // TODO: This doesn't look cool
       let message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
         logMessage.message.message :
         logMessage.message;
-      const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
       let logger = logMessage.logger;
       if (logger) {
         message = logger + ": " + message;
       }
+      const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
 
-      const flash = new osparc.ui.message.FlashMessage(message, level);
+      const flash = new osparc.ui.message.FlashMessage(message, level, logMessage.duration);
       flash.addListener("closeMessage", () => this.__removeMessage(flash), this);
       this.__messages.push(flash);
     },
@@ -121,9 +115,12 @@ qx.Class.define("osparc.component.message.FlashMessenger", {
       }
       this.__displayedMessagesCount++;
 
-      const wordCount = message.getMessage().split(" ").length;
-      const readingTime = Math.max(5500, wordCount*400); // An average reader takes 300ms to read a word
-      qx.event.Timer.once(() => this.__removeMessage(message), this, readingTime);
+      let duration = message.getDuration();
+      if (duration === null) {
+        const wordCount = message.getMessage().split(" ").length;
+        duration = Math.max(5500, wordCount*400); // An average reader takes 300ms to read a word
+      }
+      qx.event.Timer.once(() => this.__removeMessage(message), this, duration);
     },
 
     /**

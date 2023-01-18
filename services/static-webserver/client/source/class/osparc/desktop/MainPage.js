@@ -49,6 +49,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     this._add(navBar);
 
     // Some resources request before building the main stack
+    osparc.data.MaintenanceTracker.getInstance().startTracker();
+
     const store = osparc.store.Store.getInstance();
     Promise.all([
       store.getAllClassifiers(true),
@@ -123,7 +125,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       const studyId = this.__studyEditor.getStudy().getUuid();
       this.__studyEditor.closeEditor();
-      this.__closeStudy(studyId);
+      this.closeStudy(studyId);
       this.__showDashboard();
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
@@ -296,7 +298,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.tr("Closing previous snapshot...")
       ]);
       this.__studyEditor.closeEditor();
-      this.__closeStudy(studyId);
+      this.closeStudy(studyId);
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -348,7 +350,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.tr("Closing...")
       ]);
       this.__studyEditor.closeEditor();
-      this.__closeStudy(studyId);
+      this.closeStudy(studyId);
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -413,7 +415,14 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __closeStudy: function(studyId) {
+    closeStudy: function(studyId) {
+      if (studyId === undefined) {
+        if (this.__studyEditor && this.__studyEditor.getStudy()) {
+          studyId = this.__studyEditor.getStudy().getUuid();
+        } else {
+          return;
+        }
+      }
       const params = {
         url: {
           "studyId": studyId

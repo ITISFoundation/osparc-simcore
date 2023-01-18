@@ -13,6 +13,7 @@ import pytest
 import yaml
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._resources import resources
@@ -61,7 +62,17 @@ def client(
     return cli
 
 
-async def test_frontend_config(client: TestClient, api_version_prefix: str):
+async def test_frontend_config(
+    client: TestClient, api_version_prefix: str, mocker: MockerFixture
+):
+    assert client.app
+    # avoids having to start database etc...
+    mocker.patch(
+        "simcore_service_webserver.rest_handlers.get_product_name",
+        spec=True,
+        return_value="osparc",
+    )
+
     url = client.app.router["get_config"].url_for()
     assert str(url) == f"/{api_version_prefix}/config"
 

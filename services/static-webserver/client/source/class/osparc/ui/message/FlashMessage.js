@@ -27,8 +27,9 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
    *
    * @param {String} message Message that the user will read.
    * @param {String="INFO","DEBUG","WARNING","ERROR"} level Logging level of the message. Each level has different, distinct color.
+   * @param {Number} duration
    */
-  construct: function(message, level) {
+  construct: function(message, level, duration) {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(15));
 
@@ -49,6 +50,10 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       this.setMessage(message);
     }
 
+    if (duration) {
+      this.setDuration(duration);
+    }
+
     this.getChildControl("closebutton");
   },
 
@@ -61,7 +66,12 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     message: {
       check: "String",
       nullable: true,
-      apply: "_applyMessage"
+      apply: "__applyMessage"
+    },
+
+    duration: {
+      check: "Number",
+      nullable: true
     }
   },
 
@@ -120,7 +130,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       return control || this.base(arguments, id);
     },
 
-    _applyMessage: function(value) {
+    __applyMessage: function(value) {
       const label = this.getChildControl("message");
       if (label) {
         label.setValue(value);
