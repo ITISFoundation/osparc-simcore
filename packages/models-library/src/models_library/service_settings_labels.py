@@ -4,11 +4,13 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Iterator, Literal, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 
+from .basic_types import PortInt
 from .generics import ListModel
+from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 
 
 class _BaseConfig:
@@ -170,6 +172,32 @@ class RestartPolicy(str, Enum):
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
+class PortRange(BaseModel):
+    lower: PortInt
+    upper: PortInt
+
+    @validator("upper")
+    @classmethod
+    def lower_less_than_upper(cls, v, values) -> PortInt:
+        upper = v
+        lower = values.get("lower")
+        if lower >= upper:
+            raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
+        return v
+
+
+class HostWhitelistPolicy(BaseModel):
+    hostname: str
+    tcp_ports: list[Union[PortRange, PortInt]]
+
+    def iter_tcp_ports(self) -> Iterator[PortInt]:
+        for port in self.tcp_ports:
+            if type(port) == PortRange:
+                yield from range(port.lower, port.upper + 1)
+            else:
+                yield port
+
+
 class DynamicSidecarServiceLabels(BaseModel):
     paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
         None,
@@ -211,6 +239,20 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
+    containers_allowed_outgoing_whitelist: Optional[
+        dict[str, list[HostWhitelistPolicy]]
+    ] = Field(
+        None,
+        alias="simcore.service.containers-allowed-outgoing-whitelist",
+        description="limit internet access to certain domain names and ports per container",
+    )
+
+    containers_allowed_outgoing_internet: Optional[set[str]] = Field(
+        None,
+        alias="simcore.service.containers-allowed-outgoing-internet",
+        description="allow complete internet access to containers in here",
+    )
+
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
@@ -228,6 +270,42 @@ class DynamicSidecarServiceLabels(BaseModel):
             raise ValueError(
                 "`container_http_entry` not allowed if `compose_spec` is missing"
             )
+        return v
+
+    @validator("containers_allowed_outgoing_whitelist")
+    @classmethod
+    def containers_allowed_outgoing_whitelist_in_compose_spec(cls, v, values):
+        compose_spec: Optional[dict] = values.get("compose_spec")
+        if compose_spec is None:
+            keys = set(v.keys())
+            if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in v:
+                raise ValueError(
+                    f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{keys.pop()}'"
+                )
+        else:
+            containers_in_compose_spec = set(compose_spec["services"].keys())
+            for container in v.keys():
+                if container not in containers_in_compose_spec:
+                    raise ValueError(
+                        f"Trying to whitelist {container=} which was not found in {compose_spec=}"
+                    )
+
+        return v
+
+    @validator("containers_allowed_outgoing_internet")
+    @classmethod
+    def containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
+        compose_spec: Optional[dict] = values.get("compose_spec")
+        if compose_spec is None:
+            if {DEFAULT_SINGLE_SERVICE_NAME} != v:
+                raise ValueError(
+                    f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{v}'"
+                )
+        else:
+            containers_in_compose_spec = set(compose_spec["services"].keys())
+            for container in v:
+                if container not in containers_in_compose_spec:
+                    raise ValueError(f"{container=} not found in {compose_spec=}")
         return v
 
     class Config(_BaseConfig):

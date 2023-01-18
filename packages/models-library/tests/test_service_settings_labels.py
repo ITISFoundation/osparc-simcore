@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
@@ -9,11 +10,15 @@ from typing import Any
 
 import pytest
 from models_library.service_settings_labels import (
+    DynamicSidecarServiceLabels,
+    HostWhitelistPolicy,
     PathMappingsLabel,
+    PortRange,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from pydantic import BaseModel, ValidationError
 
 SimcoreServiceExample = namedtuple(
@@ -147,3 +152,127 @@ def test_raises_error_wrong_restart_policy() -> None:
 
     with pytest.raises(ValueError):
         SimcoreServiceLabels(**simcore_service_labels)
+
+
+def test_port_range():
+    with pytest.raises(ValidationError):
+        PortRange(lower=1, upper=1)
+
+    with pytest.raises(ValidationError):
+        PortRange(lower=20, upper=1)
+
+    assert PortRange(lower=1, upper=2)
+
+
+def test_host_whitelist_policy():
+    host_whitelist_policy = HostWhitelistPolicy(
+        hostname="hostname",
+        tcp_ports=[
+            PortRange(lower=1, upper=12),
+            22,
+        ],
+    )
+
+    assert set(host_whitelist_policy.iter_tcp_ports()) == set(range(1, 12 + 1)) | {22}
+
+
+def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_spec():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-whitelist": {
+            container_name: [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                }
+            ]
+        },
+        "simcore.service.containers-allowed-outgoing-internet": [container_name],
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+        "simcore.service.container-http-entrypoint": container_name,
+    }
+
+    assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+
+def test_container_outgoing_whitelist_and_container_allow_internet_without_compose_spec():
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-whitelist": {
+            DEFAULT_SINGLE_SERVICE_NAME: [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                }
+            ]
+        },
+        "simcore.service.containers-allowed-outgoing-internet": [
+            DEFAULT_SINGLE_SERVICE_NAME
+        ],
+    }
+    assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+
+def test_container_allow_internet_no_compose_spec_not_ok():
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-internet": ["hoho"],
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+    assert "Expected only 1 entry 'container' not '{'hoho'}" in f"{exec_info.value}"
+
+
+def test_container_allow_internet_compose_spec_not_ok():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+    dict_data = {
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+        "simcore.service.containers-allowed-outgoing-internet": ["hoho"],
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+    assert f"container='hoho' not found in {compose_spec=}" in f"{exec_info.value}"
+
+
+def test_container_outgoing_whitelist_no_compose_spec_not_ok():
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-whitelist": {
+            "container_name": [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                }
+            ]
+        },
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    assert (
+        f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not 'container_name'"
+        in f"{exec_info.value}"
+    )
+
+
+def test_container_outgoing_whitelist_compose_spec_not_ok():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-whitelist": {
+            "container_name": [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                }
+            ]
+        },
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    assert (
+        f"Trying to whitelist container='container_name' which was not found in {compose_spec=}"
+        in f"{exec_info.value}"
+    )
