@@ -17,7 +17,7 @@ from ._dependencies import get_container_restart_lock, get_shared_store
 
 logger = logging.getLogger(__name__)
 
-_TOO_LONG_TO_MATCH: str = "NOPE" * 100
+_NOT_EXISTING_NAME_PART: str = "__NOT_EXISTING_NAME_PART__" * 10
 
 
 def _raise_if_container_is_missing(
@@ -165,9 +165,11 @@ async def get_containers_name(
     on which the proxy communicates with it.
     Supported filters:
         network: matches against the exact network name
-            assigned to the container
-        exclude_name_part: if this is included in the
-            name of the container, it will skip
+            assigned to the container; `will include`
+            containers
+        exclude_name_part: matches if is part in the
+            name of the container; `will exclude`
+            containers
     """
     assert request  # nosec
 
@@ -178,7 +180,7 @@ async def get_containers_name(
             detail=f"Provided filters, could not parsed {filters_dict}",
         )
     network_name = filters_dict.get("network", None)
-    exclude_name_part = filters_dict.get("exclude_name_part", _TOO_LONG_TO_MATCH)
+    exclude_name_part = filters_dict.get("exclude_name_part", _NOT_EXISTING_NAME_PART)
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
