@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Awaitable, Callable
+from typing import Optional, Protocol
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -114,22 +114,53 @@ def client(event_loop, aiohttp_client) -> TestClient:
     return event_loop.run_until_complete(aiohttp_client(app))
 
 
-@pytest.fixture
-def client_request(client: TestClient) -> Callable[[str], Awaitable[ClientResponse]]:
-    assert client.app
+class ClientRequestCallable(Protocol):
+    async def __call__(
+        self, name: str, return_status: Optional[int] = None
+    ) -> ClientResponse:
+        ...
 
-    async def _request(name) -> ClientResponse:
+
+@pytest.fixture
+def client_request(client: TestClient) -> ClientRequestCallable:
+    assert client.app
+    # SEE from mypy_extensions import Arg, VarArg, KwArg
+
+    async def _request(name, return_status=None) -> ClientResponse:
         assert client.app
         url = client.app.router[name].url_for()
-        response = await client.post(f"{url}")
+        params = {"return_status": f"{return_status}"} if return_status else None
+        response = await client.post(f"{url}", params=params)
         print(response.request_info.method, url, response.status)
         return response
 
     return _request
 
 
+async def test_login_then_submit_code(client_request: ClientRequestCallable):
+    response = await client_request("auth_login")
+    assert response.ok
+
+    response = await client_request("auth_login_2fa")
+    assert response.ok
+
+    # one_time_access=True, then after success is not auth
+    response = await client_request("auth_login_2fa")
+    assert response.status == 401
+
+
+@pytest.mark.testit
+async def test_login_fails_then_no_access(client_request: ClientRequestCallable):
+
+    response = await client_request("auth_login", return_status=500)
+    assert response.status == 500
+
+    response = await client_request("auth_login_2fa")
+    assert response.status == 401
+
+
 async def test_login_then_multiple_resend_and_submit_code(
-    client_request: Callable[[str], Awaitable[ClientResponse]]
+    client_request: ClientRequestCallable,
 ):
     response = await client_request("auth_login")
     assert response.ok
@@ -147,7 +178,7 @@ async def test_login_then_multiple_resend_and_submit_code(
 
 
 async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
-    client_request: Callable[[str], Awaitable[ClientResponse]]
+    client_request: ClientRequestCallable,
 ):
     response = await client_request("auth_login")
     assert response.ok
@@ -167,7 +198,6 @@ async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
     assert response.status == 401
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "route_name,granted_at",
     [
@@ -180,7 +210,7 @@ async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
 async def test_routes_with_session_access_required(
     route_name: str,
     granted_at: str,
-    client_request: Callable[[str], Awaitable[ClientResponse]],
+    client_request: ClientRequestCallable,
 ):
     # no access
     response = await client_request(route_name)
