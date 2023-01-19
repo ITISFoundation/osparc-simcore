@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.9.12"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
@@ -10,17 +11,38 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
-RUN set -eux && \
+COPY  --chown=scu:scu scripts/install_rclone.bash .
+RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux && \
   apt-get update && \
-  apt-get install -y \
+  apt-get install -y --no-install-recommends\
   curl \
   gosu \
+  ca-certificates \
+  gnupg \
+  lsb-release \
   # required by python-magic
   libmagic1 \
-  && \
-  rm -rf /var/lib/apt/lists/* && \
+  && mkdir -p /etc/apt/keyrings \
+  && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  # only the cli is needed and we remove the unnecessary stuff again
+  docker-ce-cli \
+  && ./install_rclone.bash \
+  && apt-get remove -y\
+  ca-certificates \
+  curl \
+  gnupg \
+  lsb-release \
+  && apt-get autoclean -y\
+  && apt-get autoremove -y\
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -48,10 +70,6 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # volumes between itself and the spawned containers
 ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
 
-# rclone installation
-COPY  --chown=scu:scu scripts/install_rclone.bash .
-RUN ./install_rclone.bash
-
 # create direcotry to persist SharedStore data accessiable
 # between dynamic-sidecar reboots
 ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="/shared-store"
@@ -67,16 +85,22 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update &&\
-  apt-get install -y --no-install-recommends \
-  build-essential
+RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  build-essential \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
-RUN pip install --upgrade --no-cache-dir \
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install --upgrade  \
   pip~=22.0  \
   wheel \
   setuptools
@@ -107,7 +131,9 @@ COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
 
 WORKDIR /build/services/dynamic-sidecar
 
-RUN pip --no-cache-dir install -r requirements/prod.txt &&\
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip --no-cache-dir install \
+  --requirement requirements/prod.txt &&\
   pip --no-cache-dir list -v
 
 # --------------------------Production stage -------------------
