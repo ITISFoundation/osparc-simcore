@@ -7,6 +7,7 @@ from typing import Optional
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
 from pydantic import BaseModel, EmailStr, parse_obj_as
+from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
 from .invitations_settings import InvitationsSettings
@@ -33,7 +34,6 @@ class InvitationsServiceApi:
         exit_stack = contextlib.AsyncExitStack()
         client_session = await exit_stack.enter_async_context(
             ClientSession(
-                base_url=settings.base_url,
                 auth=BasicAuth(
                     login=settings.INVITATIONS_USERNAME,
                     password=settings.INVITATIONS_PASSWORD.get_secret_value(),
@@ -46,13 +46,21 @@ class InvitationsServiceApi:
     #
     # common SDK
     #
+    # NOTE: due to limitations in aioresponses https://github.com/pnuckowski/aioresponses/issues/230
+    # we will avoid using ClientSession(base_url=settings.base_url, ... ) and use insteald self._url("/v0/foo")
+
+    def _url(self, rel_url: str):
+        return URL(self.settings.base_url) / rel_url.lstrip("/")
+
+    def _url_vtag(self, rel_url: str):
+        return URL(self.settings.api_base_url) / rel_url.lstrip("/")
 
     async def close(self) -> None:
         await self.exit_stack.aclose()
 
     async def ping(self) -> bool:
         try:
-            response = await self.client.get(self.healthcheck_path)
+            response = await self.client.get(self._url(self.healthcheck_path))
             return response.status == web.HTTPOk.status_code
         except ClientError as err:
             logger.debug("failed to connect %s", err)
@@ -66,7 +74,7 @@ class InvitationsServiceApi:
 
     async def extract_invitation(self, invitation_url: str) -> InvitationContent:
         response = await self.client.post(
-            url=f"/{self.settings.INVITATIONS_VTAG}/invitations:extract",
+            url=self._url_vtag("/invitations:extract"),
             json={"invitation_url": invitation_url},
         )
         invitation = parse_obj_as(InvitationContent, await response.json())

@@ -53,7 +53,9 @@ class InvalidInvitationError(InvitationsErrors):
 
 
 class InvitationServiceUnavailable(InvitationsErrors):
-    msg_template = "Invitations service is currently unavailable"
+    msg_template = (
+        "Invitations service is currently unavailable. Please try again later."
+    )
 
 
 @contextmanager
