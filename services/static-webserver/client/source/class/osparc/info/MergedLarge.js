@@ -39,7 +39,6 @@ qx.Class.define("osparc.info.MergedLarge", {
     }
 
     this.addListenerOnce("appear", () => this.__rebuildLayout(), this);
-    this.addListener("resize", () => this.__rebuildLayout(), this);
   },
 
   events: {
