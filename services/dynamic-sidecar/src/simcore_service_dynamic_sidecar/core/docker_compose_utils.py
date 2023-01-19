@@ -9,7 +9,7 @@ import asyncio
 import logging
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Optional
+from typing import Any, Final, Optional
 
 import aiodocker
 from fastapi import FastAPI
@@ -91,6 +91,9 @@ async def docker_compose_config(
     return result  # type: ignore
 
 
+_DOWNLOAD_RATIO: Final[float] = 0.75
+
+
 async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     """
     Pulls all images required by the service.
@@ -105,6 +108,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     ) -> None:
         # NOTE: image is of type registry_host/organization/any/number/of/folders/image_name:tag
         # NOTE: if there is no registry_host, then there is no auth allowed, which is typical for dockerhub or local images
+        # NOTE: progress is such that downloading is taking 3/4 of the time, Extracting 1/4
         match = DOCKER_GENERIC_TAG_KEY_RE.match(image)
         registry_host = ""
         if match:
@@ -128,35 +132,53 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             else None,
         ):
             if pull_progress.get("status") == "Downloading":
-                layer_id = pull_progress.get("id")
-                layer_total_size = pull_progress.get("progressDetail", {}).get(
-                    "total", 0
-                )
-                layer_current_size = pull_progress.get("progressDetail", {}).get(
-                    "current", 0
-                )
+                # NOTE: this takes the bulk of the time
+                layer_id = pull_progress["id"]
                 all_image_pulling_data[image][layer_id] = (
-                    layer_current_size,
+                    _DOWNLOAD_RATIO * pull_progress["progressDetail"]["current"],
+                    pull_progress["progressDetail"]["total"],
+                )
+            elif pull_progress.get("status") == "Download complete":
+                layer_id = pull_progress["id"]
+                _, layer_total_size = all_image_pulling_data[image][layer_id]
+                all_image_pulling_data[image][layer_id] = (
+                    _DOWNLOAD_RATIO * layer_total_size,
+                    layer_total_size,
+                )
+            elif pull_progress.get("status") == "Extracting":
+                layer_id = pull_progress["id"]
+                _, layer_total_size = all_image_pulling_data[image][layer_id]
+                all_image_pulling_data[image][layer_id] = (
+                    _DOWNLOAD_RATIO * layer_total_size
+                    + (1 - _DOWNLOAD_RATIO)
+                    * pull_progress["progressDetail"]["current"],
+                    layer_total_size,
+                )
+            elif pull_progress.get("status") == "Pull complete":
+                layer_id = pull_progress["id"]
+                _, layer_total_size = all_image_pulling_data[image][layer_id]
+                all_image_pulling_data[image][layer_id] = (
+                    layer_total_size,
                     layer_total_size,
                 )
 
-                def _compute_sizes(
-                    all_images: dict[str, dict[str, tuple[int, int]]]
-                ) -> tuple[ByteSize, ByteSize]:
-                    total_current_size = total_total_size = 0
-                    for layer in all_images.values():
-                        for current_size, total_size in layer.values():
-                            total_current_size += current_size
-                            total_total_size += total_size
-                    return (ByteSize(total_current_size), ByteSize(total_total_size))
+            def _compute_sizes(
+                all_images: dict[str, dict[str, tuple[int, int]]]
+            ) -> tuple[ByteSize, ByteSize]:
+                total_current_size = total_total_size = 0
+                for layer in all_images.values():
+                    for current_size, total_size in layer.values():
+                        total_current_size += current_size
+                        total_total_size += total_size
+                return (ByteSize(total_current_size), ByteSize(total_total_size))
 
-                total_current, total_total = _compute_sizes(all_image_pulling_data)
+            total_current, total_total = _compute_sizes(all_image_pulling_data)
 
-                await post_progress_message(
-                    app,
-                    float(total_current / (total_total or 1)),
-                    ProgressType.SERVICE_IMAGES_PULLING,
-                )
+            await post_progress_message(
+                app,
+                float(total_current / (total_total or 1)),
+                ProgressType.SERVICE_IMAGES_PULLING,
+            )
 
             await post_sidecar_log_message(
                 app,
@@ -164,9 +186,6 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             )
 
     list_of_images = get_docker_service_images(compose_spec_yaml)
-    # results: list[ByteSize] = await asyncio.gather(
-    #     *(get_image_size_on_remote(image) for image in list_of_images)
-    # )
     all_image_pulling_data = {}
     async with docker_client() as docker:
         await asyncio.gather(
@@ -175,6 +194,11 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
                 for image in list_of_images
             )
         )
+    await post_progress_message(
+        app,
+        1.0,
+        ProgressType.SERVICE_IMAGES_PULLING,
+    )
 
 
 async def docker_compose_create(

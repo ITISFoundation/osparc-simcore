@@ -8,6 +8,7 @@ from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessage,
+    ProgressType,
 )
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
@@ -38,56 +39,60 @@ log = logging.getLogger(__name__)
 async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
     rabbit_message = ProgressRabbitMessage.parse_raw(data)
-    await send_messages(
-        app,
-        f"{rabbit_message.user_id}",
-        [
-            {
-                "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
-                "data": {
-                    "project_id": rabbit_message.project_id,
-                    "node_id": rabbit_message.node_id,
-                    "user_id": rabbit_message.user_id,
-                    "progress_type": rabbit_message.progress_type.name,
-                    "progress": rabbit_message.progress,
-                },
-            }
-        ],
-    )
-    try:
-        project = await projects_api.update_project_node_progress(
+
+    if rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
+        try:
+            project = await projects_api.update_project_node_progress(
+                app,
+                rabbit_message.user_id,
+                f"{rabbit_message.project_id}",
+                f"{rabbit_message.node_id}",
+                progress=rabbit_message.progress,
+            )
+            if project:
+                messages: list[SocketMessageDict] = [
+                    {
+                        "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+                        "data": {
+                            "project_id": project["uuid"],
+                            "node_id": rabbit_message.node_id,
+                            "data": project["workbench"][f"{rabbit_message.node_id}"],
+                        },
+                    }
+                ]
+                await send_messages(app, f"{rabbit_message.user_id}", messages)
+                return True
+        except ProjectNotFoundError:
+            log.warning(
+                "project related to received rabbitMQ progress message not found: '%s'",
+                json_dumps(rabbit_message, indent=2),
+            )
+            return True
+        except NodeNotFoundError:
+            log.warning(
+                "node related to received rabbitMQ progress message not found: '%s'",
+                json_dumps(rabbit_message, indent=2),
+            )
+            return True
+        return False
+    else:
+        await send_messages(
             app,
-            rabbit_message.user_id,
-            f"{rabbit_message.project_id}",
-            f"{rabbit_message.node_id}",
-            progress=rabbit_message.progress,
-        )
-        if project:
-            messages: list[SocketMessageDict] = [
+            f"{rabbit_message.user_id}",
+            [
                 {
-                    "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+                    "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
                     "data": {
-                        "project_id": project["uuid"],
+                        "project_id": rabbit_message.project_id,
                         "node_id": rabbit_message.node_id,
-                        "data": project["workbench"][f"{rabbit_message.node_id}"],
+                        "user_id": rabbit_message.user_id,
+                        "progress_type": rabbit_message.progress_type.name,
+                        "progress": rabbit_message.progress,
                     },
                 }
-            ]
-            await send_messages(app, f"{rabbit_message.user_id}", messages)
-            return True
-    except ProjectNotFoundError:
-        log.warning(
-            "project related to received rabbitMQ progress message not found: '%s'",
-            json_dumps(rabbit_message, indent=2),
+            ],
         )
-        return True
-    except NodeNotFoundError:
-        log.warning(
-            "node related to received rabbitMQ progress message not found: '%s'",
-            json_dumps(rabbit_message, indent=2),
-        )
-        return True
-    return False
+    return True
 
 
 async def log_message_parser(app: web.Application, data: bytes) -> bool:
