@@ -65,7 +65,7 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
       3: {
         id: "delete",
         label: qx.locale.Manager.tr("Administrator"),
-        longLabel: qx.locale.Manager.tr("Administrator: Read/Write/Delete access")
+        longLabel: qx.locale.Manager.tr("Admin: Read/Write/Delete access")
       }
     }
   },
