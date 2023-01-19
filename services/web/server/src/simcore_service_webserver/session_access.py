@@ -17,14 +17,6 @@ class AccessToken(TypedDict, total=True):
     expires: int  # time in seconds since the epoch as a floating point number.
 
 
-def consume_access(token: AccessToken) -> None:
-    token["count"] = -1
-
-
-_MINUTES = 60
-EXPIRATION_INTERVAL_SECS = 30 * _MINUTES
-
-
 def is_expired(token: AccessToken) -> bool:
     return token["expires"] <= time.time()
 
@@ -47,11 +39,11 @@ def on_success_grant_session_access_to(
             if response.status < 400:  # success
                 settings: SessionSettings = get_plugin_settings(request.app)
 
-                granted_access_tokens = session.setdefault(
+                access_tokens = session.setdefault(
                     SESSION_GRANTED_ACCESS_TOKENS_KEY, {}
                 )
                 # NOTE: does NOT add up access counts but re-assigns to max_access_count
-                granted_access_tokens[name] = AccessToken(
+                access_tokens[name] = AccessToken(
                     count=max_access_count,
                     expires=time.time()
                     + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS,
@@ -75,21 +67,19 @@ def session_access_required(
         @functools.wraps(handler)
         async def _wrapper(request: web.Request):
             session = await get_session(request)
-            granted_access_tokens = session.get(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
+            access_tokens = session.get(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
 
             try:
-                access_token: Optional[AccessToken] = granted_access_tokens.get(
-                    name, None
-                )
-                if not access_token:
+                access: Optional[AccessToken] = access_tokens.get(name, None)
+                if not access:
                     raise web.HTTPUnauthorized(reason=unauthorized_reason)
 
-                access_token["count"] -= 1  # consume access count
-                if access_token["count"] < 0 or is_expired(access_token):
+                access["count"] -= 1  # consume access count
+                if access["count"] < 0 or is_expired(access):
                     raise web.HTTPUnauthorized(reason=unauthorized_reason)
 
                 # update and keep for future accesses (e.g. retry this route)
-                granted_access_tokens[name] = access_token
+                access_tokens[name] = access
 
                 # Access granted to this handler
                 response = await handler(request)
@@ -97,20 +87,20 @@ def session_access_required(
                 if response.status < 400:  # success
                     if one_time_access:
                         # avoids future accesses by clearing all tokens
-                        granted_access_tokens.pop(name, None)
+                        access_tokens.pop(name, None)
 
                     if remove_all_on_success:
                         # all access tokens removed
-                        granted_access_tokens = {}
+                        access_tokens = {}
 
                 return response
 
             finally:
                 # prunes
                 session[SESSION_GRANTED_ACCESS_TOKENS_KEY] = {
-                    name: access_token
-                    for name, access_token in granted_access_tokens.items()
-                    if access_token["count"] > 0 and not is_expired(access_token)
+                    name: token
+                    for name, token in access_tokens.items()
+                    if token["count"] > 0 and not is_expired(token)
                 }
 
         return _wrapper

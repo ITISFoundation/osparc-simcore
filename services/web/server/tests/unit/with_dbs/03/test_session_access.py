@@ -110,15 +110,7 @@ def client(
     # build app with session -------------------------------------------------
     app = web.Application()
     app[APP_SETTINGS_KEY] = ApplicationSettings.create_from_envs()
-
     setup_session(app)
-
-    # session_settings = get_plugin_settings(app)
-
-    # _setup_encrypted_cookie_sessions(
-    #    app=app,
-    #    secret_key=generate_fernet_secret_key(),
-    # )
 
     app.add_routes(routes)
     return event_loop.run_until_complete(aiohttp_client(app))
