@@ -56,6 +56,7 @@ class InvitationsServiceApi:
         return URL(self.settings.api_base_url) / rel_url.lstrip("/")
 
     async def close(self) -> None:
+        """Releases underlying connector from ClientSession [client]"""
         await self.exit_stack.aclose()
 
     async def ping(self) -> bool:
@@ -98,7 +99,10 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
 
     yield
 
-    await service_api.close()
+    try:
+        await service_api.close()
+    except Exception:  # pylint: disable=broad-except
+        logger.warning("Ignoring error while closing service-api")
 
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:
