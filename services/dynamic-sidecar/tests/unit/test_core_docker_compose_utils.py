@@ -76,7 +76,7 @@ async def test_docker_compose_workflow(
     # pulls containers before starting them
     fake_app = mocker.AsyncMock()
     fake_app.state.settings = settings
-    await docker_compose_pull(fake_app, compose_spec_yaml, settings)
+    await docker_compose_pull(fake_app, compose_spec_yaml)
 
     # creates containers
     r = await docker_compose_create(compose_spec_yaml, settings)

@@ -124,8 +124,8 @@ def compose_spec_yaml() -> str:
 
 
 def test_get_docker_service_images(compose_spec_yaml: str):
-    assert get_docker_service_images(compose_spec_yaml) == [
+    assert get_docker_service_images(compose_spec_yaml) == {
         "busybox:latest",
         "nginx:latest",
         "simcore/services/dynamic/jupyter-math:2.1.3",
-    ]
+    }
