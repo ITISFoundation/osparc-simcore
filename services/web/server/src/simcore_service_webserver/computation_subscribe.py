@@ -26,6 +26,7 @@ from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundErro
 from .socketio.events import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
+    SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
     SocketMessageDict,
     send_messages,
@@ -37,6 +38,22 @@ log = logging.getLogger(__name__)
 async def progress_message_parser(app: web.Application, data: bytes) -> bool:
     # update corresponding project, node, progress value
     rabbit_message = ProgressRabbitMessage.parse_raw(data)
+    await send_messages(
+        app,
+        f"{rabbit_message.user_id}",
+        [
+            {
+                "event_type": SOCKET_IO_NODE_PROGRESS_EVENT,
+                "data": {
+                    "project_id": rabbit_message.project_id,
+                    "node_id": rabbit_message.node_id,
+                    "user_id": rabbit_message.user_id,
+                    "progress_type": rabbit_message.progress_type.name,
+                    "progress": rabbit_message.progress,
+                },
+            }
+        ],
+    )
     try:
         project = await projects_api.update_project_node_progress(
             app,
