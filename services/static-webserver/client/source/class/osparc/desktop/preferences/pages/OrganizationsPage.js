@@ -221,6 +221,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             const orgMember = e.getData();
             this.__promoteToManager(orgMember);
           });
+          item.addListener("demoteToMember", e => {
+            const orgMember = e.getData();
+            this.__demoteToMember(orgMember);
+          });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
             this.__deleteMember(orgMember);
@@ -510,7 +514,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted to Member"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
@@ -537,7 +541,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
           if (msg === undefined) {
-            msg = orgMember["name"] + this.tr(" successfully demoted");
+            msg = orgMember["name"] + this.tr(" successfully demoted to User");
           }
           osparc.component.message.FlashMessenger.getInstance().logAs(msg);
           osparc.store.Store.getInstance().reset("organizationMembers");
@@ -565,12 +569,38 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted to Manager"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
+          console.error(err);
+        });
+    },
+
+    __demoteToMember: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMember["id"]
+        },
+        data: {
+          "accessRights": this.self().getReadAccess()
+        }
+      };
+      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Member"));
+          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
           console.error(err);
         });
     },
