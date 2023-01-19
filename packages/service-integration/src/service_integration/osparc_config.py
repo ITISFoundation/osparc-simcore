@@ -17,6 +17,7 @@ from typing import Any, Literal, NamedTuple, Optional
 
 from models_library.service_settings_labels import (
     ContainerSpec,
+    HostWhitelistPolicy,
     PathMappingsLabel,
     RestartPolicy,
 )
@@ -181,6 +182,12 @@ class RuntimeConfig(BaseModel):
 
     paths_mapping: Optional[PathMappingsLabel] = None
     boot_options: BootOptions = None
+
+    containers_allowed_outgoing_whitelist: Optional[
+        dict[str, list[HostWhitelistPolicy]]
+    ] = None
+
+    containers_allowed_outgoing_internet: Optional[set[str]] = None
 
     settings: list[SettingsItem] = []
 
