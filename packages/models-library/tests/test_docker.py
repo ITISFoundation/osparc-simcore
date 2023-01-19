@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import pytest
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import ValidationError, parse_obj_as
 
 
@@ -35,3 +35,61 @@ def test_docker_label_key(label_key: str, valid: bool):
     else:
         with pytest.raises(ValidationError):
             parse_obj_as(DockerLabelKey, label_key)
+
+
+@pytest.mark.parametrize(
+    "image_name, valid",
+    (
+        ("busybox:latest", True),
+        (
+            "registry.osparc-master.com/simcore/services/dynamic/jupyter-smash:2.3.4",
+            True,
+        ),
+        ("registry-1.docker.io/nginx:latest", True),
+        ("registry-1.docker.io/ngin34x:latest", True),
+        ("itisfoundation/dynamic-sidecar:release-github-latest", True),
+        (
+            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:2.3.4",
+            True,
+        ),
+        (
+            "registry:5000/simcore/dyUPPER_CASE_FORBIDDEN_IN_NAME/jupyter-smash:2.3.4",
+            False,
+        ),
+        (
+            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:.2.3.4",
+            False,
+        ),
+        (
+            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:-2.3.4",
+            False,
+        ),
+        (
+            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:_2.3.4",
+            True,
+        ),
+        (
+            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:AUPPER_CASE_TAG_IS_OK_2.3.4",
+            True,
+        ),
+        (
+            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:AUPPER_CASE_TAG_IS_OK_2.3.4",
+            True,
+        ),
+        (
+            f"registry:5000/si.m--c_ore/services/1234/jupyter-smash:{'A'*128}",
+            True,
+        ),
+        (
+            f"registry:5000/si.m--c_ore/services/1234/jupyter-smash:{'A'*129}",
+            False,
+        ),
+    ),
+)
+def test_docker_generic_tag(image_name: str, valid: bool):
+    if valid:
+        instance = parse_obj_as(DockerGenericTag, image_name)
+        assert instance
+    else:
+        with pytest.raises(ValidationError):
+            parse_obj_as(DockerGenericTag, image_name)
