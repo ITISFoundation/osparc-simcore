@@ -12,7 +12,7 @@ from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 
-DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"
+DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
 DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
 
 
