@@ -152,7 +152,6 @@ async def test_login_then_submit_code(
     assert response.status == 401
 
 
-@pytest.mark.testit
 async def test_login_fails_then_no_access(
     client: TestClient, do_request: ClientRequestCallable
 ):
@@ -205,7 +204,6 @@ async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
     assert response.status == 401
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "route_name,granted_at",
     [

@@ -30,6 +30,10 @@ def is_expired(token: AccessToken) -> bool:
 
 @contextmanager
 def access_tokens_cleanup_ctx(session: Session) -> dict[str, AccessToken]:
+    # WARNING: make sure this does not wrapp any ``await handler(request)``
+    # Note that these access_tokens correspond to the values BEFORE that call
+    # and all the tokens added/removed in the decorators nested on the handler
+    # are not updated on ``access_tokens`` returned.
     try:
         access_tokens = session.setdefault(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
 
@@ -62,17 +66,13 @@ def on_success_grant_session_access_to(
 
             if response.status < 400:  # success
                 settings: SessionSettings = get_plugin_settings(request.app)
-                #                with granted_access_tokens(session) as access_tokens:
-                access_tokens = session.setdefault(
-                    SESSION_GRANTED_ACCESS_TOKENS_KEY, {}
-                )
-
-                # NOTE: does NOT add up access counts but re-assigns to max_access_count
-                access_tokens[name] = AccessToken(
-                    count=max_access_count,
-                    expires=time.time()
-                    + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS,
-                )
+                with access_tokens_cleanup_ctx(session) as access_tokens:
+                    # NOTE: does NOT add up access counts but re-assigns to max_access_count
+                    access_tokens[name] = AccessToken(
+                        count=max_access_count,
+                        expires=time.time()
+                        + settings.SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS,
+                    )
 
             return response
 
@@ -105,10 +105,11 @@ def session_access_required(
                 # update and keep for future accesses (e.g. retry this route)
                 access_tokens[name] = access
 
-                # Access granted to this handler
-                response = await handler(request)
+            # Access granted to this handler
+            response = await handler(request)
 
-                if response.status < 400:  # success
+            if response.status < 400:  # success
+                with access_tokens_cleanup_ctx(session) as access_tokens:
                     if one_time_access:
                         # avoids future accesses by clearing all tokens
                         access_tokens.pop(name, None)
@@ -117,7 +118,7 @@ def session_access_required(
                         # all access tokens removed
                         access_tokens = {}
 
-                return response
+            return response
 
         return _wrapper
 
