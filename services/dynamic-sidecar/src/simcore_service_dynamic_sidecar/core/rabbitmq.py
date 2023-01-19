@@ -6,9 +6,12 @@ from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
+    ProgressRabbitMessage,
+    ProgressType,
     RabbitEventMessageType,
     RabbitMessageBase,
 )
+from pydantic import NonNegativeFloat
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
@@ -39,6 +42,21 @@ async def post_log_message(app: FastAPI, logs: Union[str, list[str]]) -> None:
     )
 
     await _post_rabbit_message(app, message)
+
+
+async def post_progress_message(
+    app: FastAPI, progress_value: NonNegativeFloat, progress_type: ProgressType
+) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    message = ProgressRabbitMessage(
+        node_id=app_settings.DY_SIDECAR_NODE_ID,
+        user_id=app_settings.DY_SIDECAR_USER_ID,
+        project_id=app_settings.DY_SIDECAR_PROJECT_ID,
+        progress_type=progress_type,
+        progress=progress_value,
+    )
+    if _is_rabbitmq_initialized(app):
+        await get_rabbitmq_client(app).publish(message.channel_name, message.json())
 
 
 async def post_sidecar_log_message(app: FastAPI, logs: str) -> None:

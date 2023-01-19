@@ -9,14 +9,19 @@ import asyncio
 import logging
 from copy import deepcopy
 from pprint import pformat
-from typing import Optional
+from typing import Any, Optional
 
 import aiodocker
 from fastapi import FastAPI
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
+from models_library.rabbitmq_messages import ProgressType
+from pydantic import ByteSize
 from servicelib.async_utils import run_sequentially_in_context
 from settings_library.basic_types import LogLevel
-from simcore_service_dynamic_sidecar.core.rabbitmq import post_sidecar_log_message
+from simcore_service_dynamic_sidecar.core.rabbitmq import (
+    post_progress_message,
+    post_sidecar_log_message,
+)
 
 from .docker_utils import docker_client, get_docker_service_images
 from .settings import ApplicationSettings
@@ -95,7 +100,9 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     app_settings: ApplicationSettings = app.state.settings
     registry_settings = app_settings.REGISTRY_SETTINGS
 
-    async def _pull_image_with_progress(client: aiodocker.Docker, image: str) -> None:
+    async def _pull_image_with_progress(
+        client: aiodocker.Docker, image: str, all_image_pulling_data: dict[str, Any]
+    ) -> None:
         # NOTE: image is of type registry_host/organization/any/number/of/folders/image_name:tag
         # NOTE: if there is no registry_host, then there is no auth allowed, which is typical for dockerhub or local images
         match = DOCKER_GENERIC_TAG_KEY_RE.match(image)
@@ -109,6 +116,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             )
 
         simplified_image_name = image.rsplit("/", maxsplit=1)[-1]
+        all_image_pulling_data[image] = {}
         async for pull_progress in client.images.pull(
             image,
             stream=True,
@@ -119,15 +127,53 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             if registry_host
             else None,
         ):
+            if pull_progress.get("status") == "Downloading":
+                layer_id = pull_progress.get("id")
+                layer_total_size = pull_progress.get("progressDetail", {}).get(
+                    "total", 0
+                )
+                layer_current_size = pull_progress.get("progressDetail", {}).get(
+                    "current", 0
+                )
+                all_image_pulling_data[image][layer_id] = (
+                    layer_current_size,
+                    layer_total_size,
+                )
+
+                def _compute_sizes(
+                    all_images: dict[str, dict[str, tuple[int, int]]]
+                ) -> tuple[ByteSize, ByteSize]:
+                    total_current_size = total_total_size = 0
+                    for layer in all_images.values():
+                        for current_size, total_size in layer.values():
+                            total_current_size += current_size
+                            total_total_size += total_size
+                    return (ByteSize(total_current_size), ByteSize(total_total_size))
+
+                total_current, total_total = _compute_sizes(all_image_pulling_data)
+
+                await post_progress_message(
+                    app,
+                    float(total_current / (total_total or 1)),
+                    ProgressType.SERVICE_IMAGES_PULLING,
+                )
 
             await post_sidecar_log_message(
-                app, f"pulling {simplified_image_name}: {pull_progress}..."
+                app,
+                f"pulling {simplified_image_name}: {pull_progress}...",
             )
 
     list_of_images = get_docker_service_images(compose_spec_yaml)
+    # results: list[ByteSize] = await asyncio.gather(
+    #     *(get_image_size_on_remote(image) for image in list_of_images)
+    # )
+    all_image_pulling_data = {}
     async with docker_client() as docker:
         await asyncio.gather(
-            *(_pull_image_with_progress(docker, image) for image in list_of_images)
+            *(
+                _pull_image_with_progress(docker, image, all_image_pulling_data)
+                for image in list_of_images
+            )
         )
 
 
