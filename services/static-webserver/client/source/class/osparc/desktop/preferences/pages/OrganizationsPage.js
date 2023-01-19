@@ -249,6 +249,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
 
+      const sortOrganizations = (a, b) => {
+        const aAccessRights = a.getAccessRights();
+        const bAccessRights = b.getAccessRights();
+        if (aAccessRights.getDelete() !== bAccessRights.getDelete()) {
+          return bAccessRights.getDelete() - aAccessRights.getDelete();
+        }
+        if (aAccessRights.getWrite() !== bAccessRights.getWrite()) {
+          return bAccessRights.getWrite() - aAccessRights.getWrite();
+        }
+        if (aAccessRights.getRead() !== bAccessRights.getRead()) {
+          return bAccessRights.getRead() - aAccessRights.getRead();
+        }
+        return a.getLabel().localeCompare(b.getLabel());
+      };
       osparc.data.Resources.get("organizations")
         .then(respOrgs => {
           const orgs = respOrgs["organizations"];
@@ -262,6 +276,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
               .then(respOrgMembers => {
                 org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
                 orgsModel.append(qx.data.marshal.Json.createModel(org));
+                orgsModel.sort(sortOrganizations);
               });
           });
         });
