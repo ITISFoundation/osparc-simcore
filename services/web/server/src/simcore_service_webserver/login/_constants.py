@@ -63,8 +63,8 @@ CODE_2FA_CODE_REQUIRED = "SMS_CODE_REQUIRED"
 APP_LOGIN_SETTINGS_PER_PRODUCT_KEY = f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
 
 
-# maximum amount of resends of code via email or phone
+# maximum amount the user can resend the code via email or phone
 MAX_2FA_CODE_RESEND = 5
 
-# maximum number of failures allowed using the passcode
-MAX_2FA_CODE_TRIALS = 3
+# maximum number of trials to validate the passcode
+MAX_2FA_CODE_TRIALS = 5

@@ -1,8 +1,11 @@
 import functools
+import logging
 import time
+from contextlib import contextmanager
 from typing import Optional, TypedDict
 
 from aiohttp import web
+from aiohttp_session import Session
 from pydantic import PositiveInt, validate_arguments
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -11,6 +14,8 @@ from .session_settings import SessionSettings, get_plugin_settings
 
 SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}.SESSION_GRANTED_ACCESS_TOKENS_KEY"
 
+logger = logging.getLogger(__name__)
+
 
 class AccessToken(TypedDict, total=True):
     count: int
@@ -18,7 +23,26 @@ class AccessToken(TypedDict, total=True):
 
 
 def is_expired(token: AccessToken) -> bool:
-    return token["expires"] <= time.time()
+    expired = token["expires"] <= time.time()
+    logger.debug("%s -> %s", f"{token=}", f"{expired=}")
+    return expired
+
+
+@contextmanager
+def access_tokens_cleanup_ctx(session: Session) -> dict[str, AccessToken]:
+    try:
+        access_tokens = session.setdefault(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
+
+        yield access_tokens
+
+    finally:
+        # prunes
+        pruned_access_tokens = {
+            name: token
+            for name, token in access_tokens.items()
+            if token["count"] > 0 and not is_expired(token)
+        }
+        session[SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
 
 
 @validate_arguments
@@ -38,10 +62,11 @@ def on_success_grant_session_access_to(
 
             if response.status < 400:  # success
                 settings: SessionSettings = get_plugin_settings(request.app)
-
+                #                with granted_access_tokens(session) as access_tokens:
                 access_tokens = session.setdefault(
                     SESSION_GRANTED_ACCESS_TOKENS_KEY, {}
                 )
+
                 # NOTE: does NOT add up access counts but re-assigns to max_access_count
                 access_tokens[name] = AccessToken(
                     count=max_access_count,
@@ -67,9 +92,8 @@ def session_access_required(
         @functools.wraps(handler)
         async def _wrapper(request: web.Request):
             session = await get_session(request)
-            access_tokens = session.get(SESSION_GRANTED_ACCESS_TOKENS_KEY, {})
 
-            try:
+            with access_tokens_cleanup_ctx(session) as access_tokens:
                 access: Optional[AccessToken] = access_tokens.get(name, None)
                 if not access:
                     raise web.HTTPUnauthorized(reason=unauthorized_reason)
@@ -94,14 +118,6 @@ def session_access_required(
                         access_tokens = {}
 
                 return response
-
-            finally:
-                # prunes
-                session[SESSION_GRANTED_ACCESS_TOKENS_KEY] = {
-                    name: token
-                    for name, token in access_tokens.items()
-                    if token["count"] > 0 and not is_expired(token)
-                }
 
         return _wrapper
 
