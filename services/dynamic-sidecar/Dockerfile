@@ -20,23 +20,11 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   curl \
   gosu \
   ca-certificates \
-  gnupg \
-  lsb-release \
   # required by python-magic
   libmagic1 \
-  && mkdir -p /etc/apt/keyrings \
-  && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  # only the cli is needed and we remove the unnecessary stuff again
-  docker-ce-cli \
   && ./install_rclone.bash \
   && apt-get remove -y\
   curl \
-  gnupg \
-  lsb-release \
   && apt-get autoclean -y\
   && apt-get autoremove -y\
   && rm -rf /var/lib/apt/lists/* \
