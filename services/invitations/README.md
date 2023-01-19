@@ -54,21 +54,21 @@ simcore-service-invitations serve
 and then open http://127.0.0.1:8000/dev/doc
 
 
-### With docker image ``itisfoundation/invitations:latest``
+### With docker image ``itisfoundation/invitations`
 
-Here we assume the image ``itisfoundation/invitations:latest`` is published in dockerhub. It can be tested by
+Here we assume the image ``itisfoundation/invitations:release-github-latest ` is published in dockerhub (see all [tags available](https://registry.hub.docker.com/r/itisfoundation/invitations/tags)). It can be tested by
 ```cmd
-docker run -it itisfoundation/invitations:latest simcore-service-invitations --version
+docker run -it itisfoundation/invitations:release-github-latest simcore-service-invitations --version
 ```
 Otherwise, you can build the image tagged as ``local/invitations:production`` using ``make build``. Then check help
 ```cmd
-docker run -it itisfoundation/invitations:latest simcore-service-invitations --help
+docker run -it itisfoundation/invitations:release-github-latest simcore-service-invitations --help
 ```
 #### Setup
 
 Create ``.env`` file
 ```
-docker run -it itisfoundation/invitations:latest simcore-service-invitations generate-dotenv --auto-password > .env
+docker run -it itisfoundation/invitations:release-github-latest simcore-service-invitations generate-dotenv --auto-password > .env
 ```
 and modify the ``.env`` if needed
 
@@ -78,7 +78,7 @@ and modify the ``.env`` if needed
 
 Create an invitation for ``guest@company.com`` as
 ```
-docker run -it --env-file .env  itisfoundation/invitations:latest simcore-service-invitations invite guest@company.com --issuer=me
+docker run -it --env-file .env  itisfoundation/invitations:release-github-latest simcore-service-invitations invite guest@company.com --issuer=me
 ```
 and will produce a link
 
@@ -88,7 +88,7 @@ and will produce a link
 
 Start it as a web app as
 ```
-docker run -it --env-file .env -p 8000:8000 itisfoundation/invitations:latest simcore-service-invitations serve
+docker run -it --env-file .env -p 8000:8000 itisfoundation/invitations:release-github-latest simcore-service-invitations serve
 ```
 and then open http://127.0.0.1:8000/dev/doc.
 
