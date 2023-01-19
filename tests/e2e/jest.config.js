@@ -1,9 +1,11 @@
-const config = {
+module.exports = {
   preset: "jest-puppeteer",
   verbose: true,
   collectCoverage: true,
   coverageReporters: ["lcov", "text"],
-  setupFiles: ['<rootDir>/custom-jest-setup.ts'],
-};
-
-module.exports = config;
+  globals: {
+    url: "http://127.0.0.1:9081/",
+    apiVersion: 'v0/',
+    ourTimeout: 40000,
+  }
+}

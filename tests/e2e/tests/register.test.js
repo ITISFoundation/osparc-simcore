@@ -67,5 +67,5 @@ test('Register and Log Out', async () => {
   await auto.register(page, user, pass);
   page.on('response', secondHandler);
   await auto.logOut(page);
-  await utils.sleep(5000);
+  await page.waitFor(5000);
 }, ourTimeout);
