@@ -21,4 +21,5 @@ class DockerLabelKey(ConstrainedStr):
 
 
 class DockerGenericTag(ConstrainedStr):
+    # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
     regex: Optional[re.Pattern[str]] = DOCKER_GENERIC_TAG_KEY_RE
