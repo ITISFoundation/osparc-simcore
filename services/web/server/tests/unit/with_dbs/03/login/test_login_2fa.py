@@ -144,8 +144,18 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
-    # register phone --------------------------------------------------
+    # 0. login first (since there is no phone -> register)
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+        },
+    )
+    data, _ = await assert_status(response, web.HTTPAccepted)
 
+    # register phone --------------------------------------------------
     # 1. submit
     url = client.app.router["auth_register_phone"].url_for()
     response = await client.post(
