@@ -34,7 +34,6 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   docker-ce-cli \
   && ./install_rclone.bash \
   && apt-get remove -y\
-  ca-certificates \
   curl \
   gnupg \
   lsb-release \
