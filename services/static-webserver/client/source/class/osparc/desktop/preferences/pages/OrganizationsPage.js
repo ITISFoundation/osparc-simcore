@@ -289,7 +289,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         if (aAccessRights.getRead() !== bAccessRights.getRead()) {
           return bAccessRights.getRead() - aAccessRights.getRead();
         }
-        return a.getName() > b.getName();
+        return a.getLogin().localeCompare(b.getLogin());
       };
       const params = {
         url: {
