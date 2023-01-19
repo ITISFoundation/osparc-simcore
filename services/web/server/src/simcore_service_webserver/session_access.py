@@ -2,7 +2,7 @@ import functools
 import logging
 import time
 from contextlib import contextmanager
-from typing import Optional, TypedDict
+from typing import Iterator, Optional, TypedDict
 
 from aiohttp import web
 from aiohttp_session import Session
@@ -29,7 +29,7 @@ def is_expired(token: AccessToken) -> bool:
 
 
 @contextmanager
-def access_tokens_cleanup_ctx(session: Session) -> dict[str, AccessToken]:
+def access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, AccessToken]]:
     # WARNING: make sure this does not wrapp any ``await handler(request)``
     # Note that these access_tokens correspond to the values BEFORE that call
     # and all the tokens added/removed in the decorators nested on the handler
