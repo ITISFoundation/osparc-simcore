@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
 import aiodocker
+import yaml
 from aiodocker.utils import clean_filters
 from models_library.services import RunID
 from pydantic import PositiveInt
@@ -53,3 +54,11 @@ async def get_running_containers_count_from_names(
         filters = clean_filters({"name": container_names})
         containers = await docker.containers.list(all=True, filters=filters)
         return len(containers)
+
+
+def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
+    docker_compose_spec = yaml.safe_load(compose_spec_yaml)
+    return {
+        service_data["image"]
+        for service_data in docker_compose_spec["services"].values()
+    }

@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import ConstrainedStr, constr
 
 from .basic_regex import (
+    DOCKER_GENERIC_TAG_KEY_RE,
     DOCKER_IMAGE_KEY_RE,
     DOCKER_IMAGE_VERSION_RE,
     DOCKER_LABEL_KEY_REGEX,
@@ -17,3 +18,8 @@ class DockerLabelKey(ConstrainedStr):
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
     # good practice: use reverse DNS notation
     regex: Optional[re.Pattern[str]] = DOCKER_LABEL_KEY_REGEX
+
+
+class DockerGenericTag(ConstrainedStr):
+    # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
+    regex: Optional[re.Pattern[str]] = DOCKER_GENERIC_TAG_KEY_RE
