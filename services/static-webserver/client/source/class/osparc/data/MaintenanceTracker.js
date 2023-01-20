@@ -173,6 +173,15 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       this.__removeScheduledLogout();
 
       const logoutUser = () => {
+        this.set({
+          start: null,
+          end: null,
+          reason: null
+        });
+        let text = qx.locale.Manager.tr("We are under maintenance.");
+        text += "<br>";
+        text += qx.locale.Manager.tr("Please, check back later");
+        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING");
         qx.core.Init.getApplication().logout();
       };
       const now = new Date();
