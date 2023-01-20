@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest import MonkeyPatch
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -19,11 +20,11 @@ from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations import (
     InvalidInvitation,
-    InvitationContent,
     InvitationsServiceUnavailable,
     validate_invitation_url,
 )
 from simcore_service_webserver.invitations_client import (
+    InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,
 )
@@ -135,7 +136,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.post(
         f"{base_url}/v1/invitations:extract",
         status=web.HTTPOk.status_code,
-        payload=expected_invitation.dict(),
+        payload=jsonable_encoder(expected_invitation.dict()),
         repeat=True,
     )
 
@@ -163,6 +164,7 @@ async def test_invitation_service_api_ping(
     print(mock_invitations_service_http_api)
 
     assert await invitations_api.ping()
+    assert await invitations_api.is_responsive()
 
 
 async def test_valid_invitation(

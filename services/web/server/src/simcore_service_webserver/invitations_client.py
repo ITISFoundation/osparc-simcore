@@ -15,11 +15,21 @@ from .invitations_settings import InvitationsSettings
 logger = logging.getLogger(__name__)
 
 
+#
+# MODELS
+#
+
+
 class InvitationContent(BaseModel):
     issuer: str
     guest: EmailStr
     trial_account_days: Optional[int] = None
     created: datetime
+
+
+#
+# CLIENT
+#
 
 
 @dataclass(frozen=True)
@@ -46,14 +56,17 @@ class InvitationsServiceApi:
     #
     # common SDK
     #
-    # NOTE: due to limitations in aioresponses https://github.com/pnuckowski/aioresponses/issues/230
-    # we will avoid using ClientSession(base_url=settings.base_url, ... ) and use insteald self._url("/v0/foo")
 
     def _url(self, rel_url: str):
         return URL(self.settings.base_url) / rel_url.lstrip("/")
 
     def _url_vtag(self, rel_url: str):
         return URL(self.settings.api_base_url) / rel_url.lstrip("/")
+
+    # NOTE: the functions above are added due to limitations in
+    # aioresponses https://github.com/pnuckowski/aioresponses/issues/230
+    # we will avoid using ClientSession(base_url=settings.base_url, ... ) and
+    # use insteald self._url("/v0/foo")
 
     async def close(self) -> None:
         """Releases underlying connector from ClientSession [client]"""
