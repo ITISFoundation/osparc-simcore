@@ -3,10 +3,10 @@
 
 
 import logging
-from enum import Enum
+from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -79,6 +79,18 @@ class VFSCacheMode(str, Enum):
     FULL = "full"
 
 
+class EnvyLogLevel(str, Enum):
+    def _generate_next_value_(self, *_: Any) -> str:  # pylint:disable=arguments-differ
+        return self.lower()
+
+    TRACE = auto()
+    DEBUG = auto()
+    INFO = auto()
+    WARNING = auto()
+    ERROR = auto()
+    CRITICAL = auto()
+
+
 class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
@@ -146,6 +158,16 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
     )
 
 
+class DynamicSidecarEgressSettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_ENVOY_IMAGE: str = Field(
+        "envoyproxy/envoy:v1.24-latest",
+        description="envoy image to use",
+    )
+    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: str = Field(
+        EnvyLogLevel.ERROR, description="log level for envoy proxy service"
+    )
+
+
 class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
@@ -188,6 +210,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
+
+    DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: DynamicSidecarEgressSettings = Field(
         auto_default_from_env=True
     )
 
