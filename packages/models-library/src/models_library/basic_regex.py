@@ -71,5 +71,5 @@ DOCKER_LABEL_KEY_REGEX: Final[re.Pattern] = re.compile(
 DOCKER_IMAGE_KEY_RE = r"[\w/-]+"
 DOCKER_IMAGE_VERSION_RE = r"[\w/.]+"
 DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
-    r"^(?P<registry_host>(?=[^:\/]{1,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::\d{1,5})?/)?(?P<image_name>(?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*):(?P<tag_name>(?![.-])[a-zA-Z0-9_.-]{1,128})?$"
+    r"^(?P<registry_host>(?:(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+(?::\d+)?)|(?:[a-zA-Z0-9-]+:\d+)))?(?:/)?(?P<docker_image>(?:[a-z0-9][a-z0-9-_.]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[a-zA-Z0-9_][a-zA-Z0-9._-]{0,126}[a-zA-Z0-9_]))?$"
 )
