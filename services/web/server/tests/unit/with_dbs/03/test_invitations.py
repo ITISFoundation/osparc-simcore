@@ -120,7 +120,10 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.get(
         f"{base_url}/",
         status=web.HTTPOk.status_code,
-        repeat=True,
+    )
+    aioresponses_mocker.get(
+        f"{base_url}/",
+        status=web.HTTPServiceUnavailable.status_code,
     )
 
     # meta
@@ -129,7 +132,6 @@ def mock_invitations_service_http_api(
         f"{base_url}/v1/meta",
         status=web.HTTPOk.status_code,
         payload={"name": "string", "version": "string", "docs_url": "string"},
-        repeat=True,
     )
 
     # extract
@@ -138,7 +140,6 @@ def mock_invitations_service_http_api(
         f"{base_url}/v1/invitations:extract",
         status=web.HTTPOk.status_code,
         payload=jsonable_encoder(expected_invitation.dict()),
-        repeat=True,
     )
 
     return aioresponses_mocker
@@ -164,8 +165,11 @@ async def test_invitation_service_api_ping(
 
     print(mock_invitations_service_http_api)
 
+    # first request is mocked to pass
     assert await invitations_api.ping()
-    assert await invitations_api.is_responsive()
+
+    # second request is mocked to fail
+    assert not await invitations_api.is_responsive()
 
 
 async def test_valid_invitation(
@@ -199,12 +203,3 @@ async def test_invalid_invitation_if_already_registered(
                 app=client.app,
                 invitation_url="https://server.com#register?invitation=1234",
             )
-
-
-# create fake invitation service
-
-# valid invitation
-
-# invalid invitation
-
-# confirmation-type of invitations
