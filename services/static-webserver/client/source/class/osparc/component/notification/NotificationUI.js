@@ -72,7 +72,9 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             wrap: true
           });
           this.bind("text", control, "value");
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
       }
       return control || this.base(arguments, id);
