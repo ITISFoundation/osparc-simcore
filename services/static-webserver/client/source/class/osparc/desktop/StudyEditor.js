@@ -538,12 +538,33 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopAutoSaveTimer();
     },
 
+    __removeIdleTimer: function() {
+      if (this.__idleTimer) {
+        clearTimeout(this.__idleTimer);
+        this.__idleTimer = null;
+      }
+    },
+
+    __removeIdleInterval: function() {
+      if (this.__idleInteval) {
+        clearInterval(this.__idleInteval);
+        this.__idleInteval = null;
+      }
+    },
+
+    __removeIdleFlashMessage: function() {
+      if (this.__idleFlashMessage) {
+        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
+        this.__idleFlashMessage = null;
+      }
+    },
+
     __startIdleTimer: function() {
       const warningAfter = 5000;
       const outAfter = 20000;
 
       const sendBackToDashboard = () => {
-        clearTimeout(this.__idleTimer);
+        this.__stopIdleTimer();
         this.fireEvent("userIdled");
       };
 
@@ -558,9 +579,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             msg += osparc.utils.Utils.formatSeconds(countdown/1000);
             this.__idleFlashMessage.setMessage(msg);
             countdown -= 1000;
-          } else if (this.__idleInteval) {
-            clearInterval(this.__idleInteval);
           }
+          this.__removeIdleInterval();
         };
         this.__idleInteval = setInterval(updateFlashMessage, 1000);
         updateFlashMessage();
@@ -569,14 +589,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       };
 
       const resetTimer = () => {
-        clearInterval(this.__idleInteval);
-
-        if (this.__idleFlashMessage) {
-          osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
-          this.__idleFlashMessage = null;
-        }
-
-        clearTimeout(this.__idleTimer);
+        this.__stopIdleTimer();
         this.__idleTimer = setTimeout(startCountdown, warningAfter);
       };
       resetTimer();
@@ -586,18 +599,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __stopIdleTimer: function() {
-      if (this.__idleInteval) {
-        clearInterval(this.__idleInteval);
-      }
-
-      if (this.__idleFlashMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
-        this.__idleFlashMessage = null;
-      }
-
-      if (this.__idleTimer) {
-        clearTimeout(this.__idleTimer);
-      }
+      this.__removeIdleInterval();
+      this.__removeIdleFlashMessage();
+      this.__removeIdleTimer();
     },
 
     __startAutoSaveTimer: function() {
