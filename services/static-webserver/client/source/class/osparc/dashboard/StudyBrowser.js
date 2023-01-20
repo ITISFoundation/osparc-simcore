@@ -577,7 +577,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       selectButton.bind("value", this, "multiSelection");
       selectButton.bind("value", selectButton, "label", {
-        converter: val => val ? this.tr("Cancel Selection") : this.tr("Select Studies")
+        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.getStudyLabel(true))
       });
       this.bind("multiSelection", selectButton, "value");
       return selectButton;
