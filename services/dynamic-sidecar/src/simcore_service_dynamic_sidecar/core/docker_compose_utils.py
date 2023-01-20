@@ -186,7 +186,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             )
 
     list_of_images = get_docker_service_images(compose_spec_yaml)
-    all_image_pulling_data = {}
+    all_image_pulling_data: dict[str, dict[str, tuple[int, int]]] = {}
     async with docker_client() as docker:
         await asyncio.gather(
             *(
