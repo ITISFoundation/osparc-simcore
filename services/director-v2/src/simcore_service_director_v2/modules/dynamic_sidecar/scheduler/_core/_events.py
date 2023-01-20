@@ -153,7 +153,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
         )
 
-        # these configuration should guarantee 245 address network
+        allow_internet_access: bool = False
+
         network_config = {
             "Name": scheduler_data.dynamic_sidecar_network_name,
             "Driver": "overlay",
@@ -163,7 +164,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },
             "Attachable": True,
-            "Internal": True,
+            "Internal": not allow_internet_access,
         }
         dynamic_sidecar_network_id = await create_network(network_config)
 

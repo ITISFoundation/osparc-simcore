@@ -189,6 +189,7 @@ def assemble_spec(
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
+    simcore_service_labels: SimcoreServiceLabels,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -201,6 +202,10 @@ def assemble_spec(
 
     docker_compose_version = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+    )
+
+    egress_proxy_settings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
     )
 
     # when no compose yaml file was provided
@@ -223,7 +228,7 @@ def assemble_spec(
 
     _update_networking_configuration(
         service_spec=service_spec,
-        target_container=container_name,
+        target_http_entrypoint_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         swarm_network_name=swarm_network_name,
     )
