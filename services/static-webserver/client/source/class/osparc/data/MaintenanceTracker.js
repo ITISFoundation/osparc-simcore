@@ -40,7 +40,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
-    // CHECK_INTERVAL: 30*60*1000, // Check every 30'
+    // CHECK_INTERVAL: 15*60*1000, // Check every 15'
     CHECK_INTERVAL: 5*1000, // testing
     WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
   },
@@ -49,6 +49,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     __checkInternval: null,
     __lastNotification: null,
     __lastFlashMessage: null,
+    __logoutTimer: null,
 
     startTracker: function() {
       const checkMaintenance = () => {
@@ -57,6 +58,8 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
             if (scheduledMaintenance) {
               // for now it's just a string
               this.__setMaintenance(JSON.parse(scheduledMaintenance));
+            } else {
+              this.__setMaintenance(null);
             }
           })
           .catch(err => console.error(err));
@@ -98,9 +101,9 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       const oldEnd = this.getEnd();
       const oldReason = this.getReason();
 
-      this.setStart("start" in maintenanceData ? new Date(maintenanceData.start) : null);
-      this.setEnd("end" in maintenanceData ? new Date(maintenanceData.end) : null);
-      this.setReason("reason" in maintenanceData ? maintenanceData.reason : null);
+      this.setStart(maintenanceData && "start" in maintenanceData ? new Date(maintenanceData.start) : null);
+      this.setEnd(maintenanceData && "end" in maintenanceData ? new Date(maintenanceData.end) : null);
+      this.setReason(maintenanceData && "reason" in maintenanceData ? maintenanceData.reason : null);
 
       if (
         (oldStart === null || oldStart.getTime() !== this.getStart().getTime()) ||
@@ -117,26 +120,35 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     },
 
     __scheduleStart: function() {
-      this.__addNotification();
-      this.__scheduleFlashMessage();
-      this.__scheduleLogout();
+      if (this.getStart() === null) {
+        this.__removeNotification();
+        this.__removeFlashMessage();
+        this.__removeScheduledLogout();
+      } else {
+        this.__addNotification();
+        this.__scheduleFlashMessage();
+        this.__scheduleLogout();
+      }
     },
 
     __addNotification: function() {
-      if (this.__lastNotification) {
-        osparc.component.notification.Notifications.getInstance().removeNotification(this.__lastNotification);
-        this.__lastNotification = null;
-      }
+      this.__removeNotification();
+
       const text = this.__getText();
       const notification = this.__lastNotification = new osparc.component.notification.NotificationUI(text);
       osparc.component.notification.Notifications.getInstance().addNotification(notification);
     },
 
-    __scheduleFlashMessage: function() {
-      if (this.__lastFlashMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastFlashMessage);
-        this.__lastFlashMessage = null;
+    __removeNotification: function() {
+      if (this.__lastNotification) {
+        osparc.component.notification.Notifications.getInstance().removeNotification(this.__lastNotification);
+        this.__lastNotification = null;
       }
+    },
+
+    __scheduleFlashMessage: function() {
+      this.__removeFlashMessage();
+
       const popupMessage = () => {
         const now = new Date();
         const duration = this.getStart().getTime() - now.getTime();
@@ -152,14 +164,29 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
+    __removeFlashMessage: function() {
+      if (this.__lastFlashMessage) {
+        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastFlashMessage);
+        this.__lastFlashMessage = null;
+      }
+    },
+
     __scheduleLogout: function() {
+      this.__removeScheduledLogout();
+
       const logoutUser = () => {
         qx.core.Init.getApplication().logout();
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime();
       console.log("logout scheduled: ", this.getStart());
-      setTimeout(() => logoutUser(), diff);
+      this.__logoutTimer = setTimeout(() => logoutUser(), diff);
+    },
+
+    __removeScheduledLogout: function() {
+      if (this.__logoutTimer) {
+        clearTimeout(this.__logoutTimer);
+      }
     },
 
     __scheduleEnd: function() {
