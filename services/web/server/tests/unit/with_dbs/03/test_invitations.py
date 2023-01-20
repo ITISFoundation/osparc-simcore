@@ -120,6 +120,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.get(
         f"{base_url}/",
         status=web.HTTPOk.status_code,
+        repeat=True,
     )
 
     # meta
