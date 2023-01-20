@@ -121,6 +121,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __slideshowView: null,
     __autoSaveTimer: null,
     __idleTimer: null,
+    __idleInteval: null,
     __lastSavedStudy: null,
     __updatingStudy: null,
     __updateThrottled: null,
@@ -535,29 +536,42 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __startIdleTimer: function() {
-      const warningAfter = 2000;
-      const outAfter = 5000;
-      window.onmousemove = resetTimer;
-      window.onkeydown = resetTimer;
+      const warningAfter = 5000;
+      const outAfter = 20000;
 
       const sendBackToDashboard = () => {
         clearTimeout(this.__idleTimer);
         this.fireEvent("userIdling");
       };
 
-      const showWarning = () => {
-        let msg = this.tr("Are you there?");
-        msg += "<br>";
-        msg += `You will be kicked out in ${outAfter/1000} seconds`;
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
-        this.__idleTimer = setTimeout(sendBackToDashboard, outAfter);
+      const startCountdown = () => {
+        let countdown = outAfter - warningAfter;
+        const flashMessage = osparc.component.message.FlashMessenger.getInstance().logAs("", "WARNING", null, outAfter-warningAfter);
+        const updateFlashMessage = () => {
+          if (flashMessage) {
+            let msg = this.tr("Are you there?");
+            msg += "<br>";
+            msg += `You will be kicked out in ${countdown/1000} seconds`;
+            flashMessage.setMessage(msg);
+            countdown -= 1000;
+          } else if (this.__idleInteval) {
+            clearInterval(this.__idleInteval);
+          }
+        };
+        this.__idleInteval = setInterval(updateFlashMessage, 1000);
+        updateFlashMessage();
+
+        this.__idleTimer = setTimeout(sendBackToDashboard, countdown);
       };
 
-      function resetTimer() {
+      const resetTimer = () => {
         clearTimeout(this.__idleTimer);
-        this.__idleTimer = setTimeout(showWarning, warningAfter);
-      }
+        this.__idleTimer = setTimeout(startCountdown, warningAfter);
+      };
       resetTimer();
+
+      window.onmousemove = resetTimer;
+      window.onkeydown = resetTimer;
     },
 
     __stopIdleTimer: function() {
