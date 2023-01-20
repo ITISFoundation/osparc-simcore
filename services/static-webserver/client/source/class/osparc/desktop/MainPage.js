@@ -456,7 +456,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       studyEditor.addListener("expandNavBar", () => this.__navBar.show());
       studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
       studyEditor.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
-      studyEditor.addListener("forceBackToDashboard", () => this.__backToDashboard(), this);
+      studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
+      studyEditor.addListener("userIdling", () => this.__backToDashboard(), this);
       studyEditor.addListener("slidesEdit", () => {
         studyEditor.editSlides();
       }, this);

@@ -88,6 +88,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
+    "userIdling": "qx.event.type.Event",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
@@ -565,7 +566,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const sendBackToDashboard = () => {
         clearTimeout(this.__idleTimer);
-        this.fireEvent("forceBackToDashboard");
+        this.fireEvent("userIdling");
       };
 
       const showWarning = () => {
