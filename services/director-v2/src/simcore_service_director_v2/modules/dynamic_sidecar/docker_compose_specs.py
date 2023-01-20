@@ -15,7 +15,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
-from .docker_compose_egress_proxy_specs import add_egress_configuration
+from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
 EnvVarsMap = dict[str, Optional[str]]
@@ -26,38 +26,35 @@ logger = logging.getLogger(__name__)
 
 def _update_networking_configuration(
     service_spec: ComposeSpecLabel,
-    target_container: str,
+    target_http_entrypoint_container: str,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
 ) -> None:
     """
-    Adds network configuration to allow the service
+    1. Adds network configuration to allow the service
     to be accessible on `uuid.services.SERVICE_DNS`
-    Adds networking configuration allowing egress
+    2. Adds networking configuration allowing egress
     proxies to access the internet.
     """
 
-    # add external network to existing networks defined in the container
     networks = service_spec.get("networks", {})
+    # used by the proxy to contact the service http entrypoint
     networks[dynamic_sidecar_network_name] = {
         "external": {"name": dynamic_sidecar_network_name},
         "driver": "overlay",
     }
-    # used by egress proxies
+    # used by egress proxies to gain access to the internet
     networks[swarm_network_name] = {
         "external": {"name": swarm_network_name},
         "driver": "overlay",
     }
     service_spec["networks"] = networks
 
-    # attach overlay network to container
-    target_container_spec = service_spec["services"][target_container]
-    container_networks = target_container_spec.get("networks", [])
-    container_networks.append(dynamic_sidecar_network_name)
-    # avoid duplicate entries, this is important when the dynamic-sidecar
-    # fails to run docker-compose up, otherwise it will
-    # continue adding lots of entries to this list
-    target_container_spec["networks"] = list(set(container_networks))
+    # attach proxy network to target http entrypoint container
+    target_container_spec = service_spec["services"][target_http_entrypoint_container]
+    container_networks = target_container_spec.get("networks", {})
+    container_networks[dynamic_sidecar_network_name] = None
+    target_container_spec["networks"] = container_networks
 
 
 class _environment_section:
