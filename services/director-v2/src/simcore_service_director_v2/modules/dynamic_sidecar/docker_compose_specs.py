@@ -234,11 +234,17 @@ def assemble_spec(
         service_resources=service_resources, service_spec=service_spec
     )
 
-    add_egress_configuration(
-        service_spec=service_spec,
-        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        swarm_network_name=swarm_network_name,
-    )
+    allow_internet_access: bool = False
+    if not allow_internet_access:
+        # NOTE: when service has no access to the internet,
+        # there could be some components that still require access
+        add_egress_configuration(
+            service_spec=service_spec,
+            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+            swarm_network_name=swarm_network_name,
+            simcore_service_labels=simcore_service_labels,
+            egress_proxy_settings=egress_proxy_settings,
+        )
 
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,

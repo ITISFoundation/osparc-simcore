@@ -482,6 +482,15 @@ class CreateUserServices(DynamicSchedulerEvent):
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
 
+        director_v0_client: DirectorV0Client = get_director_v0_client(app)
+        simcore_service_labels: SimcoreServiceLabels = (
+            await director_v0_client.get_service_labels(
+                service=ServiceKeyVersion(
+                    key=scheduler_data.key, version=scheduler_data.version
+                )
+            )
+        )
+
         compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
@@ -492,6 +501,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
+            simcore_service_labels=simcore_service_labels,
         )
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",
