@@ -16,11 +16,11 @@ from .server import AsyncServer, get_socket_server
 
 log = logging.getLogger(__name__)
 
-SOCKET_IO_PROJECT_UPDATED_EVENT: str = "projectStateUpdated"
-SOCKET_IO_NODE_UPDATED_EVENT: str = "nodeUpdated"
-SOCKET_IO_LOG_EVENT: str = "logger"
-SOCKET_IO_HEARTBEAT_EVENT: str = "set_heartbeat_emit_interval"
-SOCKET_IO_EVENT: str = "event"
+SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
+SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
+SOCKET_IO_LOG_EVENT: Final[str] = "logger"
+SOCKET_IO_HEARTBEAT_EVENT: Final[str] = "set_heartbeat_emit_interval"
+SOCKET_IO_EVENT: Final[str] = "event"
 SOCKET_IO_NODE_PROGRESS_EVENT: Final[str] = "nodeProgress"
 
 
