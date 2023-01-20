@@ -214,6 +214,7 @@ async def _try_scale_up_with_drained_nodes(
                     tasks,
                     "cluster adjusted, service should start shortly...",
                 ),
+                _progress_tasks_message(app, tasks, progress=1.0),
             )
         )
         return tasks
@@ -224,6 +225,38 @@ async def _try_scale_up_with_drained_nodes(
     )
 
     return list(itertools.chain(*list_treated_tasks))
+
+
+async def _try_assigning_task_to_pending_instances(
+    app: FastAPI,
+    pending_task: Task,
+    list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]],
+    type_to_instance_map: dict[str, EC2Instance],
+) -> bool:
+    for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
+        instance_type = type_to_instance_map[instance.type]
+        instance_total_resources = Resources(
+            cpus=instance_type.cpus, ram=instance_type.ram
+        )
+        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
+            instance_assigned_tasks
+        )
+        if (
+            instance_total_resources - tasks_needed_resources
+        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
+            instance_assigned_tasks.append(pending_task)
+            await _log_tasks_message(
+                app,
+                [pending_task],
+                "scaling up of cluster in progress...awaiting new machines...please wait...",
+            )
+            await _progress_tasks_message(
+                app,
+                [pending_task],
+                (datetime.utcnow() - instance.launch_time).total_seconds(),
+            )
+            return True
+    return False
 
 
 def _try_assigning_task_to_instances(
@@ -253,17 +286,14 @@ async def _find_needed_instances(
     )
     type_to_instance_map = {t.name: t for t in existing_instance_types}
 
-    list_of_existing_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = [
-        (type_to_instance_map[i.type], []) for i in pending_ec2_instances
+    list_of_existing_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]] = [
+        (i, []) for i in pending_ec2_instances
     ]
     list_of_new_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
-        if _try_assigning_task_to_instances(task, list_of_existing_instance_to_tasks):
-            await _log_tasks_message(
-                app,
-                [task],
-                f"scaling up of cluster in progress...awaiting {len(pending_ec2_instances)} new machines...please wait...",
-            )
+        if await _try_assigning_task_to_pending_instances(
+            app, task, list_of_existing_instance_to_tasks, type_to_instance_map
+        ):
             continue
 
         if _try_assigning_task_to_instances(task, list_of_new_instance_to_tasks):
@@ -359,6 +389,15 @@ async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> N
     )
 
 
+async def _progress_tasks_message(
+    app: FastAPI, tasks: list[Task], progress: float
+) -> None:
+    await asyncio.gather(
+        *(rabbitmq.post_task_progress_message(app, task, progress) for task in tasks),
+        return_exceptions=True,
+    )
+
+
 async def _scale_up_cluster(
     app: FastAPI, monitored_nodes: list[Node], pending_tasks: list[Task]
 ) -> None:
@@ -414,6 +453,7 @@ async def _scale_up_cluster(
             f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
         )
         await _start_instances(app, needed_ec2_instances, pending_tasks)
+        await _progress_tasks_message(app, pending_tasks, 0)
 
 
 async def _attach_new_ec2_instances(
