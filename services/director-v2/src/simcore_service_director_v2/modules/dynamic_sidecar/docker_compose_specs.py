@@ -3,7 +3,11 @@ from copy import deepcopy
 from typing import Optional, Union
 
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.service_settings_labels import (
+    ComposeSpecLabel,
+    PathMappingsLabel,
+    SimcoreServiceLabels,
+)
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
