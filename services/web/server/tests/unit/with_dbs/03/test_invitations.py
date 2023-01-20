@@ -15,9 +15,12 @@ from aiohttp.test_utils import TestClient
 from pytest import MonkeyPatch
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations import (
-    InvitationServiceUnavailable,
+    InvalidInvitation,
+    InvitationContent,
+    InvitationsServiceUnavailable,
     validate_invitation_url,
 )
 from simcore_service_webserver.invitations_client import (
@@ -92,10 +95,21 @@ def invitations_service_openapi_specs(
 
 
 @pytest.fixture
+def expected_invitation(
+    invitations_service_openapi_specs: dict[str, Any]
+) -> InvitationContent:
+    oas = deepcopy(invitations_service_openapi_specs)
+    return InvitationContent.parse_obj(
+        oas["components"]["schemas"]["_ApiInvitationContent"]["example"]
+    )
+
+
+@pytest.fixture
 def mock_invitations_service_http_api(
     aioresponses_mocker: AioResponsesMock,
     invitations_service_openapi_specs: dict[str, Any],
     app_invitation_plugin_settings: InvitationsSettings,
+    expected_invitation: InvitationContent,
 ) -> AioResponsesMock:
     oas = deepcopy(invitations_service_openapi_specs)
     base_url = URL(app_invitation_plugin_settings.base_url)
@@ -121,7 +135,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.post(
         f"{base_url}/v1/invitations:extract",
         status=web.HTTPOk.status_code,
-        payload=oas["components"]["schemas"]["_ApiInvitationContent"]["example"],
+        payload=expected_invitation.dict(),
         repeat=True,
     )
 
@@ -134,9 +148,10 @@ async def test_invitation_service_unavailable(client: TestClient):
 
     assert not await invitations_api.ping()
 
-    with pytest.raises(InvitationServiceUnavailable):
+    with pytest.raises(InvitationsServiceUnavailable):
         await validate_invitation_url(
-            app=client.app, invitation_url="https://server.com#register?invitation=1234"
+            app=client.app,
+            invitation_url="https://server.com#/registration?invitation=1234",
         )
 
 
@@ -149,10 +164,38 @@ async def test_invitation_service_api_ping(
 
     assert await invitations_api.ping()
 
+
+async def test_valid_invitation(
+    client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
+    expected_invitation: InvitationContent,
+):
     invitation = await validate_invitation_url(
         app=client.app, invitation_url="https://server.com#register?invitation=1234"
     )
     assert invitation
+    assert invitation == expected_invitation
+
+
+async def test_invalid_invitation_if_already_registered(
+    client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
+    expected_invitation: InvitationContent,
+):
+
+    async with NewUser(
+        params={
+            "name": "test-user",
+            "email": expected_invitation.guest,
+        },
+        app=client.app,
+    ) as registered_user:
+
+        with pytest.raises(InvalidInvitation):
+            await validate_invitation_url(
+                app=client.app,
+                invitation_url="https://server.com#register?invitation=1234",
+            )
 
 
 # create fake invitation service

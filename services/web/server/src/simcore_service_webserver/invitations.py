@@ -48,11 +48,11 @@ class InvitationsErrors(PydanticErrorMixin, ValueError):
     ...
 
 
-class InvalidInvitationError(InvitationsErrors):
+class InvalidInvitation(InvitationsErrors):
     msg_template = "Invalid invitation: {reason}"
 
 
-class InvitationServiceUnavailable(InvitationsErrors):
+class InvitationsServiceUnavailable(InvitationsErrors):
     msg_template = (
         "Invitations service is currently unavailable. Please try again later."
     )
@@ -67,16 +67,16 @@ def _handle_exceptions_as_invitations_errors():
     except ClientResponseError as err:
         # check possible errors
         if err.status == web.HTTPUnprocessableEntity.status_code:
-            raise InvalidInvitationError(reason=err.message) from err
+            raise InvalidInvitation(reason=err.message) from err
 
         # some validation or other error?
-        raise InvitationServiceUnavailable() from err
+        raise InvitationsServiceUnavailable() from err
 
     except ValidationError as err:
-        raise InvitationServiceUnavailable() from err
+        raise InvitationsServiceUnavailable() from err
 
     except ClientError as err:
-        raise InvitationServiceUnavailable() from err
+        raise InvitationsServiceUnavailable() from err
 
     except InvitationsErrors:
         # bypass
@@ -84,12 +84,17 @@ def _handle_exceptions_as_invitations_errors():
 
     except Exception as err:
         logger.exception("Unexpected error in invitations plugin")
-        raise InvitationServiceUnavailable() from err
+        raise InvitationsServiceUnavailable() from err
 
 
 #
 # API plugin calls
 #
+
+
+def can_be_service_invitation_code(code: str):
+    """Fast check to distinguish from confirmation-type of invitation code"""
+    return len(code) > 100
 
 
 async def validate_invitation_url(
@@ -110,7 +115,7 @@ async def validate_invitation_url(
 
         # existing users cannot be re-invited
         if await _is_user_registered(app=app, email=invitation.guest):
-            raise InvalidInvitationError(reason="This invitation was already used")
+            raise InvalidInvitation(reason="This invitation was already used")
 
     return invitation
 
@@ -148,6 +153,6 @@ def setup_invitations(app: web.Application):
 __all__: tuple[str, ...] = (
     "setup_invitations",
     "validate_invitation_url",
-    "InvalidInvitationError",
-    "InvitationServiceUnavailable",
+    "InvalidInvitation",
+    "InvitationsServiceUnavailable",
 )
