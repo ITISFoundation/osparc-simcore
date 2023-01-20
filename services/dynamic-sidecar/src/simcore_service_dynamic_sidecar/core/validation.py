@@ -133,8 +133,8 @@ def _connect_user_services(
 ) -> None:
     """
     Put all containers in the compose spec in the same network.
-    The `network_name` must only be unique inside the user defined spec;
-    docker-compose will add some prefix to it.
+    The network name must only be unique inside the user defined spec.
+    `docker-compose` will add some prefix to it.
     """
     networks = parsed_compose_spec.setdefault("networks", {})
     if networks is None:
@@ -149,7 +149,7 @@ def _connect_user_services(
         service_networks = service_content.setdefault("networks", [])
         if service_networks is None:
             # if network is set without entries
-            service_content["networks"] = [_DEFAULT_USER_SERVICES_NETWORK_NAME]
+            service_content["networks"] = {_DEFAULT_USER_SERVICES_NETWORK_NAME: None}
         elif isinstance(service_networks, list):
             service_networks.append(_DEFAULT_USER_SERVICES_NETWORK_NAME)
         else:
