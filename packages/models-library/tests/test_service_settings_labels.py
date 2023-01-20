@@ -223,10 +223,12 @@ def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_
     compose_spec: dict[str, Any] = {"services": {container_name: None}}
 
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": {
-            container_name: container_whitelist
-        },
-        "simcore.service.containers-allowed-outgoing-internet": [container_name],
+        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+            {container_name: container_whitelist}
+        ),
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+            [container_name]
+        ),
         "simcore.service.compose-spec": json.dumps(compose_spec),
         "simcore.service.container-http-entrypoint": container_name,
     }
@@ -240,24 +242,26 @@ def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_
 
 def test_container_outgoing_whitelist_and_container_allow_internet_without_compose_spec():
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": {
-            DEFAULT_SINGLE_SERVICE_NAME: [
-                {
-                    "hostname": "a-host",
-                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
-                }
-            ]
-        },
-        "simcore.service.containers-allowed-outgoing-internet": [
-            DEFAULT_SINGLE_SERVICE_NAME
-        ],
+        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+            {
+                DEFAULT_SINGLE_SERVICE_NAME: [
+                    {
+                        "hostname": "a-host",
+                        "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    }
+                ]
+            }
+        ),
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+            [DEFAULT_SINGLE_SERVICE_NAME]
+        ),
     }
     assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
 
 
 def test_container_allow_internet_no_compose_spec_not_ok():
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-internet": ["hoho"],
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
     }
     with pytest.raises(ValidationError) as exec_info:
         assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
@@ -270,7 +274,7 @@ def test_container_allow_internet_compose_spec_not_ok():
     compose_spec: dict[str, Any] = {"services": {container_name: None}}
     dict_data = {
         "simcore.service.compose-spec": json.dumps(compose_spec),
-        "simcore.service.containers-allowed-outgoing-internet": ["hoho"],
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
     }
     with pytest.raises(ValidationError) as exec_info:
         assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
@@ -280,14 +284,16 @@ def test_container_allow_internet_compose_spec_not_ok():
 
 def test_container_outgoing_whitelist_no_compose_spec_not_ok():
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": {
-            "container_name": [
-                {
-                    "hostname": "a-host",
-                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
-                }
-            ]
-        },
+        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+            {
+                "container_name": [
+                    {
+                        "hostname": "a-host",
+                        "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    }
+                ]
+            }
+        ),
     }
     with pytest.raises(ValidationError) as exec_info:
         assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
@@ -301,14 +307,16 @@ def test_container_outgoing_whitelist_compose_spec_not_ok():
     container_name = "test_container"
     compose_spec: dict[str, Any] = {"services": {container_name: None}}
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": {
-            "container_name": [
-                {
-                    "hostname": "a-host",
-                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
-                }
-            ]
-        },
+        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+            {
+                "container_name": [
+                    {
+                        "hostname": "a-host",
+                        "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    }
+                ]
+            }
+        ),
         "simcore.service.compose-spec": json.dumps(compose_spec),
     }
     with pytest.raises(ValidationError) as exec_info:

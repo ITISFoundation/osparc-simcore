@@ -254,14 +254,14 @@ class DynamicSidecarServiceLabels(BaseModel):
     )
 
     containers_allowed_outgoing_whitelist: Optional[
-        dict[str, list[HostWhitelistPolicy]]
+        Json[dict[str, list[HostWhitelistPolicy]]]
     ] = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-whitelist",
         description="limit internet access to certain domain names and ports per container",
     )
 
-    containers_allowed_outgoing_internet: Optional[set[str]] = Field(
+    containers_allowed_outgoing_internet: Optional[Json[set[str]]] = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-internet",
         description="allow complete internet access to containers in here",
