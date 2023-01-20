@@ -40,7 +40,8 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
-    CHECK_INTERVAL: 30*60*1000, // Check every 30'
+    // CHECK_INTERVAL: 30*60*1000, // Check every 30'
+    CHECK_INTERVAL: 5*1000, // testing
     WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
   },
 
@@ -51,9 +52,6 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
     startTracker: function() {
       const checkMaintenance = () => {
-        if (this.getStart()) {
-          return;
-        }
         osparc.data.Resources.get("maintenance")
           .then(scheduledMaintenance => {
             if (scheduledMaintenance) {
@@ -118,34 +116,36 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     },
 
     __scheduleMaintenance: function() {
-      this.__addNotification();
       this.__scheduleStart();
       this.__scheduleEnd();
     },
 
+    __scheduleStart: function() {
+      this.__addNotification();
+      this.__scheduleFlashMessage();
+      this.__scheduleLogout();
+    },
+
     __addNotification: function() {
       if (this.__lastNotification) {
-        // remove last notification
+        osparc.component.notification.Notifications.getInstance().removeNotification(this.__lastNotification);
+        this.__lastNotification = null;
       }
       const text = this.__getText();
       const notification = this.__lastNotification = new osparc.component.notification.NotificationUI(text);
       osparc.component.notification.Notifications.getInstance().addNotification(notification);
     },
 
-    __scheduleStart: function() {
-      this.__scheduleFlashMessage();
-      this.__scheduleLogout();
-    },
-
     __scheduleFlashMessage: function() {
       if (this.__lastFlashMessage) {
-        // remove last FlashMessage
+        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastFlashMessage);
+        this.__lastFlashMessage = null;
       }
       const popupMessage = () => {
         const now = new Date();
         const duration = this.getStart().getTime() - now.getTime();
         const text = this.__getText();
-        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
+        this.__lastFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
