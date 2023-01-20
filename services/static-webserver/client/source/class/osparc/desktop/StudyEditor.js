@@ -554,7 +554,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (this.__idleFlashMessage) {
             let msg = this.tr("Are you there?");
             msg += "<br>";
-            msg += `You will be kicked out in ${countdown/1000} seconds`;
+            msg += this.tr("You will be kicked out in ");
+            msg += osparc.utils.Utils.formatSeconds(countdown/1000);
             this.__idleFlashMessage.setMessage(msg);
             countdown -= 1000;
           } else if (this.__idleInteval) {
@@ -569,8 +570,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const resetTimer = () => {
         clearInterval(this.__idleInteval);
-        osparc.component.message.FlashMessenger.getInstance().remove(this.__idleFlashMessage);
-        this.__idleFlashMessage = null;
+
+        if (this.__idleFlashMessage) {
+          osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
+          this.__idleFlashMessage = null;
+        }
 
         clearTimeout(this.__idleTimer);
         this.__idleTimer = setTimeout(startCountdown, warningAfter);
