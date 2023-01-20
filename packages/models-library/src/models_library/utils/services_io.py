@@ -8,6 +8,7 @@ from ..services import ServiceInput, ServiceOutput
 from ..services_constants import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP
 
 PortKindStr = Literal["input", "output"]
+JsonSchemaDict = dict[str, Any]
 
 _PROPERTY_TYPE_TO_SCHEMAS = {
     property_type: schema_of(python_type, title=property_type.capitalize())
@@ -36,7 +37,7 @@ def update_schema_doc(schema: dict[str, Any], port: Union[ServiceInput, ServiceO
 
 def get_service_io_json_schema(
     port: Union[ServiceInput, ServiceOutput]
-) -> Optional[dict[str, Any]]:
+) -> Optional[JsonSchemaDict]:
     """Get json-schema for a i/o service
 
     For legacy metadata with property_type = integer, etc ... , it applies a conversion

@@ -32,6 +32,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/director*/                      @sanderegg @pcrespov @GitHK
 /services/docker-compose*.yml             @sanderegg @Surfict @mrnicegyu11
 /services/dynamic-sidecar/                @GitHK
+/services/invitations/                    @pcrespov
 /services/migration/                      @pcrespov
 /services/static-webserver                @GitHK
 /services/static-webserver/client/        @odeimaiz

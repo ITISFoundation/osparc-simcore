@@ -22,12 +22,17 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     DynamicSidecarClient,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import _utils, task
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import (
-    REGISTERED_EVENTS,
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core import (
+    _events_utils,
+    _observer,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._abc import (
     DynamicSchedulerEvent,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task import (
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events import (
+    REGISTERED_EVENTS,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task import (
     DynamicSidecarsScheduler,
 )
 
@@ -36,6 +41,7 @@ SCHEDULER_INTERVAL_SECONDS: Final[float] = 0.1
 
 @pytest.fixture
 def mock_env(
+    disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     simcore_services_network_name: str,
@@ -99,7 +105,7 @@ def mock_is_dynamic_sidecar_stack_missing(mocker: MockerFixture) -> None:
         return False
 
     mocker.patch.object(
-        task, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
+        _observer, "is_dynamic_sidecar_stack_missing", side_effect=_return_false
     )
 
 
@@ -202,7 +208,7 @@ def mocked_dynamic_scheduler_events(
 
 @pytest.fixture
 def mock_remove_calls(mocker: MockerFixture) -> None:
-    mocker.patch.object(_utils, "remove_volumes_from_node")
+    mocker.patch.object(_events_utils, "remove_volumes_from_node")
 
 
 async def test_skip_observation_cycle_after_error(
@@ -218,9 +224,9 @@ async def test_skip_observation_cycle_after_error(
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
-    await scheduler.add_service(scheduler_data)
+    await scheduler._scheduler._add_service(scheduler_data)
     # check it is being tracked
-    assert scheduler_data.node_uuid in scheduler._inverse_search_mapping
+    assert scheduler_data.node_uuid in scheduler._scheduler._inverse_search_mapping
 
     # ensure observation cycle triggers a lot
     await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 10)
@@ -231,8 +237,15 @@ async def test_skip_observation_cycle_after_error(
     # check if service was properly removed or is still kept for manual interventions
     if error_raised_by_saving_state:
         if use_case.outcome_service_removed:
-            assert scheduler_data.node_uuid not in scheduler._inverse_search_mapping
+            assert (
+                scheduler_data.node_uuid
+                not in scheduler._scheduler._inverse_search_mapping
+            )
         else:
-            assert scheduler_data.node_uuid in scheduler._inverse_search_mapping
+            assert (
+                scheduler_data.node_uuid in scheduler._scheduler._inverse_search_mapping
+            )
     else:
-        assert scheduler_data.node_uuid not in scheduler._inverse_search_mapping
+        assert (
+            scheduler_data.node_uuid not in scheduler._scheduler._inverse_search_mapping
+        )

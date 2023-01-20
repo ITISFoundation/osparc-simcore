@@ -63,6 +63,7 @@ jobs:
       director: ${{ steps.filter.outputs.director }}
       director-v2: ${{ steps.filter.outputs.director-v2 }}
       dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
+      invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
@@ -81,65 +82,89 @@ jobs:
             dask-task-models-library:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
             postgres-database:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
             service-integration:
               - 'packages/models-library/**'
               - 'packages/pytest-simcore/**'
               - 'packages/service-integration/**'
+              - 'services/docker-compose*'
             service-library:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
+              - 'services/docker-compose*'
             settings-library:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
+              - 'services/docker-compose*'
             simcore-sdk:
               - 'packages/**'
+              - 'services/docker-compose*'
             agent:
               - 'packages/**'
               - 'services/agent/**'
+              - 'services/docker-compose*'
             api:
               - 'api/**'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
+              - 'services/docker-compose*'
             autoscaling:
               - 'packages/**'
               - 'services/autoscaling/**'
+              - 'services/docker-compose*'
             catalog:
               - 'packages/**'
               - 'services/catalog/**'
+              - 'services/docker-compose*'
             dask-sidecar:
               - 'packages/**'
               - 'services/dask-sidecar/**'
+              - 'services/docker-compose*'
             datcore-adapter:
               - 'packages/**'
               - 'services/datcore-adapter/**'
+              - 'services/docker-compose*'
             director:
               - 'packages/**'
               - 'services/director/**'
+              - 'services/docker-compose*'
             director-v2:
               - 'packages/**'
               - 'services/director-v2/**'
+              - 'services/docker-compose*'
             dynamic-sidecar:
               - 'packages/**'
               - 'services/dynamic-sidecar/**'
+              - 'services/docker-compose*'
+            invitations:
+              - 'packages/**'
+              - 'services/invitations/**'
+              - 'services/docker-compose*'
             migration:
               - 'packages/**'
               - 'services/migration/**'
+              - 'services/docker-compose*'
             static-webserver:
               - 'services/static-webserver/**'
+              - 'services/docker-compose*'
             storage:
               - 'packages/**'
               - 'services/storage/**'
+              - 'services/docker-compose*'
             webserver:
               - 'packages/**'
               - 'services/web/**'
+              - 'services/docker-compose*'
             anything:
               - 'packages/**'
               - 'services/**'
@@ -193,7 +218,7 @@ jobs:
   unit-test-webserver-01:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -279,7 +304,7 @@ jobs:
   unit-test-webserver-03:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -524,7 +549,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/autoscaling.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/autoscaling.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/autoscaling.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
@@ -878,7 +906,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - uses: actions/setup-node@v3.5.1
+      - uses: actions/setup-node@v3.6.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -973,6 +1001,51 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
+      - uses: codecov/codecov-action@v3.1.1
+        with:
+          flags: unittests #optional
+
+  unit-test-invitations:
+    needs: changes
+    if: ${{ needs.changes.outputs.invitations == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] invitations"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.9"]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.8.2]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/invitations/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/invitations.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/invitations.bash typecheck
+      - name: test
+        if: always()
+        run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v3.1.1
         with:
           flags: unittests #optional
@@ -1224,6 +1297,7 @@ jobs:
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         run: |
           echo "::error title=ERROR::one of the unit-tests failed!"
+          echo "${{ join(needs.*.result, ',') }}"
           exit 1
       - name: all the previous unit-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
@@ -1546,7 +1620,7 @@ jobs:
       - name: a previous integration-test job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
+          echo "::error title=ERROR::one of the integration-tests failed!"
           exit 1
       - name: all the previous integration-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
@@ -1699,7 +1773,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v3.5.1
+      - uses: actions/setup-node@v3.6.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1800,7 +1874,7 @@ jobs:
       - name: a previous system-test job failed
         if: ${{ contains(join(needs.*.result, ','), 'failure') }}
         run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
+          echo "::error title=ERROR::one of the system-tests failed!"
           exit 1
       - name: all the previous system-tests were run successfully or skipped
         if: ${{ !contains(join(needs.*.result, ','), 'failure') }}

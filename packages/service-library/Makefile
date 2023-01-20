@@ -38,6 +38,7 @@ test-dev: ## runs unit tests in w/o extras
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--keep-docker-up \
 		--ignore=tests/aiohttp \
 		--ignore=tests/fastapi \
 		--pdb \
@@ -58,6 +59,7 @@ test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--keep-docker-up \
 		--ignore=tests/fastapi \
 		--pdb \
 		-vv \
@@ -76,6 +78,7 @@ test-dev[fastapi]: ## runs unit common tests and fastapi extras
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--keep-docker-up \
 		--ignore=tests/aiohttp \
 		--pdb \
 		-vv \
@@ -93,6 +96,7 @@ test-dev[all]: ## runs unit tests  w/ all extras
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--keep-docker-up \
 		--pdb \
 		-vv \
 		$(CURDIR)/tests
@@ -109,6 +113,7 @@ test-ci[all]: ## runs unit tests  w/ all extras
 		--cov-report=xml \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
+		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \

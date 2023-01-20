@@ -21,12 +21,15 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.users import UserRole
 
 from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
+from ..projects.projects_db import ProjectDBAPI
 from ..security_decorators import permission_required
+from ..users_api import get_user_role
 from . import projects_api
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -75,7 +78,6 @@ async def create_node(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
         data = {
             "node_id": await projects_api.add_project_node(
@@ -114,7 +116,6 @@ async def get_node(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
 
         if await projects_api.is_project_node_deprecated(
@@ -174,7 +175,6 @@ async def delete_node(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
 
         await projects_api.delete_project_node(
@@ -267,6 +267,14 @@ async def stop_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
+    save_state = await ProjectDBAPI.get_from_app_context(request.app).has_permission(
+        user_id=req_ctx.user_id, project_uuid=path_params.project_id, permission="write"
+    )
+
+    user_role = await get_user_role(request.app, req_ctx.user_id)
+    if user_role is None or user_role <= UserRole.GUEST:
+        save_state = False
+
     return await start_long_running_task(
         request,
         _stop_dynamic_service_with_progress,
@@ -274,6 +282,7 @@ async def stop_node(request: web.Request) -> web.Response:
         path_params=path_params,
         app=request.app,
         service_uuid=f"{path_params.node_id}",
+        save_state=save_state,
         fire_and_forget=True,
     )
 
@@ -309,11 +318,13 @@ async def get_node_resources(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
 
         resources = await projects_api.get_project_node_resources(
-            request.app, project=project, node_id=path_params.node_id
+            request.app,
+            user_id=req_ctx.user_id,
+            project=project,
+            node_id=path_params.node_id,
         )
         return web.json_response({"data": resources}, dumps=json_dumps)
 
@@ -346,7 +357,6 @@ async def replace_node_resources(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=True,
         )
         raise web.HTTPNotImplemented(reason="Not yet implemented!")
         # new_node_resources = await projects_api.set_project_node_resources(

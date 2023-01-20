@@ -8,8 +8,9 @@ from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
+from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
-from .._constants import APP_SETTINGS_KEY
+from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 
 _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
@@ -41,9 +42,13 @@ class LoginSettings(BaseCustomSettings):
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
+    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
+        default=60.0, description="Expiration time for code [sec]"
+    )
+
     LOGIN_2FA_REQUIRED: bool = Field(
         default=False,
-        description="Enforces two-factor-authentication for all user's during login",
+        description="If true, it enables two-factor authentication (2FA)",
     )
 
     @validator("LOGIN_2FA_REQUIRED")
@@ -64,14 +69,48 @@ class LoginSettings(BaseCustomSettings):
         return v
 
 
+class LoginSettingsForProduct(LoginSettings):
+    """
+    Customization of these plugin settings for a product
+
+    LoginSettings are created (and frozen) upon creation of the app and available
+    to the plugin for setup_login.
+
+    LoginSettingsForProduct is obtained composing those with the overrides defined for each
+    product in the  database.
+
+    This is initialized for each product during on_startup events at the setup_login
+    """
+
+    @classmethod
+    def create_from_composition(
+        cls,
+        app_login_settings: LoginSettings,
+        product_login_settings: ProductLoginSettingsDict,
+    ) -> "LoginSettingsForProduct":
+        """
+        For the LoginSettings, product-specific settings override app-specifics settings
+        """
+        composed_settings = {**app_login_settings.dict(), **product_login_settings}
+
+        if "two_factor_enabled" in composed_settings:
+            # legacy safe
+            composed_settings["LOGIN_2FA_REQUIRED"] = composed_settings.pop(
+                "two_factor_enabled"
+            )
+        return cls(**composed_settings)
+
+
 class LoginOptions(BaseModel):
-    """These options are NOT directly exposed to the env vars due to security reasons."""
+    """These options are NOT directly exposed to the env vars due to security reasons.
+
+    NOTE: This is legacy from first version and should not be extended anymore
+    """
 
     PASSWORD_LEN: tuple[PositiveInt, PositiveInt] = (6, 30)
     LOGIN_REDIRECT: str = "/"
     LOGOUT_REDIRECT: str = "/"
 
-    SMTP_SENDER: str
     SMTP_HOST: str
     SMTP_PORT: int
     SMTP_PROTOCOL: EmailProtocol
@@ -91,39 +130,14 @@ class LoginOptions(BaseModel):
         value = getattr(self, f"{action.upper()}_CONFIRMATION_LIFETIME")
         return timedelta(days=value)
 
-    MSG_LOGGED_IN: str = "You are logged in"
-    MSG_LOGGED_OUT: str = "You are logged out"
-    MSG_2FA_CODE_SENT: str = "Code sent by SMS to {phone_number}"
-    MSG_ACTIVATED: str = "Your account is activated"
-    MSG_UNKNOWN_EMAIL: str = "This email is not registered"
-    MSG_WRONG_PASSWORD: str = "Wrong password"
-    MSG_PASSWORD_MISMATCH: str = "Password and confirmation do not match"
-    MSG_USER_BANNED: str = "This user does not have anymore access. Please contact support for further details: {support_email}"
-    MSG_USER_EXPIRED: str = "This account has expired and does not have anymore access. Please contact support for further details: {support_email}"
-    MSG_ACTIVATION_REQUIRED: str = (
-        "You have to activate your account via email, before you can login"
-    )
-    MSG_EMAIL_EXISTS: str = "This email is already registered"
-    MSG_OFTEN_RESET_PASSWORD: str = (
-        "You can not request of restoring your password so often. Please, use"
-        " the link we sent you recently"
-    )
 
-    MSG_CANT_SEND_MAIL: str = "Can't send email, try a little later"
-    MSG_PASSWORDS_NOT_MATCH: str = "Passwords must match"
-    MSG_PASSWORD_CHANGED: str = "Your password is changed"
-    MSG_CHANGE_EMAIL_REQUESTED: str = (
-        "Please, click on the verification link we sent to your new email address"
-    )
-    MSG_EMAIL_CHANGED: str = "Your email is changed"
-    MSG_AUTH_FAILED: str = "Authorization failed"
-    MSG_EMAIL_SENT: str = "An email has been sent to {email} with further instructions"
-
-
-def get_plugin_settings(app: web.Application) -> LoginSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
+def get_plugin_settings(
+    app: web.Application, product_name: str
+) -> LoginSettingsForProduct:
+    """login plugin's settings are customized per product"""
+    settings = app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY][product_name]
     assert settings, "setup_settings not called?"  # nosec
-    assert isinstance(settings, LoginSettings)  # nosec
+    assert isinstance(settings, LoginSettingsForProduct)  # nosec
     return settings
 
 

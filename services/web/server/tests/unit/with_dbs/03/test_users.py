@@ -23,12 +23,12 @@ from pytest_simcore.helpers.utils_tokens import (
     get_token_from_db,
 )
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session

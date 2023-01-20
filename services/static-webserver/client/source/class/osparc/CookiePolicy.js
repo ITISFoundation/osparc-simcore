@@ -82,13 +82,21 @@ qx.Class.define("osparc.CookiePolicy", {
           });
           break;
         case "license-text": {
-          const licenseLink = osparc.navigation.Manuals.getLicenseLink();
-          const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
-          const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ") + textLink;
+          const text = this.tr("It also uses third party software and libraries. By visiting the site, you agree to the ");
           control = new qx.ui.basic.Label(text).set({
             rich : true
           });
+          osparc.store.Support.getLicenseURL()
+            .then(licenseLink => {
+              const lbl = control.getValue();
+              if (licenseLink) {
+                const color = qx.theme.manager.Color.getInstance().resolve("text");
+                const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
+                control.setValue(lbl + textLink);
+              } else {
+                control.setValue(lbl + this.tr("Licensing."));
+              }
+            });
           this._add(control, {
             column: 0,
             row: 1

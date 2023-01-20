@@ -5,11 +5,105 @@
     - Every product has a front-end with exactly the same name
 """
 
+import json
+from typing import Literal, TypedDict
+
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
+from .groups import groups
 from .jinja2_templates import jinja2_templates
+
+# NOTE: a default entry is created in the table Product
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
+
+
+#
+# Layout of the data in the JSONB columns
+#
+
+
+class Vendor(TypedDict, total=False):
+    """
+        Brand information about the vendor
+    E.g. company name, address, copyright, etc.
+    """
+
+    name: str
+    copyright: str
+    url: str
+    license_url: str  # Which are the license terms? (if applies)
+    invitation_url: str  # How to request a trial invitation? (if applies)
+
+
+class IssueTracker(TypedDict, total=True):
+    """Link to actions in an online issue tracker (e.g. in fogbugz, github, gitlab ...)
+
+    e.g. URL to create a new issue for this product
+
+    new_url=https://github.com/ITISFoundation/osparc-simcore/issues/new/choose
+    """
+
+    label: str
+    login_url: str
+    new_url: str
+
+
+class Manual(TypedDict, total=True):
+    label: str
+    url: str
+
+
+class WebFeedback(TypedDict, total=True):
+    """URL to a feedback form (e.g. google forms etc)"""
+
+    kind: Literal["web"]
+    label: str
+    url: str
+
+
+class EmailFeedback(TypedDict, total=True):
+    """Give feedback via email"""
+
+    kind: Literal["email"]
+    label: str
+    email: str
+
+
+class Forum(TypedDict, total=True):
+    """Link to a forum"""
+
+    kind: Literal["forum"]
+    label: str
+    url: str
+
+
+class ProductLoginSettingsDict(TypedDict, total=False):
+    """Login plugin settings customized for this product
+
+    Overrides simcore_service_webserver.login.settings.LoginSettings
+    (i.e. if not defined, the values of LoginSettings apply)
+
+    NOTE: These attributes need to match those of LoginSettings
+    """
+
+    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool
+    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
+    LOGIN_2FA_REQUIRED: bool  # previously 'two_factor_enabled'
+
+
+# NOTE: defaults affects migration!!
+LOGIN_SETTINGS_DEFAULT = ProductLoginSettingsDict()  # = {}
+_LOGIN_SETTINGS_SERVER_DEFAULT = json.dumps(LOGIN_SETTINGS_DEFAULT)
+
+
+#
+# Table
+#
+# NOTE: a default entry is created in the table Product
+# see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
 
 products = sa.Table(
     "products",
@@ -59,40 +153,36 @@ products = sa.Table(
         "When set to None, this feature is disabled.",
     ),
     sa.Column(
-        "manual_url",
-        sa.String,
+        "vendor",
+        JSONB,
+        nullable=True,
+        doc="Info about the Vendor",
+    ),
+    sa.Column(
+        "issues",
+        JSONB,
+        nullable=True,
+        doc="Issue trackers: list[IssueTracker]",
+    ),
+    sa.Column(
+        "manuals",
+        JSONB,
+        nullable=True,
+        doc="User manuals: list[Manual]",
+    ),
+    sa.Column(
+        "support",
+        JSONB,
+        nullable=True,
+        doc="User support: list[Forum | EmailFeedback | WebFeedback ]",
+    ),
+    sa.Column(
+        "login_settings",
+        JSONB,
         nullable=False,
-        server_default="https://itisfoundation.github.io/osparc-manual/",
-        doc="URL to main product's manual",
-    ),
-    sa.Column(
-        "manual_extra_url",
-        sa.String,
-        nullable=True,
-        server_default="https://itisfoundation.github.io/osparc-manual-z43/",
-        doc="URL to extra product's manual",
-    ),
-    sa.Column(
-        "issues_login_url",
-        sa.String,
-        nullable=True,
-        server_default="https://github.com/ITISFoundation/osparc-simcore/issues",
-        doc="URL to login in the issue tracker site"
-        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
-    ),
-    sa.Column(
-        "issues_new_url",
-        sa.String,
-        nullable=True,
-        server_default="https://github.com/ITISFoundation/osparc-simcore/issues/new",
-        doc="URL to create a new issue for this product (e.g. fogbugz new case, github new issues)"
-        "NOTE: Set nullable because some POs consider that issue tracking is optional in some products.",
-    ),
-    sa.Column(
-        "feedback_form_url",
-        sa.String,
-        nullable=True,
-        doc="URL to a feedback form (e.g. google forms etc)",
+        server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
+        "SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "registration_email_template",
@@ -120,6 +210,31 @@ products = sa.Table(
         server_default=func.now(),
         onupdate=func.now(),
         doc="Automaticaly updates on modification of the row",
+    ),
+    sa.Column(
+        "priority",
+        sa.Integer(),
+        server_default=sa.text("0"),
+        doc="Index used to sort the products. E.g. determine default",
+    ),
+    sa.Column(
+        "max_open_studies_per_user",
+        sa.Integer(),
+        nullable=True,
+        doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+    ),
+    sa.Column(
+        "group_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            groups.c.gid,
+            name="fk_products_group_id",
+            ondelete="SET NULL",
+            onupdate="CASCADE",
+        ),
+        unique=True,
+        nullable=True,
+        doc="Group associated to this product",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

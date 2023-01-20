@@ -19,9 +19,11 @@ from aiohttp import web
 from aiohttp_session import get_session
 from servicelib.error_codes import create_error_code
 
-from .._constants import INDEX_RESOURCE_NAME, RQ_PRODUCT_FRONTEND_KEY
+from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
+from ..products import get_product_name
 from ..projects.projects_db import ProjectDBAPI
+from ..projects.projects_exceptions import ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
@@ -44,15 +46,14 @@ def compose_uuid(template_uuid, user_id, query="") -> str:
     return new_uuid
 
 
-# TODO: from .projects import get_public_project
 async def get_public_project(app: web.Application, project_uuid: str):
     """
     Returns project if project_uuid is a template and is marked as published, otherwise None
     """
-    from ..projects.projects_db import APP_PROJECT_DBAPI
-
-    db = app[APP_PROJECT_DBAPI]
-    prj = await db.get_template_project(project_uuid, only_published=True)
+    db = ProjectDBAPI.get_from_app_context(app)
+    prj, _ = await db.get_project(
+        -1, project_uuid, only_published=True, only_templates=True
+    )
     return prj
 
 
@@ -144,7 +145,6 @@ async def copy_study_to_account(
     - Avoids multiple copies of the same template on each account
     """
     from ..projects.projects_db import APP_PROJECT_DBAPI
-    from ..projects.projects_exceptions import ProjectNotFoundError
     from ..projects.projects_utils import (
         clone_project_document,
         substitute_parameterized_inputs,
@@ -162,7 +162,7 @@ async def copy_study_to_account(
 
     try:
         # Avoids multiple copies of the same template on each account
-        await db.get_user_project(user["id"], project_uuid)
+        await db.get_project(user["id"], project_uuid)
 
         # FIXME: if template is parametrized and user has already a copy, then delete it and create a new one??
 
@@ -187,7 +187,7 @@ async def copy_study_to_account(
         await db.add_project(
             project,
             user["id"],
-            product_name=request[RQ_PRODUCT_FRONTEND_KEY],
+            product_name=get_product_name(request),
             force_project_uuid=True,
         )
         async for lr_task in copy_data_folders_from_project(
@@ -222,7 +222,13 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     # TODO: implement nice error-page.html
     project_id = request.match_info["id"]
 
-    template_project = await get_public_project(request.app, project_id)
+    try:
+        template_project = await get_public_project(request.app, project_id)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Requested study ({project_id}) has not been published.\
+             Please contact the data curators for more information."
+        ) from exc
     if not template_project:
         raise web.HTTPNotFound(
             reason=f"Requested study ({project_id}) has not been published.\

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.10.0
+  version: 0.14.1
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -32,10 +32,6 @@ tags:
   - name: storage
   - name: activity
   - name: tag
-    description: |
-      Grouping the paths and operations that perform changes on the TAG entity.
-      Tags are customized visual elements that help the user group and quickly identify different items
-      on the interface. They can also be used for searching and filtering purposes.
   - name: tasks
     description: |
       Asynchronously running tasks
@@ -77,6 +73,9 @@ paths:
 
   /auth/register:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1register"
+
+  /auth/two_factor:resend:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1two_factor:resend"
 
   /auth/verify-phone-number:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1verify-phone-number"
@@ -239,6 +238,9 @@ paths:
 
   /projects/{project_id}/outputs:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1outputs"
+
+  /projects/{project_id}/metadata/ports:
+    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1metadata~1ports"
 
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"

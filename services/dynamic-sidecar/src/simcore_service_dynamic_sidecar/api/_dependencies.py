@@ -1,11 +1,15 @@
 """ Free functions to inject dependencies in routes handlers
 """
 
+from asyncio import Lock
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
+from simcore_service_dynamic_sidecar.modules.outputs import (
+    OutputsContext,
+    OutputsManager,
+)
 
-from ..core.rabbitmq import RabbitMQ
 from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
@@ -34,9 +38,17 @@ def get_shared_store(app_state: State = Depends(get_app_state)) -> SharedStore:
     return app_state.shared_store  # type: ignore
 
 
-def get_rabbitmq(app_state: State = Depends(get_app_state)) -> RabbitMQ:
-    return app_state.rabbitmq  # type: ignore
-
-
 def get_mounted_volumes(app_state: State = Depends(get_app_state)) -> MountedVolumes:
     return app_state.mounted_volumes  # type: ignore
+
+
+def get_container_restart_lock(app_state: State = Depends(get_app_state)) -> Lock:
+    return app_state.container_restart_lock  # type: ignore
+
+
+def get_outputs_manager(app_state: State = Depends(get_app_state)) -> OutputsManager:
+    return app_state.outputs_manager  # type: ignore
+
+
+def get_outputs_context(app_state: State = Depends(get_app_state)) -> OutputsContext:
+    return app_state.outputs_context  # type: ignore

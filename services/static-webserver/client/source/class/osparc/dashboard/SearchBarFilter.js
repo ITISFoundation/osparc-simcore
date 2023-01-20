@@ -185,17 +185,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
         icon: "@MaterialIcons/close/12",
         iconPosition: "right",
-        paddingRight: 4,
-        paddingLeft: 4,
+        paddingRight: 6,
+        paddingLeft: 6,
         alignY: "middle",
         toolTipText: chipLabel,
         maxHeight: 26,
-        maxWidth: 180
+        maxWidth: 180,
+        backgroundColor: "background-main-1"
       });
       chipButton.type = chipType;
       chipButton.id = chipId;
       chipButton.getContentElement().setStyles({
-        "border-radius": "4px"
+        "border-radius": "6px"
       });
       chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
       return chipButton;

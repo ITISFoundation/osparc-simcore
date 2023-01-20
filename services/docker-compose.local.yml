@@ -53,6 +53,10 @@ services:
       - "8000"
       - "3010:3000"
 
+  invitations:
+    ports:
+      - "8008:8000"
+
   storage:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
@@ -86,8 +90,12 @@ services:
       - "3011:3000"
 
   agent:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
       - LOGLEVEL=${LOG_LEVEL:-INFO}
+      - AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
 
   dask-sidecar:
     environment:

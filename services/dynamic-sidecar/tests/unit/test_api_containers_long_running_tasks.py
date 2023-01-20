@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=no-member
 
 import json
 from collections import namedtuple
@@ -27,7 +28,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import FixtureRequest
+from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -40,6 +41,8 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -121,19 +124,19 @@ def dynamic_sidecar_network_name() -> str:
             "version": "3",
             "services": {
                 "first-box": {
-                    "image": "busybox",
+                    "image": "busybox:latest",
                     "networks": [
                         _get_dynamic_sidecar_network_name(),
                     ],
                 },
-                "second-box": {"image": "busybox"},
+                "second-box": {"image": "busybox:latest"},
             },
             "networks": {_get_dynamic_sidecar_network_name(): {}},
         },
         {
             "version": "3",
             "services": {
-                "solo-box": {"image": "busybox"},
+                "solo-box": {"image": "busybox:latest"},
             },
         },
     ]
@@ -211,7 +214,7 @@ def mock_data_manager(mocker: MockerFixture) -> None:
 @pytest.fixture()
 def mock_nodeports(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         return_value=None,
     )
     mocker.patch(
@@ -228,8 +231,18 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-def mock_port_keys(request: FixtureRequest) -> list[str]:
+async def mock_port_keys(
+    request: FixtureRequest, client: Client
+) -> Optional[list[str]]:
+    outputs_context: OutputsContext = client.app.state.outputs_context
+    if request.param is not None:
+        await outputs_context.set_file_type_port_keys(request.param)
     return request.param
+
+
+@pytest.fixture
+def outputs_manager(client: Client) -> OutputsManager:
+    return client.app.state.outputs_manager
 
 
 @pytest.fixture
@@ -243,7 +256,7 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
         raise NodeNotFound(missing_node_uuid)
 
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.upload_outputs",
+        "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mocked,
     )
 
@@ -287,7 +300,7 @@ async def _get_task_id_state_save(
 
 
 async def _get_task_id_task_ports_inputs_pull(
-    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys
@@ -298,7 +311,7 @@ async def _get_task_id_task_ports_inputs_pull(
 
 
 async def _get_task_id_task_ports_outputs_pull(
-    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys
@@ -309,10 +322,10 @@ async def _get_task_id_task_ports_outputs_pull(
 
 
 async def _get_task_id_task_ports_outputs_push(
-    httpx_async_client: AsyncClient, port_keys: list[str], *args, **kwargs
+    httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:push", json=port_keys
+        f"/{API_VTAG}/containers/ports/outputs:push"
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -329,6 +342,10 @@ async def _get_task_id_task_containers_restart(
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id
+
+
+async def _debug_progress(message: str, percent: float, task_id: TaskId) -> None:
+    print(f"{task_id} {percent} {message}")
 
 
 async def test_create_containers_task(
@@ -369,6 +386,7 @@ async def test_create_containers_task_invalid_yaml_spec(
             ),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
+            progress_callback=_debug_progress,
         ):
             pass
     assert "raise InvalidComposeSpec" in f"{exec_info.value}"
@@ -432,6 +450,7 @@ async def test_containers_down_after_starting(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert shared_store.container_names == result
 
@@ -441,22 +460,25 @@ async def test_containers_down_after_starting(
         task_id=await _get_task_id_docker_compose_down(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
 
 async def test_containers_down_missing_spec(
-    httpx_async_client: AsyncClient, client: Client
+    httpx_async_client: AsyncClient,
+    client: Client,
+    caplog_info_debug: LogCaptureFixture,
 ):
-    with pytest.raises(TaskClientResultError) as exec_info:
-        async with periodic_task_result(
-            client=client,
-            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
-            task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-            status_poll_interval=FAST_STATUS_POLL,
-        ) as result:
-            assert result is None
-    assert 'RuntimeError("No compose-spec was found")' in f"{exec_info.value}"
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
+    ) as result:
+        assert result is None
+    assert "No compose-spec was found" in caplog_info_debug.text
 
 
 async def test_container_restore_state(
@@ -467,6 +489,7 @@ async def test_container_restore_state(
         task_id=await _get_task_id_state_restore(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -479,6 +502,7 @@ async def test_container_save_state(
         task_id=await _get_task_id_state_save(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -486,7 +510,7 @@ async def test_container_save_state(
 async def test_container_pull_input_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -496,6 +520,7 @@ async def test_container_pull_input_ports(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result == 42
 
@@ -503,7 +528,7 @@ async def test_container_pull_input_ports(
 async def test_container_pull_output_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -513,6 +538,7 @@ async def test_container_pull_output_ports(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result == 42
 
@@ -520,7 +546,7 @@ async def test_container_pull_output_ports(
 async def test_container_push_output_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -530,6 +556,7 @@ async def test_container_push_output_ports(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
@@ -537,11 +564,16 @@ async def test_container_push_output_ports(
 async def test_container_push_output_ports_missing_node(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: list[str],
+    mock_port_keys: Optional[list[str]],
     missing_node_uuid: str,
     mock_node_missing: None,
+    outputs_manager: OutputsManager,
 ):
-    with pytest.raises(TaskClientResultError) as exec_info:
+
+    for port_key in mock_port_keys if mock_port_keys else []:
+        await outputs_manager.port_key_content_changed(port_key)
+
+    async def _test_code() -> None:
         async with periodic_task_result(
             client=client,
             task_id=await _get_task_id_task_ports_outputs_push(
@@ -549,9 +581,16 @@ async def test_container_push_output_ports_missing_node(
             ),
             task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=FAST_STATUS_POLL,
+            progress_callback=_debug_progress,
         ):
             pass
-    assert f"the node id {missing_node_uuid} was not found" in f"{exec_info.value}"
+
+    if not mock_port_keys:
+        await _test_code()
+    else:
+        with pytest.raises(TaskClientResultError) as exec_info:
+            await _test_code()
+        assert f"the node id {missing_node_uuid} was not found" in f"{exec_info.value}"
 
 
 async def test_containers_restart(
@@ -567,6 +606,7 @@ async def test_containers_restart(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as container_names:
         assert shared_store.container_names == container_names
 
@@ -581,6 +621,7 @@ async def test_containers_restart(
         ),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
     ) as result:
         assert result is None
 

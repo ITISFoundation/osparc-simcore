@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.10.0
+  version: 0.14.1
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -32,10 +32,6 @@ tags:
   - name: storage
   - name: activity
   - name: tag
-    description: |
-      Grouping the paths and operations that perform changes on the TAG entity.
-      Tags are customized visual elements that help the user group and quickly identify different items
-      on the interface. They can also be used for searching and filtering purposes.
   - name: tasks
     description: |
       Asynchronously running tasks
@@ -157,491 +153,791 @@ paths:
                     properties:
                       invitation_required:
                         type: boolean
-                      login_2fa_required:
-                        type: boolean
                     example:
                       invitation_required: true
-                      login_2fa_required: false
                   error:
                     nullable: true
                     default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /scheduled_maintenance:
+    get:
+      tags:
+        - maintenance
+      summary: Get Scheduled Maintenance
+      operationId: get_scheduled_maintenance
+      responses:
+        '200':
+          description: Maintenance scheduled
+          content:
+            application/json:
+              schema:
+                title: ScheduledMaintenance
+                type: object
+                properties:
+                  start:
+                    title: Start
+                    type: string
+                    description: At what time the Maintenance starts (UTC)
+                  end:
+                    title: End
+                    type: string
+                    description: At what time the Maintenance ends (UTC)
+                  reason:
+                    title: Reason
+                    type: string
+                    description: What the purpose of the Maintenance is
+                additionalProperties: false
+        '204':
+          description: No maintenance scheduled
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/register:
     post:
-      operationId: auth_register
       tags:
         - authentication
+      summary: Register
+      description: User registration
+      operationId: auth_register
       requestBody:
-        description: user registration
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                password:
-                  type: string
-                confirm:
-                  type: string
-                invitation:
-                  type: string
-                  description: Invitation code
+              title: RegisterBody
               required:
                 - email
                 - password
-              example:
-                email: foo@mymail.com
-                password: my secret
-                confirm: my secret
-                invitation: 33c451d4-17b7-4e65-9880-694559b8ffc2
+              type: object
+              properties:
+                email:
+                  title: Email
+                  type: string
+                  format: email
+                password:
+                  title: Password
+                  type: string
+                  format: password
+                  writeOnly: true
+                confirm:
+                  title: Confirm
+                  type: string
+                  description: Password confirmation
+                  format: password
+                  writeOnly: true
+                invitation:
+                  title: Invitation
+                  type: string
+                  description: Invitation code
+              additionalProperties: false
         required: true
       responses:
         '200':
-          description: User has been succesfully registered.
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/verify-phone-number:
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+  '/auth/two_factor:resend':
     post:
-      summary: user tries to verify phone number for 2 Factor Authentication when registering
       tags:
         - authentication
-      operationId: auth_verify_2fa_phone
+      summary: Resend 2Fa Code
+      description: Resends 2FA either via email or sms
+      operationId: auth_resend_2fa_code
       requestBody:
         content:
           application/json:
             schema:
-              type: object
+              title: Resend2faBody
               required:
                 - email
-                - phone
-              properties:
-                email:
-                  type: string
-                phone:
-                  type: string
-                  description: 'Phone number E.164, needed on the deployments with 2FA'
-              example:
-                email: foo@mymail.com
-                phone: '+41123456789'
-      responses:
-        '202':
-          description: 'Accepted, SMS sent'
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/validate-code-register:
-    post:
-      summary: user enters 2 Factor Authentication code when registering
-      tags:
-        - authentication
-      operationId: auth_validate_2fa_register
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - phone
-                - code
-              properties:
-                email:
-                  type: string
-                phone:
-                  type: string
-                  description: 'Phone number E.164, needed on the deployments with 2FA'
-                code:
-                  type: string
-              example:
-                email: foo@mymail.com
-                phone: '+41123456789'
-                code: '1234'
-      responses:
-        '200':
-          description: Succesfully validated
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/login:
-    post:
-      summary: user logs in
-      tags:
-        - authentication
-      operationId: auth_login
-      requestBody:
-        content:
-          application/json:
-            schema:
               type: object
               properties:
                 email:
+                  title: Email
                   type: string
-                password:
+                  description: User email (identifier)
+                  format: email
+                via:
+                  title: Via
+                  enum:
+                    - SMS
+                    - Email
                   type: string
-              example:
-                email: foo@mymail.com
-                password: my secret
+                  default: SMS
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: Succesfully logged in
+          description: Successful Response
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      level:
-                        description: log level
-                        type: string
-                        default: INFO
-                        enum:
-                          - DEBUG
-                          - WARNING
-                          - INFO
-                          - ERROR
-                      message:
-                        description: 'log message. If logger is USER, then it MUST be human readable'
-                        type: string
-                      logger:
-                        description: name of the logger receiving this message
-                        type: string
-                    required:
-                      - message
-                    example:
-                      message: 'Hi there, Mr user'
-                      level: INFO
-                      logger: user-logger
-                  error:
-                    nullable: true
-                    default: null
-        '202':
-          description: 'Accepted, but 2 Factor Authentication required'
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/validate-code-login:
-    post:
-      summary: user enters 2 Factor Authentication code when login in
-      tags:
-        - authentication
-      operationId: auth_validate_2fa_login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - code
-              properties:
-                email:
-                  type: string
-                code:
-                  type: string
-              example:
-                email: foo@mymail.com
-                code: '1234'
-      responses:
-        '200':
-          description: Succesfully logged in
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/logout:
-    post:
-      tags:
-        - authentication
-      operationId: auth_logout
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                client_session_id:
-                  type: string
-                  example: 5ac57685-c40f-448f-8711-70be1936fd63
-      responses:
-        '200':
-          description: Succesfully logged out
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/reset-password:
-    post:
-      summary: a non logged-in user requests a password reset
-      tags:
-        - authentication
-      operationId: auth_reset_password
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-              properties:
-                email:
-                  type: string
-              example:
-                email: foo@mymail.com
-      responses:
-        '200':
-          description: confirmation email sent to user
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
-        '503':
-          description: failed to send confirmation email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
-  '/auth/reset-password/{code}':
-    post:
-      tags:
-        - authentication
-      summary: changes password using a token code without being logged in
-      operationId: auth_reset_password_allowed
-      parameters:
-        - name: code
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - password
-                - confirm
-              properties:
-                password:
-                  type: string
-                confirm:
-                  type: string
-              example:
-                password: my secret
-                confirm: my secret
-      responses:
-        '200':
-          description: password was successfully changed
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /auth/change-email:
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+  /auth/verify-phone-number:
     post:
-      summary: logged in user changes email
       tags:
         - authentication
+      summary: Register Phone
+      description: user tries to verify phone number for 2 Factor Authentication when registering
+      operationId: auth_register_phone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: RegisterPhoneBody
+              required:
+                - email
+                - phone
+              type: object
+              properties:
+                email:
+                  title: Email
+                  type: string
+                  format: email
+                phone:
+                  title: Phone
+                  type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[RegisterPhoneNextPage]'
+                type: object
+                properties:
+                  data:
+                    title: RegisterPhoneNextPage
+                    required:
+                      - name
+                      - message
+                    type: object
+                    properties:
+                      name:
+                        title: Name
+                        type: string
+                        description: Code name to the front-end page
+                      parameters:
+                        title: _PageParams
+                        type: object
+                        properties:
+                          retry_2fa_after:
+                            title: Retry 2Fa After
+                            exclusiveMinimum: true
+                            type: integer
+                            minimum: 0
+                      logger:
+                        title: Logger
+                        type: string
+                        default: user
+                        deprecated: true
+                      level:
+                        title: Level
+                        enum:
+                          - INFO
+                          - WARNING
+                          - ERROR
+                        type: string
+                        default: INFO
+                      message:
+                        title: Message
+                        type: string
+                    description: |-
+                      This is the body of a 2XX response to pass the front-end
+                      what kind of page shall be display next and some information about it
+
+                      An analogous structure is used in the redirects (see create_redirect_response) but
+                      using a path+query in the fragment of the URL
+                  error:
+                    title: Error
+  /auth/validate-code-register:
+    post:
+      tags:
+        - authentication
+      summary: Phone Confirmation
+      description: user enters 2 Factor Authentication code when registering
+      operationId: auth_phone_confirmation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: PhoneConfirmationBody
+              required:
+                - email
+                - phone
+                - code
+              type: object
+              properties:
+                email:
+                  title: Email
+                  type: string
+                  format: email
+                phone:
+                  title: Phone
+                  type: string
+                  description: 'Phone number E.164, needed on the deployments with 2FA'
+                code:
+                  title: Code
+                  type: string
+                  format: password
+                  writeOnly: true
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+  /auth/login:
+    post:
+      tags:
+        - authentication
+      summary: Login
+      description: user logs in
+      operationId: auth_login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: LoginBody
+              required:
+                - email
+                - password
+              type: object
+              properties:
+                email:
+                  title: Email
+                  type: string
+                  format: email
+                password:
+                  title: Password
+                  type: string
+                  format: password
+                  writeOnly: true
+              additionalProperties: false
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[LoginNextPage]'
+                type: object
+                properties:
+                  data:
+                    title: LoginNextPage
+                    required:
+                      - name
+                      - code
+                      - reason
+                    type: object
+                    properties:
+                      name:
+                        title: Name
+                        type: string
+                        description: Code name to the front-end page
+                      parameters:
+                        title: CodePageParams
+                        required:
+                          - message
+                        type: object
+                        properties:
+                          message:
+                            title: Message
+                            type: string
+                          retry_2fa_after:
+                            title: Retry 2Fa After
+                            exclusiveMinimum: true
+                            type: integer
+                            minimum: 0
+                          next_url:
+                            title: Next Url
+                            type: string
+                      code:
+                        title: Code
+                        type: string
+                        deprecated: true
+                      reason:
+                        title: Reason
+                        type: string
+                        deprecated: true
+                    description: |-
+                      This is the body of a 2XX response to pass the front-end
+                      what kind of page shall be display next and some information about it
+
+                      An analogous structure is used in the redirects (see create_redirect_response) but
+                      using a path+query in the fragment of the URL
+                  error:
+                    title: Error
+        '401':
+          description: unauthorized reset due to invalid token code
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Error]'
+                type: object
+                properties:
+                  data:
+                    title: Error
+                    type: object
+                    properties:
+                      logs:
+                        title: Logs
+                        type: array
+                        items:
+                          $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema/properties/data'
+                        description: log messages
+                      errors:
+                        title: Errors
+                        type: array
+                        items:
+                          title: ErrorItem
+                          required:
+                            - code
+                            - message
+                          type: object
+                          properties:
+                            code:
+                              title: Code
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              title: Message
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              title: Resource
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              title: Field
+                              type: string
+                              description: Specific field within the resource
+                        description: errors metadata
+                      status:
+                        title: Status
+                        type: integer
+                        description: HTTP error code
+                  error:
+                    title: Error
+  /auth/validate-code-login:
+    post:
+      tags:
+        - authentication
+      summary: Login 2Fa
+      description: user enters 2 Factor Authentication code when login in
+      operationId: auth_login_2fa
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: LoginTwoFactorAuthBody
+              required:
+                - email
+                - code
+              type: object
+              properties:
+                email:
+                  title: Email
+                  type: string
+                  format: email
+                code:
+                  title: Code
+                  type: string
+                  format: password
+                  writeOnly: true
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+        '401':
+          description: unauthorized reset due to invalid token code
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+  /auth/logout:
+    post:
+      tags:
+        - authentication
+      summary: Logout
+      description: user logout
+      operationId: auth_logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: LogoutBody
+              type: object
+              properties:
+                client_session_id:
+                  title: Client Session Id
+                  type: string
+                  example: 5ac57685-c40f-448f-8711-70be1936fd63
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Log]'
+                type: object
+                properties:
+                  data:
+                    title: Log
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      level:
+                        allOf:
+                          - title: LogLevel
+                            enum:
+                              - DEBUG
+                              - INFO
+                              - WARNING
+                              - ERROR
+                            type: string
+                            description: An enumeration.
+                        description: log level
+                        default: INFO
+                      message:
+                        title: Message
+                        type: string
+                        description: 'log message. If logger is USER, then it MUST be human readable'
+                      logger:
+                        title: Logger
+                        type: string
+                        description: name of the logger receiving this message
+                    example:
+                      message: 'Hi there, Mr user'
+                      level: INFO
+                      logger: user-logger
+                  error:
+                    title: Error
+  /auth/reset-password:
+    post:
+      tags:
+        - authentication
+      summary: Reset Password
+      description: a non logged-in user requests a password reset
+      operationId: auth_reset_password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: ResetPasswordBody
+              required:
+                - email
+              type: object
+              properties:
+                email:
+                  title: Email
+                  type: string
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+  '/auth/reset-password/{code}':
+    post:
+      tags:
+        - authentication
+      summary: Reset Password Allowed
+      description: changes password using a token code without being logged in
+      operationId: auth_reset_password_allowed
+      parameters:
+        - required: true
+          schema:
+            title: Code
+            type: string
+          name: code
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: ResetPasswordConfirmation
+              required:
+                - password
+                - confirm
+              type: object
+              properties:
+                password:
+                  title: Password
+                  type: string
+                  format: password
+                  writeOnly: true
+                confirm:
+                  title: Confirm
+                  type: string
+                  format: password
+                  writeOnly: true
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+        '401':
+          description: unauthorized reset due to invalid token code
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+  /auth/change-email:
+    post:
+      tags:
+        - authentication
+      summary: Change Email
+      description: logged in user changes email
       operationId: auth_change_email
       requestBody:
         content:
           application/json:
             schema:
-              type: object
+              title: ChangeEmailBody
               required:
                 - email
+              type: object
               properties:
                 email:
+                  title: Email
                   type: string
-              example:
-                email: foo@mymail.com
+                  format: email
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: confirmation sent to new email to complete operation
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
         '503':
           description: unable to send confirmation email
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
   /auth/change-password:
     post:
-      summary: logged in user changes password
       tags:
         - authentication
+      summary: Change Password
+      description: logged in user changes password
       operationId: auth_change_password
       requestBody:
         content:
           application/json:
             schema:
-              type: object
+              title: ChangePasswordBody
               required:
                 - current
                 - new
                 - confirm
+              type: object
               properties:
                 current:
+                  title: Current
                   type: string
+                  format: password
+                  writeOnly: true
                 new:
+                  title: New
                   type: string
+                  format: password
+                  writeOnly: true
                 confirm:
+                  title: Confirm
                   type: string
-              example:
-                current: my secret
-                new: my new secret
-                confirm: my new secret
+                  format: password
+                  writeOnly: true
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: password was successfully changed
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
         '409':
           description: mismatch between new and confirmation passwords
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
         '422':
           description: current password is invalid
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/DefaultErrorResponse/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
   '/auth/confirmation/{code}':
     get:
-      summary: email link sent to user to confirm an action
       tags:
         - authentication
+      summary: Email Confirmation
+      description: email link sent to user to confirm an action
       operationId: auth_confirmation
       parameters:
-        - name: code
-          in: path
-          required: true
+        - required: true
           schema:
+            title: Code
             type: string
+          name: code
+          in: path
       responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
         3XX:
           description: redirection to specific ui application page
   /auth/api-keys:
     get:
-      summary: lists display names of API keys by this user
       tags:
         - authentication
+      summary: List Api Keys
+      description: lists display names of API keys by this user
       operationId: list_api_keys
+      parameters:
+        - required: true
+          schema:
+            title: Code
+            type: string
+          name: code
+          in: query
       responses:
         '200':
           description: returns the display names of API keys
           content:
             application/json:
               schema:
+                title: Response 200 List Api Keys
                 type: array
                 items:
                   type: string
+        '400':
+          description: key name requested is invalid
         '401':
           description: requires login to  list keys
         '403':
           description: not enough permissions to list keys
     post:
-      summary: creates API keys to access public API
       tags:
         - authentication
+      summary: Create Api Key
+      description: creates API keys to access public API
       operationId: create_api_key
       requestBody:
-        description: user registration
         content:
           application/json:
             schema:
-              type: object
+              title: ApiKeyCreate
               required:
                 - display_name
+              type: object
               properties:
                 display_name:
+                  title: Display Name
+                  minLength: 3
                   type: string
                 expiration:
+                  title: Expiration
                   type: number
-                  description: expiration delta in seconds
+                  description: 'Time delta from creation time to expiration. If None, then it does not expire.'
+                  format: time-delta
+        required: true
       responses:
         '200':
           description: Authorization granted returning API key
           content:
             application/json:
               schema:
+                title: ApiKeyGet
+                required:
+                  - display_name
+                  - api_key
+                  - api_secret
                 type: object
                 properties:
                   display_name:
+                    title: Display Name
+                    minLength: 3
                     type: string
                   api_key:
+                    title: Api Key
                     type: string
                   api_secret:
+                    title: Api Secret
                     type: string
         '400':
           description: key name requested is invalid
         '401':
-          description: requires login to  create a key
+          description: requires login to  list keys
         '403':
-          description: not enough permissions to create a key
+          description: not enough permissions to list keys
     delete:
-      summary: deletes API key by name
       tags:
         - authentication
+      summary: Delete Api Key
+      description: deletes API key by name
       operationId: delete_api_key
       requestBody:
-        description: deletes given api key by name
         content:
           application/json:
             schema:
               $ref: '#/paths/~1auth~1api-keys/post/requestBody/content/application~1json/schema'
+        required: true
       responses:
         '204':
           description: api key successfully deleted
@@ -840,6 +1136,8 @@ paths:
                         items:
                           $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
                       all:
+                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                      product:
                         $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
@@ -2302,7 +2600,9 @@ paths:
                                 - 0
                                 - 2
                             instructions:
-                              type: string
+                              type:
+                                - string
+                                - 'null'
                               description: Instructions about what to do in this step
                               example:
                                 - This is a **sleeper**
@@ -3122,14 +3422,14 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectPortGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
                     title: Data
                     type: object
                     additionalProperties:
-                      title: ProjectPortGet
+                      title: ProjectInputGet
                       required:
                         - key
                         - value
@@ -3170,7 +3470,7 @@ paths:
               title: Updates
               type: array
               items:
-                title: ProjectPort
+                title: ProjectInputUpdate
                 required:
                   - key
                   - value
@@ -3213,7 +3513,84 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects.projects_ports_handlers.ProjectOutputGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: object
+                    additionalProperties:
+                      title: ProjectOutputGet
+                      required:
+                        - key
+                        - value
+                        - label
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        value:
+                          title: Value
+                          description: Value assigned to this i/o port
+                        label:
+                          title: Label
+                          type: string
+                  error:
+                    title: Error
+  '/projects/{project_id}/metadata/ports':
+    get:
+      tags:
+        - project
+      summary: List Project Metadata Ports
+      description: New in version *0.12*
+      operationId: list_project_metadata_ports
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.projects.projects_ports_handlers.ProjectMetadataPortGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: ProjectMetadataPortGet
+                      required:
+                        - key
+                        - kind
+                      type: object
+                      properties:
+                        key:
+                          title: Key
+                          type: string
+                          description: Project port's unique identifer. Same as the UUID of the associated port node
+                          format: uuid
+                        kind:
+                          title: Kind
+                          enum:
+                            - input
+                            - output
+                          type: string
+                        content_schema:
+                          title: Content Schema
+                          type: object
+                          description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
+                  error:
+                    title: Error
   '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
     get:
       tags:
@@ -4382,96 +4759,156 @@ paths:
     get:
       tags:
         - tag
-      summary: List all tags for the current user
+      summary: List Tags
       operationId: list_tags
       responses:
         '200':
-          description: List of tags
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
-                    type: object
-                    required:
-                      - tags
-                    properties:
-                      tags:
-                        type: array
-                        items:
-                          $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
     post:
       tags:
         - tag
-      summary: Creates a new tag
+      summary: Create Tag
       operationId: create_tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TagCreate
+              required:
+                - name
+                - color
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                description:
+                  title: Description
+                  type: string
+                color:
+                  title: Color
+                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  type: string
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: The created tag
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[TagGet]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
-                    type: object
+                    title: TagGet
                     required:
+                      - id
                       - name
                       - color
+                      - accessRights
+                    type: object
                     properties:
                       id:
+                        title: Id
+                        exclusiveMinimum: true
                         type: integer
+                        minimum: 0
                       name:
+                        title: Name
                         type: string
                       description:
+                        title: Description
                         type: string
                       color:
+                        title: Color
                         type: string
-                        pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                      accessRights:
+                        title: TagAccessRights
+                        required:
+                          - read
+                          - write
+                          - delete
+                        type: object
+                        properties:
+                          read:
+                            title: Read
+                            type: boolean
+                          write:
+                            title: Write
+                            type: boolean
+                          delete:
+                            title: Delete
+                            type: boolean
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
   '/tags/{tag_id}':
-    parameters:
-      - name: tag_id
-        in: path
-        required: true
-        schema:
-          type: integer
-    put:
+    delete:
       tags:
         - tag
-      summary: Updates a tag
+      summary: Delete Tag
+      operationId: delete_tag
+      parameters:
+        - required: true
+          schema:
+            title: Tag Id
+            type: integer
+          name: tag_id
+          in: path
+      responses:
+        '204':
+          description: Successful Response
+    patch:
+      tags:
+        - tag
+      summary: Update Tag
       operationId: update_tag
+      parameters:
+        - required: true
+          schema:
+            title: Tag Id
+            type: integer
+          name: tag_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TagUpdate
+              type: object
+              properties:
+                name:
+                  title: Name
+                  type: string
+                description:
+                  title: Description
+                  type: string
+                color:
+                  title: Color
+                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  type: string
+              additionalProperties: false
+        required: true
       responses:
         '200':
-          description: The updated tag
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-    delete:
-      tags:
-        - tag
-      summary: Deletes an existing tag
-      operationId: delete_tag
-      responses:
-        '204':
-          description: The tag has been successfully deleted
   /publications/service-submission:
     post:
       tags:
@@ -5714,7 +6151,29 @@ components:
                     description: log messages
                     type: array
                     items:
-                      $ref: '#/paths/~1auth~1login/post/responses/200/content/application~1json/schema/properties/data'
+                      type: object
+                      properties:
+                        level:
+                          description: log level
+                          type: string
+                          default: INFO
+                          enum:
+                            - DEBUG
+                            - WARNING
+                            - INFO
+                            - ERROR
+                        message:
+                          description: 'log message. If logger is USER, then it MUST be human readable'
+                          type: string
+                        logger:
+                          description: name of the logger receiving this message
+                          type: string
+                      required:
+                        - message
+                      example:
+                        message: 'Hi there, Mr user'
+                        level: INFO
+                        logger: user-logger
                   errors:
                     description: errors metadata
                     type: array

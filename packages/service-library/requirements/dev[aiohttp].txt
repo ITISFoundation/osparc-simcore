@@ -13,6 +13,7 @@
 --requirement _tools.txt
 
 # installs this repo's packages
+--editable ../settings-library/
 --editable ../pytest-simcore/
 
 # current module

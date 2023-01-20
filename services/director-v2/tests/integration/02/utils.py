@@ -107,7 +107,9 @@ async def _wait_for_service(service_name: str) -> None:
                 services = await docker_client.services.list(
                     filters={"name": service_name}
                 )
-                assert len(services) == 1, f"Docker service {service_name=} is missing"
+                assert (
+                    len(services) == 1
+                ), f"Docker service {service_name=} is missing, {services=}"
                 print(
                     f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})"
                 )
@@ -209,10 +211,12 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     # patch the endppoint inside the scheduler
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
     endpoint: Optional[str] = None
-    async with scheduler._lock:  # pylint: disable=protected-access
+    async with scheduler._scheduler._lock:  # pylint: disable=protected-access
         for (
             scheduler_data
-        ) in scheduler._to_observe.values():  # pylint: disable=protected-access
+        ) in (  # pylint: disable=protected-access
+            scheduler._scheduler._to_observe.values()
+        ):
             if scheduler_data.service_name == service_name:
                 scheduler_data.hostname = f"{get_localhost_ip()}"
                 scheduler_data.port = published_port
@@ -455,7 +459,7 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
         return exposed_port
 
 
-async def assert_service_is_available(  # pylint: disable=redefined-outer-name
+async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
     exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
 ) -> None:
     service_address = (
@@ -518,14 +522,14 @@ async def assert_services_reply_200(
         )
 
         try:
-            await assert_service_is_available(
+            await assert_service_is_ready(
                 exposed_port=exposed_port,
                 is_legacy=is_legacy(node_data),
                 service_uuid=service_uuid,
             )
         finally:
             await _inspect_service_and_print_logs(
-                tag=f"after_service_is_available {service_uuid}",
+                tag=f"after_service_is_ready {service_uuid}",
                 service_name=service_data["service_host"],
                 is_legacy=is_legacy(node_data),
             )

@@ -211,13 +211,10 @@ def docker_stack(
 
     # NOTE: if the migration service was already running prior to this call it must
     # be force updated so that it does its job. else it remains and tests will fail
-    migration_service_was_running_before = any(
-        filter(
-            lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
-        )
-    )
-    for migration_service in filter(
-        lambda s: "migration" in s.name, docker_client.services.list()  # type: ignore
+    for migration_service in (
+        service
+        for service in docker_client.services.list()
+        if "migration" in service.name  # type: ignore
     ):
         print(
             "WARNING: migration service detected before updating stack, it will be force-updated"

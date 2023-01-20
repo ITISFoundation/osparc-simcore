@@ -26,6 +26,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
@@ -38,9 +39,7 @@ from simcore_service_director_v2.models.schemas.comp_tasks import (
 from simcore_service_director_v2.models.schemas.services import ServiceExtras
 from starlette import status
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
@@ -58,6 +57,7 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
 def minimal_configuration(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
+    rabbit_service: RabbitSettings,
     monkeypatch: pytest.MonkeyPatch,
     mocked_rabbit_mq_client: None,
 ):

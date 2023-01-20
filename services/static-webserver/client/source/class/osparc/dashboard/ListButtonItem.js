@@ -27,6 +27,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
   construct: function() {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
+
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -96,17 +98,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tsr-rating": {
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
             alignY: "middle"
           })).set({
             toolTipText: this.tr("Ten Simple Rules"),
             minWidth: 85
           });
           const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          this._add(tsrLayout, {
+          control.add(tsrLabel);
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          control.add(tsrRating);
+          this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TSR
           });
@@ -125,7 +127,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         case "hits-service": {
           control = new qx.ui.basic.Label().set({
             alignY: "middle",
-            toolTipText: this.tr("Number of times it was instantiated")
+            toolTipText: this.tr("Number of times you instantiated it")
           });
           this._add(control, {
             row: 0,
@@ -196,94 +198,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       return;
     },
 
-    _applyAccessRights: function(value, old) {
+    _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
-        const sharedIcon = this.getChildControl("shared-icon");
-        sharedIcon.addListener("tap", e => {
-          e.stopPropagation();
-          this._openAccessRights();
-        }, this);
-        sharedIcon.addListener("pointerdown", e => e.stopPropagation());
-
-        const store = osparc.store.Store.getInstance();
-        Promise.all([
-          store.getGroupsAll(),
-          store.getVisibleMembers(),
-          store.getGroupsOrganizations()
-        ])
-          .then(values => {
-            const all = values[0];
-            const orgMembs = [];
-            const orgMembers = values[1];
-            for (const gid of Object.keys(orgMembers)) {
-              orgMembs.push(orgMembers[gid]);
-            }
-            const orgs = values.length === 3 ? values[2] : [];
-            const groups = [orgMembs, orgs, [all]];
-            this.__setSharedIcon(sharedIcon, value, groups);
-          });
-
-        if (this.isResourceType("study")) {
-          this._setStudyPermissions(value);
-        }
+        const shareIcon = this.getChildControl("shared-icon");
+        this._evaluateShareIcon(shareIcon, value);
       }
-    },
-
-    __setSharedIcon: function(image, value, groups) {
-      let sharedGrps = [];
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      for (let i=0; i<groups.length; i++) {
-        const sharedGrp = [];
-        const gids = Object.keys(value);
-        for (let j=0; j<gids.length; j++) {
-          const gid = parseInt(gids[j]);
-          if (this.isResourceType("study") && (gid === myGroupId)) {
-            continue;
-          }
-          const grp = groups[i].find(group => group["gid"] === gid);
-          if (grp) {
-            sharedGrp.push(grp);
-          }
-        }
-        if (sharedGrp.length === 0) {
-          continue;
-        } else {
-          sharedGrps = sharedGrps.concat(sharedGrp);
-        }
-        switch (i) {
-          case 0:
-            image.setSource(osparc.dashboard.CardBase.SHARED_USER);
-            break;
-          case 1:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
-            break;
-          case 2:
-            image.setSource(osparc.dashboard.CardBase.SHARED_ALL);
-            break;
-        }
-      }
-
-      if (sharedGrps.length === 0) {
-        image.setVisibility("excluded");
-        return;
-      }
-
-      const sharedGrpLabels = [];
-      const maxItems = 6;
-      for (let i=0; i<sharedGrps.length; i++) {
-        if (i > maxItems) {
-          sharedGrpLabels.push("...");
-          break;
-        }
-        const sharedGrpLabel = sharedGrps[i]["label"];
-        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
-          sharedGrpLabels.push(sharedGrpLabel);
-        }
-      }
-      const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(image, hintText);
-      image.addListener("mouseover", () => hint.show(), this);
-      image.addListener("mouseout", () => hint.exclude(), this);
     },
 
     _applyTags: function(tags) {

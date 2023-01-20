@@ -40,7 +40,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     "toRegister": "qx.event.type.Event",
     "toReset": "qx.event.type.Event",
     "toVerifyPhone": "qx.event.type.Data",
-    "toSMSCode": "qx.event.type.Data"
+    "to2FAValidationCode": "qx.event.type.Data"
   },
 
   /*
@@ -91,21 +91,17 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const registerBtn = this.createLinkButton(this.tr("Create Account"), () => {
+        registerBtn.setEnabled(false);
         osparc.data.Resources.getOne("config")
           .then(config => {
             if (config["invitation_required"]) {
-              let text = this.tr("Registration is currently only available with an invitation.");
-              text += "<br>";
-              text += this.tr("Please contact support@osparc.io");
-              osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+              osparc.store.Support.openInvitationRequiredDialog();
             } else {
               this.fireEvent("toRegister");
             }
           })
-          .catch(err => {
-            console.error(err);
-            this.fireEvent("toRegister");
-          });
+          .catch(err => console.error(err));
+        registerBtn.setEnabled(true);
       }, this);
       osparc.utils.Utils.setIdToWidget(registerBtn, "loginCreateAccountBtn");
 
@@ -179,10 +175,10 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
-      const twoFactorAuthCbk = log => {
+      const twoFactorAuthCbk = msg => {
         this.__loginBtn.setFetching(false);
-        osparc.component.message.FlashMessenger.getInstance().logAs(log, "INFO");
-        this.fireDataEvent("toSMSCode", log);
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+        this.fireDataEvent("to2FAValidationCode", msg);
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
         this._formElement.dispose();

@@ -89,13 +89,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const permissions = osparc.data.Permissions.getInstance();
       const tabs = [{
         id: "studiesTabBtn",
-        label: osparc.utils.Utils.isProduct("s4llite") ? this.tr("PROJECTS") : this.tr("STUDIES"),
+        label: osparc.utils.Utils.getStudyLabel(true).toUpperCase(),
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         const templatesTab = {
           id: "templatesTabBtn",
-          label: osparc.utils.Utils.isProduct("s4llite") ? this.tr("TUTORIALS") : this.tr("TEMPLATES"),
+          label: osparc.utils.Utils.getTemplateLabel(true).toUpperCase(),
           buildLayout: this.__createTemplateBrowser
         };
         tabs.push(templatesTab);
@@ -142,7 +142,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
-      preResourcePromises.push(store.getServicesOnly(true));
+      preResourcePromises.push(store.getAllServices(true));
       if (permissions.canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }

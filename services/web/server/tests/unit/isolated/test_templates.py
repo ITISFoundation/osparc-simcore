@@ -13,7 +13,7 @@ from aiohttp_jinja2 import render_string
 from faker import Faker
 from simcore_service_webserver._resources import resources
 from simcore_service_webserver.email import setup_email
-from simcore_service_webserver.login.utils import themed
+from simcore_service_webserver.login.utils_email import themed
 
 
 @pytest.fixture
@@ -30,10 +30,13 @@ def app() -> web.Application:
 )
 def test_all_email_templates_include_subject(template_path: Path, app: web.Application):
     assert template_path.exists()
-    subject, body = template_path.read_text().split("\n", 1)
-    assert (
-        re.match(r"[a-zA-Z0-9\-_\s]+", subject) or "{{subject}}" in subject
+    subject, content = template_path.read_text().split("\n", 1)
+
+    assert re.match(
+        r"[\{\}a-zA-Z0-9\-_\s]+", subject.strip("🐼")
     ), f"Template {template_path} must start with a subject line, got {subject}"
+
+    assert content
 
 
 @pytest.mark.skip(reason="DEV")

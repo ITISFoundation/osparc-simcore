@@ -1,9 +1,12 @@
 import asyncio
 import logging
+from asyncio.streams import StreamReader
 from pathlib import Path
+from textwrap import dedent
 from typing import Final
 
 from settings_library.r_clone import S3Provider
+from settings_library.utils_r_clone import resolve_provider
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,7 @@ def get_config_file_path(
     s3_provider: S3Provider,
 ) -> Path:
     config_content = R_CLONE_CONFIG.format(
-        destination_provider=s3_provider,
+        destination_provider=resolve_provider(s3_provider),
         destination_access_key=s3_access_key,
         destination_secret_key=s3_secret_key,
         destination_endpoint=s3_endpoint,
@@ -46,7 +49,6 @@ def _get_dir_name(volume_name: str) -> str:
 
 
 def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Path:
-
     joint_key = "/".join(
         (
             s3_bucket,
@@ -60,9 +62,55 @@ def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Pa
     return Path(f"/{joint_key}")
 
 
-async def _read_stream(stream):
+async def _read_stream(stream: StreamReader) -> str:
+    output = ""
     while line := await stream.readline():
-        logger.info(line.decode().strip("\n"))
+        message = line.decode()
+        output += message
+        logger.debug(message.strip("\n"))
+    return output
+
+
+def _get_r_clone_str_command(command: list[str], exclude_files: list[str]) -> str:
+    # add files to be ignored
+    for to_exclude in exclude_files:
+        command.append("--exclude")
+        command.append(to_exclude)
+
+    str_command = " ".join(command)
+    logger.info(str_command)
+    return str_command
+
+
+def _log_expected_operation(
+    dyv_volume_labels: dict[str, str],
+    s3_path: Path,
+    r_clone_ls_output: str,
+    volume_name: str,
+) -> None:
+    """
+    This message will be logged as warning if any files will be synced
+    """
+    log_level = logging.INFO if r_clone_ls_output.strip() == "" else logging.WARNING
+
+    formatted_message = dedent(
+        f"""
+        ---
+        Volume data
+        ---
+        volume_name         {volume_name}
+        destination_path    {s3_path}
+        study_id:           {dyv_volume_labels['study_id']}
+        node_id:            {dyv_volume_labels['node_uuid']}
+        user_id:            {dyv_volume_labels['user_id']}
+        run_id:             {dyv_volume_labels['run_id']}
+        ---
+        Files to sync by rclone
+        ---\n{r_clone_ls_output.rstrip()}
+        ---
+    """
+    )
+    logger.log(log_level, formatted_message)
 
 
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
@@ -89,7 +137,28 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     source_dir = dyv_volume["Mountpoint"]
     s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"], volume_name)
 
-    r_clone_command = [
+    # listing files rclone will sync
+    r_clone_ls = [
+        "rclone",
+        "--config",
+        f"{config_file_path}",
+        "ls",
+        f"{source_dir}",
+    ]
+    process = await asyncio.create_subprocess_shell(
+        _get_r_clone_str_command(r_clone_ls, exclude_files),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+
+    r_clone_ls_output = await _read_stream(process.stdout)
+    await process.wait()
+    _log_expected_operation(
+        dyv_volume["Labels"], s3_path, r_clone_ls_output, volume_name
+    )
+
+    # sync files via rclone
+    r_clone_sync = [
         "rclone",
         "--config",
         f"{config_file_path}",
@@ -105,28 +174,22 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         "sync",
         f"{source_dir}",
         f"dst:{s3_path}",
-        "-P",
+        "--verbose",
     ]
 
-    # add files to be ignored
-    for to_exclude in exclude_files:
-        r_clone_command.append("--exclude")
-        r_clone_command.append(to_exclude)
-
-    str_r_clone_command = " ".join(r_clone_command)
-    logger.info(r_clone_command)
-
+    str_r_clone_sync = _get_r_clone_str_command(r_clone_sync, exclude_files)
     process = await asyncio.create_subprocess_shell(
-        str_r_clone_command,
+        str_r_clone_sync,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
 
-    await _read_stream(process.stdout)
+    r_clone_sync_output = await _read_stream(process.stdout)
     await process.wait()
+    logger.info("Sync result:\n%s", r_clone_sync_output)
 
     if process.returncode != 0:
         raise RuntimeError(
             f"Shell subprocesses yielded nonzero error code {process.returncode} "
-            f"for command {str_r_clone_command}"
+            f"for command {str_r_clone_sync}\n{r_clone_sync_output}"
         )

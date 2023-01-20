@@ -31,12 +31,26 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - autoscaling_subnet
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-    env_file:
-      - ../.env
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+        limits:
+          cpus: "0.5"
+          memory: "512M"
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -147,6 +161,19 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+
+  invitations:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - INVITATIONS_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - INVITATIONS_SECRET_KEY=${INVITATIONS_SECRET_KEY}
+      - INVITATIONS_OSPARC_URL=${INVITATIONS_OSPARC_URL}
+      - INVITATIONS_USERNAME=${INVITATIONS_USERNAME}
+      - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -282,9 +309,10 @@ services:
         limits:
           cpus: "1.0"
           memory: 200M
+    networks:
+      - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
       LOGLEVEL: ${LOG_LEVEL:-INFO}
       AGENT_VOLUMES_CLEANUP_S3_SECURE: ${AGENT_VOLUMES_CLEANUP_S3_SECURE}
@@ -327,7 +355,6 @@ services:
       DASK_START_AS_SCHEDULER: 1
 
     networks:
-      - interactive_services_subnet
       - computational_services_subnet
 
   datcore-adapter:
@@ -368,7 +395,6 @@ services:
     networks:
       - default
       - interactive_services_subnet
-      - computational_services_subnet
       - storage_subnet
 
   rabbit:
@@ -380,15 +406,15 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
     networks:
       - default
-      - computational_services_subnet
       - interactive_services_subnet
+      - autoscaling_subnet
     healthcheck:
       # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
       test: rabbitmq-diagnostics -q status
-      interval: 30s
+      interval: 5s
       timeout: 30s
       retries: 5
-      start_period: 15s
+      start_period: 5s
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
@@ -402,7 +428,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_USER=${POSTGRES_USER}
     networks:
-      - default
+      - default # actually needed for the postgres service only
 
   postgres:
     image: "postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce"
@@ -421,7 +447,6 @@ services:
     networks:
       - default
       - interactive_services_subnet
-      - computational_services_subnet
     healthcheck:
       test:
         [
@@ -432,7 +457,7 @@ services:
           "--dbname",
           "${POSTGRES_DB}"
         ]
-      interval: 15s
+      interval: 5s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
@@ -475,12 +500,13 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "3",
+        "4",
         "--appendonly",
         "yes"
       ]
     networks:
       - default
+      - autoscaling_subnet
     volumes:
       - redis-data:/data
     healthcheck:
@@ -490,7 +516,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v2.5.6@sha256:2f603f8d3abe1dd3a4eb28960c55506be48293b41ea2c6ed4a4297c851a57a05"
+    image: "traefik:v2.9.5@sha256:6c37f2135af79e0c2e387653ff3ab9abf95eb393439f07cfcfa5e06fd4bb10bb"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
@@ -539,10 +565,9 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
-
     networks:
       - default
-      - interactive_services_subnet
+      - interactive_services_subnet # for legacy dynamic services
     #healthcheck:
     #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
     #  interval: 3s
@@ -560,6 +585,8 @@ networks:
     attachable: true
   storage_subnet:
     attachable: true
+  autoscaling_subnet:
+    attachable: true
   interactive_services_subnet:
     driver: overlay
     attachable: true
@@ -576,7 +603,3 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.9.0.0/16"

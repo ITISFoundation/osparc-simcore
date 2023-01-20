@@ -24,7 +24,11 @@ async def assert_file_meta_data_in_db(
         )
         db_data = await result.fetchall()
         assert db_data is not None
-        assert len(db_data) == (1 if expected_entry_exists else 0)
+        assert len(db_data) == (1 if expected_entry_exists else 0), (
+            f"{file_id} was not found!"
+            if expected_entry_exists
+            else f"{file_id} should not exist"
+        )
         upload_id = None
         if expected_entry_exists:
             row = db_data[0]

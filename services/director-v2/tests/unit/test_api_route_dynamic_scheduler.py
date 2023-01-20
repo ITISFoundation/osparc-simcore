@@ -8,10 +8,14 @@ from typing import AsyncIterator
 import pytest
 import respx
 from fastapi import status
+from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from requests import Response
+from simcore_service_director_v2.models.domains.dynamic_services import (
+    DynamicServiceCreate,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
@@ -26,7 +30,10 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def mock_env(
-    mock_env: EnvVarsDict, monkeypatch: MonkeyPatch, docker_swarm: None
+    disable_rabbitmq: None,
+    mock_env: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
+    docker_swarm: None,
 ) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "default")
     monkeypatch.setenv("DIRECTOR_ENABLED", "false")
@@ -70,22 +77,36 @@ async def mock_sidecar_api(scheduler_data: SchedulerData) -> AsyncIterator[None]
 
 @pytest.fixture
 async def observed_service(
-    dynamic_sidecar_scheduler: DynamicSidecarsScheduler, scheduler_data: SchedulerData
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
+    dynamic_service_create: DynamicServiceCreate,
+    simcore_service_labels: SimcoreServiceLabels,
+    dynamic_sidecar_port: int,
+    request_dns: str,
+    request_scheme: str,
 ) -> SchedulerData:
-    await dynamic_sidecar_scheduler.add_service(scheduler_data)
-    return scheduler_data
+    await dynamic_sidecar_scheduler.add_service(
+        dynamic_service_create,
+        simcore_service_labels,
+        dynamic_sidecar_port,
+        request_dns,
+        request_scheme,
+    )
+    # pylint:disable=protected-access
+    return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(
+        dynamic_service_create.node_uuid
+    )
 
 
 @pytest.fixture
 def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:
-    base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._utils"
-    mocker.patch(f"{base}.service_push_outputs", autospec=True)
-    mocker.patch(f"{base}.service_remove_containers", autospec=True)
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events_utils"
+    mocker.patch(f"{module_base}.service_push_outputs", autospec=True)
+    mocker.patch(f"{module_base}.service_remove_containers", autospec=True)
     mocker.patch(
-        f"{base}.service_remove_sidecar_proxy_docker_networks_and_volumes",
+        f"{module_base}.service_remove_sidecar_proxy_docker_networks_and_volumes",
         autospec=True,
     )
-    mocker.patch(f"{base}.service_save_state", autospec=True)
+    mocker.patch(f"{module_base}.service_save_state", autospec=True)
 
 
 async def test_update_service_observation_node_not_found(

@@ -1,10 +1,14 @@
 import json
 import logging
+import warnings
 from enum import Enum
+from functools import cached_property
 from typing import Any, Mapping, Optional
 from uuid import UUID, uuid4
 
 from models_library.basic_types import PortInt
+from models_library.generated_models.docker_rest_api import ContainerState
+from models_library.generated_models.docker_rest_api import Status2 as DockerStatus
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
@@ -13,7 +17,15 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    constr,
+    parse_obj_as,
+    root_validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -84,31 +96,47 @@ class Status(BaseModel):
         return initial_state
 
 
-class DockerStatus(str, Enum):
-    CREATED = "created"
-    DEAD = "dead"
-    EXITED = "exited"
-    PAUSED = "paused"
-    REMOVING = "removing"
-    RESTARTING = "restarting"
-    RUNNING = "running"
-
-
 class DockerContainerInspect(BaseModel):
-    status: DockerStatus = Field(
-        ...,
-        scription="status of the underlying container",
+    container_state: ContainerState = Field(
+        ..., description="current state of container"
     )
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
 
+    @cached_property
+    def status(self) -> DockerStatus:
+        assert self.container_state.Status  # nosec
+        return self.container_state.Status
+
     @classmethod
     def from_container(cls, container: dict[str, Any]) -> "DockerContainerInspect":
         return cls(
-            status=DockerStatus(container["State"]["Status"]),
+            container_state=ContainerState(**container["State"]),
             name=container["Name"],
             id=container["Id"],
         )
+
+    @root_validator(pre=True)
+    @classmethod
+    def _ensure_legacy_format_compatibility(cls, values):
+        warnings.warn(
+            (
+                "Once https://github.com/ITISFoundation/osparc-simcore/pull/3610 "
+                "reaches production this entire root_validator function "
+                "can be safely removed. Please check the "
+                "https://github.com/ITISFoundation/osparc-simcore/releases"
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        status: Optional[str] = values.get("status")
+        if status:
+            values["container_state"] = {"Status": status}
+        return values
+
+    class Config:
+        keep_untouched = (cached_property,)
+        allow_mutation = False
 
 
 class ServiceRemovalState(BaseModel):
@@ -143,7 +171,7 @@ class DynamicSidecar(BaseModel):
         description="status of the service sidecar also with additional information",
     )
 
-    is_available: bool = Field(
+    is_ready: bool = Field(
         False,
         scription=(
             "is True while the health check on the dynamic-sidecar is responding. "
@@ -171,6 +199,7 @@ class DynamicSidecar(BaseModel):
     )
 
     was_dynamic_sidecar_started: bool = False
+    is_healthy: bool = False
     were_containers_created: bool = Field(
         False,
         description=(
@@ -187,7 +216,7 @@ class DynamicSidecar(BaseModel):
         ),
     )
 
-    service_environment_prepared: bool = Field(
+    is_service_environment_ready: bool = Field(
         False,
         description=(
             "True when the environment setup required by the "

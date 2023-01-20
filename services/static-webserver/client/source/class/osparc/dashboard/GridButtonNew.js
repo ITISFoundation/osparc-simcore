@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
   construct: function(title, description) {
     this.base(arguments);
 
+    this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
+
     this._buildLayout();
 
     if (title) {

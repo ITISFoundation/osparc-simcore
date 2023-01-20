@@ -51,6 +51,26 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
     "removeCollaborator": "qx.event.type.Data"
   },
 
+  statics: {
+    canDelete: function(accessRights) {
+      let canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
+      canDelete = canDelete || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
+      return canDelete;
+    },
+
+    canWrite: function(accessRights) {
+      let canWrite = accessRights.getWrite ? accessRights.getWrite() : false;
+      canWrite = canWrite || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
+      return canWrite;
+    },
+
+    canView: function(accessRights) {
+      let canView = accessRights.getRead ? accessRights.getRead() : false;
+      canView = canView || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
+      return canView;
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -102,11 +122,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         return;
       }
       const subtitle = this.getChildControl("contact");
-      const isOwner = osparc.component.permissions.Permissions.canDelete(value);
-      const isCollaborator = osparc.component.permissions.Permissions.canWrite(value);
-      if (isOwner) {
+      const canDelete = this.self().canDelete(value);
+      const canWrite = this.self().canWrite(value);
+      if (canDelete) {
         subtitle.setValue(this.tr("Owner"));
-      } else if (isCollaborator) {
+      } else if (canWrite) {
         subtitle.setValue(this.tr("Collaborator"));
       } else {
         subtitle.setValue(this.tr("Viewer"));
@@ -166,8 +186,8 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
        * - makeCollabButton or makeViewerButton
        * - removeCollabButton
       */
-      if (!osparc.component.permissions.Permissions.canDelete(accessRights)) {
-        if (osparc.component.permissions.Permissions.canWrite(accessRights)) {
+      if (!this.self().canDelete(accessRights)) {
+        if (this.self().canWrite(accessRights)) {
           // collaborator
           if (this.getCollabType() === 2) { // single user
             menu.add(makeOwnerButton);

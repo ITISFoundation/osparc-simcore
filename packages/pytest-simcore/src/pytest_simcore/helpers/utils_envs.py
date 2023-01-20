@@ -17,10 +17,15 @@ from .typing_env import EnvVarsDict
 #
 # monkeypatch using dict
 #
-def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict):
+def setenvs_from_dict(monkeypatch: MonkeyPatch, envs: EnvVarsDict) -> EnvVarsDict:
     for key, value in envs.items():
+        assert isinstance(key, str)
         assert value is not None  # None keys cannot be is defined w/o value
-        monkeypatch.setenv(key, str(value))
+        assert isinstance(
+            value, str
+        ), "client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values"
+
+        monkeypatch.setenv(key, value)
     return deepcopy(envs)
 
 
@@ -44,7 +49,7 @@ def load_dotenv(envfile_content_or_path: Union[Path, str], **options) -> EnvVars
 
 
 def setenvs_from_envfile(
-    monkeypatch: MonkeyPatch, content_or_path: str, **dotenv_kwags
+    monkeypatch: MonkeyPatch, content_or_path: Union[str, Path], **dotenv_kwags
 ) -> EnvVarsDict:
     """Batch monkeypatch.setenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)
@@ -55,7 +60,10 @@ def setenvs_from_envfile(
 
 
 def delenvs_from_envfile(
-    monkeypatch: MonkeyPatch, content_or_path: str, raising: bool, **dotenv_kwags
+    monkeypatch: MonkeyPatch,
+    content_or_path: Union[str, Path],
+    raising: bool,
+    **dotenv_kwags
 ) -> EnvVarsDict:
     """Batch monkeypatch.delenv(...) on all env vars in an envfile"""
     envs = load_dotenv(content_or_path, **dotenv_kwags)

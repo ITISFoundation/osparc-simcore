@@ -2,17 +2,9 @@ from functools import cached_property
 
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
-from typing_extensions import TypedDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
-
-
-class Channels(TypedDict):
-    log: str
-    progress: str
-    instrumentation: str
-    events: str
 
 
 class RabbitDsn(AnyUrl):
@@ -21,20 +13,12 @@ class RabbitDsn(AnyUrl):
 
 class RabbitSettings(BaseCustomSettings):
     # host
-    RABBIT_HOST: str = "rabbit"
+    RABBIT_HOST: str
     RABBIT_PORT: PortInt = 5672
 
     # auth
-    RABBIT_USER: str = "simcore"
-    RABBIT_PASSWORD: SecretStr = SecretStr("simcore")
-
-    # channels
-    RABBIT_CHANNELS: Channels = {
-        "log": "simcore.services.logs",
-        "progress": "simcore.services.progress",
-        "instrumentation": "simcore.services.instrumentation",
-        "events": "simcore.services.events",
-    }
+    RABBIT_USER: str
+    RABBIT_PASSWORD: SecretStr
 
     @cached_property
     def dsn(self) -> str:

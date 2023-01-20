@@ -9,16 +9,17 @@ Currently includes two parts:
 
 import asyncio
 import logging
-import secrets
 from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
+from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
+from .utils_email import get_template_path, render_and_send_mail
 
 log = logging.getLogger(__name__)
 
@@ -34,21 +35,28 @@ class ValidationCode(BaseModel):
 # SEE https://redis-py.readthedocs.io/en/stable/index.html
 
 
-def _generage_2fa_code() -> str:
-    return f"{1000 + secrets.randbelow(8999)}"  # code between [1000, 9999)
-
-
 @log_decorator(log, level=logging.DEBUG)
-async def set_2fa_code(
-    app: web.Application,
+async def _do_create_2fa_code(
+    redis_client,
     user_email: str,
     *,
-    expiration_time: int = 60,
+    expiration_seconds: int,
+) -> str:
+    hash_key, code = user_email, generate_passcode()
+    await redis_client.set(hash_key, value=code, ex=expiration_seconds)
+    return code
+
+
+async def create_2fa_code(
+    app: web.Application, *, user_email: str, expiration_in_seconds: int
 ) -> str:
     """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
     redis_client = get_redis_validation_code_client(app)
-    hash_key, code = user_email, _generage_2fa_code()
-    await redis_client.set(hash_key, value=code, ex=expiration_time)
+    code = await _do_create_2fa_code(
+        redis_client=redis_client,
+        user_email=user_email,
+        expiration_seconds=expiration_in_seconds,
+    )
     return code
 
 
@@ -71,6 +79,10 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 # TWILIO
 #   - sms service
 #
+
+
+class SMSError(RuntimeError):
+    pass
 
 
 @log_decorator(log, level=logging.DEBUG)
@@ -107,7 +119,39 @@ async def send_sms_code(
             f"{message=}",
         )
 
-    await asyncio.get_event_loop().run_in_executor(None, _sender)
+    await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
+
+
+#
+# EMAIL
+#
+
+
+class EmailError(RuntimeError):
+    pass
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def send_email_code(
+    request: web.Request,
+    user_email: str,
+    support_email: str,
+    code: str,
+    user_name: str = "user",
+):
+    email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
+    await render_and_send_mail(
+        request,
+        from_=support_email,
+        to=user_email,
+        template=email_template_path,
+        context={
+            "host": request.host,
+            "code": code,
+            "name": user_name.capitalize(),
+            "support_email": support_email,
+        },
+    )
 
 
 #

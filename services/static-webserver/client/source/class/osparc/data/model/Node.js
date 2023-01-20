@@ -381,14 +381,6 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    hasChildren: function() {
-      const innerNodes = this.getInnerNodes();
-      if (innerNodes) {
-        return Object.keys(innerNodes).length > 0;
-      }
-      return false;
-    },
-
     getInnerNodes: function(recursive = false) {
       let innerNodes = Object.assign({}, this.__innerNodes);
       if (recursive) {
@@ -402,32 +394,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     addInnerNode: function(innerNodeId, innerNode) {
       this.__innerNodes[innerNodeId] = innerNode;
-    },
-
-    removeInnerNode: function(innerNodeId) {
-      delete this.__innerNodes[innerNodeId];
-    },
-
-    isInnerNode: function(inputNodeId) {
-      return (inputNodeId in this.__innerNodes);
-    },
-
-    getExposedInnerNodes: function() {
-      const workbench = this.getWorkbench();
-
-      let outputNodes = [];
-      for (let i = 0; i < this.__exposedNodes.length; i++) {
-        const outputNode = workbench.getNode(this.__exposedNodes[i]);
-        outputNodes.push(outputNode);
-      }
-      const uniqueNodes = [...new Set(outputNodes)];
-      return uniqueNodes;
-    },
-
-    getExposedNodeIDs: function() {
-      const exposedInnerNodes = this.getExposedInnerNodes();
-      const exposedNodeIDs = exposedInnerNodes.map(exposedInnerNode => exposedInnerNode.getNodeId());
-      return exposedNodeIDs;
     },
 
     populateWithMetadata: function() {
@@ -1001,6 +967,10 @@ qx.Class.define("osparc.data.model.Node", {
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+      const thumbnail = this.getMetaData()["thumbnail"];
+      if (thumbnail) {
+        loadingPage.setLogo(thumbnail);
+      }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
@@ -1344,7 +1314,7 @@ qx.Class.define("osparc.data.model.Node", {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", () => {
-        this.__serviceReadyIn(srvUrl);
+        this.__waitForServiceWebsite(srvUrl);
       }, this);
       pingRequest.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse();
@@ -1360,6 +1330,33 @@ qx.Class.define("osparc.data.model.Node", {
       pingRequest.send();
     },
 
+    __waitForServiceWebsite: function(srvUrl) {
+      // request the frontend to make sure it is ready
+      let retries = 5;
+      const request = new XMLHttpRequest();
+      const openAndSend = () => {
+        if (retries === 0) {
+          return;
+        }
+        retries--;
+        request.open("GET", srvUrl);
+        request.send();
+      };
+      const retry = () => {
+        setTimeout(() => openAndSend(), 2000);
+      };
+      request.onerror = () => retry();
+      request.ontimeout = () => retry();
+      request.onload = () => {
+        if (request.status < 200 || request.status >= 300) {
+          retry();
+        } else {
+          this.__serviceReadyIn(srvUrl);
+        }
+      };
+      openAndSend();
+    },
+
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
       this.getStatus().setInteractive("ready");
@@ -1369,14 +1366,7 @@ qx.Class.define("osparc.data.model.Node", {
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);
-
-      // FIXME: Apparently no all services are inmediately ready when they publish the port
-      // ping the service until it is accessible through the platform
-      const waitFor = 500;
-      qx.event.Timer.once(ev => {
-        this.__restartIFrame();
-      }, this, waitFor);
-
+      this.__restartIFrame();
       this.callRetrieveInputs();
     },
 
@@ -1387,37 +1377,21 @@ qx.Class.define("osparc.data.model.Node", {
       this.getStatus().bind("interactive", startButton, "enabled", {
         converter: state => ["idle", "failed"].includes(state)
       });
-      startButton.addListener("execute", () => this.requestStartNode());
+      const executeListenerId = startButton.addListener("execute", this.requestStartNode, this);
+      startButton.executeListenerId = executeListenerId;
     },
 
     attachHandlersToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-      stopButton.addListener("execute", () => this.requestStopNode());
-    },
-
-    __removeInnerNodes: function() {
-      const innerNodes = Object.values(this.getInnerNodes());
-      for (let i = 0; i < innerNodes.length; i++) {
-        innerNodes[i].removeNode();
-      }
-    },
-
-    __detachFromParent: function() {
-      const parentNodeId = this.getParentNodeId();
-      if (parentNodeId) {
-        const parentNode = this.getWorkbench().getNode(parentNodeId);
-        parentNode.removeInnerNode(this.getNodeId());
-        parentNode.removeOutputNode(this.getNodeId());
-      }
+      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
+      stopButton.executeListenerId = executeListenerId;
     },
 
     removeNode: function() {
       this.__deleteInBackend();
       this.removeIFrame();
-      this.__removeInnerNodes();
-      this.__detachFromParent();
     },
 
     stopRequestingStatus: function() {

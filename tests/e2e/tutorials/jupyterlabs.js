@@ -10,14 +10,16 @@ const {
   pass,
   newUser,
   startTimeout,
+  basicauthUsername,
+  basicauthPassword,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
 const templateName = "JupyterLabs";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-  let studyId
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
+  let studyId;
   try {
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
@@ -31,12 +33,12 @@ async function runTutorial() {
       false
     );
 
-    await tutorial.waitFor(2000);
+    await tutorial.waitFor(5000);
 
     for (let j = 1; j < 3; j++) {
       // open JLab
       await tutorial.openNode(j);
-      await tutorial.waitFor(10000);
+      await tutorial.waitFor(12000);
 
       // Run the jlab nbook
       const jLabIframe = await tutorial.getIframe(workbenchData["nodeIds"][j]);
@@ -63,10 +65,10 @@ async function runTutorial() {
       await tutorial.takeScreenshot("after_run_all_menu");
 
       if (j === 2) {
-        await tutorial.waitFor(30000); // we are solving an em problem
+        await tutorial.waitFor(40000); // we are solving an em problem
       }
       else {
-        await tutorial.waitFor(5000); // we are NOT solving an em problem
+        await tutorial.waitFor(10000); // we are NOT solving an em problem
       }
 
       const outFiles = [
@@ -80,10 +82,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId, 20000);
-    await tutorial.logOut();
-    await tutorial.close();
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

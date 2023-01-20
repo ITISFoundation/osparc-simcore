@@ -1,4 +1,6 @@
-""" Helper script to generate OAS automatically
+""" Helper script to automatically generate OAS
+
+This OAS are the source of truth
 """
 
 # pylint: disable=redefined-outer-name
@@ -10,19 +12,16 @@
 from enum import Enum
 from typing import Union
 
-import yaml
 from fastapi import FastAPI
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from simcore_service_webserver.projects.projects_ports_handlers import (
-    ProjectPort,
-    ProjectPortGet,
+    ProjectInputGet,
+    ProjectInputUpdate,
+    ProjectMetadataPortGet,
+    ProjectOutputGet,
 )
-
-# TODO: how to ensure this is in sync with projects_ports_handlers.routes ??
-# this is the source of truth.
 
 app = FastAPI(redoc_url=None)
 
@@ -33,7 +32,7 @@ TAGS: list[Union[str, Enum]] = [
 
 @app.get(
     "/projects/{project_id}/inputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectInputGet]],
     tags=TAGS,
     operation_id="get_project_inputs",
 )
@@ -43,17 +42,19 @@ async def get_project_inputs(project_id: ProjectID):
 
 @app.patch(
     "/projects/{project_id}/inputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectInputGet]],
     tags=TAGS,
     operation_id="update_project_inputs",
 )
-async def update_project_inputs(project_id: ProjectID, updates: list[ProjectPort]):
+async def update_project_inputs(
+    project_id: ProjectID, updates: list[ProjectInputUpdate]
+):
     """New in version *0.10*"""
 
 
 @app.get(
     "/projects/{project_id}/outputs",
-    response_model=Envelope[dict[NodeID, ProjectPortGet]],
+    response_model=Envelope[dict[NodeID, ProjectOutputGet]],
     tags=TAGS,
     operation_id="get_project_outputs",
 )
@@ -61,18 +62,17 @@ async def get_project_outputs(project_id: ProjectID):
     """New in version *0.10*"""
 
 
+@app.get(
+    "/projects/{project_id}/metadata/ports",
+    response_model=Envelope[list[ProjectMetadataPortGet]],
+    tags=TAGS,
+    operation_id="list_project_metadata_ports",
+)
+async def list_project_metadata_ports(project_id: ProjectID):
+    """New in version *0.12*"""
+
+
 if __name__ == "__main__":
-    override_fastapi_openapi_method(app)
-    openapi = app.openapi()
+    from _common import CURRENT_DIR, create_openapi_specs
 
-    # Remove these sections
-    for section in ("info", "openapi"):
-        openapi.pop(section)
-
-    # Removes default response 422
-    for _, method_item in openapi.get("paths", {}).items():
-        for _, param in method_item.items():
-            param.get("responses", {}).pop("422")
-
-    with open("../openapi-projects-ports.yaml", "wt") as fh:
-        yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
+    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-ports.yaml")

@@ -15,6 +15,7 @@ from ._constants import APP_SETTINGS_KEY
 from .redis_constants import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
+    APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY,
     APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY,
 )
 
@@ -69,6 +70,7 @@ async def setup_redis_client(app: web.Application):
         APP_CLIENT_REDIS_CLIENT_KEY: redis_settings.dsn_resources,
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY: redis_settings.dsn_locks,
         APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY: redis_settings.dsn_validation_codes,
+        APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY: redis_settings.dsn_scheduled_maintenance,
     }
 
     for app_key, dsn in REDIS_DSN_MAP.items():
@@ -98,6 +100,10 @@ def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
     return _get_redis_client(app, APP_CLIENT_REDIS_VALIDATION_CODE_CLIENT_KEY)
+
+
+def get_redis_scheduled_maintenance_client(app: web.Application) -> aioredis.Redis:
+    return _get_redis_client(app, APP_CLIENT_REDIS_SCHEDULED_MAINTENANCE_CLIENT_KEY)
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------

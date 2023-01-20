@@ -18,8 +18,14 @@ from simcore_service_dynamic_sidecar.core.docker_logs import (
 
 
 @pytest.fixture
-def mock_environment(monkeypatch: MonkeyPatch, mock_environment: None) -> None:
+def mock_environment(
+    monkeypatch: MonkeyPatch,
+    mock_environment: None,
+) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")
+    monkeypatch.setenv("RABBIT_HOST", "mocked_host")
+    monkeypatch.setenv("RABBIT_USER", "mocked_user")
+    monkeypatch.setenv("RABBIT_PASSWORD", "mocked_password")
 
 
 @pytest.fixture
@@ -29,7 +35,7 @@ async def container_name() -> AsyncIterable[str]:
         container = await client.containers.run(
             config={
                 "Cmd": ["/bin/ash", "-c", 'echo "test message"'],
-                "Image": "busybox",
+                "Image": "busybox:latest",
             }
         )
         container_inspect = await container.show()
@@ -46,14 +52,9 @@ async def test_background_log_fetcher(
     app: FastAPI,
 ):
     assert _get_background_log_fetcher(app=app) is not None
-
-    assert mock_core_rabbitmq["connect"].call_count == 1
-
     await start_log_fetching(app=app, container_name=container_name)
-
     # wait for background log fetcher
     await asyncio.sleep(1)
     assert mock_core_rabbitmq["post_log_message"].call_count == 1
 
     await stop_log_fetching(app=app, container_name=container_name)
-    assert mock_core_rabbitmq["connect"].call_count == 1

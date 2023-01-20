@@ -14,24 +14,28 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.webserver_models import ProjectType
 
+from .. import users_api
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_exceptions import DirectorServiceError
 from ..login.decorators import login_required
+from ..products import Product, get_current_product
 from ..security_decorators import permission_required
 from . import projects_api
-from .projects_exceptions import ProjectNotFoundError, ProjectStartsTooManyDynamicNodes
+from .projects_exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+    ProjectStartsTooManyDynamicNodes,
+    ProjectTooManyProjectOpened,
+)
 from .projects_handlers_crud import ProjectPathParams, RequestContext
 
 log = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-#
-# open project: custom methods https://google.aip.dev/136
-#
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
@@ -48,19 +52,34 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
+        project_type = await projects_api.get_project_type(
+            request.app, path_params.project_id
+        )
+        user_role: UserRole = await users_api.get_user_role(
+            request.app, req_ctx.user_id
+        )
+        if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
+            # only USERS/TESTERS can do that
+            raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")
+
         project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=False,
             include_state=True,
+            check_permissions="read|write"
+            if project_type is ProjectType.TEMPLATE
+            else "read",
         )
+
+        product: Product = get_current_product(request)
 
         if not await projects_api.try_open_project_for_user(
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
             app=request.app,
+            max_number_of_studies_per_user=product.max_open_studies_per_user,
         ):
             raise HTTPLocked(reason="Project is locked, try later")
 
@@ -106,6 +125,12 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPServiceUnavailable(
             reason="Unexpected error while starting services."
         ) from exc
+    except ProjectTooManyProjectOpened as exc:
+        raise web.HTTPConflict(reason=f"{exc}") from exc
+    except ProjectInvalidRightsError as exc:
+        raise web.HTTPForbidden(
+            reason=f"You do not have sufficient rights to access project {path_params.project_id}"
+        ) from exc
 
 
 #
@@ -133,7 +158,6 @@ async def close_project(request: web.Request) -> web.Response:
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
-            include_templates=False,
             include_state=False,
         )
         await projects_api.try_close_project_for_user(
@@ -166,7 +190,6 @@ async def get_project_state(request: web.Request) -> web.Response:
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
-        include_templates=True,
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])

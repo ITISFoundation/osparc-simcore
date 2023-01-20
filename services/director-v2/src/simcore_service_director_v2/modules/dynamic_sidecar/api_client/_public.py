@@ -50,11 +50,18 @@ class DynamicSidecarClient:
     def _dynamic_sidecar_settings(self) -> DynamicSidecarSettings:
         return self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
 
-    async def is_healthy(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
+    async def is_healthy(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True
+    ) -> bool:
         """returns True if service is UP and running else False"""
         try:
             # this request uses a very short timeout
-            response = await self._thin_client.get_health(dynamic_sidecar_endpoint)
+            if with_retry:
+                response = await self._thin_client.get_health(dynamic_sidecar_endpoint)
+            else:
+                response = await self._thin_client.get_health_no_retry(
+                    dynamic_sidecar_endpoint
+                )
             return response.json()["is_healthy"]
         except BaseClientHTTPError:
             return False
@@ -84,18 +91,18 @@ class DynamicSidecarClient:
             return {}
 
     @log_decorator(logger=logger)
-    async def service_disable_dir_watcher(
+    async def disable_service_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.patch_containers_directory_watcher(
+        await self._thin_client.patch_containers_outputs_watcher(
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
     @log_decorator(logger=logger)
-    async def service_enable_dir_watcher(
+    async def enable_service_outputs_watcher(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        await self._thin_client.patch_containers_directory_watcher(
+        await self._thin_client.patch_containers_outputs_watcher(
             dynamic_sidecar_endpoint, is_enabled=True
         )
 
@@ -360,11 +367,10 @@ class DynamicSidecarClient:
     async def push_service_output_ports(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        port_keys: Optional[list[str]] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_push(
-            dynamic_sidecar_endpoint, port_keys
+            dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
 
@@ -407,11 +413,11 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
 
 
 async def get_dynamic_sidecar_service_health(
-    app: FastAPI, scheduler_data: SchedulerData
+    app: FastAPI, scheduler_data: SchedulerData, *, with_retry: bool = True
 ) -> bool:
     api_client = get_dynamic_sidecar_client(app)
     service_endpoint = scheduler_data.endpoint
 
     # update service health
-    is_healthy = await api_client.is_healthy(service_endpoint)
+    is_healthy = await api_client.is_healthy(service_endpoint, with_retry=with_retry)
     return is_healthy

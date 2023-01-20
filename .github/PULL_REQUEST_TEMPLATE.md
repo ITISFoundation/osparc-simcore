@@ -17,7 +17,7 @@ or from https://gitmoji.dev/
 
 SUFFIX:
  (⚠️ devops)  changes in devops configuration required before deploying
-
+ (🗃️ DB change)  changes in the DB tables
 -->
 
 ## What do these changes do?

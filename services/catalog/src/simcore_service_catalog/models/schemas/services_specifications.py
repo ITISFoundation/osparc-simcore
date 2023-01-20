@@ -11,6 +11,10 @@ class ServiceSpecifications(BaseModel):
         default=None,
         description="schedule-time specifications for the service sidecar (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.25/#operation/ServiceCreate)",
     )
+    service: Optional[DockerServiceSpec] = Field(
+        default=None,
+        description="schedule-time specifications specifications for the service (follows Docker Service creation API (specifically only the Resources part), see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
+    )
 
 
 class ServiceSpecificationsGet(ServiceSpecifications):

@@ -26,8 +26,8 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     accessRights: {
       check: "Object",
       nullable: false,
-      apply: "_applyAccessRights",
-      event: "changeAcessRights"
+      apply: "__applyAccessRights",
+      event: "changeAccessRights"
     }
   },
 
@@ -36,12 +36,16 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     "deleteOrganization": "qx.event.type.Data"
   },
 
+  statics: {
+    ICON_SIZE: 24
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "options": {
-          const iconSize = 25;
+          const iconSize = this.self().ICON_SIZE;
           control = new qx.ui.form.MenuButton().set({
             maxWidth: iconSize,
             maxHeight: iconSize,
@@ -63,33 +67,37 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       return control || this.base(arguments, id);
     },
 
-    _applyAccessRights: function(value) {
-      if (value === null) {
+    __applyAccessRights: function(accessRights) {
+      if (accessRights === null) {
         return;
       }
-      if (value.getDelete()) {
+      if (accessRights.getWrite()) {
         const optionsMenu = this.getChildControl("options");
-        const menu = this.__getOptionsMenu();
+        const menu = this.__getOptionsMenu(accessRights);
         optionsMenu.setMenu(menu);
       }
     },
 
-    __getOptionsMenu: function() {
+    __getOptionsMenu: function(accessRights) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
-      const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details"));
-      editOrgButton.addListener("execute", () => {
-        this.fireDataEvent("openEditOrganization", this.getKey());
-      });
-      menu.add(editOrgButton);
+      if (accessRights.getWrite()) {
+        const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details..."));
+        editOrgButton.addListener("execute", () => {
+          this.fireDataEvent("openEditOrganization", this.getKey());
+        });
+        menu.add(editOrgButton);
+      }
 
-      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
-      deleteOrgButton.addListener("execute", () => {
-        this.fireDataEvent("deleteOrganization", this.getKey());
-      });
-      menu.add(deleteOrgButton);
+      if (accessRights.getDelete()) {
+        const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
+        deleteOrgButton.addListener("execute", () => {
+          this.fireDataEvent("deleteOrganization", this.getKey());
+        });
+        menu.add(deleteOrgButton);
+      }
 
       return menu;
     },
@@ -100,8 +108,15 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       if (value) {
         thumbnail.setSource(value);
       } else {
-        thumbnail.setSource("@FontAwesome5Solid/users/24");
+        thumbnail.setSource(osparc.utils.Icons.organization(this.self().ICON_SIZE));
       }
+      const store = osparc.store.Store.getInstance();
+      store.getProductEveryone()
+        .then(groupProductEveryone => {
+          if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
+            thumbnail.setSource(osparc.utils.Icons.everyone(this.self().ICON_SIZE));
+          }
+        });
     }
   }
 });

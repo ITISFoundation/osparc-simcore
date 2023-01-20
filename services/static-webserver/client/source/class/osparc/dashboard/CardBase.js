@@ -43,6 +43,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   },
 
   statics: {
+    SHARE_ICON: "@FontAwesome5Solid/share-alt/14",
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
@@ -57,6 +58,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_WORKBENCH: "@FontAwesome5Solid/cubes/14",
     MODE_GUIDED: "@FontAwesome5Solid/play/14",
     MODE_APP: "@FontAwesome5Solid/desktop/14",
+
+    CARD_PRIORITY: {
+      NEW: 0,
+      PLACEHOLDER: 1,
+      ITEM: 2,
+      LOADER: 3
+    },
 
     filterText: function(checks, text) {
       if (text) {
@@ -87,6 +95,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     appearance: {
       refine : true,
       init : "pb-listitem"
+    },
+
+    cardKey: {
+      check: "String",
+      nullable: true
     },
 
     resourceData: {
@@ -164,6 +177,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyUiMode"
     },
 
+    updatable: {
+      check: [null, "retired", "deprecated", "updatable"],
+      nullable: false,
+      init: null,
+      event: "changeUpdatable",
+      apply: "__applyUpdatable"
+    },
+
     hits: {
       check: "Number",
       nullable: true,
@@ -202,6 +223,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       init: false,
       nullable: false,
       apply: "_applyFetching"
+    },
+
+    priority: {
+      check: "Number",
+      init: null,
+      nullable: false
     }
   },
 
@@ -218,37 +245,33 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.getResourceType() === resourceType;
     },
 
-    __applyResourceData: function(studyData) {
+    __applyResourceData: function(resourceData) {
       let defaultThumbnail = "";
       let uuid = null;
       let owner = "";
-      let accessRights = {};
       let defaultHits = null;
       let workbench = null;
-      switch (studyData["resourceType"]) {
+      switch (resourceData["resourceType"]) {
         case "study":
-          uuid = studyData.uuid ? studyData.uuid : uuid;
-          owner = studyData.prjOwner ? studyData.prjOwner : owner;
-          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
+          uuid = resourceData.uuid ? resourceData.uuid : uuid;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
           defaultThumbnail = this.self().STUDY_ICON;
-          workbench = studyData.workbench ? studyData.workbench : workbench;
+          workbench = resourceData.workbench ? resourceData.workbench : workbench;
           break;
         case "template":
-          uuid = studyData.uuid ? studyData.uuid : uuid;
-          owner = studyData.prjOwner ? studyData.prjOwner : owner;
-          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
+          uuid = resourceData.uuid ? resourceData.uuid : uuid;
+          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
           defaultThumbnail = this.self().TEMPLATE_ICON;
-          workbench = studyData.workbench ? studyData.workbench : workbench;
+          workbench = resourceData.workbench ? resourceData.workbench : workbench;
           break;
         case "service":
-          uuid = studyData.key ? studyData.key : uuid;
-          owner = studyData.owner ? studyData.owner : owner;
-          accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
+          uuid = resourceData.key ? resourceData.key : uuid;
+          owner = resourceData.owner ? resourceData.owner : owner;
           defaultThumbnail = this.self().SERVICE_ICON;
-          if (osparc.data.model.Node.isComputational(studyData)) {
+          if (osparc.data.model.Node.isComputational(resourceData)) {
             defaultThumbnail = this.self().COMP_SERVICE_ICON;
           }
-          if (osparc.data.model.Node.isDynamic(studyData)) {
+          if (osparc.data.model.Node.isDynamic(resourceData)) {
             defaultThumbnail = this.self().DYNAMIC_SERVICE_ICON;
           }
           defaultHits = 0;
@@ -256,25 +279,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       this.set({
-        resourceType: studyData.resourceType,
+        resourceType: resourceData.resourceType,
         uuid,
-        title: studyData.name,
-        description: studyData.description,
+        title: resourceData.name,
+        description: resourceData.description,
         owner,
-        accessRights,
-        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
-        icon: studyData.thumbnail || defaultThumbnail,
-        state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        quality: studyData.quality ? studyData.quality : null,
-        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null,
-        hits: studyData.hits ? studyData.hits : defaultHits,
+        accessRights: resourceData.accessRights ? resourceData.accessRights : {},
+        lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
+        icon: resourceData.thumbnail || defaultThumbnail,
+        state: resourceData.state ? resourceData.state : {},
+        classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
+        quality: resourceData.quality ? resourceData.quality : null,
+        uiMode: resourceData.ui && resourceData.ui.mode ? resourceData.ui.mode : null,
+        hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
     },
 
     __applyUuid: function(value, old) {
       osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
+
+      this.setCardKey(value);
     },
 
     _applyIcon: function(value, old) {
@@ -306,8 +331,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyQuality: function(quality) {
-      if (osparc.component.metadata.Quality.isEnabled(quality)) {
-        const tsrRating = this.getChildControl("tsr-rating");
+      if (!osparc.utils.Utils.isProduct("s4llite") && osparc.component.metadata.Quality.isEnabled(quality)) {
+        const tsrRatingLayout = this.getChildControl("tsr-rating");
+        const tsrRating = tsrRatingLayout.getChildren()[1];
         tsrRating.set({
           nStars: 4,
           showScore: true
@@ -353,37 +379,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return;
       }
 
-      const updateStudy = this.getChildControl("update-study");
-      updateStudy.addListener("pointerdown", e => e.stopPropagation());
-      updateStudy.addListener("tap", e => {
-        e.stopPropagation();
-        this.__openUpdateServices();
-      }, this);
+      // Updatable study
       if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
-        updateStudy.show();
-        updateStudy.set({
-          toolTipText: this.tr("Service(s) retired, please update"),
-          textColor: osparc.utils.StatusUI.getColor("retired")
-        });
+        this.setUpdatable("retired");
       } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
-        updateStudy.show();
-        updateStudy.set({
-          toolTipText: this.tr("Service(s) deprecated, please update"),
-          textColor: osparc.utils.StatusUI.getColor("deprecated")
-        });
+        this.setUpdatable("deprecated");
       } else {
         osparc.utils.Study.isWorkbenchUpdatable(workbench)
           .then(updatable => {
             if (updatable) {
-              updateStudy.show();
-              updateStudy.set({
-                toolTipText: this.tr("Update available"),
-                textColor: "text"
-              });
+              this.setUpdatable("updatable");
             }
           });
       }
 
+      // Block card
       osparc.utils.Study.getUnaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
@@ -396,6 +406,39 @@ qx.Class.define("osparc.dashboard.CardBase", {
             this.__blockCard(image, toolTipText);
           }
         });
+    },
+
+    __applyUpdatable: function(updatable) {
+      const updateStudy = this.getChildControl("update-study");
+      updateStudy.addListener("pointerdown", e => e.stopPropagation());
+      updateStudy.addListener("tap", e => {
+        e.stopPropagation();
+        this.__openUpdateServices();
+      }, this);
+
+      let toolTipText = null;
+      let textColor = null;
+      switch (updatable) {
+        case "retired":
+          toolTipText = this.tr("Service(s) retired, please update");
+          textColor = osparc.utils.StatusUI.getColor("retired");
+          break;
+        case "deprecated":
+          toolTipText = this.tr("Service(s) deprecated, please update");
+          textColor = osparc.utils.StatusUI.getColor("deprecated");
+          break;
+        case "updatable":
+          toolTipText = this.tr("Update available");
+          textColor = "text";
+          break;
+      }
+      if (toolTipText || textColor) {
+        updateStudy.show();
+        updateStudy.set({
+          toolTipText,
+          textColor
+        });
+      }
     },
 
     _applyState: function(state) {
@@ -491,12 +534,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _setStudyPermissions: function(accessRights) {
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(myGroupId);
-
       const permissionIcon = this.getChildControl("permission-icon");
-      if (osparc.component.permissions.Study.canGroupsWrite(accessRights, orgIDs)) {
+      if (osparc.data.model.Study.canIWrite(accessRights)) {
         permissionIcon.exclude();
       } else {
         permissionIcon.setSource(osparc.dashboard.CardBase.PERM_READ);
@@ -524,7 +563,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return moreOpts;
     },
 
-    _openAccessRights: function() {
+    openAccessRights: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openAccessRights();
     },
@@ -537,6 +576,107 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __openUpdateServices: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openUpdateServices();
+    },
+
+    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    _evaluateShareIcon: function(shareIcon, accessRights) {
+      shareIcon.addListener("tap", e => {
+        e.stopPropagation();
+        this.openAccessRights();
+      }, this);
+      shareIcon.addListener("pointerdown", e => e.stopPropagation());
+
+      const store = osparc.store.Store.getInstance();
+      Promise.all([
+        store.getGroupEveryone(),
+        store.getProductEveryone(),
+        store.getVisibleMembers(),
+        store.getGroupsOrganizations()
+      ])
+        .then(values => {
+          const everyone = values[0] ? [values[0]] : [];
+          const productEveryone = values[1] ? [values[1]] : [];
+          const orgMembs = [];
+          const orgMembers = values[2];
+          for (const gid of Object.keys(orgMembers)) {
+            orgMembs.push(orgMembers[gid]);
+          }
+          const orgs = values.length === 4 ? values[3] : [];
+          const groups = [orgMembs, orgs, productEveryone, everyone];
+          this.__setIconAndTooltip(shareIcon, accessRights, groups);
+        });
+
+      if (this.isResourceType("study")) {
+        this._setStudyPermissions(accessRights);
+      }
+    },
+
+    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    __setIconAndTooltip: function(shareIcon, accessRights, groups) {
+      if (osparc.data.model.Study.canIWrite(accessRights)) {
+        shareIcon.set({
+          source: osparc.dashboard.CardBase.SHARE_ICON,
+          toolTipText: this.tr("Share")
+        });
+      }
+      let sharedGrps = [];
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      for (let i=0; i<groups.length; i++) {
+        if (groups[i].length === 0) {
+          // user has no read access to the productEveryone
+          continue;
+        }
+        const sharedGrp = [];
+        const gids = Object.keys(accessRights);
+        for (let j=0; j<gids.length; j++) {
+          const gid = parseInt(gids[j]);
+          if (this.isResourceType("study") && (gid === myGroupId)) {
+            continue;
+          }
+          const grp = groups[i].find(group => group["gid"] === gid);
+          if (grp) {
+            sharedGrp.push(grp);
+          }
+        }
+        if (sharedGrp.length === 0) {
+          continue;
+        } else {
+          sharedGrps = sharedGrps.concat(sharedGrp);
+        }
+        switch (i) {
+          case 0:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
+            break;
+          case 1:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+            break;
+          case 2:
+          case 3:
+            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+            break;
+        }
+      }
+
+      // tooltip
+      if (sharedGrps.length === 0) {
+        return;
+      }
+      const sharedGrpLabels = [];
+      const maxItems = 6;
+      for (let i=0; i<sharedGrps.length; i++) {
+        if (i > maxItems) {
+          sharedGrpLabels.push("...");
+          break;
+        }
+        const sharedGrpLabel = sharedGrps[i]["label"];
+        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+          sharedGrpLabels.push(sharedGrpLabel);
+        }
+      }
+      const hintText = sharedGrpLabels.join("<br>");
+      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
+      shareIcon.addListener("mouseover", () => hint.show(), this);
+      shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
     /**
@@ -566,6 +706,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _filterText: function(text) {
       const checks = [
+        this.getUuid(),
         this.getTitle(),
         this.getDescription(),
         this.getOwner()

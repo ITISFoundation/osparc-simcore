@@ -47,7 +47,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
 
           const form = new qx.ui.form.Form();
           for (let [key, value] of Object.entries(statics)) {
-            const textField = new qx.ui.form.TextField(value.toString()).set({
+            const textField = new qx.ui.form.TextField().set({
+              value: typeof value === "object" ? JSON.stringify(value) : value.toString(),
               readOnly: true
             });
             form.add(textField, key, null, key);

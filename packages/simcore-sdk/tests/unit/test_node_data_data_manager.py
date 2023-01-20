@@ -37,7 +37,7 @@ async def test_push_folder(
     node_uuid: str,
     mocker,
     tmpdir: Path,
-    create_files: Callable,
+    create_files: Callable[..., list[Path]],
 ):
     # create some files
     assert tmpdir.exists()
@@ -107,7 +107,7 @@ async def test_push_file(
     node_uuid: str,
     mocker,
     tmpdir: Path,
-    create_files: Callable,
+    create_files: Callable[..., list[Path]],
 ):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
@@ -143,7 +143,7 @@ async def test_pull_folder(
     node_uuid: str,
     mocker,
     tmpdir: Path,
-    create_files: Callable,
+    create_files: Callable[..., list[Path]],
 ):
     assert tmpdir.exists()
     # create a folder to compress from
@@ -213,7 +213,7 @@ async def test_pull_file(
     node_uuid: str,
     mocker,
     tmpdir: Path,
-    create_files: Callable,
+    create_files: Callable[..., list[Path]],
 ):
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()

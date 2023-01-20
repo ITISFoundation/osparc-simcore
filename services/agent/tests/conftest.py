@@ -14,13 +14,13 @@ from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
-from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
 pytestmark = pytest.mark.asyncio
 
 pytest_plugins = [
+    "pytest_simcore.aws_services",
     "pytest_simcore.repository_paths",
 ]
 
@@ -89,7 +89,6 @@ async def unused_volume(
     run_id: str,
     unused_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
-
     async with aiodocker.Docker() as docker_client:
         source = _get_source(run_id, node_uuid, unused_volume_path)
         volume = await docker_client.volumes.create(
@@ -157,10 +156,16 @@ async def used_volume(
 
 
 @pytest.fixture
-def env(monkeypatch: MonkeyPatch, mocked_s3_server_url: HttpUrl, bucket: str) -> None:
+def env(
+    monkeypatch: MonkeyPatch,
+    mocked_s3_server_url: HttpUrl,
+    bucket: str,
+    swarm_stack_name: str,
+) -> None:
     mock_dict = {
         "LOGLEVEL": "DEBUG",
         "SC_BOOT_MODE": BootModeEnum.DEBUG,
+        "AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME": swarm_stack_name,
         "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
         "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
         "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
@@ -182,22 +187,10 @@ def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
         yield caplog
 
 
-@pytest.fixture
-def mocked_s3_server_url() -> Iterator[HttpUrl]:
-    """
-    For download links, the in-memory moto.mock_s3() does not suffice since
-    we need an http entrypoint
-    """
-    # http://docs.getmoto.org/en/latest/docs/server_mode.html#start-within-python
-    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=9000)
-
+@pytest.fixture(scope="module")
+def mocked_s3_server_url(mocked_s3_server: ThreadedMotoServer) -> Iterator[HttpUrl]:
     # pylint: disable=protected-access
-    endpoint_url = parse_obj_as(HttpUrl, f"http://{server._ip_address}:{server._port}")
-
-    print(f"--> started mock S3 server on {endpoint_url}")
-    server.start()
-
+    endpoint_url = parse_obj_as(
+        HttpUrl, f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}"
+    )
     yield endpoint_url
-
-    server.stop()
-    print(f"<-- stopped mock S3 server on {endpoint_url}")

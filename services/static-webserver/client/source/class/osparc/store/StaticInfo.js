@@ -42,21 +42,15 @@ qx.Class.define("osparc.store.StaticInfo", {
       });
     },
 
-    getDisplayNameKey: function() {
-      const productName = osparc.utils.Utils.getProductName();
-      return productName + "DisplayName";
-    },
-
-    getSupportEmail: function() {
-      const productName = osparc.utils.Utils.getProductName();
-      const supportEmailKey = productName + "SupportEmail";
-      return this.getValue(supportEmailKey);
+    getDisplayName: function() {
+      const staticKey = "displayName";
+      return this.getValue(staticKey);
     },
 
     getMaxNumberDyNodes: function() {
       return new Promise(resolve => {
-        const wsKey = "webserverProjects";
-        this.getValue(wsKey)
+        const staticKey = "webserverProjects";
+        this.getValue(staticKey)
           .then(wsStaticData => {
             const key = "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES";
             if (key in wsStaticData) {

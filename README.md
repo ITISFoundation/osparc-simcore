@@ -7,8 +7,7 @@
 
 <!-- NOTE: when branched replace `master` in urls -->
 [![Code style: black]](https://github.com/psf/black)
-[![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
-[![Github-CI Push/PR]](https://github.com/ITISFoundation/osparc-simcore/actions?query=workflow%3A%22Github-CI+Push%2FPR%22+branch%3Amaster)
+[![CI](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg)](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
 [![codecov](https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic)](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![github.io]](https://itisfoundation.github.io/)
 [![itis.dockerhub]](https://hub.docker.com/u/itisfoundation)
@@ -17,7 +16,6 @@
 
 <!-- ADD HERE ALL BADGE URLS. Use https://shields.io/ -->
 [Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
-[Requires.io]:https://requires.io/github/ITISFoundation/osparc-simcore/requirements.svg?branch=master
 [github.io]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green
 [license]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore
@@ -62,10 +60,7 @@ This is the common workflow to build and deploy locally:
 
 Some routes can only be reached via DNS such as `UUID.services.DNS`. Since `UUID.services.127.0.0.1` is **not a valid DNS**, the solution is to use [nip.io](https://nip.io/). A service that maps ``<anything>[.-]<IP Address>.nip.io`` in "dot", "dash" or "hexadecimal" notation to the corresponding ``<IP Address>``.
 
-Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
-for operations during development. This is a representation of ``simcore-stack``:
-
-![](docs/img/.stack-simcore-version.yml.png)
+Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used for operations during development.
 
 ### Requirements
 
@@ -144,7 +139,7 @@ This project is licensed under the terms of the [MIT license](LICENSE).
 ---
 
 <p align="center">
-<img src="https://forthebadge.com/images/badges/built-with-love.svg" width="150">
+<image src="https://github.com/ITISFoundation/osparc-simcore-python-client/blob/4e8b18494f3191d55f6692a6a605818aeeb83f95/docs/_media/mwl.png" alt="Made with love at www.z43.swiss" width="20%" />
 </p>
 
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->

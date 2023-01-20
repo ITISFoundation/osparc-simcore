@@ -12,14 +12,16 @@ const {
   pass,
   newUser,
   startTimeout,
+  basicauthUsername,
+  basicauthPassword,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
 const templateName = "isolve-gpu";
 
 async function runTutorial() {
-  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-  let studyId
+  const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, basicauthUsername, basicauthPassword, enableDemoMode);
+  let studyId;
   try {
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
@@ -42,10 +44,7 @@ async function runTutorial() {
     console.log('Tutorial error: ' + err);
   }
   finally {
-    await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId);
-    await tutorial.logOut();
-    await tutorial.close();
+    await tutorial.leave(studyId);
   }
 
   if (tutorial.getTutorialFailed()) {

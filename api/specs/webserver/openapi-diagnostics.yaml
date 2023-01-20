@@ -80,7 +80,43 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /scheduled_maintenance:
+    get:
+      tags:
+        - maintenance
+      summary: Get Scheduled Maintenance
+      operationId: get_scheduled_maintenance
+      responses:
+        "200":
+          description: Maintenance scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledMaintenance"
+        "204":
+          description: No maintenance scheduled
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
 components:
   responses:
     DefaultErrorResponse:
       $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
+  schemas:
+    ScheduledMaintenance:
+      title: ScheduledMaintenance
+      type: object
+      properties:
+        start:
+          title: Start
+          type: string
+          description: At what time the Maintenance starts (UTC)
+        end:
+          title: End
+          type: string
+          description: At what time the Maintenance ends (UTC)
+        reason:
+          title: Reason
+          type: string
+          description: What the purpose of the Maintenance is
+      additionalProperties: false

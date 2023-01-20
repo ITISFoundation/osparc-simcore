@@ -11,7 +11,12 @@ from pydantic import ValidationError
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
-from simcore_service_webserver.login.settings import LoginOptions, LoginSettings
+from simcore_postgres_database.models.products import ProductLoginSettingsDict
+from simcore_service_webserver.login.settings import (
+    LoginOptions,
+    LoginSettings,
+    LoginSettingsForProduct,
+)
 
 
 def test_login_with_invitation(monkeypatch: MonkeyPatch):
@@ -43,11 +48,10 @@ def test_login_settings_with_2fa(
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",
             **twilio_config,
         },
     )
-    assert LoginSettings.create_from_envs()
+    assert LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
 
 
 def test_login_settings_fails_with_2fa_but_wo_twilio(
@@ -59,43 +63,64 @@ def test_login_settings_fails_with_2fa_but_wo_twilio(
         {
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_REQUIRED": "1",
         },
     )
     with pytest.raises(ValidationError) as exc_info:
-        LoginSettings.create_from_envs()
+        LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
 
     errors: list[ErrorDict] = exc_info.value.errors()
     assert len(errors) == 1
     assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 
 
-def test_login_settings_fails_with_2fa_but_wo_confirmed_email(
+@pytest.fixture
+def no_registration_environment(
     monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
 ):
     # cannot enable 2fa w/o email confirmation
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {
-                "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "0",
-                "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-                "LOGIN_2FA_REQUIRED": "1",
-                **twilio_config,
-            },
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "0",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            **twilio_config,
+        },
+    )
+
+
+def test_login_settings_fails_with_2fa_but_wo_confirmed_email(
+    no_registration_environment: None,
+):
+    # cannot enable 2fa w/o email confirmation
+    with pytest.raises(ValidationError) as exc_info:
+        LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
+
+    errors: list[ErrorDict] = exc_info.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
+
+
+def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
+    no_registration_environment: None,
+):
+    # cannot enable 2fa w/o email confirmation
+    plugin_settings = LoginSettings.create_from_envs()
+    product_settings = ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        LoginSettingsForProduct.create_from_composition(
+            app_login_settings=plugin_settings,
+            product_login_settings=product_settings,
         )
 
-        with pytest.raises(ValidationError) as exc_info:
-            LoginSettings.create_from_envs()
-
-        errors: list[ErrorDict] = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
+    errors: list[ErrorDict] = exc_info.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 
 
 def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 
-    settings = SMTPSettings()
+    settings = SMTPSettings.create_from_envs()
 
     cfg = settings.dict(exclude_unset=True)
 
@@ -107,4 +132,12 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
     config = LoginOptions(**cfg)
     print(config.json(indent=1))
 
-    assert config.SMTP_SENDER is not None
+    assert not hasattr(config, "SMTP_SENDER"), "was deprecated and now we use product"
+
+
+def test_product_login_settings_in_plugin_settings():
+    # pylint: disable=no-member
+    customizable_attributes = set(ProductLoginSettingsDict.__annotations__.keys())
+    settings_atrributes = set(LoginSettingsForProduct.__fields__.keys())
+
+    assert customizable_attributes.issubset(settings_atrributes)

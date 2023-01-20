@@ -138,7 +138,6 @@ async def test_add_new_project_from_model_instance(
                 str(project.uuid),
                 user.id,
                 include_state=False,
-                include_templates=False,
             )
             assert set(project_db["workbench"].keys()) == {file_picker_id, viewer_id}
 

@@ -1,6 +1,6 @@
 from collections import deque
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from aiodocker import Docker
 from aiodocker.utils import clean_filters
@@ -14,11 +14,15 @@ async def docker_client() -> AsyncIterator[Docker]:
         yield docker
 
 
-async def get_dyv_volumes(docker: Docker) -> list[dict]:
+async def get_dyv_volumes(docker: Docker, target_swarm_stack_name: str) -> list[dict]:
     dyv_volumes: deque[dict] = deque()
     volumes = await docker.volumes.list()
     for volume in volumes["Volumes"]:
-        if volume["Name"].startswith(f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_"):
+        volume_labels: dict[str, Any] = volume.get("Labels") or {}
+        if (
+            volume["Name"].startswith(f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_")
+            and volume_labels.get("swarm_stack_name") == target_swarm_stack_name
+        ):
             dyv_volumes.append(volume)
     return list(dyv_volumes)
 

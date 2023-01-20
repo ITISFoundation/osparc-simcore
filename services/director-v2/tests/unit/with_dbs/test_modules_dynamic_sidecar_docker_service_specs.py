@@ -109,9 +109,9 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         "containers_inspect": [],
                         "dynamic_sidecar_id": None,
                         "dynamic_sidecar_network_id": None,
-                        "is_available": False,
+                        "is_ready": False,
                         "is_project_network_attached": False,
-                        "service_environment_prepared": False,
+                        "is_service_environment_ready": False,
                         "service_removal_state": {
                             "can_remove": False,
                             "can_save": None,
@@ -188,14 +188,6 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     "POSTGRES_USER": "test",
                     "POSTGRES_PASSWORD": "test",
                     "POSTGRES_ENDPOINT": "localhost:5432",
-                    "RABBIT_CHANNELS": '{"log": '
-                    '"simcore.services.logs", '
-                    '"progress": '
-                    '"simcore.services.progress", '
-                    '"instrumentation": '
-                    '"simcore.services.instrumentation", '
-                    '"events": '
-                    '"simcore.services.events"}',
                     "RABBIT_HOST": "rabbit",
                     "RABBIT_PASSWORD": "adminadmin",
                     "RABBIT_PORT": "5672",
@@ -215,13 +207,20 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                     "S3_SECURE": "False",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    "SSL_CERT_FILE": "",
                     "STORAGE_HOST": "storage",
                     "STORAGE_PORT": "8080",
                 },
                 "Hosts": [],
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
-                "Labels": {"mem_limit": "8589934592", "nano_cpus_limit": "4000000000"},
+                "Labels": {
+                    "mem_limit": "8589934592",
+                    "nano_cpus_limit": "4000000000",
+                    "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "user_id": "234",
+                    "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                },
                 "Mounts": [
                     {
                         "Source": "/var/run/docker.sock",
@@ -452,10 +451,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
             sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key] = json.dumps(
                 unsorted_list.sort()
             )
-    assert (
-        dynamic_sidecar_spec_dict
-        == expected_dynamic_sidecar_spec_dict
-    )
+    assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
 
     catalog_client = CatalogClient.instance(minimal_app)
     user_service_specs: dict[

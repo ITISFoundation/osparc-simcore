@@ -8,15 +8,17 @@ const {
   urlPrefix,
   templateUuid,
   startTimeout,
+  basicauthUsername,
+  basicauthPassword,
   enableDemoMode
-} = utils.parseCommandLineArgumentsTemplate(args);
+} = utils.parseCommandLineArgumentsAnonymous(args);
 
 const anonURL = urlPrefix + templateUuid;
 const screenshotPrefix = "CCRabbit_";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, basicauthUsername, basicauthPassword, enableDemoMode);
 
   try {
     const page = await tutorial.beforeScript();

@@ -11,42 +11,14 @@ from aiohttp.client_exceptions import ClientError
 from models_library.services import KEY_RE, VERSION_RE
 from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
-from yarl import URL
 
-from .._constants import INDEX_RESOURCE_NAME, RQ_PRODUCT_FRONTEND_KEY
+from ..products import get_product_name
+from ..utils_aiohttp import create_redirect_response
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
 log = logging.getLogger(__name__)
-
-
-def create_redirect_response(
-    app: web.Application, page: str, **parameters
-) -> web.HTTPFound:
-    """
-    Returns a redirect response to the front-end with information on page and parameters embedded in the fragment.
-
-    For instance,
-        https://osparc.io/#/error?message=Sorry%2C%20I%20could%20not%20find%20this%20&status_code=404
-    results from
-            - page=error
-        and parameters
-            - message="Sorry, I could not find this"
-            - status_code=404
-
-    Front-end can then render this data either in an error or a view page
-    """
-    # TODO: Uniform encoding in front-end fragments  https://github.com/ITISFoundation/osparc-simcore/issues/1975
-    log.debug("page: '%s' parameters: '%s'", page, parameters)
-
-    page = page.strip(" /")
-    assert page in ("view", "error")  # nosec
-    fragment_path = str(URL.build(path=f"/{page}").with_query(parameters))
-    redirect_url = (
-        app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
-    )
-    return web.HTTPFound(location=redirect_url)
 
 
 # HANDLERS --------------------------------
@@ -159,7 +131,7 @@ async def get_redirection_to_viewer(request: web.Request):
             user,
             viewer,
             params.download_link,
-            product_name=request[RQ_PRODUCT_FRONTEND_KEY],
+            product_name=get_product_name(request),
         )
         log.debug("Project acquired '%s'", project_id)
 

@@ -49,6 +49,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     this._add(navBar);
 
     // Some resources request before building the main stack
+    osparc.data.MaintenanceTracker.getInstance().startTracker();
+
     const store = osparc.store.Store.getInstance();
     Promise.all([
       store.getAllClassifiers(true),
@@ -74,6 +76,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
       navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+      navBar.addListener("downloadStudyLogs", () => this.__downloadStudyLogs(), this);
       return navBar;
     },
 
@@ -84,9 +87,17 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (this.__studyEditor) {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmBackToDashboard()) {
-          const msg = this.tr("Do you really want to save and close the study?");
+          let msg = this.tr("Do you really want to save and close the study?");
+          let confirmText = this.tr("Save & Close");
+          if (osparc.utils.Utils.isProduct("s4llite")) {
+            msg = this.tr("Do you really want to close the project?");
+            msg += "<br>";
+            msg += this.tr("Make sure you saved the changes to the current <b>smash file</b> and <b>open notebooks</b>");
+            confirmText = this.tr("Close");
+          }
           const win = new osparc.ui.window.Confirmation(msg).set({
-            confirmText: this.tr("Save & Close")
+            caption: confirmText,
+            confirmText
           });
           const confirmButton = win.getConfirmButton();
           osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
@@ -109,16 +120,23 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardBtn = this.__navBar.getChildControl("dashboard-button");
       dashboardBtn.setFetching(true);
       if (this.__studyEditor.didStudyChange()) {
+        // make sure very latest changes are saved
         await this.__studyEditor.updateStudyDocument(false);
       }
       const studyId = this.__studyEditor.getStudy().getUuid();
       this.__studyEditor.closeEditor();
+      this.closeStudy(studyId);
       this.__showDashboard();
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
-      this.__dashboard.getStudyBrowser().reloadStudy(studyId);
       dashboardBtn.setFetching(false);
+    },
+
+    __downloadStudyLogs: function() {
+      if (this.__studyEditor) {
+        this.__studyEditor.getStudyLogger().downloadLogs();
+      }
     },
 
     __createMainStack: function() {
@@ -182,8 +200,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       ].forEach(browser => {
         if (browser) {
           browser.addListener("startStudy", e => {
-            const startStudyData = e.getData();
-            this.__startStudy(startStudyData);
+            const startStudyId = e.getData();
+            this.__startStudy(startStudyId);
           }, this);
         }
       });
@@ -249,11 +267,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__mainStack.setSelection([this.__studyEditor]);
     },
 
-    __startStudy: function(startStudyData) {
-      const {
-        studyId,
-        pageContext
-      } = startStudyData;
+    __startStudy: function(studyId) {
       this.__showLoadingPage(this.tr("Loading Study"));
 
       const params = {
@@ -267,6 +281,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("Study not found");
             throw new Error(msg);
           }
+          const pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
           this.__loadStudy(studyData, pageContext);
         })
         .catch(err => {
@@ -283,6 +298,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.tr("Closing previous snapshot...")
       ]);
       this.__studyEditor.closeEditor();
+      this.closeStudy(studyId);
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -334,6 +350,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.tr("Closing...")
       ]);
       this.__studyEditor.closeEditor();
+      this.closeStudy(studyId);
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -396,6 +413,23 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__showDashboard();
           return;
         });
+    },
+
+    closeStudy: function(studyId) {
+      if (studyId === undefined) {
+        if (this.__studyEditor && this.__studyEditor.getStudy()) {
+          studyId = this.__studyEditor.getStudy().getUuid();
+        } else {
+          return;
+        }
+      }
+      const params = {
+        url: {
+          "studyId": studyId
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      osparc.data.Resources.fetch("studies", "close", params);
     },
 
     __syncStudyEditor: function(pageContext = "workbench") {
