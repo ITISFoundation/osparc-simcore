@@ -128,9 +128,17 @@ async def _file_chunk_reader(
             yield chunk
 
 
+@dataclass(frozen=True)
+class ProgressData:
+    current: int
+    total: int
+
+
 @runtime_checkable
 class LogRedirectCB(Protocol):
-    async def __call__(self, msg: str) -> None:
+    async def __call__(
+        self, msg: str, progress_data: Optional[ProgressData] = None
+    ) -> None:
         ...
 
 
@@ -143,8 +151,11 @@ async def _file_chunk_writer(
     async with aiofiles.open(file, "wb") as file_pointer:
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
-            if pbar.update(len(chunk)) and io_log_redirect_cb:
-                await io_log_redirect_cb(f"{pbar}")
+            if pbar.update(len(chunk)):
+                if io_log_redirect_cb:
+                    await io_log_redirect_cb(
+                        f"{pbar}", ProgressData(pbar.n, pbar.total)
+                    )
 
 
 log = logging.getLogger(__name__)
@@ -276,8 +287,12 @@ async def _upload_file_part(
                 },
             ) as response:
                 await _raise_for_status(response)
-                if pbar.update(file_part_size) and io_log_redirect_cb:
-                    await io_log_redirect_cb(f"{pbar}")
+                if pbar.update(file_part_size):
+                    if io_log_redirect_cb:
+                        await io_log_redirect_cb(
+                            f"{pbar}", ProgressData(pbar.n, pbar.total)
+                        )
+
                 # NOTE: the response from minio does not contain a json body
                 assert response.status == web.HTTPOk.status_code  # nosec
                 assert response.headers  # nosec

@@ -8,6 +8,7 @@ from models_library.rabbitmq_messages import ProgressType
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.file_io_utils import ProgressData
 from tenacity import retry
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
@@ -172,10 +173,19 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=0.99)
 
 
-async def _progress_cb(app: FastAPI, progress_type: ProgressType, msg: str) -> None:
+async def _logs_cb(
+    app: FastAPI,
+    progress_type: ProgressType,
+    msg: str,
+    progress_data: Optional[ProgressData] = None,
+) -> None:
     await post_sidecar_log_message(app, msg)
-    # TODO: convert to progress message
-    await post_progress_message(app, 0, progress_type)
+    if progress_data:
+        await post_progress_message(
+            app,
+            float(progress_data.current / (progress_data.total or 1.0)),
+            progress_type,
+        )
 
 
 async def task_restore_state(
@@ -212,9 +222,7 @@ async def task_restore_state(
                 project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                 node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                 file_or_folder=path,
-                io_log_redirect_cb=functools.partial(
-                    _progress_cb, app, ProgressType.SERVICE_STATE_PULLING
-                ),
+                io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_STATE_PULLING),  # type: ignore
             )
             for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
             if exists
@@ -247,9 +255,7 @@ async def task_save_state(
                 file_or_folder=state_path,
                 r_clone_settings=settings.rclone_settings_for_nodeports,
                 archive_exclude_patterns=mounted_volumes.state_exclude,
-                io_log_redirect_cb=functools.partial(
-                    _progress_cb, app, ProgressType.SERVICE_STATE_PUSHING
-                ),
+                io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_STATE_PUSHING),  # type: ignore
             )
         )
 
@@ -275,9 +281,7 @@ async def task_ports_inputs_pull(
         nodeports.PortTypeName.INPUTS,
         mounted_volumes.disk_inputs_path,
         port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(
-            _progress_cb, app, ProgressType.SERVICE_INPUTS_PULLING
-        ),
+        io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_INPUTS_PULLING),  # type: ignore
     )
     await post_sidecar_log_message(app, "Finished pulling inputs")
     progress.update(message="finished inputs pulling", percent=0.99)
@@ -298,9 +302,7 @@ async def task_ports_outputs_pull(
         nodeports.PortTypeName.OUTPUTS,
         mounted_volumes.disk_outputs_path,
         port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(
-            _progress_cb, app, ProgressType.SERVICE_OUTPUTS_PULLING
-        ),
+        io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_OUTPUTS_PULLING),  # type: ignore
     )
     await post_sidecar_log_message(app, "Finished pulling outputs")
     progress.update(message="finished outputs pulling", percent=0.99)
