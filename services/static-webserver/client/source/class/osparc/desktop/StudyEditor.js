@@ -586,6 +586,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __stopIdleTimer: function() {
+      clearInterval(this.__idleInteval);
+
+      if (this.__idleFlashMessage) {
+        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
+        this.__idleFlashMessage = null;
+      }
+
       if (this.__idleTimer) {
         clearTimeout(this.__idleTimer);
       }
