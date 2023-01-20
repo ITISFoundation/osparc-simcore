@@ -97,18 +97,10 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       const oldStart = this.getStart();
       const oldEnd = this.getEnd();
       const oldReason = this.getReason();
-      if ("start" in maintenanceData) {
-        const startDate = new Date(maintenanceData.start);
-        this.setStart(startDate);
-      }
-      if ("end" in maintenanceData) {
-        const endDate = new Date(maintenanceData.end);
-        this.setEnd(new Date(endDate));
-      }
-      if ("reason" in maintenanceData) {
-        const reason = maintenanceData.reason;
-        this.setReason(reason);
-      }
+
+      this.setStart("start" in maintenanceData ? new Date(maintenanceData.start) : null);
+      this.setEnd("end" in maintenanceData ? new Date(maintenanceData.end) : null);
+      this.setReason("reason" in maintenanceData ? maintenanceData.reason : null);
 
       if (
         (oldStart === null || oldStart.getTime() !== this.getStart().getTime()) ||
