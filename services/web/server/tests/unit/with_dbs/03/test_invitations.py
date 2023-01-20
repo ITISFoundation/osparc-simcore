@@ -105,25 +105,25 @@ def expected_invitation(
     )
 
 
+@pytest.fixture()
+def base_url(app_invitation_plugin_settings: InvitationsSettings) -> URL:
+    return URL(app_invitation_plugin_settings.base_url)
+
+
 @pytest.fixture
 def mock_invitations_service_http_api(
     aioresponses_mocker: AioResponsesMock,
     invitations_service_openapi_specs: dict[str, Any],
-    app_invitation_plugin_settings: InvitationsSettings,
+    base_url: URL,
     expected_invitation: InvitationContent,
 ) -> AioResponsesMock:
     oas = deepcopy(invitations_service_openapi_specs)
-    base_url = URL(app_invitation_plugin_settings.base_url)
 
     # healthcheck
     assert "/" in oas["paths"]
     aioresponses_mocker.get(
         f"{base_url}/",
         status=web.HTTPOk.status_code,
-    )
-    aioresponses_mocker.get(
-        f"{base_url}/",
-        status=web.HTTPServiceUnavailable.status_code,
     )
 
     # meta
@@ -159,7 +159,9 @@ async def test_invitation_service_unavailable(client: TestClient):
 
 
 async def test_invitation_service_api_ping(
-    client: TestClient, mock_invitations_service_http_api: AioResponsesMock
+    client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
+    base_url: URL,
 ):
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
@@ -167,6 +169,11 @@ async def test_invitation_service_api_ping(
 
     # first request is mocked to pass
     assert await invitations_api.ping()
+
+    mock_invitations_service_http_api.get(
+        f"{base_url}/",
+        status=web.HTTPServiceUnavailable.status_code,
+    )
 
     # second request is mocked to fail
     assert not await invitations_api.is_responsive()
@@ -184,7 +191,7 @@ async def test_valid_invitation(
     assert invitation == expected_invitation
 
 
-async def test_invalid_invitation_if_already_registered(
+async def test_invalid_invitation_if_guest_is_already_registered(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: InvitationContent,
