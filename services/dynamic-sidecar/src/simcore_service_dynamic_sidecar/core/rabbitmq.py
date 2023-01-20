@@ -55,8 +55,7 @@ async def post_progress_message(
         progress_type=progress_type,
         progress=progress_value,
     )
-    if _is_rabbitmq_initialized(app):
-        await get_rabbitmq_client(app).publish(message.channel_name, message.json())
+    await _post_rabbit_message(app, message)
 
 
 async def post_sidecar_log_message(app: FastAPI, logs: str) -> None:

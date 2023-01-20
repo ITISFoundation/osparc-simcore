@@ -5,17 +5,13 @@ docker_compose_* coroutines are implemented such that they can only
 run sequentially by this service
 
 """
-import asyncio
 import logging
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Final, Optional
+from typing import Optional
 
-import aiodocker
 from fastapi import FastAPI
-from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.rabbitmq_messages import ProgressType
-from pydantic import ByteSize
 from servicelib.async_utils import run_sequentially_in_context
 from settings_library.basic_types import LogLevel
 from simcore_service_dynamic_sidecar.core.rabbitmq import (
@@ -23,7 +19,7 @@ from simcore_service_dynamic_sidecar.core.rabbitmq import (
     post_sidecar_log_message,
 )
 
-from .docker_utils import docker_client, get_docker_service_images
+from .docker_utils import get_docker_service_images, pull_images
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
@@ -91,9 +87,6 @@ async def docker_compose_config(
     return result  # type: ignore
 
 
-_DOWNLOAD_RATIO: Final[float] = 0.75
-
-
 async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     """
     Pulls all images required by the service.
@@ -102,103 +95,19 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     """
     app_settings: ApplicationSettings = app.state.settings
     registry_settings = app_settings.REGISTRY_SETTINGS
-
-    async def _pull_image_with_progress(
-        client: aiodocker.Docker, image: str, all_image_pulling_data: dict[str, Any]
-    ) -> None:
-        # NOTE: image is of type registry_host/organization/any/number/of/folders/image_name:tag
-        # NOTE: if there is no registry_host, then there is no auth allowed, which is typical for dockerhub or local images
-        # NOTE: progress is such that downloading is taking 3/4 of the time, Extracting 1/4
-        match = DOCKER_GENERIC_TAG_KEY_RE.match(image)
-        registry_host = ""
-        if match:
-            registry_host = match.group("registry_host")
-        else:
-            logger.error(
-                "%s does not match typical docker image pattern, please check! Image pulling will still be attempted but may fail.",
-                f"{image=}",
-            )
-
-        simplified_image_name = image.rsplit("/", maxsplit=1)[-1]
-        all_image_pulling_data[image] = {}
-        async for pull_progress in client.images.pull(
-            image,
-            stream=True,
-            auth={
-                "username": registry_settings.REGISTRY_USER,
-                "password": registry_settings.REGISTRY_PW.get_secret_value(),
-            }
-            if registry_host
-            else None,
-        ):
-            if pull_progress.get("status") == "Downloading":
-                # NOTE: this takes the bulk of the time
-                layer_id = pull_progress["id"]
-                all_image_pulling_data[image][layer_id] = (
-                    _DOWNLOAD_RATIO * pull_progress["progressDetail"]["current"],
-                    pull_progress["progressDetail"]["total"],
-                )
-            elif pull_progress.get("status") == "Download complete":
-                layer_id = pull_progress["id"]
-                _, layer_total_size = all_image_pulling_data[image][layer_id]
-                all_image_pulling_data[image][layer_id] = (
-                    _DOWNLOAD_RATIO * layer_total_size,
-                    layer_total_size,
-                )
-            elif pull_progress.get("status") == "Extracting":
-                layer_id = pull_progress["id"]
-                _, layer_total_size = all_image_pulling_data[image][layer_id]
-                all_image_pulling_data[image][layer_id] = (
-                    _DOWNLOAD_RATIO * layer_total_size
-                    + (1 - _DOWNLOAD_RATIO)
-                    * pull_progress["progressDetail"]["current"],
-                    layer_total_size,
-                )
-            elif pull_progress.get("status") == "Pull complete":
-                layer_id = pull_progress["id"]
-                _, layer_total_size = all_image_pulling_data[image][layer_id]
-                all_image_pulling_data[image][layer_id] = (
-                    layer_total_size,
-                    layer_total_size,
-                )
-
-            def _compute_sizes(
-                all_images: dict[str, dict[str, tuple[int, int]]]
-            ) -> tuple[ByteSize, ByteSize]:
-                total_current_size = total_total_size = 0
-                for layer in all_images.values():
-                    for current_size, total_size in layer.values():
-                        total_current_size += current_size
-                        total_total_size += total_size
-                return (ByteSize(total_current_size), ByteSize(total_total_size))
-
-            total_current, total_total = _compute_sizes(all_image_pulling_data)
-
-            await post_progress_message(
-                app,
-                float(total_current / (total_total or 1)),
-                ProgressType.SERVICE_IMAGES_PULLING,
-            )
-
-            await post_sidecar_log_message(
-                app,
-                f"pulling {simplified_image_name}: {pull_progress}...",
-            )
-
     list_of_images = get_docker_service_images(compose_spec_yaml)
-    all_image_pulling_data: dict[str, dict[str, tuple[int, int]]] = {}
-    async with docker_client() as docker:
-        await asyncio.gather(
-            *(
-                _pull_image_with_progress(docker, image, all_image_pulling_data)
-                for image in list_of_images
-            )
+
+    async def _progress_cb(current: int, total: int) -> None:
+        await post_progress_message(
+            app,
+            float(current / (total or 1)),
+            ProgressType.SERVICE_IMAGES_PULLING,
         )
-    await post_progress_message(
-        app,
-        1.0,
-        ProgressType.SERVICE_IMAGES_PULLING,
-    )
+
+    async def _log_cb(msg: str) -> None:
+        await post_sidecar_log_message(app, msg)
+
+    await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 
 
 async def docker_compose_create(
