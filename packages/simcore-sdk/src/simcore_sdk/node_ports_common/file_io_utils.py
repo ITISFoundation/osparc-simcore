@@ -151,11 +151,8 @@ async def _file_chunk_writer(
     async with aiofiles.open(file, "wb") as file_pointer:
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
-            if pbar.update(len(chunk)):
-                if io_log_redirect_cb:
-                    await io_log_redirect_cb(
-                        f"{pbar}", ProgressData(pbar.n, pbar.total)
-                    )
+            if io_log_redirect_cb and pbar.update(len(chunk)):
+                await io_log_redirect_cb(f"{pbar}", ProgressData(pbar.n, pbar.total))
 
 
 log = logging.getLogger(__name__)
@@ -287,11 +284,10 @@ async def _upload_file_part(
                 },
             ) as response:
                 await _raise_for_status(response)
-                if pbar.update(file_part_size):
-                    if io_log_redirect_cb:
-                        await io_log_redirect_cb(
-                            f"{pbar}", ProgressData(pbar.n, pbar.total)
-                        )
+                if io_log_redirect_cb and pbar.update(file_part_size):
+                    await io_log_redirect_cb(
+                        f"{pbar}", ProgressData(pbar.n, pbar.total)
+                    )
 
                 # NOTE: the response from minio does not contain a json body
                 assert response.status == web.HTTPOk.status_code  # nosec
