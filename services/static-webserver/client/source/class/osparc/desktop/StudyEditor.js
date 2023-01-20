@@ -582,8 +582,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
           this.__removeIdleInterval();
         };
-        this.__idleInteval = setInterval(updateFlashMessage, 1000);
         updateFlashMessage();
+        this.__idleInteval = setInterval(updateFlashMessage, 1000);
 
         this.__idleTimer = setTimeout(sendBackToDashboard, countdown);
       };
