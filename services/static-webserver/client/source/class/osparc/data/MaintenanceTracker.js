@@ -40,8 +40,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
-    // CHECK_INTERVAL: 15*60*1000, // Check every 15'
-    CHECK_INTERVAL: 5*1000, // testing
+    CHECK_INTERVAL: 15*60*1000, // Check every 15'
     WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
   },
 
@@ -180,7 +179,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       if (this.getStart().getTime() > now.getTime()) {
         const diff = this.getStart().getTime() - now.getTime();
         this.__logoutTimer = setTimeout(() => logoutUser(), diff);
-      } else if (this.getEnd().getTime() > now.getTime()) {
+      } else if (this.getStart().getTime() < now.getTime() && this.getEnd().getTime() > now.getTime()) {
         logoutUser();
       }
     },
