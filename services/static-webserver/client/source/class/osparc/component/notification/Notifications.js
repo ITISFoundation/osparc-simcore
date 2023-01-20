@@ -44,6 +44,11 @@ qx.Class.define("osparc.component.notification.Notifications", {
       this.__notificationsContainer.addAt(notification, 0);
     },
 
+    removeNotification: function(notification) {
+      this.__notifications.remove(notification);
+      this.__notificationsContainer.remove(notification);
+    },
+
     getNotifications: function() {
       return this.__notifications;
     },

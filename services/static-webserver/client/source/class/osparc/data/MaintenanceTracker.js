@@ -40,23 +40,25 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
-    CHECK_INTERVAL: 60*60*1000, // Check hourly
+    CHECK_INTERVAL: 15*60*1000, // Check every 15'
     WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
   },
 
   members: {
     __checkInternval: null,
+    __lastNotification: null,
+    __lastFlashMessage: null,
+    __logoutTimer: null,
 
     startTracker: function() {
       const checkMaintenance = () => {
-        if (this.getStart()) {
-          return;
-        }
         osparc.data.Resources.get("maintenance")
           .then(scheduledMaintenance => {
             if (scheduledMaintenance) {
               // for now it's just a string
               this.__setMaintenance(JSON.parse(scheduledMaintenance));
+            } else {
+              this.__setMaintenance(null);
             }
           })
           .catch(err => console.error(err));
@@ -94,39 +96,62 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     },
 
     __setMaintenance: function(maintenanceData) {
-      if ("start" in maintenanceData) {
-        const startDate = new Date(maintenanceData.start);
-        this.setStart(startDate);
-      }
-      if ("end" in maintenanceData) {
-        const endDate = new Date(maintenanceData.end);
-        this.setEnd(new Date(endDate));
-      }
-      if ("reason" in maintenanceData) {
-        const reason = maintenanceData.reason;
-        this.setReason(reason);
-      }
+      const oldStart = this.getStart();
+      const oldEnd = this.getEnd();
+      const oldReason = this.getReason();
 
-      const text = this.__getText();
-      const notification = new osparc.component.notification.NotificationUI(text);
-      osparc.component.notification.Notifications.getInstance().addNotification(notification);
+      this.setStart(maintenanceData && "start" in maintenanceData ? new Date(maintenanceData.start) : null);
+      this.setEnd(maintenanceData && "end" in maintenanceData ? new Date(maintenanceData.end) : null);
+      this.setReason(maintenanceData && "reason" in maintenanceData ? maintenanceData.reason : null);
 
-      this.__scheduleMaintenance();
-
-      this.stopTracker();
+      if (
+        (oldStart === null || oldStart.getTime() !== this.getStart().getTime()) ||
+        (oldEnd === null || oldEnd.getTime() !== this.getEnd().getTime()) ||
+        oldReason !== this.getReason()
+      ) {
+        this.__scheduleMaintenance();
+      }
     },
 
     __scheduleMaintenance: function() {
-      this.__scheduleFlashMessage();
-      this.__scheduleLogout();
+      this.__scheduleStart();
+    },
+
+    __scheduleStart: function() {
+      if (this.getStart() === null) {
+        this.__removeNotification();
+        this.__removeFlashMessage();
+        this.__removeScheduledLogout();
+      } else {
+        this.__addNotification();
+        this.__scheduleFlashMessage();
+        this.__scheduleLogout();
+      }
+    },
+
+    __addNotification: function() {
+      this.__removeNotification();
+
+      const text = this.__getText();
+      const notification = this.__lastNotification = new osparc.component.notification.NotificationUI(text);
+      osparc.component.notification.Notifications.getInstance().addNotification(notification);
+    },
+
+    __removeNotification: function() {
+      if (this.__lastNotification) {
+        osparc.component.notification.Notifications.getInstance().removeNotification(this.__lastNotification);
+        this.__lastNotification = null;
+      }
     },
 
     __scheduleFlashMessage: function() {
+      this.__removeFlashMessage();
+
       const popupMessage = () => {
         const now = new Date();
         const duration = this.getStart().getTime() - now.getTime();
         const text = this.__getText();
-        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
+        this.__lastFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
@@ -137,14 +162,41 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
+    __removeFlashMessage: function() {
+      if (this.__lastFlashMessage) {
+        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastFlashMessage);
+        this.__lastFlashMessage = null;
+      }
+    },
+
     __scheduleLogout: function() {
+      this.__removeScheduledLogout();
+
       const logoutUser = () => {
+        this.set({
+          start: null,
+          end: null,
+          reason: null
+        });
+        let text = qx.locale.Manager.tr("We are under maintenance.");
+        text += "<br>";
+        text += qx.locale.Manager.tr("Please, check back later");
+        osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING");
         qx.core.Init.getApplication().logout();
       };
       const now = new Date();
-      const diff = this.getStart().getTime() - now.getTime();
-      console.log("logout scheduled: ", this.getStart());
-      setTimeout(() => logoutUser(), diff);
+      if (this.getStart().getTime() > now.getTime()) {
+        const diff = this.getStart().getTime() - now.getTime();
+        this.__logoutTimer = setTimeout(() => logoutUser(), diff);
+      } else if (this.getStart().getTime() < now.getTime() && this.getEnd().getTime() > now.getTime()) {
+        logoutUser();
+      }
+    },
+
+    __removeScheduledLogout: function() {
+      if (this.__logoutTimer) {
+        clearTimeout(this.__logoutTimer);
+      }
     }
   }
 });
