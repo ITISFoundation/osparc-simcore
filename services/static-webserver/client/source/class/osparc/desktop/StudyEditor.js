@@ -122,6 +122,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __autoSaveTimer: null,
     __idleTimer: null,
     __idleInteval: null,
+    __idleFlashMessage: null,
     __lastSavedStudy: null,
     __updatingStudy: null,
     __updateThrottled: null,
@@ -177,7 +178,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
-          this.__startIdleTimer();
+          if (osparc.utils.Utils.isProduct("s4llite")) {
+            this.__startIdleTimer();
+          }
 
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
@@ -546,13 +549,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       const startCountdown = () => {
         let countdown = outAfter - warningAfter;
-        const flashMessage = osparc.component.message.FlashMessenger.getInstance().logAs("", "WARNING", null, outAfter-warningAfter);
+        this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Are you there?"), "WARNING", null, outAfter-warningAfter);
         const updateFlashMessage = () => {
-          if (flashMessage) {
+          if (this.__idleFlashMessage) {
             let msg = this.tr("Are you there?");
             msg += "<br>";
             msg += `You will be kicked out in ${countdown/1000} seconds`;
-            flashMessage.setMessage(msg);
+            this.__idleFlashMessage.setMessage(msg);
             countdown -= 1000;
           } else if (this.__idleInteval) {
             clearInterval(this.__idleInteval);
@@ -565,6 +568,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       };
 
       const resetTimer = () => {
+        clearInterval(this.__idleInteval);
+        osparc.component.message.FlashMessenger.getInstance().remove(this.__idleFlashMessage);
+        this.__idleFlashMessage = null;
+
         clearTimeout(this.__idleTimer);
         this.__idleTimer = setTimeout(startCountdown, warningAfter);
       };
