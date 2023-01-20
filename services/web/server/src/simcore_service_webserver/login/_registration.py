@@ -21,8 +21,13 @@ from pydantic import (
     validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_service_webserver.invitations_core import (
+    InvalidInvitation,
+    InvitationsServiceUnavailable,
+)
 from yarl import URL
 
+from ..invitations import is_service_invitation_code, validate_invitation_url
 from ._confirmation import (
     ConfirmationAction,
     get_expiration_date,
@@ -43,8 +48,9 @@ class ConfirmationTokenInfoDict(ConfirmationTokenDict):
 
 
 class InvitationData(BaseModel):
-    issuer: Optional[EmailStr] = Field(
-        None, description="email of the person that issues this invitation"
+    issuer: Optional[str] = Field(
+        None,
+        description="Who has issued this invitation? (e.g. an email or a uid)",
     )
     guest: Optional[str] = Field(
         None, description="Reference tag for this invitation", deprecated=True
@@ -151,7 +157,7 @@ async def create_invitation_token(
 
 
 async def check_and_consume_invitation(
-    invitation_code: str, db: AsyncpgStorage, cfg: LoginOptions
+    invitation_code: str, db: AsyncpgStorage, cfg: LoginOptions, app=web.Application
 ) -> InvitationData:
     """Consumes invitation: the code is validated, the invitation retrieives and then deleted
        since it only has one use
@@ -160,6 +166,49 @@ async def check_and_consume_invitation(
 
     :raises web.HTTPForbidden
     """
+    MSG_CONTACT_SUPPORT_SUFFIX = (
+        "Please contact our support team to get a new invitation."
+    )
+
+    # service-type invitations
+
+    if is_service_invitation_code(code=invitation_code):
+        try:
+            url = get_invitation_url(
+                confirmation=ConfirmationTokenDict(
+                    code=invitation_code, action=ConfirmationAction.INVITATION.name
+                ),
+                origin=URL("https://127.0.0.1:8000"),
+            )
+            content = await validate_invitation_url(app, invitation_url=f"{url}")
+
+            log.info("Consuming invitation from service:\n%s", content.json(indent=1))
+            return InvitationData(
+                issuer=content.issuer,
+                guest=content.guest,
+                trial_account_days=content.trial_account_days,
+            )
+
+        except ValidationError as err:
+            raise web.HTTPForbidden(
+                reason=f"{err}. {MSG_CONTACT_SUPPORT_SUFFIX}",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            )
+
+        except InvalidInvitation as err:
+            raise web.HTTPForbidden(
+                reason=f"{err}. {MSG_CONTACT_SUPPORT_SUFFIX}.",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            )
+
+        except InvitationsServiceUnavailable as err:
+            raise web.HTTPServiceUnavailable(
+                reason=f"{err}",
+                content_type=MIMETYPE_APPLICATION_JSON,
+            )
+
+    # database-type invitations
+
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
             invitation = _InvitationValidator.parse_obj(confirmation_token)
@@ -181,7 +230,7 @@ async def check_and_consume_invitation(
         reason=(
             "Invalid invitation code."
             "Your invitation was already used or might have expired."
-            "Please contact our support team to get a new one."
+            + MSG_CONTACT_SUPPORT_SUFFIX
         ),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
