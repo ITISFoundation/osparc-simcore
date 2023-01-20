@@ -110,7 +110,11 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         this.setReason(reason);
       }
 
-      if (oldStart !== this.getStart() || oldEnd !== this.getEnd() || oldReason !== this.getReason()) {
+      if (
+        (oldStart === null || oldStart.getTime() !== this.getStart().getTime()) ||
+        (oldEnd === null || oldEnd.getTime() !== this.getEnd().getTime()) ||
+        oldReason !== this.getReason()
+      ) {
         this.__scheduleMaintenance();
       }
     },
