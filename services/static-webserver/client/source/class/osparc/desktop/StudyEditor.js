@@ -113,6 +113,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }
   },
 
+  statics: {
+    IDLE_CLOSE_AFTER: 30*60*1000, // 30'
+    IDLE_WARNING_AFTER: 20*60*1000 // 20'
+  },
+
   members: {
     __study: null,
     __settingStudy: null,
@@ -560,8 +565,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __startIdleTimer: function() {
-      const warningAfter = 5000;
-      const outAfter = 20000;
+      const warningAfter = this.self().IDLE_WARNING_AFTER;
+      const outAfter = this.self().IDLE_CLOSE_AFTER;
 
       const sendBackToDashboard = () => {
         this.__stopIdleTimer();
