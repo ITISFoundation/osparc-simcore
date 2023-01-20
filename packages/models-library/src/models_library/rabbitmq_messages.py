@@ -39,7 +39,7 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
 
 
 class ProgressType(Enum):
-    COMPUTATION_RUNNING = auto()
+    COMPUTATION_RUNNING = auto()  # NOTE: this is the original only progress report
     SIDECARS_PULLING = auto()
     SERVICE_IMAGES_PULLING = auto()
     SERVICE_INPUTS_PULLING = auto()
