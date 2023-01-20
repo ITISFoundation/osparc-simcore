@@ -1,3 +1,4 @@
+import logging
 from enum import Enum, auto
 from typing import Any, Literal, Optional
 
@@ -31,6 +32,7 @@ class NodeMessageBase(BaseModel):
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs"] = "simcore.services.logs"
     messages: list[str]
+    log_level: int = logging.INFO
 
 
 class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):

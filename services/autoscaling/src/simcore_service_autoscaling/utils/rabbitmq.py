@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 async def post_task_progress_message(app: FastAPI, task: Task, progress: float) -> None:
     with log_catch(logger, reraise=False):
         simcore_label_keys = SimcoreServiceDockerLabelKeys.from_docker_task(task)
-        message = ProgressRabbitMessage(
+        message = ProgressRabbitMessage.construct(
             node_id=simcore_label_keys.node_id,
             user_id=simcore_label_keys.user_id,
             project_id=simcore_label_keys.project_id,
@@ -37,11 +37,12 @@ async def post_task_progress_message(app: FastAPI, task: Task, progress: float) 
 async def post_task_log_message(app: FastAPI, task: Task, log: str, level: int) -> None:
     with log_catch(logger, reraise=False):
         simcore_label_keys = SimcoreServiceDockerLabelKeys.from_docker_task(task)
-        message = LoggerRabbitMessage(
+        message = LoggerRabbitMessage.construct(
             node_id=simcore_label_keys.node_id,
             user_id=simcore_label_keys.user_id,
             project_id=simcore_label_keys.project_id,
             messages=[f"[cluster] {log}"],
+            log_level=level,
         )
         logger.log(level, message)
         await post_message(app, message)

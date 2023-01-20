@@ -39,6 +39,7 @@ async def post_log_message(app: FastAPI, logs: Union[str, list[str]]) -> None:
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
         messages=logs,
+        log_level=logging.INFO,
     )
 
     await _post_rabbit_message(app, message)
