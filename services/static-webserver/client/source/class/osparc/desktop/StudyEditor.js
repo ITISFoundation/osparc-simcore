@@ -573,14 +573,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Are you there?"), "WARNING", null, outAfter-warningAfter);
         const updateFlashMessage = () => {
           if (this.__idleFlashMessage) {
-            let msg = this.tr("Are you there?");
-            msg += "<br>";
-            msg += this.tr("You will be kicked out in ");
+            let msg = this.tr("Are you there?") + "<br>";
+            msg += this.tr("The ") + osparc.utils.Utils.getStudyLabel() + this.tr(" will be closed out in ");
             msg += osparc.utils.Utils.formatSeconds(countdown/1000);
             this.__idleFlashMessage.setMessage(msg);
             countdown -= 1000;
           }
-          this.__removeIdleInterval();
         };
         updateFlashMessage();
         this.__idleInteval = setInterval(updateFlashMessage, 1000);
@@ -589,6 +587,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       };
 
       const resetTimer = () => {
+        console.log("reset timer");
         this.__stopIdleTimer();
         this.__idleTimer = setTimeout(startCountdown, warningAfter);
       };
