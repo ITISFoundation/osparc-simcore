@@ -205,7 +205,7 @@ def _get_egress_proxy_service_config(
 
     envoy_config: dict[str, Any] = _get_envy_config(egress_proxy_rules)
     yaml_str_envy_config: str = yaml.safe_dump(envoy_config, default_style='"')
-    logger.error("ENVOY CONFIG\n%s", yaml_str_envy_config)  # TODO:revert back to debug
+    logger.debug("ENVOY CONFIG\n%s", yaml_str_envy_config)
 
     command: str = " ".join(
         [
@@ -271,9 +271,8 @@ def _allow_outgoing_internet(
     service_spec: ComposeSpecLabel, container_name: str
 ) -> None:
     # containers are allowed complete access to the internet by
-    # connecting them to the `swarm_network_name` network
-    # TODO: this is a security risk because it is accessing the internet via a
-    # a network with swarm services
+    # connecting them to an isolated network (from the rest
+    # of the deployment)
     container_spec = service_spec["services"][container_name]
     networks = container_spec.get("networks", {})
     networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = None
@@ -336,7 +335,7 @@ def add_egress_configuration(
                 egress_proxy_rules=proxy_rules,
                 egress_proxy_settings=egress_proxy_settings,
             )
-            logger.error(  # TODO: revert log level to debug
+            logger.debug(
                 "EGRESS PROXY '%s' CONFIG:\n%s",
                 egress_proxy_name,
                 yaml.safe_dump(egress_proxy_config),
