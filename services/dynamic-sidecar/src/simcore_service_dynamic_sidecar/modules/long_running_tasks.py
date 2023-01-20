@@ -222,7 +222,9 @@ async def task_restore_state(
                 project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                 node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                 file_or_folder=path,
-                io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_STATE_PULLING),  # type: ignore
+                io_log_redirect_cb=functools.partial(
+                    _logs_cb, app, ProgressType.SERVICE_STATE_PULLING
+                ),
             )
             for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
             if exists
@@ -255,7 +257,9 @@ async def task_save_state(
                 file_or_folder=state_path,
                 r_clone_settings=settings.rclone_settings_for_nodeports,
                 archive_exclude_patterns=mounted_volumes.state_exclude,
-                io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_STATE_PUSHING),  # type: ignore
+                io_log_redirect_cb=functools.partial(
+                    _logs_cb, app, ProgressType.SERVICE_STATE_PUSHING
+                ),
             )
         )
 
@@ -281,7 +285,9 @@ async def task_ports_inputs_pull(
         nodeports.PortTypeName.INPUTS,
         mounted_volumes.disk_inputs_path,
         port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_INPUTS_PULLING),  # type: ignore
+        io_log_redirect_cb=functools.partial(
+            _logs_cb, app, ProgressType.SERVICE_INPUTS_PULLING
+        ),
     )
     await post_sidecar_log_message(app, "Finished pulling inputs")
     progress.update(message="finished inputs pulling", percent=0.99)
@@ -302,7 +308,9 @@ async def task_ports_outputs_pull(
         nodeports.PortTypeName.OUTPUTS,
         mounted_volumes.disk_outputs_path,
         port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(_logs_cb, app, ProgressType.SERVICE_OUTPUTS_PULLING),  # type: ignore
+        io_log_redirect_cb=functools.partial(
+            _logs_cb, app, ProgressType.SERVICE_OUTPUTS_PULLING
+        ),
     )
     await post_sidecar_log_message(app, "Finished pulling outputs")
     progress.update(message="finished outputs pulling", percent=0.99)
