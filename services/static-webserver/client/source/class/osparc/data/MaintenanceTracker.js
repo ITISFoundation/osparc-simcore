@@ -116,7 +116,6 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
     __scheduleMaintenance: function() {
       this.__scheduleStart();
-      this.__scheduleEnd();
     },
 
     __scheduleStart: function() {
@@ -178,19 +177,18 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         qx.core.Init.getApplication().logout();
       };
       const now = new Date();
-      const diff = this.getStart().getTime() - now.getTime();
-      console.log("logout scheduled: ", this.getStart());
-      this.__logoutTimer = setTimeout(() => logoutUser(), diff);
+      if (this.getStart().getTime() > now.getTime()) {
+        const diff = this.getStart().getTime() - now.getTime();
+        this.__logoutTimer = setTimeout(() => logoutUser(), diff);
+      } else if (this.getEnd().getTime() > now.getTime()) {
+        logoutUser();
+      }
     },
 
     __removeScheduledLogout: function() {
       if (this.__logoutTimer) {
         clearTimeout(this.__logoutTimer);
       }
-    },
-
-    __scheduleEnd: function() {
-
     }
   }
 });
