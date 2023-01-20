@@ -11,11 +11,15 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from orderedset import OrderedSet
-from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
+from servicelib.docker_constants import (
+    DEFAULT_USER_SERVICES_NETWORK_NAME,
+    SUFFIX_EGRESS_PROXY_NAME,
+)
 
 from ...core.settings import DynamicSidecarEgressSettings
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
+
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +200,6 @@ def _get_envy_config(proxy_rules: OrderedSet[_ProxyRule]) -> dict[str, Any]:
 
 def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
-    dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     egress_proxy_settings: DynamicSidecarEgressSettings,
 ) -> dict[str, Any]:
@@ -225,7 +228,7 @@ def _get_egress_proxy_service_config(
             # allows the proxy to access the internet
             swarm_network_name: None,
             # allows containers to contact proxy via these aliases
-            dynamic_sidecar_network_name: {"aliases": list(network_aliases)},
+            DEFAULT_USER_SERVICES_NETWORK_NAME: {"aliases": list(network_aliases)},
         },
     }
     return egress_proxy_config
@@ -281,7 +284,6 @@ def _allow_outgoing_internet(
 
 def add_egress_configuration(
     service_spec: ComposeSpecLabel,
-    dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: DynamicSidecarEgressSettings,
@@ -315,12 +317,21 @@ def add_egress_configuration(
     if simcore_service_labels.containers_allowed_outgoing_whitelist:
         # get all HostWhitelistPolicy entries from all containers
         all_host_whitelist_policies: list[HostWhitelistPolicy] = []
+
+        hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
+        container_name_to_proxies_names: dict[str, set[set]] = {}
+
         for (
             container_name,
             host_whitelist_policies,
         ) in simcore_service_labels.containers_allowed_outgoing_whitelist.items():
             for host_whitelist_policy in host_whitelist_policies:
                 all_host_whitelist_policies.append(host_whitelist_policy)
+
+                for port in host_whitelist_policy.iter_tcp_ports():
+                    hostname_port_to_container_name[
+                        (host_whitelist_policy.hostname, port)
+                    ] = container_name
 
         # assemble proxy configuration based on all HostWhitelistPolicy entries
         grouped_proxy_rules = _get_egress_proxy_dns_port_rules(
@@ -330,9 +341,8 @@ def add_egress_configuration(
             egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}_{i}"
 
             egress_proxy_config = _get_egress_proxy_service_config(
-                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-                swarm_network_name=swarm_network_name,
                 egress_proxy_rules=proxy_rules,
+                swarm_network_name=swarm_network_name,
                 egress_proxy_settings=egress_proxy_settings,
             )
             logger.debug(
@@ -342,3 +352,16 @@ def add_egress_configuration(
             )
             # adds a new service configuration here
             service_spec["services"][egress_proxy_name] = egress_proxy_config
+
+            # extract dependency between container_name and egress_proxy_name
+            for proxy_rule in proxy_rules:
+                container_name = hostname_port_to_container_name[
+                    (proxy_rule[0].hostname, proxy_rule[1])
+                ]
+                if container_name not in container_name_to_proxies_names:
+                    container_name_to_proxies_names[container_name] = set()
+                container_name_to_proxies_names[container_name].add(egress_proxy_name)
+
+        # attach `depends_on` rules to all container
+        for container_name, proxy_names in container_name_to_proxies_names.items():
+            service_spec["services"][container_name]["depends_on"] = list(proxy_names)

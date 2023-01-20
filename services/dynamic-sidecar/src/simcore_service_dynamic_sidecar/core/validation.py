@@ -5,6 +5,7 @@ import re
 from typing import Any, Generator
 
 import yaml
+from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
@@ -125,9 +126,6 @@ def _merge_env_vars(
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
 
 
-_DEFAULT_USER_SERVICES_NETWORK_NAME = "back----end"
-
-
 def _connect_user_services(
     parsed_compose_spec: dict[str, Any], allow_internet_access: bool
 ) -> None:
@@ -140,7 +138,7 @@ def _connect_user_services(
     if networks is None:
         parsed_compose_spec["networks"] = {}
     else:
-        networks[_DEFAULT_USER_SERVICES_NETWORK_NAME] = {
+        networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = {
             "driver": "overlay",
             "internal": not allow_internet_access,
         }
@@ -149,12 +147,16 @@ def _connect_user_services(
         service_networks = service_content.setdefault("networks", [])
         if service_networks is None:
             # if network is set without entries
-            service_content["networks"] = {_DEFAULT_USER_SERVICES_NETWORK_NAME: None}
+            service_content["networks"] = {DEFAULT_USER_SERVICES_NETWORK_NAME: None}
         elif isinstance(service_networks, list):
-            service_networks.append(_DEFAULT_USER_SERVICES_NETWORK_NAME)
+            service_networks.append(DEFAULT_USER_SERVICES_NETWORK_NAME)
         else:
             # if the network is set as a dictionary (rather non official but works)
-            service_networks[_DEFAULT_USER_SERVICES_NETWORK_NAME] = None
+
+            # if the network already exists do not add (this is the case of the egress proxies)
+            if DEFAULT_USER_SERVICES_NETWORK_NAME in service_networks:
+                continue
+            service_networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = None
 
 
 def parse_compose_spec(compose_file_content: str) -> Any:
