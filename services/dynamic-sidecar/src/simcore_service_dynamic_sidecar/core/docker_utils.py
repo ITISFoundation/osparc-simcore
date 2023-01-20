@@ -114,20 +114,25 @@ def _parse_docker_pull_progress(
 
         if docker_pull_progress["status"] == "Downloading":
             all_image_pulling_data[image_name][layer_id] = (
-                _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"],
+                round(
+                    _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"]
+                ),
                 docker_pull_progress["progressDetail"]["total"],
             )
         elif docker_pull_progress["status"] == "Downloading complete":
+            _, layer_total_size = all_image_pulling_data[image_name][layer_id]
             all_image_pulling_data[image_name][layer_id] = (
-                _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"],
-                docker_pull_progress["progressDetail"]["total"],
+                round(_DOWNLOAD_RATIO * layer_total_size),
+                layer_total_size,
             )
         elif docker_pull_progress["status"] == "Extracting":
             _, layer_total_size = all_image_pulling_data[image_name][layer_id]
             all_image_pulling_data[image_name][layer_id] = (
-                _DOWNLOAD_RATIO * layer_total_size
-                + (1 - _DOWNLOAD_RATIO)
-                * docker_pull_progress["progressDetail"]["current"],
+                round(
+                    _DOWNLOAD_RATIO * layer_total_size
+                    + (1 - _DOWNLOAD_RATIO)
+                    * docker_pull_progress["progressDetail"]["current"]
+                ),
                 layer_total_size,
             )
         elif docker_pull_progress["status"] == "Pull complete":
