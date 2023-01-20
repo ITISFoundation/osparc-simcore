@@ -48,7 +48,7 @@ def setup_client_instance(
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
 
-    assert issubclass(api_cls, BaseServiceClientApi)
+    assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
     def _create_instance() -> None:
         api_cls.create_once(
