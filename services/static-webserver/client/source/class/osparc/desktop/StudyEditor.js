@@ -176,6 +176,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
+          this.__startIdleTimer();
+
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes()
@@ -196,7 +198,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           osparc.data.Resources.get("organizations")
             .then(() => {
               if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
-                // OM? this.__startTimers();
                 this.__startAutoSaveTimer();
               } else {
                 const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
@@ -528,34 +529,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
-    __startTimers: function() {
-      this.__startAutoSaveTimer();
-      this.__startIdleTimer();
-    },
-
     __stopTimers: function() {
-      this.__stopAutoSaveTimer();
       this.__stopIdleTimer();
-    },
-
-    __startAutoSaveTimer: function() {
-      // Save every 3 seconds
-      const interval = 3000;
-      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
-      timer.addListener("interval", () => {
-        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
-          return;
-        }
-        this.__checkStudyChanges();
-      }, this);
-      timer.start();
-    },
-
-    __stopAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.stop();
-        this.__autoSaveTimer.setEnabled(false);
-      }
+      this.__stopAutoSaveTimer();
     },
 
     __startIdleTimer: function() {
@@ -587,6 +563,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __stopIdleTimer: function() {
       if (this.__idleTimer) {
         clearTimeout(this.__idleTimer);
+      }
+    },
+
+    __startAutoSaveTimer: function() {
+      // Save every 3 seconds
+      const interval = 3000;
+      let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
+      timer.addListener("interval", () => {
+        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
+          return;
+        }
+        this.__checkStudyChanges();
+      }, this);
+      timer.start();
+    },
+
+    __stopAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.stop();
+        this.__autoSaveTimer.setEnabled(false);
       }
     },
 
