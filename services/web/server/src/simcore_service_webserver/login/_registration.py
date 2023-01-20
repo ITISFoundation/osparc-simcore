@@ -266,7 +266,6 @@ def get_confirmation_info(
     Extends ConfirmationTokenDict by adding extra info and
     deserializing action's data entry
     """
-    # TODO: move to _confirmation.py??
     info = ConfirmationTokenInfoDict(**confirmation)
 
     action = ConfirmationAction(confirmation["action"])
