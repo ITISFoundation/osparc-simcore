@@ -12,7 +12,11 @@ from models_library.generated_models.docker_rest_api import Availability, Node, 
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from .core.errors import Ec2InstanceNotFoundError, Ec2InvalidDnsNameError
+from .core.errors import (
+    Ec2InstanceNotFoundError,
+    Ec2InvalidDnsNameError,
+    Ec2TooManyInstancesError,
+)
 from .core.settings import ApplicationSettings
 from .models import EC2Instance, Resources
 from .modules.docker import get_docker_client
@@ -354,6 +358,13 @@ async def _start_instances(
     # parse results
     last_issue = ""
     for r in results:
+        if isinstance(r, Ec2TooManyInstancesError):
+            await _log_tasks_message(
+                app,
+                tasks,
+                "Exceptionally high load on computational cluster, please try again later.",
+                level=logging.ERROR,
+            )
         if isinstance(r, Exception):
             logger.error("Unexpected error happened when starting EC2 instance: %s", r)
             last_issue = f"{r}"
@@ -379,12 +390,11 @@ def _get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, 
     }
 
 
-async def _log_tasks_message(app: FastAPI, tasks: list[Task], message: str) -> None:
+async def _log_tasks_message(
+    app: FastAPI, tasks: list[Task], message: str, *, level: int = logging.INFO
+) -> None:
     await asyncio.gather(
-        *(
-            rabbitmq.post_task_log_message(app, task, message, logging.INFO)
-            for task in tasks
-        ),
+        *(rabbitmq.post_task_log_message(app, task, message, level) for task in tasks),
         return_exceptions=True,
     )
 
