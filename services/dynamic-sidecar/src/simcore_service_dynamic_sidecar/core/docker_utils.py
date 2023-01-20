@@ -83,8 +83,8 @@ async def pull_images(
             *(
                 _pull_image_with_progress(
                     docker,
-                    image,
                     registry_settings,
+                    image,
                     images_pulling_data,
                     progress_cb,
                     log_cb,
@@ -131,6 +131,7 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
+        invoke_progress_cb = False
         if pull_progress.get("status") == "Downloading":
             # NOTE: this takes the bulk of the time
             layer_id = pull_progress["id"]
@@ -138,6 +139,7 @@ async def _pull_image_with_progress(
                 _DOWNLOAD_RATIO * pull_progress["progressDetail"]["current"],
                 pull_progress["progressDetail"]["total"],
             )
+            invoke_progress_cb = True
         elif pull_progress.get("status") == "Download complete":
             layer_id = pull_progress["id"]
             _, layer_total_size = all_image_pulling_data[image][layer_id]
@@ -145,6 +147,7 @@ async def _pull_image_with_progress(
                 _DOWNLOAD_RATIO * layer_total_size,
                 layer_total_size,
             )
+            invoke_progress_cb = True
         elif pull_progress.get("status") == "Extracting":
             layer_id = pull_progress["id"]
             _, layer_total_size = all_image_pulling_data[image][layer_id]
@@ -153,6 +156,7 @@ async def _pull_image_with_progress(
                 + (1 - _DOWNLOAD_RATIO) * pull_progress["progressDetail"]["current"],
                 layer_total_size,
             )
+            invoke_progress_cb = True
         elif pull_progress.get("status") == "Pull complete":
             layer_id = pull_progress["id"]
             _, layer_total_size = all_image_pulling_data[image][layer_id]
@@ -160,6 +164,7 @@ async def _pull_image_with_progress(
                 layer_total_size,
                 layer_total_size,
             )
+            invoke_progress_cb = True
 
         def _compute_sizes(
             all_images: dict[str, dict[str, tuple[int, int]]]
@@ -171,6 +176,7 @@ async def _pull_image_with_progress(
                     total_total_size += total_size
             return (total_current_size, total_total_size)
 
-        total_current, total_total = _compute_sizes(all_image_pulling_data)
-        await progress_cb(total_current, total_total)
+        if invoke_progress_cb:
+            total_current, total_total = _compute_sizes(all_image_pulling_data)
+            await progress_cb(total_current, total_total)
         await log_cb(f"pulling {simplified_image_name}: {pull_progress}...")
