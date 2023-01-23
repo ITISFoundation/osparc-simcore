@@ -113,11 +113,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }
   },
 
-  statics: {
-    IDLE_CLOSE_AFTER: 30*60*1000, // 30'
-    IDLE_WARNING_AFTER: 20*60*1000 // 20'
-  },
-
   members: {
     __study: null,
     __settingStudy: null,
@@ -537,6 +532,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         iterations.unlistenToNodeUpdates();
         this.__workbenchView.listenToNodeUpdated();
       }, this);
+    },
+
+    __startIdlingTracker: function() {
+      if (this.__studyEditorIdlingTracker) {
+        this.__studyEditorIdlingTracker.stop();
+      }
+      this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker();
+      this.__studyEditorIdlingTracker.start();
     },
 
     __stopTimers: function() {
