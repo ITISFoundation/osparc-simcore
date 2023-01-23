@@ -537,14 +537,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __startIdlingTracker: function() {
       if (this.__studyEditorIdlingTracker) {
         this.__studyEditorIdlingTracker.stop();
+        this.__studyEditorIdlingTracker = null;
       }
-      this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker();
-      this.__studyEditorIdlingTracker.start();
+      const studyEditorIdlingTracker = this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker();
+      studyEditorIdlingTracker.addListener("userIdled", () => this.fireEvent("userIdled"));
+      studyEditorIdlingTracker.start();
     },
 
     __stopTimers: function() {
       if (this.__studyEditorIdlingTracker) {
         this.__studyEditorIdlingTracker.stop();
+        this.__studyEditorIdlingTracker = null;
       }
       this.__stopAutoSaveTimer();
     },
