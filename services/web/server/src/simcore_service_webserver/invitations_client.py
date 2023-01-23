@@ -75,9 +75,9 @@ class InvitationsServiceApi:
     async def ping(self) -> bool:
         try:
             response = await self.client.get(self._url(self.healthcheck_path))
-            return response.status == web.HTTPOk.status_code
+            return response.ok
         except ClientError as err:
-            logger.debug("failed to connect %s", err)
+            logger.debug("Invitations service is not responsive: %s", err)
         return False
 
     is_responsive = ping

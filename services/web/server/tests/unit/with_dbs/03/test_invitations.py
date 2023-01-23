@@ -124,6 +124,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.get(
         f"{base_url}/",
         status=web.HTTPOk.status_code,
+        repeat=False,  # NOTE: this is only usable once!
     )
 
     # meta
@@ -158,6 +159,7 @@ async def test_invitation_service_unavailable(client: TestClient):
         )
 
 
+@pytest.mark.testit
 async def test_invitation_service_api_ping(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
@@ -170,12 +172,7 @@ async def test_invitation_service_api_ping(
     # first request is mocked to pass
     assert await invitations_api.ping()
 
-    mock_invitations_service_http_api.get(
-        f"{base_url}/",
-        status=web.HTTPServiceUnavailable.status_code,
-    )
-
-    # second request is mocked to fail
+    # second request is mocked to fail (since mock only works once)
     assert not await invitations_api.is_responsive()
 
 
