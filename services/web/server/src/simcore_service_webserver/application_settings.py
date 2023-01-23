@@ -32,6 +32,7 @@ from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
+from .invitations_settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.projects_settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
@@ -136,6 +137,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
         auto_default_from_env=True, description="garbage collector plugin"
+    )
+
+    WEBSERVER_INVITATIONS: Optional[InvitationsSettings] = Field(
+        auto_default_from_env=True, description="invitations plugin"
     )
 
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
