@@ -974,7 +974,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
 
-      loadingPage.addWidgetToMessages(this.getStatus().getProgressStatus().getSequenceForLoadingPage());
+      loadingPage.addExtraWidget(this.getStatus().getProgressStatus().getSequenceForLoadingPage());
 
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
@@ -989,6 +989,8 @@ qx.Class.define("osparc.data.model.Node", {
           });
           startButton.addListener("execute", () => this.requestStartNode());
           loadingPage.addWidgetToMessages(startButton);
+        } else {
+          loadingPage.setMessages([]);
         }
       }, this);
       this.setLoadingPage(loadingPage);

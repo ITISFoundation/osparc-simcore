@@ -91,6 +91,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __logo: null,
     __header: null,
     __messages: null,
+    __extraWidgets: null,
     __loadingWidget: null,
 
     __maxButton: null,
@@ -117,6 +118,12 @@ qx.Class.define("osparc.ui.message.Loading", {
         padding: 20
       });
 
+      const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        alignX: "center"
+      })).set({
+        padding: 20
+      });
+
       const loadingWidget = this.__loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
@@ -126,6 +133,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       loadingWidget.add(image);
       loadingWidget.add(atom);
       loadingWidget.add(messages);
+      loadingWidget.add(extraWidgets);
 
       this._add(new qx.ui.core.Widget(), {
         flex: 1
@@ -189,6 +197,10 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     addWidgetToMessages: function(widget) {
       this.__messages.add(widget);
+    },
+
+    addExtraWidget: function(widget) {
+      this.__extraWidgets.add(widget);
     },
 
     // from osparc.component.widget.PersistentIframe
