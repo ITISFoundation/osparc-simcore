@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Optional, cast
 
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
+from pydantic import Field, HttpUrl, PositiveInt, SecretStr, root_validator, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
@@ -73,15 +73,39 @@ class ApplicationSettings(MinimalApplicationSettings):
     """Web app's environment variables
 
     These settings includes extra configuration for the http-API
+
+    Set both INVITATIONS_USERNAME and INVITATIONS_PASSWORD to None to disable authentication
     """
 
-    INVITATIONS_USERNAME: str = Field(
-        ...,
-        description="Username for HTTP Basic Auth. Required if started as a web app.",
+    INVITATIONS_USERNAME: Optional[str] = Field(
+        None,
+        description="Username for HTTP Basic Auth",
         min_length=3,
     )
-    INVITATIONS_PASSWORD: SecretStr = Field(
-        ...,
-        description="Password for HTTP Basic Auth. Required if started as a web app.",
+    INVITATIONS_PASSWORD: Optional[SecretStr] = Field(
+        None,
+        description="Password for HTTP Basic Auth",
         min_length=10,
     )
+
+    def is_auth_enabled(self):
+        return (
+            self.INVITATIONS_USERNAME is not None
+            and self.INVITATIONS_PASSWORD is not None
+        )
+
+    @root_validator
+    @classmethod
+    def check_complete_auth_state(cls, values):
+        # either both None or none of them is None
+        username = values.get("INVITATIONS_USERNAME")
+        password = values.get("INVITATIONS_PASSWORD")
+
+        if (username is None and password is not None) or (
+            username is not None and password is None
+        ):
+            raise ValueError(
+                f"To disable auth, set username==password==None. Partial None is not allowed, got {username=}, {password=}"
+            )
+
+        return values

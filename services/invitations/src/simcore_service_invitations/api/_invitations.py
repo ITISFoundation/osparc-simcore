@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBasicCredentials
 from pydantic import BaseModel, Field, HttpUrl
 
 from ..core.settings import ApplicationSettings
@@ -14,7 +15,7 @@ from ..invitations import (
     extract_invitation_code_from,
     extract_invitation_content,
 )
-from ._dependencies import get_current_username, get_settings
+from ._dependencies import get_settings, get_validated_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -78,10 +79,9 @@ router = APIRouter()
 async def create_invitation(
     invitation_inputs: _ApiInvitationInputs,
     settings: ApplicationSettings = Depends(get_settings),
-    username: str = Depends(get_current_username),
+    _credentials: Optional[HTTPBasicCredentials] = Depends(get_validated_credentials),
 ):
     """Generates a new invitation code and returns its content and an invitation link"""
-    assert username == settings.INVITATIONS_USERNAME  # nosec
 
     invitation_link = create_invitation_link(
         invitation_inputs,
@@ -107,11 +107,9 @@ async def create_invitation(
 async def extracts_invitation_from_code(
     encrypted: _EncryptedInvitation,
     settings: ApplicationSettings = Depends(get_settings),
-    username: str = Depends(get_current_username),
+    _credentials: Optional[HTTPBasicCredentials] = Depends(get_validated_credentials),
 ):
     """Decrypts the invitation code and returns its content"""
-
-    assert username == settings.INVITATIONS_USERNAME  # nosec
 
     try:
         invitation = extract_invitation_content(
