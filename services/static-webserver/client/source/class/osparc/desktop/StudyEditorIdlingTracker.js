@@ -18,17 +18,15 @@
 qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
   extend: qx.core.Object,
 
-  construct: function() {
-    this.base(arguments);
-  },
-
   events: {
     "userIdled": "qx.event.type.Event"
   },
 
   statics: {
-    IDLE_TIMEOUT: 30*60*1000, // 30'
-    IDLE_WARNING: 15*60*1000 // 15'
+    // IDLE_TIMEOUT: 30*60*1000, // 30'
+    // IDLE_WARNING: 15*60*1000 // 15'
+    IDLE_TIMEOUT: 20*1000, // 30'
+    IDLE_WARNING: 10*1000 // 15'
   },
 
   members: {
@@ -39,8 +37,8 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __updateFlashMessage: function() {
       if (this.__idleFlashMessage) {
-        let msg = this.tr("Are you there?") + "<br>";
-        msg += this.tr("The ") + osparc.utils.Utils.getStudyLabel() + this.tr(" will be closed out in ");
+        let msg = qx.locale.Manager.tr("Are you there?") + "<br>";
+        msg += qx.locale.Manager.tr("The ") + osparc.utils.Utils.getStudyLabel() + qx.locale.Manager.tr(" will be closed in ");
         msg += osparc.utils.Utils.formatSeconds(this.__countdown/1000);
         this.__idleFlashMessage.setMessage(msg);
         this.__countdown -= 1000;
@@ -51,40 +49,20 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       const idleWarning = this.self().IDLE_WARNING;
       const idlingTimeout = this.self().IDLE_TIMEOUT;
 
-      this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Are you there?"), "WARNING", null, idlingTimeout-idleWarning);
+      this.__idleTimer = setTimeout(this.__userIdled.bind(this), idlingTimeout - idleWarning);
+
+      this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you there?"), "WARNING", null, idlingTimeout - idleWarning);
       this.__countdown = idlingTimeout - idleWarning;
       this.__updateFlashMessage();
-      this.__idleInteval = setInterval(this.__updateFlashMessage, 1000);
-
-      this.__idleTimer = setTimeout(this.__userIdled, idlingTimeout);
+      this.__idleInteval = setInterval(this.__updateFlashMessage.bind(this), 1000);
     },
 
     __resetTimer: function() {
       const warningAfter = this.self().IDLE_WARNING;
+
       console.log("reset timer");
-      this.stop();
-      this.__idleTimer = setTimeout(this.__startCountdown, warningAfter);
-    },
-
-    start: function() {
-      this.__resetTimer();
-
-      // OM dettach this
-      window.onmousemove = this.__resetTimer;
-      window.onkeydown = this.__resetTimer;
-    },
-
-    stop: function() {
-      this.__removeIdleInterval();
-      this.__removeIdleFlashMessage();
-      this.__removeIdleTimer();
-    },
-
-    __removeIdleTimer: function() {
-      if (this.__idleTimer) {
-        clearTimeout(this.__idleTimer);
-        this.__idleTimer = null;
-      }
+      this.__removeTimers();
+      this.__idleTimer = setTimeout(this.__startCountdown.bind(this), warningAfter);
     },
 
     __removeIdleInterval: function() {
@@ -101,9 +79,36 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       }
     },
 
+    __removeIdleTimer: function() {
+      if (this.__idleTimer) {
+        clearTimeout(this.__idleTimer);
+        this.__idleTimer = null;
+      }
+    },
+
+    __removeTimers: function() {
+      this.__removeIdleInterval();
+      this.__removeIdleFlashMessage();
+      this.__removeIdleTimer();
+    },
+
     __userIdled: function() {
       this.stop();
       this.fireEvent("userIdled");
+    },
+
+    start: function() {
+      this.__resetTimer();
+
+      window.addEventListener("mousemove", this.__resetTimer.bind(this));
+      window.addEventListener("onkeydown", this.__resetTimer.bind(this));
+    },
+
+    stop: function() {
+      this.__removeTimers();
+
+      window.removeEventListener("mousemove", this.__resetTimer.bind(this));
+      window.removeEventListener("onkeydown", this.__resetTimer.bind(this));
     },
 
     /**
