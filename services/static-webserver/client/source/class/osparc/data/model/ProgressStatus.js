@@ -86,7 +86,7 @@ qx.Class.define("osparc.data.model.ProgressStatus", {
     createTitleAtom: function(label) {
       const atom = new qx.ui.basic.Atom().set({
         label,
-        font: "text-14",
+        font: "text-16",
         icon: "@FontAwesome5Solid/circle-notch/16",
         gap: 15
       });

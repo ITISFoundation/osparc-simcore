@@ -989,8 +989,6 @@ qx.Class.define("osparc.data.model.Node", {
           });
           startButton.addListener("execute", () => this.requestStartNode());
           loadingPage.addWidgetToMessages(startButton);
-        } else {
-          loadingPage.setMessages([]);
         }
       }, this);
       this.setLoadingPage(loadingPage);
