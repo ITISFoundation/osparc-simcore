@@ -68,7 +68,7 @@ def _get_tcp_listener(
         "name": name,
         "address": {
             "socket_address": {
-                "address": "0.0.0.0",
+                "address": "0.0.0.0",  # nosec
                 "port_value": port,
             },
         },
