@@ -134,14 +134,15 @@ def _connect_user_services(
     The network name must only be unique inside the user defined spec.
     `docker-compose` will add some prefix to it.
     """
-    networks = parsed_compose_spec.setdefault("networks", {})
+    networks = parsed_compose_spec.get("networks", None)
     if networks is None:
         parsed_compose_spec["networks"] = {}
-    else:
-        networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = {
-            "driver": "overlay",
-            "internal": not allow_internet_access,
-        }
+    networks = parsed_compose_spec["networks"]
+
+    networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = {
+        "driver": "overlay",
+        "internal": not allow_internet_access,
+    }
 
     for service_content in parsed_compose_spec["services"].values():
         service_networks = service_content.setdefault("networks", [])
