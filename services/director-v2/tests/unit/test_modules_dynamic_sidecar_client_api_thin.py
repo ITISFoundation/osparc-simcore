@@ -12,6 +12,7 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
+from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import (
     ThinDynamicSidecarClient,
@@ -174,7 +175,13 @@ async def test_get_containers_name(
     dynamic_sidecar_network_name: str,
 ) -> None:
     mock_response = Response(status.HTTP_200_OK)
-    encoded_filters = json.dumps(dict(network=dynamic_sidecar_network_name))
+
+    encoded_filters = json.dumps(
+        dict(
+            network=dynamic_sidecar_network_name,
+            exclude_name_part=SUFFIX_EGRESS_PROXY_NAME,
+        )
+    )
     mock_request(
         "GET",
         (
