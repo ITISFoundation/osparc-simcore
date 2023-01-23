@@ -88,6 +88,7 @@ class ApplicationSettings(MinimalApplicationSettings):
         min_length=10,
     )
 
+    @cached_property
     def is_auth_enabled(self) -> bool:
         return (
             self.INVITATIONS_USERNAME is not None

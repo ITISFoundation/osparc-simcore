@@ -47,7 +47,9 @@ class InvitationsServiceApi:
                 auth=BasicAuth(
                     login=settings.INVITATIONS_USERNAME,
                     password=settings.INVITATIONS_PASSWORD.get_secret_value(),
-                ),
+                )
+                if settings.is_auth_enabled
+                else None,
                 raise_for_status=True,
             )
         )
