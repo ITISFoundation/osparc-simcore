@@ -26,7 +26,7 @@ class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
     INVITATIONS_VTAG: VersionTag = "v1"
 
     INVITATIONS_USERNAME: Optional[str] = Field(
-        None,
+        ...,
         description="Username for HTTP Basic Auth. Required if started as a web app.",
         min_length=3,
     )
