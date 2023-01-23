@@ -163,7 +163,7 @@ services:
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     networks:
       - default
     environment:
@@ -175,14 +175,13 @@ services:
     labels:
       - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
       - traefik.enable=true
-      - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
       - traefik.http.routers.${SWARM_STACK_NAME}_invitations.entrypoints=simcore_invitations
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_invitations
+      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=ratelimit-${SWARM_STACK_NAME}_invitations
       - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1
       - traefik.http.routers.${SWARM_STACK_NAME}_invitations.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v1`) ||  PathPrefix(`/v1/`) || Path(`/api/v1/openapi.json`))
       - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=2000ms
       - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.path=/
-      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=1000ms
+      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=2000ms
       - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.server.port=8000
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
