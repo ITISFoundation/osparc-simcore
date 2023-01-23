@@ -18,6 +18,12 @@
 qx.Class.define("osparc.desktop.StudyEditorIdlingTracker2", {
   extend: qx.core.Object,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__resetIdlingTimeBound = this.__resetIdlingTime.bind(this);
+  },
+
   events: {
     "userIdled": "qx.event.type.Event"
   },
@@ -30,6 +36,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker2", {
   },
 
   members: {
+    __resetIdlingTimeBound: null,
     __idlingTime: null,
     __idleInteval: null,
     __idleFlashMessage: null,
@@ -60,10 +67,9 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker2", {
     __startTimer: function() {
       this.__idleInteval = setInterval(() => {
         this.__idlingTime++;
-        console.log("idling", this.__idlingTime);
-        if (this.__idlingTime > this.self().IDLE_TIMEOUT) {
+        if (this.__idlingTime >= this.self().IDLE_TIMEOUT) {
           this.__userIdled();
-        } else if (this.__idlingTime > this.self().IDLE_WARNING) {
+        } else if (this.__idlingTime >= this.self().IDLE_WARNING) {
           this.__updateFlashMessage(this.self().IDLE_TIMEOUT - this.__idlingTime);
         } else if (this.__idleFlashMessage) {
           this.__removeIdleFlashMessage();
@@ -79,21 +85,23 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker2", {
     },
 
     __resetIdlingTime: function() {
-      console.log("__resetIdlingTime");
       this.__idlingTime = 0;
     },
 
     start: function() {
       this.__idlingTime = 0;
-      window.addEventListener("mousemove", this.__resetIdlingTime.bind(this));
-      window.addEventListener("keydown", this.__resetIdlingTime.bind(this));
+
+      const cb = this.__resetIdlingTimeBound;
+      window.addEventListener("mousemove", cb);
+      window.addEventListener("keydown", cb);
 
       this.__startTimer();
     },
 
     stop: function() {
-      window.removeEventListener("mousemove", this.__resetIdlingTime.bind(this));
-      window.removeEventListener("keydown", this.__resetIdlingTime.bind(this));
+      const cb = this.__resetIdlingTimeBound;
+      window.removeEventListener("mousemove", cb);
+      window.removeEventListener("keydown", cb);
 
       this.__removeIdleFlashMessage();
       this.__stopTimer();
