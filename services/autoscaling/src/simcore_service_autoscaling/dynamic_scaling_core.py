@@ -536,6 +536,12 @@ async def _scale_up_cluster(
         await _progress_tasks_message(app, pending_tasks, 0)
 
 
+async def _associate_ec2_instances_with_nodes(
+    app: FastAPI,
+) -> list[tuple[Node, EC2InstanceData]]:
+    ...
+
+
 async def _attach_new_ec2_instances(
     app: FastAPI, monitored_nodes: list[Node]
 ) -> list[Node]:
