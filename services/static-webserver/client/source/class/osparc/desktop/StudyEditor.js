@@ -536,7 +536,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__studyEditorIdlingTracker.stop();
         this.__studyEditorIdlingTracker = null;
       }
-      const studyEditorIdlingTracker = this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker();
+      const studyEditorIdlingTracker = this.__studyEditorIdlingTracker = new osparc.desktop.StudyEditorIdlingTracker2();
       studyEditorIdlingTracker.addListener("userIdled", () => this.fireEvent("userIdled"));
       studyEditorIdlingTracker.start();
     },
