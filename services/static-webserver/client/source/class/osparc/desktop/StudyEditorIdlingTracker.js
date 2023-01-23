@@ -29,10 +29,8 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
   },
 
   statics: {
-    // IDLE_TIMEOUT: 30*60, // 30'
-    // IDLE_WARNING: 15*60 // 15'
-    IDLE_TIMEOUT: 20, // 30'
-    IDLE_WARNING: 10 // 15'
+    IDLE_TIMEOUT: 30*60, // 30'
+    IDLE_WARNING: 15*60 // 15'
   },
 
   members: {
