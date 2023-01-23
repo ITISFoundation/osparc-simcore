@@ -44,6 +44,12 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       transform: "__transformProgress"
     },
 
+    progressStatus: {
+      check: "osparc.data.model.ProgressStatus",
+      nullable: true,
+      init: null
+    },
+
     running: {
       check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
       nullable: true,

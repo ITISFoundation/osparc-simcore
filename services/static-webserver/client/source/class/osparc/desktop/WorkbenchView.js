@@ -653,6 +653,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.listenToNodeUpdated();
 
+      this.listenToNodeProgress();
+
       // callback for events
       const slotName3 = "event";
       if (!socket.slotExists(slotName3)) {
@@ -686,6 +688,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         socket.on(slotName, jsonString => {
           const data = JSON.parse(jsonString);
           this.getStudy().nodeUpdated(data);
+        }, this);
+      }
+    },
+
+    listenToNodeProgress: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      const slotName = "nodeProgress";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, jsonString => {
+          const data = JSON.parse(jsonString);
+          this.getStudy().nodeProgressStatus(data);
         }, this);
       }
     },

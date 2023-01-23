@@ -410,6 +410,21 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
+    nodeProgressStatus: function(nodeProgressData) {
+      const studyId = nodeProgressData["project_id"];
+      if (studyId !== this.getUuid()) {
+        return;
+      }
+      const nodeId = nodeProgressData["node_id"];
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node) {
+        const progressType = nodeProgressData["progress_type"];
+        const progress = nodeProgressData["progress"];
+        node.setProgressStatus(progressType, progress);
+      }
+    },
+
     computeStudyProgress: function() {
       const nodes = this.getWorkbench().getNodes();
       let nCompNodes = 0;

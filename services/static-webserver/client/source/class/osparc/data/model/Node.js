@@ -1290,24 +1290,13 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    __onInteractiveNodeStarted: function(e) {
-      let req = e.getTarget();
-      const {
-        error
-      } = req.getResponse();
-
-      if (error) {
-        const msg = "Error received: " + error;
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg,
-          level: "ERROR"
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-        return;
+    setProgressStatus: function(progressType, progress) {
+      const nodeStatus = this.getStatus();
+      if (!nodeStatus.isPropertyInitialized("progressStatus")) {
+        const progressStatus = new osparc.data.model.ProgressStatus();
+        nodeStatus.setProgressStatus(progressStatus);
       }
-
-      this.__nodeState();
+      this.getStatus().getProgressStatus().addProgressMessage(progressType, progress);
     },
 
     __waitForServiceReady: function(srvUrl) {
