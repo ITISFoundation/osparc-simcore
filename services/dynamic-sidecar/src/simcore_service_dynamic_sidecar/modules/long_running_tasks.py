@@ -4,9 +4,11 @@ from collections import deque
 from typing import Any, Awaitable, Final, Optional
 
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import ProgressType
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.file_io_utils import ProgressData
 from tenacity import retry
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
@@ -22,7 +24,11 @@ from ..core.docker_compose_utils import (
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
 from ..core.docker_utils import get_running_containers_count_from_names
-from ..core.rabbitmq import post_event_reload_iframe, post_sidecar_log_message
+from ..core.rabbitmq import (
+    post_event_reload_iframe,
+    post_progress_message,
+    post_sidecar_log_message,
+)
 from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult, assemble_container_names
 from ..core.validation import parse_compose_spec, validate_compose_spec
@@ -167,6 +173,21 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=0.99)
 
 
+async def _logs_cb(
+    app: FastAPI,
+    progress_type: ProgressType,
+    msg: str,
+    progress_data: Optional[ProgressData] = None,
+) -> None:
+    await post_sidecar_log_message(app, msg)
+    if progress_data:
+        await post_progress_message(
+            app,
+            float(progress_data.current / (progress_data.total or 1.0)),
+            progress_type,
+        )
+
+
 async def task_restore_state(
     progress: TaskProgress,
     settings: ApplicationSettings,
@@ -193,6 +214,7 @@ async def task_restore_state(
         app,
         f"Downloading state files for {existing_files}...",
     )
+
     await logged_gather(
         *(
             data_manager.pull(
@@ -200,7 +222,9 @@ async def task_restore_state(
                 project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                 node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                 file_or_folder=path,
-                io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+                io_log_redirect_cb=functools.partial(
+                    _logs_cb, app, ProgressType.SERVICE_STATE_PULLING
+                ),
             )
             for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
             if exists
@@ -233,7 +257,9 @@ async def task_save_state(
                 file_or_folder=state_path,
                 r_clone_settings=settings.rclone_settings_for_nodeports,
                 archive_exclude_patterns=mounted_volumes.state_exclude,
-                io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+                io_log_redirect_cb=functools.partial(
+                    _logs_cb, app, ProgressType.SERVICE_STATE_PUSHING
+                ),
             )
         )
 
@@ -259,7 +285,9 @@ async def task_ports_inputs_pull(
         nodeports.PortTypeName.INPUTS,
         mounted_volumes.disk_inputs_path,
         port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+        io_log_redirect_cb=functools.partial(
+            _logs_cb, app, ProgressType.SERVICE_INPUTS_PULLING
+        ),
     )
     await post_sidecar_log_message(app, "Finished pulling inputs")
     progress.update(message="finished inputs pulling", percent=0.99)
@@ -280,7 +308,9 @@ async def task_ports_outputs_pull(
         nodeports.PortTypeName.OUTPUTS,
         mounted_volumes.disk_outputs_path,
         port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+        io_log_redirect_cb=functools.partial(
+            _logs_cb, app, ProgressType.SERVICE_OUTPUTS_PULLING
+        ),
     )
     await post_sidecar_log_message(app, "Finished pulling outputs")
     progress.update(message="finished outputs pulling", percent=0.99)

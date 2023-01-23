@@ -85,6 +85,7 @@ async def test_post_task_log_message(
                     project_id=osparc_docker_label_keys.project_id,
                     user_id=osparc_docker_label_keys.user_id,
                     messages=[f"[cluster] {log_message}"],
+                    log_level=0,
                 )
                 .json()
                 .encode()
