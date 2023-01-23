@@ -187,7 +187,7 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
                     },
                 },
             },
-            "networks": {dynamic_sidecar_network_name: {}},
+            "networks": {dynamic_sidecar_network_name: None},
         }
     )
 
@@ -350,6 +350,7 @@ async def test_start_same_space_twice(compose_spec: str, test_client: TestClient
 
 
 async def test_containers_get(
+    docker_swarm: None,
     test_client: TestClient,
     started_containers: list[str],
     ensure_external_volumes: None,
@@ -365,6 +366,7 @@ async def test_containers_get(
 
 
 async def test_containers_get_status(
+    docker_swarm: None,
     test_client: TestClient,
     started_containers: list[str],
     ensure_external_volumes: None,
@@ -387,6 +389,7 @@ async def test_containers_get_status(
 
 
 async def test_containers_docker_status_docker_error(
+    docker_swarm: None,
     test_client: TestClient,
     started_containers: list[str],
     mock_aiodocker_containers_get: int,
@@ -396,7 +399,7 @@ async def test_containers_docker_status_docker_error(
 
 
 async def test_container_inspect_logs_remove(
-    test_client: TestClient, started_containers: list[str]
+    docker_swarm: None, test_client: TestClient, started_containers: list[str]
 ):
     for container in started_containers:
         # get container logs
@@ -412,7 +415,7 @@ async def test_container_inspect_logs_remove(
 
 
 async def test_container_logs_with_timestamps(
-    test_client: TestClient, started_containers: list[str]
+    docker_swarm: None, test_client: TestClient, started_containers: list[str]
 ):
     for container in started_containers:
         print("getting logs of container", container, "...")
@@ -445,6 +448,7 @@ async def test_container_missing_container(
 
 
 async def test_container_docker_error(
+    docker_swarm: None,
     test_client: TestClient,
     started_containers: list[str],
     mock_aiodocker_containers_get: int,
@@ -598,6 +602,7 @@ def _get_entrypoint_container_name(test_client: TestClient) -> str:
 
 
 async def test_containers_entrypoint_name_ok(
+    docker_swarm: None,
     test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
@@ -609,6 +614,7 @@ async def test_containers_entrypoint_name_ok(
 
 
 async def test_containers_entrypoint_name_containers_not_started(
+    docker_swarm: None,
     test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
