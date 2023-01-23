@@ -91,7 +91,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = ApplicationSettings(
-        INVITATIONS_OSPARC_URL="https://osparc.io",
+        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=getpass.getuser(),
         INVITATIONS_PASSWORD=password,

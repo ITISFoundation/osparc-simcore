@@ -7,7 +7,7 @@ include ../../scripts/common-service.Makefile
 
 
 .env:
-	$(APP_CLI_NAME) generate-dotenv > $@
+	$(APP_CLI_NAME) generate-dotenv --auto-password > $@
 
 
 .PHONY: openapi.json
@@ -20,7 +20,18 @@ openapi.json: .env ## produces openapi.json
 	python3 -c "import json; from $(APP_PACKAGE_NAME).web_main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 
+#
+# docker container
+#
 
+DOCKER_REGISTRY ?=local
+DOCKER_IMAGE_TAG ?=production
+DOCKER_IMAGE_NAME :=$(DOCKER_REGISTRY)/$(APP_NAME):$(DOCKER_IMAGE_TAG)
 
-run: .env build ## runs (development)
-	docker run -it --env-file .env -p 8000:8000 local/$(APP_NAME):production $(APP_CLI_NAME) serve
+.PHONY: run
+run: .env build ## [docker] runs in container
+	docker run --interactive --tty \
+	--env-file .env \
+	--publish 8000:8000 \
+	$(DOCKER_IMAGE_NAME) \
+	$(APP_CLI_NAME) serve
