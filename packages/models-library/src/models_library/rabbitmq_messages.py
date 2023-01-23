@@ -1,10 +1,12 @@
-from enum import Enum
+import logging
+from enum import Enum, auto
 from typing import Any, Literal, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
@@ -31,6 +33,7 @@ class NodeMessageBase(BaseModel):
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs"] = "simcore.services.logs"
     messages: list[str]
+    log_level: int = logging.INFO
 
 
 class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
@@ -38,8 +41,25 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
     action: RabbitEventMessageType
 
 
+class ProgressType(StrAutoEnum):
+    COMPUTATION_RUNNING = auto()  # NOTE: this is the original only progress report
+
+    CLUSTER_UP_SCALING = auto()
+    SIDECARS_PULLING = auto()
+    SERVICE_INPUTS_PULLING = auto()
+    SERVICE_OUTPUTS_PULLING = auto()
+    SERVICE_STATE_PULLING = auto()
+    SERVICE_IMAGES_PULLING = auto()
+
+    SERVICE_STATE_PUSHING = auto()
+    SERVICE_OUTPUTS_PUSHING = auto()
+
+
 class ProgressRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.progress"] = "simcore.services.progress"
+    progress_type: ProgressType = (
+        ProgressType.COMPUTATION_RUNNING
+    )  # NOTE: backwards compatible
     progress: NonNegativeFloat
 
 

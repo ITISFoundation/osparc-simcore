@@ -7,9 +7,9 @@ from fastapi import FastAPI
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 from ..core.docker_utils import get_volume_by_label
+from ..core.settings import ApplicationSettings
 
 
 def _ensure_path(path: Path) -> Path:
