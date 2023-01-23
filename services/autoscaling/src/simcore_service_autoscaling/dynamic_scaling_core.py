@@ -537,9 +537,25 @@ async def _scale_up_cluster(
 
 
 async def _associate_ec2_instances_with_nodes(
-    app: FastAPI,
+    app: FastAPI, monitored_nodes: list[Node]
 ) -> list[tuple[Node, EC2InstanceData]]:
-    ...
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    existing_ec2_instances = await get_ec2_client(app).get_instances(
+        app_settings.AUTOSCALING_EC2_INSTANCES,
+        list(ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()),
+    )
+
+    associated_instances = dict[str, EC2InstanceData]
+    for instance_data in existing_ec2_instances:
+        try:
+            docker_node_name = _get_docker_node_name_from_aws_private_dns_name(
+                instance_data
+            )
+        except Ec2InvalidDnsNameError:
+            logger.exception("Unexcepted EC2 private dns name")
+            continue
 
 
 async def _attach_new_ec2_instances(
