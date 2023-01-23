@@ -18,58 +18,38 @@
 qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
   extend: qx.core.Object,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__resetIdlingTimeBound = this.__resetIdlingTime.bind(this);
+  },
+
   events: {
     "userIdled": "qx.event.type.Event"
   },
 
   statics: {
-    // IDLE_TIMEOUT: 30*60*1000, // 30'
-    // IDLE_WARNING: 15*60*1000 // 15'
-    IDLE_TIMEOUT: 20*1000, // 30'
-    IDLE_WARNING: 10*1000 // 15'
+    // IDLE_TIMEOUT: 30*60, // 30'
+    // IDLE_WARNING: 15*60 // 15'
+    IDLE_TIMEOUT: 20, // 30'
+    IDLE_WARNING: 10 // 15'
   },
 
   members: {
-    __idleTimer: null,
+    __resetIdlingTimeBound: null,
+    __idlingTime: null,
     __idleInteval: null,
     __idleFlashMessage: null,
-    __countdown: null,
 
-    __updateFlashMessage: function() {
-      if (this.__idleFlashMessage) {
-        let msg = qx.locale.Manager.tr("Are you there?") + "<br>";
-        msg += qx.locale.Manager.tr("The ") + osparc.utils.Utils.getStudyLabel() + qx.locale.Manager.tr(" will be closed in ");
-        msg += osparc.utils.Utils.formatSeconds(this.__countdown/1000);
-        this.__idleFlashMessage.setMessage(msg);
-        this.__countdown -= 1000;
+    __updateFlashMessage: function(timeoutSec) {
+      if (this.__idleFlashMessage === null) {
+        this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you there?"), "WARNING", null, timeoutSec*1000);
       }
-    },
 
-    __startCountdown: function() {
-      const idleWarning = this.self().IDLE_WARNING;
-      const idlingTimeout = this.self().IDLE_TIMEOUT;
-
-      this.__idleTimer = setTimeout(() => this.__userIdled(), idlingTimeout - idleWarning);
-
-      this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you there?"), "WARNING", null, idlingTimeout - idleWarning);
-      this.__countdown = idlingTimeout - idleWarning;
-      this.__updateFlashMessage();
-      this.__idleInteval = setInterval(() => this.__updateFlashMessage(), 1000);
-    },
-
-    __resetTimer: function() {
-      const warningAfter = this.self().IDLE_WARNING;
-
-      console.log("reset timer");
-      this.__removeTimers();
-      this.__idleTimer = setTimeout(() => this.__startCountdown(), warningAfter);
-    },
-
-    __removeIdleInterval: function() {
-      if (this.__idleInteval) {
-        clearInterval(this.__idleInteval);
-        this.__idleInteval = null;
-      }
+      let msg = qx.locale.Manager.tr("Are you there?") + "<br>";
+      msg += qx.locale.Manager.tr("The ") + osparc.utils.Utils.getStudyLabel() + qx.locale.Manager.tr(" will be closed in ");
+      msg += osparc.utils.Utils.formatSeconds(timeoutSec);
+      this.__idleFlashMessage.setMessage(msg);
     },
 
     __removeIdleFlashMessage: function() {
@@ -79,36 +59,52 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       }
     },
 
-    __removeIdleTimer: function() {
-      if (this.__idleTimer) {
-        clearTimeout(this.__idleTimer);
-        this.__idleTimer = null;
-      }
-    },
-
-    __removeTimers: function() {
-      this.__removeIdleInterval();
-      this.__removeIdleFlashMessage();
-      this.__removeIdleTimer();
-    },
-
     __userIdled: function() {
       this.stop();
       this.fireEvent("userIdled");
     },
 
-    start: function() {
-      this.__resetTimer();
+    __startTimer: function() {
+      this.__idleInteval = setInterval(() => {
+        this.__idlingTime++;
+        if (this.__idlingTime >= this.self().IDLE_TIMEOUT) {
+          this.__userIdled();
+        } else if (this.__idlingTime >= this.self().IDLE_WARNING) {
+          this.__updateFlashMessage(this.self().IDLE_TIMEOUT - this.__idlingTime);
+        } else if (this.__idleFlashMessage) {
+          this.__removeIdleFlashMessage();
+        }
+      }, 1000);
+    },
 
-      window.addEventListener("mousemove", this.__resetTimer.bind(this));
-      window.addEventListener("keydown", this.__resetTimer.bind(this));
+    __stopTimer: function() {
+      if (this.__idleInteval) {
+        clearInterval(this.__idleInteval);
+        this.__idleInteval = null;
+      }
+    },
+
+    __resetIdlingTime: function() {
+      this.__idlingTime = 0;
+    },
+
+    start: function() {
+      this.__idlingTime = 0;
+
+      const cb = this.__resetIdlingTimeBound;
+      window.addEventListener("mousemove", cb);
+      window.addEventListener("keydown", cb);
+
+      this.__startTimer();
     },
 
     stop: function() {
-      this.__removeTimers();
+      const cb = this.__resetIdlingTimeBound;
+      window.removeEventListener("mousemove", cb);
+      window.removeEventListener("keydown", cb);
 
-      window.removeEventListener("mousemove", this.__resetTimer.bind(this));
-      window.removeEventListener("keydown", this.__resetTimer.bind(this));
+      this.__removeIdleFlashMessage();
+      this.__stopTimer();
     },
 
     /**
