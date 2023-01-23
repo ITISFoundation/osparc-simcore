@@ -71,9 +71,7 @@ def generate_key(
 
 
 @app.command()
-def generate_dotenv(
-    ctx: typer.Context, skip_auth: bool = False, auto_password: bool = False
-):
+def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     """Generates an example of environment variables file (or dot-envfile)
 
     Usage sample:
@@ -86,16 +84,12 @@ def generate_dotenv(
     """
     assert ctx  # nosec
 
-    if skip_auth:
-        username = None
-        password = None
-    else:
-        username = getpass.getuser()
-        password: str = (
-            getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
-            if not auto_password
-            else None
-        ) or generate_password(length=32)
+    username = getpass.getuser()
+    password: str = (
+        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
+        if not auto_password
+        else None
+    ) or generate_password(length=32)
 
     settings = ApplicationSettings(
         INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",

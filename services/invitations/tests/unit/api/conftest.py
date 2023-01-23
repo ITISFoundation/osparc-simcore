@@ -26,22 +26,14 @@ def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
 
 @pytest.fixture(params=["username", "password", "both", None])
 def invalid_basic_auth(
-    request: FixtureRequest,
-    fake_user_name: Optional[str],
-    fake_password: Optional[str],
-    auth_enabled: bool,
+    request: FixtureRequest, fake_user_name: str, fake_password: str
 ) -> Optional[httpx.BasicAuth]:
     invalid_case = request.param
 
     if invalid_case is None:
         return None
 
-    if auth_enabled:
-        assert fake_user_name is not None
-        assert fake_password is not None
-        kwargs = {"username": fake_user_name, "password": fake_password}
-    else:
-        kwargs = {"username": "does-not-matter", "password": "does-not-matter"}
+    kwargs = {"username": fake_user_name, "password": fake_password}
 
     if invalid_case == "both":
         kwargs = {key: "wrong" for key in kwargs}
@@ -52,13 +44,5 @@ def invalid_basic_auth(
 
 
 @pytest.fixture
-def basic_auth(
-    fake_user_name: Optional[str],
-    fake_password: Optional[str],
-    auth_enabled: bool,
-) -> httpx.BasicAuth:
-    return (
-        httpx.BasicAuth(username=fake_user_name, password=fake_password)
-        if auth_enabled
-        else None
-    )
+def basic_auth(fake_user_name: str, fake_password: str) -> httpx.BasicAuth:
+    return httpx.BasicAuth(username=fake_user_name, password=fake_password)

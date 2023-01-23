@@ -16,17 +16,10 @@ def test_invalid_http_basic_auth(
     client: TestClient,
     invalid_basic_auth: Optional[httpx.BasicAuth],
     invitation_data: InvitationInputs,
-    auth_enabled: bool,
 ):
     response = client.post(
         f"/{API_VTAG}/invitations",
         json=invitation_data.dict(),
         auth=invalid_basic_auth,
     )
-
-    if not auth_enabled:
-        assert response.status_code == status.HTTP_200_OK, f"{response.json()=}"
-    else:
-        assert (
-            response.status_code == status.HTTP_401_UNAUTHORIZED
-        ), f"{response.json()=}"
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED, f"{response.json()=}"

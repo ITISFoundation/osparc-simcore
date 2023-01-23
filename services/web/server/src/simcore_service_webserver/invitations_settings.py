@@ -7,6 +7,7 @@ webserver should interact with this
 from functools import cached_property
 
 from aiohttp import web
+from pydantic import Field, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -22,6 +23,17 @@ class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
     INVITATIONS_HOST: str = "invitations"
     INVITATIONS_PORT: PortInt = DEFAULT_FASTAPI_PORT
     INVITATIONS_VTAG: VersionTag = "v1"
+
+    INVITATIONS_USERNAME: str = Field(
+        ...,
+        description="Username for HTTP Basic Auth. Required if started as a web app.",
+        min_length=3,
+    )
+    INVITATIONS_PASSWORD: SecretStr = Field(
+        ...,
+        description="Password for HTTP Basic Auth. Required if started as a web app.",
+        min_length=10,
+    )
 
     @cached_property
     def api_base_url(self) -> str:

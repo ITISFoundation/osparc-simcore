@@ -26,10 +26,6 @@ def test_valid_cli_application_settings(monkeypatch: MonkeyPatch, secret_key: st
     assert settings
 
 
-def test_valid_web_application_settings(
-    app_environment: EnvVarsDict, auth_enabled: bool
-):
+def test_valid_web_application_settings(app_environment: EnvVarsDict):
     settings = ApplicationSettings()
     assert settings
-
-    assert settings.is_auth_enabled == auth_enabled

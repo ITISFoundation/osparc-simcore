@@ -5,7 +5,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import simcore_service_invitations
@@ -66,28 +66,22 @@ def another_secret_key(secret_key: str) -> str:
     return other.decode()
 
 
-@pytest.fixture(params=[True, False])
-def auth_enabled(request: FixtureRequest) -> bool:
-    """Enables/disables auth"""
-    return request.param
+@pytest.fixture
+def fake_user_name(faker: Faker) -> str:
+    return faker.user_name()
 
 
 @pytest.fixture
-def fake_user_name(faker: Faker, auth_enabled: bool) -> Optional[str]:
-    return faker.user_name() if auth_enabled else None
-
-
-@pytest.fixture
-def fake_password(faker: Faker, auth_enabled: bool) -> Optional[str]:
-    return faker.password(length=10) if auth_enabled else None
+def fake_password(faker: Faker) -> str:
+    return faker.password(length=10)
 
 
 @pytest.fixture
 def app_environment(
     monkeypatch: MonkeyPatch,
     secret_key: str,
-    fake_user_name: Optional[str],
-    fake_password: Optional[str],
+    fake_user_name: str,
+    fake_password: str,
 ) -> EnvVarsDict:
 
     envs = setenvs_from_dict(
@@ -95,8 +89,8 @@ def app_environment(
         {
             "INVITATIONS_SECRET_KEY": secret_key,
             "INVITATIONS_OSPARC_URL": "https://myosparc.org",
-            "INVITATIONS_USERNAME": fake_user_name or "null",
-            "INVITATIONS_PASSWORD": fake_password or "null",
+            "INVITATIONS_USERNAME": fake_user_name,
+            "INVITATIONS_PASSWORD": fake_password,
         },
     )
 
