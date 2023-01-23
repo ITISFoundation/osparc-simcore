@@ -6,6 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
@@ -40,7 +41,7 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
     action: RabbitEventMessageType
 
 
-class ProgressType(Enum):
+class ProgressType(StrAutoEnum):
     COMPUTATION_RUNNING = auto()  # NOTE: this is the original only progress report
 
     CLUSTER_UP_SCALING = auto()

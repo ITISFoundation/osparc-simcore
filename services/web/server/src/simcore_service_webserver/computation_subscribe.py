@@ -94,7 +94,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> bool:
                     "project_id": rabbit_message.project_id,
                     "node_id": rabbit_message.node_id,
                     "user_id": rabbit_message.user_id,
-                    "progress_type": rabbit_message.progress_type.name,
+                    "progress_type": rabbit_message.progress_type,
                     "progress": rabbit_message.progress,
                 },
             }
