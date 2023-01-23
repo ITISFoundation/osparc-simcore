@@ -189,15 +189,9 @@ async def check_and_consume_invitation(
                 trial_account_days=content.trial_account_days,
             )
 
-        except ValidationError as err:
+        except (ValidationError, InvalidInvitation) as err:
             raise web.HTTPForbidden(
                 reason=f"{err}. {MSG_CONTACT_SUPPORT_SUFFIX}",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )
-
-        except InvalidInvitation as err:
-            raise web.HTTPForbidden(
-                reason=f"{err}. {MSG_CONTACT_SUPPORT_SUFFIX}.",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
