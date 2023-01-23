@@ -41,11 +41,11 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __updateFlashMessage: function(timeoutSec) {
       if (this.__idleFlashMessage === null) {
-        this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you there?"), "WARNING", null, timeoutSec*1000);
+        this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you still there?"), "WARNING", null, timeoutSec*1000);
       }
 
-      let msg = qx.locale.Manager.tr("Are you there?") + "<br>";
-      msg += qx.locale.Manager.tr("The ") + osparc.utils.Utils.getStudyLabel() + qx.locale.Manager.tr(" will be closed in ");
+      let msg = qx.locale.Manager.tr("Are you still there?") + "<br>";
+      msg += qx.locale.Manager.tr("If not, the ") + osparc.utils.Utils.getStudyLabel() + qx.locale.Manager.tr(" will be closed in: ");
       msg += osparc.utils.Utils.formatSeconds(timeoutSec);
       this.__idleFlashMessage.setMessage(msg);
     },
