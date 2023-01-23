@@ -3,10 +3,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 import simcore_service_invitations
+import yaml
 from cryptography.fernet import Fernet
 from faker import Faker
 from pytest import FixtureRequest, MonkeyPatch
@@ -34,6 +37,20 @@ def installed_package_dir() -> Path:
     dirpath = Path(simcore_service_invitations.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
+
+
+@pytest.fixture
+def services_docker_compose_specs(services_docker_compose_file: Path) -> dict[str, Any]:
+    return yaml.safe_load(services_docker_compose_file.read_text())
+
+
+@pytest.fixture
+def openapi_specs(project_slug_dir: Path) -> dict[str, Any]:
+    """
+    Returns openapi.json
+    """
+    open_api_json_file = project_slug_dir / "openapi.json"
+    return json.loads(open_api_json_file.read_text())
 
 
 @pytest.fixture

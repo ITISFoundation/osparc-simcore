@@ -45,7 +45,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 EXPOSE 8000
-EXPOSE 3000
+
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
