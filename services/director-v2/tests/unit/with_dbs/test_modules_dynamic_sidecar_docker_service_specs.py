@@ -180,7 +180,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         ["/tmp/save_1", "/tmp_save_2"]
                     ),
                     "DY_SIDECAR_USER_ID": "234",
-                    "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
+                    "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "POSTGRES_DB": "test",
