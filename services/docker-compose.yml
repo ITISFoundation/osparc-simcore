@@ -173,17 +173,17 @@ services:
       - INVITATIONS_USERNAME=${INVITATIONS_USERNAME}
       - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
     labels:
-      - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE} # FIXME: ask DK!
+      - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
       - traefik.enable=true
-      - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true # FIXME: I guess this depends on the middleware?
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.entrypoints=simcore_api # FIXME: what is this for?
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_invitations # FIXME: no need to gzip?
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1 # FIXME: priority?
+      - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
+      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.entrypoints=simcore_invitations
+      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_invitations
+      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1
       - traefik.http.routers.${SWARM_STACK_NAME}_invitations.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v1`) ||  PathPrefix(`/v1/`) || Path(`/api/v1/openapi.json`))
       - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=2000ms
       - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.path=/
       - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=1000ms
-      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.server.port=8000 # FIXME: What port is exposed?  static-webserver:
+      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.server.port=8000
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -545,6 +545,8 @@ services:
       - "--entryPoints.http.forwardedHeaders.insecure"
       - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
+      - "--entryPoints.simcore_invitations.address=:10082"
+      - "--entryPoints.simcore_invitations.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
