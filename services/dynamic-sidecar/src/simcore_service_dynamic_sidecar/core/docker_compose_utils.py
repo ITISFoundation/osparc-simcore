@@ -5,20 +5,21 @@ docker_compose_* coroutines are implemented such that they can only
 run sequentially by this service
 
 """
-import asyncio
 import logging
 from copy import deepcopy
 from pprint import pformat
 from typing import Optional
 
-import aiodocker
 from fastapi import FastAPI
-from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
+from models_library.rabbitmq_messages import ProgressType
 from servicelib.async_utils import run_sequentially_in_context
 from settings_library.basic_types import LogLevel
-from simcore_service_dynamic_sidecar.core.rabbitmq import post_sidecar_log_message
+from simcore_service_dynamic_sidecar.core.rabbitmq import (
+    post_progress_message,
+    post_sidecar_log_message,
+)
 
-from .docker_utils import docker_client, get_docker_service_images
+from .docker_utils import get_docker_service_images, pull_images
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
@@ -94,41 +95,19 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     """
     app_settings: ApplicationSettings = app.state.settings
     registry_settings = app_settings.REGISTRY_SETTINGS
-
-    async def _pull_image_with_progress(client: aiodocker.Docker, image: str) -> None:
-        # NOTE: image is of type registry_host/organization/any/number/of/folders/image_name:tag
-        # NOTE: if there is no registry_host, then there is no auth allowed, which is typical for dockerhub or local images
-        match = DOCKER_GENERIC_TAG_KEY_RE.match(image)
-        registry_host = ""
-        if match:
-            registry_host = match.group("registry_host")
-        else:
-            logger.error(
-                "%s does not match typical docker image pattern, please check! Image pulling will still be attempted but may fail.",
-                f"{image=}",
-            )
-
-        simplified_image_name = image.rsplit("/", maxsplit=1)[-1]
-        async for pull_progress in client.images.pull(
-            image,
-            stream=True,
-            auth={
-                "username": registry_settings.REGISTRY_USER,
-                "password": registry_settings.REGISTRY_PW.get_secret_value(),
-            }
-            if registry_host
-            else None,
-        ):
-
-            await post_sidecar_log_message(
-                app, f"pulling {simplified_image_name}: {pull_progress}..."
-            )
-
     list_of_images = get_docker_service_images(compose_spec_yaml)
-    async with docker_client() as docker:
-        await asyncio.gather(
-            *(_pull_image_with_progress(docker, image) for image in list_of_images)
+
+    async def _progress_cb(current: int, total: int) -> None:
+        await post_progress_message(
+            app,
+            float(current / (total or 1)),
+            ProgressType.SERVICE_IMAGES_PULLING,
         )
+
+    async def _log_cb(msg: str) -> None:
+        await post_sidecar_log_message(app, msg)
+
+    await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 
 
 async def docker_compose_create(

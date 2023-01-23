@@ -4,7 +4,7 @@ This module takes care of sending events to the connected webclient through the 
 
 import logging
 from collections import deque
-from typing import Any, Dict, List, Sequence, TypedDict
+from typing import Any, Final, Sequence, TypedDict
 
 from aiohttp.web import Application
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -16,16 +16,17 @@ from .server import AsyncServer, get_socket_server
 
 log = logging.getLogger(__name__)
 
-SOCKET_IO_PROJECT_UPDATED_EVENT: str = "projectStateUpdated"
-SOCKET_IO_NODE_UPDATED_EVENT: str = "nodeUpdated"
-SOCKET_IO_LOG_EVENT: str = "logger"
-SOCKET_IO_HEARTBEAT_EVENT: str = "set_heartbeat_emit_interval"
-SOCKET_IO_EVENT: str = "event"
+SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
+SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
+SOCKET_IO_LOG_EVENT: Final[str] = "logger"
+SOCKET_IO_HEARTBEAT_EVENT: Final[str] = "set_heartbeat_emit_interval"
+SOCKET_IO_EVENT: Final[str] = "event"
+SOCKET_IO_NODE_PROGRESS_EVENT: Final[str] = "nodeProgress"
 
 
 class SocketMessageDict(TypedDict):
     event_type: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 async def send_messages(
@@ -33,7 +34,7 @@ async def send_messages(
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
-    socket_ids: List[str] = []
+    socket_ids: list[str] = []
     with managed_resource(user_id, None, app) as rt:
         socket_ids = await rt.find_socket_ids()
 
