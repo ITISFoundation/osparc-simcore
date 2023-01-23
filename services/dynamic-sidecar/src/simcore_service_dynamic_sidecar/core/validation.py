@@ -5,7 +5,10 @@ import re
 from typing import Any, Generator
 
 import yaml
-from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
+from servicelib.docker_constants import (
+    DEFAULT_USER_SERVICES_NETWORK_NAME,
+    SUFFIX_EGRESS_PROXY_NAME,
+)
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
@@ -144,7 +147,11 @@ def _connect_user_services(
         "internal": not allow_internet_access,
     }
 
-    for service_content in parsed_compose_spec["services"].values():
+    for service_name, service_content in parsed_compose_spec["services"].items():
+        # do not add egress proxies to the backend network
+        if SUFFIX_EGRESS_PROXY_NAME in service_name:
+            continue
+
         service_networks = service_content.setdefault("networks", [])
         if service_networks is None:
             # if network is set without entries

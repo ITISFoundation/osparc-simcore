@@ -11,10 +11,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from orderedset import OrderedSet
-from servicelib.docker_constants import (
-    DEFAULT_USER_SERVICES_NETWORK_NAME,
-    SUFFIX_EGRESS_PROXY_NAME,
-)
+from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ...core.settings import DynamicSidecarEgressSettings
 
@@ -198,10 +195,26 @@ def _get_envy_config(proxy_rules: OrderedSet[_ProxyRule]) -> dict[str, Any]:
     return yaml_proxy_config
 
 
+def _get_egress_proxy_network_name(egress_proxy_name: str) -> str:
+    return egress_proxy_name
+
+
+def _add_egress_proxy_network(
+    service_spec: ComposeSpecLabel, egress_proxy_name: str
+) -> None:
+    networks = service_spec.get("networks")
+    networks[_get_egress_proxy_network_name(egress_proxy_name)] = {
+        "driver": "overlay",
+        "internal": True,
+    }
+    service_spec["networks"] = networks
+
+
 def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
     swarm_network_name: str,
     egress_proxy_settings: DynamicSidecarEgressSettings,
+    egress_proxy_name: str,
 ) -> dict[str, Any]:
 
     network_aliases: set[str] = {x[0].hostname for x in egress_proxy_rules}
@@ -228,7 +241,9 @@ def _get_egress_proxy_service_config(
             # allows the proxy to access the internet
             swarm_network_name: None,
             # allows containers to contact proxy via these aliases
-            DEFAULT_USER_SERVICES_NETWORK_NAME: {"aliases": list(network_aliases)},
+            _get_egress_proxy_network_name(egress_proxy_name): {
+                "aliases": list(network_aliases)
+            },
         },
     }
     return egress_proxy_config
@@ -302,8 +317,8 @@ def add_egress_configuration(
     # allow complete internet access to single container
     if simcore_service_labels.containers_allowed_outgoing_internet:
         # placing containers with internet access in an isolated network
-        networks = service_spec.setdefault("networks", {})
-        networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {
+        service_networks = service_spec.setdefault("networks", {})
+        service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {
             "driver": "overlay",
             "internal": False,
         }
@@ -338,12 +353,16 @@ def add_egress_configuration(
             all_host_whitelist_policies
         )
         for i, proxy_rules in enumerate(grouped_proxy_rules):
-            egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}_{i}"
+            egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}-{i}"
+
+            # add new network for each proxy where it can be reached
+            _add_egress_proxy_network(service_spec, egress_proxy_name)
 
             egress_proxy_config = _get_egress_proxy_service_config(
                 egress_proxy_rules=proxy_rules,
                 swarm_network_name=swarm_network_name,
                 egress_proxy_settings=egress_proxy_settings,
+                egress_proxy_name=egress_proxy_name,
             )
             logger.debug(
                 "EGRESS PROXY '%s' CONFIG:\n%s",
@@ -362,6 +381,12 @@ def add_egress_configuration(
                     container_name_to_proxies_names[container_name] = set()
                 container_name_to_proxies_names[container_name].add(egress_proxy_name)
 
-        # attach `depends_on` rules to all container
         for container_name, proxy_names in container_name_to_proxies_names.items():
+            # attach `depends_on` rules to all container
             service_spec["services"][container_name]["depends_on"] = list(proxy_names)
+            # attach proxy network to allow
+            service_networks = service_spec["services"][container_name].get(
+                "networks", {}
+            )
+            service_networks[_get_egress_proxy_network_name(egress_proxy_name)] = None
+            service_spec["services"][container_name]["networks"] = service_networks

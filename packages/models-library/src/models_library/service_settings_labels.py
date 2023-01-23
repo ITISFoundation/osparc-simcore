@@ -201,7 +201,7 @@ class HostWhitelistPolicy(BaseModel):
         default_factory=lambda: DNResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
         ),
-        description="specify a DNS resolver, by default you get one",
+        description="specify a DNS resolver address and port",
     )
 
     def iter_tcp_ports(self) -> Iterator[PortInt]:
@@ -258,7 +258,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     ] = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-whitelist",
-        description="limit internet access to certain domain names and ports per container",
+        description="allow internet access to certain domain names and ports per container",
     )
 
     containers_allowed_outgoing_internet: Optional[Json[set[str]]] = Field(
