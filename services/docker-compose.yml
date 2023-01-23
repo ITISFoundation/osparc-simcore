@@ -170,17 +170,18 @@ services:
       - INVITATIONS_LOGLEVEL=${LOG_LEVEL:-INFO}
       - INVITATIONS_SECRET_KEY=${INVITATIONS_SECRET_KEY}
       - INVITATIONS_OSPARC_URL=${INVITATIONS_OSPARC_URL}
-    labels:
-      - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
-      - traefik.enable=true
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.entrypoints=simcore_invitations
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=ratelimit-${SWARM_STACK_NAME}_invitations
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1
-      - traefik.http.routers.${SWARM_STACK_NAME}_invitations.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v1`) ||  PathPrefix(`/v1/`) || Path(`/api/v1/openapi.json`))
-      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=2000ms
-      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.path=/
-      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=2000ms
-      - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.server.port=8000
+    deploy:
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=true
+        - traefik.http.routers.${SWARM_STACK_NAME}_invitations.entrypoints=simcore_invitations
+        - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=ratelimit-${SWARM_STACK_NAME}_invitations
+        - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_invitations.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v1`) ||  PathPrefix(`/v1/`) || Path(`/api/v1/openapi.json`))
+        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.path=/
+        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.server.port=8000
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
