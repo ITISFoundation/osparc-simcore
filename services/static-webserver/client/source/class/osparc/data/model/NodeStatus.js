@@ -27,6 +27,11 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     this.base(arguments);
 
     this.setNode(node);
+
+    if (node.isDynamic()) {
+      const progressStatus = new osparc.data.model.ProgressStatus();
+      this.setProgressStatus(progressStatus);
+    }
   },
 
   properties: {
