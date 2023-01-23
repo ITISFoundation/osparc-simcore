@@ -646,11 +646,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     closeEditor: function() {
+      this.__stopTimers();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
       this.__closeStudy();
-      this.__stopTimers();
       const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);
