@@ -255,6 +255,17 @@ def assemble_spec(  # pylint:disable=too-many-arguments
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_tag,
+        # TODO: env var replacement for env vars which are defined per service, we need
+        # a way to fetch for them and a way to search for them
+        # I will add this in a followup PR
+        # TODO: add a service_env_var_resolver that per deployment fetches env vars
+        # from the product tables
     )
 
     return stringified_service_spec
+
+
+# TODO: test, given a service labels specification
+# generates some service specification which is hardcoded
+#   - with internet access
+#   - without internet access
