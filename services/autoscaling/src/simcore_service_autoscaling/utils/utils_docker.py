@@ -11,6 +11,7 @@ from typing import Final, Optional, cast
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
+    Availability,
     Node,
     NodeState,
     Service,
@@ -379,3 +380,25 @@ def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, s
         tag_key: "true"
         for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
     }
+
+
+async def get_drained_empty_nodes(
+    docker_client: AutoscalingDocker,
+    app_settings: ApplicationSettings,
+    nodes: list[Node],
+) -> list[Node]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    return [
+        node
+        for node in nodes
+        if (
+            await compute_node_used_resources(
+                docker_client,
+                node,
+                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+            )
+            == Resources.create_as_empty()
+        )
+        and (node.Spec is not None)
+        and (node.Spec.Availability == Availability.drain)
+    ]

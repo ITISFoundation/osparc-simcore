@@ -23,6 +23,9 @@ from .utils import ec2, utils_docker
 from .utils.dynamic_scaling import (
     associate_ec2_instances_with_nodes,
     node_host_name_from_ec2_private_dns,
+    try_assigning_task_to_instances,
+    try_assigning_task_to_node,
+    try_assigning_task_to_pending_instances,
 )
 from .utils.rabbitmq import (
     log_tasks_message,
@@ -33,7 +36,7 @@ from .utils.rabbitmq import (
 logger = logging.getLogger(__name__)
 
 
-async def _mark_empty_active_nodes_to_drain(
+async def _deactivate_empty_nodes(
     app: FastAPI,
     monitored_nodes: list[Node],
 ) -> None:
@@ -77,24 +80,12 @@ async def _find_terminateable_nodes(
 ) -> list[tuple[Node, EC2InstanceData]]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    docker_client = get_docker_client(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     # NOTE: we want the drained nodes where no monitored service is running anymore
-    drained_empty_nodes = [
-        node
-        for node in monitored_nodes
-        if (
-            await utils_docker.compute_node_used_resources(
-                docker_client,
-                node,
-                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-            )
-            == Resources.create_as_empty()
-        )
-        and (node.Spec is not None)
-        and (node.Spec.Availability == Availability.drain)
-    ]
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    drained_empty_nodes = await utils_docker.get_drained_empty_nodes(
+        get_docker_client(app), app_settings, monitored_nodes
+    )
 
     # we keep a buffer of nodes always on the ready
     drained_empty_nodes = drained_empty_nodes[
@@ -177,23 +168,7 @@ async def _try_scale_down_cluster(app: FastAPI, monitored_nodes: list[Node]) -> 
     # 4.
 
 
-def _try_assigning_task_to_node(
-    pending_task: Task, node_to_tasks: list[tuple[Node, list[Task]]]
-) -> bool:
-    for node, node_assigned_tasks in node_to_tasks:
-        instance_total_resource = utils_docker.get_node_total_resources(node)
-        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-            node_assigned_tasks
-        )
-        if (
-            instance_total_resource - tasks_needed_resources
-        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
-            node_assigned_tasks.append(pending_task)
-            return True
-    return False
-
-
-async def _try_scale_up_with_drained_nodes(
+async def _activate_drained_nodes(
     app: FastAPI,
     monitored_nodes: list[Node],
     pending_tasks: list[Task],
@@ -202,6 +177,7 @@ async def _try_scale_up_with_drained_nodes(
     docker_client = get_docker_client(app)
     if not pending_tasks:
         return []
+
     activatable_nodes: list[tuple[Node, list[Task]]] = [
         (
             node,
@@ -212,7 +188,7 @@ async def _try_scale_up_with_drained_nodes(
     ]
 
     for task in pending_tasks:
-        if _try_assigning_task_to_node(task, activatable_nodes):
+        if try_assigning_task_to_node(task, activatable_nodes):
             continue
 
     nodes_to_activate = [
@@ -243,54 +219,6 @@ async def _try_scale_up_with_drained_nodes(
     return list(itertools.chain(*list_treated_tasks))
 
 
-async def _try_assigning_task_to_pending_instances(
-    app: FastAPI,
-    pending_task: Task,
-    list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]],
-    type_to_instance_map: dict[str, EC2Instance],
-) -> bool:
-    for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
-        instance_type = type_to_instance_map[instance.type]
-        instance_total_resources = Resources(
-            cpus=instance_type.cpus, ram=instance_type.ram
-        )
-        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-            instance_assigned_tasks
-        )
-        if (
-            instance_total_resources - tasks_needed_resources
-        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
-            instance_assigned_tasks.append(pending_task)
-            await log_tasks_message(
-                app,
-                [pending_task],
-                "scaling up of cluster in progress...awaiting new machines...please wait...",
-            )
-            await progress_tasks_message(
-                app,
-                [pending_task],
-                (datetime.utcnow() - instance.launch_time).total_seconds(),
-            )
-            return True
-    return False
-
-
-def _try_assigning_task_to_instances(
-    pending_task: Task, list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]]
-) -> bool:
-    for instance, instance_assigned_tasks in list_of_instance_to_tasks:
-        instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
-        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-            instance_assigned_tasks
-        )
-        if (
-            instance_total_resource - tasks_needed_resources
-        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
-            instance_assigned_tasks.append(pending_task)
-            return True
-    return False
-
-
 async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list[Task],
@@ -307,12 +235,12 @@ async def _find_needed_instances(
     ]
     list_of_new_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
-        if await _try_assigning_task_to_pending_instances(
+        if await try_assigning_task_to_pending_instances(
             app, task, list_of_existing_instance_to_tasks, type_to_instance_map
         ):
             continue
 
-        if _try_assigning_task_to_instances(task, list_of_new_instance_to_tasks):
+        if try_assigning_task_to_instances(task, list_of_new_instance_to_tasks):
             continue
 
         try:
@@ -386,21 +314,9 @@ async def _ensure_buffer_machine_runs(
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    docker_client = get_docker_client(app)
-    drained_empty_nodes = [
-        node
-        for node in monitored_nodes
-        if (
-            await utils_docker.compute_node_used_resources(
-                docker_client,
-                node,
-                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-            )
-            == Resources.create_as_empty()
-        )
-        and (node.Spec is not None)
-        and (node.Spec.Availability == Availability.drain)
-    ]
+    drained_empty_nodes = await utils_docker.get_drained_empty_nodes(
+        get_docker_client(app), app_settings, monitored_nodes
+    )
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     # we keep a buffer of nodes always on the ready
@@ -539,12 +455,14 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     )
 
     # 2. Cleanup nodes that are gone or were terminated
-    removed_nodes = await utils_docker.remove_nodes(docker_client, monitored_nodes)
-    monitored_nodes = [n for n in monitored_nodes if n not in removed_nodes]
+    monitored_nodes = [
+        n
+        for n in monitored_nodes
+        if n not in await utils_docker.remove_nodes(docker_client, monitored_nodes)
+    ]
 
     # 3. Label new connected instances
-    new_nodes = await _attach_new_ec2_instances(app, monitored_nodes)
-    monitored_nodes.extend(new_nodes)
+    monitored_nodes.extend(await _attach_new_ec2_instances(app, monitored_nodes))
 
     # 4. Scale up the cluster if there are pending tasks, else see if we shall scale down
     if pending_tasks := await utils_docker.pending_service_tasks_with_insufficient_resources(
@@ -552,19 +470,16 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
     ):
         # we have a number of pending tasks, try to resolve them with drained nodes if possible
-        treated_tasks = await _try_scale_up_with_drained_nodes(
-            app, monitored_nodes, pending_tasks
-        )
-        treated_task_ids = [t.ID for t in treated_tasks]
-        # clean the pending tasks with the ones that were treated
-        pending_tasks = [t for t in pending_tasks if t.ID not in treated_task_ids]
-
+        assigned_tasks = [
+            t.ID
+            for t in await _activate_drained_nodes(app, monitored_nodes, pending_tasks)
+        ]
         # let's check if there are still pending tasks
-        if pending_tasks:
+        if pending_tasks := [t for t in pending_tasks if t.ID not in assigned_tasks]:
             # yes? then scale up
             await _scale_up_cluster(app, monitored_nodes, pending_tasks)
     else:
-        await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
+        await _deactivate_empty_nodes(app, monitored_nodes)
         await _try_scale_down_cluster(app, monitored_nodes)
         await _ensure_buffer_machine_runs(app, monitored_nodes)
 
