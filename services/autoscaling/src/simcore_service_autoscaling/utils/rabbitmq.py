@@ -21,6 +21,24 @@ from . import ec2, utils_docker
 logger = logging.getLogger(__name__)
 
 
+async def log_tasks_message(
+    app: FastAPI, tasks: list[Task], message: str, *, level: int = logging.INFO
+) -> None:
+    await asyncio.gather(
+        *(post_task_log_message(app, task, message, level) for task in tasks),
+        return_exceptions=True,
+    )
+
+
+async def progress_tasks_message(
+    app: FastAPI, tasks: list[Task], progress: float
+) -> None:
+    await asyncio.gather(
+        *(post_task_progress_message(app, task, progress) for task in tasks),
+        return_exceptions=True,
+    )
+
+
 async def post_task_progress_message(app: FastAPI, task: Task, progress: float) -> None:
     with log_catch(logger, reraise=False):
         simcore_label_keys = SimcoreServiceDockerLabelKeys.from_docker_task(task)

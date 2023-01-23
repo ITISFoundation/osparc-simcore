@@ -22,6 +22,7 @@ from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
+from ..core.settings import ApplicationSettings
 from ..models import Resources
 from ..modules.docker import AutoscalingDocker
 
@@ -367,3 +368,14 @@ async def set_node_availability(
         tags=cast(dict[DockerLabelKey, str], node.Spec.Labels),
         available=available,
     )
+
+
+def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, str]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    return {
+        tag_key: "true"
+        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+    } | {
+        tag_key: "true"
+        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+    }

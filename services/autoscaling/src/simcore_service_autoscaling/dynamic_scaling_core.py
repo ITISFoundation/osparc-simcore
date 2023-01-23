@@ -2,12 +2,10 @@ import asyncio
 import collections
 import itertools
 import logging
-import re
 from datetime import datetime, timedelta, timezone
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Availability, Node, Task
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -21,12 +19,18 @@ from .core.settings import ApplicationSettings
 from .models import EC2Instance, Resources
 from .modules.docker import get_docker_client
 from .modules.ec2 import EC2InstanceData, get_ec2_client
-from .utils import ec2, rabbitmq, utils_docker
-from .utils.rabbitmq import post_autoscaling_status_message
+from .utils import ec2, utils_docker
+from .utils.dynamic_scaling import (
+    associate_ec2_instances_with_nodes,
+    node_host_name_from_ec2_private_dns,
+)
+from .utils.rabbitmq import (
+    log_tasks_message,
+    post_autoscaling_status_message,
+    progress_tasks_message,
+)
 
 logger = logging.getLogger(__name__)
-
-_EC2_INTERNAL_DNS_RE: re.Pattern = re.compile(r"^(?P<ip>ip-[0-9-]+).+$")
 
 
 async def _mark_empty_active_nodes_to_drain(
@@ -221,12 +225,12 @@ async def _try_scale_up_with_drained_nodes(
         await asyncio.gather(
             *(
                 utils_docker.set_node_availability(docker_client, node, available=True),
-                _log_tasks_message(
+                log_tasks_message(
                     app,
                     tasks,
                     "cluster adjusted, service should start shortly...",
                 ),
-                _progress_tasks_message(app, tasks, progress=1.0),
+                progress_tasks_message(app, tasks, progress=1.0),
             )
         )
         return tasks
@@ -257,12 +261,12 @@ async def _try_assigning_task_to_pending_instances(
             instance_total_resources - tasks_needed_resources
         ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
             instance_assigned_tasks.append(pending_task)
-            await _log_tasks_message(
+            await log_tasks_message(
                 app,
                 [pending_task],
                 "scaling up of cluster in progress...awaiting new machines...please wait...",
             )
-            await _progress_tasks_message(
+            await progress_tasks_message(
                 app,
                 [pending_task],
                 (datetime.utcnow() - instance.launch_time).total_seconds(),
@@ -332,14 +336,6 @@ async def _find_needed_instances(
     return num_instances_per_type
 
 
-def _get_docker_node_name_from_aws_private_dns_name(
-    ec2_instance_data: EC2InstanceData,
-) -> str:
-    if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
-        return match.group(1)
-    raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
-
-
 async def _start_instances(
     app: FastAPI, needed_instances: dict[EC2Instance, int], tasks: list[Task]
 ) -> None:
@@ -367,7 +363,7 @@ async def _start_instances(
     last_issue = ""
     for r in results:
         if isinstance(r, Ec2TooManyInstancesError):
-            await _log_tasks_message(
+            await log_tasks_message(
                 app,
                 tasks,
                 "Exceptionally high load on computational cluster, please try again later.",
@@ -380,40 +376,7 @@ async def _start_instances(
     log_message = f"{sum(n for n in needed_instances.values())} new machines launched, it might take up to 3 minutes to start, Please wait..."
     if last_issue:
         log_message += "\nUnexpected issues detected, probably due to high load, please contact support"
-    await _log_tasks_message(
-        app,
-        tasks,
-        log_message,
-    )
-
-
-def _get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, str]:
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    return {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-    } | {
-        tag_key: "true"
-        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-    }
-
-
-async def _log_tasks_message(
-    app: FastAPI, tasks: list[Task], message: str, *, level: int = logging.INFO
-) -> None:
-    await asyncio.gather(
-        *(rabbitmq.post_task_log_message(app, task, message, level) for task in tasks),
-        return_exceptions=True,
-    )
-
-
-async def _progress_tasks_message(
-    app: FastAPI, tasks: list[Task], progress: float
-) -> None:
-    await asyncio.gather(
-        *(rabbitmq.post_task_progress_message(app, task, progress) for task in tasks),
-        return_exceptions=True,
-    )
+    await log_tasks_message(app, tasks, log_message)
 
 
 async def _ensure_buffer_machine_runs(
@@ -495,22 +458,11 @@ async def _scale_up_cluster(
         ),
     )
     # find the currently starting instances (aka not connected to docker swarm yet)
-    pending_ec2_instances: list[EC2InstanceData] = []
-    all_monitored_node_names = [
-        n.Description.Hostname for n in monitored_nodes if n.Description
-    ]
-    for instance_data in existing_ec2_instances:
-        try:
-            docker_node_name = _get_docker_node_name_from_aws_private_dns_name(
-                instance_data
-            )
-        except Ec2InvalidDnsNameError:
-            logger.exception("Unexcepted EC2 private dns name")
-            continue
-        if docker_node_name in all_monitored_node_names:
-            continue
-        pending_ec2_instances.append(instance_data)
+    _, pending_ec2_instances = await associate_ec2_instances_with_nodes(
+        monitored_nodes, existing_ec2_instances
+    )
 
+    # some instances might be able to run several tasks
     allowed_instance_types = await ec2_client.get_ec2_instance_capabilities(
         cast(  # type: ignore
             set[InstanceTypeType],
@@ -519,43 +471,19 @@ async def _scale_up_cluster(
             ),
         )
     )
-    # some instances might be able to run several tasks
-    needed_ec2_instances = await _find_needed_instances(
-        app, pending_tasks, allowed_instance_types, pending_ec2_instances
-    )
 
     # let's start these
-    if needed_ec2_instances:
-        await _log_tasks_message(
+    if needed_ec2_instances := await _find_needed_instances(
+        app, pending_tasks, allowed_instance_types, pending_ec2_instances
+    ):
+        await log_tasks_message(
             app,
             pending_tasks,
             "service is pending due to missing resources, scaling up cluster now\n"
             f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
         )
         await _start_instances(app, needed_ec2_instances, pending_tasks)
-        await _progress_tasks_message(app, pending_tasks, 0)
-
-
-async def _associate_ec2_instances_with_nodes(
-    app: FastAPI, monitored_nodes: list[Node]
-) -> list[tuple[Node, EC2InstanceData]]:
-    app_settings: ApplicationSettings = app.state.settings
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    existing_ec2_instances = await get_ec2_client(app).get_instances(
-        app_settings.AUTOSCALING_EC2_INSTANCES,
-        list(ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()),
-    )
-
-    associated_instances = dict[str, EC2InstanceData]
-    for instance_data in existing_ec2_instances:
-        try:
-            docker_node_name = _get_docker_node_name_from_aws_private_dns_name(
-                instance_data
-            )
-        except Ec2InvalidDnsNameError:
-            logger.exception("Unexcepted EC2 private dns name")
-            continue
+        await progress_tasks_message(app, pending_tasks, 0)
 
 
 async def _attach_new_ec2_instances(
@@ -571,34 +499,27 @@ async def _attach_new_ec2_instances(
         state_names=["running"],
     )
     # check that all running instances are already labelled correctly
+    _, pending_ec2_instances = await associate_ec2_instances_with_nodes(
+        monitored_nodes, running_ec2_instances
+    )
     newly_attached_nodes = []
-    all_monitored_node_names = [
-        n.Description.Hostname for n in monitored_nodes if n.Description
-    ]
-    for instance_data in running_ec2_instances:
+    for instance_data in pending_ec2_instances:
         try:
-            docker_node_name = _get_docker_node_name_from_aws_private_dns_name(
-                instance_data
-            )
+            node_host_name = node_host_name_from_ec2_private_dns(instance_data)
+            if new_node := await utils_docker.try_get_node_with_name(
+                get_docker_client(app), node_host_name
+            ):
+                # it is attached, let's label it, but keep it as drained
+                new_node = await utils_docker.tag_node(
+                    get_docker_client(app),
+                    new_node,
+                    tags=utils_docker.get_docker_tags(app_settings),
+                    available=False,
+                )
+                newly_attached_nodes.append(new_node)
         except Ec2InvalidDnsNameError:
-            logger.exception("Unexcepted EC2 private dns name")
-            continue
+            logger.exception("Unexpected EC2 private dns")
 
-        # already monitored then we skip
-        if docker_node_name in all_monitored_node_names:
-            continue
-        # this one is missing, let's check if it attached already
-        if new_node := await utils_docker.try_get_node_with_name(
-            get_docker_client(app), docker_node_name
-        ):
-            # it is attached, let's label it, but keep it as drained
-            new_node = await utils_docker.tag_node(
-                get_docker_client(app),
-                new_node,
-                tags=_get_docker_tags(app_settings),
-                available=False,
-            )
-            newly_attached_nodes.append(new_node)
     return newly_attached_nodes
 
 
