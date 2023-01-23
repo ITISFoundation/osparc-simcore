@@ -7,6 +7,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.invitations import setup_invitations
 
 from ._meta import WELCOME_GC_MSG, WELCOME_MSG
 from .activity.plugin import setup_activity
@@ -81,6 +82,7 @@ def create_application() -> web.Application:
 
     # login
     setup_email(app)
+    setup_invitations(app)
     setup_login(app)
 
     # interaction with other backend services

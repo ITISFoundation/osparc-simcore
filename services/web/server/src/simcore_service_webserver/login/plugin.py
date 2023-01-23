@@ -20,6 +20,7 @@ from ..db_settings import get_plugin_settings as get_db_plugin_settings
 from ..email import setup_email
 from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
+from ..invitations import setup_invitations
 from ..products import ProductName, list_products, setup_products
 from ..redis import setup_redis
 from ..rest import setup_rest
@@ -145,6 +146,7 @@ def setup_login(app: web.Application):
     setup_products(app)
     setup_rest(app)
     setup_email(app)
+    setup_invitations(app)
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
