@@ -32,4 +32,4 @@ def test_valid_web_application_settings(
     settings = ApplicationSettings()
     assert settings
 
-    assert settings.is_auth_enabled() == auth_enabled
+    assert settings.is_auth_enabled == auth_enabled

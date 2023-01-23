@@ -37,7 +37,7 @@ def get_validated_credentials(
     settings: ApplicationSettings = Depends(get_settings),
 ) -> Optional[HTTPBasicCredentials]:
 
-    if settings.is_auth_enabled():
+    if settings.is_auth_enabled:
 
         def _is_valid(current: str, expected: str) -> bool:
             return secrets.compare_digest(
@@ -61,9 +61,8 @@ def get_validated_credentials(
                 headers={"WWW-Authenticate": "Basic"},
             )
     else:
-        assert credentials is None  # nosec
-        assert not settings.is_auth_enabled()  # nosec
+        assert not settings.is_auth_enabled  # nosec
 
-        logger.debug("Auth was disabled")
+        logger.debug("Auth was disabled: %s", f"{settings=}")
 
     return credentials
