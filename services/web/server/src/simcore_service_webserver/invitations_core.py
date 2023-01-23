@@ -67,17 +67,15 @@ def _handle_exceptions_as_invitations_errors():
         if err.status == web.HTTPUnprocessableEntity.status_code:
             raise InvalidInvitation(reason=err.message) from err
 
-        # some validation or other error?
+        assert 400 <= err.status  # nosec
+        # any other error status code
         raise InvitationsServiceUnavailable() from err
 
-    except ValidationError as err:
-        raise InvitationsServiceUnavailable() from err
-
-    except ClientError as err:
+    except (ValidationError, ClientError) as err:
         raise InvitationsServiceUnavailable() from err
 
     except InvitationsErrors:
-        # bypass
+        # bypass: prevents that the Exceptions handler catches this exception
         raise
 
     except Exception as err:
