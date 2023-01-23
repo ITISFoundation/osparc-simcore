@@ -65,7 +65,7 @@ def test_dynamic_sidecar_env_vars(
     app_settings = AppSettings.create_from_envs()
 
     dynamic_sidecar_env_vars = _get_environment_variables(
-        "compose_namespace", scheduler_data_from_http_request, app_settings
+        "compose_namespace", scheduler_data_from_http_request, app_settings, False
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 

@@ -26,7 +26,10 @@ def extract_service_port_from_compose_start_spec(
 
 
 def _get_environment_variables(
-    compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
+    compose_namespace: str,
+    scheduler_data: SchedulerData,
+    app_settings: AppSettings,
+    allow_internet_access: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -37,8 +40,6 @@ def _get_environment_variables(
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
         state_exclude = scheduler_data.paths_mapping.state_exclude
-
-    allow_internet_access: bool = False
 
     return {
         # These environments will be captured by
@@ -96,6 +97,7 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
+    allow_internet_access: bool,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -242,7 +244,10 @@ def get_dynamic_sidecar_spec(
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
-                    compose_namespace, scheduler_data, app_settings
+                    compose_namespace,
+                    scheduler_data,
+                    app_settings,
+                    allow_internet_access,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

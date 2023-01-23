@@ -180,7 +180,7 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-def assemble_spec(
+def assemble_spec(  # pylint:disable=too-many-arguments
     app: FastAPI,
     service_key: str,
     service_tag: str,
@@ -191,6 +191,7 @@ def assemble_spec(
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
     simcore_service_labels: SimcoreServiceLabels,
+    allow_internet_access: bool,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -240,7 +241,6 @@ def assemble_spec(
         service_resources=service_resources, service_spec=service_spec
     )
 
-    allow_internet_access: bool = False
     if not allow_internet_access:
         # NOTE: when service has no access to the internet,
         # there could be some components that still require access

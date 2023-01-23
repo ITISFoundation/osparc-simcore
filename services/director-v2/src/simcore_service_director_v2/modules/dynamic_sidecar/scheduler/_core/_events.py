@@ -37,6 +37,7 @@ from .....models.schemas.dynamic_services.scheduler import (
 )
 from .....utils.db import get_repository
 from ....catalog import CatalogClient
+from ....db.repositories.internet_to_groups import InternetToGroupsRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
 from ....node_rights import NodeRightsManager
@@ -153,7 +154,12 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
         )
 
-        allow_internet_access: bool = False
+        internet_to_groups = cast(
+            InternetToGroupsRepository, get_repository(app, InternetToGroupsRepository)
+        )
+        allow_internet_access: bool = await internet_to_groups.has_access(
+            user_id=scheduler_data.user_id
+        )
 
         network_config = {
             "Name": scheduler_data.dynamic_sidecar_network_name,
@@ -190,6 +196,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 swarm_network_id=swarm_network_id,
                 settings=settings,
                 app_settings=app.state.settings,
+                allow_internet_access=allow_internet_access,
             )
         )
 
@@ -492,6 +499,13 @@ class CreateUserServices(DynamicSchedulerEvent):
             )
         )
 
+        internet_to_groups = cast(
+            InternetToGroupsRepository, get_repository(app, InternetToGroupsRepository)
+        )
+        allow_internet_access: bool = await internet_to_groups.has_access(
+            user_id=scheduler_data.user_id
+        )
+
         compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
@@ -503,6 +517,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
             simcore_service_labels=simcore_service_labels,
+            allow_internet_access=allow_internet_access,
         )
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",
