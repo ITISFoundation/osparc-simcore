@@ -49,6 +49,7 @@ async def associate_ec2_instances_with_nodes(
             docker_node_name = node_host_name_from_ec2_private_dns(instance_data)
         except Ec2InvalidDnsNameError:
             logger.exception("Unexcepted EC2 private dns name")
+            non_associated_instances.append(instance_data)
             continue
 
         if node := next(iter(filter(_find_node_with_name, nodes)), None):
