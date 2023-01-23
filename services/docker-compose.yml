@@ -12,18 +12,16 @@ services:
     deploy:
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
-        # gzip compression
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
-        # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
         - traefik.enable=true
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.server.port=8000
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.path=/
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.interval=2000ms
-        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.path=/
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.server.port=8000
     networks:
       - default
 
