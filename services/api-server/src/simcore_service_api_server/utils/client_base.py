@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Optional
 
 import httpx
 from fastapi import FastAPI
@@ -33,20 +33,22 @@ class BaseServiceClientApi(AppDataMixin):
             log.error("%s not responsive: %s", self.service_name, err)
             return False
 
+    ping = is_responsive  # alias
+
 
 # HELPERS -------------------------------------------------------------
 
 
 def setup_client_instance(
     app: FastAPI,
-    api_cls: Type[BaseServiceClientApi],
+    api_cls: type[BaseServiceClientApi],
     api_baseurl,
     service_name: str,
     **extra_fields
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
 
-    assert issubclass(api_cls, BaseServiceClientApi)
+    assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
     def _create_instance() -> None:
         api_cls.create_once(
