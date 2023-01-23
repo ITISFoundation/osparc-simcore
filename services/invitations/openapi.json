@@ -84,12 +84,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v1/invitations:extract": {
@@ -131,12 +126,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     }
   },
@@ -364,12 +354,6 @@
             "format": "uri"
           }
         }
-      }
-    },
-    "securitySchemes": {
-      "HTTPBasic": {
-        "type": "http",
-        "scheme": "basic"
       }
     }
   }

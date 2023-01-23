@@ -29,17 +29,19 @@ def get_settings(request: Request) -> ApplicationSettings:
     return app_settings
 
 
-def get_basic_credentials(
+async def _get_basic_credentials(
+    request: Request,
     settings: ApplicationSettings = Depends(get_settings),
 ) -> Optional[HTTPBasicCredentials]:
-    """If auth is enabled, it set auth headers (in OAS and response) and fetches user credentials at runtime"""
+    """Enables/disables http auth based on app settings"""
     if settings.is_auth_enabled():
-        return HTTPBasic()
+        http_basic = HTTPBasic()
+        return await http_basic(request=request)
     return None
 
 
 def get_validated_credentials(
-    credentials: Optional[HTTPBasicCredentials] = Depends(get_basic_credentials),
+    credentials: Optional[HTTPBasicCredentials] = Depends(_get_basic_credentials),
     settings: ApplicationSettings = Depends(get_settings),
 ) -> Optional[HTTPBasicCredentials]:
 

@@ -88,7 +88,7 @@ class ApplicationSettings(MinimalApplicationSettings):
         min_length=10,
     )
 
-    def is_auth_enabled(self):
+    def is_auth_enabled(self) -> bool:
         return (
             self.INVITATIONS_USERNAME is not None
             and self.INVITATIONS_PASSWORD is not None
