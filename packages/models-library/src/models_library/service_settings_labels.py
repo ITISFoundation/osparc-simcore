@@ -288,7 +288,12 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("containers_allowed_outgoing_whitelist")
     @classmethod
-    def _containers_allowed_outgoing_whitelist_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_whitelist_in_compose_spec(  # pylint: disable = inconsistent-return-statements
+        cls, v, values
+    ):
+        if v is None:
+            return
+
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
@@ -308,7 +313,12 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("containers_allowed_outgoing_internet")
     @classmethod
-    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_internet_in_compose_spec(  # pylint: disable = inconsistent-return-statements
+        cls, v, values
+    ):
+        if v is None:
+            return
+
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
