@@ -29,15 +29,7 @@ def get_settings(request: Request) -> ApplicationSettings:
     return app_settings
 
 
-async def _get_basic_credentials(
-    request: Request,
-    settings: ApplicationSettings = Depends(get_settings),
-) -> Optional[HTTPBasicCredentials]:
-    """Enables/disables http auth based on app settings"""
-    if settings.is_auth_enabled():
-        http_basic = HTTPBasic()
-        return await http_basic(request=request)
-    return None
+_get_basic_credentials = HTTPBasic()  # NOTE: adds Auth specs in openapi.json
 
 
 def get_validated_credentials(
@@ -45,20 +37,20 @@ def get_validated_credentials(
     settings: ApplicationSettings = Depends(get_settings),
 ) -> Optional[HTTPBasicCredentials]:
 
-    if credentials:
-        assert settings.is_auth_enabled()  # nosec
+    if settings.is_auth_enabled():
 
         def _is_valid(current: str, expected: str) -> bool:
             return secrets.compare_digest(
                 current.encode("utf8"), expected.encode("utf8")
             )
 
-        if not (
-            _is_valid(
+        if (
+            not credentials
+            or not _is_valid(
                 credentials.username,
                 expected=settings.INVITATIONS_USERNAME,
             )
-            and _is_valid(
+            or not _is_valid(
                 credentials.password,
                 expected=settings.INVITATIONS_PASSWORD.get_secret_value(),
             )

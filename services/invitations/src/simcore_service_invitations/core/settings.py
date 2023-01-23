@@ -78,12 +78,12 @@ class ApplicationSettings(MinimalApplicationSettings):
     """
 
     INVITATIONS_USERNAME: Optional[str] = Field(
-        None,
+        ...,
         description="Username for HTTP Basic Auth",
         min_length=3,
     )
     INVITATIONS_PASSWORD: Optional[SecretStr] = Field(
-        None,
+        ...,
         description="Password for HTTP Basic Auth",
         min_length=10,
     )
