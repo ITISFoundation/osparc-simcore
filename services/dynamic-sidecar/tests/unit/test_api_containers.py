@@ -174,17 +174,17 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
             "services": {
                 "first-box": {
                     "image": "busybox:latest",
-                    "networks": [
-                        dynamic_sidecar_network_name,
-                    ],
+                    "networks": {
+                        dynamic_sidecar_network_name: None,
+                    },
                     "labels": {"io.osparc.test-label": "mark-entrypoint"},
                 },
                 "second-box": {"image": "busybox:latest"},
                 "egress": {
                     "image": "busybox:latest",
-                    "networks": [
-                        dynamic_sidecar_network_name,
-                    ],
+                    "networks": {
+                        dynamic_sidecar_network_name: None,
+                    },
                 },
             },
             "networks": {dynamic_sidecar_network_name: {}},
@@ -198,8 +198,10 @@ def compose_spec_single_service() -> str:
         {
             "version": "3",
             "services": {
-                "solo-box": {"image": "busybox:latest"},
-                "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                "solo-box": {
+                    "image": "busybox:latest",
+                    "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                },
             },
         }
     )
