@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from aiohttp import BasicAuth, ClientSession, web
+from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientError
 from pydantic import BaseModel, EmailStr, parse_obj_as
 from yarl import URL
@@ -43,15 +43,7 @@ class InvitationsServiceApi:
     async def create(cls, settings: InvitationsSettings) -> "InvitationsServiceApi":
         exit_stack = contextlib.AsyncExitStack()
         client_session = await exit_stack.enter_async_context(
-            ClientSession(
-                auth=BasicAuth(
-                    login=settings.INVITATIONS_USERNAME,
-                    password=settings.INVITATIONS_PASSWORD.get_secret_value(),
-                )
-                if settings.is_auth_enabled
-                else None,
-                raise_for_status=True,
-            )
+            ClientSession(raise_for_status=True)
         )
         return cls(client=client_session, exit_stack=exit_stack, settings=settings)
 
