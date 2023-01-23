@@ -122,6 +122,13 @@ def mock_remove_nodes(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
+def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> Iterator[int]:
+    num_machines_in_buffer = 5
+    monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
+    yield num_machines_in_buffer
+
+
+@pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
     disabled_rabbitmq: None,
@@ -173,6 +180,45 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
+
+
+async def test_cluster_scaling_from_labelled_services_with_no_services_and_machine_buffer_starts_expected_machines(
+    minimal_configuration: None,
+    mock_machines_buffer: int,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    aws_allowed_ec2_instance_type_names: list[str],
+    mock_start_aws_instance: mock.Mock,
+    mock_terminate_instance: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+        == mock_machines_buffer
+    )
+    await cluster_scaling_from_labelled_services(initialized_app)
+    mock_start_aws_instance.assert_called_once()
+    assert "number_of_instances" in mock_start_aws_instance.call_args[1]
+    assert (
+        mock_start_aws_instance.call_args[1]["number_of_instances"]
+        == mock_machines_buffer
+    )
+    assert "instance_type" in mock_start_aws_instance.call_args[1]
+    assert (
+        mock_start_aws_instance.call_args[1]["instance_type"]
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[0]
+    )
+    mock_terminate_instance.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app
+    )
+    # now calling the function again should do nothing
+    mock_start_aws_instance.reset_mock()
+    await cluster_scaling_from_labelled_services(initialized_app)
+    await cluster_scaling_from_labelled_services(initialized_app)
+    mock_start_aws_instance.assert_not_called()
+    mock_terminate_instance.assert_not_called()
 
 
 async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(

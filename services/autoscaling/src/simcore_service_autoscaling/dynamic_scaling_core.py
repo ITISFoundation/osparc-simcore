@@ -91,6 +91,12 @@ async def _find_terminateable_nodes(
         and (node.Spec.Availability == Availability.drain)
     ]
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    # we keep a buffer of nodes always on the ready
+    drained_empty_nodes = drained_empty_nodes[
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
+    ]
+
     if not drained_empty_nodes:
         # there is nothing to terminate here
         return []
@@ -114,6 +120,7 @@ async def _find_terminateable_nodes(
     )
 
     terminateable_nodes: list[tuple[Node, EC2InstanceData]] = []
+
     for node, ec2_instance_data in zip(
         drained_empty_nodes, drained_empty_ec2_instances
     ):
@@ -132,6 +139,7 @@ async def _find_terminateable_nodes(
         ):
             # let's terminate that one
             terminateable_nodes.append((node, ec2_instance_data))
+
     if terminateable_nodes:
         logger.info(
             "the following nodes were found to be terminateable: '%s'",
@@ -408,6 +416,68 @@ async def _progress_tasks_message(
     )
 
 
+async def _ensure_buffer_machine_runs(
+    app: FastAPI, monitored_nodes: list[Node]
+) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    docker_client = get_docker_client(app)
+    drained_empty_nodes = [
+        node
+        for node in monitored_nodes
+        if (
+            await utils_docker.compute_node_used_resources(
+                docker_client,
+                node,
+                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+            )
+            == Resources.create_as_empty()
+        )
+        and (node.Spec is not None)
+        and (node.Spec.Availability == Availability.drain)
+    ]
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    # we keep a buffer of nodes always on the ready
+    if (
+        len(drained_empty_nodes)
+        < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    ):
+        allowed_instance_types = await get_ec2_client(
+            app
+        ).get_ec2_instance_capabilities(
+            cast(  # type: ignore
+                list[InstanceTypeType],
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
+            )
+        )
+
+        missing_buffer_instances = (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+            - len(drained_empty_nodes)
+        )
+        # NOTE: we start the first instance type available in the list
+        for (
+            instance_type
+        ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES:
+            if filtered_instance_types := list(
+                filter(
+                    lambda x: x.name == instance_type,
+                    allowed_instance_types,
+                )
+            ):
+                await _start_instances(
+                    app,
+                    {
+                        filtered_instance_types[0]: missing_buffer_instances,
+                    },
+                    [],
+                )
+                return
+
+
 async def _scale_up_cluster(
     app: FastAPI, monitored_nodes: list[Node], pending_tasks: list[Task]
 ) -> None:
@@ -553,6 +623,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     else:
         await _mark_empty_active_nodes_to_drain(app, monitored_nodes)
         await _try_scale_down_cluster(app, monitored_nodes)
+        await _ensure_buffer_machine_runs(app, monitored_nodes)
 
     # 4. Notify anyone interested of current state
     await post_autoscaling_status_message(app, monitored_nodes)

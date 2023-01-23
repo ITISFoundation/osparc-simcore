@@ -9,7 +9,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.docker import DockerLabelKey
-from pydantic import Field, PositiveInt, parse_obj_as, validator
+from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -69,6 +69,11 @@ class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=55),
         description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
+    )
+
+    EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
+        default=0,
+        description="Buffer of readily available machines for fast usage (always on)",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
