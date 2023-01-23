@@ -110,7 +110,11 @@ async def register(request: web.Request):
             )
 
         invitation = await check_and_consume_invitation(
-            invitation_code, db=db, cfg=cfg, app=request.app
+            invitation_code,
+            guest_email=registration.email,
+            db=db,
+            cfg=cfg,
+            app=request.app,
         )
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)

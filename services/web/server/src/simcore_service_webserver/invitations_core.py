@@ -94,7 +94,7 @@ def is_service_invitation_code(code: str):
 
 
 async def validate_invitation_url(
-    app: web.Application, invitation_url: str
+    app: web.Application, guest_email: str, invitation_url: str
 ) -> InvitationContent:
     """Validates invitation and returns content
 
@@ -108,6 +108,11 @@ async def validate_invitation_url(
         invitation = await invitations_service.extract_invitation(
             invitation_url=invitation_url
         )
+
+        if invitation.guest != guest_email:
+            raise InvalidInvitation(
+                reason="This invitation was issued for a different email"
+            )
 
         # existing users cannot be re-invited
         if await _is_user_registered(app=app, email=invitation.guest):

@@ -157,7 +157,11 @@ async def create_invitation_token(
 
 
 async def check_and_consume_invitation(
-    invitation_code: str, db: AsyncpgStorage, cfg: LoginOptions, app=web.Application
+    invitation_code: str,
+    guest_email: str,
+    db: AsyncpgStorage,
+    cfg: LoginOptions,
+    app=web.Application,
 ) -> InvitationData:
     """Consumes invitation: the code is validated, the invitation retrieives and then deleted
        since it only has one use
@@ -178,9 +182,13 @@ async def check_and_consume_invitation(
                 confirmation=ConfirmationTokenDict(
                     code=invitation_code, action=ConfirmationAction.INVITATION.name
                 ),
-                origin=URL("https://127.0.0.1:8000"),
+                origin=URL("https://fakehost.io:8000"),
             )
-            content = await validate_invitation_url(app, invitation_url=f"{url}")
+            content = await validate_invitation_url(
+                app,
+                guest_email=guest_email,
+                invitation_url=f"{url}",
+            )
 
             log.info("Consuming invitation from service:\n%s", content.json(indent=1))
             return InvitationData(

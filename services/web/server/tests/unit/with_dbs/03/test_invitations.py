@@ -146,7 +146,10 @@ def mock_invitations_service_http_api(
     return aioresponses_mocker
 
 
-async def test_invitation_service_unavailable(client: TestClient):
+async def test_invitation_service_unavailable(
+    client: TestClient,
+    expected_invitation: InvitationContent,
+):
 
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
@@ -155,11 +158,11 @@ async def test_invitation_service_unavailable(client: TestClient):
     with pytest.raises(InvitationsServiceUnavailable):
         await validate_invitation_url(
             app=client.app,
+            guest_email=expected_invitation.guest,
             invitation_url="https://server.com#/registration?invitation=1234",
         )
 
 
-@pytest.mark.testit
 async def test_invitation_service_api_ping(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
@@ -182,7 +185,9 @@ async def test_valid_invitation(
     expected_invitation: InvitationContent,
 ):
     invitation = await validate_invitation_url(
-        app=client.app, invitation_url="https://server.com#register?invitation=1234"
+        app=client.app,
+        guest_email=expected_invitation.guest,
+        invitation_url="https://server.com#register?invitation=1234",
     )
     assert invitation
     assert invitation == expected_invitation
@@ -205,5 +210,21 @@ async def test_invalid_invitation_if_guest_is_already_registered(
         with pytest.raises(InvalidInvitation):
             await validate_invitation_url(
                 app=client.app,
+                guest_email=expected_invitation.guest,
                 invitation_url="https://server.com#register?invitation=1234",
             )
+
+
+@pytest.mark.testit
+async def test_invatlid_invitation_if_not_guest(
+    client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
+    expected_invitation: InvitationContent,
+):
+    assert expected_invitation.guest != "unexpected_guest@email.me"
+    with pytest.raises(InvalidInvitation):
+        await validate_invitation_url(
+            app=client.app,
+            guest_email="unexpected_guest@email.me",
+            invitation_url="https://server.com#register?invitation=1234",
+        )
