@@ -128,6 +128,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __idleTimer: null,
     __idleInteval: null,
     __idleFlashMessage: null,
+    __studyEditorIdlingTracker: null,
     __lastSavedStudy: null,
     __updatingStudy: null,
     __updateThrottled: null,
@@ -184,7 +185,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           study.initStudy();
 
           if (osparc.utils.Utils.isProduct("s4llite")) {
-            this.__startIdleTimer();
+            this.__startIdlingTracker();
           }
 
           // Count dynamic services.
@@ -539,73 +540,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __stopTimers: function() {
-      this.__stopIdleTimer();
+      if (this.__studyEditorIdlingTracker) {
+        this.__studyEditorIdlingTracker.stop();
+      }
       this.__stopAutoSaveTimer();
-    },
-
-    __removeIdleTimer: function() {
-      if (this.__idleTimer) {
-        clearTimeout(this.__idleTimer);
-        this.__idleTimer = null;
-      }
-    },
-
-    __removeIdleInterval: function() {
-      if (this.__idleInteval) {
-        clearInterval(this.__idleInteval);
-        this.__idleInteval = null;
-      }
-    },
-
-    __removeIdleFlashMessage: function() {
-      if (this.__idleFlashMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
-        this.__idleFlashMessage = null;
-      }
-    },
-
-    __startIdleTimer: function() {
-      const warningAfter = this.self().IDLE_WARNING_AFTER;
-      const outAfter = this.self().IDLE_CLOSE_AFTER;
-
-      const sendBackToDashboard = () => {
-        this.__stopIdleTimer();
-        this.fireEvent("userIdled");
-      };
-
-      const startCountdown = () => {
-        let countdown = outAfter - warningAfter;
-        this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Are you there?"), "WARNING", null, outAfter-warningAfter);
-        const updateFlashMessage = () => {
-          if (this.__idleFlashMessage) {
-            let msg = this.tr("Are you there?") + "<br>";
-            msg += this.tr("The ") + osparc.utils.Utils.getStudyLabel() + this.tr(" will be closed out in ");
-            msg += osparc.utils.Utils.formatSeconds(countdown/1000);
-            this.__idleFlashMessage.setMessage(msg);
-            countdown -= 1000;
-          }
-        };
-        updateFlashMessage();
-        this.__idleInteval = setInterval(updateFlashMessage, 1000);
-
-        this.__idleTimer = setTimeout(sendBackToDashboard, countdown);
-      };
-
-      const resetTimer = () => {
-        console.log("reset timer");
-        this.__stopIdleTimer();
-        this.__idleTimer = setTimeout(startCountdown, warningAfter);
-      };
-      resetTimer();
-
-      window.onmousemove = resetTimer;
-      window.onkeydown = resetTimer;
-    },
-
-    __stopIdleTimer: function() {
-      this.__removeIdleInterval();
-      this.__removeIdleFlashMessage();
-      this.__removeIdleTimer();
     },
 
     __startAutoSaveTimer: function() {
