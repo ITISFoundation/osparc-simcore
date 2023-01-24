@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def get_ec2_tags(app_settings: ApplicationSettings) -> dict[str, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
         "io.simcore.autoscaling.version": f"{VERSION}",
         "io.simcore.autoscaling.monitored_nodes_labels": json.dumps(
