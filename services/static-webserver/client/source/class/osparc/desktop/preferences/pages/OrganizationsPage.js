@@ -172,13 +172,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const validator = new qx.ui.form.validation.Manager();
       validator.add(userEmail, qx.util.Validate.email());
 
-      const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
-      inviteBtn.addListener("execute", function() {
+      const addBtn = new qx.ui.form.Button(this.tr("Add"));
+      addBtn.addListener("execute", function() {
         if (validator.validate()) {
           this.__addMember(userEmail.getValue());
         }
       }, this);
-      hBox.add(inviteBtn);
+      hBox.add(addBtn);
 
       return hBox;
     },
@@ -508,7 +508,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding the user"), "ERROR");
           console.error(err);
         });
     },
