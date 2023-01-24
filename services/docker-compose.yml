@@ -180,9 +180,9 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=ratelimit-${SWARM_STACK_NAME}_invitations
         - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_invitations.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v1`) ||  PathPrefix(`/v1/`) || Path(`/api/v1/openapi.json`))
-        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=5000ms
         - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.path=/
-        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.timeout=5000ms
         - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.server.port=8000
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -543,9 +543,9 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_api.address=:10081"
+      - "--entryPoints.simcore_api.address=:10080"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_invitations.address=:10082"
+      - "--entryPoints.simcore_invitations.address=:10085"
       - "--entryPoints.simcore_invitations.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
@@ -568,7 +568,8 @@ services:
         constraints:
           - node.role == manager
       labels:
-        # for each service in the stack a new middlaware for rate limiting needs to be registered here
+        # NOTE: for each service in the stack a new middlaware for rate limiting needs to be registered here
+        # api-service service --
         # requests = average / period this is how the limits are defined
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.average=1
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.period=1m
@@ -576,6 +577,11 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
+        # invitations service --
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.average=1
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.period=1m
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.burst=1
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.sourcecriterion.ipstrategy.depth=2
     networks:
       - default
       - interactive_services_subnet # for legacy dynamic services
