@@ -31,14 +31,14 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
     accessRights: {
       check: "Object",
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAccessRights",
       nullable: true
     },
 
     showOptions: {
       check: "Boolean",
-      apply: "_applyShowOptions",
+      apply: "__applyShowOptions",
       event: "changeShowOptions",
       nullable: true
     }
@@ -136,33 +136,27 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       this.base(arguments, value);
     },
 
-    _applyAccessRights: function(value) {
+    __applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
 
       this.__setSubtitle();
+
+      const menu = this.__getOptionsMenu();
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setMenu(menu);
     },
 
     __setSubtitle: function() {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
-      if (accessRights.getDelete()) {
+      if (this.self().canDelete(accessRights)) {
         subtitle.setValue(this.self().ROLES[3].longLabel);
-      } else if (accessRights.getWrite()) {
+      } else if (this.self().canWrite(accessRights)) {
         subtitle.setValue(this.self().ROLES[2].longLabel);
       } else {
         subtitle.setValue(this.self().ROLES[1].longLabel);
-      }
-    },
-
-    _applyShowOptions: function(value) {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
-      if (value) {
-        const menu = this.__getOptionsMenu();
-        optionsMenu.setMenu(menu);
-        optionsMenu.setVisibility(menu.getChildren().length ? "visible" : "excluded");
       }
     },
 
@@ -173,9 +167,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
       const accessRights = this.getAccessRights();
       let currentRole = this.self().ROLES[1];
-      if (accessRights.getDelete()) {
+      if (this.self().canDelete(accessRights)) {
         currentRole = this.self().ROLES[3];
-      } else if (accessRights.getWrite()) {
+      } else if (this.self().canWrite(accessRights)) {
         currentRole = this.self().ROLES[2];
       }
 
@@ -240,6 +234,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       menu.add(removeButton);
 
       return menu;
+    },
+
+    __applyShowOptions: function(value) {
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setVisibility(value ? "visible" : "excluded");
     }
   }
 });
