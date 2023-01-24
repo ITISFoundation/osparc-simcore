@@ -97,7 +97,8 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     createProgressBar: function() {
       const progressBar = new qx.ui.indicator.ProgressBar().set({
-        height: 10
+        maximum: 1,
+        height: 14
       });
       progressBar.getChildControl("progress").set({
         backgroundColor: "strong-main"
@@ -107,7 +108,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     progressReceived: function(atom, pBar, value) {
-      if (![null, undefined].includes(value)) {
+      if ([null, undefined].includes(value)) {
         return;
       }
 
@@ -175,7 +176,10 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __initLayout: function() {
-      this.__sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+      this.__sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
+        maxWidth: 300,
+        minHeight: 250
+      });
 
       const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Scaling up the cluster..."));
       this.__sequenceLoadingPage.add(scalingTitle);
