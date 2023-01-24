@@ -285,7 +285,10 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         if (osparc.ui.list.CollaboratorListItem.canRead(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canRead(bAccessRights)) {
           return osparc.ui.list.CollaboratorListItem.canRead(bAccessRights) - osparc.ui.list.CollaboratorListItem.canRead(aAccessRights);
         }
-        return a.getLogin().localeCompare(b.getLogin());
+        if (a.isPropertyInitialized("login") && b.isPropertyInitialized("login")) {
+          return a.getLogin().localeCompare(b.getLogin());
+        }
+        return 0;
       };
       const aceessRights = this._serializedData["accessRights"];
       Object.keys(aceessRights).forEach(gid => {

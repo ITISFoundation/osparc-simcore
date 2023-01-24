@@ -54,8 +54,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   statics: {
     canDelete: function(accessRights) {
-      let canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
-      canDelete = canDelete || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
+      const canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
       return canDelete;
     },
 
