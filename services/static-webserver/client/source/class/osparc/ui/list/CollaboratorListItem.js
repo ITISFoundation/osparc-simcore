@@ -45,10 +45,10 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   },
 
   events: {
-    "makeOwner": "qx.event.type.Data",
-    "makeCollaborator": "qx.event.type.Data",
-    "makeViewer": "qx.event.type.Data",
-    "removeCollaborator": "qx.event.type.Data"
+    "promoteToOwner": "qx.event.type.Data",
+    "promoteToCollaborator": "qx.event.type.Data",
+    "demoteToViewer": "qx.event.type.Data",
+    "removeMember": "qx.event.type.Data"
   },
 
   statics: {
@@ -139,15 +139,19 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       if (value === null) {
         return;
       }
+
+      this.__setSubtitle();
+    },
+
+    __setSubtitle: function() {
+      const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
-      const canDelete = this.self().canDelete(value);
-      const canWrite = this.self().canWrite(value);
-      if (canDelete) {
-        subtitle.setValue(this.tr("Owner"));
-      } else if (canWrite) {
-        subtitle.setValue(this.tr("Collaborator"));
+      if (accessRights.getDelete()) {
+        subtitle.setValue(this.self().ROLES[3].longLabel);
+      } else if (accessRights.getWrite()) {
+        subtitle.setValue(this.self().ROLES[2].longLabel);
       } else {
-        subtitle.setValue(this.tr("Viewer"));
+        subtitle.setValue(this.self().ROLES[1].longLabel);
       }
     },
 
@@ -170,21 +174,21 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
       const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
       makeOwnerButton.addListener("execute", () => {
-        this.fireDataEvent("makeOwner", {
+        this.fireDataEvent("promoteToOwner", {
           gid: this.getKey(),
           name: this.getTitle()
         });
       });
       const makeCollabButton = new qx.ui.menu.Button(this.tr("Make Collaborator"));
       makeCollabButton.addListener("execute", () => {
-        this.fireDataEvent("makeCollaborator", {
+        this.fireDataEvent("promoteToCollaborator", {
           gid: this.getKey(),
           name: this.getTitle()
         });
       });
       const makeViewerButton = new qx.ui.menu.Button(this.tr("Make Viewer"));
       makeViewerButton.addListener("execute", () => {
-        this.fireDataEvent("makeViewer", {
+        this.fireDataEvent("demoteToViewer", {
           gid: this.getKey(),
           name: this.getTitle()
         });
@@ -192,7 +196,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
       const removeCollabButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
       removeCollabButton.addListener("execute", () => {
-        this.fireDataEvent("removeCollaborator", {
+        this.fireDataEvent("removeMember", {
           gid: this.getKey(),
           name: this.getTitle()
         });

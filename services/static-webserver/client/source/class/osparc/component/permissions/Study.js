@@ -141,7 +141,7 @@ qx.Class.define("osparc.component.permissions.Study", {
         });
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _deleteMember: function(collaborator) {
       const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
@@ -187,7 +187,7 @@ qx.Class.define("osparc.component.permissions.Study", {
         });
     },
 
-    _makeOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator) {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
@@ -196,7 +196,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       );
     },
 
-    _makeCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
@@ -205,7 +205,7 @@ qx.Class.define("osparc.component.permissions.Study", {
       );
     },
 
-    _makeViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator) {
       this.__make(
         collaborator["gid"],
         this.self().getViewerAccessRight(),

@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _deleteMember: function(collaborator) {
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
@@ -140,7 +140,7 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _makeOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator) {
       this._serializedData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: osparc.data.Resources.getServiceUrl(
@@ -162,11 +162,11 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _makeCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       return;
     },
 
-    _makeViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator) {
       return;
     }
   }

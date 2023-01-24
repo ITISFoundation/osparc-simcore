@@ -158,21 +158,21 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("makeOwner", e => {
+          item.addListener("promoteToOwner", e => {
             const orgMember = e.getData();
-            this._makeOwner(orgMember);
+            this._promoteToOwner(orgMember);
           });
-          item.addListener("makeCollaborator", e => {
+          item.addListener("promoteToCollaborator", e => {
             const orgMember = e.getData();
-            this._makeCollaborator(orgMember);
+            this._promoteToCollaborator(orgMember);
           });
-          item.addListener("makeViewer", e => {
+          item.addListener("demoteToViewer", e => {
             const orgMember = e.getData();
-            this._makeViewer(orgMember);
+            this._demoteToViewer(orgMember);
           });
-          item.addListener("removeCollaborator", e => {
+          item.addListener("removeMember", e => {
             const orgMember = e.getData();
-            this._deleteCollaborator(orgMember);
+            this._deleteMember(orgMember);
           });
         }
       });
@@ -293,19 +293,19 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       throw new Error("Abstract method called!");
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _deleteMember: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _makeOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _makeCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _makeViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator) {
       throw new Error("Abstract method called!");
     }
   }
