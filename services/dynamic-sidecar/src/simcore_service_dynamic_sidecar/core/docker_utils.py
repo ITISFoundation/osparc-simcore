@@ -94,8 +94,13 @@ async def pull_images(
         )
 
 
+ImageName = str
+LayerId = str
+
 _DOWNLOAD_RATIO: Final[float] = 0.75
-_LayerInfoDict = dict[str, dict[str, tuple[int, int]]]
+_LayerInfoDict = dict[LayerId, tuple[int, int]]
+
+
 _PULL_PROGRESS_STATES: Final[list[str]] = [
     "Downloading",
     "Download complete",
@@ -105,29 +110,34 @@ _PULL_PROGRESS_STATES: Final[list[str]] = [
 
 
 def _parse_docker_pull_progress(
-    docker_pull_progress: dict[str, Any],
-    image_name: str,
-    all_image_pulling_data: _LayerInfoDict,
+    docker_pull_progress: dict[str, Any], image_pulling_data: _LayerInfoDict
 ) -> bool:
     if docker_pull_progress.get("status") in _PULL_PROGRESS_STATES:
         layer_id = docker_pull_progress["id"]
+        image_pulling_data[layer_id].setdefault((0, 0))
 
         if docker_pull_progress["status"] == "Downloading":
-            all_image_pulling_data[image_name][layer_id] = (
+            # writes
+            image_pulling_data[layer_id] = (
                 round(
                     _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"]
                 ),
                 docker_pull_progress["progressDetail"]["total"],
             )
         elif docker_pull_progress["status"] == "Downloading complete":
-            _, layer_total_size = all_image_pulling_data[image_name][layer_id]
-            all_image_pulling_data[image_name][layer_id] = (
+            # reads
+            _, layer_total_size = image_pulling_data[layer_id]
+            # writes
+            image_pulling_data[layer_id] = (
                 round(_DOWNLOAD_RATIO * layer_total_size),
                 layer_total_size,
             )
         elif docker_pull_progress["status"] == "Extracting":
-            _, layer_total_size = all_image_pulling_data[image_name][layer_id]
-            all_image_pulling_data[image_name][layer_id] = (
+            # reads
+            _, layer_total_size = image_pulling_data[layer_id]
+
+            # writes
+            image_pulling_data[layer_id] = (
                 round(
                     _DOWNLOAD_RATIO * layer_total_size
                     + (1 - _DOWNLOAD_RATIO)
@@ -136,13 +146,16 @@ def _parse_docker_pull_progress(
                 layer_total_size,
             )
         elif docker_pull_progress["status"] == "Pull complete":
-            _, layer_total_size = all_image_pulling_data[image_name][layer_id]
-            all_image_pulling_data[image_name][layer_id] = (
+            # reads
+            _, layer_total_size = image_pulling_data[layer_id]
+            # writes
+            image_pulling_data[layer_id] = (
                 layer_total_size,
                 layer_total_size,
             )
         return True
-    return False
+
+    return False  # skips
 
 
 def _compute_sizes(all_images: _LayerInfoDict) -> tuple[int, int]:
@@ -177,7 +190,7 @@ async def _pull_image_with_progress(
         )
 
     simplified_image_name = image_name.rsplit("/", maxsplit=1)[-1]
-    all_image_pulling_data[image_name] = {}
+    image_pulling_data = {}
     async for pull_progress in client.images.pull(
         image_name,
         stream=True,
@@ -188,9 +201,7 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
-        if _parse_docker_pull_progress(
-            pull_progress, image_name, all_image_pulling_data
-        ):
+        if _parse_docker_pull_progress(pull_progress, image_pulling_data):
             total_current, total_total = _compute_sizes(all_image_pulling_data)
             await progress_cb(total_current, total_total)
 
