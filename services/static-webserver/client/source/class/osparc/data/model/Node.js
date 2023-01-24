@@ -974,7 +974,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
 
-      loadingPage.addExtraWidget(this.getStatus().getNodeProgressSequence().getWidgetForLoadingPage());
+      loadingPage.addExtraWidget(this.getStatus().getProgressSequence().getWidgetForLoadingPage());
 
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
@@ -1296,8 +1296,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     setNodeProgressSequence: function(progressType, progress) {
       const nodeStatus = this.getStatus();
-      if (nodeStatus.getNodeProgressSequence()) {
-        nodeStatus.getNodeProgressSequence().addProgressMessage(progressType, progress);
+      if (nodeStatus.getProgressSequence()) {
+        nodeStatus.getProgressSequence().addProgressMessage(progressType, progress);
       }
     },
 
