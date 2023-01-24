@@ -91,6 +91,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
       const cb = this.__resetIdlingTimeBound;
       window.addEventListener("mousemove", cb);
+      window.addEventListener("mousedown", cb);
       window.addEventListener("keydown", cb);
 
       this.__startTimer();
@@ -99,6 +100,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     stop: function() {
       const cb = this.__resetIdlingTimeBound;
       window.removeEventListener("mousemove", cb);
+      window.removeEventListener("mousedown", cb);
       window.removeEventListener("keydown", cb);
 
       this.__removeIdleFlashMessage();
