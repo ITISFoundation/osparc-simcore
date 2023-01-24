@@ -17,12 +17,12 @@
 
 /**
  * The progress sequence of a dynamic service is as follows:
- * - CLUSTER_UP_SCALING
- * - SIDECAR_PULLING
- * - SERVICE_INPUTS_PULLING
- * - SERVICE_OUTPUTS_PULLING
- * - SERVICE_STATE_PULLING
- * - SERVICE_IMAGES_PULLING
+ * - CLUSTER_UP_SCALING      (1)
+ * - SIDECAR_PULLING         (2)
+ * - SERVICE_INPUTS_PULLING  (3a)
+ * - SERVICE_OUTPUTS_PULLING (3b)
+ * - SERVICE_STATE_PULLING   (3c)
+ * - SERVICE_IMAGES_PULLING  (4)
  *
  * This class provides different widgets that render the progress status
  *
