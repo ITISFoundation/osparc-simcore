@@ -123,14 +123,18 @@ qx.Class.define("osparc.desktop.MainPage", {
         // make sure very latest changes are saved
         await this.__studyEditor.updateStudyDocument(false);
       }
-      const studyId = this.__studyEditor.getStudy().getUuid();
-      this.__studyEditor.closeEditor();
-      this.closeStudy(studyId);
+      this.closeEditor();
       this.__showDashboard();
       this.__dashboard.getStudyBrowser().invalidateStudies();
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
       dashboardBtn.setFetching(false);
+    },
+
+    closeEditor: function() {
+      if (this.__studyEditor) {
+        this.__studyEditor.closeEditor();
+      }
     },
 
     __downloadStudyLogs: function() {
@@ -297,8 +301,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__loadingPage.setMessages([
         this.tr("Closing previous snapshot...")
       ]);
-      this.__studyEditor.closeEditor();
-      this.closeStudy(studyId);
+      this.closeEditor();
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -349,8 +352,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__loadingPage.setMessages([
         this.tr("Closing...")
       ]);
-      this.__studyEditor.closeEditor();
-      this.closeStudy(studyId);
+      this.closeEditor();
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
@@ -457,6 +459,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
       studyEditor.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
       studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
+      studyEditor.addListener("userIdled", () => this.__backToDashboard(), this);
       studyEditor.addListener("slidesEdit", () => {
         studyEditor.editSlides();
       }, this);
@@ -469,12 +472,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
       }, this);
       return studyEditor;
-    },
-
-    closeEditor: function() {
-      if (this.__studyEditor) {
-        this.__studyEditor.closeEditor();
-      }
     }
   }
 });
