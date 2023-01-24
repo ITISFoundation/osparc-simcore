@@ -405,6 +405,8 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         monitored_nodes, running_ec2_instances
     )
 
+    logger.info("current ec2s: %s, %s", f"{attached_ec2s=}", f"{pending_ec2s=}")
+
     # 3. Attach/Label new connected instances
     attached_ec2s, pending_ec2s = await _try_attach_pending_ec2s(
         app, attached_ec2s, pending_ec2s
