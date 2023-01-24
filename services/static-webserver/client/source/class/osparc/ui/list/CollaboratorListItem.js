@@ -193,14 +193,14 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
-          const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
-          makeOwnerButton.addListener("execute", () => {
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[3].label);
+          promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToOwner", {
               gid: this.getKey(),
               name: this.getTitle()
             });
           });
-          menu.add(makeOwnerButton);
+          menu.add(promoteButton);
           const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[1].label);
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToViewer", {
