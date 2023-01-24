@@ -246,7 +246,7 @@ async def _find_needed_instances(
 
 async def _start_instances(
     app: FastAPI, needed_instances: dict[EC2Instance, int], tasks: list[Task]
-) -> None:
+) -> list[EC2InstanceData]:
     ec2_client = get_ec2_client(app)
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -269,6 +269,7 @@ async def _start_instances(
     )
     # parse results
     last_issue = ""
+    new_pending_instances: list[EC2InstanceData] = []
     for r in results:
         if isinstance(r, Ec2TooManyInstancesError):
             await log_tasks_message(
@@ -277,14 +278,17 @@ async def _start_instances(
                 "Exceptionally high load on computational cluster, please try again later.",
                 level=logging.ERROR,
             )
-        if isinstance(r, Exception):
+        elif isinstance(r, Exception):
             logger.error("Unexpected error happened when starting EC2 instance: %s", r)
             last_issue = f"{r}"
+        else:
+            new_pending_instances.extend(r)
 
     log_message = f"{sum(n for n in needed_instances.values())} new machines launched, it might take up to 3 minutes to start, Please wait..."
     if last_issue:
         log_message += "\nUnexpected issues detected, probably due to high load, please contact support"
     await log_tasks_message(app, tasks, log_message)
+    return new_pending_instances
 
 
 async def _scale_up_cluster(
@@ -316,8 +320,12 @@ async def _scale_up_cluster(
             "service is pending due to missing resources, scaling up cluster now\n"
             f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
         )
-        await _start_instances(app, needed_ec2_instances, pending_tasks)
+        new_pending_instances = await _start_instances(
+            app, needed_ec2_instances, pending_tasks
+        )
+        pending_instances.extend(new_pending_instances)
         await progress_tasks_message(app, pending_tasks, 0)
+    return pending_instances
 
 
 async def _try_attach_pending_ec2s(
@@ -401,7 +409,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         # let's check if there are still pending tasks
         if pending_tasks := [t for t in pending_tasks if t.ID not in assigned_tasks]:
             # yes? then scale up
-            await _scale_up_cluster(app, pending_ec2s, pending_tasks)
+            pending_ec2s = await _scale_up_cluster(app, pending_ec2s, pending_tasks)
     else:
         await _deactivate_empty_nodes(app, attached_ec2s)
         await _try_scale_down_cluster(app, attached_ec2s)
