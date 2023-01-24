@@ -177,7 +177,6 @@ services:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.enable=true
         - traefik.http.routers.${SWARM_STACK_NAME}_invitations.entrypoints=simcore_invitations
-        - traefik.http.routers.${SWARM_STACK_NAME}_invitations.middlewares=ratelimit-${SWARM_STACK_NAME}_invitations
         - traefik.http.routers.${SWARM_STACK_NAME}_invitations.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_invitations.rule=hostregexp(`{host:.+}`) && (Path(`/`, `/v1`) ||  PathPrefix(`/v1/`) || Path(`/api/v1/openapi.json`))
         - traefik.http.services.${SWARM_STACK_NAME}_invitations.loadbalancer.healthcheck.interval=5000ms
@@ -535,7 +534,7 @@ services:
       - "--entryPoints.ping.address=:9082"
       - "--ping.entryPoint=ping"
       - "--log.level=WARNING"
-      - "--accesslog=false"
+      - "--accesslog=true"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.addEntryPointsLabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
@@ -543,9 +542,9 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_api.address=:10080"
+      - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_invitations.address=:10085"
+      - "--entryPoints.simcore_invitations.address=:10082"
       - "--entryPoints.simcore_invitations.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
@@ -577,11 +576,6 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
-        # invitations service --
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.average=1
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.period=1m
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.burst=1
-        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_invitations.ratelimit.sourcecriterion.ipstrategy.depth=2
     networks:
       - default
       - interactive_services_subnet # for legacy dynamic services

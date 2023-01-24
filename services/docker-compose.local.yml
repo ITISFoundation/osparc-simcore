@@ -157,6 +157,8 @@ services:
         published: 9081
       - target: 10081
         published: 10081
+      - target: 10082
+        published: 10082
       - target: 8080
         published: 8080
     deploy:
