@@ -166,19 +166,21 @@ class AutoscalingEC2:
         *,
         state_names: Optional[list[InstanceStateNameType]] = None,
     ) -> list[EC2InstanceData]:
+        # NOTE: be careful: Name=instance-state-name,Values=["pending", "running"] means pending OR running
+        # NOTE2: AND is done by repeating Name=instance-state-name,Values=pending Name=instance-state-name,Values=running
         if state_names is None:
             state_names = ["pending", "running"]
 
-        instances = await self.client.describe_instances(
-            Filters=[
-                {
-                    "Name": "key-name",
-                    "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
-                },
-                {"Name": "instance-state-name", "Values": state_names},
-                {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
-            ]
-        )
+        filters = [
+            {
+                "Name": "key-name",
+                "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
+            },
+            {"Name": "instance-state-name", "Values": state_names},
+        ]
+        filters.extend([{"Name": "tag-key", "Values": [t]} for t in tag_keys])
+
+        instances = await self.client.describe_instances(Filters=filters)
         all_instances = []
         for reservation in instances["Reservations"]:
             assert "Instances" in reservation  # nosec
@@ -198,6 +200,7 @@ class AutoscalingEC2:
                         state=instance["State"]["Name"],
                     )
                 )
+        logger.debug("received: %s", f"{all_instances=}")
         return all_instances
 
     async def get_running_instance(
@@ -206,20 +209,19 @@ class AutoscalingEC2:
         tag_keys: list[str],
         instance_host_name: str,
     ) -> EC2InstanceData:
-        instances = await self.client.describe_instances(
-            Filters=[
-                {
-                    "Name": "key-name",
-                    "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
-                },
-                {"Name": "instance-state-name", "Values": ["running"]},
-                {"Name": "tag-key", "Values": tag_keys} if tag_keys else {},
-                {
-                    "Name": "network-interface.private-dns-name",
-                    "Values": [f"{instance_host_name}.ec2.internal"],
-                },
-            ]
-        )
+        filters = [
+            {
+                "Name": "key-name",
+                "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
+            },
+            {"Name": "instance-state-name", "Values": ["running"]},
+            {
+                "Name": "network-interface.private-dns-name",
+                "Values": [f"{instance_host_name}.ec2.internal"],
+            },
+        ]
+        filters.extend([{"Name": "tag-key", "Values": [t]} for t in tag_keys])
+        instances = await self.client.describe_instances(Filters=filters)
         if not instances["Reservations"]:
             # NOTE: wrong hostname, or not running, or wrong usage
             raise Ec2InstanceNotFoundError()
