@@ -597,7 +597,7 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     attached_ec2_nowish = AssociatedInstance(
         drained_host_node,
         fake_ec2_instance_data(
-            launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+            launch_time=datetime.datetime.now(datetime.timezone.utc)
         ),
     )
     assert (
@@ -609,7 +609,7 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     attached_ec2_long_time_ago_but_not_inthe_window = AssociatedInstance(
         drained_host_node,
         fake_ec2_instance_data(
-            launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+            launch_time=datetime.datetime.now(datetime.timezone.utc)
             - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
             - datetime.timedelta(days=21)
             + datetime.timedelta(seconds=10)
@@ -626,7 +626,7 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     attached_ec2_long_time_ago_terminateable = AssociatedInstance(
         drained_host_node,
         fake_ec2_instance_data(
-            launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+            launch_time=datetime.datetime.now(datetime.timezone.utc)
             - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
             - datetime.timedelta(days=21)
             - datetime.timedelta(seconds=10),
@@ -669,9 +669,7 @@ async def test__try_scale_down_cluster(
             AssociatedInstance(
                 drained_host_node,
                 fake_ec2_instance_data(
-                    launch_time=datetime.datetime.utcnow().replace(
-                        tzinfo=datetime.timezone.utc
-                    )
+                    launch_time=datetime.datetime.now(datetime.timezone.utc)
                     - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
                     - datetime.timedelta(days=21)
                     - datetime.timedelta(seconds=10)

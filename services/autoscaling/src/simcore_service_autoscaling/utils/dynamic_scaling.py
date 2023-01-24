@@ -114,8 +114,7 @@ async def try_assigning_task_to_pending_instances(
                 app,
                 [pending_task],
                 (
-                    datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-                    - instance.launch_time
+                    datetime.datetime.now(datetime.timezone.utc) - instance.launch_time
                 ).total_seconds()
                 / _AVG_TIME_TO_START_EC2_INSTANCE,
             )

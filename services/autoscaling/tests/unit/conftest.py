@@ -5,6 +5,7 @@
 import asyncio
 import json
 import random
+from datetime import timezone
 from pathlib import Path
 from typing import (
     Any,
@@ -630,7 +631,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
         return EC2InstanceData(
             **(
                 {
-                    "launch_time": faker.date_time(),
+                    "launch_time": faker.date_time(tzinfo=timezone.utc),
                     "id": faker.uuid4(),
                     "aws_private_dns": faker.name(),
                     "type": faker.pystr(),

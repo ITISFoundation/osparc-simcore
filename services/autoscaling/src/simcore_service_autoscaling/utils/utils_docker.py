@@ -4,9 +4,9 @@
 
 import asyncio
 import collections
+import datetime
 import logging
 import re
-from datetime import datetime
 from typing import Final, Optional, cast
 
 from models_library.docker import DockerLabelKey
@@ -161,7 +161,12 @@ async def pending_service_tasks_with_insufficient_resources(
     sorted_tasks = sorted(
         tasks,
         key=lambda task: cast(  # NOTE: some mypy fun here
-            datetime, (to_datetime(task.CreatedAt or f"{datetime.utcnow()}"))
+            datetime.datetime,
+            (
+                to_datetime(
+                    task.CreatedAt or f"{datetime.datetime.now(datetime.timezone.utc)}"
+                )
+            ),
         ),
     )
 

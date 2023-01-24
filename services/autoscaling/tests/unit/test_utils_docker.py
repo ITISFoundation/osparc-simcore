@@ -3,10 +3,10 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import datetime
 import itertools
 import random
 from copy import deepcopy
-from datetime import datetime, timedelta
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
@@ -391,7 +391,9 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
 
     assert len(pending_tasks) == len(services)
     # check sorting is done by creation date
-    last_date = datetime.utcnow() - timedelta(days=1)
+    last_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        days=1
+    )
     for task in pending_tasks:
         assert task.CreatedAt
         assert to_datetime(task.CreatedAt) > last_date
