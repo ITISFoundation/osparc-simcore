@@ -40,11 +40,18 @@ def access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, AccessToke
         yield access_tokens
 
     finally:
+
+        def _is_valid(token) -> bool:
+            # NOTE: We have experience (old) tokens that
+            # were not deserialized as AccessToken dicts
+            try:
+                return token["count"] > 0 and not is_expired(token)
+            except (KeyError, TypeError):
+                return False
+
         # prunes
         pruned_access_tokens = {
-            name: token
-            for name, token in access_tokens.items()
-            if token["count"] > 0 and not is_expired(token)
+            name: token for name, token in access_tokens.items() if _is_valid(token)
         }
         session[SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
 
