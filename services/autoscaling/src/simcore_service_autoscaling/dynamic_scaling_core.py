@@ -259,7 +259,7 @@ async def _start_instances(
             ec2_client.start_aws_instance(
                 app_settings.AUTOSCALING_EC2_INSTANCES,
                 instance_type=parse_obj_as(InstanceTypeType, instance.name),
-                tags=ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING),
+                tags=ec2.get_ec2_tags(app_settings),
                 startup_script=startup_script,
                 number_of_instances=instance_num,
             )
@@ -289,7 +289,7 @@ async def _start_instances(
 
 async def _scale_up_cluster(
     app: FastAPI, pending_instances: list[EC2InstanceData], pending_tasks: list[Task]
-) -> None:
+) -> list[EC2InstanceData]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -377,7 +377,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     running_ec2_instances = await get_ec2_client(app).get_instances(
         app_settings.AUTOSCALING_EC2_INSTANCES,
-        list(ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()),
+        list(ec2.get_ec2_tags(app_settings).keys()),
     )
     attached_ec2s, pending_ec2s = await associate_ec2_instances_with_nodes(
         monitored_nodes, running_ec2_instances
