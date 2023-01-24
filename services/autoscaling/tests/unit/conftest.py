@@ -223,8 +223,8 @@ def fake_node(faker: Faker) -> Node:
     return Node(
         ID=faker.uuid4(),
         Version=ObjectVersion(Index=faker.pyint()),
-        CreatedAt=faker.date_time().isoformat(),
-        UpdatedAt=faker.date_time().isoformat(),
+        CreatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
+        UpdatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
         Description=NodeDescription(
             Hostname=faker.pystr(),
             Resources=ResourceObject(

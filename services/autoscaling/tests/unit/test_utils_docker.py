@@ -396,8 +396,11 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
     )
     for task in pending_tasks:
         assert task.CreatedAt
-        assert to_datetime(task.CreatedAt) > last_date
-        last_date = to_datetime(task.CreatedAt)
+        assert (
+            to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
+            > last_date
+        )
+        last_date = to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
 
 
 def test_get_node_total_resources(host_node: Node):

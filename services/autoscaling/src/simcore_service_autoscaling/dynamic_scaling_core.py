@@ -206,7 +206,6 @@ async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list[Task],
     available_ec2_types: list[EC2Instance],
-    attached_ec2_instances: list[AssociatedInstance],
     pending_ec2_instances: list[EC2InstanceData],
 ) -> dict[EC2Instance, int]:
     type_to_instance_map = {t.name: t for t in available_ec2_types}
@@ -303,7 +302,6 @@ async def _start_instances(
 
 async def _scale_up_cluster(
     app: FastAPI,
-    attached_instances: list[AssociatedInstance],
     pending_instances: list[EC2InstanceData],
     pending_tasks: list[Task],
 ) -> list[EC2InstanceData]:
@@ -328,7 +326,6 @@ async def _scale_up_cluster(
         app,
         pending_tasks,
         allowed_instance_types,
-        attached_instances,
         pending_instances,
     ):
         await log_tasks_message(
@@ -428,9 +425,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
         # let's check if there are still pending tasks
         if pending_tasks := [t for t in pending_tasks if t.ID not in assigned_tasks]:
             # yes? then scale up
-            pending_ec2s = await _scale_up_cluster(
-                app, attached_ec2s, pending_ec2s, pending_tasks
-            )
+            pending_ec2s = await _scale_up_cluster(app, pending_ec2s, pending_tasks)
     else:
         await _deactivate_empty_nodes(app, attached_ec2s)
         attached_ec2s = await _try_scale_down_cluster(app, attached_ec2s)
