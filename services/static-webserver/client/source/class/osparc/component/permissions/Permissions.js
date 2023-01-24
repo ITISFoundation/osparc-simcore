@@ -158,13 +158,13 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteToOwner", e => {
-            const orgMember = e.getData();
-            this._promoteToOwner(orgMember);
-          });
           item.addListener("promoteToCollaborator", e => {
             const orgMember = e.getData();
             this._promoteToCollaborator(orgMember);
+          });
+          item.addListener("promoteToOwner", e => {
+            const orgMember = e.getData();
+            this._promoteToOwner(orgMember);
           });
           item.addListener("demoteToViewer", e => {
             const orgMember = e.getData();
