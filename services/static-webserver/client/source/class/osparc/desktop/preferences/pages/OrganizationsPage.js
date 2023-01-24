@@ -213,13 +213,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             const clusterMember = e.getData();
             this.__promoteToMember(clusterMember);
           });
-          item.addListener("demoteToUser", e => {
-            const clusterMember = e.getData();
-            this.__demoteToUser(clusterMember);
-          });
           item.addListener("promoteToManager", e => {
             const orgMember = e.getData();
             this.__promoteToManager(orgMember);
+          });
+          item.addListener("demoteToUser", e => {
+            const clusterMember = e.getData();
+            this.__demoteToUser(clusterMember);
           });
           item.addListener("demoteToMember", e => {
             const orgMember = e.getData();
