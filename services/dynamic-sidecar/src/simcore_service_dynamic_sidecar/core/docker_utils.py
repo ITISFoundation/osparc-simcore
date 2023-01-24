@@ -217,7 +217,7 @@ async def _pull_image_with_progress(
             f"{image_name=}",
         )
 
-    simplified_image_name = image_name.rsplit("/", maxsplit=1)[-1]
+    shorter_image_name: Final[str] = image_name.rsplit("/", maxsplit=1)[-1]
     all_image_pulling_data[image_name] = {}
     async for pull_progress in client.images.pull(
         image_name,
@@ -235,4 +235,4 @@ async def _pull_image_with_progress(
             total_current, total_total = _compute_sizes(all_image_pulling_data)
             await progress_cb(total_current, total_total)
 
-        await log_cb(f"pulling {simplified_image_name}: {pull_progress}...")
+        await log_cb(f"pulling {shorter_image_name}: {pull_progress}...")
