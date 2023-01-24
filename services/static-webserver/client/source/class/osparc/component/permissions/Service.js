@@ -163,7 +163,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     },
 
     _promoteToOwner: function(collaborator) {
-      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available", "WARNING"));
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
     _demoteToViewer: function(collaborator) {
@@ -189,7 +189,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     },
 
     _demoteToCollaborator: function(collaborator) {
-      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available", "WARNING"));
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }
 });
