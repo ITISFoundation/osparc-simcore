@@ -22,10 +22,10 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import (
+    _activate_drained_nodes,
+    _deactivate_empty_nodes,
     _find_terminateable_nodes,
-    _mark_empty_active_nodes_to_drain,
     _try_scale_down_cluster,
-    _try_scale_up_with_drained_nodes,
     cluster_scaling_from_labelled_services,
 )
 from simcore_service_autoscaling.models import Resources
@@ -492,18 +492,18 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
-async def test__mark_empty_active_nodes_to_drain(
+async def test__deactivate_empty_nodes(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
     mock_tag_node: mock.Mock,
 ):
     # since we have no service running, we expect the passed node to be set to drain
-    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    await _deactivate_empty_nodes(initialized_app, [host_node])
     mock_tag_node.assert_called_once_with(mock.ANY, host_node, tags={}, available=False)
 
 
-async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missing_labels(
+async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missing_labels(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
@@ -525,11 +525,11 @@ async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missi
         "running",
     )
 
-    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    await _deactivate_empty_nodes(initialized_app, [host_node])
     mock_tag_node.assert_called_once_with(mock.ANY, host_node, tags={}, available=False)
 
 
-async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_running_with_correct_labels(
+async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with_correct_labels(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -555,7 +555,7 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     )
 
     # since we have no service running, we expect the passed node to be set to drain
-    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    await _deactivate_empty_nodes(initialized_app, [host_node])
     mock_tag_node.assert_not_called()
 
 
@@ -684,21 +684,19 @@ async def test__try_scale_down_cluster(
     mock_remove_nodes.assert_called_once()
 
 
-async def test__try_scale_up_with_drained_nodes_with_no_tasks(
+async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
     mock_tag_node: mock.Mock,
 ):
     # no tasks, does nothing and returns True
-    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) == []
-    assert (
-        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) == []
-    )
+    assert await _activate_drained_nodes(initialized_app, [], []) == []
+    assert await _activate_drained_nodes(initialized_app, [host_node], []) == []
     mock_tag_node.assert_not_called()
 
 
-async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
+async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
@@ -728,10 +726,7 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
     assert service_tasks
     assert len(service_tasks) == 1
     assert (
-        await _try_scale_up_with_drained_nodes(
-            initialized_app, [host_node], service_tasks
-        )
-        == []
+        await _activate_drained_nodes(initialized_app, [host_node], service_tasks) == []
     )
     mock_tag_node.assert_not_called()
 
@@ -785,7 +780,7 @@ async def drained_host_node(
     )
 
 
-async def test__try_scale_up_with_drained_nodes_with_drained_node(
+async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
@@ -815,7 +810,7 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
     assert service_tasks
     assert len(service_tasks) == 1
     assert (
-        await _try_scale_up_with_drained_nodes(
+        await _activate_drained_nodes(
             initialized_app, [drained_host_node], service_tasks
         )
         == service_tasks
