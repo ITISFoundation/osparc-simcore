@@ -117,7 +117,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     _deleteMember: function(collaborator) {
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
       }
 
       const params = {
@@ -130,12 +130,12 @@ qx.Class.define("osparc.component.permissions.Service", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
         });
     },
@@ -152,12 +152,12 @@ qx.Class.define("osparc.component.permissions.Service", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Viewer successfully made Collaborator"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Viewer Collaborator"), "ERROR");
           console.error(err);
         });
     },
@@ -178,12 +178,12 @@ qx.Class.define("osparc.component.permissions.Service", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Owner successfully made Collaborator"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Viewer"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Owner Collaborator"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Viewer"), "ERROR");
           console.error(err);
         });
     },
