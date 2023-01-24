@@ -29,8 +29,8 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     this.setNode(node);
 
     if (node.isDynamic()) {
-      const progressStatus = new osparc.data.model.ProgressStatus();
-      this.setProgressStatus(progressStatus);
+      const progressStatus = new osparc.data.model.NodeProgressSequence();
+      this.setNodeProgressSequence(progressStatus);
     }
   },
 
@@ -50,7 +50,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     progressStatus: {
-      check: "osparc.data.model.ProgressStatus",
+      check: "osparc.data.model.NodeProgressSequence",
       nullable: true,
       init: null
     },

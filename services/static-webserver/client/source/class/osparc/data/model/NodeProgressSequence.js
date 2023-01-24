@@ -29,7 +29,7 @@
  */
 
 
-qx.Class.define("osparc.data.model.ProgressStatus", {
+qx.Class.define("osparc.data.model.NodeProgressSequence", {
   extend: qx.core.Object,
 
   construct: function() {

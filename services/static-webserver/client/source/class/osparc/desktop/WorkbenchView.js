@@ -699,7 +699,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName)) {
         socket.on(slotName, jsonString => {
           const data = JSON.parse(jsonString);
-          this.getStudy().nodeProgressStatus(data);
+          this.getStudy().nodeNodeProgressSequence(data);
         }, this);
       }
     },

@@ -410,7 +410,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
     },
 
-    nodeProgressStatus: function(nodeProgressData) {
+    nodeNodeProgressSequence: function(nodeProgressData) {
       const studyId = nodeProgressData["project_id"];
       if (studyId !== this.getUuid()) {
         return;
@@ -421,7 +421,7 @@ qx.Class.define("osparc.data.model.Study", {
       if (node) {
         const progressType = nodeProgressData["progress_type"];
         const progress = nodeProgressData["progress"];
-        node.setProgressStatus(progressType, progress);
+        node.setNodeProgressSequence(progressType, progress);
       }
     },
 
