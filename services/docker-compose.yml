@@ -534,7 +534,7 @@ services:
       - "--entryPoints.ping.address=:9082"
       - "--ping.entryPoint=ping"
       - "--log.level=WARNING"
-      - "--accesslog=true"
+      - "--accesslog=false"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.addEntryPointsLabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
@@ -567,8 +567,8 @@ services:
         constraints:
           - node.role == manager
       labels:
-        # NOTE: for each service in the stack a new middlaware for rate limiting needs to be registered here
-        # api-service service --
+        # NOTE: for each service in the stack a new middleware for rate limiting needs to be registered here below
+        # -- api-service service --
         # requests = average / period this is how the limits are defined
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.average=1
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.period=1m
