@@ -189,7 +189,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.__messages.removeAll();
       msgs.forEach(msg => {
         const text = new qx.ui.basic.Label(msg.toString()).set({
-          font: "text-18"
+          font: "text-18",
+          rich: true,
+          wrap: true
         });
         this.__messages.add(text);
       });
