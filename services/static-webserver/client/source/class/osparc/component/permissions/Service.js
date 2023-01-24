@@ -168,6 +168,28 @@ qx.Class.define("osparc.component.permissions.Service", {
 
     _demoteToViewer: function(collaborator) {
       return;
+    },
+
+    _demoteToCollaborator: function(collaborator) {
+      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getCollaboratorAccessRight();
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          this._serializedData["key"],
+          this._serializedData["version"]
+        ),
+        data: this._serializedData
+      };
+      osparc.data.Resources.fetch("services", "patch", params)
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Owner successfully made Collaborator"));
+          this.__reloadOrganizationsAndMembers();
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Owner Collaborator"), "ERROR");
+          console.error(err);
+        });
     }
   }
 });

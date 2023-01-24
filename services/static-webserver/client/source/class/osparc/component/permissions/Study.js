@@ -212,6 +212,15 @@ qx.Class.define("osparc.component.permissions.Study", {
         this.tr("Collaborator successfully made Viewer"),
         this.tr("Something went wrong making Collaborator Viewer")
       );
+    },
+
+    _demoteToCollaborator: function(collaborator) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getCollaboratorAccessRight(),
+        this.tr("Collaborator successfully made Collaborator"),
+        this.tr("Something went wrong making Owner Collaborator")
+      );
     }
   }
 });

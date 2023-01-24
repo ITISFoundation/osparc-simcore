@@ -45,9 +45,10 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   },
 
   events: {
-    "promoteToOwner": "qx.event.type.Data",
     "promoteToCollaborator": "qx.event.type.Data",
+    "promoteToOwner": "qx.event.type.Data",
     "demoteToViewer": "qx.event.type.Data",
+    "demoteToCollaborator": "qx.event.type.Data",
     "removeMember": "qx.event.type.Data"
   },
 
@@ -171,60 +172,72 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
+      let currentRole = this.self().ROLES[1];
+      if (accessRights.getDelete()) {
+        currentRole = this.self().ROLES[3];
+      } else if (accessRights.getWrite()) {
+        currentRole = this.self().ROLES[2];
+      }
 
-      const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
-      makeOwnerButton.addListener("execute", () => {
-        this.fireDataEvent("promoteToOwner", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
-      const makeCollabButton = new qx.ui.menu.Button(this.tr("Make Collaborator"));
-      makeCollabButton.addListener("execute", () => {
-        this.fireDataEvent("promoteToCollaborator", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
-      const makeViewerButton = new qx.ui.menu.Button(this.tr("Make Viewer"));
-      makeViewerButton.addListener("execute", () => {
-        this.fireDataEvent("demoteToViewer", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
+      // promote/demote actions
+      switch (currentRole.id) {
+        case "read": {
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[2].label);
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToCollaborator", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(promoteButton);
+          break;
+        }
+        case "write": {
+          const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
+          makeOwnerButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToOwner", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(makeOwnerButton);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[1].label);
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToViewer", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+          break;
+        }
+        case "delete": {
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[2].label);
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToCollaborator", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+          break;
+        }
+      }
 
-      const removeCollabButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
-      removeCollabButton.addListener("execute", () => {
+      if (menu.getChildren().length) {
+        menu.addSeparator();
+      }
+
+      const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
+        textColor: "danger-red"
+      });
+      removeButton.addListener("execute", () => {
         this.fireDataEvent("removeMember", {
           gid: this.getKey(),
           name: this.getTitle()
         });
       });
-
-      /*
-       * Owners can make this collaborator:
-       * - makeOwnerButton
-       * - makeCollabButton or makeViewerButton
-       * - removeCollabButton
-      */
-      if (!this.self().canDelete(accessRights)) {
-        if (this.self().canWrite(accessRights)) {
-          // collaborator
-          if (this.getCollabType() === 2) { // single user
-            menu.add(makeOwnerButton);
-          }
-          menu.add(makeViewerButton);
-        } else {
-          // viewer
-          if (this.getCollabType() === 2) { // single user
-            menu.add(makeOwnerButton);
-          }
-          menu.add(makeCollabButton);
-        }
-
-        menu.add(removeCollabButton);
-      }
+      menu.add(removeButton);
 
       return menu;
     }

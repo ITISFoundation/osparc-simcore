@@ -170,6 +170,10 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             const orgMember = e.getData();
             this._demoteToViewer(orgMember);
           });
+          item.addListener("demoteToCollaborator", e => {
+            const orgMember = e.getData();
+            this._demoteToCollaborator(orgMember);
+          });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
             this._deleteMember(orgMember);
@@ -306,6 +310,10 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     },
 
     _demoteToViewer: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
+
+    _demoteToCollaborator: function(collaborator) {
       throw new Error("Abstract method called!");
     }
   }

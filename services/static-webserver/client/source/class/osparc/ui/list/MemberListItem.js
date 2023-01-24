@@ -40,9 +40,11 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
 
   events: {
     "promoteToMember": "qx.event.type.Data",
-    "demoteToUser": "qx.event.type.Data",
     "promoteToManager": "qx.event.type.Data",
+    "promoteToAdministrator": "qx.event.type.Data",
+    "demoteToUser": "qx.event.type.Data",
     "demoteToMember": "qx.event.type.Data",
+    "demoteToManager": "qx.event.type.Data",
     "removeMember": "qx.event.type.Data"
   },
 
@@ -171,9 +173,28 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
           break;
         }
         case "write": {
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[3].label);
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToAdministrator", {
+              id: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(promoteButton);
           const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[1].label);
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToMember", {
+              id: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+          break;
+        }
+        case "delete": {
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[2].label);
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToManager", {
               id: this.getKey(),
               name: this.getTitle()
             });
