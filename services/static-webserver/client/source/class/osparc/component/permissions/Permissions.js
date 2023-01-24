@@ -285,7 +285,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         if (osparc.ui.list.CollaboratorListItem.canRead(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canRead(bAccessRights)) {
           return osparc.ui.list.CollaboratorListItem.canRead(bAccessRights) - osparc.ui.list.CollaboratorListItem.canRead(aAccessRights);
         }
-        if (a.isPropertyInitialized("login") && b.isPropertyInitialized("login")) {
+        if (a.getLogin && b.getLogin) {
           return a.getLogin().localeCompare(b.getLogin());
         }
         return 0;

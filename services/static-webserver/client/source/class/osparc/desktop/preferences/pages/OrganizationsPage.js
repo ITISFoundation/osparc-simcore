@@ -324,7 +324,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         if (aAccessRights.getRead() !== bAccessRights.getRead()) {
           return bAccessRights.getRead() - aAccessRights.getRead();
         }
-        if (a.isPropertyInitialized("login") && b.isPropertyInitialized("login")) {
+        if (a.getLogin && b.getLogin) {
           return a.getLogin().localeCompare(b.getLogin());
         }
         return 0;
