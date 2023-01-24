@@ -123,9 +123,10 @@ async def _find_terminateable_instances(
 
 async def _try_scale_down_cluster(
     app: FastAPI, attached_ec2s: list[AssociatedInstance]
-) -> None:
+) -> list[AssociatedInstance]:
     # 2. once it is in draining mode and we are nearing a modulo of an hour we can start the termination procedure
     # NOTE: the nodes that were just changed to drain above will be eventually terminated on the next iteration
+    terminated_instance_ids = []
     if terminateable_instances := await _find_terminateable_instances(
         app, attached_ec2s
     ):
@@ -142,9 +143,13 @@ async def _try_scale_down_cluster(
             [i.node for i in terminateable_instances],
             force=True,
         )
-
+        terminated_instance_ids = [i.ec2_instance.id for i in terminateable_instances]
+    attached_ec2s = [
+        i for i in attached_ec2s if i.ec2_instance.id not in terminated_instance_ids
+    ]
     # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
     # 4.
+    return attached_ec2s
 
 
 async def _activate_drained_nodes(
@@ -430,8 +435,7 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
             )
     else:
         await _deactivate_empty_nodes(app, attached_ec2s)
-        await _try_scale_down_cluster(app, attached_ec2s)
-        # await _ensure_buffer_machine_runs(app, monitored_nodes)
+        attached_ec2s = await _try_scale_down_cluster(app, attached_ec2s)
 
     # 4. Notify anyone interested of current state
     await post_autoscaling_status_message(app, attached_ec2s, pending_ec2s)
