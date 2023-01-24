@@ -248,13 +248,6 @@ async def _find_needed_instances(
         if num_i > 0
     }
 
-    if (
-        not num_instances_per_type_from_tasks
-        and app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
-    ):
-        # we might need to create some buffer machines still
-        ...
-
     return num_instances_per_type_from_tasks
 
 
