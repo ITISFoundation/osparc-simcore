@@ -38,9 +38,9 @@ from types_aiobotocore_ec2.client import EC2Client
 
 
 @pytest.fixture
-def mock_terminate_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mocked_terminate_instance = mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instance",
+        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instances",
         autospec=True,
     )
     yield mocked_terminate_instance
@@ -171,12 +171,12 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_start_aws_instance: mock.Mock,
-    mock_terminate_instance: mock.Mock,
+    mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
-    mock_terminate_instance.assert_not_called()
+    mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
@@ -189,7 +189,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
 #     initialized_app: FastAPI,
 #     aws_allowed_ec2_instance_type_names: list[str],
 #     mock_start_aws_instance: mock.Mock,
-#     mock_terminate_instance: mock.Mock,
+#     mock_terminate_instances: mock.Mock,
 #     mock_rabbitmq_post_message: mock.Mock,
 # ):
 #     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -209,7 +209,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
 #         mock_start_aws_instance.call_args[1]["instance_type"]
 #         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[0]
 #     )
-#     mock_terminate_instance.assert_not_called()
+#     mock_terminate_instances.assert_not_called()
 #     _assert_rabbit_autoscaling_message_sent(
 #         mock_rabbitmq_post_message, app_settings, initialized_app
 #     )
@@ -218,7 +218,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
 #     await cluster_scaling_from_labelled_services(initialized_app)
 #     await cluster_scaling_from_labelled_services(initialized_app)
 #     mock_start_aws_instance.assert_not_called()
-#     mock_terminate_instance.assert_not_called()
+#     mock_terminate_instances.assert_not_called()
 
 
 async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(
@@ -232,7 +232,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     mock_start_aws_instance: mock.Mock,
-    mock_terminate_instance: mock.Mock,
+    mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
     task_template_with_too_many_resource = task_template | create_task_reservations(
@@ -246,7 +246,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
 
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
-    mock_terminate_instance.assert_not_called()
+    mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
@@ -316,7 +316,11 @@ async def test_cluster_scaling_up(
     mock_set_node_availability.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
-        mock_rabbitmq_post_message, app_settings, initialized_app, instances_running=1
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        instances_running=0,
+        instances_pending=1,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -666,7 +670,7 @@ async def test__try_scale_down_cluster(
     initialized_app: FastAPI,
     drained_host_node: Node,
     mock_get_running_instance: mock.Mock,
-    mock_terminate_instance: mock.Mock,
+    mock_terminate_instances: mock.Mock,
     mock_remove_nodes: mock.Mock,
     ec2_instance_data: EC2InstanceData,
     app_settings: ApplicationSettings,
@@ -686,7 +690,7 @@ async def test__try_scale_down_cluster(
     )
     await _try_scale_down_cluster(initialized_app, [drained_host_node])
     mock_get_running_instance.assert_called_once()
-    mock_terminate_instance.assert_called_once()
+    mock_terminate_instances.assert_called_once()
     mock_remove_nodes.assert_called_once()
 
 
