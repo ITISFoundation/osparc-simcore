@@ -83,6 +83,10 @@ def try_assigning_task_to_instances(
     return False
 
 
+_MINUTE: Final[int] = 60
+_AVG_TIME_TO_START_EC2_INSTANCE: Final[int] = 3 * _MINUTE
+
+
 async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
@@ -109,7 +113,8 @@ async def try_assigning_task_to_pending_instances(
             await progress_tasks_message(
                 app,
                 [pending_task],
-                (datetime.utcnow() - instance.launch_time).total_seconds(),
+                (datetime.utcnow() - instance.launch_time).total_seconds()
+                / _AVG_TIME_TO_START_EC2_INSTANCE,
             )
             return True
     return False
