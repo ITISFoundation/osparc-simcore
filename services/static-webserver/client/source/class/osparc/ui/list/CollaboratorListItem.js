@@ -65,10 +65,10 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       return canWrite;
     },
 
-    canView: function(accessRights) {
-      let canView = accessRights.getRead ? accessRights.getRead() : false;
-      canView = canView || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
-      return canView;
+    canRead: function(accessRights) {
+      let canRead = accessRights.getRead ? accessRights.getRead() : false;
+      canRead = canRead || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
+      return canRead;
     },
 
     ROLES: {
