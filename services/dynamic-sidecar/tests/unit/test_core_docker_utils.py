@@ -133,7 +133,6 @@ def test_get_docker_service_images(compose_spec_yaml: str):
     }
 
 
-@pytest.mark.testit
 @pytest.mark.skip(
     reason="Only for manual testing."
     "Avoid this test in CI since it consumes disk and time"
@@ -169,3 +168,27 @@ async def test_issue_3793_pulling_images_raises_error():
             progress_cb=_print_progress,
             log_cb=_print_log,
         )
+
+
+@pytest.mark.parametrize("repeat", ["first-pull", "repeat-pull"])
+async def test_pull_image(repeat: str):
+    async def _print_progress(current: int, total: int):
+        print("progress ->", f"{current=}", f"{total=}")
+
+    async def _print_log(msg):
+        assert "alpine" in msg
+        print("log -> ", msg)
+
+    await pull_images(
+        images={
+            "alpine:latest",
+        },
+        registry_settings=RegistrySettings(
+            REGISTRY_AUTH=False,
+            REGISTRY_USER="",
+            REGISTRY_PW="",
+            REGISTRY_SSL=False,
+        ),
+        progress_cb=_print_progress,
+        log_cb=_print_log,
+    )
