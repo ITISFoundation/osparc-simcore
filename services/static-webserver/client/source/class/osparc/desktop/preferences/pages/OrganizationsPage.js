@@ -338,8 +338,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
             member["showOptions"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
-            membersModel.sort(sortMembers);
           });
+          membersModel.sort(sortMembers);
         });
     },
 

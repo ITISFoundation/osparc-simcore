@@ -273,6 +273,20 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
+      const sortCollaborators = (a, b) => {
+        const aAccessRights = a.getAccessRights();
+        const bAccessRights = b.getAccessRights();
+        if (osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights)) {
+          return osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights) - osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights);
+        }
+        if (osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights)) {
+          return osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights) - osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights);
+        }
+        if (osparc.ui.list.CollaboratorListItem.canRead(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canRead(bAccessRights)) {
+          return osparc.ui.list.CollaboratorListItem.canRead(bAccessRights) - osparc.ui.list.CollaboratorListItem.canRead(aAccessRights);
+        }
+        return a.getLogin().localeCompare(b.getLogin());
+      };
       const aceessRights = this._serializedData["accessRights"];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
@@ -287,6 +301,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           this.__collaboratorsModel.append(collaboratorModel);
         }
       });
+      this.__collaboratorsModel.sort(sortCollaborators);
     },
 
     _canIWrite: function() {
