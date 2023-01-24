@@ -1,6 +1,6 @@
+import datetime
 import logging
 import re
-from datetime import datetime
 from typing import Final
 
 from fastapi import FastAPI
@@ -113,7 +113,10 @@ async def try_assigning_task_to_pending_instances(
             await progress_tasks_message(
                 app,
                 [pending_task],
-                (datetime.utcnow() - instance.launch_time).total_seconds()
+                (
+                    datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+                    - instance.launch_time
+                ).total_seconds()
                 / _AVG_TIME_TO_START_EC2_INSTANCE,
             )
             return True
