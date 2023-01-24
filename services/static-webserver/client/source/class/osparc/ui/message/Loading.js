@@ -82,8 +82,8 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   statics: {
-    LOGO_WIDTH: 260,
-    LOGO_HEIGHT: 110,
+    LOGO_WIDTH: 208,
+    LOGO_HEIGHT: 88,
     STATUS_ICON_SIZE: 32
   },
 
@@ -91,6 +91,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __logo: null,
     __header: null,
     __messages: null,
+    __extraWidgets: null,
     __loadingWidget: null,
 
     __maxButton: null,
@@ -108,24 +109,33 @@ qx.Class.define("osparc.ui.message.Loading", {
         gap: 15,
         allowGrowX: false
       });
+      const label = atom.getChildControl("label");
+      label.set({
+        rich: true,
+        wrap: true
+      });
       const icon = atom.getChildControl("icon");
       osparc.utils.StatusUI.updateIconAnimation(icon);
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
-      })).set({
-        padding: 20
-      });
+      }));
+
+      const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        alignX: "center"
+      }));
 
       const loadingWidget = this.__loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox(20).set({
         alignX: "center",
         alignY: "middle"
       })).set({
-        maxWidth: this.self().LOGO_WIDTH*2
+        maxWidth: this.self().LOGO_WIDTH*2,
+        padding: 20
       });
       loadingWidget.add(image);
       loadingWidget.add(atom);
       loadingWidget.add(messages);
+      loadingWidget.add(extraWidgets);
 
       this._add(new qx.ui.core.Widget(), {
         flex: 1
@@ -181,7 +191,9 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.__messages.removeAll();
       msgs.forEach(msg => {
         const text = new qx.ui.basic.Label(msg.toString()).set({
-          font: "text-18"
+          font: "text-18",
+          rich: true,
+          wrap: true
         });
         this.__messages.add(text);
       });
@@ -189,6 +201,10 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     addWidgetToMessages: function(widget) {
       this.__messages.add(widget);
+    },
+
+    addExtraWidget: function(widget) {
+      this.__extraWidgets.add(widget);
     },
 
     // from osparc.component.widget.PersistentIframe
