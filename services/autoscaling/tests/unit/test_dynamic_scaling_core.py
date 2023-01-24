@@ -300,6 +300,7 @@ async def test_cluster_scaling_up(
         "io.simcore.autoscaling.version",
         "io.simcore.autoscaling.monitored_nodes_labels",
         "io.simcore.autoscaling.monitored_services_labels",
+        "Name",
     ]
     for tag_dict in running_instance["Tags"]:
         assert "Key" in tag_dict
