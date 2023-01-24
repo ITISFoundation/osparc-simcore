@@ -121,7 +121,7 @@ def _parse_docker_pull_progress(
     if status in list(_PullProgressStates):
         layer_id: LayerId = docker_pull_progress["id"]
         # inits in case states are not in order
-        image_pulling_data[layer_id].setdefault((0, 0))
+        image_pulling_data.setdefault(layer_id, (0, 0))
 
         if status == _PullProgressStates.DOWNLOADING:
             # writes
