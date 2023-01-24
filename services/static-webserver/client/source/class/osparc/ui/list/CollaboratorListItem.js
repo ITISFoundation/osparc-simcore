@@ -68,6 +68,24 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       let canView = accessRights.getRead ? accessRights.getRead() : false;
       canView = canView || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
       return canView;
+    },
+
+    ROLES: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("Viewer"),
+        longLabel: qx.locale.Manager.tr("Viewer: Read access")
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Collaborator"),
+        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access")
+      },
+      3: {
+        id: "delete",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access")
+      }
     }
   },
 
