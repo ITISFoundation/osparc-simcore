@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Awaitable, Callable, Final
+from enum import Enum
+from typing import Any, AsyncGenerator, Awaitable, Callable, Final, Optional
 
 import aiodocker
 import yaml
@@ -94,29 +95,35 @@ async def pull_images(
         )
 
 
-ImageName = str
-LayerId = str
+#
+# HELPERS
+#
 
 _DOWNLOAD_RATIO: Final[float] = 0.75
-_LayerInfoDict = dict[LayerId, tuple[int, int]]
+LayerId = str
+_LayersInfoDict = dict[LayerId, tuple[int, int]]
+ImageName = str
+_ImagesInfoDict = dict[ImageName, _LayersInfoDict]
 
 
-_PULL_PROGRESS_STATES: Final[list[str]] = [
-    "Downloading",
-    "Download complete",
-    "Extracting",
-    "Pull complete",
-]
+class _PullProgressStates(str, Enum):
+    DOWNLOADING = "Downloading"
+    DOWNLOAD_COMPLETE = "Download complete"
+    EXTRACTING = "Extracting"
+    PULL_COMPLETE = "Pull complete"
 
 
 def _parse_docker_pull_progress(
-    docker_pull_progress: dict[str, Any], image_pulling_data: _LayerInfoDict
+    docker_pull_progress: dict[str, Any], image_pulling_data: _LayersInfoDict
 ) -> bool:
-    if docker_pull_progress.get("status") in _PULL_PROGRESS_STATES:
-        layer_id = docker_pull_progress["id"]
+    status: Optional[str] = docker_pull_progress.get("status")
+
+    if status in list(_PullProgressStates):
+        layer_id: LayerId = docker_pull_progress["id"]
+        # inits in case states are not in order
         image_pulling_data[layer_id].setdefault((0, 0))
 
-        if docker_pull_progress["status"] == "Downloading":
+        if status == _PullProgressStates.DOWNLOADING:
             # writes
             image_pulling_data[layer_id] = (
                 round(
@@ -124,7 +131,7 @@ def _parse_docker_pull_progress(
                 ),
                 docker_pull_progress["progressDetail"]["total"],
             )
-        elif docker_pull_progress["status"] == "Downloading complete":
+        elif status == _PullProgressStates.DOWNLOAD_COMPLETE:
             # reads
             _, layer_total_size = image_pulling_data[layer_id]
             # writes
@@ -132,7 +139,7 @@ def _parse_docker_pull_progress(
                 round(_DOWNLOAD_RATIO * layer_total_size),
                 layer_total_size,
             )
-        elif docker_pull_progress["status"] == "Extracting":
+        elif status == _PullProgressStates.EXTRACTING:
             # reads
             _, layer_total_size = image_pulling_data[layer_id]
 
@@ -145,7 +152,7 @@ def _parse_docker_pull_progress(
                 ),
                 layer_total_size,
             )
-        elif docker_pull_progress["status"] == "Pull complete":
+        elif status == _PullProgressStates.PULL_COMPLETE:
             # reads
             _, layer_total_size = image_pulling_data[layer_id]
             # writes
@@ -155,10 +162,10 @@ def _parse_docker_pull_progress(
             )
         return True
 
-    return False  # skips
+    return False  # no pull progress logged
 
 
-def _compute_sizes(all_images: _LayerInfoDict) -> tuple[int, int]:
+def _compute_sizes(all_images: _ImagesInfoDict) -> tuple[int, int]:
     total_current_size = total_total_size = 0
     for layer in all_images.values():
         for current_size, total_size in layer.values():
@@ -190,7 +197,7 @@ async def _pull_image_with_progress(
         )
 
     simplified_image_name = image_name.rsplit("/", maxsplit=1)[-1]
-    image_pulling_data = {}
+    all_image_pulling_data[image_name] = {}
     async for pull_progress in client.images.pull(
         image_name,
         stream=True,
@@ -201,7 +208,9 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
-        if _parse_docker_pull_progress(pull_progress, image_pulling_data):
+        if _parse_docker_pull_progress(
+            pull_progress, all_image_pulling_data[image_name]
+        ):
             total_current, total_total = _compute_sizes(all_image_pulling_data)
             await progress_cb(total_current, total_total)
 
