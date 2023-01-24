@@ -1,5 +1,4 @@
 import contextlib
-import datetime
 import logging
 from dataclasses import dataclass
 from typing import Optional, cast
@@ -24,21 +23,10 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings
-from ..models import EC2Instance
+from ..models import EC2Instance, EC2InstanceData
 from ..utils.ec2 import compose_user_data
 
-InstancePrivateDNSName = str
-
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class EC2InstanceData:
-    launch_time: datetime.datetime
-    id: str
-    aws_private_dns: InstancePrivateDNSName
-    type: InstanceTypeType
-    state: InstanceStateNameType
 
 
 @dataclass(frozen=True)
@@ -253,9 +241,11 @@ class AutoscalingEC2:
             state=instance["State"]["Name"],
         )
 
-    async def terminate_instance(self, instance_data: EC2InstanceData) -> None:
+    async def terminate_instances(self, instance_datas: list[EC2InstanceData]) -> None:
         try:
-            await self.client.terminate_instances(InstanceIds=[instance_data.id])
+            await self.client.terminate_instances(
+                InstanceIds=[i.id for i in instance_datas]
+            )
         except botocore.exceptions.ClientError as exc:
             if (
                 exc.response.get("Error", {}).get("Code", "")

@@ -1,6 +1,5 @@
 import logging
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
 
@@ -8,8 +7,7 @@ from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, Task
 
 from ..core.errors import Ec2InvalidDnsNameError
-from ..models import EC2Instance, Resources
-from ..modules.ec2 import EC2InstanceData
+from ..models import AssociatedInstance, EC2Instance, EC2InstanceData, Resources
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
 
@@ -27,12 +25,6 @@ def node_host_name_from_ec2_private_dns(
     raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
 
 
-@dataclass(frozen=True)
-class AssociatedInstance:
-    node: Node
-    ec2_instance: EC2InstanceData
-
-
 async def associate_ec2_instances_with_nodes(
     nodes: list[Node], ec2_instances: list[EC2InstanceData]
 ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
@@ -42,7 +34,7 @@ async def associate_ec2_instances_with_nodes(
 
     def _find_node_with_name(node: Node) -> bool:
         assert node.Description  # nosec
-        return node.Description.Hostname == docker_node_name
+        return bool(node.Description.Hostname == docker_node_name)
 
     for instance_data in ec2_instances:
         try:

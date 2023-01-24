@@ -316,9 +316,9 @@ async def test_terminate_instance(
     assert len(created_instances) == 1
 
     # terminate the instance
-    await autoscaling_ec2.terminate_instance(created_instances[0])
+    await autoscaling_ec2.terminate_instances(created_instances[0])
     # calling it several times is ok, the instance stays a while
-    await autoscaling_ec2.terminate_instance(created_instances[0])
+    await autoscaling_ec2.terminate_instances(created_instances[0])
 
 
 async def test_terminate_instance_not_existing_raises(
@@ -337,4 +337,4 @@ async def test_terminate_instance_not_existing_raises(
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     with pytest.raises(Ec2InstanceNotFoundError):
-        await autoscaling_ec2.terminate_instance(ec2_instance_data)
+        await autoscaling_ec2.terminate_instances(ec2_instance_data)

@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Availability, Node, Task
+from models_library.generated_models.docker_rest_api import Availability, Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessage,
@@ -12,11 +12,10 @@ from models_library.rabbitmq_messages import (
 from servicelib.logging_utils import log_catch
 
 from ..core.settings import ApplicationSettings
-from ..models import SimcoreServiceDockerLabelKeys
+from ..models import AssociatedInstance, EC2InstanceData, SimcoreServiceDockerLabelKeys
 from ..modules.docker import AutoscalingDocker, get_docker_client
-from ..modules.ec2 import AutoscalingEC2, get_ec2_client
 from ..modules.rabbitmq import post_message
-from . import ec2, utils_docker
+from . import utils_docker
 
 logger = logging.getLogger(__name__)
 
@@ -68,35 +67,17 @@ async def post_task_log_message(app: FastAPI, task: Task, log: str, level: int) 
 
 async def create_autoscaling_status_message(
     docker_client: AutoscalingDocker,
-    ec2_client: AutoscalingEC2,
     app_settings: ApplicationSettings,
-    monitored_nodes: list[Node],
+    attached_ec2s: list[AssociatedInstance],
+    pending_ec2s: list[EC2InstanceData],
 ) -> RabbitAutoscalingStatusMessage:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    (
-        total_resources,
-        used_resources,
-        pending_ec2_instances,
-        running_ec2_instances,
-    ) = await asyncio.gather(
+    monitored_nodes = [i.node for i in attached_ec2s]
+    (total_resources, used_resources) = await asyncio.gather(
         *(
             utils_docker.compute_cluster_total_resources(monitored_nodes),
             utils_docker.compute_cluster_used_resources(docker_client, monitored_nodes),
-            ec2_client.get_instances(
-                app_settings.AUTOSCALING_EC2_INSTANCES,
-                list(
-                    ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()
-                ),
-                state_names=["pending"],
-            ),
-            ec2_client.get_instances(
-                app_settings.AUTOSCALING_EC2_INSTANCES,
-                list(
-                    ec2.get_ec2_tags(app_settings.AUTOSCALING_NODES_MONITORING).keys()
-                ),
-                state_names=["running"],
-            ),
         )
     )
     return RabbitAutoscalingStatusMessage.construct(
@@ -118,20 +99,22 @@ async def create_autoscaling_status_message(
         ),
         cluster_total_resources=total_resources.dict(),
         cluster_used_resources=used_resources.dict(),
-        instances_pending=len(pending_ec2_instances),
-        instances_running=len(running_ec2_instances),
+        instances_pending=len(pending_ec2s),
+        instances_running=len(attached_ec2s),
     )
 
 
 async def post_autoscaling_status_message(
-    app: FastAPI, monitored_nodes: list[Node]
+    app: FastAPI,
+    attached_ec2s: list[AssociatedInstance],
+    pending_ec2s: list[EC2InstanceData],
 ) -> None:
     await post_message(
         app,
         await create_autoscaling_status_message(
             get_docker_client(app),
-            get_ec2_client(app),
             app.state.settings,
-            monitored_nodes,
+            attached_ec2s,
+            pending_ec2s,
         ),
     )

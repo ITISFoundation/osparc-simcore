@@ -24,7 +24,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
 from ..core.settings import ApplicationSettings
-from ..models import Resources
+from ..models import AssociatedInstance, Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -385,20 +385,20 @@ def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, s
 async def get_drained_empty_nodes(
     docker_client: AutoscalingDocker,
     app_settings: ApplicationSettings,
-    nodes: list[Node],
-) -> list[Node]:
+    associated_instances: list[AssociatedInstance],
+) -> list[AssociatedInstance]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     return [
-        node
-        for node in nodes
+        instance
+        for instance in associated_instances
         if (
             await compute_node_used_resources(
                 docker_client,
-                node,
+                instance.node,
                 service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
             )
             == Resources.create_as_empty()
         )
-        and (node.Spec is not None)
-        and (node.Spec.Availability == Availability.drain)
+        and (instance.node.Spec is not None)
+        and (instance.node.Spec.Availability == Availability.drain)
     ]

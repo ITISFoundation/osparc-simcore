@@ -24,7 +24,7 @@ from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import (
     _activate_drained_nodes,
     _deactivate_empty_nodes,
-    _find_terminateable_nodes,
+    _find_terminateable_instances,
     _try_scale_down_cluster,
     cluster_scaling_from_labelled_services,
 )
@@ -565,7 +565,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
     host_node: Node,
 ):
     # there is no node to terminate, since the host is not an EC2 instance and is not drained
-    assert await _find_terminateable_nodes(initialized_app, [host_node]) == []
+    assert await _find_terminateable_instances(initialized_app, [host_node]) == []
 
 
 async def test__find_terminateable_nodes_with_drained_host_but_not_in_ec2(
@@ -574,7 +574,9 @@ async def test__find_terminateable_nodes_with_drained_host_but_not_in_ec2(
     drained_host_node: Node,
 ):
     # there is no node to terminate, since the host is not an EC2 instance
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+    assert (
+        await _find_terminateable_instances(initialized_app, [drained_host_node]) == []
+    )
 
 
 async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
@@ -596,7 +598,9 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
         ec2_instance_data,
         launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc),
     )
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+    assert (
+        await _find_terminateable_instances(initialized_app, [drained_host_node]) == []
+    )
     mock_get_running_instance.assert_called_once_with(
         mock.ANY,
         app_settings.AUTOSCALING_EC2_INSTANCES,
@@ -614,7 +618,9 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
         + datetime.timedelta(seconds=10),
     )
 
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+    assert (
+        await _find_terminateable_instances(initialized_app, [drained_host_node]) == []
+    )
     mock_get_running_instance.assert_called_once_with(
         mock.ANY,
         app_settings.AUTOSCALING_EC2_INSTANCES,
@@ -632,9 +638,9 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
         - datetime.timedelta(seconds=10),
     )
 
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == [
-        (drained_host_node, terminataeble_ec2_instance_data)
-    ]
+    assert await _find_terminateable_instances(
+        initialized_app, [drained_host_node]
+    ) == [(drained_host_node, terminataeble_ec2_instance_data)]
     mock_get_running_instance.assert_called_once_with(
         mock.ANY,
         app_settings.AUTOSCALING_EC2_INSTANCES,
