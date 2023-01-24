@@ -974,7 +974,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
 
-      loadingPage.addExtraWidget(this.getStatus().getNodeProgressSequence().getSequenceForLoadingPage());
+      loadingPage.addExtraWidget(this.getStatus().getNodeProgressSequence().getWidgetForLoadingPage());
 
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
