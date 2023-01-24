@@ -205,10 +205,7 @@ async def _find_needed_instances(
     available_ec2_types: list[EC2Instance],
     pending_ec2_instances: list[EC2InstanceData],
 ) -> dict[EC2Instance, int]:
-    existing_instance_types = await get_ec2_client(app).get_ec2_instance_capabilities(
-        {i.type for i in pending_ec2_instances}
-    )
-    type_to_instance_map = {t.name: t for t in existing_instance_types}
+    type_to_instance_map = {t.name: t for t in available_ec2_types}
 
     list_of_existing_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]] = [
         (i, []) for i in pending_ec2_instances
@@ -241,6 +238,7 @@ async def _find_needed_instances(
     num_instances_per_type = dict(
         collections.Counter(t for t, _ in list_of_new_instance_to_tasks)
     )
+
     return num_instances_per_type
 
 
