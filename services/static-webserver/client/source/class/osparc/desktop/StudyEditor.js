@@ -541,12 +541,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       studyEditorIdlingTracker.start();
     },
 
-    __stopTimers: function() {
+    __stopIdlingTracker: function() {
       if (this.__studyEditorIdlingTracker) {
         this.__studyEditorIdlingTracker.stop();
         this.__studyEditorIdlingTracker = null;
       }
-      this.__stopAutoSaveTimer();
     },
 
     __startAutoSaveTimer: function() {
@@ -567,6 +566,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
       }
+    },
+
+    __stopTimers: function() {
+      this.__stopIdlingTracker();
+      this.__stopAutoSaveTimer();
     },
 
     didStudyChange: function() {
@@ -649,8 +653,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__stopTimers();
       if (this.getStudy()) {
         this.getStudy().stopStudy();
+        this.__closeStudy();
       }
-      this.__closeStudy();
       const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);
