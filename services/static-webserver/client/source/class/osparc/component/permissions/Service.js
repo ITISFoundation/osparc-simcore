@@ -140,7 +140,7 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _promoteToOwner: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       this._serializedData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: osparc.data.Resources.getServiceUrl(
@@ -162,15 +162,11 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _promoteToCollaborator: function(collaborator) {
-      return;
+    _promoteToOwner: function(collaborator) {
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available", "WARNING"));
     },
 
     _demoteToViewer: function(collaborator) {
-      return;
-    },
-
-    _demoteToCollaborator: function(collaborator) {
       this._serializedData["accessRights"][collaborator["gid"]] = this.self().getCollaboratorAccessRight();
       const params = {
         url: osparc.data.Resources.getServiceUrl(
@@ -190,6 +186,10 @@ qx.Class.define("osparc.component.permissions.Service", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Owner Collaborator"), "ERROR");
           console.error(err);
         });
+    },
+
+    _demoteToCollaborator: function(collaborator) {
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available", "WARNING"));
     }
   }
 });
