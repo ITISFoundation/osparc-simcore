@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import cast
+from typing import Callable, cast
 
 import botocore.exceptions
 import pytest
@@ -316,9 +316,9 @@ async def test_terminate_instance(
     assert len(created_instances) == 1
 
     # terminate the instance
-    await autoscaling_ec2.terminate_instances(created_instances[0])
+    await autoscaling_ec2.terminate_instances(created_instances)
     # calling it several times is ok, the instance stays a while
-    await autoscaling_ec2.terminate_instances(created_instances[0])
+    await autoscaling_ec2.terminate_instances(created_instances)
 
 
 async def test_terminate_instance_not_existing_raises(
@@ -330,11 +330,11 @@ async def test_terminate_instance_not_existing_raises(
     ec2_client: EC2Client,
     autoscaling_ec2: AutoscalingEC2,
     app_settings: ApplicationSettings,
-    ec2_instance_data: EC2InstanceData,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     # we have nothing running now in ec2
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     with pytest.raises(Ec2InstanceNotFoundError):
-        await autoscaling_ec2.terminate_instances(ec2_instance_data)
+        await autoscaling_ec2.terminate_instances([fake_ec2_instance_data()])

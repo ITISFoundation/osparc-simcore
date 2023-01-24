@@ -19,25 +19,6 @@ from simcore_service_autoscaling.utils.dynamic_scaling import (
 
 
 @pytest.fixture
-def ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
-    def _creator(**overrides) -> EC2InstanceData:
-        return EC2InstanceData(
-            **(
-                {
-                    "launch_time": faker.date_time(),
-                    "id": faker.uuid4(),
-                    "aws_private_dns": faker.name(),
-                    "type": faker.pystr(),
-                    "state": faker.pystr(),
-                }
-                | overrides
-            )
-        )
-
-    return _creator
-
-
-@pytest.fixture
 def node(faker: Faker) -> Callable[..., Node]:
     def _creator(**overrides) -> Node:
         return Node(
@@ -56,33 +37,33 @@ def node(faker: Faker) -> Callable[..., Node]:
 
 
 def test_node_host_name_from_ec2_private_dns(
-    ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData]
 ):
-    instance = ec2_instance_data(
+    instance = fake_ec2_instance_data(
         aws_private_dns="ip-10-12-32-3.internal-data",
     )
     assert node_host_name_from_ec2_private_dns(instance) == "ip-10-12-32-3"
 
 
 def test_node_host_name_from_ec2_private_dns_raises_with_invalid_name(
-    ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData]
 ):
-    instance = ec2_instance_data()
+    instance = fake_ec2_instance_data()
     with pytest.raises(Ec2InvalidDnsNameError):
         node_host_name_from_ec2_private_dns(instance)
 
 
 @pytest.mark.parametrize("valid_ec2_dns", [True, False])
 async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
-    ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
     node: Callable[..., Node],
     valid_ec2_dns: bool,
 ):
     nodes = [node() for _ in range(10)]
     ec2_instances = [
-        ec2_instance_data(aws_private_dns=f"ip-10-12-32-{n+1}.internal-data")
+        fake_ec2_instance_data(aws_private_dns=f"ip-10-12-32-{n+1}.internal-data")
         if valid_ec2_dns
-        else ec2_instance_data()
+        else fake_ec2_instance_data()
         for n in range(10)
     ]
 
@@ -97,7 +78,7 @@ async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
 
 
 async def test_associate_ec2_instances_with_corresponding_nodes(
-    ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
     node: Callable[..., Node],
 ):
     nodes = []
@@ -106,7 +87,7 @@ async def test_associate_ec2_instances_with_corresponding_nodes(
         host_name = f"ip-10-12-32-{n+1}"
         nodes.append(node(Description={"Hostname": host_name}))
         ec2_instances.append(
-            ec2_instance_data(aws_private_dns=f"{host_name}.internal-data")
+            fake_ec2_instance_data(aws_private_dns=f"{host_name}.internal-data")
         )
 
     (
