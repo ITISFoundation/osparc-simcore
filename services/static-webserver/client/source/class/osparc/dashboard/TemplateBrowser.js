@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("templatesList");
       cards.forEach(card => {
-        card.addListener("execute", () => this.__itemClicked(card), this);
+        card.addListener("tap", () => this.__itemClicked(card), this);
         card.addListener("changeUpdatable", () => this.__evaluateUpdateAllButton(), this);
         card.addListener("changeVisibility", () => this.__evaluateUpdateAllButton(), this);
         this._populateCardMenu(card);
@@ -117,9 +117,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __itemClicked: function(card) {
-      const matchesId = study => study.uuid === card.getUuid();
-      const templateData = this._resourcesList.find(matchesId);
-      this.__createStudyFromTemplate(templateData);
+      if (!card.isLocked()) {
+        const matchesId = study => study.uuid === card.getUuid();
+        const templateData = this._resourcesList.find(matchesId);
+        this.__createStudyFromTemplate(templateData);
+      }
       this.resetSelection();
     },
 
