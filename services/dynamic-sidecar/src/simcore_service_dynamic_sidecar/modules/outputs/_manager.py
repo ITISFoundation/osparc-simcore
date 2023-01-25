@@ -136,6 +136,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         def _remove_downloads(future: Future) -> None:
             # pylint: disable=protected-access
             if future._exception is not None:
+                # pylint:disable = unexpected-keyword-arg
                 formatted_traceback = (
                     "\n"
                     + "".join(
