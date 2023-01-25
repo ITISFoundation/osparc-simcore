@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     }));
 
     // Page title
-    this.add(new qx.ui.basic.Label(title + " Settings").set({
+    this.add(new qx.ui.basic.Label(title).set({
       font: "title-16"
     }));
 
