@@ -140,6 +140,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         visibility: "excluded"
       });
       this.__groupedContainers.push(groupContainer);
+
+      const compareByHeaderLabel = (a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel());
+      this.__groupedContainers.sort(compareByHeaderLabel);
+
       return groupContainer;
     },
 
