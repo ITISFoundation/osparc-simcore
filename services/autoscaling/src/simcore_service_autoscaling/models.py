@@ -1,8 +1,12 @@
-from models_library.generated_models.docker_rest_api import Task
+import datetime
+from dataclasses import dataclass
+
+from models_library.generated_models.docker_rest_api import Node, Task
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pydantic import BaseModel, ByteSize, Field, NonNegativeFloat, PositiveInt
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
 class Resources(BaseModel):
@@ -62,3 +66,21 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+
+
+InstancePrivateDNSName = str
+
+
+@dataclass(frozen=True)
+class EC2InstanceData:
+    launch_time: datetime.datetime
+    id: str
+    aws_private_dns: InstancePrivateDNSName
+    type: InstanceTypeType
+    state: InstanceStateNameType
+
+
+@dataclass(frozen=True)
+class AssociatedInstance:
+    node: Node
+    ec2_instance: EC2InstanceData
