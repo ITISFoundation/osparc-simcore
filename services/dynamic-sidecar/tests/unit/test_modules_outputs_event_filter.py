@@ -118,7 +118,7 @@ async def event_filter(
 
 
 async def _wait_for_event_to_trigger(event_filter: EventFilter) -> None:
-    await asyncio.sleep(event_filter.delay_policy.get_min_interval() * 2)
+    await asyncio.sleep(event_filter.delay_policy.get_min_interval() * 5)
 
 
 async def _wait_for_event_to_trigger_big_directory(event_filter: EventFilter) -> None:
