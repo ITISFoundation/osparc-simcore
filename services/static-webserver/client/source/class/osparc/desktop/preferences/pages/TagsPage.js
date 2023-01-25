@@ -18,12 +18,12 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     const msg = this.tr("\
     Tags are annotations to help users with grouping reources in the Dashboard. \
-    Once you have created the tags, you may assign them by accessing 'More options...' on the resource card");
+    Once you have created the tags, you may assign them by accessing 'More options...' on the resource card.");
     const intro = this._createHelpLabel(msg);
     this._add(intro);
 
+    this._add(new qx.ui.core.Spacer(null, 10));
 
-    this.__createComponents();
     this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__container.set({
       backgroundColor: "background-main-2",
@@ -31,6 +31,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     });
     const scroll = new qx.ui.container.Scroll(this.__container);
     this.add(scroll);
+
+    this.__createComponents();
   },
 
   members: {
@@ -62,6 +64,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       }));
       buttonContainer.add(this.__addTagButton);
       this.__container.add(buttonContainer);
+
       // Print tag items
       this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
     },

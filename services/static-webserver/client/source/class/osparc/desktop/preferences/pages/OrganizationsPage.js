@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
     const msg = this.tr("\
     An organization is any group of users that are able to share resources with each other.<br>\
-    Here you may review the organizations you are a part of, create new organizations, \
+    Here you may review the organizations you are a part of, create new ones, \
     or manage the membership and access rights of organizations where you are a manager/administrator.");
     const intro = this._createHelpLabel(msg);
     this._add(intro);
@@ -87,6 +87,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const createOrgBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("New Organization"),
+        alignX: "center",
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });

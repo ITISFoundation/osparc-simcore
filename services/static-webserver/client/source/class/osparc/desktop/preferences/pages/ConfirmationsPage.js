@@ -34,12 +34,16 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
   members: {
     __createConfirmationsSettings: function() {
       // layout
-      const box = this._createSectionBox();
-
       const label = this._createHelpLabel(this.tr("Provide warnings for the following actions:"));
-      box.add(label);
+      this.add(label);
+
+      this.add(new qx.ui.core.Spacer(null, 10));
 
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+
+      const box = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        paddingLeft: 10
+      });
 
       const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Go back to the Dashboard"));
       preferencesSettings.bind("confirmBackToDashboard", cbConfirmBackToDashboard, "value");

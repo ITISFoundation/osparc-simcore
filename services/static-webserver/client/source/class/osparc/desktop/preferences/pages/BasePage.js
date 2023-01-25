@@ -22,26 +22,26 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     this.base(arguments, null, iconSrc);
 
     this.setLayout(new qx.ui.layout.VBox(10).set({
-      spacing: 10,
+      spacing: 5,
       alignX: "center"
     }));
 
     // Page title
     this.add(new qx.ui.basic.Label(title).set({
-      font: "title-16"
+      font: "title-16",
+      alignX: "left"
     }));
-
     // spacer
     this.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
     this.set({
       backgroundColor: "background-main-2",
-      paddingLeft: 10
+      paddingLeft: 20
     });
   },
 
   members: {
     /**
-     * Common layout of secion's box
+     * Common layout of section's box
      * @param {page section's name} sectionName
      */
     _createSectionBox: function(sectionName) {
@@ -59,8 +59,9 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     _createHelpLabel: function(message=null) {
       let label = new qx.ui.basic.Label().set({
         value: message,
+        alignX: "left",
         rich: true,
-        font: "text-12"
+        font: "text-13"
       });
       return label;
     }
