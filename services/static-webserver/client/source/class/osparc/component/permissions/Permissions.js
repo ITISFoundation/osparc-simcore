@@ -158,21 +158,25 @@ qx.Class.define("osparc.component.permissions.Permissions", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("makeOwner", e => {
+          item.addListener("promoteToCollaborator", e => {
             const orgMember = e.getData();
-            this._makeOwner(orgMember);
+            this._promoteToCollaborator(orgMember);
           });
-          item.addListener("makeCollaborator", e => {
+          item.addListener("promoteToOwner", e => {
             const orgMember = e.getData();
-            this._makeCollaborator(orgMember);
+            this._promoteToOwner(orgMember);
           });
-          item.addListener("makeViewer", e => {
+          item.addListener("demoteToViewer", e => {
             const orgMember = e.getData();
-            this._makeViewer(orgMember);
+            this._demoteToViewer(orgMember);
           });
-          item.addListener("removeCollaborator", e => {
+          item.addListener("demoteToCollaborator", e => {
             const orgMember = e.getData();
-            this._deleteCollaborator(orgMember);
+            this._demoteToCollaborator(orgMember);
+          });
+          item.addListener("removeMember", e => {
+            const orgMember = e.getData();
+            this._deleteMember(orgMember);
           });
         }
       });
@@ -269,6 +273,23 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
+      const sortCollaborators = (a, b) => {
+        const aAccessRights = a.getAccessRights();
+        const bAccessRights = b.getAccessRights();
+        if (osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights)) {
+          return osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights) - osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights);
+        }
+        if (osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights)) {
+          return osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights) - osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights);
+        }
+        if (osparc.ui.list.CollaboratorListItem.canRead(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canRead(bAccessRights)) {
+          return osparc.ui.list.CollaboratorListItem.canRead(bAccessRights) - osparc.ui.list.CollaboratorListItem.canRead(aAccessRights);
+        }
+        if (a.getLogin && b.getLogin) {
+          return a.getLogin().localeCompare(b.getLogin());
+        }
+        return 0;
+      };
       const aceessRights = this._serializedData["accessRights"];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
@@ -283,6 +304,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           this.__collaboratorsModel.append(collaboratorModel);
         }
       });
+      this.__collaboratorsModel.sort(sortCollaborators);
     },
 
     _canIWrite: function() {
@@ -293,19 +315,23 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       throw new Error("Abstract method called!");
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _deleteMember: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _makeOwner: function(collaborator) {
+    _promoteToOwner: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _makeCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _makeViewer: function(collaborator) {
+    _demoteToViewer: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
+
+    _demoteToCollaborator: function(collaborator) {
       throw new Error("Abstract method called!");
     }
   }

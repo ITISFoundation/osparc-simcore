@@ -62,6 +62,14 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         "write": true,
         "delete": false
       };
+    },
+
+    getDeleteAccess: function() {
+      return {
+        "read": true,
+        "write": true,
+        "delete": true
+      };
     }
   },
 
@@ -172,13 +180,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const validator = new qx.ui.form.validation.Manager();
       validator.add(userEmail, qx.util.Validate.email());
 
-      const inviteBtn = new qx.ui.form.Button(this.tr("Invite"));
-      inviteBtn.addListener("execute", function() {
+      const addBtn = new qx.ui.form.Button(this.tr("Add"));
+      addBtn.addListener("execute", function() {
         if (validator.validate()) {
           this.__addMember(userEmail.getValue());
         }
       }, this);
-      hBox.add(inviteBtn);
+      hBox.add(addBtn);
 
       return hBox;
     },
@@ -213,17 +221,25 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             const clusterMember = e.getData();
             this.__promoteToMember(clusterMember);
           });
-          item.addListener("demoteToUser", e => {
-            const clusterMember = e.getData();
-            this.__demoteToUser(clusterMember);
-          });
           item.addListener("promoteToManager", e => {
             const orgMember = e.getData();
             this.__promoteToManager(orgMember);
           });
+          item.addListener("promoteToAdministrator", e => {
+            const orgMember = e.getData();
+            this.__promoteToAdministator(orgMember);
+          });
+          item.addListener("demoteToUser", e => {
+            const clusterMember = e.getData();
+            this.__demoteToUser(clusterMember);
+          });
           item.addListener("demoteToMember", e => {
             const orgMember = e.getData();
             this.__demoteToMember(orgMember);
+          });
+          item.addListener("demoteToManager", e => {
+            const orgMember = e.getData();
+            this.__demoteToManager(orgMember);
           });
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
@@ -308,7 +324,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         if (aAccessRights.getRead() !== bAccessRights.getRead()) {
           return bAccessRights.getRead() - aAccessRights.getRead();
         }
-        return a.getLogin().localeCompare(b.getLogin());
+        if (a.getLogin && b.getLogin) {
+          return a.getLogin().localeCompare(b.getLogin());
+        }
+        return 0;
       };
       const params = {
         url: {
@@ -322,8 +341,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
             member["showOptions"] = canWrite;
             membersModel.append(qx.data.marshal.Json.createModel(member));
-            membersModel.sort(sortMembers);
           });
+          membersModel.sort(sortMembers);
         });
     },
 
@@ -508,7 +527,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding the user"), "ERROR");
           console.error(err);
         });
     },
@@ -594,6 +613,32 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         });
     },
 
+    __promoteToAdministator: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMember["id"]
+        },
+        data: {
+          "accessRights": this.self().getDeleteAccess()
+        }
+      };
+      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted to Administrator"));
+          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
+          console.error(err);
+        });
+    },
+
     __demoteToMember: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
@@ -611,6 +656,32 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       osparc.data.Resources.fetch("organizationMembers", "patch", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Member"));
+          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
+          console.error(err);
+        });
+    },
+
+    __demoteToManager: function(orgMember) {
+      if (this.__currentOrg === null) {
+        return;
+      }
+
+      const params = {
+        url: {
+          "gid": this.__currentOrg.getKey(),
+          "uid": orgMember["id"]
+        },
+        data: {
+          "accessRights": this.self().getWriteAccess()
+        }
+      };
+      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Manager"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
