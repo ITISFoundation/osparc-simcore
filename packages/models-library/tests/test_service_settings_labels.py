@@ -117,17 +117,17 @@ def test_raises_error_if_http_entrypoint_is_missing() -> None:
 
 
 def test_path_mappings_none_state_paths() -> None:
-    sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["example"])
+    sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["examples"][0])
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)
 
 
 def test_path_mappings_json_encoding() -> None:
-    example = PathMappingsLabel.Config.schema_extra["example"]
-    path_mappings = PathMappingsLabel.parse_obj(example)
-    print(path_mappings)
-    assert PathMappingsLabel.parse_raw(path_mappings.json()) == path_mappings
+    for example in PathMappingsLabel.Config.schema_extra["examples"]:
+        path_mappings = PathMappingsLabel.parse_obj(example)
+        print(path_mappings)
+        assert PathMappingsLabel.parse_raw(path_mappings.json()) == path_mappings
 
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided() -> None:
@@ -147,3 +147,32 @@ def test_raises_error_wrong_restart_policy() -> None:
 
     with pytest.raises(ValueError):
         SimcoreServiceLabels(**simcore_service_labels)
+
+
+def test_path_mappings_label_unsupported_size_constraints():
+    with pytest.raises(ValidationError) as exec_into:
+        PathMappingsLabel.parse_obj(
+            {
+                "outputs_path": "/so",
+                "inputs_path": "/si",
+                "state_paths": [],
+                "volume_limits": {"/si": "1d"},
+            },
+        )
+    assert (
+        "Provided size='1d' contains unsupported 'd' docker size."
+        in f"{exec_into.value}"
+    )
+
+
+def test_path_mappings_label_defining_constraing_on_missing_path():
+    with pytest.raises(ValidationError) as exec_into:
+        PathMappingsLabel.parse_obj(
+            {
+                "outputs_path": "/so",
+                "inputs_path": "/si",
+                "state_paths": [],
+                "volume_limits": {"/missing": "1"},
+            },
+        )
+    assert "path=PosixPath('/missing') not found in" in f"{exec_into.value}"

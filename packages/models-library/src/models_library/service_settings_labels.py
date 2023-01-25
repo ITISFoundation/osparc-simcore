@@ -132,6 +132,11 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
+_BASE_DOCKER_SIZE: set[str] = {"b", "k", "m", "g", "t", "p"}
+ALLOWED_DOCKER_SIZE: set[str] = _BASE_DOCKER_SIZE | {
+    x.upper() for x in _BASE_DOCKER_SIZE
+}
+
 
 class PathMappingsLabel(BaseModel):
     inputs_path: Path = Field(
@@ -151,14 +156,64 @@ class PathMappingsLabel(BaseModel):
         description="optional list unix shell rules used to exclude files from the state",
     )
 
+    volume_limits: Optional[dict[str, str]] = Field(
+        None,
+        description=(
+            "Apply volume size limits to entries in `inputs_path` `outputs_path` "
+            "and `state_paths`. Limits are expressed as docker sizes"
+        ),
+    )
+
+    @validator("volume_limits")
+    @classmethod
+    def validate_volume_limits(cls, v, values) -> Optional[str]:
+        if v is None:
+            return v
+
+        for path_str, size_str in v.items():
+            last_char = size_str[-1]
+            if not last_char.isnumeric():
+                if last_char not in ALLOWED_DOCKER_SIZE:
+                    raise ValueError(
+                        f"Provided size='{size_str}' contains unsupported '{last_char}' "
+                        f"docker size. Supported values are: {ALLOWED_DOCKER_SIZE}."
+                    )
+
+            inputs_path: Optional[Path] = values.get("inputs_path")
+            outputs_path: Optional[Path] = values.get("outputs_path")
+            state_paths: Optional[list[Path]] = values.get("state_paths")
+            path = Path(path_str)
+            if not (
+                path == inputs_path
+                or path == outputs_path
+                or (state_paths is not None and path in state_paths)
+            ):
+                raise ValueError(
+                    f"{path=} not found in {inputs_path=}, {outputs_path=}, {state_paths=}"
+                )
+
+        return v
+
     class Config(_BaseConfig):
         schema_extra = {
-            "example": {
-                "outputs_path": "/tmp/outputs",  # nosec
-                "inputs_path": "/tmp/inputs",  # nosec
-                "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
-            }
+            "examples": [
+                {
+                    "outputs_path": "/tmp/outputs",  # nosec
+                    "inputs_path": "/tmp/inputs",  # nosec
+                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
+                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
+                },
+                {
+                    "outputs_path": "/t_out",
+                    "inputs_path": "/t_inp",
+                    "state_paths": [f"/s{x}" for x in range(len(ALLOWED_DOCKER_SIZE))]
+                    + ["/s"],
+                    "volume_limits": {
+                        f"/s{k}": f"1{x}" for k, x in enumerate(ALLOWED_DOCKER_SIZE)
+                    }
+                    | {"/s": "1"},
+                },
+            ]
         }
 
 
@@ -277,7 +332,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["example"]
+                        PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                 },
@@ -287,7 +342,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["example"]
+                        PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {
