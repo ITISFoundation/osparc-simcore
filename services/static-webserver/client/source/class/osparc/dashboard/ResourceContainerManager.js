@@ -143,11 +143,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return groupContainer;
     },
 
-    __createEmptyGroupContainer: function() {
-      const noGroupContainer = this.__createGroupContainer("no-group", this.tr("No Group"), "transparent");
-      return noGroupContainer;
-    },
-
     areMoreResourcesRequired: function(loadingResourcesBtn) {
       if (this.__flatList) {
         return this.__flatList.areMoreResourcesRequired(loadingResourcesBtn);
@@ -186,7 +181,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return null;
     },
 
-    __createCard: function(resourceData, tags) {
+    __createCard: function(resourceData) {
+      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
         resourceData: resourceData,
@@ -229,7 +225,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     reloadCards: function(listId) {
       this.__cleanAll();
       if (this.getGroupBy()) {
-        const noGroupContainer = this.__createEmptyGroupContainer();
+        const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
       } else {
         const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
@@ -267,83 +263,98 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return newCards;
     },
 
+    __moveNoGroupToLast: function() {
+      const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
+      if (idx > -1) {
+        this._getChildren().push(this._getChildren().splice(idx, 1)[0]);
+      }
+    },
+
+    __groupByTags: function(cards, resourceData) {
+      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
+      if (tags.length === 0) {
+        let noGroupContainer = this.__getGroupContainer("no-group");
+        const card = this.__createCard(resourceData);
+        noGroupContainer.add(card);
+        this.self().sortList(noGroupContainer.getContentContainer());
+        cards.push(card);
+      } else {
+        tags.forEach(tag => {
+          let groupContainer = this.__getGroupContainer(tag.id);
+          if (groupContainer === null) {
+            groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
+            groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
+            this._add(groupContainer);
+            this._getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
+            this.__moveNoGroupToLast();
+          }
+          const card = this.__createCard(resourceData);
+          groupContainer.add(card);
+          this.self().sortList(groupContainer.getContentContainer());
+          cards.push(card);
+        });
+      }
+    },
+
+    __groupByShareWith: function(cards, resourceData) {
+      const orgIds = resourceData.accessRights ? Object.keys(resourceData["accessRights"]) : [];
+      if (orgIds.length === 0) {
+        let noGroupContainer = this.__getGroupContainer("no-group");
+        const card = this.__createCard(resourceData);
+        noGroupContainer.add(card);
+        this.self().sortList(noGroupContainer.getContentContainer());
+        cards.push(card);
+      } else {
+        orgIds.forEach(orgId => {
+          let groupContainer = this.__getGroupContainer(orgId);
+          if (groupContainer === null) {
+            groupContainer = this.__createGroupContainer(orgId, "loading-label");
+            osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
+              .then(org => {
+                if (org) {
+                  let icon = "";
+                  if (org.thumbnail) {
+                    icon = org.thumbnail;
+                  } else if (org["collabType"] === 0) {
+                    icon = "@FontAwesome5Solid/globe/24";
+                  } else if (org["collabType"] === 1) {
+                    icon = "@FontAwesome5Solid/users/24";
+                  } else if (org["collabType"] === 2) {
+                    icon = "@FontAwesome5Solid/user/24";
+                  }
+                  groupContainer.set({
+                    headerIcon: icon,
+                    headerLabel: org.label
+                  });
+                } else {
+                  // unknown org/user: show email address instead
+                  groupContainer.set({
+                    headerIcon: "@FontAwesome5Solid/user/24",
+                    headerLabel: resourceData["prjOwner"]
+                  });
+                }
+              })
+              .finally(() => {
+                this._add(groupContainer);
+                this.__moveNoGroupToLast();
+              });
+          }
+          const card = this.__createCard(resourceData);
+          groupContainer.add(card);
+          this.self().sortList(groupContainer.getContentContainer());
+          cards.push(card);
+        });
+      }
+    },
+
     __resourceToCards: function(resourceData) {
       const cards = [];
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
       if (this.getGroupBy() === "tags") {
-        if (tags.length === 0) {
-          let noGroupContainer = this.__getGroupContainer("no-group");
-          const card = this.__createCard(resourceData, tags);
-          noGroupContainer.add(card);
-          this.self().sortList(noGroupContainer.getContentContainer());
-          cards.push(card);
-        } else {
-          tags.forEach(tag => {
-            let groupContainer = this.__getGroupContainer(tag.id);
-            if (groupContainer === null) {
-              groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
-              groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
-              const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
-              this._addAt(groupContainer, idx);
-            }
-            const card = this.__createCard(resourceData, tags);
-            groupContainer.add(card);
-            this.self().sortList(groupContainer.getContentContainer());
-            cards.push(card);
-          });
-        }
+        this.__groupByTags(cards, resourceData);
       } else if (this.getGroupBy() === "shared") {
-        let orgIds = [];
-        if ("accessRights" in resourceData) {
-          orgIds = Object.keys(resourceData["accessRights"]);
-        }
-        if (orgIds.length === 0) {
-          let noGroupContainer = this.__getGroupContainer("no-group");
-          const card = this.__createCard(resourceData, tags);
-          noGroupContainer.add(card);
-          this.self().sortList(noGroupContainer.getContentContainer());
-          cards.push(card);
-        } else {
-          orgIds.forEach(orgId => {
-            let groupContainer = this.__getGroupContainer(orgId);
-            if (groupContainer === null) {
-              groupContainer = this.__createGroupContainer(orgId, "loading-label");
-              osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
-                .then(org => {
-                  if (org) {
-                    let icon = "";
-                    if (org.thumbnail) {
-                      icon = org.thumbnail;
-                    } else if (org["collabType"] === 0) {
-                      icon = "@FontAwesome5Solid/globe/24";
-                    } else if (org["collabType"] === 1) {
-                      icon = "@FontAwesome5Solid/users/24";
-                    } else if (org["collabType"] === 2) {
-                      icon = "@FontAwesome5Solid/user/24";
-                    }
-                    groupContainer.set({
-                      headerIcon: icon,
-                      headerLabel: org.label
-                    });
-                  } else {
-                    // unknown org/user: show email address instead
-                    groupContainer.set({
-                      headerIcon: "@FontAwesome5Solid/user/24",
-                      headerLabel: resourceData["prjOwner"]
-                    });
-                  }
-                });
-              const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
-              this._addAt(groupContainer, idx);
-            }
-            const card = this.__createCard(resourceData, tags);
-            groupContainer.add(card);
-            this.self().sortList(groupContainer.getContentContainer());
-            cards.push(card);
-          });
-        }
+        this.__groupByShareWith(cards, resourceData);
       } else {
-        const card = this.__createCard(resourceData, tags);
+        const card = this.__createCard(resourceData);
         cards.push(card);
         this.__flatList.add(card);
         this.self().sortList(this.__flatList);

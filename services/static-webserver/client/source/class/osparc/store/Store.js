@@ -438,11 +438,15 @@ qx.Class.define("osparc.store.Store", {
               groups.push(org);
             });
             const groupProductEveryone = values[3];
-            groupProductEveryone["collabType"] = 0;
-            groups.push(groupProductEveryone);
+            if (groupProductEveryone) {
+              groupProductEveryone["collabType"] = 0;
+              groups.push(groupProductEveryone);
+            }
             const groupEveryone = values[4];
-            groupEveryone["collabType"] = 0;
-            groups.push(groupEveryone);
+            if (groupEveryone) {
+              groupEveryone["collabType"] = 0;
+              groups.push(groupEveryone);
+            }
             resolve(groups);
           });
       });
