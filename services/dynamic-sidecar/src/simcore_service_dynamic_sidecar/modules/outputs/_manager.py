@@ -134,12 +134,12 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading = create_task(_upload_ports(), name=task_name)
 
         def _remove_downloads(future: Future) -> None:
+            # pylint: disable=protected-access
             if future._exception is not None:
-                # pylint:disable = unexpected-keyword-arg
                 formatted_traceback = (
                     "\n"
                     + "".join(
-                        # pylint: disable=protected-access,no-value-for-parameter
+                        # pylint:disable = unexpected-keyword-arg, no-value-for-parameter
                         traceback.format_exception(
                             etype=type(future._exception),
                             value=future._exception,
