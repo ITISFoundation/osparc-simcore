@@ -39,13 +39,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
     EXPECTED_S4L_SERVICE_KEYS: {
       "simcore/services/dynamic/jupyter-smash": {
-        title: "Start sim4life lab",
+        title: "Start Sim4Life lab",
         decription: "jupyter powered by Sim4Life",
         idToWidget: "startJSmashButton"
       },
       "simcore/services/dynamic/sim4life-dy": {
-        title: "Start sim4life",
-        decription: "New sim4life project",
+        title: "Start Sim4Life",
+        decription: "New Sim4Life project",
         idToWidget: "startS4LButton"
       }
     },
