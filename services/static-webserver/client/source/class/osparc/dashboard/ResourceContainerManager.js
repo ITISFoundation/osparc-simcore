@@ -263,6 +263,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return newCards;
     },
 
+    __moveNoGroupToLast: function() {
+      const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
+      if (idx > -1) {
+        this._getChildren().push(this._getChildren().splice(idx, 1)[0]);
+      }
+    },
+
     __groupByTags: function(cards, resourceData) {
       const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
       if (tags.length === 0) {
@@ -279,9 +286,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
             this._add(groupContainer);
             this._getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
-            // keep no-group last
-            const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
-            this._getChildren().push(this._getChildren().splice(idx, 1)[0]);
+            this.__moveNoGroupToLast();
           }
           const card = this.__createCard(resourceData);
           groupContainer.add(card);
@@ -328,10 +333,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                     headerLabel: resourceData["prjOwner"]
                   });
                 }
+              })
+              .finally(() => {
+                this._add(groupContainer);
+                this.__moveNoGroupToLast();
               });
-            const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
-            // keep no-group last
-            this._addAt(groupContainer, idx);
           }
           const card = this.__createCard(resourceData);
           groupContainer.add(card);
