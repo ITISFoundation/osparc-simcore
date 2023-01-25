@@ -2,6 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Optional, cast
 
+from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -173,3 +174,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         # NOTE: mypy is not happy without the cast
         return cast(str, cls.validate_log_level(value))
+
+
+def get_application_settings(app: FastAPI) -> ApplicationSettings:
+    return app.state.settings
