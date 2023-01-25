@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     EXPECTED_S4L_SERVICE_KEYS: {
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start sim4life lab",
-        decription: "jupyter powered by s4l",
+        decription: "jupyter powered by Sim4Life",
         idToWidget: "startJSmashButton"
       },
       "simcore/services/dynamic/sim4life-dy": {
@@ -51,8 +51,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
-        title: "Start Sim4Life Lite",
-        decription: "New s4l-lite project",
+        title: "Start Sim4Life lite",
+        decription: "New Sim4Life lite project",
         idToWidget: "startS4LButton"
       }
     }
@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 let msg = this.tr("It seems you don't have access to this product.");
                 msg += "</br>";
                 msg += "</br>";
-                msg += this.tr("Please, contact us:");
+                msg += this.tr("Please contact us:");
                 msg += "</br>";
                 osparc.store.VendorInfo.getInstance().getSupportEmail()
                   .then(supportEmail => {

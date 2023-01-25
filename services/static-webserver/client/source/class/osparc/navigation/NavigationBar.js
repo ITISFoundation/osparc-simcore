@@ -284,7 +284,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcherFormBtn();
+          control = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
+            toolTipText: this.tr("Switch theme")
+          });
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;

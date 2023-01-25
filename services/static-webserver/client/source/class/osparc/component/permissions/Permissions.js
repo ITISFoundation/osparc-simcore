@@ -191,7 +191,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
-        value: this.tr("Those that have access to the study can use the following permanent link:"),
+        value: this.tr("Permanent Link for users that have access to the ") + osparc.utils.Utils.getStudyLabel(),
         rich: true
       });
       vBox.add(label);
