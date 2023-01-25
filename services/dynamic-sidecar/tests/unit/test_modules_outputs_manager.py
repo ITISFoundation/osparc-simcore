@@ -19,7 +19,7 @@ from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
-from simcore_sdk.node_ports_common.file_io_utils import ProgressData
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB, ProgressData
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs._context import (
@@ -392,6 +392,7 @@ async def test_regression_io_log_redirect_cb(
         outputs_manager: OutputsManager = app.state.outputs_manager
         assert outputs_manager.io_log_redirect_cb is not None
 
+        # ensure callback signature passed to nodeports does not change
         assert inspect.getfullargspec(
             outputs_manager.io_log_redirect_cb.func
         ) == FullArgSpec(
@@ -406,5 +407,20 @@ async def test_regression_io_log_redirect_cb(
                 "app": FastAPI,
                 "msg": str,
                 "_": Optional[ProgressData],
+            },
+        )
+
+        # ensure logger used in nodeports deos not change
+        assert inspect.getfullargspec(LogRedirectCB.__call__) == FullArgSpec(
+            args=["self", "msg", "progress_data"],
+            varargs=None,
+            varkw=None,
+            defaults=(None,),
+            kwonlyargs=[],
+            kwonlydefaults=None,
+            annotations={
+                "return": None,
+                "msg": str,
+                "progress_data": Optional[ProgressData],
             },
         )
