@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import dataclasses
 import itertools
 import logging
 from collections import defaultdict
@@ -77,13 +78,10 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
             "The following nodes set to drain: '%s'",
             f"{[node.node.Description.Hostname for node in active_empty_nodes if node.node.Description]}",
         )
-    return Cluster(
+    return dataclasses.replace(
+        cluster,
         active_nodes=active_non_empty_nodes,
         drained_nodes=cluster.drained_nodes + active_empty_nodes,
-        reserve_drained_nodes=cluster.reserve_drained_nodes,
-        pending_ec2s=cluster.pending_ec2s,
-        disconnected_nodes=cluster.disconnected_nodes,
-        terminated_instances=cluster.terminated_instances,
     )
 
 
@@ -147,12 +145,9 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         for i in cluster.drained_nodes
         if i.ec2_instance.id not in terminated_instance_ids
     ]
-    return Cluster(
-        active_nodes=cluster.active_nodes,
+    return dataclasses.replace(
+        cluster,
         drained_nodes=still_drained_nodes,
-        reserve_drained_nodes=cluster.reserve_drained_nodes,
-        pending_ec2s=cluster.pending_ec2s,
-        disconnected_nodes=cluster.disconnected_nodes,
         terminated_instances=cluster.terminated_instances
         + [i.ec2_instance for i in terminateable_instances],
     )
@@ -225,13 +220,11 @@ async def _activate_drained_nodes(
         for node in cluster.reserve_drained_nodes
         if node.ec2_instance.id not in new_active_node_ids
     ]
-    return still_pending_tasks, Cluster(
+    return still_pending_tasks, dataclasses.replace(
+        cluster,
         active_nodes=cluster.active_nodes + new_active_nodes,
         drained_nodes=remaining_drained_nodes,
         reserve_drained_nodes=remaining_reserved_drained_nodes,
-        pending_ec2s=cluster.pending_ec2s,
-        disconnected_nodes=cluster.disconnected_nodes,
-        terminated_instances=cluster.terminated_instances,
     )
 
 
@@ -404,13 +397,10 @@ async def _try_attach_pending_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
                 still_pending_ec2.append(instance_data)
         except Ec2InvalidDnsNameError:
             logger.exception("Unexpected EC2 private dns")
-    return Cluster(
-        active_nodes=cluster.active_nodes,
+    return dataclasses.replace(
+        cluster,
         drained_nodes=cluster.drained_nodes + newly_attached_nodes,
-        reserve_drained_nodes=cluster.reserve_drained_nodes,
         pending_ec2s=still_pending_ec2,
-        disconnected_nodes=cluster.disconnected_nodes,
-        terminated_instances=cluster.terminated_instances,
     )
 
 
