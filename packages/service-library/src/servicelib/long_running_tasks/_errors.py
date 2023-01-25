@@ -30,7 +30,7 @@ class TaskCancelledError(BaseLongRunningError):
 class TaskExceptionError(BaseLongRunningError):
     code: str = "long_running_task.task_exception_error"
     msg_template: str = (
-        "Task {task_id} finished with exception: '{exception!r}'\n{traceback}"
+        "Task {task_id} finished with exception: '{exception}'\n{traceback}"
     )
 
 
