@@ -144,7 +144,6 @@ async def test_event_triggers_once(
     assert mocked_port_key_content_changed.call_count == 2
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_trigger_once_after_event_chain(
     event_filter: EventFilter,
     port_key_1: str,
