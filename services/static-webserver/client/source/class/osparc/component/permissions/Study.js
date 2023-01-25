@@ -141,10 +141,10 @@ qx.Class.define("osparc.component.permissions.Study", {
         });
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _deleteMember: function(collaborator) {
       const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
       if (!success) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
       }
 
       const params = {
@@ -156,12 +156,12 @@ qx.Class.define("osparc.component.permissions.Study", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.fireDataEvent("updateAccessRights", updatedData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
         });
     },
@@ -187,16 +187,7 @@ qx.Class.define("osparc.component.permissions.Study", {
         });
     },
 
-    _makeOwner: function(collaborator) {
-      this.__make(
-        collaborator["gid"],
-        this.self().getOwnerAccessRight(),
-        this.tr("Collaborator successfully made Owner"),
-        this.tr("Something went wrong making Collaborator Owner")
-      );
-    },
-
-    _makeCollaborator: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
@@ -205,12 +196,30 @@ qx.Class.define("osparc.component.permissions.Study", {
       );
     },
 
-    _makeViewer: function(collaborator) {
+    _promoteToOwner: function(collaborator) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getOwnerAccessRight(),
+        this.tr("Collaborator successfully made Owner"),
+        this.tr("Something went wrong making Collaborator Owner")
+      );
+    },
+
+    _demoteToViewer: function(collaborator) {
       this.__make(
         collaborator["gid"],
         this.self().getViewerAccessRight(),
         this.tr("Collaborator successfully made Viewer"),
         this.tr("Something went wrong making Collaborator Viewer")
+      );
+    },
+
+    _demoteToCollaborator: function(collaborator) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getCollaboratorAccessRight(),
+        this.tr("Owner successfully made Collaborator"),
+        this.tr("Something went wrong making Owner Collaborator")
       );
     }
   }

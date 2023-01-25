@@ -31,30 +31,30 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
     accessRights: {
       check: "Object",
-      apply: "_applyAccessRights",
+      apply: "__applyAccessRights",
       event: "changeAccessRights",
       nullable: true
     },
 
     showOptions: {
       check: "Boolean",
-      apply: "_applyShowOptions",
+      apply: "__applyShowOptions",
       event: "changeShowOptions",
       nullable: true
     }
   },
 
   events: {
-    "makeOwner": "qx.event.type.Data",
-    "makeCollaborator": "qx.event.type.Data",
-    "makeViewer": "qx.event.type.Data",
-    "removeCollaborator": "qx.event.type.Data"
+    "promoteToCollaborator": "qx.event.type.Data",
+    "promoteToOwner": "qx.event.type.Data",
+    "demoteToViewer": "qx.event.type.Data",
+    "demoteToCollaborator": "qx.event.type.Data",
+    "removeMember": "qx.event.type.Data"
   },
 
   statics: {
     canDelete: function(accessRights) {
-      let canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
-      canDelete = canDelete || (accessRights.getWrite_access ? accessRights.getWrite_access() : false);
+      const canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
       return canDelete;
     },
 
@@ -64,10 +64,28 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       return canWrite;
     },
 
-    canView: function(accessRights) {
-      let canView = accessRights.getRead ? accessRights.getRead() : false;
-      canView = canView || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
-      return canView;
+    canRead: function(accessRights) {
+      let canRead = accessRights.getRead ? accessRights.getRead() : false;
+      canRead = canRead || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
+      return canRead;
+    },
+
+    ROLES: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("Viewer"),
+        longLabel: qx.locale.Manager.tr("Viewer: Read access")
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Collaborator"),
+        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access")
+      },
+      3: {
+        id: "delete",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access")
+      }
     }
   },
 
@@ -117,29 +135,27 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       this.base(arguments, value);
     },
 
-    _applyAccessRights: function(value) {
+    __applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
-      const subtitle = this.getChildControl("contact");
-      const canDelete = this.self().canDelete(value);
-      const canWrite = this.self().canWrite(value);
-      if (canDelete) {
-        subtitle.setValue(this.tr("Owner"));
-      } else if (canWrite) {
-        subtitle.setValue(this.tr("Collaborator"));
-      } else {
-        subtitle.setValue(this.tr("Viewer"));
-      }
+
+      this.__setSubtitle();
+
+      const menu = this.__getOptionsMenu();
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setMenu(menu);
     },
 
-    _applyShowOptions: function(value) {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
-      if (value) {
-        const menu = this.__getOptionsMenu();
-        optionsMenu.setMenu(menu);
-        optionsMenu.setVisibility(menu.getChildren().length ? "visible" : "excluded");
+    __setSubtitle: function() {
+      const accessRights = this.getAccessRights();
+      const subtitle = this.getChildControl("contact");
+      if (this.self().canDelete(accessRights)) {
+        subtitle.setValue(this.self().ROLES[3].longLabel);
+      } else if (this.self().canWrite(accessRights)) {
+        subtitle.setValue(this.self().ROLES[2].longLabel);
+      } else {
+        subtitle.setValue(this.self().ROLES[1].longLabel);
       }
     },
 
@@ -149,62 +165,79 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-
-      const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
-      makeOwnerButton.addListener("execute", () => {
-        this.fireDataEvent("makeOwner", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
-      const makeCollabButton = new qx.ui.menu.Button(this.tr("Make Collaborator"));
-      makeCollabButton.addListener("execute", () => {
-        this.fireDataEvent("makeCollaborator", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
-      const makeViewerButton = new qx.ui.menu.Button(this.tr("Make Viewer"));
-      makeViewerButton.addListener("execute", () => {
-        this.fireDataEvent("makeViewer", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
-
-      const removeCollabButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
-      removeCollabButton.addListener("execute", () => {
-        this.fireDataEvent("removeCollaborator", {
-          gid: this.getKey(),
-          name: this.getTitle()
-        });
-      });
-
-      /*
-       * Owners can make this collaborator:
-       * - makeOwnerButton
-       * - makeCollabButton or makeViewerButton
-       * - removeCollabButton
-      */
-      if (!this.self().canDelete(accessRights)) {
-        if (this.self().canWrite(accessRights)) {
-          // collaborator
-          if (this.getCollabType() === 2) { // single user
-            menu.add(makeOwnerButton);
-          }
-          menu.add(makeViewerButton);
-        } else {
-          // viewer
-          if (this.getCollabType() === 2) { // single user
-            menu.add(makeOwnerButton);
-          }
-          menu.add(makeCollabButton);
-        }
-
-        menu.add(removeCollabButton);
+      let currentRole = this.self().ROLES[1];
+      if (this.self().canDelete(accessRights)) {
+        currentRole = this.self().ROLES[3];
+      } else if (this.self().canWrite(accessRights)) {
+        currentRole = this.self().ROLES[2];
       }
 
+      // promote/demote actions
+      switch (currentRole.id) {
+        case "read": {
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[2].label);
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToCollaborator", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(promoteButton);
+          break;
+        }
+        case "write": {
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[3].label);
+          promoteButton.addListener("execute", () => {
+            this.fireDataEvent("promoteToOwner", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(promoteButton);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[1].label);
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToViewer", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+          break;
+        }
+        case "delete": {
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[2].label);
+          demoteButton.addListener("execute", () => {
+            this.fireDataEvent("demoteToCollaborator", {
+              gid: this.getKey(),
+              name: this.getTitle()
+            });
+          });
+          menu.add(demoteButton);
+          break;
+        }
+      }
+
+      if (menu.getChildren().length) {
+        menu.addSeparator();
+      }
+
+      const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
+        textColor: "danger-red"
+      });
+      removeButton.addListener("execute", () => {
+        this.fireDataEvent("removeMember", {
+          gid: this.getKey(),
+          name: this.getTitle()
+        });
+      });
+      menu.add(removeButton);
+
       return menu;
+    },
+
+    __applyShowOptions: function(value) {
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.setVisibility(value ? "visible" : "excluded");
     }
   }
 });
