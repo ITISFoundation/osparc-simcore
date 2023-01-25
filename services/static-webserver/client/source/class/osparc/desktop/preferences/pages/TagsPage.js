@@ -16,6 +16,13 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     const title = this.tr("Tags");
     this.base(arguments, title, iconSrc);
 
+    const msg = this.tr("\
+    Tags are annotations to help users with grouping reources in the Dashboard. \
+    Once you have created the tags, you may assign them by accessing 'More options...' on the resource card");
+    const intro = this._createHelpLabel(msg);
+    this._add(intro);
+
+
     this.__createComponents();
     this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__container.set({
