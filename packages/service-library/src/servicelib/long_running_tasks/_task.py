@@ -300,7 +300,9 @@ class TasksManager:
                 task, task_id, reraise_errors=reraise_errors
             )
         except Exception as e:  # pylint:disable=broad-except
+
             formatted_traceback = "".join(
+                # pylint: disable=protected-access,no-value-for-parameter
                 traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
             )
             raise TaskExceptionError(
