@@ -26,7 +26,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/server/24";
     // const iconSrc = "@FontAwesome5Brands/hubspot/24";
-    const title = this.tr("Clusters Settings");
+    const title = this.tr("Clusters");
     this.base(arguments, title, iconSrc);
 
     const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({

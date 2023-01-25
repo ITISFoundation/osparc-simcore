@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/question-circle/24";
-    const title = this.tr("Confirmations Settings");
+    const title = this.tr("Confirmation Settings");
     this.base(arguments, title, iconSrc);
 
     const experimentalSettings = this.__createConfirmationsSettings();
@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
     __createConfirmationsSettings: function() {
       // layout
-      const box = this._createSectionBox("Confirmations preferences");
+      const box = this._createSectionBox();
 
       const label = this._createHelpLabel(this.tr("Provide warnings for the following actions:"));
       box.add(label);
