@@ -40,19 +40,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     EXPECTED_S4L_SERVICE_KEYS: {
       "simcore/services/dynamic/jupyter-smash": {
         title: "Start Sim4Life lab",
-        decription: "jupyter powered by Sim4Life",
+        description: "Jupyter powered by Sim4Life",
         idToWidget: "startJSmashButton"
       },
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
-        decription: "New Sim4Life project",
+        description: "New Sim4Life project",
         idToWidget: "startS4LButton"
       }
     },
     EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
         title: "Start Sim4Life lite",
-        decription: "New Sim4Life lite project",
+        description: "New Sim4Life lite project",
         idToWidget: "startS4LButton"
       }
     }
@@ -416,7 +416,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const versions = osparc.utils.Services.getVersions(services, serviceKey);
       if (versions.length && newButtonInfo) {
         const title = newButtonInfo.title;
-        const desc = newButtonInfo.decription;
+        const desc = newButtonInfo.description;
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
         newStudyFromServiceButton.setCardKey("new-"+serviceKey);
         osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
