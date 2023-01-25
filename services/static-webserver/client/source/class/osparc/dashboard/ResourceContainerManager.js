@@ -277,10 +277,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
             groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
-            // OM sort
-            const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
+            this._add(groupContainer);
+            this._getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
             // keep no-group last
-            this._addAt(groupContainer, idx);
+            const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
+            this._getChildren().push(this._getChildren().splice(idx, 1)[0]);
           }
           const card = this.__createCard(resourceData);
           groupContainer.add(card);
