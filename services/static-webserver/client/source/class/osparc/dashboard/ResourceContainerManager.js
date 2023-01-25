@@ -140,15 +140,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         visibility: "excluded"
       });
       this.__groupedContainers.push(groupContainer);
-
-      const compareByHeaderLabel = (a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel());
-      this.__groupedContainers.sort(compareByHeaderLabel);
-
       return groupContainer;
     },
 
     __createEmptyGroupContainer: function() {
-      const noGroupContainer = this.__createGroupContainer("no-group", this.tr("No Group"), "transparent");
+      const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
       return noGroupContainer;
     },
 
@@ -286,6 +282,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
             groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
+            // OM sort
             const idx = this._getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
             this._addAt(groupContainer, idx);
           }
