@@ -52,10 +52,10 @@ async def associate_ec2_instances_with_nodes(
 
 
 def try_assigning_task_to_node(
-    pending_task: Task, node_to_tasks: list[tuple[Node, list[Task]]]
+    pending_task: Task, instance_to_tasks: list[tuple[AssociatedInstance, list[Task]]]
 ) -> bool:
-    for node, node_assigned_tasks in node_to_tasks:
-        instance_total_resource = utils_docker.get_node_total_resources(node)
+    for instance, node_assigned_tasks in instance_to_tasks:
+        instance_total_resource = utils_docker.get_node_total_resources(instance.node)
         tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
             node_assigned_tasks
         )

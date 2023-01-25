@@ -177,4 +177,4 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
-    return app.state.settings
+    return cast(ApplicationSettings, app.state.settings)
