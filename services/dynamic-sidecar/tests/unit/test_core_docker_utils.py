@@ -10,10 +10,12 @@ from faker import Faker
 from models_library.services import RunID
 from pydantic import PositiveInt
 from pytest import FixtureRequest
+from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     get_docker_service_images,
     get_running_containers_count_from_names,
     get_volume_by_label,
+    pull_images,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
@@ -129,3 +131,64 @@ def test_get_docker_service_images(compose_spec_yaml: str):
         "nginx:latest",
         "simcore/services/dynamic/jupyter-math:2.1.3",
     }
+
+
+@pytest.mark.skip(
+    reason="Only for manual testing."
+    "Avoid this test in CI since it consumes disk and time"
+)
+async def test_issue_3793_pulling_images_raises_error():
+    """
+    Reproduces (sometimes) https://github.com/ITISFoundation/osparc-simcore/issues/3793
+    """
+
+    async def _print_progress(*args, **kwargs):
+        print("progress -> ", args, kwargs)
+
+    async def _print_log(*args, **kwargs):
+        print("log -> ", args, kwargs)
+
+    for n in range(2):
+        await pull_images(
+            images={
+                "ubuntu:latest",
+                "ubuntu:18.04",
+                "ubuntu:22.04",
+                "ubuntu:22.10",
+                "ubuntu:23.04",
+                "ubuntu:14.04",
+                "itisfoundation/mattward-viewer:latest",  # 6.1 GB
+            },
+            registry_settings=RegistrySettings(
+                REGISTRY_AUTH=False,
+                REGISTRY_USER="",
+                REGISTRY_PW="",
+                REGISTRY_SSL=False,
+            ),
+            progress_cb=_print_progress,
+            log_cb=_print_log,
+        )
+
+
+@pytest.mark.parametrize("repeat", ["first-pull", "repeat-pull"])
+async def test_pull_image(repeat: str):
+    async def _print_progress(current: int, total: int):
+        print("progress ->", f"{current=}", f"{total=}")
+
+    async def _print_log(msg):
+        assert "alpine" in msg
+        print("log -> ", msg)
+
+    await pull_images(
+        images={
+            "alpine:latest",
+        },
+        registry_settings=RegistrySettings(
+            REGISTRY_AUTH=False,
+            REGISTRY_USER="",
+            REGISTRY_PW="",
+            REGISTRY_SSL=False,
+        ),
+        progress_cb=_print_progress,
+        log_cb=_print_log,
+    )
