@@ -74,7 +74,8 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
         default=0,
-        description="Buffer of readily available machines for fast usage (always on)",
+        description="Constant reserve of drained ready machines for fast(er) usage,"
+        "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
