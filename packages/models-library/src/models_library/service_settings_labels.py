@@ -156,7 +156,7 @@ class PathMappingsLabel(BaseModel):
         description="optional list unix shell rules used to exclude files from the state",
     )
 
-    volume_limits: Optional[dict[str, str]] = Field(
+    volume_size_limits: Optional[dict[str, str]] = Field(
         None,
         description=(
             "Apply volume size limits to entries in `inputs_path` `outputs_path` "
@@ -164,7 +164,7 @@ class PathMappingsLabel(BaseModel):
         ),
     )
 
-    @validator("volume_limits")
+    @validator("volume_size_limits")
     @classmethod
     def validate_volume_limits(cls, v, values) -> Optional[str]:
         if v is None:
@@ -208,7 +208,7 @@ class PathMappingsLabel(BaseModel):
                     "inputs_path": "/t_inp",
                     "state_paths": [f"/s{x}" for x in range(len(ALLOWED_DOCKER_SIZE))]
                     + ["/s"],
-                    "volume_limits": {
+                    "volume_size_limits": {
                         f"/s{k}": f"1{x}" for k, x in enumerate(ALLOWED_DOCKER_SIZE)
                     }
                     | {"/s": "1"},

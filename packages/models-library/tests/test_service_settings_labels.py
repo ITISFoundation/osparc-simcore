@@ -156,7 +156,7 @@ def test_path_mappings_label_unsupported_size_constraints():
                 "outputs_path": "/so",
                 "inputs_path": "/si",
                 "state_paths": [],
-                "volume_limits": {"/si": "1d"},
+                "volume_size_limits": {"/si": "1d"},
             },
         )
     assert (
@@ -172,7 +172,7 @@ def test_path_mappings_label_defining_constraing_on_missing_path():
                 "outputs_path": "/so",
                 "inputs_path": "/si",
                 "state_paths": [],
-                "volume_limits": {"/missing": "1"},
+                "volume_size_limits": {"/missing": "1"},
             },
         )
     assert "path=PosixPath('/missing') not found in" in f"{exec_into.value}"
