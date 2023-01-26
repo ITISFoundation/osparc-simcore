@@ -278,7 +278,7 @@ qx.Class.define("osparc.Application", {
 
     __startupChecks: function() {
       const platformName = osparc.utils.LibVersions.getPlatformName();
-      if (platformName !== "master") {
+      if (platformName !== "OM-REMOVE-master") {
         // first, pop up new relaese window
         this.__checkNewRelease();
         // then, pop up cookies accepted window. It will go on top.
@@ -288,12 +288,22 @@ qx.Class.define("osparc.Application", {
 
     __checkNewRelease: function() {
       const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRef();
+      const thisCommit = osparc.utils.LibVersions.getVcsRef();
       if (lastCommit) {
-        const thisCommit = osparc.utils.LibVersions.getVcsRef();
         if (lastCommit !== thisCommit) {
           console.log("New Release!!");
-          osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
+          const newRelease = new osparc.NewRelease();
+          const title = this.tr("New Release");
+          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 200, 120).set({
+            clickAwayClose: false,
+            resizable: false,
+            showClose: true
+          });
+          const closeBtn = win.getChildControl("close-button");
+          osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
         }
+      } else {
+        osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
       }
     },
 
