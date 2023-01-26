@@ -76,9 +76,10 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy(
         score_type=closest_instance_policy,
     )
 
-    assert found_instance.dict(exclude={"name"}) == expected_ec2_instance.dict(
-        exclude={"name"}
-    )
+    SKIPPED_KEYS = ["name"]
+    for k in found_instance.__dict__.keys():
+        if k not in SKIPPED_KEYS:
+            assert getattr(found_instance, k) == getattr(expected_ec2_instance, k)
 
 
 def test_compose_user_data(faker: Faker):
