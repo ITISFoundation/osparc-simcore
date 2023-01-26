@@ -48,7 +48,9 @@ def mock_env(
 
 
 @pytest.fixture()
-def internet_to_group(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict]]:
+def give_internet_to_group(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[Callable[..., dict]]:
     created_group_ids = []
 
     def creator(**groups_extra_properties_kwargs) -> dict[str, Any]:
@@ -56,7 +58,7 @@ def internet_to_group(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., d
             # removes all users before continuing
             groups_extra_properties_config = {
                 "group_id": len(created_group_ids) + 1,
-                "has_access": True,
+                "internet_access": True,
             }
             groups_extra_properties_config.update(groups_extra_properties_kwargs)
 
@@ -98,12 +100,12 @@ def with_internet_access(request: FixtureRequest) -> bool:
 async def user(
     mock_env: EnvVarsDict,
     registered_user: Callable[..., dict],
-    internet_to_group: Callable[..., dict],
+    give_internet_to_group: Callable[..., dict],
     with_internet_access: bool,
 ) -> dict[str, Any]:
     user = registered_user()
     if with_internet_access:
-        internet_to_group(group_id=user["primary_gid"])
+        give_internet_to_group(group_id=user["primary_gid"])
     return user
 
 
