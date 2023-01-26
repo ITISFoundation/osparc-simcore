@@ -14,7 +14,7 @@ from simcore_service_autoscaling.core.errors import (
 )
 from simcore_service_autoscaling.models import Resources
 from simcore_service_autoscaling.utils.ec2 import (
-    EC2Instance,
+    EC2InstanceType,
     closest_instance_policy,
     compose_user_data,
     find_best_fitting_ec2_instance,
@@ -31,9 +31,9 @@ async def test_find_best_fitting_ec2_instance_with_no_instances_raises():
 
 
 @pytest.fixture
-def random_fake_available_instances(faker: Faker) -> list[EC2Instance]:
+def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
     list_of_instances = [
-        EC2Instance(
+        EC2InstanceType(
             name=faker.pystr(),
             cpus=n,
             ram=ByteSize(n),
@@ -45,7 +45,7 @@ def random_fake_available_instances(faker: Faker) -> list[EC2Instance]:
 
 
 async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_raises(
-    random_fake_available_instances: list[EC2Instance],
+    random_fake_available_instances: list[EC2InstanceType],
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
         find_best_fitting_ec2_instance(
@@ -60,17 +60,17 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
     [
         (
             Resources(cpus=n, ram=ByteSize(n)),
-            EC2Instance(name="fake", cpus=n, ram=ByteSize(n)),
+            EC2InstanceType(name="fake", cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)
     ],
 )
 async def test_find_best_fitting_ec2_instance_closest_instance_policy(
     needed_resources: Resources,
-    expected_ec2_instance: EC2Instance,
-    random_fake_available_instances: list[EC2Instance],
+    expected_ec2_instance: EC2InstanceType,
+    random_fake_available_instances: list[EC2InstanceType],
 ):
-    found_instance: EC2Instance = find_best_fitting_ec2_instance(
+    found_instance: EC2InstanceType = find_best_fitting_ec2_instance(
         allowed_ec2_instances=random_fake_available_instances,
         resources=needed_resources,
         score_type=closest_instance_policy,

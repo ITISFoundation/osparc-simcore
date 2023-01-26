@@ -23,7 +23,13 @@ from .core.errors import (
     Ec2TooManyInstancesError,
 )
 from .core.settings import ApplicationSettings, get_application_settings
-from .models import AssociatedInstance, Cluster, EC2Instance, EC2InstanceData, Resources
+from .models import (
+    AssociatedInstance,
+    Cluster,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from .modules.docker import get_docker_client
 from .modules.ec2 import get_ec2_client
 from .utils import ec2, utils_docker
@@ -231,16 +237,16 @@ async def _activate_drained_nodes(
 async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list[Task],
-    available_ec2_types: list[EC2Instance],
+    available_ec2_types: list[EC2InstanceType],
     cluster: Cluster,
-) -> dict[EC2Instance, int]:
+) -> dict[EC2InstanceType, int]:
     type_to_instance_map = {t.name: t for t in available_ec2_types}
 
     # 1. check first the pending task needs
     pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]] = [
         (i, []) for i in cluster.pending_ec2s
     ]
-    needed_new_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
+    needed_new_instance_to_tasks: list[tuple[EC2InstanceType, list[Task]]] = []
     for task in pending_tasks:
         if await try_assigning_task_to_pending_instances(
             app, task, pending_instance_to_tasks, type_to_instance_map
@@ -295,7 +301,7 @@ async def _find_needed_instances(
 
 
 async def _start_instances(
-    app: FastAPI, needed_instances: dict[EC2Instance, int], tasks: list[Task]
+    app: FastAPI, needed_instances: dict[EC2InstanceType, int], tasks: list[Task]
 ) -> list[EC2InstanceData]:
     ec2_client = get_ec2_client(app)
     app_settings: ApplicationSettings = app.state.settings
@@ -364,7 +370,7 @@ async def _scale_up_cluster(
         )
     )
 
-    def _sort_according_to_allowed_types(instance_type: EC2Instance) -> int:
+    def _sort_according_to_allowed_types(instance_type: EC2InstanceType) -> int:
         assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         return app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.index(
             instance_type.name

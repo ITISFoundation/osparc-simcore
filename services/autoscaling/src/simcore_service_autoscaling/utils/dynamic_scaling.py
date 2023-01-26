@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, Task
 
 from ..core.errors import Ec2InvalidDnsNameError
-from ..models import AssociatedInstance, EC2Instance, EC2InstanceData, Resources
+from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
 
@@ -68,7 +68,8 @@ def try_assigning_task_to_node(
 
 
 def try_assigning_task_to_instances(
-    pending_task: Task, list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]]
+    pending_task: Task,
+    list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[Task]]],
 ) -> bool:
     for instance, instance_assigned_tasks in list_of_instance_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
@@ -91,7 +92,7 @@ async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
     list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]],
-    type_to_instance_map: dict[str, EC2Instance],
+    type_to_instance_map: dict[str, EC2InstanceType],
 ) -> bool:
     for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
         instance_type = type_to_instance_map[instance.type]
