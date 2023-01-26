@@ -319,7 +319,6 @@ qx.Class.define("osparc.Application", {
           resizable: false,
           showClose: false
         });
-        win.center();
         cookiePolicy.addListener("cookiesAccepted", () => {
           osparc.CookiePolicy.acceptCookies();
           win.close();
