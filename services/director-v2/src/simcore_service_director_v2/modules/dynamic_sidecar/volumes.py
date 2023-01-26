@@ -156,6 +156,7 @@ class DynamicSidecarVolumesPathsResolver:
             run_id=run_id,
             project_id=project_id,
             user_id=user_id,
+            volume_size_limit="1M",
         )
 
     @classmethod
