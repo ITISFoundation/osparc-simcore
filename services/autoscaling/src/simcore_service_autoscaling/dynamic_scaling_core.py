@@ -479,15 +479,18 @@ async def _scale_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
     )
     # we have a number of pending tasks, try to resolve them with drained nodes if possible
-    pending_tasks, cluster = await _activate_drained_nodes(app, cluster, pending_tasks)
+    still_pending_tasks, cluster = await _activate_drained_nodes(
+        app, cluster, pending_tasks
+    )
     # let's check if there are still pending tasks or if the reserve was used
-    if pending_tasks or (
+    if still_pending_tasks or (
         len(cluster.reserve_drained_nodes)
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
         # yes? then scale up
-        cluster = await _scale_up_cluster(app, cluster, pending_tasks)
-    else:
+        cluster = await _scale_up_cluster(app, cluster, still_pending_tasks)
+    elif still_pending_tasks == pending_tasks:
+        # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
         cluster = await _deactivate_empty_nodes(app, cluster)
         cluster = await _try_scale_down_cluster(app, cluster)
 

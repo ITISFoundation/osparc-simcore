@@ -3,7 +3,7 @@ import itertools
 import logging
 
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Availability, Task
+from models_library.generated_models.docker_rest_api import Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessage,
@@ -87,25 +87,17 @@ async def create_autoscaling_status_message(
     )
     return RabbitAutoscalingStatusMessage.construct(
         origin=f"{app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS}",
-        nodes_total=len(monitored_nodes),
-        nodes_active=len(
-            [
-                n
-                for n in monitored_nodes
-                if n.Spec and (n.Spec.Availability is Availability.active)
-            ]
-        ),
-        nodes_drained=len(
-            [
-                n
-                for n in monitored_nodes
-                if n.Spec and (n.Spec.Availability is Availability.drain)
-            ]
-        ),
+        nodes_total=len(cluster.active_nodes)
+        + len(cluster.drained_nodes)
+        + len(cluster.reserve_drained_nodes),
+        nodes_active=len(cluster.active_nodes),
+        nodes_drained=len(cluster.drained_nodes),
         cluster_total_resources=total_resources.dict(),
         cluster_used_resources=used_resources.dict(),
         instances_pending=len(cluster.pending_ec2s),
-        instances_running=len(monitored_nodes),
+        instances_running=len(cluster.active_nodes)
+        + len(cluster.drained_nodes)
+        + len(cluster.reserve_drained_nodes),
     )
 
 
