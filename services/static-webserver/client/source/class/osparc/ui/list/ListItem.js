@@ -223,7 +223,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
     },
 
     __applySubtitle: function(value) {
-      if (value === null) {
+      if ([null, undefined, ""].includes(value)) {
         return;
       }
       const label = this.getChildControl("subtitle");
@@ -231,7 +231,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
     },
 
     __applySubtitleMD: function(value) {
-      if (value === null) {
+      if ([null, undefined, ""].includes(value)) {
         return;
       }
       const label = this.getChildControl("subtitle-md");

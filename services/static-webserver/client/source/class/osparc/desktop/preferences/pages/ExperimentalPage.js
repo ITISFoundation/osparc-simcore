@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/flask/24";
-    const title = this.tr("Experimental");
+    const title = this.tr("Experimental Features");
     this.base(arguments, title, iconSrc);
 
     const themeSelector = this.__createThemesSelector();

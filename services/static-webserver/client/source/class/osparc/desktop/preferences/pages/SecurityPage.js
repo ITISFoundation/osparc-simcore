@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/shield-alt/24";
-    const title = this.tr("Security");
+    const title = this.tr("Security Settings");
     this.base(arguments, title, iconSrc);
 
     this.add(this.__createPasswordSection());

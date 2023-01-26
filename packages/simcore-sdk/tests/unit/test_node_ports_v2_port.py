@@ -21,7 +21,7 @@ from attr import dataclass
 from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
-from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB, ProgressData
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
@@ -178,6 +178,7 @@ async def mock_download_file(
         file_name: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
     ) -> Path:
+        await io_log_redirect_cb("mock_message")
         assert f"{local_folder}".startswith(f"{download_file_folder}")
         destination_path = local_folder / this_node_file.name
         destination_path.parent.mkdir(parents=True, exist_ok=True)
@@ -586,13 +587,18 @@ async def test_valid_port(
     exp_new_get_value: Union[int, float, bool, str, Path],
     another_node_file: Path,
 ):
+    async def _io_log_redirect_cb(
+        msg: str, progress_data: Optional[ProgressData] = None
+    ) -> None:
+        print(f"{msg=}, {progress_data=}")
+
     @dataclass
     class FakeNodePorts:
         user_id: int
         project_id: str
         node_uuid: str
         r_clone_settings: Optional[Any] = None
-        io_log_redirect_cb: Optional[LogRedirectCB] = None
+        io_log_redirect_cb: Optional[LogRedirectCB] = _io_log_redirect_cb
 
         @staticmethod
         async def get(key):

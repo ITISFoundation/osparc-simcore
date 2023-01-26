@@ -332,7 +332,7 @@ qx.Class.define("osparc.utils.Utils", {
         msg = qx.locale.Manager.tr("This account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
       }
       msg += "</br>";
-      msg += qx.locale.Manager.tr("Please, contact us by email:");
+      msg += qx.locale.Manager.tr("Please contact us by email:");
       msg += "</br>";
       return new Promise(resolve => {
         osparc.store.VendorInfo.getInstance().getSupportEmail()

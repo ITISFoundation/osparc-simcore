@@ -114,10 +114,10 @@ qx.Class.define("osparc.component.permissions.Service", {
         });
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _deleteMember: function(collaborator) {
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
       }
 
       const params = {
@@ -130,17 +130,17 @@ qx.Class.define("osparc.component.permissions.Service", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
         });
     },
 
-    _makeOwner: function(collaborator) {
+    _promoteToCollaborator: function(collaborator) {
       this._serializedData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
       const params = {
         url: osparc.data.Resources.getServiceUrl(
@@ -152,22 +152,44 @@ qx.Class.define("osparc.component.permissions.Service", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Viewer successfully made Collaborator"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Viewer Collaborator"), "ERROR");
           console.error(err);
         });
     },
 
-    _makeCollaborator: function(collaborator) {
-      return;
+    _promoteToOwner: function(collaborator) {
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
-    _makeViewer: function(collaborator) {
-      return;
+    _demoteToViewer: function(collaborator) {
+      this._serializedData["accessRights"][collaborator["gid"]] = this.self().getCollaboratorAccessRight();
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          this._serializedData["key"],
+          this._serializedData["version"]
+        ),
+        data: this._serializedData
+      };
+      osparc.data.Resources.fetch("services", "patch", params)
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Viewer"));
+          this.__reloadOrganizationsAndMembers();
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Viewer"), "ERROR");
+          console.error(err);
+        });
+    },
+
+    _demoteToCollaborator: function(collaborator) {
+      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }
 });

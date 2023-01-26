@@ -191,7 +191,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 if (nDynamics > maxNumber) {
                   let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
                   msg += "<br>";
-                  msg += this.tr("Please, start them manually.");
+                  msg += this.tr("Please start them manually.");
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
                 }
               }
