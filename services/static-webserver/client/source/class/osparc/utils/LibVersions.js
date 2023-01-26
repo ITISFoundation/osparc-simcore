@@ -32,6 +32,16 @@ qx.Class.define("osparc.utils.LibVersions", {
       return remoteUrl;
     },
 
+    getVcsRefUrl: function() {
+      const commitId = this.getVcsRef();
+      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
+      let url = remoteUrl;
+      if (commitId) {
+        url = remoteUrl + "/commits/" + String(commitId) + "/";
+      }
+      return url;
+    },
+
     getVcsRef: function() {
       return qx.core.Environment.get("osparc.vcsRef");
     },
@@ -39,17 +49,12 @@ qx.Class.define("osparc.utils.LibVersions", {
     getPlatformVersion: function() {
       const name = "osparc-simcore";
       const commitId = this.getVcsRef();
-      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
-
-      let url = remoteUrl;
-      if (commitId) {
-        url = remoteUrl + "/tree/" + String(commitId) + "/";
-      }
+      const remoteUrl = this.getVcsRefUrl();
 
       return {
         name: name,
         version: commitId.substring(0, 7),
-        url: url
+        url: remoteUrl
       };
     },
 
