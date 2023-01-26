@@ -9,8 +9,10 @@ from fastapi import FastAPI
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_postgres_database.models.internet_to_groups import internet_to_groups
-from simcore_service_director_v2.modules.db.repositories.internet_to_groups import (
+from simcore_postgres_database.models.groups_extra_properties import (
+    groups_extra_properties,
+)
+from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
     InternetToGroupsRepository,
 )
 from simcore_service_director_v2.utils.db import get_repository
@@ -49,25 +51,25 @@ def mock_env(
 def internet_to_group(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict]]:
     created_group_ids = []
 
-    def creator(**internet_to_groups_kwargs) -> dict[str, Any]:
+    def creator(**groups_extra_properties_kwargs) -> dict[str, Any]:
         with postgres_db.connect() as con:
             # removes all users before continuing
-            internet_to_groups_config = {
+            groups_extra_properties_config = {
                 "group_id": len(created_group_ids) + 1,
                 "has_access": True,
             }
-            internet_to_groups_config.update(internet_to_groups_kwargs)
+            groups_extra_properties_config.update(groups_extra_properties_kwargs)
 
             con.execute(
-                internet_to_groups.insert()
-                .values(internet_to_groups_config)
+                groups_extra_properties.insert()
+                .values(groups_extra_properties_config)
                 .returning(sa.literal_column("*"))
             )
             # this is needed to get the primary_gid correctly
             result = con.execute(
-                sa.select([internet_to_groups]).where(
-                    internet_to_groups.c.group_id
-                    == internet_to_groups_config["group_id"]
+                sa.select([groups_extra_properties]).where(
+                    groups_extra_properties.c.group_id
+                    == groups_extra_properties_config["group_id"]
                 )
             )
             entry = result.first()
@@ -80,11 +82,11 @@ def internet_to_group(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., d
 
     with postgres_db.connect() as con:
         con.execute(
-            internet_to_groups.delete().where(
-                internet_to_groups.c.group_id.in_(created_group_ids)
+            groups_extra_properties.delete().where(
+                groups_extra_properties.c.group_id.in_(created_group_ids)
             )
         )
-    print(f"<-- deleted internet_to_groups {created_group_ids=}")
+    print(f"<-- deleted groups_extra_properties {created_group_ids=}")
 
 
 @pytest.fixture(params=[True, False])
@@ -108,11 +110,11 @@ async def user(
 async def test_has_access(
     initialized_app: FastAPI, user: dict[str, Any], with_internet_access: bool
 ):
-    internet_to_groups = cast(
+    groups_extra_properties = cast(
         InternetToGroupsRepository,
         get_repository(initialized_app, InternetToGroupsRepository),
     )
-    allow_internet_access: bool = await internet_to_groups.has_access(
+    allow_internet_access: bool = await groups_extra_properties.has_access(
         user_id=user["id"]
     )
     assert allow_internet_access is with_internet_access

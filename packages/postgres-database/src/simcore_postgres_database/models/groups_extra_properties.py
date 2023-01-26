@@ -4,10 +4,10 @@ from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 
 #
-# internet_to_groups: Maps internet access permissions to groups
+# groups_extra_properties: Maps internet access permissions to groups
 #
-internet_to_groups = sa.Table(
-    "internet_to_groups",
+groups_extra_properties = sa.Table(
+    "groups_extra_properties",
     metadata,
     sa.Column(
         "group_id",
