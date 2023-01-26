@@ -45,6 +45,13 @@ qx.Class.define("osparc.utils.Utils", {
         return this.getLocalStorageItem("themeName");
       },
 
+      getLastCommitVcsRef: function() {
+        return this.getLocalStorageItem("lastVcsRef");
+      },
+      setLastCommitVcsRef: function(vcsRef) {
+        this.setLocalStorageItem("lastVcsRef", vcsRef);
+      },
+
       serviceToFavs: function(serviceKey) {
         let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
