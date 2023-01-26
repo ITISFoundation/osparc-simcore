@@ -4,13 +4,14 @@
 
 import asyncio
 import collections
+import datetime
 import logging
 import re
-from datetime import datetime
 from typing import Final, Optional, cast
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
+    Availability,
     Node,
     NodeState,
     Service,
@@ -22,7 +23,8 @@ from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
-from ..models import Resources
+from ..core.settings import ApplicationSettings
+from ..models import AssociatedInstance, Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -159,7 +161,12 @@ async def pending_service_tasks_with_insufficient_resources(
     sorted_tasks = sorted(
         tasks,
         key=lambda task: cast(  # NOTE: some mypy fun here
-            datetime, (to_datetime(task.CreatedAt or f"{datetime.utcnow()}"))
+            datetime.datetime,
+            (
+                to_datetime(
+                    task.CreatedAt or f"{datetime.datetime.now(datetime.timezone.utc)}"
+                )
+            ),
         ),
     )
 
@@ -367,3 +374,36 @@ async def set_node_availability(
         tags=cast(dict[DockerLabelKey, str], node.Spec.Labels),
         available=available,
     )
+
+
+def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, str]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    return {
+        tag_key: "true"
+        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+    } | {
+        tag_key: "true"
+        for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
+    }
+
+
+async def get_drained_empty_nodes(
+    docker_client: AutoscalingDocker,
+    app_settings: ApplicationSettings,
+    associated_instances: list[AssociatedInstance],
+) -> list[AssociatedInstance]:
+    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    return [
+        instance
+        for instance in associated_instances
+        if (
+            await compute_node_used_resources(
+                docker_client,
+                instance.node,
+                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+            )
+            == Resources.create_as_empty()
+        )
+        and (instance.node.Spec is not None)
+        and (instance.node.Spec.Availability == Availability.drain)
+    ]

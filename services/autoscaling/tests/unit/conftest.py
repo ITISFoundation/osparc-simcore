@@ -3,9 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-import datetime
 import json
 import random
+from datetime import timezone
 from pathlib import Path
 from typing import (
     Any,
@@ -223,8 +223,8 @@ def fake_node(faker: Faker) -> Node:
     return Node(
         ID=faker.uuid4(),
         Version=ObjectVersion(Index=faker.pyint()),
-        CreatedAt=faker.date_time().isoformat(),
-        UpdatedAt=faker.date_time().isoformat(),
+        CreatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
+        UpdatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
         Description=NodeDescription(
             Hostname=faker.pystr(),
             Resources=ResourceObject(
@@ -626,14 +626,22 @@ def aws_instance_private_dns() -> str:
 
 
 @pytest.fixture
-def ec2_instance_data(faker: Faker, aws_instance_private_dns: str) -> EC2InstanceData:
-    return EC2InstanceData(
-        launch_time=faker.date_time(tzinfo=datetime.timezone.utc),
-        id=faker.uuid4(),
-        aws_private_dns=aws_instance_private_dns,
-        type=faker.pystr(),
-        state="running",
-    )
+def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
+    def _creator(**overrides) -> EC2InstanceData:
+        return EC2InstanceData(
+            **(
+                {
+                    "launch_time": faker.date_time(tzinfo=timezone.utc),
+                    "id": faker.uuid4(),
+                    "aws_private_dns": faker.name(),
+                    "type": faker.pystr(),
+                    "state": faker.pystr(),
+                }
+                | overrides
+            )
+        )
+
+    return _creator
 
 
 @pytest.fixture

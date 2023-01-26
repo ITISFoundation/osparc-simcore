@@ -7,7 +7,7 @@
 
 import asyncio
 import datetime
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
@@ -22,13 +22,13 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.dynamic_scaling_core import (
-    _find_terminateable_nodes,
-    _mark_empty_active_nodes_to_drain,
+    _activate_drained_nodes,
+    _deactivate_empty_nodes,
+    _find_terminateable_instances,
     _try_scale_down_cluster,
-    _try_scale_up_with_drained_nodes,
     cluster_scaling_from_labelled_services,
 )
-from simcore_service_autoscaling.models import Resources
+from simcore_service_autoscaling.models import AssociatedInstance, Resources
 from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
@@ -38,9 +38,9 @@ from types_aiobotocore_ec2.client import EC2Client
 
 
 @pytest.fixture
-def mock_terminate_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
     mocked_terminate_instance = mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instance",
+        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instances",
         autospec=True,
     )
     yield mocked_terminate_instance
@@ -48,24 +48,14 @@ def mock_terminate_instance(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 @pytest.fixture
 def mock_start_aws_instance(
-    mocker: MockerFixture, ec2_instance_data: EC2InstanceData
+    mocker: MockerFixture,
+    aws_instance_private_dns: str,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
     mocked_start_aws_instance = mocker.patch(
         "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.start_aws_instance",
         autospec=True,
-        return_value=ec2_instance_data,
-    )
-    yield mocked_start_aws_instance
-
-
-@pytest.fixture
-def mock_get_running_instance(
-    mocker: MockerFixture, ec2_instance_data: EC2InstanceData
-) -> Iterator[mock.Mock]:
-    mocked_start_aws_instance = mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.get_running_instance",
-        autospec=True,
-        return_value=ec2_instance_data,
+        return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )
     yield mocked_start_aws_instance
 
@@ -122,6 +112,13 @@ def mock_remove_nodes(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
+def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> Iterator[int]:
+    num_machines_in_buffer = 5
+    monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
+    yield num_machines_in_buffer
+
+
+@pytest.fixture
 def minimal_configuration(
     docker_swarm: None,
     disabled_rabbitmq: None,
@@ -164,15 +161,54 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_start_aws_instance: mock.Mock,
-    mock_terminate_instance: mock.Mock,
+    mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
-    mock_terminate_instance.assert_not_called()
+    mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
+
+
+# async def test_cluster_scaling_from_labelled_services_with_no_services_and_machine_buffer_starts_expected_machines(
+#     minimal_configuration: None,
+#     mock_machines_buffer: int,
+#     app_settings: ApplicationSettings,
+#     initialized_app: FastAPI,
+#     aws_allowed_ec2_instance_type_names: list[str],
+#     mock_start_aws_instance: mock.Mock,
+#     mock_terminate_instances: mock.Mock,
+#     mock_rabbitmq_post_message: mock.Mock,
+# ):
+#     assert app_settings.AUTOSCALING_EC2_INSTANCES
+#     assert (
+#         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+#         == mock_machines_buffer
+#     )
+#     await cluster_scaling_from_labelled_services(initialized_app)
+#     mock_start_aws_instance.assert_called_once()
+#     assert "number_of_instances" in mock_start_aws_instance.call_args[1]
+#     assert (
+#         mock_start_aws_instance.call_args[1]["number_of_instances"]
+#         == mock_machines_buffer
+#     )
+#     assert "instance_type" in mock_start_aws_instance.call_args[1]
+#     assert (
+#         mock_start_aws_instance.call_args[1]["instance_type"]
+#         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[0]
+#     )
+#     mock_terminate_instances.assert_not_called()
+#     _assert_rabbit_autoscaling_message_sent(
+#         mock_rabbitmq_post_message, app_settings, initialized_app
+#     )
+#     # now calling the function again should do nothing
+#     mock_start_aws_instance.reset_mock()
+#     await cluster_scaling_from_labelled_services(initialized_app)
+#     await cluster_scaling_from_labelled_services(initialized_app)
+#     mock_start_aws_instance.assert_not_called()
+#     mock_terminate_instances.assert_not_called()
 
 
 async def test_cluster_scaling_from_labelled_services_with_service_with_too_much_resources_starts_nothing(
@@ -186,7 +222,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     mock_start_aws_instance: mock.Mock,
-    mock_terminate_instance: mock.Mock,
+    mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
     task_template_with_too_many_resource = task_template | create_task_reservations(
@@ -200,7 +236,7 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
 
     await cluster_scaling_from_labelled_services(initialized_app)
     mock_start_aws_instance.assert_not_called()
-    mock_terminate_instance.assert_not_called()
+    mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
@@ -254,6 +290,7 @@ async def test_cluster_scaling_up(
         "io.simcore.autoscaling.version",
         "io.simcore.autoscaling.monitored_nodes_labels",
         "io.simcore.autoscaling.monitored_services_labels",
+        "Name",
     ]
     for tag_dict in running_instance["Tags"]:
         assert "Key" in tag_dict
@@ -270,7 +307,11 @@ async def test_cluster_scaling_up(
     mock_set_node_availability.assert_not_called()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
-        mock_rabbitmq_post_message, app_settings, initialized_app, instances_running=1
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        instances_running=0,
+        instances_pending=1,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -421,6 +462,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             "io.simcore.autoscaling.version",
             "io.simcore.autoscaling.monitored_nodes_labels",
             "io.simcore.autoscaling.monitored_services_labels",
+            "Name",
         ]
         for tag_dict in instance["Tags"]:
             assert "Key" in tag_dict
@@ -441,26 +483,31 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        instances_running=scale_up_params.expected_num_instances,
+        instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
 
 
-async def test__mark_empty_active_nodes_to_drain(
+async def test__deactivate_empty_nodes(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_tag_node: mock.Mock,
 ):
     # since we have no service running, we expect the passed node to be set to drain
-    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    await _deactivate_empty_nodes(
+        initialized_app,
+        [AssociatedInstance(host_node, fake_ec2_instance_data())],
+    )
     mock_tag_node.assert_called_once_with(mock.ANY, host_node, tags={}, available=False)
 
 
-async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missing_labels(
+async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missing_labels(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_tag_node: mock.Mock,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
@@ -479,15 +526,18 @@ async def test__mark_empty_active_nodes_to_drain_when_services_running_are_missi
         "running",
     )
 
-    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    await _deactivate_empty_nodes(
+        initialized_app, [AssociatedInstance(host_node, fake_ec2_instance_data())]
+    )
     mock_tag_node.assert_called_once_with(mock.ANY, host_node, tags={}, available=False)
 
 
-async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_running_with_correct_labels(
+async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with_correct_labels(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     host_node: Node,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_tag_node: mock.Mock,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
@@ -509,7 +559,9 @@ async def test__mark_empty_active_nodes_to_drain_does_not_drain_if_service_is_ru
     )
 
     # since we have no service running, we expect the passed node to be set to drain
-    await _mark_empty_active_nodes_to_drain(initialized_app, [host_node])
+    await _deactivate_empty_nodes(
+        initialized_app, [AssociatedInstance(host_node, fake_ec2_instance_data())]
+    )
     mock_tag_node.assert_not_called()
 
 
@@ -517,27 +569,23 @@ async def test__find_terminateable_nodes_with_no_hosts(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     # there is no node to terminate, since the host is not an EC2 instance and is not drained
-    assert await _find_terminateable_nodes(initialized_app, [host_node]) == []
-
-
-async def test__find_terminateable_nodes_with_drained_host_but_not_in_ec2(
-    minimal_configuration: None,
-    initialized_app: FastAPI,
-    drained_host_node: Node,
-):
-    # there is no node to terminate, since the host is not an EC2 instance
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
+    assert (
+        await _find_terminateable_instances(
+            initialized_app, [AssociatedInstance(host_node, fake_ec2_instance_data())]
+        )
+        == []
+    )
 
 
 async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     minimal_configuration: None,
     initialized_app: FastAPI,
     drained_host_node: Node,
-    mock_get_running_instance: mock.Mock,
-    ec2_instance_data: EC2InstanceData,
     app_settings: ApplicationSettings,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -546,66 +594,57 @@ async def test__find_terminateable_nodes_with_drained_host_and_in_ec2(
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
     # if the instance started just about now, then it should not be terminateable
-    mock_get_running_instance.return_value = replace(
-        ec2_instance_data,
-        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc),
+    attached_ec2_nowish = AssociatedInstance(
+        drained_host_node,
+        fake_ec2_instance_data(
+            launch_time=datetime.datetime.now(datetime.timezone.utc)
+        ),
     )
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
-    mock_get_running_instance.assert_called_once_with(
-        mock.ANY,
-        app_settings.AUTOSCALING_EC2_INSTANCES,
-        tag_keys=["io.simcore.autoscaling.version"],
-        instance_host_name=mock.ANY,
+    assert (
+        await _find_terminateable_instances(initialized_app, [attached_ec2_nowish])
+        == []
     )
-    mock_get_running_instance.reset_mock()
 
     # if the instance started just after the termination time, even on several days, it is not terminateable
-    mock_get_running_instance.return_value = replace(
-        ec2_instance_data,
-        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        - datetime.timedelta(days=21)
-        + datetime.timedelta(seconds=10),
+    attached_ec2_long_time_ago_but_not_inthe_window = AssociatedInstance(
+        drained_host_node,
+        fake_ec2_instance_data(
+            launch_time=datetime.datetime.now(datetime.timezone.utc)
+            - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+            - datetime.timedelta(days=21)
+            + datetime.timedelta(seconds=10)
+        ),
     )
-
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == []
-    mock_get_running_instance.assert_called_once_with(
-        mock.ANY,
-        app_settings.AUTOSCALING_EC2_INSTANCES,
-        tag_keys=["io.simcore.autoscaling.version"],
-        instance_host_name=mock.ANY,
+    assert (
+        await _find_terminateable_instances(
+            initialized_app, [attached_ec2_long_time_ago_but_not_inthe_window]
+        )
+        == []
     )
-    mock_get_running_instance.reset_mock()
 
     # if the instance started just before the termination time, even on several days, it is terminateable
-    mock_get_running_instance.return_value = terminataeble_ec2_instance_data = replace(
-        ec2_instance_data,
-        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        - datetime.timedelta(days=21)
-        - datetime.timedelta(seconds=10),
+    attached_ec2_long_time_ago_terminateable = AssociatedInstance(
+        drained_host_node,
+        fake_ec2_instance_data(
+            launch_time=datetime.datetime.now(datetime.timezone.utc)
+            - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+            - datetime.timedelta(days=21)
+            - datetime.timedelta(seconds=10),
+        ),
     )
 
-    assert await _find_terminateable_nodes(initialized_app, [drained_host_node]) == [
-        (drained_host_node, terminataeble_ec2_instance_data)
-    ]
-    mock_get_running_instance.assert_called_once_with(
-        mock.ANY,
-        app_settings.AUTOSCALING_EC2_INSTANCES,
-        tag_keys=["io.simcore.autoscaling.version"],
-        instance_host_name=mock.ANY,
-    )
+    assert await _find_terminateable_instances(
+        initialized_app, [attached_ec2_long_time_ago_terminateable]
+    ) == [attached_ec2_long_time_ago_terminateable]
 
 
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     initialized_app: FastAPI,
-    mock_get_running_instance: mock.Mock,
     mock_remove_nodes: mock.Mock,
 ):
     # this shall work as is
     await _try_scale_down_cluster(initialized_app, [])
-    mock_get_running_instance.assert_not_called()
     mock_remove_nodes.assert_not_called()
 
 
@@ -613,11 +652,10 @@ async def test__try_scale_down_cluster(
     minimal_configuration: None,
     initialized_app: FastAPI,
     drained_host_node: Node,
-    mock_get_running_instance: mock.Mock,
-    mock_terminate_instance: mock.Mock,
+    mock_terminate_instances: mock.Mock,
     mock_remove_nodes: mock.Mock,
-    ec2_instance_data: EC2InstanceData,
     app_settings: ApplicationSettings,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -625,34 +663,45 @@ async def test__try_scale_down_cluster(
         > datetime.timedelta(seconds=10)
     ), "this tests relies on the fact that the time before termination is above 10 seconds"
 
-    mock_get_running_instance.return_value = replace(
-        ec2_instance_data,
-        launch_time=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        - datetime.timedelta(days=21)
-        - datetime.timedelta(seconds=10),
+    await _try_scale_down_cluster(
+        initialized_app,
+        [
+            AssociatedInstance(
+                drained_host_node,
+                fake_ec2_instance_data(
+                    launch_time=datetime.datetime.now(datetime.timezone.utc)
+                    - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+                    - datetime.timedelta(days=21)
+                    - datetime.timedelta(seconds=10)
+                ),
+            )
+        ],
     )
-    await _try_scale_down_cluster(initialized_app, [drained_host_node])
-    mock_get_running_instance.assert_called_once()
-    mock_terminate_instance.assert_called_once()
+    mock_terminate_instances.assert_called_once()
     mock_remove_nodes.assert_called_once()
 
 
-async def test__try_scale_up_with_drained_nodes_with_no_tasks(
+async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
     initialized_app: FastAPI,
     host_node: Node,
     mock_tag_node: mock.Mock,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     # no tasks, does nothing and returns True
-    assert await _try_scale_up_with_drained_nodes(initialized_app, [], []) == []
+    assert await _activate_drained_nodes(initialized_app, [], []) == []
     assert (
-        await _try_scale_up_with_drained_nodes(initialized_app, [host_node], []) == []
+        await _activate_drained_nodes(
+            initialized_app,
+            [AssociatedInstance(host_node, fake_ec2_instance_data())],
+            [],
+        )
+        == []
     )
     mock_tag_node.assert_not_called()
 
 
-async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
+async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
@@ -664,6 +713,7 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     # task with no drain nodes returns False
     task_template_that_runs = task_template | create_task_reservations(
@@ -682,8 +732,10 @@ async def test__try_scale_up_with_drained_nodes_with_no_drained_nodes(
     assert service_tasks
     assert len(service_tasks) == 1
     assert (
-        await _try_scale_up_with_drained_nodes(
-            initialized_app, [host_node], service_tasks
+        await _activate_drained_nodes(
+            initialized_app,
+            [AssociatedInstance(host_node, fake_ec2_instance_data())],
+            service_tasks,
         )
         == []
     )
@@ -739,7 +791,7 @@ async def drained_host_node(
     )
 
 
-async def test__try_scale_up_with_drained_nodes_with_drained_node(
+async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
@@ -751,6 +803,7 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     # task with no drain nodes returns False
     task_template_that_runs = task_template | create_task_reservations(
@@ -769,8 +822,10 @@ async def test__try_scale_up_with_drained_nodes_with_drained_node(
     assert service_tasks
     assert len(service_tasks) == 1
     assert (
-        await _try_scale_up_with_drained_nodes(
-            initialized_app, [drained_host_node], service_tasks
+        await _activate_drained_nodes(
+            initialized_app,
+            [AssociatedInstance(drained_host_node, fake_ec2_instance_data())],
+            service_tasks,
         )
         == service_tasks
     )
