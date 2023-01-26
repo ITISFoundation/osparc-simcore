@@ -39,20 +39,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     EXPECTED_TI_TEMPLATE_TITLE: "TI Planning Tool",
     EXPECTED_S4L_SERVICE_KEYS: {
       "simcore/services/dynamic/jupyter-smash": {
-        title: "Start sim4life lab",
-        decription: "jupyter powered by s4l",
+        title: "Start Sim4Life lab",
+        description: "Jupyter powered by Sim4Life",
         idToWidget: "startJSmashButton"
       },
       "simcore/services/dynamic/sim4life-dy": {
-        title: "Start sim4life",
-        decription: "New sim4life project",
+        title: "Start Sim4Life",
+        description: "New Sim4Life project",
         idToWidget: "startS4LButton"
       }
     },
     EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
-        title: "Start Sim4Life Lite",
-        decription: "New s4l-lite project",
+        title: "Start Sim4Life lite",
+        description: "New Sim4Life lite project",
         idToWidget: "startS4LButton"
       }
     }
@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 let msg = this.tr("It seems you don't have access to this product.");
                 msg += "</br>";
                 msg += "</br>";
-                msg += this.tr("Please, contact us:");
+                msg += this.tr("Please contact us:");
                 msg += "</br>";
                 osparc.store.VendorInfo.getInstance().getSupportEmail()
                   .then(supportEmail => {
@@ -416,7 +416,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const versions = osparc.utils.Services.getVersions(services, serviceKey);
       if (versions.length && newButtonInfo) {
         const title = newButtonInfo.title;
-        const desc = newButtonInfo.decription;
+        const desc = newButtonInfo.description;
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
         newStudyFromServiceButton.setCardKey("new-"+serviceKey);
         osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);

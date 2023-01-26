@@ -117,7 +117,7 @@ qx.Class.define("osparc.store.Support", {
 
     __openSendEmailFeedbackDialog: function(email) {
       const productName = osparc.utils.Utils.getProductName();
-      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please, send us an email to:"));
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please send us an email to:"));
       const mailto = this.getMailToLabel(email, productName + "feedback");
       giveEmailFeedbackWindow.addWidget(mailto);
       giveEmailFeedbackWindow.open();

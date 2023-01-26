@@ -28,9 +28,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     const title = this.tr("Organizations");
     this.base(arguments, title, iconSrc);
 
-    if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
-      this.add(this.__getCreateOrganizationSection());
-    }
+    const msg = this.tr("\
+    An organization is any group of users that are able to share resources with each other.<br>\
+    Here you may review the organizations you are a part of, create new ones, \
+    or manage the membership and access rights of organizations where you are a manager/administrator.");
+    const intro = this._createHelpLabel(msg);
+    this._add(intro);
+
     this.add(this.__getOrganizationsSection());
     this.add(this.__getMembersSection(), {
       flex: 1
@@ -83,6 +87,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const createOrgBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("New Organization"),
+        alignX: "center",
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
@@ -101,6 +106,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
     __getOrganizationsSection: function() {
       const box = this._createSectionBox(this.tr("Organizations"));
+      if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
+        box.add(this.__getCreateOrganizationSection());
+      }
       box.add(this.__getOrganizationsList());
       box.setContentPadding(0);
       return box;
