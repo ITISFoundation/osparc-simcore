@@ -522,24 +522,21 @@ async def _scale_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     return cluster
 
 
+async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
+    await utils_docker.remove_nodes(get_docker_client(app), cluster.disconnected_nodes)
+    return dataclasses.replace(cluster, disconnected_nodes=[])
+
+
 async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
     If there are such tasks, this method will allocate new machines in AWS to cope with
     the additional load.
     """
 
-    # 1. Analyze cluster current state
     cluster = await _analyze_current_cluster(app)
-
-    # 2. Cleanup nodes that are gone or were terminated
-    await utils_docker.remove_nodes(get_docker_client(app), cluster.disconnected_nodes)
-    cluster.disconnected_nodes.clear()
-
-    # 3. Attach/Label new connected instances
+    cluster = await _cleanup_disconnected_nodes(app, cluster)
     cluster = await _try_attach_pending_ec2s(app, cluster)
-
-    # 4. Scale the cluster
     cluster = await _scale_cluster(app, cluster)
 
-    # 4. Notify anyone interested of current state
+    # informa status
     await post_autoscaling_status_message(app, cluster)
