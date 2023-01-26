@@ -31,9 +31,14 @@ qx.Class.define("osparc.utils.LibVersions", {
 
       return remoteUrl;
     },
+
+    getVcsRef: function() {
+      return qx.core.Environment.get("osparc.vcsRef");
+    },
+
     getPlatformVersion: function() {
       const name = "osparc-simcore";
-      const commitId = qx.core.Environment.get("osparc.vcsRef");
+      const commitId = this.getVcsRef();
       const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
 
       let url = remoteUrl;

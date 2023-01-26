@@ -98,7 +98,8 @@ qx.Class.define("osparc.Application", {
 
       this.__updateTabName();
       this.__updateFavicon();
-      this.__checkCookiesAccepted();
+
+      this.__preStartChecks();
 
       // onload, load, DOMContentLoaded, appear... didn't work
       // bit of a hack
@@ -275,31 +276,47 @@ qx.Class.define("osparc.Application", {
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
+    __preStartChecks: function() {
+      const platformName = osparc.utils.LibVersions.getPlatformName();
+      if (platformName !== "master") {
+        // first pop up new relaese window
+        this.__checkNewRelease();
+        // then pop up cookies accepted window. It will go on top.
+        this.__checkCookiesAccepted();
+      }
+    },
+
+    __checkNewRelease: function() {
+      const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRef();
+      if (lastCommit) {
+        const thisCommit = osparc.utils.LibVersions.getVcsRef();
+        if (lastCommit !== thisCommit) {
+          console.log("New Release!!");
+          osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
+        }
+      }
+    },
+
     __checkCookiesAccepted: function() {
-      osparc.utils.LibVersions.getPlatformName()
-        .then(platformName => {
-          if (platformName !== "master") {
-            if (!osparc.CookiePolicy.areCookiesAccepted()) {
-              const cookiePolicy = new osparc.CookiePolicy();
-              const title = this.tr("Cookie Policy");
-              // "tis" and "s4llite" include the license agreement
-              const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
-              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
-                clickAwayClose: false,
-                resizable: false,
-                showClose: false
-              });
-              cookiePolicy.addListener("cookiesAccepted", () => {
-                osparc.CookiePolicy.acceptCookies();
-                win.close();
-              }, this);
-              cookiePolicy.addListener("cookiesDeclined", () => {
-                osparc.CookiePolicy.declineCookies();
-                win.close();
-              }, this);
-            }
-          }
+      if (!osparc.CookiePolicy.areCookiesAccepted()) {
+        const cookiePolicy = new osparc.CookiePolicy();
+        const title = this.tr("Cookie Policy");
+        // "tis" and "s4llite" include the license agreement
+        const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
+        const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
+          clickAwayClose: false,
+          resizable: false,
+          showClose: false
         });
+        cookiePolicy.addListener("cookiesAccepted", () => {
+          osparc.CookiePolicy.acceptCookies();
+          win.close();
+        }, this);
+        cookiePolicy.addListener("cookiesDeclined", () => {
+          osparc.CookiePolicy.declineCookies();
+          win.close();
+        }, this);
+      }
     },
 
     __restart: function() {
