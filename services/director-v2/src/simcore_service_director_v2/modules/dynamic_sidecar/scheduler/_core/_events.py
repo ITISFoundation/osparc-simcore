@@ -34,7 +34,7 @@ from .....models.schemas.dynamic_services.scheduler import (
 )
 from .....utils.db import get_repository
 from ....catalog import CatalogClient
-from ....db.repositories.groups_extra_properties import InternetToGroupsRepository
+from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
 from ....rabbitmq import RabbitMQClient
@@ -151,9 +151,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         groups_extra_properties = cast(
-            InternetToGroupsRepository, get_repository(app, InternetToGroupsRepository)
+            GroupsExtraPropertiesRepository,
+            get_repository(app, GroupsExtraPropertiesRepository),
         )
-        allow_internet_access: bool = await groups_extra_properties.has_access(
+        allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id
         )
 
@@ -432,9 +433,10 @@ class CreateUserServices(DynamicSchedulerEvent):
         )
 
         groups_extra_properties = cast(
-            InternetToGroupsRepository, get_repository(app, InternetToGroupsRepository)
+            GroupsExtraPropertiesRepository,
+            get_repository(app, GroupsExtraPropertiesRepository),
         )
-        allow_internet_access: bool = await groups_extra_properties.has_access(
+        allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id
         )
 

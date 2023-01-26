@@ -21,7 +21,10 @@ def upgrade():
         "groups_extra_properties",
         sa.Column("group_id", sa.BigInteger(), nullable=False),
         sa.Column(
-            "has_access", sa.Boolean(), server_default=sa.text("true"), nullable=False
+            "internet_access",
+            sa.Boolean(),
+            server_default=sa.text("true"),
+            nullable=False,
         ),
         sa.Column(
             "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False

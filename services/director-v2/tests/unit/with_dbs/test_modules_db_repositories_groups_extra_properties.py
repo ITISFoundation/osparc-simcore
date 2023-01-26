@@ -13,7 +13,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
-    InternetToGroupsRepository,
+    GroupsExtraPropertiesRepository,
 )
 from simcore_service_director_v2.utils.db import get_repository
 
@@ -107,14 +107,14 @@ async def user(
     return user
 
 
-async def test_has_access(
+async def test_has_internet_access(
     initialized_app: FastAPI, user: dict[str, Any], with_internet_access: bool
 ):
     groups_extra_properties = cast(
-        InternetToGroupsRepository,
-        get_repository(initialized_app, InternetToGroupsRepository),
+        GroupsExtraPropertiesRepository,
+        get_repository(initialized_app, GroupsExtraPropertiesRepository),
     )
-    allow_internet_access: bool = await groups_extra_properties.has_access(
+    allow_internet_access: bool = await groups_extra_properties.has_internet_access(
         user_id=user["id"]
     )
     assert allow_internet_access is with_internet_access
