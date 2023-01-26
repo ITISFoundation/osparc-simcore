@@ -68,6 +68,7 @@ qx.Class.define("osparc.NewRelease", {
       const thisCommit = osparc.utils.LibVersions.getVcsRef();
       osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
 
+      // OM todo: hard refresh
       window.location.reload();
     }
   }
