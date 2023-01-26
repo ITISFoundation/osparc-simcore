@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             msg += "<br>";
             msg += this.tr("Make sure you saved the changes to:");
             msg += "<br>";
-            msg += this.tr("- your current <b>smash file</b> (Running <b>simulations</b> will be killed)");
+            msg += this.tr("- your current <b>smash file</b> (running <b>simulations</b> will be killed)");
             msg += "<br>";
             msg += this.tr("- the current <b>open notebooks</b> (<b>jupyterlab</b> will be killed)");
             confirmText = this.tr("Close");
