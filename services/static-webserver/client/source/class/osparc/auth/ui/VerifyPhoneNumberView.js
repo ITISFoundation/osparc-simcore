@@ -96,6 +96,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       });
 
       const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
+        appearance: "strong-button",
+        center: true,
         maxHeight: 23,
         minWidth: 80
       });
@@ -113,8 +115,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         flex: 1
       });
       const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
-        minWidth: 80,
-        appearance: "strong-button"
+        appearance: "strong-button",
+        center: true,
+        minWidth: 80
       });
       validateCodeTF.bind("value", validateCodeBtn, "enabled", {
         converter: val => Boolean(val)
