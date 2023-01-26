@@ -12,11 +12,13 @@ integrates with osparc.
     -
 """
 
+import logging
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, Optional
 
 from models_library.service_settings_labels import (
     ContainerSpec,
+    DynamicSidecarServiceLabels,
     HostPermitListPolicy,
     PathMappingsLabel,
     RestartPolicy,
@@ -28,7 +30,8 @@ from models_library.services import (
     ServiceDockerData,
     ServiceType,
 )
-from pydantic.class_validators import validator
+from pydantic import ValidationError
+from pydantic.class_validators import root_validator, validator
 from pydantic.config import Extra
 from pydantic.fields import Field
 from pydantic.main import BaseModel
@@ -38,6 +41,8 @@ from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
 from .settings import AppSettings
 from .yaml_utils import yaml_safe_load
+
+logger = logging.getLogger(__name__)
 
 CONFIG_FOLDER_NAME = ".osparc"
 
@@ -169,6 +174,12 @@ class SettingsItem(BaseModel):
         return v
 
 
+class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
+    class Config:
+        extra = Extra.allow
+        allow_population_by_field_name = True
+
+
 class RuntimeConfig(BaseModel):
     """Details about the service runtime
 
@@ -190,6 +201,23 @@ class RuntimeConfig(BaseModel):
     containers_allowed_outgoing_internet: Optional[set[str]] = None
 
     settings: list[SettingsItem] = []
+
+    @root_validator(pre=True)
+    @classmethod
+    def ensure_compatibility(cls, v):
+        # NOTE: if changes are applied to `DynamicSidecarServiceLabels`
+        # these are also validated when ooil runs.
+        try:
+            ValidatingDynamicSidecarServiceLabels.parse_obj(v)
+        except ValidationError as e:
+            logger.exception(
+                "Could not validate %s via %s",
+                DynamicSidecarServiceLabels,
+                ValidatingDynamicSidecarServiceLabels,
+            )
+            raise e
+
+        return v
 
     class Config:
         alias_generator = lambda field_name: field_name.replace("_", "-")

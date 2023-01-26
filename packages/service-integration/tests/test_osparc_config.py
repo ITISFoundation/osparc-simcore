@@ -21,6 +21,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
         "legacy": "dy-static-file-server",
         "service-sidecared": "dy-static-file-server-dynamic-sidecar",
         "compose-sidecared": "dy-static-file-server-dynamic-sidecar-compose-spec",
+        "rocket": "rocket",
     }
 
     labels_annotations = data["services"][service_name[labels_fixture_name]]["build"][
@@ -37,7 +38,8 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
 
 
 @pytest.mark.parametrize(
-    "labels_fixture_name", ["legacy", "service-sidecared", "compose-sidecared"]
+    "labels_fixture_name",
+    ["legacy", "service-sidecared", "compose-sidecared", "rocket"],
 )
 def test_load_from_labels(
     labels: dict[str, str], labels_fixture_name: str, tmp_path: Path
