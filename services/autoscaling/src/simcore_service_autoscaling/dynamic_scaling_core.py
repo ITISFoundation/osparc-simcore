@@ -237,17 +237,17 @@ async def _find_needed_instances(
     type_to_instance_map = {t.name: t for t in available_ec2_types}
 
     # 1. check first the pending task needs
-    list_of_existing_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]] = [
+    pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]] = [
         (i, []) for i in cluster.pending_ec2s
     ]
-    list_of_new_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
+    needed_new_instance_to_tasks: list[tuple[EC2Instance, list[Task]]] = []
     for task in pending_tasks:
         if await try_assigning_task_to_pending_instances(
-            app, task, list_of_existing_instance_to_tasks, type_to_instance_map
+            app, task, pending_instance_to_tasks, type_to_instance_map
         ):
             continue
 
-        if try_assigning_task_to_instances(task, list_of_new_instance_to_tasks):
+        if try_assigning_task_to_instances(task, needed_new_instance_to_tasks):
             continue
 
         try:
@@ -257,7 +257,7 @@ async def _find_needed_instances(
                 utils_docker.get_max_resources_from_docker_task(task),
                 score_type=ec2.closest_instance_policy,
             )
-            list_of_new_instance_to_tasks.append((best_ec2_instance, [task]))
+            needed_new_instance_to_tasks.append((best_ec2_instance, [task]))
         except Ec2InstanceNotFoundError:
             logger.error(
                 "Task %s needs more resources than any EC2 instance "
@@ -266,7 +266,7 @@ async def _find_needed_instances(
             )
 
     num_instances_per_type = defaultdict(
-        int, collections.Counter(t for t, _ in list_of_new_instance_to_tasks)
+        int, collections.Counter(t for t, _ in needed_new_instance_to_tasks)
     )
 
     # 2. check the buffer needs
@@ -278,8 +278,18 @@ async def _find_needed_instances(
             - len(cluster.reserve_drained_nodes)
         )
     ) > 0:
-        default_instance_type = available_ec2_types[0]
-        num_instances_per_type[default_instance_type] += num_missing_nodes
+        # check if some are already pending
+        remaining_pending_instances = [
+            instance
+            for instance, assigned_tasks in pending_instance_to_tasks
+            if not assigned_tasks
+        ]
+        if len(remaining_pending_instances) < (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+            - len(cluster.reserve_drained_nodes)
+        ):
+            default_instance_type = available_ec2_types[0]
+            num_instances_per_type[default_instance_type] += num_missing_nodes
 
     return num_instances_per_type
 
