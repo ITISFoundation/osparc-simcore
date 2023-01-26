@@ -400,14 +400,14 @@ async def _scale_up_cluster(
 
 
 async def _try_attach_pending_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
-    """label the instances that connected to the swarm that are missing the monitoring labels"""
+    """label the drained instances that connected to the swarm which are missing the monitoring labels"""
     newly_attached_nodes: list[AssociatedInstance] = []
     still_pending_ec2: list[EC2InstanceData] = []
     app_settings: ApplicationSettings = app.state.settings
     for instance_data in cluster.pending_ec2s:
         try:
             node_host_name = node_host_name_from_ec2_private_dns(instance_data)
-            if new_node := await utils_docker.try_get_node_with_name(
+            if new_node := await utils_docker.find_node_with_name(
                 get_docker_client(app), node_host_name
             ):
                 # it is attached, let's label it, but keep it as drained
@@ -538,5 +538,5 @@ async def cluster_scaling_from_labelled_services(app: FastAPI) -> None:
     cluster = await _try_attach_pending_ec2s(app, cluster)
     cluster = await _scale_cluster(app, cluster)
 
-    # informa status
+    # inform on rabbit about status
     await post_autoscaling_status_message(app, cluster)

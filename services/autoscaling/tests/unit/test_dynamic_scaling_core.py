@@ -88,11 +88,9 @@ def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 @pytest.fixture
-def mock_try_get_node_with_name(
-    mocker: MockerFixture, fake_node: Node
-) -> Iterator[mock.Mock]:
+def find_node_with_name(mocker: MockerFixture, fake_node: Node) -> Iterator[mock.Mock]:
     mocked_wait_for_node = mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.try_get_node_with_name",
+        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
     )
@@ -383,7 +381,7 @@ async def test_cluster_scaling_up(
     mock_tag_node: mock.Mock,
     fake_node: Node,
     mock_rabbitmq_post_message: mock.Mock,
-    mock_try_get_node_with_name: mock.Mock,
+    find_node_with_name: mock.Mock,
     mock_set_node_availability: mock.Mock,
     # mock_cluster_used_resources: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
@@ -413,7 +411,7 @@ async def test_cluster_scaling_up(
     )
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
-    mock_try_get_node_with_name.assert_not_called()
+    find_node_with_name.assert_not_called()
     mock_tag_node.assert_not_called()
     mock_set_node_availability.assert_not_called()
     mock_compute_node_used_resources.assert_not_called()
@@ -446,7 +444,7 @@ async def test_cluster_scaling_up(
         instance_state="running",
     )
     # the node is tagged and made active right away since we still have the pending task
-    mock_try_get_node_with_name.assert_called_once()
+    find_node_with_name.assert_called_once()
     assert app_settings.AUTOSCALING_NODES_MONITORING
     expected_docker_node_tags = {
         tag_key: "true"
@@ -527,7 +525,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     fake_node: Node,
     scale_up_params: _ScaleUpParams,
     mock_rabbitmq_post_message: mock.Mock,
-    mock_try_get_node_with_name: mock.Mock,
+    find_node_with_name: mock.Mock,
     mock_set_node_availability: mock.Mock,
     mocker: MockerFixture,
 ):
@@ -585,7 +583,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         all_private_dns_names.append(instance_private_dns_name)
 
     # as the new node is already running, but is not yet connected, hence not tagged and drained
-    mock_try_get_node_with_name.assert_not_called()
+    find_node_with_name.assert_not_called()
     mock_tag_node.assert_not_called()
     mock_set_node_availability.assert_not_called()
     # check rabbit messages were sent

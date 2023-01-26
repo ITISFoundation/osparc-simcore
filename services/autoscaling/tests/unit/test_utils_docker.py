@@ -31,6 +31,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_cluster_used_resources,
     compute_node_used_resources,
     compute_tasks_needed_resources,
+    find_node_with_name,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
@@ -38,7 +39,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     tag_node,
-    try_get_node_with_name,
 )
 
 
@@ -748,7 +748,7 @@ async def test_try_get_node_with_name(
     assert host_node.Description
     assert host_node.Description.Hostname
 
-    received_node = await try_get_node_with_name(
+    received_node = await find_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert received_node == host_node
@@ -760,7 +760,7 @@ async def test_try_get_node_with_name_fake(
     assert fake_node.Description
     assert fake_node.Description.Hostname
 
-    received_node = await try_get_node_with_name(
+    received_node = await find_node_with_name(
         autoscaling_docker, fake_node.Description.Hostname
     )
     assert received_node is None
@@ -773,7 +773,7 @@ async def test_tag_node(
     assert host_node.Description.Hostname
     tags = faker.pydict(allowed_types=(str,))
     await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
-    updated_node = await try_get_node_with_name(
+    updated_node = await find_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert updated_node
@@ -782,7 +782,7 @@ async def test_tag_node(
     assert updated_node.Spec.Labels == tags
 
     await tag_node(autoscaling_docker, updated_node, tags={}, available=True)
-    updated_node = await try_get_node_with_name(
+    updated_node = await find_node_with_name(
         autoscaling_docker, host_node.Description.Hostname
     )
     assert updated_node

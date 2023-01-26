@@ -328,7 +328,7 @@ async def get_docker_swarm_join_bash_command() -> str:
     )
 
 
-async def try_get_node_with_name(
+async def find_node_with_name(
     docker_client: AutoscalingDocker, name: str
 ) -> Optional[Node]:
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
