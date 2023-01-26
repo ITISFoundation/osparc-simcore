@@ -266,8 +266,6 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     aws_allowed_ec2_instance_type_names: list[str],
-    # mock_start_aws_instance: mock.Mock,
-    # mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     ec2_client: EC2Client,
 ):
