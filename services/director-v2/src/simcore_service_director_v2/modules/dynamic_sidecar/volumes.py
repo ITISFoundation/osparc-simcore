@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
