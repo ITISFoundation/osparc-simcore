@@ -14,7 +14,7 @@ from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_PORT,
     DNResolver,
     DynamicSidecarServiceLabels,
-    HostWhitelistPolicy,
+    HostPermitListPolicy,
     PathMappingsLabel,
     PortRange,
     SimcoreServiceLabels,
@@ -167,8 +167,8 @@ def test_port_range():
     assert PortRange(lower=1, upper=2)
 
 
-def test_host_whitelist_policy():
-    host_whitelist_policy = HostWhitelistPolicy(
+def test_host_permit_list_policy():
+    host_permit_list_policy = HostPermitListPolicy(
         hostname="hostname",
         tcp_ports=[
             PortRange(lower=1, upper=12),
@@ -176,11 +176,11 @@ def test_host_whitelist_policy():
         ],
     )
 
-    assert set(host_whitelist_policy.iter_tcp_ports()) == set(range(1, 12 + 1)) | {22}
+    assert set(host_permit_list_policy.iter_tcp_ports()) == set(range(1, 12 + 1)) | {22}
 
 
 @pytest.mark.parametrize(
-    "container_whitelist, expected_host_whitelist_policy",
+    "container_permit_list, expected_host_permit_list_policy",
     [
         pytest.param(
             [
@@ -189,7 +189,7 @@ def test_host_whitelist_policy():
                     "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
                 }
             ],
-            HostWhitelistPolicy(
+            HostPermitListPolicy(
                 hostname="a-host",
                 tcp_ports=[12132, PortRange(lower=12, upper=2334)],
                 dns_resolver=DNResolver(
@@ -206,7 +206,7 @@ def test_host_whitelist_policy():
                     "dns_resolver": {"address": "ns1.example.com", "port": 123},
                 }
             ],
-            HostWhitelistPolicy(
+            HostPermitListPolicy(
                 hostname="a-host",
                 tcp_ports=[12132, PortRange(lower=12, upper=2334)],
                 dns_resolver=DNResolver(address="ns1.example.com", port=123),
@@ -215,16 +215,16 @@ def test_host_whitelist_policy():
         ),
     ],
 )
-def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_spec(
-    container_whitelist: dict[str, Any],
-    expected_host_whitelist_policy: HostWhitelistPolicy,
+def test_container_outgoing_permit_list_and_container_allow_internet_with_compose_spec(
+    container_permit_list: dict[str, Any],
+    expected_host_permit_list_policy: HostPermitListPolicy,
 ):
     container_name = "test_container"
     compose_spec: dict[str, Any] = {"services": {container_name: None}}
 
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
-            {container_name: container_whitelist}
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {container_name: container_permit_list}
         ),
         "simcore.service.containers-allowed-outgoing-internet": json.dumps(
             [container_name]
@@ -235,14 +235,14 @@ def test_container_outgoing_whitelist_and_container_allow_internet_with_compose_
 
     instance = DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
     assert (
-        instance.containers_allowed_outgoing_whitelist[container_name][0]
-        == expected_host_whitelist_policy
+        instance.containers_allowed_outgoing_permit_list[container_name][0]
+        == expected_host_permit_list_policy
     )
 
 
-def test_container_outgoing_whitelist_and_container_allow_internet_without_compose_spec():
+def test_container_outgoing_permit_list_and_container_allow_internet_without_compose_spec():
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
             {
                 DEFAULT_SINGLE_SERVICE_NAME: [
                     {
@@ -282,9 +282,9 @@ def test_container_allow_internet_compose_spec_not_ok():
     assert f"container='hoho' not found in {compose_spec=}" in f"{exec_info.value}"
 
 
-def test_container_outgoing_whitelist_no_compose_spec_not_ok():
+def test_container_outgoing_permit_list_no_compose_spec_not_ok():
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
             {
                 "container_name": [
                     {
@@ -303,11 +303,11 @@ def test_container_outgoing_whitelist_no_compose_spec_not_ok():
     )
 
 
-def test_container_outgoing_whitelist_compose_spec_not_ok():
+def test_container_outgoing_permit_list_compose_spec_not_ok():
     container_name = "test_container"
     compose_spec: dict[str, Any] = {"services": {container_name: None}}
     dict_data = {
-        "simcore.service.containers-allowed-outgoing-whitelist": json.dumps(
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
             {
                 "container_name": [
                     {
@@ -322,6 +322,6 @@ def test_container_outgoing_whitelist_compose_spec_not_ok():
     with pytest.raises(ValidationError) as exec_info:
         assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
     assert (
-        f"Trying to whitelist container='container_name' which was not found in {compose_spec=}"
+        f"Trying to permit list container='container_name' which was not found in {compose_spec=}"
         in f"{exec_info.value}"
     )

@@ -10,7 +10,7 @@ from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
-    HostWhitelistPolicy,
+    HostPermitListPolicy,
     PortRange,
 )
 from orderedset import OrderedSet
@@ -61,16 +61,16 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "host_whitelist_policies, expected_grouped_proxy_rules",
+    "host_permit_list_policies, expected_grouped_proxy_rules",
     [
         pytest.param(
-            [HostWhitelistPolicy(hostname="", tcp_ports=[1])],
+            [HostPermitListPolicy(hostname="", tcp_ports=[1])],
             [OrderedSet({_pr("", 1)})],
             id="one_port",
         ),
         pytest.param(
             [
-                HostWhitelistPolicy(
+                HostPermitListPolicy(
                     hostname="abc", tcp_ports=[1, PortRange(lower=1, upper=N)]
                 )
             ],
@@ -81,10 +81,10 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
         ),
         pytest.param(
             [
-                HostWhitelistPolicy(
+                HostPermitListPolicy(
                     hostname="abc", tcp_ports=[PortRange(lower=1, upper=N), 999]
                 ),
-                HostWhitelistPolicy(
+                HostPermitListPolicy(
                     hostname="xyz", tcp_ports=[PortRange(lower=1, upper=N), 999]
                 ),
             ],
@@ -98,22 +98,22 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
         ),
         pytest.param(
             [
-                HostWhitelistPolicy(hostname=f"abc{x}", tcp_ports=[80, 443])
+                HostPermitListPolicy(hostname=f"abc{x}", tcp_ports=[80, 443])
                 for x in range(2)
             ],
             [
                 OrderedSet({_pr(f"abc{x}", 80)}) | OrderedSet({_pr(f"abc{x}", 443)})
                 for x in range(2)
             ],
-            id="mix_lots_of_http_whitelisting",
+            id="mix_lots_of_http_permit_listing",
         ),
     ],
 )
 def test_get_egress_proxy_dns_port_rules(
-    host_whitelist_policies: list[HostWhitelistPolicy],
+    host_permit_list_policies: list[HostPermitListPolicy],
     expected_grouped_proxy_rules: deque[set[tuple[str, PortInt]]],
 ):
-    grouped_proxy_rules = _get_egress_proxy_dns_port_rules(host_whitelist_policies)
+    grouped_proxy_rules = _get_egress_proxy_dns_port_rules(host_permit_list_policies)
 
     # sorting by hostname in set
     sorted_grouped_proxy_rules = sorted(

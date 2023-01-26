@@ -7,7 +7,7 @@ import yaml
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
-    HostWhitelistPolicy,
+    HostPermitListPolicy,
     SimcoreServiceLabels,
 )
 from orderedset import OrderedSet
@@ -250,21 +250,21 @@ def _get_egress_proxy_service_config(
 
 
 def _get_egress_proxy_dns_port_rules(
-    all_host_whitelist_policies: list[HostWhitelistPolicy],
+    all_host_permit_list_policies: list[HostPermitListPolicy],
 ) -> list[OrderedSet[_ProxyRule]]:
     """returns a list of sets of rules to be applied to each proxy"""
     # 1. map all ports to hostnames to compute overlapping ports per proxy
     port_to_hostname: dict[PortInt, set[_HostData]] = {}
 
-    for host_whitelist_policy in all_host_whitelist_policies:
-        for port in host_whitelist_policy.iter_tcp_ports():
+    for host_permit_list_policy in all_host_permit_list_policies:
+        for port in host_permit_list_policy.iter_tcp_ports():
             if port not in port_to_hostname:
                 port_to_hostname[port] = OrderedSet()
             port_to_hostname[port].add(
                 _HostData(
-                    hostname=host_whitelist_policy.hostname,
-                    dns_resolver_address=host_whitelist_policy.dns_resolver.address,
-                    dns_resolver_port=host_whitelist_policy.dns_resolver.port,
+                    hostname=host_permit_list_policy.hostname,
+                    dns_resolver_address=host_permit_list_policy.dns_resolver.address,
+                    dns_resolver_port=host_permit_list_policy.dns_resolver.port,
                 )
             )
 
@@ -306,7 +306,7 @@ def add_egress_configuration(
     """
     Each service defines rules to allow certain containers to gain access
     to the internet. The following are supported:
-    - `simcore.service.containers-allowed-outgoing-whitelist` list of host
+    - `simcore.service.containers-allowed-outgoing-permit-list` list of host
         and ports that are allowed to be connected
     - `simcore.service.containers-allowed-outgoing-internet` list of containers
         allowed to have complete access to the internet
@@ -329,28 +329,28 @@ def add_egress_configuration(
             _allow_outgoing_internet(service_spec, container_name)
 
     # allow internet access to containers based on DNS:PORT rules
-    if simcore_service_labels.containers_allowed_outgoing_whitelist:
-        # get all HostWhitelistPolicy entries from all containers
-        all_host_whitelist_policies: list[HostWhitelistPolicy] = []
+    if simcore_service_labels.containers_allowed_outgoing_permit_list:
+        # get all HostPermitListPolicy entries from all containers
+        all_host_permit_list_policies: list[HostPermitListPolicy] = []
 
         hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
         container_name_to_proxies_names: dict[str, set[set]] = {}
 
         for (
             container_name,
-            host_whitelist_policies,
-        ) in simcore_service_labels.containers_allowed_outgoing_whitelist.items():
-            for host_whitelist_policy in host_whitelist_policies:
-                all_host_whitelist_policies.append(host_whitelist_policy)
+            host_permit_list_policies,
+        ) in simcore_service_labels.containers_allowed_outgoing_permit_list.items():
+            for host_permit_list_policy in host_permit_list_policies:
+                all_host_permit_list_policies.append(host_permit_list_policy)
 
-                for port in host_whitelist_policy.iter_tcp_ports():
+                for port in host_permit_list_policy.iter_tcp_ports():
                     hostname_port_to_container_name[
-                        (host_whitelist_policy.hostname, port)
+                        (host_permit_list_policy.hostname, port)
                     ] = container_name
 
-        # assemble proxy configuration based on all HostWhitelistPolicy entries
+        # assemble proxy configuration based on all HostPermitListPolicy entries
         grouped_proxy_rules = _get_egress_proxy_dns_port_rules(
-            all_host_whitelist_policies
+            all_host_permit_list_policies
         )
         for i, proxy_rules in enumerate(grouped_proxy_rules):
             egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}-{i}"

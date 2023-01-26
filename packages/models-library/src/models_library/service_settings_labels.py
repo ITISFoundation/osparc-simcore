@@ -207,7 +207,7 @@ class DNResolver(BaseModel):
         }
 
 
-class HostWhitelistPolicy(BaseModel):
+class HostPermitListPolicy(BaseModel):
     hostname: str
     tcp_ports: list[Union[PortRange, PortInt]]
     dns_resolver: DNResolver = Field(
@@ -266,11 +266,11 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_whitelist: Optional[
-        Json[dict[str, list[HostWhitelistPolicy]]]
+    containers_allowed_outgoing_permit_list: Optional[
+        Json[dict[str, list[HostPermitListPolicy]]]
     ] = Field(
         None,
-        alias="simcore.service.containers-allowed-outgoing-whitelist",
+        alias="simcore.service.containers-allowed-outgoing-permit-list",
         description="allow internet access to certain domain names and ports per container",
     )
 
@@ -299,9 +299,9 @@ class DynamicSidecarServiceLabels(BaseModel):
             )
         return v
 
-    @validator("containers_allowed_outgoing_whitelist")
+    @validator("containers_allowed_outgoing_permit_list")
     @classmethod
-    def _containers_allowed_outgoing_whitelist_in_compose_spec(  # pylint: disable = inconsistent-return-statements
+    def _containers_allowed_outgoing_permit_list_in_compose_spec(  # pylint: disable = inconsistent-return-statements
         cls, v, values
     ):
         if v is None:
@@ -319,7 +319,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             for container in v.keys():
                 if container not in containers_in_compose_spec:
                     raise ValueError(
-                        f"Trying to whitelist {container=} which was not found in {compose_spec=}"
+                        f"Trying to permit list {container=} which was not found in {compose_spec=}"
                     )
 
         return v
