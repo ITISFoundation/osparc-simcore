@@ -35,25 +35,19 @@ qx.Class.define("osparc.NewRelease", {
       });
       this._add(introLabel);
 
+      const detailsText = this.tr("What's new");
+      const link = osparc.utils.LibVersions.getVcsRefUrl();
+      const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
+      this._add(linkLabel, {
+        flex: 1
+      });
+
       const reloadText = this.tr("Click on the 'Reload' button to make sure you get the latest version.");
       const reloadLabel = new qx.ui.basic.Label(reloadText).set({
         rich: true,
         wrap: true
       });
       this._add(reloadLabel);
-
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
-      const detailsText = this.tr("What's new");
-      const link = osparc.utils.LibVersions.getVcsRefUrl();
-      const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
-      layout.add(linkLabel, {
-        flex: 1
-      });
-
-      this._add(layout, {
-        flex: 1
-      });
 
       const reloadBtn = new qx.ui.form.Button(this.tr("Reload")).set({
         appearance: "strong-button",
@@ -64,9 +58,13 @@ qx.Class.define("osparc.NewRelease", {
       this._add(reloadBtn);
     },
 
-    __reloadButtonPressed: function() {
+    __saveCommitVcsRef: function() {
       const thisCommit = osparc.utils.LibVersions.getVcsRef();
       osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
+    },
+
+    __reloadButtonPressed: function() {
+      this.__saveCommitVcsRef();
 
       // OM todo: hard refresh
       window.location.reload();
