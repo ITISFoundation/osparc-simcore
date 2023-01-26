@@ -171,12 +171,12 @@ def test_host_permit_list_policy():
     host_permit_list_policy = HostPermitListPolicy(
         hostname="hostname",
         tcp_ports=[
-            PortRange(lower=1, upper=12),
-            22,
+            PortRange(lower=1, upper=3),
+            99,
         ],
     )
 
-    assert set(host_permit_list_policy.iter_tcp_ports()) == set(range(1, 12 + 1)) | {22}
+    assert set(host_permit_list_policy.iter_tcp_ports()) == {1, 2, 3, 99}
 
 
 @pytest.mark.parametrize(
