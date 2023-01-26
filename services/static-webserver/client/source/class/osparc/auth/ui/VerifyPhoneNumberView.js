@@ -153,7 +153,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__verifyPhoneNumberBtn.setFetching(false);
             osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
             this.__validateCodeTF.setEnabled(true);
-            this.__validateCodeBtn.setEnabled(true);
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
