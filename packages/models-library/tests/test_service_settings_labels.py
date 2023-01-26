@@ -203,13 +203,13 @@ def test_host_whitelist_policy():
                 {
                     "hostname": "a-host",
                     "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
-                    "dns_resolver": {"address": "3.4.6.7", "port": 123},
+                    "dns_resolver": {"address": "ns1.example.com", "port": 123},
                 }
             ],
             HostWhitelistPolicy(
                 hostname="a-host",
                 tcp_ports=[12132, PortRange(lower=12, upper=2334)],
-                dns_resolver=DNResolver(address="3.4.6.7", port=123),
+                dns_resolver=DNResolver(address="ns1.example.com", port=123),
             ),
             id="with_dns_resolver",
         ),

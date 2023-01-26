@@ -12,7 +12,9 @@ from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 
+# well known DNS server ran by address by Cloudflare
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
+# standard domain name system port
 DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
 
 
@@ -176,6 +178,8 @@ class RestartPolicy(str, Enum):
 
 
 class PortRange(BaseModel):
+    """`lower` and `upper` are included"""
+
     lower: PortInt
     upper: PortInt
 
@@ -183,8 +187,8 @@ class PortRange(BaseModel):
     @classmethod
     def lower_less_than_upper(cls, v, values) -> PortInt:
         upper = v
-        lower = values.get("lower")
-        if lower >= upper:
+        lower: Optional[PortInt] = values.get("lower")
+        if lower is None or lower >= upper:
             raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
         return v
 
@@ -192,6 +196,15 @@ class PortRange(BaseModel):
 class DNResolver(BaseModel):
     address: str
     port: PortInt
+
+    class Config(_BaseConfig):
+        extra = Extra.allow
+        schema_extra = {
+            "examples": [
+                {"address": "1.1.1.1", "port": 53},
+                {"address": "ns1.example.com", "port": 53},
+            ]
+        }
 
 
 class HostWhitelistPolicy(BaseModel):
