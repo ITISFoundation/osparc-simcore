@@ -66,6 +66,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
     },
 
     __updateTasksButton: function() {
+      this._createChildControlImpl("icon");
       const number = this.getChildControl("number");
 
       const tasks = osparc.component.task.Tasks.getInstance();

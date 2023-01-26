@@ -63,6 +63,8 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         center: true,
         appearance: "strong-button"
       });
+      validateCodeBtn.setEnabled(false);
+      validateCodeTF.addListener("input", e => validateCodeBtn.setEnabled(Boolean(e.getData())));
       validateCodeBtn.addListener("execute", () => this.__validateCodeLogin(), this);
       this.add(validateCodeBtn);
 
@@ -79,7 +81,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       }));
       resendLayout.add(resendBtnsLayout);
 
-      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new qx.ui.form.Button().set({
+      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Via SMS") + ` (60)`,
         enabled: false
       });
@@ -90,16 +92,21 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         flex: 1
       });
       resendCodeSMSBtn.addListener("execute", () => {
+        resendCodeSMSBtn.setFetching(true);
         osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserEmail())
           .then(data => {
+            resendCodeSMSBtn.setFetching(false);
             osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
             introText.setValue(justSentText + this.getUserPhoneNumber());
             this.__restartTimers();
           })
-          .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
+          .catch(err => {
+            resendCodeSMSBtn.setFetching(false);
+            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+          });
       }, this);
 
-      const resendCodeEmailBtn = this.__resendCodeEmailBtn = new qx.ui.form.Button().set({
+      const resendCodeEmailBtn = this.__resendCodeEmailBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Via email") + ` (60)`,
         enabled: false
       });
@@ -107,13 +114,18 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         flex: 1
       });
       resendCodeEmailBtn.addListener("execute", () => {
+        resendCodeEmailBtn.setFetching(true);
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
           .then(data => {
+            resendCodeEmailBtn.setFetching(false);
             osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
             introText.setValue(justSentText + this.getUserEmail());
             this.__restartTimers();
           })
-          .catch(err => osparc.component.message.FlashMessenger.logAs(err.message, "ERROR"));
+          .catch(err => {
+            resendCodeEmailBtn.setFetching(false);
+            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+          });
       }, this);
       this.add(resendLayout);
     },
