@@ -44,11 +44,9 @@ qx.Class.define("osparc.NewRelease", {
 
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const detailsText = this.tr("More details here:");
-      layout.add(new qx.ui.basic.Label(detailsText));
-
+      const detailsText = this.tr("What's new");
       const link = osparc.utils.LibVersions.getVcsRefUrl();
-      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("Last features"), link);
+      const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
       layout.add(linkLabel, {
         flex: 1
       });
