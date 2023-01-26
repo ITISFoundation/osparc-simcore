@@ -316,7 +316,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
-            if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in v:
+            if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
                 raise ValueError(
                     f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{keys.pop()}'"
                 )
