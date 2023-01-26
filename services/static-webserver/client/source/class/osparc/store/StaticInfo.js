@@ -42,6 +42,24 @@ qx.Class.define("osparc.store.StaticInfo", {
       });
     },
 
+    getPlatformName: function() {
+      return new Promise(resolve => {
+        const staticKey = "stackName";
+        this.getValue(staticKey)
+          .then(stackName => {
+            let platformName = "dev";
+            if (stackName.includes("master")) {
+              platformName = "master";
+            } else if (stackName.includes("staging")) {
+              platformName = "staging";
+            } else if (stackName.includes("production")) {
+              platformName = "";
+            }
+            resolve(platformName);
+          });
+      });
+    },
+
     getDisplayName: function() {
       const staticKey = "displayName";
       return this.getValue(staticKey);

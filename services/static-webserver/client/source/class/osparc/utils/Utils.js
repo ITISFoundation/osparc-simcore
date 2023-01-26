@@ -199,7 +199,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     isDevelopmentPlatform: function() {
       return new Promise(resolve => {
-        osparc.utils.LibVersions.getPlatformName()
+        osparc.store.StaticInfo.getInstance().getPlatformName()
           .then(platformName => resolve(["dev", "master"].includes(platformName)));
       });
     },

@@ -159,7 +159,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addNewServiceButtons: function() {
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (platformName === "dev") {
             const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");

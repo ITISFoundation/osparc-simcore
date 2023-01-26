@@ -65,7 +65,7 @@ qx.Class.define("osparc.utils.LibVersions", {
 
       let url = remoteUrl;
       if (commitId) {
-        url = remoteUrl + "/tree/" + String(commitId) + "/services/static-webserver/client/";
+        url = remoteUrl + "/commits/" + String(commitId) + "/services/static-webserver/client/";
       }
       let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
@@ -138,22 +138,6 @@ qx.Class.define("osparc.utils.LibVersions", {
             return statics["thirdPartyReferences"];
           }
           return [];
-        });
-    },
-
-    getPlatformName: function() {
-      return osparc.data.Resources.get("statics")
-        .then(statics => statics.stackName)
-        .then(stackName => {
-          let platformName = "dev";
-          if (stackName.includes("master")) {
-            platformName = "master";
-          } else if (stackName.includes("staging")) {
-            platformName = "staging";
-          } else if (stackName.includes("production")) {
-            platformName = "";
-          }
-          return platformName;
         });
     }
   }
