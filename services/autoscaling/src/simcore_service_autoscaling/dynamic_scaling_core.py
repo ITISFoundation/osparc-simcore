@@ -277,8 +277,7 @@ async def _find_needed_instances(
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             - len(cluster.reserve_drained_nodes)
         )
-        > 0
-    ):
+    ) > 0:
         default_instance_type = available_ec2_types[0]
         num_instances_per_type[default_instance_type] += num_missing_nodes
 
