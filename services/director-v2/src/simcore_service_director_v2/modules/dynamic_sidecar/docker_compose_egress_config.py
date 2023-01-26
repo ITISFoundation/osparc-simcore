@@ -227,7 +227,7 @@ def _get_egress_proxy_service_config(
         [
             "envoy",
             "--log-level",
-            egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL,
+            egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL.to_log_level(),
             # add envy proxy config
             "--config-yaml",
             f"'{yaml_str_envy_config}'",

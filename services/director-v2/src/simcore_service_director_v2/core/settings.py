@@ -6,7 +6,7 @@ import logging
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from models_library.basic_types import (
     BootModeEnum,
@@ -22,6 +22,7 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from models_library.projects_networks import SERVICE_NETWORK_RE
+from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -79,16 +80,16 @@ class VFSCacheMode(str, Enum):
     FULL = "full"
 
 
-class EnvyLogLevel(str, Enum):
-    def _generate_next_value_(self, *_: Any) -> str:  # pylint:disable=arguments-differ
-        return self.lower()
-
+class EnvoyLogLevel(StrAutoEnum):
     TRACE = auto()
     DEBUG = auto()
     INFO = auto()
     WARNING = auto()
     ERROR = auto()
     CRITICAL = auto()
+
+    def to_log_level(self) -> str:
+        return self.value.lower()
 
 
 class RCloneSettings(RCloneSettings):  # pylint: disable=function-redefined
@@ -163,8 +164,8 @@ class DynamicSidecarEgressSettings(BaseCustomSettings):
         "envoyproxy/envoy:v1.24-latest",
         description="envoy image to use",
     )
-    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: str = Field(
-        EnvyLogLevel.ERROR, description="log level for envoy proxy service"
+    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
+        EnvoyLogLevel.ERROR, description="log level for envoy proxy service"
     )
 
 

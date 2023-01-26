@@ -14,6 +14,7 @@ from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
     DynamicSidecarSettings,
+    EnvoyLogLevel,
     RCloneSettings,
 )
 
@@ -252,3 +253,8 @@ def test_class_dynamicsidecarsettings_in_production(
     assert not prod_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
     assert not prod_settings.DYNAMIC_SIDECAR_EXPOSE_PORT
     assert prod_settings.DYNAMIC_SIDECAR_PORT
+
+
+def test_envoy_log_level():
+    for enum in (EnvoyLogLevel("WARNING"), EnvoyLogLevel.WARNING):
+        assert enum.to_log_level() == "warning"
