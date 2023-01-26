@@ -288,13 +288,13 @@ qx.Class.define("osparc.Application", {
 
     __checkNewRelease: function() {
       const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRef();
-      const thisCommit = osparc.utils.LibVersions.getVcsRef();
+      let thisCommit = osparc.utils.LibVersions.getVcsRef();
+      thisCommit = "blah";
       if (lastCommit) {
         if (lastCommit !== thisCommit) {
-          console.log("New Release!!");
           const newRelease = new osparc.NewRelease();
           const title = this.tr("New Release");
-          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 200, 120).set({
+          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 190).set({
             clickAwayClose: false,
             resizable: false,
             showClose: true
@@ -303,7 +303,7 @@ qx.Class.define("osparc.Application", {
           osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
         }
       } else {
-        osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
+        osparc.utils.Utils.localCache.setLastCommitVcsRef(osparc.utils.LibVersions.getVcsRef());
       }
     },
 
@@ -318,6 +318,7 @@ qx.Class.define("osparc.Application", {
           resizable: false,
           showClose: false
         });
+        win.center();
         cookiePolicy.addListener("cookiesAccepted", () => {
           osparc.CookiePolicy.acceptCookies();
           win.close();

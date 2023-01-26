@@ -21,29 +21,44 @@ qx.Class.define("osparc.NewRelease", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
   },
 
   members: {
     __buildLayout: function() {
-      const text = this.tr("We are pleased to announce that some new features have been deployed for you!");
-      const label1 = new qx.ui.basic.Label(text).set({
+      const introText = this.tr("We are pleased to announce that some new features were deployed for you!");
+      const introLabel = new qx.ui.basic.Label(introText).set({
         rich: true,
         wrap: true
       });
-      this._add(label1, {
+      this._add(introLabel);
+
+      const reloadText = this.tr("Click on the 'Reload' button to make sure you get the latest version.");
+      const reloadLabel = new qx.ui.basic.Label(reloadText).set({
+        rich: true,
+        wrap: true
+      });
+      this._add(reloadLabel);
+
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const detailsText = this.tr("More details here:");
+      layout.add(new qx.ui.basic.Label(detailsText));
+
+      const link = osparc.utils.LibVersions.getVcsRefUrl();
+      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("Last features"), link);
+      layout.add(linkLabel, {
         flex: 1
       });
 
-      const text2 = this.tr("More details here:");
-      this._add(new qx.ui.basic.Label(text2));
-
-      const link = osparc.utils.LibVersions.getVcsRefUrl();
-      this._add(new osparc.ui.basic.LinkLabel(this.tr("Last features"), link));
+      this._add(layout, {
+        flex: 1
+      });
 
       const reloadBtn = new qx.ui.form.Button(this.tr("Reload")).set({
+        appearance: "strong-button",
         alignX: "right",
         allowGrowX: false
       });
