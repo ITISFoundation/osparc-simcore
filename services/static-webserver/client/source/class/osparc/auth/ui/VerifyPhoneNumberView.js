@@ -105,16 +105,19 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __createValidationLayout: function() {
       const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const validationCode = this.__validateCodeTF = new qx.ui.form.TextField().set({
+      const validateCodeTF = this.__validateCodeTF = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type the SMS code"),
         enabled: false
       });
-      smsValidationLayout.add(validationCode, {
+      smsValidationLayout.add(validateCodeTF, {
         flex: 1
       });
       const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
         minWidth: 80,
-        enabled: false
+        appearance: "strong-button"
+      });
+      validateCodeTF.bind("value", validateCodeBtn, "enabled", {
+        converter: val => Boolean(val)
       });
       smsValidationLayout.add(validateCodeBtn);
       return smsValidationLayout;

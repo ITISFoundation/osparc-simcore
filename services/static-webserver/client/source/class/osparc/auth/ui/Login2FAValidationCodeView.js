@@ -63,6 +63,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         center: true,
         appearance: "strong-button"
       });
+      validateCodeTF.bind("value", validateCodeBtn, "enabled", {
+        converter: val => Boolean(val)
+      });
       validateCodeBtn.addListener("execute", () => this.__validateCodeLogin(), this);
       this.add(validateCodeBtn);
 
