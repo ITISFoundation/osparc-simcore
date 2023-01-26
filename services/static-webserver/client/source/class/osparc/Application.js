@@ -99,7 +99,7 @@ qx.Class.define("osparc.Application", {
       this.__updateTabName();
       this.__updateFavicon();
 
-      this.__preStartChecks();
+      this.__startupChecks();
 
       // onload, load, DOMContentLoaded, appear... didn't work
       // bit of a hack
@@ -276,12 +276,12 @@ qx.Class.define("osparc.Application", {
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
-    __preStartChecks: function() {
+    __startupChecks: function() {
       const platformName = osparc.utils.LibVersions.getPlatformName();
       if (platformName !== "master") {
-        // first pop up new relaese window
+        // first, pop up new relaese window
         this.__checkNewRelease();
-        // then pop up cookies accepted window. It will go on top.
+        // then, pop up cookies accepted window. It will go on top.
         this.__checkCookiesAccepted();
       }
     },
