@@ -6,7 +6,15 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Iterator, Literal, Optional, Union
 
-from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    Json,
+    PrivateAttr,
+    root_validator,
+    validator,
+)
 
 from .basic_types import PortInt
 from .generics import ListModel
@@ -301,11 +309,9 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("containers_allowed_outgoing_permit_list")
     @classmethod
-    def _containers_allowed_outgoing_permit_list_in_compose_spec(  # pylint: disable = inconsistent-return-statements
-        cls, v, values
-    ):
+    def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, values):
         if v is None:
-            return
+            return v
 
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
@@ -326,11 +332,9 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("containers_allowed_outgoing_internet")
     @classmethod
-    def _containers_allowed_outgoing_internet_in_compose_spec(  # pylint: disable = inconsistent-return-statements
-        cls, v, values
-    ):
+    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
         if v is None:
-            return
+            return v
 
         compose_spec: Optional[dict] = values.get("compose_spec")
         if compose_spec is None:
@@ -344,6 +348,42 @@ class DynamicSidecarServiceLabels(BaseModel):
                 if container not in containers_in_compose_spec:
                     raise ValueError(f"{container=} not found in {compose_spec=}")
         return v
+
+    @root_validator
+    @classmethod
+    def not_allowed_in_both_specs(cls, values):
+        match_keys = {
+            "containers_allowed_outgoing_internet",
+            "containers_allowed_outgoing_permit_list",
+        }
+        if match_keys & set(values.keys()) != match_keys:
+            raise ValueError(
+                f"Expected the following keys {match_keys} to be present {values=}"
+            )
+
+        containers_allowed_outgoing_internet = values[
+            "containers_allowed_outgoing_internet"
+        ]
+        containers_allowed_outgoing_permit_list = values[
+            "containers_allowed_outgoing_permit_list"
+        ]
+        if (
+            containers_allowed_outgoing_internet is None
+            or containers_allowed_outgoing_permit_list is None
+        ):
+            return values
+
+        common_containers = set(containers_allowed_outgoing_internet) & set(
+            containers_allowed_outgoing_permit_list.keys()
+        )
+        if len(common_containers) > 0:
+            raise ValueError(
+                f"Not allowed {common_containers=} detected between "
+                "`containers-allowed-outgoing-permit-list` and "
+                "`containers-allowed-outgoing-internet`."
+            )
+
+        return values
 
     class Config(_BaseConfig):
         pass

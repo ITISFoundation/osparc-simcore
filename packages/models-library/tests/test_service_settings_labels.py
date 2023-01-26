@@ -219,44 +219,53 @@ def test_container_outgoing_permit_list_and_container_allow_internet_with_compos
     container_permit_list: dict[str, Any],
     expected_host_permit_list_policy: HostPermitListPolicy,
 ):
-    container_name = "test_container"
-    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+    container_name_1 = "test_container_1"
+    container_name_2 = "test_container_2"
+    compose_spec: dict[str, Any] = {
+        "services": {container_name_1: None, container_name_2: None}
+    }
 
     dict_data = {
         "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
-            {container_name: container_permit_list}
+            {container_name_1: container_permit_list}
         ),
         "simcore.service.containers-allowed-outgoing-internet": json.dumps(
-            [container_name]
+            [container_name_2]
         ),
         "simcore.service.compose-spec": json.dumps(compose_spec),
-        "simcore.service.container-http-entrypoint": container_name,
+        "simcore.service.container-http-entrypoint": container_name_1,
     }
 
     instance = DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
     assert (
-        instance.containers_allowed_outgoing_permit_list[container_name][0]
+        instance.containers_allowed_outgoing_permit_list[container_name_1][0]
         == expected_host_permit_list_policy
     )
 
 
 def test_container_outgoing_permit_list_and_container_allow_internet_without_compose_spec():
-    dict_data = {
-        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
-            {
-                DEFAULT_SINGLE_SERVICE_NAME: [
-                    {
-                        "hostname": "a-host",
-                        "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
-                    }
-                ]
-            }
-        ),
-        "simcore.service.containers-allowed-outgoing-internet": json.dumps(
-            [DEFAULT_SINGLE_SERVICE_NAME]
-        ),
-    }
-    assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    for dict_data in (
+        # singles service with outgoing-permit-list
+        {
+            "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+                {
+                    DEFAULT_SINGLE_SERVICE_NAME: [
+                        {
+                            "hostname": "a-host",
+                            "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                        }
+                    ]
+                }
+            )
+        },
+        # singles service with allowed-outgoing-internet
+        {
+            "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+                [DEFAULT_SINGLE_SERVICE_NAME]
+            )
+        },
+    ):
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
 
 
 def test_container_allow_internet_no_compose_spec_not_ok():
@@ -323,5 +332,29 @@ def test_container_outgoing_permit_list_compose_spec_not_ok():
         assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
     assert (
         f"Trying to permit list container='container_name' which was not found in {compose_spec=}"
+        in f"{exec_info.value}"
+    )
+
+
+def test_not_allowed_in_both_permit_list_and_outgoing_internet():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {container_name: [{"hostname": "a-host", "tcp_ports": [4]}]}
+        ),
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+            [container_name]
+        ),
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+        "simcore.service.container-http-entrypoint": container_name,
+    }
+
+    with pytest.raises(ValidationError) as exec_info:
+        DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+    assert (
+        f"Not allowed common_containers={{'{container_name}'}} detected"
         in f"{exec_info.value}"
     )
