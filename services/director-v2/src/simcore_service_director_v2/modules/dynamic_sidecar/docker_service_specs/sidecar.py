@@ -143,6 +143,9 @@ def get_dynamic_sidecar_spec(
                 run_id=scheduler_data.run_id,
                 project_id=scheduler_data.project_id,
                 user_id=scheduler_data.user_id,
+                volume_size_limit=scheduler_data.paths_mapping.volume_size_limits.get(
+                    f"{path_to_mount}"
+                ),
             )
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
@@ -169,6 +172,9 @@ def get_dynamic_sidecar_spec(
                     run_id=scheduler_data.run_id,
                     project_id=scheduler_data.project_id,
                     user_id=scheduler_data.user_id,
+                    volume_size_limit=scheduler_data.paths_mapping.volume_size_limits.get(
+                        f"{path_to_mount}"
+                    ),
                 )
             )
 

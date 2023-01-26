@@ -114,6 +114,7 @@ class DynamicSidecarVolumesPathsResolver:
         run_id: RunID,
         project_id: ProjectID,
         user_id: UserID,
+        volume_size_limit: Optional[str],
     ) -> dict[str, Any]:
         """
         Creates specification for mount to be added to containers created as part of a service
@@ -130,7 +131,12 @@ class DynamicSidecarVolumesPathsResolver:
                     "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
-                }
+                },
+                "DriverConfig": (
+                    {"Options": {"size": volume_size_limit}}
+                    if volume_size_limit is not None
+                    else None
+                ),
             },
         }
 
