@@ -99,7 +99,8 @@ qx.Class.define("osparc.Application", {
       this.__updateTabName();
       this.__updateFavicon();
 
-      this.__startupChecks();
+      // to make sure the dialogs are centered
+      setTimeout(() => this.__startupChecks(), 50);
 
       // onload, load, DOMContentLoaded, appear... didn't work
       // bit of a hack
@@ -277,7 +278,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __startupChecks: function() {
-      const platformName = osparc.utils.LibVersions.getPlatformName();
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       if (platformName !== "OM-REMOVE-master") {
         // first, pop up new relaese window
         this.__checkNewRelease();
@@ -294,7 +295,7 @@ qx.Class.define("osparc.Application", {
         if (lastCommit !== thisCommit) {
           const newRelease = new osparc.NewRelease();
           const title = this.tr("New Release");
-          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 190).set({
+          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 185).set({
             clickAwayClose: false,
             resizable: false,
             showClose: true
