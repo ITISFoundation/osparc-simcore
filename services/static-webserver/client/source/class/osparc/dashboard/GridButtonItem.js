@@ -151,12 +151,13 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     __itemSelected: function() {
+      if (this.isLocked()) {
+        this.setValue(false);
+        return;
+      }
+
       if (this.isResourceType("study") && this.isMultiSelectionMode()) {
         const selected = this.getValue();
-
-        if (this.isLocked() && selected) {
-          this.setValue(false);
-        }
 
         const tick = this.getChildControl("tick-selected");
         tick.setVisibility(selected ? "visible" : "excluded");

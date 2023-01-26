@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Node", {
   construct: function(study, key, version, uuid) {
     this.base(arguments);
 
-    this.__metaData = {};
+    this.__metaData = osparc.utils.Services.getMetaData(key, version);
     this.__innerNodes = {};
     this.setOutputs({});
 
@@ -397,7 +397,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateWithMetadata: function() {
-      const metaData = this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
+      const metaData = this.__metaData;
       if (metaData) {
         if (metaData.name) {
           this.setLabel(metaData.name);
@@ -967,11 +967,15 @@ qx.Class.define("osparc.data.model.Node", {
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.utils.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), showZoomMaximizeButton);
+
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
         loadingPage.setLogo(thumbnail);
       }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
+
+      loadingPage.addExtraWidget(this.getStatus().getProgressSequence().getWidgetForLoadingPage());
+
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
         const status = this.getStatus().getInteractive();
@@ -1290,24 +1294,11 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    __onInteractiveNodeStarted: function(e) {
-      let req = e.getTarget();
-      const {
-        error
-      } = req.getResponse();
-
-      if (error) {
-        const msg = "Error received: " + error;
-        const errorMsgData = {
-          nodeId: this.getNodeId(),
-          msg,
-          level: "ERROR"
-        };
-        this.fireDataEvent("showInLogger", errorMsgData);
-        return;
+    setNodeProgressSequence: function(progressType, progress) {
+      const nodeStatus = this.getStatus();
+      if (nodeStatus.getProgressSequence()) {
+        nodeStatus.getProgressSequence().addProgressMessage(progressType, progress);
       }
-
-      this.__nodeState();
     },
 
     __waitForServiceReady: function(srvUrl) {

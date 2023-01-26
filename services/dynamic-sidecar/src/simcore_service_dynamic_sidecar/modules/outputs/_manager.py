@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from datetime import timedelta
@@ -135,11 +136,24 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         def _remove_downloads(future: Future) -> None:
             # pylint: disable=protected-access
             if future._exception is not None:
+                formatted_traceback = (
+                    "\n"
+                    + "".join(
+                        # pylint:disable = unexpected-keyword-arg, no-value-for-parameter
+                        traceback.format_exception(
+                            etype=type(future._exception),
+                            value=future._exception,
+                            tb=future._exception.__traceback__,
+                        )
+                    )
+                    if future._exception.__traceback__
+                    else ""
+                )
                 logger.warning(
-                    "%s ended with exception: %s",
+                    "%s ended with exception: %s%s",
                     task_name,
-                    future._exception
-                    # traceback.format_tb(future._exception),
+                    future._exception,
+                    formatted_traceback,
                 )
 
             # keep track of the last result for each port

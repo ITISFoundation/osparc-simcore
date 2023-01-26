@@ -1540,7 +1540,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
           nodeId,
           label: node.getLabel(),
-          study: this.getStudy().getUuid()
+          studyId: this.getStudy().getUuid()
         });
         const title = this.tr("Service information");
         const width = 600;

@@ -304,6 +304,14 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
+    formatSeconds: function(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds - min * 60;
+      const minutesStr = ("0" + min).slice(-2);
+      const secondsStr = ("0" + sec).slice(-2);
+      return `${minutesStr}:${secondsStr}`;
+    },
+
     daysBetween: function(day1, day2) {
       // The number of milliseconds in one day
       const ONE_DAY = 1000 * 60 * 60 * 24;
@@ -324,7 +332,7 @@ qx.Class.define("osparc.utils.Utils", {
         msg = qx.locale.Manager.tr("This account will expire in ") + daysToExpiration + qx.locale.Manager.tr(" days.");
       }
       msg += "</br>";
-      msg += qx.locale.Manager.tr("Please, contact us by email:");
+      msg += qx.locale.Manager.tr("Please contact us by email:");
       msg += "</br>";
       return new Promise(resolve => {
         osparc.store.VendorInfo.getInstance().getSupportEmail()
