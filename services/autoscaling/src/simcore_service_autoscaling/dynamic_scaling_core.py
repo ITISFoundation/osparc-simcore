@@ -401,9 +401,10 @@ async def _scale_up_cluster(
 
 async def _try_attach_pending_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     """label the drained instances that connected to the swarm which are missing the monitoring labels"""
-    newly_attached_nodes: list[AssociatedInstance] = []
-    still_pending_ec2: list[EC2InstanceData] = []
-    app_settings: ApplicationSettings = app.state.settings
+    new_found_instances: list[AssociatedInstance] = []
+    still_pending_ec2s: list[EC2InstanceData] = []
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     for instance_data in cluster.pending_ec2s:
         try:
             node_host_name = node_host_name_from_ec2_private_dns(instance_data)
@@ -417,15 +418,24 @@ async def _try_attach_pending_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
                     tags=utils_docker.get_docker_tags(app_settings),
                     available=False,
                 )
-                newly_attached_nodes.append(AssociatedInstance(new_node, instance_data))
+                new_found_instances.append(AssociatedInstance(new_node, instance_data))
             else:
-                still_pending_ec2.append(instance_data)
+                still_pending_ec2s.append(instance_data)
         except Ec2InvalidDnsNameError:
             logger.exception("Unexpected EC2 private dns")
+    # NOTE: first provision the reserve drained nodes if possible
+    all_drained_nodes = (
+        cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
+    )
     return dataclasses.replace(
         cluster,
-        drained_nodes=cluster.drained_nodes + newly_attached_nodes,
-        pending_ec2s=still_pending_ec2,
+        drained_nodes=all_drained_nodes[
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
+        ],
+        reserve_drained_nodes=all_drained_nodes[
+            : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+        ],
+        pending_ec2s=still_pending_ec2s,
     )
 
 
