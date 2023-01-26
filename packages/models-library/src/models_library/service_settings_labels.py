@@ -209,7 +209,7 @@ class DNResolver(BaseModel):
         extra = Extra.allow
         schema_extra = {
             "examples": [
-                {"address": "1.1.1.1", "port": 53},  # nosec
+                {"address": "1.1.1.1", "port": 53},  # NOSONAR
                 {"address": "ns1.example.com", "port": 53},
             ]
         }
