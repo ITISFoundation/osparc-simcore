@@ -92,9 +92,11 @@ qx.Class.define("osparc.desktop.MainPage", {
           if (osparc.utils.Utils.isProduct("s4llite")) {
             msg = this.tr("Do you really want to close the project?");
             msg += "<br>";
-            msg += this.tr("Make sure you saved the changes to the current <b>smash file</b> and <b>open notebooks</b>.");
+            msg += this.tr("Make sure you saved the changes to:");
             msg += "<br>";
-            msg += this.tr("Running <b>simulations</b> will be killed.");
+            msg += this.tr("- your current <b>smash file</b> (Running <b>simulations</b> will be killed)");
+            msg += "<br>";
+            msg += this.tr("- the current <b>open notebooks</b> (<b>jupyterlab</b> will be killed)");
             confirmText = this.tr("Close");
           }
           const win = new osparc.ui.window.Confirmation(msg).set({
