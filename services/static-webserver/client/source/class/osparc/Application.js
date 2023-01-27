@@ -98,7 +98,8 @@ qx.Class.define("osparc.Application", {
 
       this.__updateTabName();
       this.__updateFavicon();
-      this.__checkCookiesAccepted();
+
+      this.__startupChecks();
 
       // onload, load, DOMContentLoaded, appear... didn't work
       // bit of a hack
@@ -275,31 +276,58 @@ qx.Class.define("osparc.Application", {
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
-    __checkCookiesAccepted: function() {
+    __startupChecks: function() {
       osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (platformName !== "master") {
-            if (!osparc.CookiePolicy.areCookiesAccepted()) {
-              const cookiePolicy = new osparc.CookiePolicy();
-              const title = this.tr("Cookie Policy");
-              // "tis" and "s4llite" include the license agreement
-              const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
-              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
-                clickAwayClose: false,
-                resizable: false,
-                showClose: false
-              });
-              cookiePolicy.addListener("cookiesAccepted", () => {
-                osparc.CookiePolicy.acceptCookies();
-                win.close();
-              }, this);
-              cookiePolicy.addListener("cookiesDeclined", () => {
-                osparc.CookiePolicy.declineCookies();
-                win.close();
-              }, this);
-            }
+            // first, pop up new relaese window
+            this.__checkNewRelease();
+            // then, pop up cookies accepted window. It will go on top.
+            this.__checkCookiesAccepted();
           }
         });
+    },
+
+    __checkNewRelease: function() {
+      const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
+      const thisCommit = osparc.utils.LibVersions.getVcsRef();
+      if (lastCommit) {
+        if (lastCommit !== thisCommit) {
+          const newRelease = new osparc.NewRelease();
+          const title = this.tr("New Release");
+          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 170).set({
+            clickAwayClose: false,
+            resizable: false,
+            showClose: true
+          });
+          const closeBtn = win.getChildControl("close-button");
+          osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+        }
+      } else {
+        osparc.utils.Utils.localCache.setLastCommitVcsRefUI(thisCommit);
+      }
+    },
+
+    __checkCookiesAccepted: function() {
+      if (!osparc.CookiePolicy.areCookiesAccepted()) {
+        const cookiePolicy = new osparc.CookiePolicy();
+        const title = this.tr("Cookie Policy");
+        // "tis" and "s4llite" include the license agreement
+        const height = (osparc.utils.Utils.isProduct("tis") || osparc.utils.Utils.isProduct("s4llite")) ? 180 : 145;
+        const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 400, height).set({
+          clickAwayClose: false,
+          resizable: false,
+          showClose: false
+        });
+        cookiePolicy.addListener("cookiesAccepted", () => {
+          osparc.CookiePolicy.acceptCookies();
+          win.close();
+        }, this);
+        cookiePolicy.addListener("cookiesDeclined", () => {
+          osparc.CookiePolicy.declineCookies();
+          win.close();
+        }, this);
+      }
     },
 
     __restart: function() {

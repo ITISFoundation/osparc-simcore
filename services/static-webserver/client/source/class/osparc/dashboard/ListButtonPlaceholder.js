@@ -23,6 +23,9 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
 
+    // make unselectable
+    this.addListener("changeValue", () => this.setValue(false), this);
+
     this.set({
       cursor: "not-allowed"
     });
