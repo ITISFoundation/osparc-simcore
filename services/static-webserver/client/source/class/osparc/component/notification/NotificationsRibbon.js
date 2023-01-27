@@ -65,14 +65,15 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
             icon: "@FontAwesome5Solid/exclamation-triangle/16",
             center: true,
             padding: 2,
-            gap: 15,
+            gap: 10,
             height: 20
           });
           notification.getChildControl("label").set({
             textColor: "black",
             font: "text-14",
             rich: true,
-            wrap: true
+            wrap: true,
+            selectable: true
           });
           notification.getChildControl("icon").set({
             textColor: "black"
