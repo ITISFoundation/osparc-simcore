@@ -85,6 +85,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     hardRefresh: function() {
+      // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // eslint-disable-next-line no-self-assign
       window.location.href = window.location.href;
     },
