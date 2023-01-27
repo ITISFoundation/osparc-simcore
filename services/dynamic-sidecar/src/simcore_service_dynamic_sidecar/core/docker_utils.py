@@ -3,10 +3,12 @@ import logging
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Awaitable, Callable, Final, Optional, TypedDict
+from uuid import uuid4
 
 import aiodocker
 import yaml
 from aiodocker.utils import clean_filters
+from aiodocker.volumes import DockerVolume
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.services import RunID
 from pydantic import PositiveInt
@@ -236,3 +238,22 @@ async def _pull_image_with_progress(
             await progress_cb(total_current, total_total)
 
         await log_cb(f"pulling {shorter_image_name}: {pull_progress}...")
+
+
+async def supports_volumes_with_quota() -> bool:
+    async with docker_client() as docker:
+        docker_volume: Optional[DockerVolume] = None
+        try:
+            docker_volume = await docker.volumes.create(
+                {
+                    "name": f"check-quota-{uuid4()}",
+                    "Driver": "local",
+                    "DriverOpts": {"size": "1m"},
+                }
+            )
+        except aiodocker.DockerError:
+            logger.debug("No support for volume with quota")
+            return False
+        if docker_volume:
+            await docker_volume.delete()
+        return True

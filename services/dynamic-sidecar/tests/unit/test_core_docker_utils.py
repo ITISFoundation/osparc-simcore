@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from typing import AsyncIterable, AsyncIterator
+from unittest.mock import AsyncMock
 
 import aiodocker
 import pytest
@@ -10,12 +11,14 @@ from faker import Faker
 from models_library.services import RunID
 from pydantic import PositiveInt
 from pytest import FixtureRequest
+from pytest_mock import MockerFixture
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     get_docker_service_images,
     get_running_containers_count_from_names,
     get_volume_by_label,
     pull_images,
+    supports_volumes_with_quota,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
@@ -192,3 +195,24 @@ async def test_pull_image(repeat: str):
         progress_cb=_print_progress,
         log_cb=_print_log,
     )
+
+
+@pytest.fixture(params=[True, False])
+def volume_has_quota_support(request: FixtureRequest) -> bool:
+    return request.param
+
+
+@pytest.fixture
+def mock_docker_volume(mocker: MockerFixture, volume_has_quota_support: bool) -> None:
+    async def _mock_create(*args, **kwargs) -> AsyncMock:
+        if volume_has_quota_support is False:
+            raise aiodocker.DockerError(status=404, data={"message": "some mock error"})
+        return AsyncMock()
+
+    mocker.patch("aiodocker.volumes.DockerVolumes.create", side_effect=_mock_create)
+
+
+async def test_supports_volumes_with_size(
+    mock_docker_volume: None, volume_has_quota_support: bool
+):
+    assert await supports_volumes_with_quota() is volume_has_quota_support
