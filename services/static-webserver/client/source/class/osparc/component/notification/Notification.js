@@ -21,12 +21,12 @@ qx.Class.define("osparc.component.notification.Notification", {
   construct: function(text, type = "maintenance") {
     this.base(arguments);
 
-    if (type) {
-      this.setType(type);
-    }
-
     if (text) {
       this.setText(text);
+    }
+
+    if (type) {
+      this.setType(type);
     }
   },
 
