@@ -201,7 +201,9 @@ class _PortRange(BaseModel):
 
 
 class DNSResolver(BaseModel):
-    address: str
+    address: str = Field(
+        ..., description="this is not an url address is derived from IP address"
+    )
     port: PortInt
 
     class Config(_BaseConfig):
