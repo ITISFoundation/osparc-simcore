@@ -274,35 +274,35 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       orgsModel.removeAll();
 
       const sortOrganizations = (a, b) => {
-        const aAccessRights = a.getAccessRights();
-        const bAccessRights = b.getAccessRights();
-        if (aAccessRights.getDelete() !== bAccessRights.getDelete()) {
-          return bAccessRights.getDelete() - aAccessRights.getDelete();
+        const aAccessRights = a["accessRights"];
+        const bAccessRights = b["accessRights"];
+        if (aAccessRights["delete"] !== bAccessRights["delete"]) {
+          return bAccessRights["delete"] - aAccessRights["delete"];
         }
-        if (aAccessRights.getWrite() !== bAccessRights.getWrite()) {
-          return bAccessRights.getWrite() - aAccessRights.getWrite();
+        if (aAccessRights["write"] !== bAccessRights["write"]) {
+          return bAccessRights["write"] - aAccessRights["write"];
         }
-        if (aAccessRights.getRead() !== bAccessRights.getRead()) {
-          return bAccessRights.getRead() - aAccessRights.getRead();
+        if (aAccessRights["read"] !== bAccessRights["read"]) {
+          return bAccessRights["read"] - aAccessRights["read"];
         }
-        return a.getLabel().localeCompare(b.getLabel());
+        return a["label"].localeCompare(b["label"]);
       };
       osparc.data.Resources.get("organizations")
-        .then(respOrgs => {
+        .then(async respOrgs => {
           const orgs = respOrgs["organizations"];
-          orgs.forEach(org => {
+          const promises = await orgs.map(async org => {
             const params = {
               url: {
                 gid: org["gid"]
               }
             };
-            osparc.data.Resources.get("organizationMembers", params)
-              .then(respOrgMembers => {
-                org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
-                orgsModel.append(qx.data.marshal.Json.createModel(org));
-                orgsModel.sort(sortOrganizations);
-              });
+            const respOrgMembers = await osparc.data.Resources.get("organizationMembers", params);
+            org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
+            return org;
           });
+          const orgsList = await Promise.all(promises);
+          orgsList.sort(sortOrganizations);
+          orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
         });
     },
 
