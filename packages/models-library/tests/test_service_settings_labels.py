@@ -12,9 +12,9 @@ import pytest
 from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
-    DNResolver,
+    DNSResolver,
     DynamicSidecarServiceLabels,
-    HostPermitListPolicy,
+    NATRule,
     PathMappingsLabel,
     PortRange,
     SimcoreServiceLabels,
@@ -168,7 +168,7 @@ def test_port_range():
 
 
 def test_host_permit_list_policy():
-    host_permit_list_policy = HostPermitListPolicy(
+    host_permit_list_policy = NATRule(
         hostname="hostname",
         tcp_ports=[
             PortRange(lower=1, upper=3),
@@ -189,10 +189,10 @@ def test_host_permit_list_policy():
                     "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
                 }
             ],
-            HostPermitListPolicy(
+            NATRule(
                 hostname="a-host",
                 tcp_ports=[12132, PortRange(lower=12, upper=2334)],
-                dns_resolver=DNResolver(
+                dns_resolver=DNSResolver(
                     address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
                 ),
             ),
@@ -206,10 +206,10 @@ def test_host_permit_list_policy():
                     "dns_resolver": {"address": "ns1.example.com", "port": 123},
                 }
             ],
-            HostPermitListPolicy(
+            NATRule(
                 hostname="a-host",
                 tcp_ports=[12132, PortRange(lower=12, upper=2334)],
-                dns_resolver=DNResolver(address="ns1.example.com", port=123),
+                dns_resolver=DNSResolver(address="ns1.example.com", port=123),
             ),
             id="with_dns_resolver",
         ),
@@ -217,7 +217,7 @@ def test_host_permit_list_policy():
 )
 def test_container_outgoing_permit_list_and_container_allow_internet_with_compose_spec(
     container_permit_list: dict[str, Any],
-    expected_host_permit_list_policy: HostPermitListPolicy,
+    expected_host_permit_list_policy: NATRule,
 ):
     container_name_1 = "test_container_1"
     container_name_2 = "test_container_2"

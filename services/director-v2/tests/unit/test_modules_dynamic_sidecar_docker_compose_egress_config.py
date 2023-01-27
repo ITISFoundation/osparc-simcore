@@ -10,7 +10,7 @@ from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
-    HostPermitListPolicy,
+    NATRule,
     PortRange,
 )
 from orderedset import OrderedSet
@@ -64,16 +64,12 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
     "host_permit_list_policies, expected_grouped_proxy_rules",
     [
         pytest.param(
-            [HostPermitListPolicy(hostname="", tcp_ports=[1])],
+            [NATRule(hostname="", tcp_ports=[1])],
             [OrderedSet({_pr("", 1)})],
             id="one_port",
         ),
         pytest.param(
-            [
-                HostPermitListPolicy(
-                    hostname="abc", tcp_ports=[1, PortRange(lower=1, upper=N)]
-                )
-            ],
+            [NATRule(hostname="abc", tcp_ports=[1, PortRange(lower=1, upper=N)])],
             [
                 _u(OrderedSet({_pr("abc", x)}) for x in range(1, N + 1)),
             ],
@@ -81,12 +77,8 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
         ),
         pytest.param(
             [
-                HostPermitListPolicy(
-                    hostname="abc", tcp_ports=[PortRange(lower=1, upper=N), 999]
-                ),
-                HostPermitListPolicy(
-                    hostname="xyz", tcp_ports=[PortRange(lower=1, upper=N), 999]
-                ),
+                NATRule(hostname="abc", tcp_ports=[PortRange(lower=1, upper=N), 999]),
+                NATRule(hostname="xyz", tcp_ports=[PortRange(lower=1, upper=N), 999]),
             ],
             [
                 _u(OrderedSet({_pr("abc", x)}) for x in range(1, N + 1))
@@ -97,10 +89,7 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
             id="mix_same_ports_on_two_separate_hosts",
         ),
         pytest.param(
-            [
-                HostPermitListPolicy(hostname=f"abc{x}", tcp_ports=[80, 443])
-                for x in range(2)
-            ],
+            [NATRule(hostname=f"abc{x}", tcp_ports=[80, 443]) for x in range(2)],
             [
                 OrderedSet({_pr(f"abc{x}", 80)}) | OrderedSet({_pr(f"abc{x}", 443)})
                 for x in range(2)
@@ -110,7 +99,7 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
     ],
 )
 def test_get_egress_proxy_dns_port_rules(
-    host_permit_list_policies: list[HostPermitListPolicy],
+    host_permit_list_policies: list[NATRule],
     expected_grouped_proxy_rules: deque[set[tuple[str, PortInt]]],
 ):
     grouped_proxy_rules = _get_egress_proxy_dns_port_rules(host_permit_list_policies)

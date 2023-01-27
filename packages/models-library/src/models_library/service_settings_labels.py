@@ -20,9 +20,8 @@ from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 
-# well known DNS server ran by address by Cloudflare
+# Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-# standard domain name system port
 DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
 
 
@@ -201,7 +200,7 @@ class PortRange(BaseModel):
         return v
 
 
-class DNResolver(BaseModel):
+class DNSResolver(BaseModel):
     address: str
     port: PortInt
 
@@ -215,11 +214,11 @@ class DNResolver(BaseModel):
         }
 
 
-class HostPermitListPolicy(BaseModel):
+class NATRule(BaseModel):
     hostname: str
     tcp_ports: list[Union[PortRange, PortInt]]
-    dns_resolver: DNResolver = Field(
-        default_factory=lambda: DNResolver(
+    dns_resolver: DNSResolver = Field(
+        default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
         ),
         description="specify a DNS resolver address and port",
@@ -275,7 +274,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     )
 
     containers_allowed_outgoing_permit_list: Optional[
-        Json[dict[str, list[HostPermitListPolicy]]]
+        Json[dict[str, list[NATRule]]]
     ] = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-permit-list",

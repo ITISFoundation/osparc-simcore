@@ -7,7 +7,7 @@ import yaml
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
-    HostPermitListPolicy,
+    NATRule,
     SimcoreServiceLabels,
 )
 from orderedset import OrderedSet
@@ -250,7 +250,7 @@ def _get_egress_proxy_service_config(
 
 
 def _get_egress_proxy_dns_port_rules(
-    all_host_permit_list_policies: list[HostPermitListPolicy],
+    all_host_permit_list_policies: list[NATRule],
 ) -> list[OrderedSet[_ProxyRule]]:
     """returns a list of sets of rules to be applied to each proxy"""
     # 1. map all ports to hostnames to compute overlapping ports per proxy
@@ -331,7 +331,7 @@ def add_egress_configuration(
     # allow internet access to containers based on DNS:PORT rules
     if simcore_service_labels.containers_allowed_outgoing_permit_list:
         # get all HostPermitListPolicy entries from all containers
-        all_host_permit_list_policies: list[HostPermitListPolicy] = []
+        all_host_permit_list_policies: list[NATRule] = []
 
         hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
         container_name_to_proxies_names: dict[str, set[set]] = {}
