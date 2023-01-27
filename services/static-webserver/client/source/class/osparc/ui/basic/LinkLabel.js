@@ -34,7 +34,10 @@ qx.Class.define("osparc.ui.basic.LinkLabel", {
   construct: function(label, url) {
     this.base(arguments, label);
 
-    this.setRich(true);
+    this.set({
+      rich: true,
+      allowGrowX: true
+    });
 
     if (url) {
       this.setUrl(url);

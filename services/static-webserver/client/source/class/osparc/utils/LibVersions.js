@@ -19,6 +19,14 @@ qx.Class.define("osparc.utils.LibVersions", {
   type: "static",
 
   statics: {
+    getVcsRef: function() {
+      return qx.core.Environment.get("osparc.vcsRef");
+    },
+
+    getVcsRefUI: function() {
+      return qx.core.Environment.get("osparc.vcsRefClient");
+    },
+
     __getRemoteUrl: function() {
       let remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
 
@@ -32,32 +40,42 @@ qx.Class.define("osparc.utils.LibVersions", {
       return remoteUrl;
     },
 
-    getPlatformVersion: function() {
-      const name = "osparc-simcore";
-      const commitId = qx.core.Environment.get("osparc.vcsRef");
-      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
-
+    getVcsRefUrl: function() {
+      const remoteUrl = this.__getRemoteUrl();
       let url = remoteUrl;
+      const commitId = this.getVcsRef();
       if (commitId) {
         url = remoteUrl + "/commits/" + String(commitId) + "/";
       }
+      return url;
+    },
+
+    getVcsRefUIUrl: function() {
+      const remoteUrl = this.__getRemoteUrl();
+      let url = remoteUrl;
+      const commitId = this.getVcsRefUI();
+      if (commitId) {
+        url = remoteUrl + "/commits/" + String(commitId) + "/services/static-webserver/client/";
+      }
+      return url;
+    },
+
+    getPlatformVersion: function() {
+      const name = "osparc-simcore";
+      const commitId = this.getVcsRef();
+      const remoteUrl = this.getVcsRefUrl();
 
       return {
         name: name,
         version: commitId.substring(0, 7),
-        url: url
+        url: remoteUrl
       };
     },
 
     getUIVersion: function() {
       let name = "osparc-simcore UI";
-      const commitId = qx.core.Environment.get("osparc.vcsRefClient");
-      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
-
-      let url = remoteUrl;
-      if (commitId) {
-        url = remoteUrl + "/commits/" + String(commitId) + "/services/static-webserver/client/";
-      }
+      const commitId = this.getVcsRefUI();
+      const remoteUrl = this.getVcsRefUIUrl();
       let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
         name = name + " [" + status + "]";
@@ -66,7 +84,7 @@ qx.Class.define("osparc.utils.LibVersions", {
       return {
         name: name,
         version: commitId,
-        url: url
+        url: remoteUrl
       };
     },
 
