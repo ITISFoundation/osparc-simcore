@@ -99,8 +99,7 @@ qx.Class.define("osparc.Application", {
       this.__updateTabName();
       this.__updateFavicon();
 
-      // to make sure the dialogs are centered
-      setTimeout(() => this.__startupChecks(), 50);
+      this.__startupChecks();
 
       // onload, load, DOMContentLoaded, appear... didn't work
       // bit of a hack
@@ -278,13 +277,15 @@ qx.Class.define("osparc.Application", {
     },
 
     __startupChecks: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (platformName !== "master") {
-        // first, pop up new relaese window
-        this.__checkNewRelease();
-        // then, pop up cookies accepted window. It will go on top.
-        this.__checkCookiesAccepted();
-      }
+      osparc.store.StaticInfo.getInstance().getPlatformName()
+        .then(platformName => {
+          if (platformName !== "master") {
+            // first, pop up new relaese window
+            this.__checkNewRelease();
+            // then, pop up cookies accepted window. It will go on top.
+            this.__checkCookiesAccepted();
+          }
+        });
     },
 
     __checkNewRelease: function() {
