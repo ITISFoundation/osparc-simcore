@@ -54,7 +54,6 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
 
     __updateRibbon: function() {
       const notifications = this.__notifications;
-      console.log("notifications", notifications);
       if (notifications.length) {
         this.show();
         this._removeAll();
