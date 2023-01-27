@@ -8,6 +8,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -180,10 +181,11 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-def assemble_spec(  # pylint:disable=too-many-arguments
+def assemble_spec(
+    *,
     app: FastAPI,
-    service_key: str,
-    service_tag: str,
+    service_key: ServiceKey,
+    service_tag: ServiceVersion,
     paths_mapping: PathMappingsLabel,
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
