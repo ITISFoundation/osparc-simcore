@@ -45,22 +45,9 @@ def _get_tcp_listener(
     port: PortInt,
     cluster_name: str,
 ) -> _TCPListener:
-    """
-    listeners:
-      - name: listener_0
-        address:
-          socket_address:
-            address: 0.0.0.0
-            port_value: 27000
-        filter_chains:
-          - filters:
-              - name: envoy.filters.network.tcp_proxy
-                typed_config:
-                  "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
-                  stat_prefix: destination
-                  cluster: cluster_0
-    """
-    # NOTE: can be refactored using pydantic models
+    """returns an Envoy proxy TCP listener configuration"""
+    # NOTE: for details see Envoy's Dynamic forward proxy
+    # https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/dynamic_forward_proxy_filter
     return {
         "name": name,
         "address": {
@@ -89,33 +76,9 @@ def _get_tcp_listener(
 def _get_tcp_cluster(
     cluster_name: str, dns_address: str, dns_port: PortInt, hostname: str, port: PortInt
 ) -> _TCPCluster:
-    """
-    - name: cluster_0
-      connect_timeout: 30s
-      type: LOGICAL_DNS
-      dns_lookup_family: V4_ONLY
-      typed_dns_resolver_config:
-        name: envoy.network.dns_resolver.cares
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.network.dns_resolver.cares.v3.CaresDnsResolverConfig
-          resolvers:
-            - socket_address:
-                address: "172.16.8.15"
-                port_value: 53
-          dns_resolver_options:
-            use_tcp_for_dns_lookups: true
-            no_default_search_domain: true
-      load_assignment:
-        cluster_name: cluster_0
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: license.speag.com
-                      port_value: 27000
-    """
-    # NOTE: can be refactored using pydantic models
+    """returns an Envoy proxy TCP cluster configuration"""
+    # NOTE: for details see Envoy's Dynamic forward proxy
+    # https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/dynamic_forward_proxy_filter
     return {
         "name": cluster_name,
         "connect_timeout": "30s",
@@ -166,7 +129,6 @@ def _get_envy_config(proxy_rules: OrderedSet[_ProxyRule]) -> dict[str, Any]:
     clusters: deque[_TCPCluster] = deque()
 
     for k, proxy_rule in enumerate(proxy_rules):
-        print(k, proxy_rule)
         host_data, port = proxy_rule
 
         listener_name = f"listener_{k}"
