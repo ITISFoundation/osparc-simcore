@@ -61,11 +61,11 @@ def give_internet_to_group(
 ) -> Iterator[Callable[..., dict]]:
     to_remove = []
 
-    def creator(group_id: int) -> dict[str, Any]:
+    def creator(group_id: int, has_internet_access: bool) -> dict[str, Any]:
         with postgres_db.connect() as con:
             groups_extra_properties_config = {
                 "group_id": group_id,
-                "internet_access": True,
+                "internet_access": has_internet_access,
             }
 
             con.execute(
@@ -110,8 +110,9 @@ async def user(
     with_internet_access: bool,
 ) -> dict[str, Any]:
     user = registered_user()
-    if with_internet_access:
-        give_internet_to_group(group_id=user["primary_gid"])
+    give_internet_to_group(
+        group_id=user["primary_gid"], has_internet_access=with_internet_access
+    )
     return user
 
 
