@@ -2,6 +2,7 @@ import datetime
 from functools import cached_property
 from typing import Optional, cast
 
+from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -73,7 +74,8 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
         default=0,
-        description="Buffer of readily available machines for fast usage (always on)",
+        description="Constant reserve of drained ready machines for fast(er) usage,"
+        "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
     )
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
@@ -173,3 +175,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         # NOTE: mypy is not happy without the cast
         return cast(str, cls.validate_log_level(value))
+
+
+def get_application_settings(app: FastAPI) -> ApplicationSettings:
+    return cast(ApplicationSettings, app.state.settings)

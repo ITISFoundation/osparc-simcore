@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, Task
 
 from ..core.errors import Ec2InvalidDnsNameError
-from ..models import AssociatedInstance, EC2Instance, EC2InstanceData, Resources
+from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
 
@@ -52,10 +52,10 @@ async def associate_ec2_instances_with_nodes(
 
 
 def try_assigning_task_to_node(
-    pending_task: Task, node_to_tasks: list[tuple[Node, list[Task]]]
+    pending_task: Task, instance_to_tasks: list[tuple[AssociatedInstance, list[Task]]]
 ) -> bool:
-    for node, node_assigned_tasks in node_to_tasks:
-        instance_total_resource = utils_docker.get_node_total_resources(node)
+    for instance, node_assigned_tasks in instance_to_tasks:
+        instance_total_resource = utils_docker.get_node_total_resources(instance.node)
         tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
             node_assigned_tasks
         )
@@ -68,7 +68,8 @@ def try_assigning_task_to_node(
 
 
 def try_assigning_task_to_instances(
-    pending_task: Task, list_of_instance_to_tasks: list[tuple[EC2Instance, list[Task]]]
+    pending_task: Task,
+    list_of_instance_to_tasks: list[tuple[EC2InstanceType, list[Task]]],
 ) -> bool:
     for instance, instance_assigned_tasks in list_of_instance_to_tasks:
         instance_total_resource = Resources(cpus=instance.cpus, ram=instance.ram)
@@ -83,15 +84,16 @@ def try_assigning_task_to_instances(
     return False
 
 
-_MINUTE: Final[int] = 60
-_AVG_TIME_TO_START_EC2_INSTANCE: Final[int] = 3 * _MINUTE
+_MAX_TIME_TO_START_EC2_INSTANCE: Final[datetime.timedelta] = datetime.timedelta(
+    minutes=3
+)
 
 
 async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
     list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]],
-    type_to_instance_map: dict[str, EC2Instance],
+    type_to_instance_map: dict[str, EC2InstanceType],
 ) -> bool:
     for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
         instance_type = type_to_instance_map[instance.type]
@@ -105,18 +107,21 @@ async def try_assigning_task_to_pending_instances(
             instance_total_resources - tasks_needed_resources
         ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
             instance_assigned_tasks.append(pending_task)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            time_since_launch = now - instance.launch_time
+            estimated_time_to_completion = (
+                instance.launch_time + _MAX_TIME_TO_START_EC2_INSTANCE - now
+            )
             await log_tasks_message(
                 app,
                 [pending_task],
-                "scaling up of cluster in progress...awaiting new machines...please wait...",
+                f"adding machines to the cluster (time waiting: {time_since_launch}, est. remaining time: {estimated_time_to_completion})...please wait...",
             )
             await progress_tasks_message(
                 app,
                 [pending_task],
-                (
-                    datetime.datetime.now(datetime.timezone.utc) - instance.launch_time
-                ).total_seconds()
-                / _AVG_TIME_TO_START_EC2_INSTANCE,
+                time_since_launch.total_seconds()
+                / _MAX_TIME_TO_START_EC2_INSTANCE.total_seconds(),
             )
             return True
     return False

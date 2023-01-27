@@ -11,13 +11,20 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Service, Task
-from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.rabbitmq_messages import (
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+    ProgressType,
+)
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.models import SimcoreServiceDockerLabelKeys
-from simcore_service_autoscaling.utils.rabbitmq import post_task_log_message
+from simcore_service_autoscaling.utils.rabbitmq import (
+    post_task_log_message,
+    post_task_progress_message,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -120,3 +127,88 @@ async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
     await post_task_log_message(initialized_app, service_tasks[0], faker.pystr(), 0)
+
+
+async def test_post_task_progress_message(
+    disable_dynamic_service_background_task,
+    enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    initialized_app: FastAPI,
+    rabbit_client: RabbitMQClient,
+    mocker: MockerFixture,
+    async_docker_client: aiodocker.Docker,
+    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    task_template: dict[str, Any],
+    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    faker: Faker,
+):
+    mocked_message_handler = mocker.AsyncMock(return_value=True)
+    await rabbit_client.subscribe(
+        ProgressRabbitMessage.get_channel_name(), mocked_message_handler
+    )
+
+    service_with_labels = await create_service(
+        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+    )
+    assert service_with_labels.Spec
+    service_tasks = parse_obj_as(
+        list[Task],
+        await async_docker_client.tasks.list(
+            filters={"service": service_with_labels.Spec.Name}
+        ),
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+
+    progress_value = faker.pyfloat(min_value=0)
+    await post_task_progress_message(initialized_app, service_tasks[0], progress_value)
+
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            print(
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+            )
+            mocked_message_handler.assert_called_once_with(
+                ProgressRabbitMessage(
+                    node_id=osparc_docker_label_keys.node_id,
+                    project_id=osparc_docker_label_keys.project_id,
+                    user_id=osparc_docker_label_keys.user_id,
+                    progress=progress_value,
+                    progress_type=ProgressType.CLUSTER_UP_SCALING,
+                )
+                .json()
+                .encode()
+            )
+            print("... message received")
+
+
+async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
+    disable_dynamic_service_background_task,
+    enabled_rabbitmq: RabbitSettings,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    initialized_app: FastAPI,
+    async_docker_client: aiodocker.Docker,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    faker: Faker,
+):
+    service_without_labels = await create_service(task_template, {}, "running")
+    assert service_without_labels.Spec
+    service_tasks = parse_obj_as(
+        list[Task],
+        await async_docker_client.tasks.list(
+            filters={"service": service_without_labels.Spec.Name}
+        ),
+    )
+    assert service_tasks
+    assert len(service_tasks) == 1
+
+    # this shall not raise any exception even if the task does not contain
+    # the necessary labels
+    await post_task_progress_message(
+        initialized_app, service_tasks[0], faker.pyfloat(min_value=0)
+    )
