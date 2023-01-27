@@ -11,7 +11,6 @@ from typing import Final, Optional, cast
 
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
-    Availability,
     Node,
     NodeState,
     Service,
@@ -24,7 +23,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
 from ..core.settings import ApplicationSettings
-from ..models import AssociatedInstance, Resources
+from ..models import Resources
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -37,8 +36,15 @@ _TASK_STATUS_WITH_ASSIGNED_RESOURCES: Final[tuple[TaskState, ...]] = (
     TaskState.starting,
     TaskState.running,
 )
-_MINUTE: Final[int] = 60
-_TIMEOUT_WAITING_FOR_NODES_S: Final[int] = 5 * _MINUTE
+
+_DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
+    "node.id",
+    "node.hostname",
+    "node.role",
+]
+
+_PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
+_INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 
 
 async def get_monitored_nodes(
@@ -80,16 +86,6 @@ async def remove_nodes(
         with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
             await docker_client.nodes.remove(node_id=node.ID, force=force)
     return nodes_that_need_removal
-
-
-_DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
-    "node.id",
-    "node.hostname",
-    "node.role",
-]
-
-_PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
-_INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 
 
 def _is_task_waiting_for_resources(task: Task) -> bool:
@@ -328,7 +324,7 @@ async def get_docker_swarm_join_bash_command() -> str:
     )
 
 
-async def try_get_node_with_name(
+async def find_node_with_name(
     docker_client: AutoscalingDocker, name: str
 ) -> Optional[Node]:
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
@@ -385,25 +381,3 @@ def get_docker_tags(app_settings: ApplicationSettings) -> dict[DockerLabelKey, s
         tag_key: "true"
         for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
     }
-
-
-async def get_drained_empty_nodes(
-    docker_client: AutoscalingDocker,
-    app_settings: ApplicationSettings,
-    associated_instances: list[AssociatedInstance],
-) -> list[AssociatedInstance]:
-    assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
-    return [
-        instance
-        for instance in associated_instances
-        if (
-            await compute_node_used_resources(
-                docker_client,
-                instance.node,
-                service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-            )
-            == Resources.create_as_empty()
-        )
-        and (instance.node.Spec is not None)
-        and (instance.node.Spec.Availability == Availability.drain)
-    ]
