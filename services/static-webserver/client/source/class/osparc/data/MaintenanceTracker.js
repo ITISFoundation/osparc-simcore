@@ -144,7 +144,8 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       const messageToRibbon = () => {
         const text = this.__getText();
         const notification = new osparc.component.notification.Notification(text);
-        this.__lastRibbonMessage = osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+        osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+        this.__lastRibbonMessage = notification;
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
@@ -157,7 +158,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
     __removeRibbonMessage: function() {
       if (this.__lastRibbonMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastRibbonMessage);
+        osparc.component.notification.NotificationsRibbon.getInstance().removeNotification(this.__lastRibbonMessage);
         this.__lastRibbonMessage = null;
       }
     },

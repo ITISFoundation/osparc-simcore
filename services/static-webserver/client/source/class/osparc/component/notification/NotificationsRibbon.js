@@ -47,8 +47,13 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
       this.__updateRibbon();
     },
 
+    /**
+     * @param {osparc.component.notification.Notification} notification
+     */
     removeNotification: function(notification) {
-      this.__notifications.push(notification);
+      if (this.__notifications.indexOf(notification) > -1) {
+        this.__notifications.remove(notification);
+      }
       this.__updateRibbon();
     },
 
