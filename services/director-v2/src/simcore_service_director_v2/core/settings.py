@@ -21,6 +21,7 @@ from models_library.clusters import (
     ClusterAuthentication,
     NoAuthentication,
 )
+from models_library.docker import DockerGenericTag
 from models_library.projects_networks import SERVICE_NETWORK_RE
 from models_library.utils.enums import StrAutoEnum
 from pydantic import (
@@ -160,7 +161,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 
 class DynamicSidecarEgressSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_ENVOY_IMAGE: str = Field(
+    DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
         "envoyproxy/envoy:v1.24-latest",
         description="envoy image to use",
     )
