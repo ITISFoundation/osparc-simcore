@@ -11,7 +11,7 @@ from models_library.service_settings_labels import (
     DEFAULT_DNS_SERVER_ADDRESS,
     DEFAULT_DNS_SERVER_PORT,
     NATRule,
-    PortRange,
+    _PortRange,
 )
 from orderedset import OrderedSet
 from pydantic import NonNegativeInt
@@ -69,7 +69,7 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
             id="one_port",
         ),
         pytest.param(
-            [NATRule(hostname="abc", tcp_ports=[1, PortRange(lower=1, upper=N)])],
+            [NATRule(hostname="abc", tcp_ports=[1, _PortRange(lower=1, upper=N)])],
             [
                 _u(OrderedSet({_pr("abc", x)}) for x in range(1, N + 1)),
             ],
@@ -77,8 +77,8 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
         ),
         pytest.param(
             [
-                NATRule(hostname="abc", tcp_ports=[PortRange(lower=1, upper=N), 999]),
-                NATRule(hostname="xyz", tcp_ports=[PortRange(lower=1, upper=N), 999]),
+                NATRule(hostname="abc", tcp_ports=[_PortRange(lower=1, upper=N), 999]),
+                NATRule(hostname="xyz", tcp_ports=[_PortRange(lower=1, upper=N), 999]),
             ],
             [
                 _u(OrderedSet({_pr("abc", x)}) for x in range(1, N + 1))

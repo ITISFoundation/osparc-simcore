@@ -16,10 +16,10 @@ from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     NATRule,
     PathMappingsLabel,
-    PortRange,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
+    _PortRange,
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from pydantic import BaseModel, ValidationError
@@ -159,19 +159,19 @@ def test_raises_error_wrong_restart_policy() -> None:
 
 def test_port_range():
     with pytest.raises(ValidationError):
-        PortRange(lower=1, upper=1)
+        _PortRange(lower=1, upper=1)
 
     with pytest.raises(ValidationError):
-        PortRange(lower=20, upper=1)
+        _PortRange(lower=20, upper=1)
 
-    assert PortRange(lower=1, upper=2)
+    assert _PortRange(lower=1, upper=2)
 
 
 def test_host_permit_list_policy():
     host_permit_list_policy = NATRule(
         hostname="hostname",
         tcp_ports=[
-            PortRange(lower=1, upper=3),
+            _PortRange(lower=1, upper=3),
             99,
         ],
     )
@@ -191,7 +191,7 @@ def test_host_permit_list_policy():
             ],
             NATRule(
                 hostname="a-host",
-                tcp_ports=[12132, PortRange(lower=12, upper=2334)],
+                tcp_ports=[12132, _PortRange(lower=12, upper=2334)],
                 dns_resolver=DNSResolver(
                     address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
                 ),
@@ -208,7 +208,7 @@ def test_host_permit_list_policy():
             ],
             NATRule(
                 hostname="a-host",
-                tcp_ports=[12132, PortRange(lower=12, upper=2334)],
+                tcp_ports=[12132, _PortRange(lower=12, upper=2334)],
                 dns_resolver=DNSResolver(address="ns1.example.com", port=123),
             ),
             id="with_dns_resolver",

@@ -184,7 +184,7 @@ class RestartPolicy(str, Enum):
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
-class PortRange(BaseModel):
+class _PortRange(BaseModel):
     """`lower` and `upper` are included"""
 
     lower: PortInt
@@ -216,7 +216,7 @@ class DNSResolver(BaseModel):
 
 class NATRule(BaseModel):
     hostname: str
-    tcp_ports: list[Union[PortRange, PortInt]]
+    tcp_ports: list[Union[_PortRange, PortInt]]
     dns_resolver: DNSResolver = Field(
         default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
@@ -226,7 +226,7 @@ class NATRule(BaseModel):
 
     def iter_tcp_ports(self) -> Iterator[PortInt]:
         for port in self.tcp_ports:
-            if type(port) == PortRange:
+            if type(port) == _PortRange:
                 yield from range(port.lower, port.upper + 1)
             else:
                 yield port
