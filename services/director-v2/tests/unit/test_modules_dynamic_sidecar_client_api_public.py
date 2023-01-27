@@ -330,3 +330,33 @@ async def test_detach_container_from_network(
             )
             is None
         )
+
+
+@pytest.mark.parametrize(
+    "response, expected_result",
+    [
+        pytest.param(
+            Response(status_code=status.HTTP_204_NO_CONTENT),
+            True,
+            id="supports_quotas",
+        ),
+        pytest.param(
+            Response(status_code=status.HTTP_404_NOT_FOUND),
+            False,
+            id="no_quotas_support",
+        ),
+    ],
+)
+async def test_are_quotas_supported(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    response: Response,
+    expected_result: bool,
+) -> None:
+    with get_patched_client(
+        "post_docker_quotas_supported", return_value=response
+    ) as client:
+        assert (
+            await client.are_quotas_supported(dynamic_sidecar_endpoint)
+            == expected_result
+        )

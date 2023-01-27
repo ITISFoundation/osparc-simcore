@@ -394,6 +394,12 @@ class DynamicSidecarClient:
             _debug_progress_callback,
         )
 
+    async def are_quotas_supported(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
+        response = await self._thin_client.post_docker_quotas_supported(
+            dynamic_sidecar_endpoint
+        )
+        return response.status_code == status.HTTP_204_NO_CONTENT
+
 
 async def setup(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
