@@ -27,18 +27,21 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
     const title = this.tr("Tester");
     this.base(arguments, title, iconSrc);
 
+    this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     const scroll = new qx.ui.container.Scroll(this.__container);
-    const staticsLayout = this.__createStaticsLayout();
-    scroll.add(staticsLayout);
-    const localStorageLayout = this.__createLocalStorageLayout();
-    scroll.add(localStorageLayout);
-    this.add(scroll);
+
+    this.__createStaticsLayout();
+    this.__createLocalStorageLayout();
+
+    this.add(scroll, {
+      flex: 1
+    });
   },
 
   members: {
     __createStaticsLayout: function() {
       // layout
-      const box = this._createSectionBox("Statics");
+      const box = this._createSectionBox(this.tr("Statics"));
 
       const label = this._createHelpLabel(this.tr(
         "This is a list of the 'statics' resources"
@@ -58,12 +61,12 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
           box.add(new qx.ui.form.renderer.Single(form));
         });
 
-      return box;
+      this.__container.add(box);
     },
 
     __createLocalStorageLayout: function() {
       // layout
-      const box = this._createSectionBox("Local Storage");
+      const box = this._createSectionBox(this.tr("Local Storage"));
 
       const items = {
         ...window.localStorage
@@ -78,7 +81,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
       }
       box.add(new qx.ui.form.renderer.Single(form));
 
-      return box;
+      this.__container.add(box);
     }
   }
 });
