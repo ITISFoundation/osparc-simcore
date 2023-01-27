@@ -66,8 +66,7 @@ qx.Class.define("osparc.NewRelease", {
     __reloadButtonPressed: function() {
       this.__saveCommitVcsRef();
 
-      // OM todo: hard refresh
-      window.location.reload();
+      osparc.utils.Utils.hardRefresh();
     }
   }
 });

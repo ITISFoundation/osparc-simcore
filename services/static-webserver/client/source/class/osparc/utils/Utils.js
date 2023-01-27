@@ -84,6 +84,10 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    hardRefresh: function() {
+
+    },
+
     getUniqueStudyName: function(preferredName, list) {
       let title = preferredName;
       const existingTitles = list.map(study => study.name);
