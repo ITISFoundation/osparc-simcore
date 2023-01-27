@@ -93,6 +93,7 @@ def get_dynamic_sidecar_spec(
     swarm_network_id: str,
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
+    has_quota_support: bool,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -121,7 +122,11 @@ def get_dynamic_sidecar_spec(
         ),
     ]
 
-    volume_size_limits = scheduler_data.paths_mapping.volume_size_limits or {}
+    volume_size_limits = (
+        scheduler_data.paths_mapping.volume_size_limits or {}
+        if has_quota_support
+        else {}
+    )
 
     # Docker does not allow mounting of subfolders from volumes as the following:
     #   `volume_name/inputs:/target_folder/inputs`

@@ -180,6 +180,11 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = uuid4()
 
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        has_quota_support = await dynamic_sidecar_client.has_quota_support(
+            scheduler_data.endpoint
+        )
+
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
@@ -189,6 +194,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 swarm_network_id=swarm_network_id,
                 settings=settings,
                 app_settings=app.state.settings,
+                has_quota_support=has_quota_support,
             )
         )
 
@@ -467,6 +473,9 @@ class CreateUserServices(DynamicSchedulerEvent):
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
 
+        has_quota_support = await dynamic_sidecar_client.has_quota_support(
+            dynamic_sidecar_endpoint
+        )
         compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
@@ -476,6 +485,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             service_resources=scheduler_data.service_resources,
+            has_quota_support=has_quota_support,
         )
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",

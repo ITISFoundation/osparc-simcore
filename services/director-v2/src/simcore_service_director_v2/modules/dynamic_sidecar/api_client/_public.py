@@ -394,7 +394,7 @@ class DynamicSidecarClient:
             _debug_progress_callback,
         )
 
-    async def are_quotas_supported(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
+    async def has_quota_support(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
         response = await self._thin_client.post_docker_quotas_supported(
             dynamic_sidecar_endpoint
         )

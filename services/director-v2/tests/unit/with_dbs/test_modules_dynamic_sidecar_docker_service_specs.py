@@ -361,6 +361,7 @@ def test_get_dynamic_proxy_spec(
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
+            has_quota_support=False,
         )
 
         # NOTE:
@@ -431,6 +432,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,
+        has_quota_support=False,
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()

@@ -169,6 +169,19 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
+def _update_service_quotas(service_spec: ComposeSpecLabel, has_quota_support: bool):
+    """
+    When disk quotas are not supported by the node need to remove any reference
+    from the docker-compose spec.
+    """
+    if has_quota_support:
+        return
+
+    for spec in service_spec["services"].values():
+        # NOTE: `storage_opt` is only supported in spec version 2
+        spec.pop("storage_opt", None)
+
+
 def assemble_spec(
     app: FastAPI,
     service_key: str,
@@ -178,6 +191,7 @@ def assemble_spec(
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
     service_resources: ServiceResourcesDict,
+    has_quota_support: bool,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -221,6 +235,8 @@ def assemble_spec(
     _update_resource_limits_and_reservations(
         service_resources=service_resources, service_spec=service_spec
     )
+
+    _update_service_quotas(service_spec, has_quota_support)
 
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
