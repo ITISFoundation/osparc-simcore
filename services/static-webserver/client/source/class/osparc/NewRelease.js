@@ -47,7 +47,7 @@ qx.Class.define("osparc.NewRelease", {
 
     __saveCommitVcsRef: function() {
       const thisCommit = osparc.utils.LibVersions.getVcsRef();
-      osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
+      osparc.utils.Utils.localCache.setLastCommitVcsRefUI(thisCommit);
     }
   }
 });

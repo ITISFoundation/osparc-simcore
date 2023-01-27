@@ -288,9 +288,8 @@ qx.Class.define("osparc.Application", {
     },
 
     __checkNewRelease: function() {
-      const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRef();
-      let thisCommit = osparc.utils.LibVersions.getVcsRef();
-      thisCommit = "blah";
+      const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
+      const thisCommit = osparc.utils.LibVersions.getVcsRef();
       if (lastCommit) {
         if (lastCommit !== thisCommit) {
           const newRelease = new osparc.NewRelease();
@@ -304,7 +303,7 @@ qx.Class.define("osparc.Application", {
           osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
         }
       } else {
-        osparc.utils.Utils.localCache.setLastCommitVcsRef(osparc.utils.LibVersions.getVcsRef());
+        osparc.utils.Utils.localCache.setLastCommitVcsRefUI(thisCommit);
       }
     },
 
