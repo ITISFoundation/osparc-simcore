@@ -40,14 +40,14 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
   },
 
   statics: {
-    CHECK_INTERVAL: 15*60*1000, // Check every 15'
-    WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
+    CHECK_INTERVAL: 15*1000, // Check every 15'
+    WARN_IN_ADVANCE: 20*60*1000 // Show Ribbon Message 20' in advance
   },
 
   members: {
     __checkInternval: null,
     __lastNotification: null,
-    __lastFlashMessage: null,
+    __lastRibbonMessage: null,
     __logoutTimer: null,
 
     startTracker: function() {
@@ -73,25 +73,23 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
-    __getText: function() {
+    __getText: function(wDecoration = true) {
       if (this.getStart() === null) {
         return null;
       }
 
-      let text = qx.locale.Manager.tr("Maintenance scheduled.");
+      let text = wDecoration ? qx.locale.Manager.tr("Maintenance scheduled.") : "";
       if (this.getStart()) {
-        text += "<br>";
+        text += wDecoration ? "<br>" : "";
         text += osparc.utils.Utils.formatDateAndTime(this.getStart());
       }
       if (this.getEnd()) {
-        text += " - ";
-        text += osparc.utils.Utils.formatDateAndTime(this.getEnd());
+        text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
       }
       if (this.getReason()) {
         text += ": " + this.getReason();
       }
-      text += "<br>";
-      text += qx.locale.Manager.tr("Please save your work and logout.");
+      text += wDecoration ? "<br>" + qx.locale.Manager.tr("Please save your work and logout.") : "";
       return text;
     },
 
@@ -120,11 +118,11 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     __scheduleStart: function() {
       if (this.getStart() === null) {
         this.__removeNotification();
-        this.__removeFlashMessage();
+        this.__removeRibbonMessage();
         this.__removeScheduledLogout();
       } else {
         this.__addNotification();
-        this.__scheduleFlashMessage();
+        this.__scheduleRibbonMessage();
         this.__scheduleLogout();
       }
     },
@@ -144,28 +142,27 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
-    __scheduleFlashMessage: function() {
-      this.__removeFlashMessage();
+    __scheduleRibbonMessage: function() {
+      this.__removeRibbonMessage();
 
-      const popupMessage = () => {
-        const now = new Date();
-        const duration = this.getStart().getTime() - now.getTime();
-        const text = this.__getText();
-        this.__lastFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
+      const messageToRibbon = () => {
+        const text = this.__getText(false);
+        const notification = new osparc.component.notification.Notification(text);
+        this.__lastRibbonMessage = osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
       };
       const now = new Date();
       const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
       if (diff < 0) {
-        popupMessage();
+        messageToRibbon();
       } else {
-        setTimeout(() => popupMessage(), diff);
+        setTimeout(() => messageToRibbon(), diff);
       }
     },
 
-    __removeFlashMessage: function() {
-      if (this.__lastFlashMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastFlashMessage);
-        this.__lastFlashMessage = null;
+    __removeRibbonMessage: function() {
+      if (this.__lastRibbonMessage) {
+        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastRibbonMessage);
+        this.__lastRibbonMessage = null;
       }
     },
 

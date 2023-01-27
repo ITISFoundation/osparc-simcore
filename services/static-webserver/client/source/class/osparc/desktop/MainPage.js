@@ -45,8 +45,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
-    const notificationsRibbon = this.__createNotificationsRibbon();
-    this._add(notificationsRibbon);
+    this._add(osparc.component.notification.NotificationsRibbon.getInstance());
 
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
@@ -75,11 +74,6 @@ qx.Class.define("osparc.desktop.MainPage", {
     __dashboardLayout: null,
     __loadingPage: null,
     __studyEditor: null,
-
-    __createNotificationsRibbon: function() {
-      const notificationsRibbon = new osparc.component.notification.NotificationsRibbon();
-      return notificationsRibbon;
-    },
 
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
