@@ -224,7 +224,7 @@
           "containers"
         ],
         "summary": "Get Containers Name",
-        "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: matches against the exact network name\n        assigned to the container; `will include`\n        containers\n    exclude_name_part: matches if is part in the\n        name of the container; `will exclude`\n        containers",
+        "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: matches against the exact network name\n        assigned to the container; `will include`\n        containers\n    exclude: matches if contained in the name of the\n        container; `will exclude` containers",
         "operationId": "get_containers_name_v1_containers_name_get",
         "parameters": [
           {

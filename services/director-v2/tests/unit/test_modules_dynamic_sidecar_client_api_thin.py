@@ -179,7 +179,7 @@ async def test_get_containers_name(
     encoded_filters = json.dumps(
         dict(
             network=dynamic_sidecar_network_name,
-            exclude_name_part=SUFFIX_EGRESS_PROXY_NAME,
+            exclude=SUFFIX_EGRESS_PROXY_NAME,
         )
     )
     mock_request(
