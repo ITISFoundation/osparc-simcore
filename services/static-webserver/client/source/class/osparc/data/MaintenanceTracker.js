@@ -78,7 +78,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         return null;
       }
 
-      let text = qx.locale.Manager.tr("Maintenance scheduled");
+      let text = qx.locale.Manager.tr("Maintenance scheduled.");
       if (this.getStart()) {
         text += "<br>";
         text += osparc.utils.Utils.formatDateAndTime(this.getStart());
@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         text += ": " + this.getReason();
       }
       text += "<br>";
-      text += qx.locale.Manager.tr("Please save your work and logout");
+      text += qx.locale.Manager.tr("Please save your work and logout.");
       return text;
     },
 
