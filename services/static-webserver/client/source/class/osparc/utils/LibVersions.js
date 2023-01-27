@@ -19,6 +19,14 @@ qx.Class.define("osparc.utils.LibVersions", {
   type: "static",
 
   statics: {
+    getVcsRef: function() {
+      return qx.core.Environment.get("osparc.vcsRef");
+    },
+
+    getVcsRefUI: function() {
+      return qx.core.Environment.get("osparc.vcsRefClient");
+    },
+
     __getRemoteUrl: function() {
       let remoteUrl = qx.core.Environment.get("osparc.vcsOriginUrl");
 
@@ -33,17 +41,23 @@ qx.Class.define("osparc.utils.LibVersions", {
     },
 
     getVcsRefUrl: function() {
-      const commitId = this.getVcsRef();
-      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
+      const remoteUrl = this.__getRemoteUrl();
       let url = remoteUrl;
+      const commitId = this.getVcsRef();
       if (commitId) {
         url = remoteUrl + "/commits/" + String(commitId) + "/";
       }
       return url;
     },
 
-    getVcsRef: function() {
-      return qx.core.Environment.get("osparc.vcsRef");
+    getVcsRefUIUrl: function() {
+      const remoteUrl = this.__getRemoteUrl();
+      let url = remoteUrl;
+      const commitId = this.getVcsRefUI();
+      if (commitId) {
+        url = remoteUrl + "/commits/" + String(commitId) + "/services/static-webserver/client/";
+      }
+      return url;
     },
 
     getPlatformVersion: function() {
@@ -60,13 +74,8 @@ qx.Class.define("osparc.utils.LibVersions", {
 
     getUIVersion: function() {
       let name = "osparc-simcore UI";
-      const commitId = qx.core.Environment.get("osparc.vcsRefClient");
-      const remoteUrl = osparc.utils.LibVersions.__getRemoteUrl(); // eslint-disable-line no-underscore-dangle
-
-      let url = remoteUrl;
-      if (commitId) {
-        url = remoteUrl + "/commits/" + String(commitId) + "/services/static-webserver/client/";
-      }
+      const commitId = this.getVcsRefUI();
+      const remoteUrl = this.getVcsRefUIUrl();
       let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
         name = name + " [" + status + "]";
@@ -75,7 +84,7 @@ qx.Class.define("osparc.utils.LibVersions", {
       return {
         name: name,
         version: commitId,
-        url: url
+        url: remoteUrl
       };
     },
 
