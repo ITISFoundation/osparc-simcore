@@ -35,7 +35,6 @@ class _HostData:
 
 
 _ProxyRule = tuple[_HostData, PortInt]
-
 _TCPListener = dict[str, Any]
 _TCPCluster = dict[str, Any]
 
