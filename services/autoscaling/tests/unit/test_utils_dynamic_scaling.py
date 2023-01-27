@@ -13,7 +13,7 @@ from models_library.generated_models.docker_rest_api import Node, Task
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
-from simcore_service_autoscaling.models import EC2Instance
+from simcore_service_autoscaling.models import EC2InstanceType
 from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from simcore_service_autoscaling.utils.dynamic_scaling import (
     associate_ec2_instances_with_nodes,
@@ -149,7 +149,7 @@ async def test_try_assigning_task_to_pending_instances(
         (fake_instance, [])
     ]
     type_to_instance_map = {
-        fake_instance.type: EC2Instance(
+        fake_instance.type: EC2InstanceType(
             name=fake_instance.type, cpus=4, ram=ByteSize(1024 * 1024)
         )
     }
