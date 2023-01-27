@@ -12,7 +12,7 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
 )
 from pydantic import NonNegativeFloat
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 from simcore_sdk.node_ports_common.file_io_utils import ProgressData
@@ -23,10 +23,7 @@ log = logging.getLogger(__file__)
 
 
 async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    # NOTE: this check is necessary when the dy-sidecar is used on the CLI
-    # where the rabbit is not initialized, it's not optimal but it allows
-    # to run the CLI without rabbit...
-    if _is_rabbitmq_initialized(app):
+    with log_catch(log, reraise=False):
         await get_rabbitmq_client(app).publish(message.channel_name, message.json())
 
 
