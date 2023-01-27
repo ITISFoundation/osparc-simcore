@@ -23,7 +23,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings
-from ..models import EC2Instance, EC2InstanceData
+from ..models import EC2InstanceData, EC2InstanceType
 from ..utils.ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)
@@ -65,16 +65,16 @@ class AutoscalingEC2:
     async def get_ec2_instance_capabilities(
         self,
         instance_type_names: set[InstanceTypeType],
-    ) -> list[EC2Instance]:
+    ) -> list[EC2InstanceType]:
         """instance_type_names must be a set of unique values"""
         instance_types = await self.client.describe_instance_types(
             InstanceTypes=list(instance_type_names)
         )
-        list_instances: list[EC2Instance] = []
+        list_instances: list[EC2InstanceType] = []
         for instance in instance_types.get("InstanceTypes", []):
             with contextlib.suppress(KeyError):
                 list_instances.append(
-                    EC2Instance(
+                    EC2InstanceType(
                         name=instance["InstanceType"],
                         cpus=instance["VCpuInfo"]["DefaultVCpus"],
                         ram=parse_obj_as(
