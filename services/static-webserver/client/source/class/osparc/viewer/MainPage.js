@@ -21,10 +21,16 @@ qx.Class.define("osparc.viewer.MainPage", {
   construct: function(studyId, viewerNodeId) {
     this.base();
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
+
+    const notificationsRibbon = this.__createNotificationsRibbon();
+    this._add(notificationsRibbon);
 
     const navBar = this.__createNavigationBar();
     this._add(navBar);
+
+    // Some resources request before building the main stack
+    osparc.data.MaintenanceTracker.getInstance().startTracker();
 
     const nodeViewer = this.__createNodeViewer(studyId, viewerNodeId);
     this._add(nodeViewer, {
@@ -34,6 +40,11 @@ qx.Class.define("osparc.viewer.MainPage", {
 
   members: {
     __iframeLayout: null,
+
+    __createNotificationsRibbon: function() {
+      const notificationsRibbon = new osparc.component.notification.NotificationsRibbon();
+      return notificationsRibbon;
+    },
 
     __createNavigationBar: function() {
       const navBar = new osparc.viewer.NavigationBar();
