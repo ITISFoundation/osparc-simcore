@@ -199,7 +199,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       const separator = new qx.ui.basic.Label("::");
       versionLinkLayout.add(separator);
 
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           text += platformName.length ? ` (${platformName})` : " (production)";
         })

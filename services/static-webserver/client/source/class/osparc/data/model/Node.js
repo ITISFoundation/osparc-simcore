@@ -974,7 +974,12 @@ qx.Class.define("osparc.data.model.Node", {
       }
       this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
 
-      loadingPage.addExtraWidget(this.getStatus().getProgressSequence().getWidgetForLoadingPage());
+      const nodeStatus = this.getStatus();
+      const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
+      nodeStatus.bind("interactive", sequenceWidget, "visiblity", {
+        converter: state => ["starting", "pulling", "pending", "connecting"].includes(state) ? "visible" : "excluded"
+      });
+      loadingPage.addExtraWidget(sequenceWidget);
 
       this.getStatus().addListener("changeInteractive", () => {
         loadingPage.setHeader(this.__getLoadingPageHeader());

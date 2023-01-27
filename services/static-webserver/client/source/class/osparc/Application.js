@@ -107,7 +107,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __checkScreenSize: function() {
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
           if (platformName !== "master" && preferencesSettings.getConfirmWindowSize()) {
@@ -254,7 +254,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateTabName: function() {
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (osparc.utils.Utils.isInZ43()) {
             document.title += " Z43";
@@ -276,7 +276,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __checkCookiesAccepted: function() {
-      osparc.utils.LibVersions.getPlatformName()
+      osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           if (platformName !== "master") {
             if (!osparc.CookiePolicy.areCookiesAccepted()) {
