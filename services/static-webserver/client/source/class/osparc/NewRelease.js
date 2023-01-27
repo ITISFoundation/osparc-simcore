@@ -42,31 +42,12 @@ qx.Class.define("osparc.NewRelease", {
         flex: 1
       });
 
-      const reloadText = this.tr("Click on the 'Reload' button to make sure you get the latest version.");
-      const reloadLabel = new qx.ui.basic.Label(reloadText).set({
-        rich: true,
-        wrap: true
-      });
-      this._add(reloadLabel);
-
-      const reloadBtn = new qx.ui.form.Button(this.tr("Reload")).set({
-        appearance: "strong-button",
-        alignX: "right",
-        allowGrowX: false
-      });
-      reloadBtn.addListener("tap", () => this.__reloadButtonPressed());
-      this._add(reloadBtn);
+      this.__saveCommitVcsRef();
     },
 
     __saveCommitVcsRef: function() {
       const thisCommit = osparc.utils.LibVersions.getVcsRef();
       osparc.utils.Utils.localCache.setLastCommitVcsRef(thisCommit);
-    },
-
-    __reloadButtonPressed: function() {
-      this.__saveCommitVcsRef();
-
-      osparc.utils.Utils.hardRefresh();
     }
   }
 });

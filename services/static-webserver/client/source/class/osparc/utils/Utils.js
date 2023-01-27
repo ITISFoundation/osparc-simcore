@@ -86,8 +86,11 @@ qx.Class.define("osparc.utils.Utils", {
 
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
+      // No cigar. Tried:
       // eslint-disable-next-line no-self-assign
-      window.location.href = window.location.href;
+      // window.location.href = window.location.href;
+      // window.location.href = window.location.origin + window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "reloadTime=" + Date.now().toString() + window.location.hash;
+      // window.location.href = window.location.href.replace(/#.*$/, "");
     },
 
     getUniqueStudyName: function(preferredName, list) {
