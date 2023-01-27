@@ -23,6 +23,9 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
 
+    // make unselectable
+    this.addListener("changeValue", () => this.setValue(false), this);
+
     this.set({
       cursor: "not-allowed"
     });
@@ -93,9 +96,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         visibility: showProgressBar ? "visible" : "excluded"
       });
 
-      this._getChildren().forEach(item => {
-        item.setOpacity(0.4);
-      });
+      this._getChildren().forEach(item => item.setOpacity(0.4));
     },
 
     isLocked: function() {
