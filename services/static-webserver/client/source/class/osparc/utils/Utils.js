@@ -85,7 +85,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     hardRefresh: function() {
-
+      // eslint-disable-next-line no-self-assign
+      window.location.href = window.location.href;
     },
 
     getUniqueStudyName: function(preferredName, list) {
