@@ -25,6 +25,7 @@
 #  SEE aiocache[mspack]
 
 aio-pika
+aiocache
 aiodocker
 aiofiles
 aioprocessing

@@ -7,10 +7,12 @@ import logging
 from typing import AsyncIterable, AsyncIterator
 from unittest.mock import AsyncMock
 
+import aiodocker
 import pytest
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
@@ -181,3 +183,22 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         return
 
     await docker_compose_down(app_state.compose_spec, app_state.settings)
+
+
+@pytest.fixture(params=[True, False])
+def volume_has_quota_support(request: FixtureRequest) -> bool:
+    return request.param
+
+
+@pytest.fixture
+def mock_docker_volume(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch, volume_has_quota_support: bool
+) -> None:
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+
+    async def _mock_create(*args, **kwargs) -> AsyncMock:
+        if volume_has_quota_support is False:
+            raise aiodocker.DockerError(status=404, data={"message": "some mock error"})
+        return AsyncMock()
+
+    mocker.patch("aiodocker.volumes.DockerVolumes.create", side_effect=_mock_create)

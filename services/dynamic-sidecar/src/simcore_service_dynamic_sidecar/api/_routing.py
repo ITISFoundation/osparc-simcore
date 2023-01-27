@@ -6,7 +6,13 @@ Setup and register all routes here form different modules
 from fastapi import APIRouter
 
 from .._meta import API_VTAG
-from . import containers, containers_extension, containers_long_running_tasks, health
+from . import (
+    containers,
+    containers_extension,
+    containers_long_running_tasks,
+    docker,
+    health,
+)
 
 main_router = APIRouter()
 main_router.include_router(health.router)
@@ -23,6 +29,11 @@ main_router.include_router(
 main_router.include_router(
     containers_long_running_tasks.router,
     tags=["containers"],
+    prefix=f"/{API_VTAG}",
+)
+main_router.include_router(
+    docker.router,
+    tags=["docker"],
     prefix=f"/{API_VTAG}",
 )
 

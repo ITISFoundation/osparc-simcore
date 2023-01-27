@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import aiodocker
 import yaml
+from aiocache import cached
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
@@ -240,6 +241,7 @@ async def _pull_image_with_progress(
         await log_cb(f"pulling {shorter_image_name}: {pull_progress}...")
 
 
+@cached()
 async def supports_volumes_with_quota() -> bool:
     async with docker_client() as docker:
         docker_volume: Optional[DockerVolume] = None

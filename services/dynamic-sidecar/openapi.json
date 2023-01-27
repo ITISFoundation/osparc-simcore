@@ -682,6 +682,23 @@
           }
         }
       }
+    },
+    "/v1/docker/quotas:supported": {
+      "post": {
+        "tags": [
+          "docker"
+        ],
+        "summary": "Checks if node where sidecar is running quotas for disk and volume space",
+        "operationId": "are_quotas_supported_v1_docker_quotas_supported_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "quotas are not supported"
+          }
+        }
+      }
     }
   },
   "components": {
