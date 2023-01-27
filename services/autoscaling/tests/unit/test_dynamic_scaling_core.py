@@ -457,7 +457,6 @@ async def test_cluster_scaling_up(
     mock_tag_node.assert_not_called()
     mock_set_node_availability.assert_not_called()
     mock_compute_node_used_resources.assert_not_called()
-    # mock_cluster_used_resources.assert_called_once()
     # check rabbit messages were sent
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
