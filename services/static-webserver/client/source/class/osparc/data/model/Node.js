@@ -976,7 +976,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       const nodeStatus = this.getStatus();
       const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
-      nodeStatus.bind("interactive", sequenceWidget, "visiblity", {
+      nodeStatus.bind("interactive", sequenceWidget, "visibility", {
         converter: state => ["starting", "pulling", "pending", "connecting"].includes(state) ? "visible" : "excluded"
       });
       loadingPage.addExtraWidget(sequenceWidget);
