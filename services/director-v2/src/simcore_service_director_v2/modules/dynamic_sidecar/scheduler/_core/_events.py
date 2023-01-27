@@ -443,7 +443,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
-            service_tag=scheduler_data.version,
+            service_version=scheduler_data.version,
             paths_mapping=scheduler_data.paths_mapping,
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,

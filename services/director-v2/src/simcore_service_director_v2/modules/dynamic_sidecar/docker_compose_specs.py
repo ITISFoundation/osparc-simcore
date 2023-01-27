@@ -185,7 +185,7 @@ def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
-    service_tag: ServiceVersion,
+    service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
@@ -218,7 +218,7 @@ def assemble_spec(
             "version": docker_compose_version,
             "services": {
                 DEFAULT_SINGLE_SERVICE_NAME: {
-                    "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
+                    "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_version}"
                 }
             },
         }
@@ -256,7 +256,7 @@ def assemble_spec(
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
-        replace_service_version=service_tag,
+        replace_service_version=service_version,
     )
 
     return stringified_service_spec
