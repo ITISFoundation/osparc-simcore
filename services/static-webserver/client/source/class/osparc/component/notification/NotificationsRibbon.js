@@ -58,10 +58,10 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
     },
 
     __updateRibbon: function() {
+      this._removeAll();
       const notifications = this.__notifications;
       if (notifications.length) {
         this.show();
-        this._removeAll();
         notifications.forEach(notificationUI => {
           const text = notificationUI.getFullText();
           const notification = new qx.ui.basic.Atom().set({
