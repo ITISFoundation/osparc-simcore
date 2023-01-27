@@ -73,23 +73,18 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
-    __getText: function(wDecoration = true) {
+    __getText: function() {
       if (this.getStart() === null) {
         return null;
       }
 
-      let text = wDecoration ? qx.locale.Manager.tr("Maintenance scheduled.") : "";
-      if (this.getStart()) {
-        text += wDecoration ? "<br>" : "";
-        text += osparc.utils.Utils.formatDateAndTime(this.getStart());
-      }
+      let text = osparc.utils.Utils.formatDateAndTime(this.getStart());
       if (this.getEnd()) {
         text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
       }
       if (this.getReason()) {
         text += ": " + this.getReason();
       }
-      text += wDecoration ? "<br>" + qx.locale.Manager.tr("Please save your work and logout.") : "";
       return text;
     },
 
@@ -131,8 +126,9 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       this.__removeNotification();
 
       const text = this.__getText();
-      const notification = this.__lastNotification = new osparc.component.notification.NotificationUI(text);
-      osparc.component.notification.Notifications.getInstance().addNotification(notification);
+      const notification = new osparc.component.notification.Notification(text);
+      const notificationUI = this.__lastNotification = new osparc.component.notification.NotificationUI(notification.getFullText(true));
+      osparc.component.notification.Notifications.getInstance().addNotification(notificationUI);
     },
 
     __removeNotification: function() {
@@ -146,7 +142,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       this.__removeRibbonMessage();
 
       const messageToRibbon = () => {
-        const text = this.__getText(false);
+        const text = this.__getText();
         const notification = new osparc.component.notification.Notification(text);
         this.__lastRibbonMessage = osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
       };

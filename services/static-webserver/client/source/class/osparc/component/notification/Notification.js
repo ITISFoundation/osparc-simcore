@@ -41,13 +41,6 @@ qx.Class.define("osparc.component.notification.Notification", {
       check: "String",
       init: "",
       nullable: false
-    },
-
-    read: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeRead"
     }
   },
 
