@@ -30,6 +30,7 @@ def mock_env(
     monkeypatch: MonkeyPatch,
     postgres_host_config: dict[str, str],
     mock_env: EnvVarsDict,
+    postgres_db: sa.engine.Engine,
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
@@ -44,6 +45,13 @@ def mock_env(
         }
     )
     setenvs_from_dict(monkeypatch, env_vars)
+
+    # NOTE: drops the default internet policy added by the migration to test
+    # otherwise any user will always have access to the internet
+    with postgres_db.connect() as con:
+        con.execute(
+            groups_extra_properties.delete(groups_extra_properties.c.group_id == 1)
+        )
     return env_vars
 
 
@@ -51,16 +59,14 @@ def mock_env(
 def give_internet_to_group(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[Callable[..., dict]]:
-    created_group_ids = []
+    to_remove = []
 
-    def creator(**groups_extra_properties_kwargs) -> dict[str, Any]:
+    def creator(group_id: int) -> dict[str, Any]:
         with postgres_db.connect() as con:
-            # removes all users before continuing
             groups_extra_properties_config = {
-                "group_id": len(created_group_ids) + 1,
+                "group_id": group_id,
                 "internet_access": True,
             }
-            groups_extra_properties_config.update(groups_extra_properties_kwargs)
 
             con.execute(
                 groups_extra_properties.insert()
@@ -70,14 +76,14 @@ def give_internet_to_group(
             # this is needed to get the primary_gid correctly
             result = con.execute(
                 sa.select([groups_extra_properties]).where(
-                    groups_extra_properties.c.group_id
-                    == groups_extra_properties_config["group_id"]
+                    groups_extra_properties.c.group_id == group_id
                 )
             )
             entry = result.first()
             assert entry
             print(f"--> created {entry=}")
-            created_group_ids.append(entry["group_id"])
+            to_remove.append(group_id)
+
         return dict(entry)
 
     yield creator
@@ -85,10 +91,10 @@ def give_internet_to_group(
     with postgres_db.connect() as con:
         con.execute(
             groups_extra_properties.delete().where(
-                groups_extra_properties.c.group_id.in_(created_group_ids)
+                groups_extra_properties.c.group_id.in_(to_remove)
             )
         )
-    print(f"<-- deleted groups_extra_properties {created_group_ids=}")
+    print(f"<-- deleted groups_extra_properties {to_remove=}")
 
 
 @pytest.fixture(params=[True, False])
