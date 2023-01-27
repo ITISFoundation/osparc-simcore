@@ -38,7 +38,14 @@ qx.Class.define("osparc.NewRelease", {
       const detailsText = this.tr("What's new");
       const link = osparc.utils.LibVersions.getVcsRefUrl();
       const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
-      this._add(linkLabel, {
+      this._add(linkLabel);
+
+      const hardRefreshText = this.tr("You might need to hard refresh the browser to get the latest version.");
+      const hardRefreshLabel = new qx.ui.basic.Label(hardRefreshText).set({
+        rich: true,
+        wrap: true
+      });
+      this._add(hardRefreshLabel, {
         flex: 1
       });
 

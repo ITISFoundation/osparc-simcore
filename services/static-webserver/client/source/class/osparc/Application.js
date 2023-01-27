@@ -294,7 +294,7 @@ qx.Class.define("osparc.Application", {
         if (lastCommit !== thisCommit) {
           const newRelease = new osparc.NewRelease();
           const title = this.tr("New Release");
-          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 185).set({
+          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 170).set({
             clickAwayClose: false,
             resizable: false,
             showClose: true
