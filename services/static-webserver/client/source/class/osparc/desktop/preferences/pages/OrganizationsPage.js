@@ -74,6 +74,29 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         "write": true,
         "delete": true
       };
+    },
+
+    sortByAccessRights: function(a, b) {
+      const aAccessRights = a["accessRights"];
+      const bAccessRights = b["accessRights"];
+      if (aAccessRights["delete"] !== bAccessRights["delete"]) {
+        return bAccessRights["delete"] - aAccessRights["delete"];
+      }
+      if (aAccessRights["write"] !== bAccessRights["write"]) {
+        return bAccessRights["write"] - aAccessRights["write"];
+      }
+      if (aAccessRights["read"] !== bAccessRights["read"]) {
+        return bAccessRights["read"] - aAccessRights["read"];
+      }
+      if (("label" in a) && ("label" in b)) {
+        // orgs
+        return a["label"].localeCompare(b["label"]);
+      }
+      if (("login" in a) && ("login" in b)) {
+        // members
+        return a["login"].localeCompare(b["login"]);
+      }
+      return 0;
     }
   },
 
@@ -273,20 +296,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
 
-      const sortOrganizations = (a, b) => {
-        const aAccessRights = a["accessRights"];
-        const bAccessRights = b["accessRights"];
-        if (aAccessRights["delete"] !== bAccessRights["delete"]) {
-          return bAccessRights["delete"] - aAccessRights["delete"];
-        }
-        if (aAccessRights["write"] !== bAccessRights["write"]) {
-          return bAccessRights["write"] - aAccessRights["write"];
-        }
-        if (aAccessRights["read"] !== bAccessRights["read"]) {
-          return bAccessRights["read"] - aAccessRights["read"];
-        }
-        return a["label"].localeCompare(b["label"]);
-      };
       osparc.data.Resources.get("organizations")
         .then(async respOrgs => {
           const orgs = respOrgs["organizations"];
@@ -301,7 +310,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             return org;
           });
           const orgsList = await Promise.all(promises);
-          orgsList.sort(sortOrganizations);
+          orgsList.sort(this.self().sortByAccessRights);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
         });
     },
@@ -320,23 +329,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         this.__memberInvitation.show();
       }
 
-      const sortMembers = (a, b) => {
-        const aAccessRights = a.getAccessRights();
-        const bAccessRights = b.getAccessRights();
-        if (aAccessRights.getDelete() !== bAccessRights.getDelete()) {
-          return bAccessRights.getDelete() - aAccessRights.getDelete();
-        }
-        if (aAccessRights.getWrite() !== bAccessRights.getWrite()) {
-          return bAccessRights.getWrite() - aAccessRights.getWrite();
-        }
-        if (aAccessRights.getRead() !== bAccessRights.getRead()) {
-          return bAccessRights.getRead() - aAccessRights.getRead();
-        }
-        if (a.getLogin && b.getLogin) {
-          return a.getLogin().localeCompare(b.getLogin());
-        }
-        return 0;
-      };
       const params = {
         url: {
           "gid": orgModel.getKey()
@@ -344,13 +336,15 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.get("organizationMembers", params)
         .then(members => {
+          const membersList = [];
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
             member["showOptions"] = canWrite;
-            membersModel.append(qx.data.marshal.Json.createModel(member));
+            membersList.push(member);
           });
-          membersModel.sort(sortMembers);
+          membersList.sort(this.self().sortByAccessRights);
+          membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
         });
     },
 
