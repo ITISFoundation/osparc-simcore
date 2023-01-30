@@ -168,10 +168,15 @@ async def test_inject_resource_limits_and_reservations(
             1,
             id="one_storage_opt_entry",
         ),
+        pytest.param(
+            {"version": "2.3", "services": {"rt-web": {}, "s4l-core": {}}},
+            0,
+            id="no_storage_opt_entry",
+        ),
     ],
 )
 @pytest.mark.parametrize("has_quota_support", [True, False])
-def test_update_service_quotas_storage_opt_present(
+def test_update_service_quotas_storage(
     compose_spec: ComposeSpecLabel, storage_opt_count: int, has_quota_support: bool
 ):
     assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
@@ -183,15 +188,3 @@ def test_update_service_quotas_storage_opt_present(
         assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
     else:
         assert "storage_opt" not in json.dumps(compose_spec)
-
-
-@pytest.mark.parametrize("has_quota_support", [True, False])
-def test_update_service_quotas_storage_opt_missing(has_quota_support: bool):
-    compose_spec = {"version": "2.3", "services": {"rt-web": {}, "s4l-core": {}}}
-
-    assert "storage_opt" not in json.dumps(compose_spec)
-    # checks this does not raise any errors
-    docker_compose_specs._update_service_quotas(
-        service_spec=compose_spec, has_quota_support=has_quota_support
-    )
-    assert "storage_opt" not in json.dumps(compose_spec)
