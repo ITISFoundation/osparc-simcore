@@ -115,7 +115,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         wrap: true
       });
       const icon = atom.getChildControl("icon");
-      osparc.utils.StatusUI.updateIconAnimation(icon);
+      osparc.utils.StatusUI.updateCircleAnimation(icon);
 
       const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
@@ -182,7 +182,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         const iconSource = osparc.utils.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
         if (iconSource) {
           this.__header.setIcon(iconSource);
-          osparc.utils.StatusUI.updateIconAnimation(this.__header.getChildControl("icon"));
+          osparc.utils.StatusUI.updateCircleAnimation(this.__header.getChildControl("icon"));
         }
       }
     },
