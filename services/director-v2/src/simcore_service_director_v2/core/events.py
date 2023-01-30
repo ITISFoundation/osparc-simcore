@@ -1,11 +1,11 @@
 from servicelib.async_utils import cancel_sequential_workers
 
-from ..meta import PROJECT_NAME, __version__
+from ..meta import __version__, info
 
 #
 # SEE https://patorjk.com/software/taag/#p=display&f=Small&t=Director
 #
-WELCOME_MSG = r"""
+APP_STARTED_BANNER_MSG = r"""
 ______ _               _
 |  _  (_)             | |
 | | | |_ _ __ ___  ___| |_ ___  _ __
@@ -17,12 +17,13 @@ ______ _               _
     f"v{__version__}"
 )
 
+APP_FINISHED_BANNER_MSG = info.get_finished_banner()
+
 
 async def on_startup() -> None:
-    print(WELCOME_MSG, flush=True)
+    print(APP_STARTED_BANNER_MSG, flush=True)
 
 
 async def on_shutdown() -> None:
     await cancel_sequential_workers()
-    msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
-    print(f"{msg:=^100}", flush=True)
+    print(APP_FINISHED_BANNER_MSG, flush=True)
