@@ -18,10 +18,6 @@
 qx.Class.define("osparc.ui.list.MemberListItem", {
   extend: osparc.ui.list.ListItem,
 
-  construct: function() {
-    this.base(arguments);
-  },
-
   properties: {
     accessRights: {
       check: "Object",
