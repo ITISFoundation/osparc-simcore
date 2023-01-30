@@ -89,22 +89,31 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (this.__studyEditor) {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmBackToDashboard()) {
-          let msg = this.tr("Do you really want to save and close the study?");
-          let confirmText = this.tr("Save & Close");
+          const win = new osparc.ui.window.Confirmation();
           if (osparc.utils.Utils.isProduct("s4llite")) {
-            msg = this.tr("Do you really want to close the project?");
+            let msg = this.tr("Do you really want to close the project?");
             msg += "<br>";
             msg += this.tr("Make sure you saved the changes to:");
             msg += "<br>";
             msg += this.tr("- your current <b>smash file</b> (running <b>simulations</b> will be killed)");
             msg += "<br>";
             msg += this.tr("- the current <b>open notebooks</b> (<b>jupyterlab</b> will be killed)");
-            confirmText = this.tr("Close");
+            const confirmText = this.tr("Close");
+            win.set({
+              maxWidth: 400,
+              message: msg,
+              caption: confirmText,
+              confirmText
+            });
+          } else {
+            const msg = this.tr("Do you really want to save and close the study?");
+            const confirmText = this.tr("Save & Close");
+            win.set({
+              message: msg,
+              caption: confirmText,
+              confirmText
+            });
           }
-          const win = new osparc.ui.window.Confirmation(msg).set({
-            caption: confirmText,
-            confirmText
-          });
           const confirmButton = win.getConfirmButton();
           osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
           win.center();

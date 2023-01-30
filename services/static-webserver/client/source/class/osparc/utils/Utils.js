@@ -45,6 +45,13 @@ qx.Class.define("osparc.utils.Utils", {
         return this.getLocalStorageItem("themeName");
       },
 
+      getLastCommitVcsRefUI: function() {
+        return this.getLocalStorageItem("lastVcsRefUI");
+      },
+      setLastCommitVcsRefUI: function(vcsRef) {
+        this.setLocalStorageItem("lastVcsRefUI", vcsRef);
+      },
+
       serviceToFavs: function(serviceKey) {
         let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
@@ -75,6 +82,15 @@ qx.Class.define("osparc.utils.Utils", {
         const favServices = Object.keys().sort((a, b) => serviceFavs[b]["hits"] - serviceFavs[a]["hits"]);
         return favServices;
       }
+    },
+
+    hardRefresh: function() {
+      // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
+      // No cigar. Tried:
+      // eslint-disable-next-line no-self-assign
+      // window.location.href = window.location.href;
+      // window.location.href = window.location.origin + window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "reloadTime=" + Date.now().toString() + window.location.hash;
+      // window.location.href = window.location.href.replace(/#.*$/, "");
     },
 
     getUniqueStudyName: function(preferredName, list) {
