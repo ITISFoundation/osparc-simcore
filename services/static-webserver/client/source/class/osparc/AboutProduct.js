@@ -62,11 +62,11 @@ qx.Class.define("osparc.AboutProduct", {
           const aboutText = this.tr(` 
           is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>o2S2PARC platform</a> 
           for online-accessible, cloud-based, and collaborative computational modeling.<br><br>
-          o2S2PARC was developed with funding from the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions 
-          (SPARC) Program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable) 
-          computational modeling in the field of bioelectronic medicine, from neural interfaces to peripheral nerve recruitment 
-          and the ensuing impact on organ function.<br><br>
-          For more information regarding the SPARC Program, see the <a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.`);
+          o2S2PARC was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions 
+          (SPARC) program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable) 
+          computational modeling in the field of bioelectronic medicine – from neural interfaces to peripheral nerve recruitment 
+          and the resulting effects on organ function.<br><br>
+          For more information about SPARC and the services offered, visit the <a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.`);
           introText.setValue(displayName + aboutText);
         });
     }
