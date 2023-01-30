@@ -601,23 +601,33 @@ def _get_entrypoint_container_name(test_client: TestClient) -> str:
     return container_name
 
 
+@pytest.mark.parametrize("include_exclude_filter_option", [True, False])
 async def test_containers_entrypoint_name_ok(
     docker_swarm: None,
     test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
+    include_exclude_filter_option: bool,
 ):
-    filters = json.dumps({"network": dynamic_sidecar_network_name})
+    filters_dict = {"network": dynamic_sidecar_network_name}
+    if include_exclude_filter_option:
+        filters_dict["exclude"] = SUFFIX_EGRESS_PROXY_NAME
+    filters = json.dumps(filters_dict)
+
     response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json() == _get_entrypoint_container_name(test_client)
+    container_name = response.json()
+    assert container_name == _get_entrypoint_container_name(test_client)
+    assert SUFFIX_EGRESS_PROXY_NAME not in container_name
 
 
+@pytest.mark.parametrize("include_exclude_filter_option", [True, False])
 async def test_containers_entrypoint_name_containers_not_started(
     docker_swarm: None,
     test_client: TestClient,
     dynamic_sidecar_network_name: str,
     started_containers: list[str],
+    include_exclude_filter_option: bool,
 ):
     entrypoint_container = _get_entrypoint_container_name(test_client)
 
@@ -630,17 +640,22 @@ async def test_containers_entrypoint_name_containers_not_started(
         parsed_spec
     )
 
-    filters = json.dumps(
-        {
-            "network": dynamic_sidecar_network_name,
-            "exclude_name_part": SUFFIX_EGRESS_PROXY_NAME,
-        }
-    )
+    filters_dict = {"network": dynamic_sidecar_network_name}
+    if include_exclude_filter_option:
+        filters_dict["exclude"] = SUFFIX_EGRESS_PROXY_NAME
+    filters = json.dumps(filters_dict)
     response = await test_client.get(f"/{API_VTAG}/containers/name?filters={filters}")
-    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
-    assert response.json() == {
-        "detail": "No container found for network=entrypoint_container_network"
-    }
+
+    if include_exclude_filter_option:
+        assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
+        assert response.json() == {
+            "detail": "No container found for network=entrypoint_container_network"
+        }
+    else:
+        assert response.status_code == status.HTTP_200_OK, response.text
+        found_container = response.json()
+        assert found_container in started_containers
+        assert SUFFIX_EGRESS_PROXY_NAME in found_container
 
 
 async def test_attach_detach_container_to_network(

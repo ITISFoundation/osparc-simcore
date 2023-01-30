@@ -194,9 +194,11 @@ async def get_containers_name(
     for service in spec_services:
         service_content = spec_services[service]
         if network_name in service_content.get("networks", {}):
-            if exclude is not None and exclude not in service_content["container_name"]:
-                container_name = service_content["container_name"]
-                break
+            if exclude is not None and exclude in service_content["container_name"]:
+                # removing this container from results
+                continue
+            container_name = service_content["container_name"]
+            break
 
     if container_name is None:
         raise HTTPException(
