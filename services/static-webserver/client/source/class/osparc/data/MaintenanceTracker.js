@@ -41,13 +41,14 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
   statics: {
     CHECK_INTERVAL: 15*60*1000, // Check every 15'
-    WARN_IN_ADVANCE: 20*60*1000 // Show Flash Message 20' in advance
+    CLOSABLE_WARN_IN_ADVANCE: 12*60*60*1000, // Show Ribbon Closable Message 12h in advance
+    PERMANENT_WARN_IN_ADVANCE: 30*60*1000 // Show Ribbon Permament Message 30' in advance
   },
 
   members: {
     __checkInternval: null,
     __lastNotification: null,
-    __lastFlashMessage: null,
+    __lastRibbonMessage: null,
     __logoutTimer: null,
 
     startTracker: function() {
@@ -78,20 +79,13 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
         return null;
       }
 
-      let text = qx.locale.Manager.tr("Maintenance scheduled");
-      if (this.getStart()) {
-        text += "<br>";
-        text += osparc.utils.Utils.formatDateAndTime(this.getStart());
-      }
+      let text = osparc.utils.Utils.formatDateAndTime(this.getStart());
       if (this.getEnd()) {
-        text += " - ";
-        text += osparc.utils.Utils.formatDateAndTime(this.getEnd());
+        text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
       }
       if (this.getReason()) {
         text += ": " + this.getReason();
       }
-      text += "<br>";
-      text += qx.locale.Manager.tr("Please save your work and logout");
       return text;
     },
 
@@ -105,6 +99,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       this.setReason(maintenanceData && "reason" in maintenanceData ? maintenanceData.reason : null);
 
       if (
+        maintenanceData === null || // it will remove it
         (oldStart === null || oldStart.getTime() !== this.getStart().getTime()) ||
         (oldEnd === null || oldEnd.getTime() !== this.getEnd().getTime()) ||
         oldReason !== this.getReason()
@@ -120,11 +115,11 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     __scheduleStart: function() {
       if (this.getStart() === null) {
         this.__removeNotification();
-        this.__removeFlashMessage();
+        this.__removeRibbonMessage();
         this.__removeScheduledLogout();
       } else {
         this.__addNotification();
-        this.__scheduleFlashMessage();
+        this.__scheduleRibbonMessage();
         this.__scheduleLogout();
       }
     },
@@ -133,8 +128,9 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       this.__removeNotification();
 
       const text = this.__getText();
-      const notification = this.__lastNotification = new osparc.component.notification.NotificationUI(text);
-      osparc.component.notification.Notifications.getInstance().addNotification(notification);
+      const notification = new osparc.component.notification.Notification(text);
+      const notificationUI = this.__lastNotification = new osparc.component.notification.NotificationUI(notification.getFullText(true));
+      osparc.component.notification.Notifications.getInstance().addNotification(notificationUI);
     },
 
     __removeNotification: function() {
@@ -144,28 +140,36 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       }
     },
 
-    __scheduleFlashMessage: function() {
-      this.__removeFlashMessage();
+    __scheduleRibbonMessage: function() {
+      this.__removeRibbonMessage();
 
-      const popupMessage = () => {
-        const now = new Date();
-        const duration = this.getStart().getTime() - now.getTime();
-        const text = this.__getText();
-        this.__lastFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(text, "WARNING", null, duration);
-      };
       const now = new Date();
-      const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
-      if (diff < 0) {
-        popupMessage();
+      const diffClosable = this.getStart().getTime() - now.getTime() - this.self().CLOSABLE_WARN_IN_ADVANCE;
+      const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
+
+      const messageToRibbon = closable => {
+        this.__removeRibbonMessage();
+        const text = this.__getText();
+        const notification = new osparc.component.notification.Notification(text, "maintenance", closable);
+        osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+        this.__lastRibbonMessage = notification;
+      };
+      if (diffClosable < 0) {
+        messageToRibbon(true);
       } else {
-        setTimeout(() => popupMessage(), diff);
+        setTimeout(() => messageToRibbon(true), diffClosable);
+      }
+      if (diffPermanent < 0) {
+        messageToRibbon(false);
+      } else {
+        setTimeout(() => messageToRibbon(false), diffPermanent);
       }
     },
 
-    __removeFlashMessage: function() {
-      if (this.__lastFlashMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__lastFlashMessage);
-        this.__lastFlashMessage = null;
+    __removeRibbonMessage: function() {
+      if (this.__lastRibbonMessage) {
+        osparc.component.notification.NotificationsRibbon.getInstance().removeNotification(this.__lastRibbonMessage);
+        this.__lastRibbonMessage = null;
       }
     },
 

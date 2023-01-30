@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.permissions.Service", {
     getEveryoneObj: function() {
       return {
         "gid": 1,
-        "label": "Everyone",
+        "label": "Public",
         "description": "",
         "thumbnail": null,
         "accessRights": this.getCollaboratorAccessRight(),

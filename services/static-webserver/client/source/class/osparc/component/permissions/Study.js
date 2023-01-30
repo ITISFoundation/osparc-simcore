@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.permissions.Study", {
     getEveryoneObj: function(isResourceStudy) {
       return {
         "gid": 1,
-        "label": "Everyone",
+        "label": "Public",
         "description": "",
         "thumbnail": null,
         "accessRights": isResourceStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight(),
