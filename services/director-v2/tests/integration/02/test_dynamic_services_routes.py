@@ -217,6 +217,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         ("restore_service_state", None),
         ("push_service_output_ports", None),
         ("save_service_state", None),
+        ("has_quota_support", False),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",

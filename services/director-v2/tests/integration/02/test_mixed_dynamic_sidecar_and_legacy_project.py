@@ -218,6 +218,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
         ("pull_service_output_ports", None),
         ("restore_service_state", None),
         ("push_service_output_ports", None),
+        ("has_quota_support", False),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
