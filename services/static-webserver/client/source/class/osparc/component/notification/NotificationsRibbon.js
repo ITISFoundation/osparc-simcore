@@ -82,7 +82,19 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
           notificationAtom.getChildControl("icon").set({
             textColor: "black"
           });
-          this._add(notificationAtom);
+          if (notification.getClosable()) {
+            const closableLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5, "center"));
+            closableLayout.add(notificationAtom);
+            const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+              backgroundColor: "transparent",
+              textColor: "black"
+            });
+            closeButton.addListener("tap", () => this.removeNotification(notification), this);
+            closableLayout.add(closeButton);
+            this._add(closableLayout);
+          } else {
+            this._add(notificationAtom);
+          }
         });
       } else {
         this.exclude();
