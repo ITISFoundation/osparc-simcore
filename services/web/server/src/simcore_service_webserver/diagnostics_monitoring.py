@@ -57,7 +57,7 @@ def setup_monitoring(app: web.Application):
         _meta.APP_NAME,
         enter_middleware_cb=enter_middleware_cb,
         exit_middleware_cb=exit_middleware_cb,
-        version=f"{_meta.version}",
+        version=f"{_meta.VERSION}",
     )
 
     monitor_services.add_instrumentation(
