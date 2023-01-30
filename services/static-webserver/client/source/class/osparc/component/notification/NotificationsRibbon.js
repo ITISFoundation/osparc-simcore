@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
           const text = notificationUI.getFullText();
           const notification = new qx.ui.basic.Atom().set({
             label: text,
-            icon: "@FontAwesome5Solid/exclamation-triangle/16",
+            icon: "@FontAwesome5Solid/exclamation-triangle/14",
             center: true,
             padding: 2,
             gap: 10,
