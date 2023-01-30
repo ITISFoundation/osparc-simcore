@@ -21,7 +21,7 @@ qx.Class.define("osparc.About", {
   type: "singleton",
 
   construct: function() {
-    this.base(arguments, this.tr("About"));
+    this.base(arguments, this.tr("About oSPARC"));
     this.set({
       layout: new qx.ui.layout.VBox(5),
       maxWidth: this.self().MAX_WIDTH,
