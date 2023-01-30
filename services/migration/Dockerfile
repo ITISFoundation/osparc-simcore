@@ -51,7 +51,10 @@ WORKDIR /build
 
 # install only base 3rd party dependencies
 COPY  --chown=scu:scu packages/postgres-database/ .
-RUN pip --no-cache-dir --quiet install .[migration]
+RUN pip --no-cache-dir --quiet \
+  install \
+  -r requirements/prod.txt \
+  && pip freeze
 
 
 
@@ -76,7 +79,12 @@ USER ${SC_USER_NAME}
 # bring installed package without build tools
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/migration/docker services/migration/docker
-#, "| grep --regexp='^Rev: .* (head)$'" ]
-HEALTHCHECK --interval=10s --timeout=10s --start-period=1ms --retries=3 CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
+
+HEALTHCHECK \
+  --interval=10s \
+  --timeout=10s \
+  --start-period=1ms \
+  --retries=3 \
+  CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]
