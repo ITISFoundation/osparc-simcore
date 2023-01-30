@@ -49,7 +49,7 @@ qx.Class.define("osparc.component.notification.Notification", {
       let fullText = "";
       switch (this.getType()) {
         case "maintenance": {
-          fullText += qx.locale.Manager.tr("Maintenance scheduled.");
+          fullText += "<b>" + qx.locale.Manager.tr("Maintenance scheduled.") + "</b>";
           fullText += wLineBreak ? "<br>" : " ";
           fullText += this.getText() + ".";
           fullText += wLineBreak ? "<br>" : " ";
