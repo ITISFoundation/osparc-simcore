@@ -467,6 +467,11 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
     },
 
+    getContrastedBinaryColor: function(color) {
+      const L = this.getColorLuminance(color);
+      return L > 0.35 ? "#202020" : "#D0D0D0";
+    },
+
     getRoundedBinaryColor: function(color) {
       const L = this.getColorLuminance(color);
       return L > 0.35 ? "#FFF" : "#000";
