@@ -61,6 +61,7 @@ def expected_volume_config(
             "Target": target,
             "Type": "volume",
             "VolumeOptions": {
+                "DriverConfig": None,
                 "Labels": {
                     "source": source,
                     "run_id": f"{run_id}",
@@ -68,7 +69,7 @@ def expected_volume_config(
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                     "node_uuid": f"{node_uuid}",
-                }
+                },
             },
         }
 

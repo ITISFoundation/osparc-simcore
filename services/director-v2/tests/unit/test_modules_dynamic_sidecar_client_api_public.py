@@ -357,6 +357,5 @@ async def test_are_quotas_supported(
         "post_docker_quotas_supported", return_value=response
     ) as client:
         assert (
-            await client.are_quotas_supported(dynamic_sidecar_endpoint)
-            == expected_result
+            await client.has_quota_support(dynamic_sidecar_endpoint) == expected_result
         )
