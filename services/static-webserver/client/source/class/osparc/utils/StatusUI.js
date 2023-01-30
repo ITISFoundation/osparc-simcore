@@ -99,7 +99,7 @@ qx.Class.define("osparc.utils.StatusUI", {
       }
     },
 
-    updateIconAnimation: function(target) {
+    updateCircleAnimation: function(target) {
       const elem = target.getContentElement();
       if (target.getSource() && target.getSource().includes("circle-notch")) {
         osparc.utils.Utils.addClass(elem, "rotate");
