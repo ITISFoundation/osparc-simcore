@@ -85,11 +85,11 @@ qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
       },
       "productAll": {
         contextId: 2,
-        label: "Product Everyone"
+        label: "Public for product users"
       },
       "all": {
         contextId: 3,
-        label: "Everyone"
+        label: "Public"
       }
     }
   },
