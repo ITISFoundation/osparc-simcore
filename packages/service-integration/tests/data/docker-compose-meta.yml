@@ -82,6 +82,7 @@ services:
         simcore.service.compose-spec: '{"version": "2.3", "services": {"rt-web-dy": {"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/rocket:${SERVICE_VERSION}", "init": true, "storage_opt": {"size": "100M"}, "depends_on": ["rocket-core"]}, "rocket-core": {"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/rocket-core-dy:${SERVICE_VERSION}", "runtime": "nvidia", "init": true, "storage_opt": {"size": "5G"}, "environment": ["DISPLAY="], "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"], "cap_add": ["SYS_PTRACE"]}, "sym-server": {"image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sym-server-dy:${SERVICE_VERSION}", "init": true, "storage_opt": {"size": "100M"}}}}'
         simcore.service.container-http-entrypoint: rt-web-dy
         simcore.service.containers-allowed-outgoing-permit-list: '{"rocket-core": [{"hostname": "${rocket_LICENSE_SERVER}", "tcp_ports": [27000, 56625], "dns_resolver": {"address": "172.16.8.15", "port": 53}}]}'
+        simcore.service.containers-allowed-outgoing-internet: '["sym-server"]'
         simcore.service.paths-mapping: '{"outputs_path": "/home/smu/work/outputs", "inputs_path": "/home/smu/work/inputs", "state_paths": ["/home/smu/work/workspace"]}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000}, "Reservations": {"NanoCPUs": 1000000000}}}, {"name": "env", "type": "string", "value": ["rocket_CORE_HOSTNAME=%%container_name.rocket-core%%"]}]'
 
