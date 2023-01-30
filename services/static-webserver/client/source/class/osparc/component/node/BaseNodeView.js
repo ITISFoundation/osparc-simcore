@@ -369,7 +369,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       } else {
         this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
       }
-      osparc.utils.StatusUI.updateIconAnimation(buttonsIcon);
+      osparc.utils.StatusUI.updateCircleAnimation(buttonsIcon);
       this.__enableIframeContent(!waiting);
     },
 

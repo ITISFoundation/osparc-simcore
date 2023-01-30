@@ -119,7 +119,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.getNode().getStatus().bind("interactive", this.__icon, "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
-          osparc.utils.StatusUI.updateIconAnimation(this.__icon);
+          osparc.utils.StatusUI.updateCircleAnimation(this.__icon);
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
           if (props["interactive"]["check"].includes(state)) {
