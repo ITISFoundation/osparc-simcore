@@ -178,7 +178,6 @@ def _update_service_quotas(service_spec: ComposeSpecLabel, has_quota_support: bo
         return
 
     for spec in service_spec["services"].values():
-        # NOTE: `storage_opt` is only supported in spec version 2
         spec.pop("storage_opt", None)
 
 

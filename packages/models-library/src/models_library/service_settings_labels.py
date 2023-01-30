@@ -352,10 +352,12 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                                     "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
                                     "init": True,
                                     "depends_on": ["s4l-core"],
+                                    "storage_opt": {"size": "10M"},
                                 },
                                 "s4l-core": {
                                     "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
                                     "runtime": "nvidia",
+                                    "storage_opt": {"size": "5G"},
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],
                                     "volumes": [
