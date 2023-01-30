@@ -62,9 +62,9 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
       const notifications = this.__notifications;
       if (notifications.length) {
         this.show();
-        notifications.forEach(notificationUI => {
-          const text = notificationUI.getFullText();
-          const notification = new qx.ui.basic.Atom().set({
+        notifications.forEach(notification => {
+          const text = notification.getFullText();
+          const notificationAtom = new qx.ui.basic.Atom().set({
             label: text,
             icon: "@FontAwesome5Solid/exclamation-triangle/14",
             center: true,
@@ -72,17 +72,17 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
             gap: 10,
             height: 20
           });
-          notification.getChildControl("label").set({
+          notificationAtom.getChildControl("label").set({
             textColor: "black",
             font: "text-14",
             rich: true,
             wrap: true,
             selectable: true
           });
-          notification.getChildControl("icon").set({
+          notificationAtom.getChildControl("icon").set({
             textColor: "black"
           });
-          this._add(notification);
+          this._add(notificationAtom);
         });
       } else {
         this.exclude();
