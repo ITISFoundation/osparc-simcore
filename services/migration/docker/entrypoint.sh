@@ -20,7 +20,7 @@ if [ -f "${SC_DONE_MARK_FILE}" ]; then
   rm "${SC_DONE_MARK_FILE}"
 fi
 
-echo "$INFO Installation"
+echo "$INFO Requirements installed:"
 pip freeze
 
 echo "$INFO Starting migration ..."
