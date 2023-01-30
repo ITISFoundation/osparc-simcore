@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.notification.Notification", {
   extend: qx.core.Object,
 
-  construct: function(text, type = "maintenance") {
+  construct: function(text, type = "maintenance", closable = false) {
     this.base(arguments);
 
     if (text) {
@@ -27,6 +27,10 @@ qx.Class.define("osparc.component.notification.Notification", {
 
     if (type) {
       this.setType(type);
+    }
+
+    if (closable) {
+      this.setClosable(closable);
     }
   },
 
@@ -40,6 +44,12 @@ qx.Class.define("osparc.component.notification.Notification", {
     text: {
       check: "String",
       init: "",
+      nullable: false
+    },
+
+    closable: {
+      check: "Boolean",
+      init: true,
       nullable: false
     }
   },
