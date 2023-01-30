@@ -1,20 +1,28 @@
 """ Current version of the simcore_service_webserver application and its API
 
 """
-import pkg_resources
+from typing import Final
+
 from packaging.version import Version
+from servicelib.utils_meta import PackageInfo
 
-__version__: str = pkg_resources.get_distribution("simcore-service-webserver").version
+info: Final = PackageInfo(package_name="simcore-service-webserver")
+__version__: Final[str] = info.__version__
 
-version = Version(__version__)
 
+PROJECT_NAME: Final[str] = info.project_name
+VERSION: Final[Version] = info.version
+API_VERSION: Final[str] = info.__version__
+API_VTAG: Final[str] = info.api_prefix_path_tag
+SUMMARY: Final[str] = info.get_summary()
+
+
+# legacy consts
 APP_NAME: str = __name__.split(".")[0]
-API_VERSION: str = __version__
-API_VTAG: str = f"v{version.major}"
-
-# legacy
 api_version_prefix: str = API_VTAG
 
+
+# kids drawings :-)
 
 WELCOME_MSG = r"""
  _    _        _
@@ -22,7 +30,7 @@ WELCOME_MSG = r"""
 | |  | |  ___ | |__   ___   ___  _ __ __   __ ___  _ __
 | |/\| | / _ \| '_ \ / __| / _ \| '__|\ \ / // _ \| '__|
 \  /\  /|  __/| |_) |\__ \|  __/| |    \ V /|  __/| |
- \/  \/  \___||_.__/ |___/ \___||_|     \_/  \___||_|     {0}
+ \/  \/  \___||_.__/ |___/ \___||_|     \_/  \___||_|     {}
 """.format(
     f"v{__version__}"
 )
