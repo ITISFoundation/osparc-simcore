@@ -105,8 +105,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       });
 
       orgsPage.addListener("organizationSelected", e => {
-        console.log(e.getData());
-        membersPage.setCurrentOrg(this.__currentOrg);
+        const currentOrg = e.getData();
+        membersPage.setCurrentOrg(currentOrg);
         pages.setSelection([membersPage]);
       });
     }

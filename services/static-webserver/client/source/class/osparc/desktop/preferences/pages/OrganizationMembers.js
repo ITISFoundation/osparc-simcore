@@ -21,10 +21,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     const msg = this.tr("\
-    Members blah blah blah.");
+    This is the list of members in the organization.\
+    Here you may review the organizations you are a part of, create new ones, \
+    or manage the membership and access rights of organizations where you are a manager/administrator.<br>\
+    Select one to check the list of members");
     const intro = new qx.ui.basic.Label().set({
       value: msg,
       alignX: "left",
@@ -103,6 +106,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
 
     setCurrentOrg: function(currentOrg) {
       this.__currentOrg = currentOrg;
+      this.__reloadOrgMembers();
     },
 
     __getMemberInvitation: function() {
@@ -193,7 +197,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
       return memebersUIList;
     },
 
-    reloadOrgMembers: function() {
+    __reloadOrgMembers: function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
@@ -293,7 +297,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
               } else {
                 osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
                 osparc.store.Store.getInstance().reset("organizationMembers");
-                this.reloadOrgMembers();
+                this.__reloadOrgMembers();
               }
             });
         })
@@ -321,7 +325,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted to Member"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
@@ -350,7 +354,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
           }
           osparc.component.message.FlashMessenger.getInstance().logAs(msg);
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
@@ -376,7 +380,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted to Manager"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
@@ -402,7 +406,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully promoted to Administrator"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + orgMember["name"], "ERROR");
@@ -428,7 +432,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Member"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
@@ -454,7 +458,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Manager"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
@@ -477,7 +481,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully removed"));
           osparc.store.Store.getInstance().reset("organizationMembers");
-          this.reloadOrgMembers();
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + orgMember["name"], "ERROR");
