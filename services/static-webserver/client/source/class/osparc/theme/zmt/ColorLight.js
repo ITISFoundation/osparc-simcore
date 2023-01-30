@@ -5,12 +5,12 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
     "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
     "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
-    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
-    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
-    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
-    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
-    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
+    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
+    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
+    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 60),
+    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 65),
     "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
     "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
     "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
@@ -18,7 +18,8 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
 
-    "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 65),
+    // "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 65),
+    "strong-main": "rgba(0, 144, 208, 1)",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
 
@@ -51,8 +52,8 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background": "c03",
-    "material-button-background-disabled": "c02",
+    "material-button-background": "c04",
+    "material-button-background-disabled": "c03",
     "material-button-background-hovered": "c05",
     "material-button-background-pressed": "c05",
     "material-button-text-disabled": "c07",
@@ -93,8 +94,8 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "border-lead": "c07",
 
     // window
-    "window-border": "c04",
-    "window-border-inner": "c01",
+    "window-border": "c03",
+    "window-border-inner": "c02",
 
     // group box
     "white-box-border": "c03",

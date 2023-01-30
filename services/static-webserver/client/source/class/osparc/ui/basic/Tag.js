@@ -48,7 +48,7 @@ qx.Class.define("osparc.ui.basic.Tag", {
     _applyColor: function(color) {
       this.setBackgroundColor(color);
       // Set the right color for the font
-      const textColor = qx.theme.manager.Color.getInstance().resolve(osparc.utils.Utils.getContrastedTextColor(color));
+      const textColor = osparc.utils.Utils.getContrastedBinaryColor(color);
       this.setTextColor(textColor);
     }
   }
