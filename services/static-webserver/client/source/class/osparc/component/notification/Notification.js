@@ -25,13 +25,8 @@ qx.Class.define("osparc.component.notification.Notification", {
       this.setText(text);
     }
 
-    if (type) {
-      this.setType(type);
-    }
-
-    if (closable) {
-      this.setClosable(closable);
-    }
+    this.setType(type);
+    this.setClosable(closable);
   },
 
   properties: {
