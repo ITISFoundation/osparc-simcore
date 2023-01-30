@@ -13,12 +13,8 @@ websocket-client<1,>=0.32.0
 
 # ----------------------
 
-
-urllib3
-
 alembic
 click
+docker # aiohttp==3.7.3 conflicting with requests==2.25.1 -> docker
 tenacity
-
-# aiohttp==3.7.3 conflicting with requests==2.25.1 -> docker
-docker
+urllib3
