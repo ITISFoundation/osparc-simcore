@@ -130,8 +130,10 @@ async def task_create_service_containers(
 
         progress.update(message="pulling images", percent=0.01)
         await post_sidecar_log_message(app, "pulling service images")
+        await post_progress_message(app, 0, ProgressType.SERVICE_IMAGES_PULLING)
         await docker_compose_pull(app, shared_store.compose_spec)
         await post_sidecar_log_message(app, "service images ready")
+        await post_progress_message(app, 1, ProgressType.SERVICE_IMAGES_PULLING)
 
         progress.update(message="creating and starting containers", percent=0.90)
         await post_sidecar_log_message(app, "starting service containers")
@@ -205,6 +207,7 @@ async def task_restore_state(
     app: FastAPI,
 ) -> None:
     progress.update(message="checking files", percent=0.0)
+    await post_progress_message(app, 0, ProgressType.SERVICE_STATE_PULLING)
     # first check if there are files (no max concurrency here, these are just quick REST calls)
     existing_files: list[bool] = await logged_gather(
         *(
@@ -245,6 +248,7 @@ async def task_restore_state(
 
     await post_sidecar_log_message(app, "Finished state downloading")
     progress.update(message="state restored", percent=0.99)
+    await post_progress_message(app, 1, ProgressType.SERVICE_STATE_PULLING)
 
 
 async def task_save_state(
@@ -256,6 +260,7 @@ async def task_save_state(
     awaitables: deque[Awaitable[Optional[Any]]] = deque()
 
     progress.update(message="starting state save", percent=0.0)
+    await post_progress_message(app, 0, ProgressType.SERVICE_STATE_PUSHING)
 
     for state_path in mounted_volumes.disk_state_paths():
         await post_sidecar_log_message(app, f"Saving state for {state_path}")
@@ -278,6 +283,7 @@ async def task_save_state(
 
     await post_sidecar_log_message(app, "Finished state saving")
     progress.update(message="finished state saving", percent=0.99)
+    await post_progress_message(app, 1, ProgressType.SERVICE_STATE_PUSHING)
 
 
 async def task_ports_inputs_pull(
@@ -290,6 +296,7 @@ async def task_ports_inputs_pull(
     port_keys = [] if port_keys is None else port_keys
 
     await post_sidecar_log_message(app, f"Pulling inputs for {port_keys}")
+    await post_progress_message(app, 0, ProgressType.SERVICE_INPUTS_PULLING)
     progress.update(message="pulling inputs", percent=0.1)
     transferred_bytes = await nodeports.download_target_ports(
         nodeports.PortTypeName.INPUTS,
@@ -300,6 +307,7 @@ async def task_ports_inputs_pull(
         ),
     )
     await post_sidecar_log_message(app, "Finished pulling inputs")
+    await post_progress_message(app, 1, ProgressType.SERVICE_INPUTS_PULLING)
     progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
 
@@ -314,6 +322,7 @@ async def task_ports_outputs_pull(
     port_keys = [] if port_keys is None else port_keys
 
     await post_sidecar_log_message(app, f"Pulling output for {port_keys}")
+    await post_progress_message(app, 0, ProgressType.SERVICE_OUTPUTS_PULLING)
     transferred_bytes = await nodeports.download_target_ports(
         nodeports.PortTypeName.OUTPUTS,
         mounted_volumes.disk_outputs_path,
@@ -323,6 +332,7 @@ async def task_ports_outputs_pull(
         ),
     )
     await post_sidecar_log_message(app, "Finished pulling outputs")
+    await post_progress_message(app, 1, ProgressType.SERVICE_OUTPUTS_PULLING)
     progress.update(message="finished outputs pulling", percent=0.99)
     return int(transferred_bytes)
 
@@ -331,6 +341,7 @@ async def task_ports_outputs_push(
     progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
 ) -> None:
     progress.update(message="starting outputs pushing", percent=0.0)
+    await post_progress_message(app, 0, ProgressType.SERVICE_OUTPUTS_PUSHING)
 
     await post_sidecar_log_message(
         app,
@@ -340,7 +351,7 @@ async def task_ports_outputs_push(
     await outputs_manager.wait_for_all_uploads_to_finish()
 
     await post_sidecar_log_message(app, "finished outputs pushing")
-
+    await post_progress_message(app, 1, ProgressType.SERVICE_OUTPUTS_PUSHING)
     progress.update(message="finished outputs pushing", percent=0.99)
 
 
