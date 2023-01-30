@@ -41,7 +41,8 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
   statics: {
     CHECK_INTERVAL: 15*60*1000, // Check every 15'
-    WARN_IN_ADVANCE: 20*60*1000 // Show Ribbon Message 20' in advance
+    CLOSABLE_WARN_IN_ADVANCE: 12*60*60*1000, // Show Ribbon Closable Message 12h in advance
+    PERMANENT_WARN_IN_ADVANCE: 30*60*1000 // Show Ribbon Permament Message 30' in advance
   },
 
   members: {
@@ -98,6 +99,7 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
       this.setReason(maintenanceData && "reason" in maintenanceData ? maintenanceData.reason : null);
 
       if (
+        maintenanceData === null || // it will remove it
         (oldStart === null || oldStart.getTime() !== this.getStart().getTime()) ||
         (oldEnd === null || oldEnd.getTime() !== this.getEnd().getTime()) ||
         oldReason !== this.getReason()
@@ -141,18 +143,26 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
     __scheduleRibbonMessage: function() {
       this.__removeRibbonMessage();
 
-      const messageToRibbon = () => {
+      const now = new Date();
+      const diffClosable = this.getStart().getTime() - now.getTime() - this.self().CLOSABLE_WARN_IN_ADVANCE;
+      const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
+
+      const messageToRibbon = closable => {
+        this.__removeRibbonMessage();
         const text = this.__getText();
-        const notification = new osparc.component.notification.Notification(text);
+        const notification = new osparc.component.notification.Notification(text, "maintenance", closable);
         osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
         this.__lastRibbonMessage = notification;
       };
-      const now = new Date();
-      const diff = this.getStart().getTime() - now.getTime() - this.self().WARN_IN_ADVANCE;
-      if (diff < 0) {
-        messageToRibbon();
+      if (diffClosable < 0) {
+        messageToRibbon(true);
       } else {
-        setTimeout(() => messageToRibbon(), diff);
+        setTimeout(() => messageToRibbon(true), diffClosable);
+      }
+      if (diffPermanent < 0) {
+        messageToRibbon(false);
+      } else {
+        setTimeout(() => messageToRibbon(false), diffPermanent);
       }
     },
 
