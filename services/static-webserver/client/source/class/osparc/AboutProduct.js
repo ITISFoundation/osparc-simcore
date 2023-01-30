@@ -22,12 +22,10 @@ qx.Class.define("osparc.AboutProduct", {
   construct: function() {
     this.base(arguments, this.tr("About Product"));
 
-    /*
     osparc.store.StaticInfo.getInstance().getDisplayName()
       .then(displayName => {
         this.setCaption(this.tr("About ") + displayName);
       });
-    */
 
     this.set({
       layout: new qx.ui.layout.VBox(5),
