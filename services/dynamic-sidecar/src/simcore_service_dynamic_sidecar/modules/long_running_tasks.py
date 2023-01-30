@@ -6,6 +6,7 @@ from typing import Any, Awaitable, Final, Optional
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.file_io_utils import ProgressData
@@ -227,24 +228,29 @@ async def task_restore_state(
         app,
         f"Downloading state files for {existing_files}...",
     )
-
-    await logged_gather(
-        *(
-            data_manager.pull(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                file_or_folder=path,
-                io_log_redirect_cb=functools.partial(
-                    _logs_cb, app, ProgressType.SERVICE_STATE_PULLING
-                ),
-            )
-            for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
-            if exists
-        ),
-        max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
-        reraise=True,  # this should raise if there is an issue
-    )
+    async with ProgressBarData(
+        steps=len([exists for exists in existing_files if exists])
+    ) as root_progress:
+        await logged_gather(
+            *(
+                data_manager.pull(
+                    user_id=settings.DY_SIDECAR_USER_ID,
+                    project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                    node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                    file_or_folder=path,
+                    io_log_redirect_cb=functools.partial(
+                        _logs_cb, app, ProgressType.SERVICE_STATE_PULLING
+                    ),
+                    progress_bar=root_progress,
+                )
+                for path, exists in zip(
+                    mounted_volumes.disk_state_paths(), existing_files
+                )
+                if exists
+            ),
+            max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
+            reraise=True,  # this should raise if there is an issue
+        )
 
     await post_sidecar_log_message(app, "Finished state downloading")
     progress.update(message="state restored", percent=0.99)

@@ -8,6 +8,7 @@ from functools import partial
 from pathlib import Path
 from typing import Final, Iterator, Optional
 
+from servicelib.progress_bar import ProgressBarData
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
@@ -154,6 +155,7 @@ async def unarchive_dir(
     destination_folder: Path,
     *,
     max_workers: int = _MAX_UNARCHIVING_WORKER_COUNT,
+    progress_bar: ProgressBarData,
 ) -> set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive

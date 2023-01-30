@@ -4,17 +4,17 @@ from typing import Optional
 
 
 @dataclass
-class ProgressData:
+class ProgressBarData:
     steps: int
     _continuous_progress: float = 0
     _children: list = field(default_factory=list)
-    _parent: Optional["ProgressData"] = None
+    _parent: Optional["ProgressBarData"] = None
     _lock: asyncio.Lock = field(init=False)
 
     def __post_init__(self) -> None:
         self._lock = asyncio.Lock()
 
-    async def __aenter__(self) -> "ProgressData":
+    async def __aenter__(self) -> "ProgressBarData":
         await self.start()
         return self
 
@@ -38,11 +38,11 @@ class ProgressData:
     async def finish(self) -> None:
         pass
 
-    def sub_progress(self, steps) -> "ProgressData":
+    def sub_progress(self, steps) -> "ProgressBarData":
         if len(self._children) == self.steps:
             raise RuntimeError(
                 "Too many sub progresses created already. Wrong usage of the progress bar"
             )
-        child = ProgressData(steps=steps, _parent=self)
+        child = ProgressBarData(steps=steps, _parent=self)
         self._children.append(child)
         return child

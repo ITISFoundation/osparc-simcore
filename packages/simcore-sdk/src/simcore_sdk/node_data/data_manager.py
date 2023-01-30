@@ -8,6 +8,7 @@ from models_library.projects_nodes_io import StorageFileID
 from pydantic import parse_obj_as
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
@@ -112,6 +113,7 @@ async def _pull_file(
     *,
     io_log_redirect_cb: Optional[LogRedirectCB],
     save_to: Optional[Path] = None,
+    progress_bar: ProgressBarData,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
@@ -123,6 +125,7 @@ async def _pull_file(
         s3_object=s3_object,
         local_folder=destination_path.parent,
         io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar,
     )
     if downloaded_file != destination_path:
         destination_path.unlink(missing_ok=True)
@@ -139,8 +142,10 @@ async def pull(
     project_id: str,
     node_uuid: str,
     file_or_folder: Path,
+    *,
     io_log_redirect_cb: Optional[LogRedirectCB],
     save_to: Optional[Path] = None,
+    progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
         return await _pull_file(
@@ -150,30 +155,35 @@ async def pull(
             file_or_folder,
             save_to=save_to,
             io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
         )
     # we have a folder, so we need somewhere to extract it to
-    with TemporaryDirectory() as tmp_dir_name:
-        archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
-        await _pull_file(
-            user_id,
-            project_id,
-            node_uuid,
-            archive_file,
-            io_log_redirect_cb=io_log_redirect_cb,
-        )
+    async with progress_bar.sub_progress(steps=2) as sub_prog:
+        with TemporaryDirectory() as tmp_dir_name:
+            archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
+            await _pull_file(
+                user_id,
+                project_id,
+                node_uuid,
+                archive_file,
+                io_log_redirect_cb=io_log_redirect_cb,
+                progress_bar=sub_prog,
+            )
 
-        destination_folder = file_or_folder if save_to is None else save_to
-        if io_log_redirect_cb:
-            await io_log_redirect_cb(
-                f"unarchiving {archive_file} into {destination_folder}, please wait..."
+            destination_folder = file_or_folder if save_to is None else save_to
+            if io_log_redirect_cb:
+                await io_log_redirect_cb(
+                    f"unarchiving {archive_file} into {destination_folder}, please wait..."
+                )
+            await unarchive_dir(
+                archive_to_extract=archive_file,
+                destination_folder=destination_folder,
+                progress_bar=sub_prog,
             )
-        await unarchive_dir(
-            archive_to_extract=archive_file, destination_folder=destination_folder
-        )
-        if io_log_redirect_cb:
-            await io_log_redirect_cb(
-                f"unarchiving {archive_file} into {destination_folder} completed."
-            )
+            if io_log_redirect_cb:
+                await io_log_redirect_cb(
+                    f"unarchiving {archive_file} into {destination_folder} completed."
+                )
 
 
 async def exists(
