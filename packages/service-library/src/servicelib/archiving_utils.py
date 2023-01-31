@@ -287,6 +287,7 @@ def _add_to_archive(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
+    update_progress,
     exclude_patterns: Optional[set[str]] = None,
 ) -> None:
     compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
@@ -320,6 +321,9 @@ def _add_to_archive(
             )
 
             zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
+            asyncio.run_coroutine_threadsafe(
+                update_progress(file_to_add.stat().st_size), asyncio.get_event_loop()
+            )
 
 
 async def archive_dir(
@@ -344,33 +348,45 @@ async def archive_dir(
 
     ::raise ArchiveError
     """
-    with non_blocking_process_pool_executor(max_workers=1) as process_pool:
-        try:
-            await asyncio.get_event_loop().run_in_executor(
-                process_pool,
-                # ---------
-                _add_to_archive,
-                dir_to_compress,
-                destination,
-                compress,
-                store_relative_path,
-                exclude_patterns,
-            )
-            # NOTE: this happens in a separate process. we need a communication channel to update the progress bar
-            await progress_bar.update()
-        except Exception as err:
-            if destination.is_file():
-                destination.unlink(missing_ok=True)
 
-            raise ArchiveError(
-                f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
-                f"Details: {err}"
-            ) from err
+    folder_size_bytes = sum(
+        file.stat().st_size
+        for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+    )
+    async with progress_bar.sub_progress(folder_size_bytes) as sub_progress:
 
-        except BaseException:
-            if destination.is_file():
-                destination.unlink(missing_ok=True)
-            raise
+        global update_progress
+        async def update_progress(delta):
+            await sub_progress.update(delta)
+
+        with non_blocking_process_pool_executor(max_workers=1) as process_pool:
+            try:
+                await asyncio.get_event_loop().run_in_executor(
+                    process_pool,
+                    # ---------
+                    _add_to_archive,
+                    dir_to_compress,
+                    destination,
+                    compress,
+                    store_relative_path,
+                    update_progress,
+                    exclude_patterns,
+                )
+                # NOTE: this happens in a separate process. we need a communication channel to update the progress bar
+                # await progress_bar.update()
+            except Exception as err:
+                if destination.is_file():
+                    destination.unlink(missing_ok=True)
+
+                raise ArchiveError(
+                    f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
+                    f"Details: {err}"
+                ) from err
+
+            except BaseException:
+                if destination.is_file():
+                    destination.unlink(missing_ok=True)
+                raise
 
 
 def is_leaf_path(p: Path) -> bool:
