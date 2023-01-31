@@ -35,7 +35,7 @@ qx.Class.define("osparc.component.tutorial.s4llite.Dashboard", {
       });
       this._add(intro);
 
-      const dashboardProjects = new qx.ui.basic.Image("osparc/tutorial/s4llite/Dashboard-Projects.png").set({
+      const dashboardProjects = new qx.ui.basic.Image("https://raw.githubusercontent.com/ZurichMedTech/s4l-lite-manual/main/assets/dashboard/projects.png").set({
         alignX: "center",
         scale: true,
         width: 637,
