@@ -178,7 +178,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __initLayout: function() {
       this.__sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
-        maxWidth: 300,
+        maxWidth: 250,
         minHeight: 250
       });
 
