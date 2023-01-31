@@ -135,6 +135,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __sequenceLoadingPage: null,
     __clusterUpScalingTitle: null,
     __clusterUpScalingSubtitle: null,
+    __clusterUpScalingPBar: null,
     __pullingSidecarTitle: null,
     __pullingSidecarPBar: null,
     __pullingInputsTitle: null,
@@ -188,6 +189,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       scalingSubtitle.exclude();
       this.__sequenceLoadingPage.add(scalingSubtitle);
 
+      const clusterUpScalingPBar = this.__clusterUpScalingPBar = this.self().createProgressBar();
+      this.__sequenceLoadingPage.add(clusterUpScalingPBar);
+
       const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling sidecar..."));
       this.__sequenceLoadingPage.add(pullingSidecarTitle);
 
@@ -220,7 +224,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applyClusterUpScaling: function(value) {
-      this.self().progressReceived(this.__clusterUpScalingTitle, null, value);
+      this.self().progressReceived(this.__clusterUpScalingTitle, this.__clusterUpScalingPBar, value);
 
       if (value > 0 && value < 1) {
         this.__clusterUpScalingSubtitle.show();
