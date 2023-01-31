@@ -1,14 +1,34 @@
 """ Utils for substitutions in string templates
 
 """
+import re
 from collections import UserDict
 from string import Template
 from typing import Any
 
 
-class TemplateExtended(Template):
-    # SEE https://docs.python.org/3/library/string.html#template-strings
+def upgrade_identifier(legacy_id):
+    legacy_id = re.sub(r"[{}%]", "", legacy_id)
+    legacy_id = re.sub(r"[.-]", "_", legacy_id)
+    legacy_id = legacy_id.upper()
+    if not legacy_id.startswith("OSPARC_ENVIRONMENT_"):
+        legacy_id = f"OSPARC_ENVIRONMENT_{legacy_id}"
+    return legacy_id
 
+
+LEGACY_FULL_IDENTIFIER_PATTERN = re.compile(r"%{1,2}([_a-z][_a-z0-9\.\-]*)%{1,2}")
+
+
+def substitute_all_legacy_identifiers(text: str):
+    def _upgrade(match):
+        legacy_id = match.group(1)
+        legacy_id = upgrade_identifier(legacy_id)
+        return f"${legacy_id}"
+
+    return re.sub(LEGACY_FULL_IDENTIFIER_PATTERN, _upgrade, text)
+
+
+class TemplatePy311Mixin:
     # NOTE: Remove these two in py3.11
     # SEE https://github.com/python/cpython/blob/main/Lib/string.py#L144
     #
@@ -43,6 +63,11 @@ class TemplateExtended(Template):
                 # another group we're not expecting
                 raise ValueError("Unrecognized named group in pattern", self.pattern)
         return ids
+
+
+class TemplateText(Template, TemplatePy311Mixin):
+    # SEE https://docs.python.org/3/library/string.html#template-strings
+    ...
 
 
 class SubstitutionsDict(UserDict):
