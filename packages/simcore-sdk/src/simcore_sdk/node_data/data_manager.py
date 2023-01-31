@@ -83,7 +83,9 @@ async def push(
         stack.enter_context(
             log_context(log, logging.INFO, "pushing %s", file_or_folder)
         )
-        tmp_dir_name = stack.enter_context(TemporaryDirectory())
+        tmp_dir_name = stack.enter_context(
+            TemporaryDirectory()  # pylint: disable=consider-using-with
+        )
         sub_progress = await stack.enter_async_context(
             progress_bar.sub_progress(steps=2)
         )
