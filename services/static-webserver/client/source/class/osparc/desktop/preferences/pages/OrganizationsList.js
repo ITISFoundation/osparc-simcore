@@ -23,11 +23,12 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    const studiesLabel = osparc.utils.Utils.getStudyLabel(true);
     const msg = this.tr("\
-    An organization is any group of users that are able to share resources with each other.<br>\
-    Here you may review the organizations you are a part of, create new ones, \
-    or manage the membership and access rights of organizations where you are a manager/administrator.<br>\
-    Select one to check the list of members");
+    An organization is a group of users who can share ") + studiesLabel + this.tr(".<br>\
+    Here you can see the list of organizations you belong to, create new organizations, \
+    or manage the membership by setting up the access rights of each member in the organization \
+    if you are a manager or administrator.");
     const intro = new qx.ui.basic.Label().set({
       value: msg,
       alignX: "left",
