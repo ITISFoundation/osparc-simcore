@@ -335,8 +335,6 @@ async def task_ports_outputs_push(
     progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
 ) -> None:
     progress.update(message="starting outputs pushing", percent=0.0)
-    await post_progress_message(app, ProgressType.SERVICE_OUTPUTS_PUSHING, 0)
-
     await post_sidecar_log_message(
         app,
         f"waiting for outputs {outputs_manager.outputs_context.file_type_port_keys} to be pushed",
@@ -345,7 +343,6 @@ async def task_ports_outputs_push(
     await outputs_manager.wait_for_all_uploads_to_finish()
 
     await post_sidecar_log_message(app, "finished outputs pushing")
-    await post_progress_message(app, ProgressType.SERVICE_OUTPUTS_PUSHING, 1)
     progress.update(message="finished outputs pushing", percent=0.99)
 
 

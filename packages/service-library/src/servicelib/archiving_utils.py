@@ -155,7 +155,7 @@ async def unarchive_dir(
     destination_folder: Path,
     *,
     max_workers: int = _MAX_UNARCHIVING_WORKER_COUNT,
-    progress_bar: ProgressBarData,
+    progress_bar: Optional[ProgressBarData] = None,
     log_cb: Optional[Callable[[str], Awaitable[None]]] = None,
 ) -> set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
@@ -209,9 +209,11 @@ async def unarchive_dir(
                 zip_entry.file_size for zip_entry in zip_file_handler.infolist()
             )
             async with AsyncExitStack() as progress_stack:
-                sub_prog = await progress_stack.enter_async_context(
-                    progress_bar.sub_progress(steps=total_file_size)
-                )
+                sub_prog = None
+                if progress_bar:
+                    sub_prog = await progress_stack.enter_async_context(
+                        progress_bar.sub_progress(steps=total_file_size)
+                    )
                 tqdm_progress = progress_stack.enter_context(
                     tqdm.tqdm(
                         desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
@@ -226,7 +228,8 @@ async def unarchive_dir(
                     if tqdm_progress.update(extracted_file_size) and log_cb:
                         with log_catch(log, reraise=False):
                             await log_cb(f"{tqdm_progress}")
-                    await sub_prog.update(extracted_file_size)
+                    if sub_prog:
+                        await sub_prog.update(extracted_file_size)
                     extracted_paths.append(extracted_path)
 
         except Exception as err:
@@ -333,7 +336,7 @@ async def archive_dir(
     compress: bool,
     store_relative_path: bool,
     exclude_patterns: Optional[set[str]] = None,
-    progress_bar: ProgressBarData,
+    progress_bar: Optional[ProgressBarData] = None,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
@@ -348,45 +351,53 @@ async def archive_dir(
 
     ::raise ArchiveError
     """
+    if not progress_bar:
+        progress_bar = ProgressBarData(steps=1)
 
-    folder_size_bytes = sum(
-        file.stat().st_size
-        for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
-    )
-    async with progress_bar.sub_progress(folder_size_bytes) as sub_progress:
+    async with AsyncExitStack() as stack:
 
-        global update_progress
-        async def update_progress(delta):
+        folder_size_bytes = sum(
+            file.stat().st_size
+            for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+        )
+        sub_progress = await stack.enter_async_context(
+            progress_bar.sub_progress(folder_size_bytes)
+        )
+
+        global update_progress  # NOTE: needed to be able to call it from the separate process
+
+        async def update_progress(delta: float) -> None:
             await sub_progress.update(delta)
 
-        with non_blocking_process_pool_executor(max_workers=1) as process_pool:
-            try:
-                await asyncio.get_event_loop().run_in_executor(
-                    process_pool,
-                    # ---------
-                    _add_to_archive,
-                    dir_to_compress,
-                    destination,
-                    compress,
-                    store_relative_path,
-                    update_progress,
-                    exclude_patterns,
-                )
-                # NOTE: this happens in a separate process. we need a communication channel to update the progress bar
-                # await progress_bar.update()
-            except Exception as err:
-                if destination.is_file():
-                    destination.unlink(missing_ok=True)
+        process_pool = stack.enter_context(
+            non_blocking_process_pool_executor(max_workers=1)
+        )
+        try:
+            await asyncio.get_event_loop().run_in_executor(
+                process_pool,
+                # ---------
+                _add_to_archive,
+                dir_to_compress,
+                destination,
+                compress,
+                store_relative_path,
+                update_progress if progress_bar else None,
+                exclude_patterns,
+            )
+        except Exception as err:
+            if destination.is_file():
+                destination.unlink(missing_ok=True)
 
-                raise ArchiveError(
-                    f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
-                    f"Details: {err}"
-                ) from err
+            raise ArchiveError(
+                f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
+                f"Details: {err}"
+            ) from err
 
-            except BaseException:
-                if destination.is_file():
-                    destination.unlink(missing_ok=True)
-                raise
+        except BaseException:
+            # NOTE: Why is this here? a BaseException, really?
+            if destination.is_file():
+                destination.unlink(missing_ok=True)
+            raise
 
 
 def is_leaf_path(p: Path) -> bool:

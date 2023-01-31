@@ -290,7 +290,7 @@ async def upload_file(
     io_log_redirect_cb: Optional[LogRedirectCB],
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
-    progress_bar: ProgressBarData,
+    progress_bar: Optional[ProgressBarData] = None,
 ) -> tuple[LocationID, ETag]:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -308,6 +308,9 @@ async def upload_file(
         f"{store_name=}",
         f"{s3_object=}",
     )
+
+    if not progress_bar:
+        progress_bar = ProgressBarData(steps=1)
 
     use_rclone = (
         await r_clone.is_r_clone_available(r_clone_settings)
