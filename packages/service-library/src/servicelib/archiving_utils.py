@@ -218,10 +218,9 @@ async def unarchive_dir(
                     for future in asyncio.as_completed(futures):
                         extracted_path = await future
                         extracted_file_size = extracted_path.stat().st_size
-                        if tqdm_progress.update(extracted_file_size):
-                            if log_cb:
-                                with log_catch(log, reraise=False):
-                                    await log_cb(f"{tqdm_progress}")
+                        if tqdm_progress.update(extracted_file_size) and log_cb:
+                            with log_catch(log, reraise=False):
+                                await log_cb(f"{tqdm_progress}")
                         await sub_prog.update(extracted_file_size)
                         extracted_paths.append(extracted_path)
 
