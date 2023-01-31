@@ -164,10 +164,7 @@ def _add_egress_proxy_network(
     service_spec: ComposeSpecLabel, egress_proxy_name: str
 ) -> None:
     networks = service_spec.get("networks")
-    networks[_get_egress_proxy_network_name(egress_proxy_name)] = {
-        "driver": "overlay",
-        "internal": True,
-    }
+    networks[_get_egress_proxy_network_name(egress_proxy_name)] = {"internal": True}
     service_spec["networks"] = networks
 
 
@@ -280,8 +277,7 @@ def add_egress_configuration(
         # placing containers with internet access in an isolated network
         service_networks = service_spec.setdefault("networks", {})
         service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {
-            "driver": "overlay",
-            "internal": False,
+            "internal": False
         }
         # attach to network
         for (
