@@ -116,7 +116,12 @@ def get_labels(image_v1: str) -> dict[str, Any]:
 
 
 def extract_metadata(labels: dict[str, Any]) -> dict[str, Any]:
-    """Creates a metadata object from 'io.simcore.*' labels"""
+    """Creates a metadata object from 'io.simcore.*' labels such as
+    {
+        "name": "foo"
+        "version": "1.2.3"
+    }
+    """
     meta = {}
     for key in labels:
         if key.startswith("io.simcore."):
@@ -125,7 +130,12 @@ def extract_metadata(labels: dict[str, Any]) -> dict[str, Any]:
 
 
 def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
-    """Creates a metadata object 'simcore.service.*' labels"""
+    """Creates a metadata object 'simcore.service.*' labels such as
+    {
+        "service.settings": { ... }
+        "service.value": 42
+    }
+    """
     meta = {}
     for key in labels:
         if key.startswith("simcore.service."):
@@ -135,7 +145,7 @@ def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
             except json.decoder.JSONDecodeError:
                 # e.g. key=value where value is a raw name
                 pass
-            meta.update(**{key.removeprefix("simcore.service."): value})
+            meta.update(**{key.removeprefix("simcore."): value})
     return meta
 
 
