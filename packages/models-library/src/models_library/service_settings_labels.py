@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Final, Iterator, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -14,10 +14,17 @@ from pydantic import (
     Json,
     PrivateAttr,
     parse_obj_as,
+    root_validator,
     validator,
 )
 
+from .basic_types import PortInt
 from .generics import ListModel
+from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+
+# Cloudflare DNS server address
+DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
 
 
 class _BaseConfig:
@@ -207,10 +214,13 @@ class PathMappingsLabel(BaseModel):
                 {
                     "outputs_path": "/t_out",
                     "inputs_path": "/t_inp",
-                    "state_paths": [f"/s{x}" for x in range(len(ALLOWED_DOCKER_SIZE))]
+                    "state_paths": [
+                        f"/s{x}" for x in range(len([]))
+                    ]  # TODO: this was broken
                     + ["/s"],
                     "volume_size_limits": {
-                        f"/s{k}": f"1{x}" for k, x in enumerate(ALLOWED_DOCKER_SIZE)
+                        f"/s{k}": f"1{x}"
+                        for k, x in enumerate([])  # TODO: this was broken
                     }
                     | {"/s": "1"},
                 },
@@ -224,6 +234,56 @@ ComposeSpecLabel = dict[str, Any]
 class RestartPolicy(str, Enum):
     NO_RESTART = "no-restart"
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
+
+
+class _PortRange(BaseModel):
+    """`lower` and `upper` are included"""
+
+    lower: PortInt
+    upper: PortInt
+
+    @validator("upper")
+    @classmethod
+    def lower_less_than_upper(cls, v, values) -> PortInt:
+        upper = v
+        lower: Optional[PortInt] = values.get("lower")
+        if lower is None or lower >= upper:
+            raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
+        return v
+
+
+class DNSResolver(BaseModel):
+    address: str = Field(
+        ..., description="this is not an url address is derived from IP address"
+    )
+    port: PortInt
+
+    class Config(_BaseConfig):
+        extra = Extra.allow
+        schema_extra = {
+            "examples": [
+                {"address": "1.1.1.1", "port": 53},  # NOSONAR
+                {"address": "ns1.example.com", "port": 53},
+            ]
+        }
+
+
+class NATRule(BaseModel):
+    hostname: str
+    tcp_ports: list[Union[_PortRange, PortInt]]
+    dns_resolver: DNSResolver = Field(
+        default_factory=lambda: DNSResolver(
+            address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
+        ),
+        description="specify a DNS resolver address and port",
+    )
+
+    def iter_tcp_ports(self) -> Iterator[PortInt]:
+        for port in self.tcp_ports:
+            if type(port) == _PortRange:
+                yield from range(port.lower, port.upper + 1)
+            else:
+                yield port
 
 
 class DynamicSidecarServiceLabels(BaseModel):
@@ -267,6 +327,20 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
+    containers_allowed_outgoing_permit_list: Optional[
+        Json[dict[str, list[NATRule]]]
+    ] = Field(
+        None,
+        alias="simcore.service.containers-allowed-outgoing-permit-list",
+        description="allow internet access to certain domain names and ports per container",
+    )
+
+    containers_allowed_outgoing_internet: Optional[Json[set[str]]] = Field(
+        None,
+        alias="simcore.service.containers-allowed-outgoing-internet",
+        description="allow complete internet access to containers in here",
+    )
+
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
@@ -285,6 +359,84 @@ class DynamicSidecarServiceLabels(BaseModel):
                 "`container_http_entry` not allowed if `compose_spec` is missing"
             )
         return v
+
+    @validator("containers_allowed_outgoing_permit_list")
+    @classmethod
+    def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, values):
+        if v is None:
+            return v
+
+        compose_spec: Optional[dict] = values.get("compose_spec")
+        if compose_spec is None:
+            keys = set(v.keys())
+            if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
+                raise ValueError(
+                    f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{keys.pop()}'"
+                )
+        else:
+            containers_in_compose_spec = set(compose_spec["services"].keys())
+            for container in v.keys():
+                if container not in containers_in_compose_spec:
+                    raise ValueError(
+                        f"Trying to permit list {container=} which was not found in {compose_spec=}"
+                    )
+
+        return v
+
+    @validator("containers_allowed_outgoing_internet")
+    @classmethod
+    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
+        if v is None:
+            return v
+
+        compose_spec: Optional[dict] = values.get("compose_spec")
+        if compose_spec is None:
+            if {DEFAULT_SINGLE_SERVICE_NAME} != v:
+                raise ValueError(
+                    f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{v}'"
+                )
+        else:
+            containers_in_compose_spec = set(compose_spec["services"].keys())
+            for container in v:
+                if container not in containers_in_compose_spec:
+                    raise ValueError(f"{container=} not found in {compose_spec=}")
+        return v
+
+    @root_validator
+    @classmethod
+    def not_allowed_in_both_specs(cls, values):
+        match_keys = {
+            "containers_allowed_outgoing_internet",
+            "containers_allowed_outgoing_permit_list",
+        }
+        if match_keys & set(values.keys()) != match_keys:
+            raise ValueError(
+                f"Expected the following keys {match_keys} to be present {values=}"
+            )
+
+        containers_allowed_outgoing_internet = values[
+            "containers_allowed_outgoing_internet"
+        ]
+        containers_allowed_outgoing_permit_list = values[
+            "containers_allowed_outgoing_permit_list"
+        ]
+        if (
+            containers_allowed_outgoing_internet is None
+            or containers_allowed_outgoing_permit_list is None
+        ):
+            return values
+
+        common_containers = set(containers_allowed_outgoing_internet) & set(
+            containers_allowed_outgoing_permit_list.keys()
+        )
+        if len(common_containers) > 0:
+            raise ValueError(
+                f"Not allowed {common_containers=} detected between "
+                "`containers-allowed-outgoing-permit-list` and "
+                "`containers-allowed-outgoing-internet`."
+            )
+
+        return values
 
     class Config(_BaseConfig):
         pass

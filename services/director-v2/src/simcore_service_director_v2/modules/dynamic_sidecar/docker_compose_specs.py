@@ -3,7 +3,12 @@ from copy import deepcopy
 from typing import Optional, Union
 
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.service_settings_labels import (
+    ComposeSpecLabel,
+    PathMappingsLabel,
+    SimcoreServiceLabels,
+)
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -15,6 +20,8 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
+from .docker_compose_egress_config import add_egress_configuration
+
 EnvKeyEqValueList = list[str]
 EnvVarsMap = dict[str, Optional[str]]
 
@@ -22,32 +29,37 @@ EnvVarsMap = dict[str, Optional[str]]
 logger = logging.getLogger(__name__)
 
 
-def _update_proxy_network_configuration(
+def _update_networking_configuration(
     service_spec: ComposeSpecLabel,
-    target_container: str,
+    target_http_entrypoint_container: str,
     dynamic_sidecar_network_name: str,
+    swarm_network_name: str,
 ) -> None:
     """
-    Injects network configuration to allow the service
+    1. Adds network configuration to allow the service
     to be accessible on `uuid.services.SERVICE_DNS`
+    2. Adds networking configuration allowing egress
+    proxies to access the internet.
     """
 
-    # add external network to existing networks defined in the container
     networks = service_spec.get("networks", {})
+    # used by the proxy to contact the service http entrypoint
     networks[dynamic_sidecar_network_name] = {
         "external": {"name": dynamic_sidecar_network_name},
         "driver": "overlay",
     }
+    # used by egress proxies to gain access to the internet
+    networks[swarm_network_name] = {
+        "external": {"name": swarm_network_name},
+        "driver": "overlay",
+    }
     service_spec["networks"] = networks
 
-    # attach overlay network to container
-    target_container_spec = service_spec["services"][target_container]
-    container_networks = target_container_spec.get("networks", [])
-    container_networks.append(dynamic_sidecar_network_name)
-    # avoid duplicate entries, this is important when the dynamic-sidecar
-    # fails to run docker-compose up, otherwise it will
-    # continue adding lots of entries to this list
-    target_container_spec["networks"] = list(set(container_networks))
+    # attach proxy network to target http entrypoint container
+    target_container_spec = service_spec["services"][target_http_entrypoint_container]
+    container_networks = target_container_spec.get("networks", {})
+    container_networks[dynamic_sidecar_network_name] = None
+    target_container_spec["networks"] = container_networks
 
 
 class _environment_section:
@@ -182,15 +194,19 @@ def _update_service_quotas(service_spec: ComposeSpecLabel, has_quota_support: bo
 
 
 def assemble_spec(
+    *,
     app: FastAPI,
-    service_key: str,
-    service_tag: str,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
+    swarm_network_name: str,
     service_resources: ServiceResourcesDict,
     has_quota_support: bool,
+    simcore_service_labels: SimcoreServiceLabels,
+    allow_internet_access: bool,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -205,13 +221,17 @@ def assemble_spec(
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
     )
 
+    egress_proxy_settings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
+    )
+
     # when no compose yaml file was provided
     if compose_spec is None:
         service_spec: ComposeSpecLabel = {
             "version": docker_compose_version,
             "services": {
                 DEFAULT_SINGLE_SERVICE_NAME: {
-                    "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
+                    "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_version}"
                 }
             },
         }
@@ -223,10 +243,11 @@ def assemble_spec(
     assert service_spec is not None  # nosec
     assert container_name is not None  # nosec
 
-    _update_proxy_network_configuration(
+    _update_networking_configuration(
         service_spec=service_spec,
-        target_container=container_name,
+        target_http_entrypoint_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+        swarm_network_name=swarm_network_name,
     )
 
     _update_paths_mappings(service_spec, paths_mapping)
@@ -236,11 +257,20 @@ def assemble_spec(
     )
 
     _update_service_quotas(service_spec, has_quota_support)
+    if not allow_internet_access:
+        # NOTE: when service has no access to the internet,
+        # there could be some components that still require access
+        add_egress_configuration(
+            service_spec=service_spec,
+            swarm_network_name=swarm_network_name,
+            simcore_service_labels=simcore_service_labels,
+            egress_proxy_settings=egress_proxy_settings,
+        )
 
     stringified_service_spec = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
-        replace_service_version=service_tag,
+        replace_service_version=service_version,
     )
 
     return stringified_service_spec

@@ -5,9 +5,7 @@
 #    pip-compile --output-file=requirements/_tools.txt --resolver=backtracking --strip-extras requirements/_tools.in
 #
 astroid==2.12.12
-    # via
-    #   -c requirements/_test.txt
-    #   pylint
+    # via pylint
 black==22.10.0
     # via -r requirements/../../../requirements/devenv.txt
 build==0.8.0
@@ -18,13 +16,10 @@ cfgv==3.3.1
     # via pre-commit
 click==8.1.3
     # via
-    #   -c requirements/_base.txt
     #   black
     #   pip-tools
 dill==0.3.5.1
-    # via
-    #   -c requirements/_test.txt
-    #   pylint
+    # via pylint
 distlib==0.3.6
     # via virtualenv
 filelock==3.8.0
@@ -36,21 +31,15 @@ isort==5.10.1
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
 lazy-object-proxy==1.7.1
-    # via
-    #   -c requirements/_test.txt
-    #   astroid
+    # via astroid
 mccabe==0.7.0
-    # via
-    #   -c requirements/_test.txt
-    #   pylint
+    # via pylint
 mypy-extensions==0.4.3
     # via black
 nodeenv==1.7.0
     # via pre-commit
 packaging==21.3
-    # via
-    #   -c requirements/_test.txt
-    #   build
+    # via build
 pathspec==0.10.1
     # via black
 pep517==0.13.0
@@ -59,7 +48,6 @@ pip-tools==6.9.0
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==2.5.2
     # via
-    #   -c requirements/_test.txt
     #   black
     #   pylint
     #   virtualenv
@@ -68,30 +56,23 @@ pre-commit==2.20.0
 pylint==2.15.5
     # via -r requirements/../../../requirements/devenv.txt
 pyparsing==3.0.9
-    # via
-    #   -c requirements/_test.txt
-    #   packaging
+    # via packaging
 pyyaml==5.4.1
     # via
-    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
 toml==0.10.2
     # via pre-commit
 tomli==2.0.1
     # via
-    #   -c requirements/_test.txt
     #   black
     #   build
     #   pep517
     #   pylint
 tomlkit==0.11.5
-    # via
-    #   -c requirements/_test.txt
-    #   pylint
+    # via pylint
 typing-extensions==4.3.0
     # via
-    #   -c requirements/_test.txt
     #   astroid
     #   black
     #   pylint
@@ -102,9 +83,7 @@ watchdog==2.1.9
 wheel==0.37.1
     # via pip-tools
 wrapt==1.14.1
-    # via
-    #   -c requirements/_test.txt
-    #   astroid
+    # via astroid
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

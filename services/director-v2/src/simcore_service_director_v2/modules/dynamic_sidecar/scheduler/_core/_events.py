@@ -1,6 +1,5 @@
 # pylint: disable=relative-beyond-top-level
 
-import json
 import logging
 from typing import Any, Final, Optional, cast
 from uuid import uuid4
@@ -20,7 +19,6 @@ from models_library.services import ServiceKeyVersion
 from pydantic import PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
-from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity._asyncio import AsyncRetrying
@@ -28,8 +26,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .....core.errors import NodeRightsAcquireError
-from .....core.settings import AppSettings, DynamicSidecarSettings
+from .....core.settings import DynamicSidecarSettings
 from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from .....models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
@@ -37,9 +34,9 @@ from .....models.schemas.dynamic_services.scheduler import (
 )
 from .....utils.db import get_repository
 from ....catalog import CatalogClient
+from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
-from ....node_rights import NodeRightsManager
 from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
@@ -64,12 +61,12 @@ from ...docker_service_specs import (
 from ...errors import EntrypointContainerNotFoundError, UnexpectedContainerStatusError
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import (
-    RESOURCE_STATE_AND_INPUTS,
     are_all_user_services_containers_running,
     attach_project_networks,
     attempt_pod_removal_and_data_saving,
     get_director_v0_client,
     parse_containers_inspect,
+    prepare_services_environment,
     wait_for_sidecar_api,
 )
 
@@ -153,7 +150,14 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
         )
 
-        # these configuration should guarantee 245 address network
+        groups_extra_properties = cast(
+            GroupsExtraPropertiesRepository,
+            get_repository(app, GroupsExtraPropertiesRepository),
+        )
+        allow_internet_access: bool = await groups_extra_properties.has_internet_access(
+            user_id=scheduler_data.user_id
+        )
+
         network_config = {
             "Name": scheduler_data.dynamic_sidecar_network_name,
             "Driver": "overlay",
@@ -163,7 +167,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },
             "Attachable": True,
-            "Internal": False,
+            "Internal": not allow_internet_access,
         }
         dynamic_sidecar_network_id = await create_network(network_config)
 
@@ -195,6 +199,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 settings=settings,
                 app_settings=app.state.settings,
                 has_quota_support=has_quota_support,
+                allow_internet_access=allow_internet_access,
             )
         )
 
@@ -376,71 +381,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        app_settings: AppSettings = app.state.settings
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
-        dynamic_sidecar_endpoint = scheduler_data.endpoint
-        dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-        )
-
-        async def _pull_outputs_and_state():
-            tasks = [
-                dynamic_sidecar_client.pull_service_output_ports(
-                    dynamic_sidecar_endpoint
-                )
-            ]
-            # When enabled no longer downloads state via nodeports
-            # S3 is used to store state paths
-            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                tasks.append(
-                    dynamic_sidecar_client.restore_service_state(
-                        dynamic_sidecar_endpoint
-                    )
-                )
-
-            await logged_gather(*tasks, max_concurrency=2)
-
-            # inside this directory create the missing dirs, fetch those form the labels
-            director_v0_client: DirectorV0Client = get_director_v0_client(app)
-            simcore_service_labels: SimcoreServiceLabels = (
-                await director_v0_client.get_service_labels(
-                    service=ServiceKeyVersion(
-                        key=scheduler_data.key, version=scheduler_data.version
-                    )
-                )
-            )
-            service_outputs_labels = json.loads(
-                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
-            ).get("outputs", {})
-            logger.debug(
-                "Creating dirs from service outputs labels: %s",
-                service_outputs_labels,
-            )
-            await dynamic_sidecar_client.service_outputs_create_dirs(
-                dynamic_sidecar_endpoint, service_outputs_labels
-            )
-
-            scheduler_data.dynamic_sidecar.is_service_environment_ready = True
-
-        if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
-            node_rights_manager = NodeRightsManager.instance(app)
-            assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
-            try:
-                async with node_rights_manager.acquire(
-                    scheduler_data.dynamic_sidecar.docker_node_id,
-                    resource_name=RESOURCE_STATE_AND_INPUTS,
-                ):
-                    await _pull_outputs_and_state()
-            except NodeRightsAcquireError:
-                # Next observation cycle, the service will try again
-                logger.debug(
-                    "Skip saving service state for %s. Docker node %s is busy. Will try later.",
-                    scheduler_data.node_uuid,
-                    scheduler_data.dynamic_sidecar.docker_node_id,
-                )
-                return
-        else:
-            await _pull_outputs_and_state()
+        await prepare_services_environment(app, scheduler_data)
 
 
 class CreateUserServices(DynamicSchedulerEvent):
@@ -469,6 +410,21 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
+        # check values have been set by previous step
+        if (
+            scheduler_data.dynamic_sidecar.dynamic_sidecar_id is None
+            or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_name is None
+        ):
+            raise ValueError(
+                "Expected a value for all the following values: "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
+            )
+
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
@@ -476,16 +432,36 @@ class CreateUserServices(DynamicSchedulerEvent):
         has_quota_support = await dynamic_sidecar_client.has_quota_support(
             dynamic_sidecar_endpoint
         )
+        director_v0_client: DirectorV0Client = get_director_v0_client(app)
+        simcore_service_labels: SimcoreServiceLabels = (
+            await director_v0_client.get_service_labels(
+                service=ServiceKeyVersion(
+                    key=scheduler_data.key, version=scheduler_data.version
+                )
+            )
+        )
+
+        groups_extra_properties = cast(
+            GroupsExtraPropertiesRepository,
+            get_repository(app, GroupsExtraPropertiesRepository),
+        )
+        allow_internet_access: bool = await groups_extra_properties.has_internet_access(
+            user_id=scheduler_data.user_id
+        )
+
         compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
-            service_tag=scheduler_data.version,
+            service_version=scheduler_data.version,
             paths_mapping=scheduler_data.paths_mapping,
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
             has_quota_support=has_quota_support,
+            simcore_service_labels=simcore_service_labels,
+            allow_internet_access=allow_internet_access,
         )
         logger.debug(
             "Starting containers %s with compose-specs:\n%s",
@@ -511,21 +487,6 @@ class CreateUserServices(DynamicSchedulerEvent):
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
         # continue starting the proxy
-
-        # check values have been set by previous step
-        if (
-            scheduler_data.dynamic_sidecar.dynamic_sidecar_id is None
-            or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
-            or scheduler_data.dynamic_sidecar.swarm_network_id is None
-            or scheduler_data.dynamic_sidecar.swarm_network_name is None
-        ):
-            raise ValueError(
-                "Expected a value for all the following values: "
-                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
-                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
-            )
 
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(

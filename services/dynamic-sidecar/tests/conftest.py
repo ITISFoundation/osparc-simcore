@@ -165,6 +165,7 @@ def mock_environment(
     envs["DY_SIDECAR_PATH_OUTPUTS"] = f"{outputs_dir}"
     envs["DY_SIDECAR_STATE_PATHS"] = json_dumps(state_paths_dirs)
     envs["DY_SIDECAR_STATE_EXCLUDE"] = json_dumps(state_exclude_dirs)
+    envs["DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS"] = "false"
 
     envs["S3_ENDPOINT"] = "endpoint"
     envs["S3_ACCESS_KEY"] = "access_key"

@@ -88,6 +88,8 @@ async function runTutorial() {
     // wait for iframe to be rendered
     await tutorial.waitForVoilaRendered(postProIframe);
 
+    await tutorial.waitFor(5000, "Extra waiting to make sure, again, it renders");
+
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();

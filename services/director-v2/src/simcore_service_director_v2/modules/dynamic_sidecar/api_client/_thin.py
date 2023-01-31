@@ -5,6 +5,7 @@ from typing import Any, Optional
 from fastapi import FastAPI, status
 from httpx import AsyncClient, Response, Timeout
 from pydantic import AnyHttpUrl
+from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ....core.settings import DynamicSidecarSettings
 from ._base import BaseThinClient, expect_status, retry_on_errors
@@ -109,7 +110,12 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def get_containers_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, dynamic_sidecar_network_name: str
     ) -> Response:
-        filters = json.dumps({"network": dynamic_sidecar_network_name})
+        filters = json.dumps(
+            {
+                "network": dynamic_sidecar_network_name,
+                "exclude": SUFFIX_EGRESS_PROXY_NAME,
+            }
+        )
         url = self._get_url(
             dynamic_sidecar_endpoint, f"/containers/name?filters={filters}"
         )

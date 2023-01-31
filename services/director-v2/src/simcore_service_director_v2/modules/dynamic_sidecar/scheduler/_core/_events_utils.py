@@ -1,5 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 
+import json
 import logging
 from collections import deque
 from typing import Any, Deque, Final, Optional, cast
@@ -9,6 +10,8 @@ from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services import ServiceKeyVersion
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
@@ -375,3 +378,69 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
             ):
                 raise TryAgain()
             scheduler_data.dynamic_sidecar.is_healthy = True
+
+
+async def prepare_services_environment(
+    app: FastAPI, scheduler_data: SchedulerData
+) -> None:
+    app_settings: AppSettings = app.state.settings
+    dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+    dynamic_sidecar_endpoint = scheduler_data.endpoint
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+
+    async def _pull_outputs_and_state():
+        tasks = [
+            dynamic_sidecar_client.pull_service_output_ports(dynamic_sidecar_endpoint)
+        ]
+        # When enabled no longer downloads state via nodeports
+        # S3 is used to store state paths
+        if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+            tasks.append(
+                dynamic_sidecar_client.restore_service_state(dynamic_sidecar_endpoint)
+            )
+
+        await logged_gather(*tasks, max_concurrency=2)
+
+        # inside this directory create the missing dirs, fetch those form the labels
+        director_v0_client: DirectorV0Client = get_director_v0_client(app)
+        simcore_service_labels: SimcoreServiceLabels = (
+            await director_v0_client.get_service_labels(
+                service=ServiceKeyVersion(
+                    key=scheduler_data.key, version=scheduler_data.version
+                )
+            )
+        )
+        service_outputs_labels = json.loads(
+            simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+        ).get("outputs", {})
+        logger.debug(
+            "Creating dirs from service outputs labels: %s",
+            service_outputs_labels,
+        )
+        await dynamic_sidecar_client.service_outputs_create_dirs(
+            dynamic_sidecar_endpoint, service_outputs_labels
+        )
+
+        scheduler_data.dynamic_sidecar.is_service_environment_ready = True
+
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED:
+        node_rights_manager = NodeRightsManager.instance(app)
+        assert scheduler_data.dynamic_sidecar.docker_node_id  # nosec
+        try:
+            async with node_rights_manager.acquire(
+                scheduler_data.dynamic_sidecar.docker_node_id,
+                resource_name=RESOURCE_STATE_AND_INPUTS,
+            ):
+                await _pull_outputs_and_state()
+        except NodeRightsAcquireError:
+            # Next observation cycle, the service will try again
+            logger.debug(
+                "Skip saving service state for %s. Docker node %s is busy. Will try later.",
+                scheduler_data.node_uuid,
+                scheduler_data.dynamic_sidecar.docker_node_id,
+            )
+            return
+    else:
+        await _pull_outputs_and_state()

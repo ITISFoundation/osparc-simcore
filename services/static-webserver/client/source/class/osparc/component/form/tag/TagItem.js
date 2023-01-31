@@ -176,7 +176,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             });
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "backgroundColor");
             this.__colorInput.bind("value", this.getChildControl("colorbutton"), "textColor", {
-              converter: value => qx.theme.manager.Color.getInstance().resolve(osparc.utils.Utils.getContrastedTextColor(value))
+              converter: value => osparc.utils.Utils.getContrastedBinaryColor(value)
             });
             this.__validationManager.add(this.__colorInput, osparc.utils.Validators.hexColor);
           }

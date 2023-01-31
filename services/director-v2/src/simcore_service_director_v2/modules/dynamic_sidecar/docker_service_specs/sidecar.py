@@ -26,7 +26,10 @@ def extract_service_port_from_compose_start_spec(
 
 
 def _get_environment_variables(
-    compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
+    compose_namespace: str,
+    scheduler_data: SchedulerData,
+    app_settings: AppSettings,
+    allow_internet_access: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -47,6 +50,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_RUN_ID": f"{scheduler_data.run_id}",
+        "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
@@ -94,6 +98,7 @@ def get_dynamic_sidecar_spec(
     settings: SimcoreServiceSettingsLabel,
     app_settings: AppSettings,
     has_quota_support: bool,
+    allow_internet_access: bool,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -248,7 +253,10 @@ def get_dynamic_sidecar_spec(
         "task_template": {
             "ContainerSpec": {
                 "Env": _get_environment_variables(
-                    compose_namespace, scheduler_data, app_settings
+                    compose_namespace,
+                    scheduler_data,
+                    app_settings,
+                    allow_internet_access,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
