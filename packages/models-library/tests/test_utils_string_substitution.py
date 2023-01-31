@@ -33,7 +33,6 @@ def test_upgrade_identifiers(legacy: str, expected: str):
     assert upgrade_identifier(legacy) == expected
 
 
-@pytest.mark.testit
 def test_substitution_with_new_and_legacy_identifiers():
 
     stringified_config = """
@@ -45,12 +44,14 @@ def test_substitution_with_new_and_legacy_identifiers():
                 # legacy examples
                 - SYM_SERVER_HOSTNAME=%%container_name.sym-server%%
                 - APP_HOSTNAME=%%container_name.dsistudio-app%%
-                - APP_HOSTNAME=bio-formats-app_%service_uuid%
+                - APP_HOSTNAME=some-prefix_%service_uuid%
                 - SPEAG_LICENSE_FILE=${OSPARC_ENVIRONMENT_SPEAG_LICENSE_FILE}
                 - MY_PRODUCT=$OSPARC_ENVIRONMENT_CURRENT_PRODUCT
                 - MY_EMAIL=$OSPARC_ENVIRONMENT_USER_EMAIL
                 - S4L_LITE_PRODUCT=yes
                 - AS_VOILA=1
+                - DISPLAY1=$${KEEP_DISPLAY}
+                - DISPLAY2=${SKIP_DISPLAY}
     containers-allowed-outgoing-permit-list:
         s4l-core:
             - hostname: $OSPARC_ENVIRONMENT_LICENSE_SERVER_HOST
@@ -67,17 +68,19 @@ def test_substitution_with_new_and_legacy_identifiers():
     template = TemplateText(stringified_config)
 
     assert template.is_valid()
-    assert template.get_identifiers() == [
+    identifiers = template.get_identifiers()
+    assert identifiers == [
         "SIMCORE_REGISTRY",
         "SERVICE_VERSION",
-        # upgraded
+        # NOTE: these identifier names were upgraded from legacy
         "OSPARC_ENVIRONMENT_CONTAINER_NAME_SYM_SERVER",
         "OSPARC_ENVIRONMENT_CONTAINER_NAME_DSISTUDIO_APP",
         "OSPARC_ENVIRONMENT_SERVICE_UUID",
-        # --
+        # -----
         "OSPARC_ENVIRONMENT_SPEAG_LICENSE_FILE",
         "OSPARC_ENVIRONMENT_CURRENT_PRODUCT",
         "OSPARC_ENVIRONMENT_USER_EMAIL",
+        "SKIP_DISPLAY",
         "OSPARC_ENVIRONMENT_LICENSE_SERVER_HOST",
         "OSPARC_ENVIRONMENT_LICENSE_SERVER_PRIMARY_PORT",
         "OSPARC_ENVIRONMENT_LICENSE_SERVER_SECONDARY_PORT",
@@ -85,15 +88,20 @@ def test_substitution_with_new_and_legacy_identifiers():
         "OSPARC_ENVIRONMENT_LICENSE_DNS_RESOLVER_PORT",
     ]
 
+    # prepare substitutions map {id: value, ...}
+    exclude = {"SKIP_DISPLAY"}
     substitutions = SubstitutionsDict(
-        {idr: "VALUE" for idr in template.get_identifiers()}
+        {idr: "VALUE" for idr in identifiers if idr not in exclude}
     )
 
-    resolved_stringified_config = template.substitute(substitutions)
+    # uses safe because we exclude some identifiers from substitution
+    resolved_stringified_config = template.safe_substitute(substitutions)
 
+    # all entries in the substitutions list were used
     assert not substitutions.unused
-    assert substitutions.used == set(template.get_identifiers())
+    assert substitutions.used == set(substitutions.keys())
 
+    # let's check how "VALUE"
     assert (
         resolved_stringified_config
         == """
@@ -105,12 +113,14 @@ def test_substitution_with_new_and_legacy_identifiers():
                 # legacy examples
                 - SYM_SERVER_HOSTNAME=VALUE
                 - APP_HOSTNAME=VALUE
-                - APP_HOSTNAME=bio-formats-app_VALUE
+                - APP_HOSTNAME=some-prefix_VALUE
                 - SPEAG_LICENSE_FILE=VALUE
                 - MY_PRODUCT=VALUE
                 - MY_EMAIL=VALUE
                 - S4L_LITE_PRODUCT=yes
                 - AS_VOILA=1
+                - DISPLAY1=${KEEP_DISPLAY}
+                - DISPLAY2=${SKIP_DISPLAY}
     containers-allowed-outgoing-permit-list:
         s4l-core:
             - hostname: VALUE
@@ -123,43 +133,27 @@ def test_substitution_with_new_and_legacy_identifiers():
     """
     )
 
-    # template = TemplateString(stringified_config)
-
-    # assert template.get_identifiers() == [
-    #     "SIMCORE_REGISTRY",
-    #     "SERVICE_VERSION",
-    #     "OSPARC_SERVICES_SPEAG_LICENSE_FILE",
-    # ]
-
-    # # somewhere we define published environments
-
-    # def factory_request_api_key(user_id: int):
-    #     def request():
-    #         return "TOKEN_{user_id}"
-
-    #     return request
-
-    # # replicates replace_env_vars_in_compose_spec
-
-    # # Substitutions created provided a given context (user, product, service, organization, ...)
-    # substitutions = SubstitutionsDict(
-    #     {
-    #         "SERVICE_VERSION": "1.2.3",
-    #         "SIMCORE_REGISTRY": "registry.com",
-    #         "API_KEYS": factory_request_api_key(user_id=1)(),
-    #     }
-    # )
-
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 TEST_DATA_FOLDER = CURRENT_DIR / "data"
 
 
-# supported identifiers
-KNOWN_IDENTIFIERS = {"DISPLAY", "SERVICE_VERSION", "SIMCORE_REGISTRY"}
+# Some fo the supported identifiers
+KNOWN_IDENTIFIERS = {
+    "DISPLAY",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_DSISTUDIO_APP",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_FSL_APP",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_ISEG_APP",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_S4L_CORE",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_SCT_LABEL_UTILS_APP",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_SPINAL_CORD_TOOLBOX_APP",
+    "OSPARC_ENVIRONMENT_CONTAINER_NAME_SYM_SERVER",
+    "OSPARC_ENVIRONMENT_SERVICE_UUID",
+    "SERVICE_VERSION",
+    "SIMCORE_REGISTRY",
+}
 
 
-@pytest.mark.testit
 @pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
