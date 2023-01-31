@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 import asyncio
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from models_library.api_schemas_storage import (
 )
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import (
     ExtendedClientResponseError,
     _check_for_aws_http_errors,
@@ -217,11 +219,14 @@ async def test_upload_file_to_presigned_links(
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
-    uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
-        session=client_session,
-        file_upload_links=upload_links,
-        file_to_upload=local_file,
-        num_retries=0,
-        io_log_redirect_cb=None,
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
+            session=client_session,
+            file_upload_links=upload_links,
+            file_to_upload=local_file,
+            num_retries=0,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+    assert progress_bar._continuous_progress == pytest.approx(1)
     assert uploaded_parts

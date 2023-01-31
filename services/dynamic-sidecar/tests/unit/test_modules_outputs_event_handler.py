@@ -41,7 +41,9 @@ async def outputs_context(
 async def outputs_manager(
     outputs_context: OutputsContext,
 ) -> AsyncIterable[OutputsManager]:
-    outputs_manager = OutputsManager(outputs_context, io_log_redirect_cb=None)
+    outputs_manager = OutputsManager(
+        outputs_context, io_log_redirect_cb=None, progress_cb=None
+    )
     await outputs_manager.start()
 
     outputs_manager.set_all_ports_for_upload = AsyncMock()

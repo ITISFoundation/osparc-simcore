@@ -10,6 +10,7 @@ from typing import Callable
 from uuid import uuid4
 
 import pytest
+from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_data import data_manager
 
 pytest_simcore_core_services_selection = [
@@ -133,25 +134,31 @@ async def test_valid_upload_download(
     project_id: str,
     node_uuid: str,
 ):
-    await data_manager.push(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        file_or_folder=content_path,
-        io_log_redirect_cb=None,
-    )
+    async with ProgressBarData(steps=2) as progress_bar:
+        await data_manager.push(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            file_or_folder=content_path,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+        # pylint: disable=protected-access
+        assert progress_bar._continuous_progress == pytest.approx(0.5)
 
-    uploaded_hashes = _get_file_hashes_in_path(content_path)
+        uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-    _remove_file_or_folder(content_path)
+        _remove_file_or_folder(content_path)
 
-    await data_manager.pull(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        file_or_folder=content_path,
-        io_log_redirect_cb=None,
-    )
+        await data_manager.pull(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            file_or_folder=content_path,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+        assert progress_bar._continuous_progress == pytest.approx(1)
 
     downloaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -175,28 +182,34 @@ async def test_valid_upload_download_saved_to(
     node_uuid: str,
     random_tmp_dir_generator: Callable,
 ):
-    await data_manager.push(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        file_or_folder=content_path,
-        io_log_redirect_cb=None,
-    )
+    async with ProgressBarData(steps=2) as progress_bar:
+        await data_manager.push(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            file_or_folder=content_path,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+        # pylint: disable=protected-access
+        assert progress_bar._continuous_progress == pytest.approx(0.5)
 
-    uploaded_hashes = _get_file_hashes_in_path(content_path)
+        uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-    _remove_file_or_folder(content_path)
+        _remove_file_or_folder(content_path)
 
-    new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
+        new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
-    await data_manager.pull(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        file_or_folder=content_path,
-        save_to=new_destination,
-        io_log_redirect_cb=None,
-    )
+        await data_manager.pull(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            file_or_folder=content_path,
+            save_to=new_destination,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+        assert progress_bar._continuous_progress == pytest.approx(1)
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)
 

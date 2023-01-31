@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=protected-access
 
 from filecmp import cmpfiles
 from pathlib import Path
@@ -8,6 +9,7 @@ from shutil import copy, make_archive, unpack_archive
 from typing import Callable, Iterator
 
 import pytest
+from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
@@ -69,10 +71,16 @@ async def test_push_folder(
     assert len(list(test_folder.glob("**/*"))) == files_number
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
-
-    await data_manager.push(
-        user_id, project_id, node_uuid, test_folder, io_log_redirect_cb=None
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await data_manager.push(
+            user_id,
+            project_id,
+            node_uuid,
+            test_folder,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+    assert progress_bar._continuous_progress == pytest.approx(1)
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
@@ -121,9 +129,16 @@ async def test_push_file(
     assert file_path.exists()
 
     # test push file by file
-    await data_manager.push(
-        user_id, project_id, node_uuid, file_path, io_log_redirect_cb=None
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await data_manager.push(
+            user_id,
+            project_id,
+            node_uuid,
+            file_path,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+    assert progress_bar._continuous_progress == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_file.assert_called_once_with(
         r_clone_settings=None,
@@ -184,9 +199,16 @@ async def test_pull_folder(
         test_compression_folder
     )
 
-    await data_manager.pull(
-        user_id, project_id, node_uuid, test_folder, io_log_redirect_cb=None
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await data_manager.pull(
+            user_id,
+            project_id,
+            node_uuid,
+            test_folder,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+    assert progress_bar._continuous_progress == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
@@ -232,9 +254,16 @@ async def test_pull_file(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
 
-    await data_manager.pull(
-        user_id, project_id, node_uuid, file_path, io_log_redirect_cb=None
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await data_manager.pull(
+            user_id,
+            project_id,
+            node_uuid,
+            file_path,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
+    assert progress_bar._continuous_progress == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=file_path.parent,
