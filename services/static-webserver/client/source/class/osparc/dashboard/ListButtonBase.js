@@ -80,7 +80,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "title-14",
-            alignY: "middle"
+            alignY: "middle",
+            rich: true
           });
           this._add(control, {
             row: 0,
@@ -89,6 +90,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         case "description":
           control = new qx.ui.basic.Label().set({
+            rich: true,
             minWidth: 100,
             font: "text-14",
             alignY: "middle",

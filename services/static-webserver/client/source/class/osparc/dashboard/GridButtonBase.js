@@ -141,6 +141,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         }
         case "subtitle-text": {
           control = new qx.ui.basic.Label().set({
+            rich: true,
             anonymous: true,
             font: "text-13",
             allowGrowY: false

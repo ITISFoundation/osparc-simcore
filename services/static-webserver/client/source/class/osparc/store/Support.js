@@ -118,7 +118,7 @@ qx.Class.define("osparc.store.Support", {
     __openSendEmailFeedbackDialog: function(email) {
       const productName = osparc.utils.Utils.getProductName();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please send us an email to:"));
-      const mailto = this.getMailToLabel(email, productName + "feedback");
+      const mailto = this.getMailToLabel(email, productName + " feedback");
       giveEmailFeedbackWindow.addWidget(mailto);
       giveEmailFeedbackWindow.open();
     },
@@ -129,10 +129,15 @@ qx.Class.define("osparc.store.Support", {
       });
       let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
       message += "<br>";
-      osparc.store.VendorInfo.getInstance().getVendor()
-        .then(vendor => {
+      Promise.all([
+        osparc.store.VendorInfo.getInstance().getVendor(),
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      ])
+        .then(values => {
+          const vendor = values[0];
+          const displayName = values[1];
           if ("invitation_url" in vendor) {
-            message += qx.locale.Manager.tr("Please request:");
+            message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
             message += "<br>";
             createAccountWindow.setMessage(message);
             const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
@@ -142,8 +147,7 @@ qx.Class.define("osparc.store.Support", {
             createAccountWindow.setMessage(message);
             osparc.store.VendorInfo.getInstance().getSupportEmail()
               .then(supportEmail => {
-                const productName = osparc.utils.Utils.getProductName();
-                const mailto = this.getMailToLabel(supportEmail, "Request Account " + productName);
+                const mailto = this.getMailToLabel(supportEmail, "Request Account " + displayName);
                 createAccountWindow.addWidget(mailto);
               });
           }

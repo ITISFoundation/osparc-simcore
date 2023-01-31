@@ -80,10 +80,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       }
 
       const form = new qx.ui.form.Form();
-      form.add(email, "", null, "email");
-      form.add(firstName, "", null, "firstName");
-      form.add(lastName, "", null, "lastName");
-      form.add(role, "", null, "role");
+      form.add(email, "Email", null, "email");
+      form.add(firstName, "First Name", null, "firstName");
+      form.add(lastName, "Last Name", null, "lastName");
+      form.add(role, "Role", null, "role");
 
       box.add(new qx.ui.form.renderer.Single(form));
 
@@ -102,8 +102,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
       box.add(expirationLayout);
 
       const img = new qx.ui.basic.Image().set({
+        maxWidth: 100,
+        maxHeight: 100,
+        scale: true,
         decorator: new qx.ui.decoration.Decorator().set({
-          radius: 50
+          radius: 30
         }),
         alignX: "center"
       });
