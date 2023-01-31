@@ -26,8 +26,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
     const msg = this.tr("\
     This is the list of members in the organization.\
     Here you may review the organizations you are a part of, create new ones, \
-    or manage the membership and access rights of organizations where you are a manager/administrator.<br>\
-    Select one to check the list of members");
+    or manage the membership and access rights of the members.<br>\
+    Select one to check the list of members:\
+    ");
     const intro = new qx.ui.basic.Label().set({
       value: msg,
       alignX: "left",
@@ -76,7 +77,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
     },
 
     sortByAccessRights: function(a, b) {
-      const sorted = osparc.desktop.preferences.pages.BasePage.sortByAccessRights(a, b);
+      const sorted = osparc.desktop.preferences.pages.OrganizationsPage.sortByAccessRights(a, b);
       if (sorted !== 0) {
         return sorted;
       }
