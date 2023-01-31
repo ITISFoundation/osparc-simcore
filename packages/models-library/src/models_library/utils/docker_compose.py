@@ -38,7 +38,4 @@ def replace_env_vars_in_compose_spec(
     )
     resolved_content: str = template.safe_substitute(substitutions)
 
-    # should all be used!??
-    assert not substitutions.unused  # nosec
-
     return resolved_content
