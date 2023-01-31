@@ -4,6 +4,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate
 from os.path import join
 from pathlib import Path
 from pprint import pformat
@@ -22,6 +23,9 @@ log = logging.getLogger(__name__)
 
 
 async def _send_mail(*, message: Union[MIMEText, MIMEMultipart], cfg: LoginOptions):
+    # Add DATE header field, it is mandatory
+    message["Date"] = formatdate(localtime=True)
+    #
     log.debug("Email configuration %s", cfg)
     smtp_args = dict(
         hostname=cfg.SMTP_HOST,
