@@ -171,8 +171,8 @@ class PathMappingsLabel(BaseModel):
     volume_size_limits: Optional[dict[str, str]] = Field(
         None,
         description=(
-            "Apply volume size limits to entries in `inputs_path` `outputs_path` "
-            "and `state_paths`. Limits are expressed as docker sizes"
+            "Apply volume size limits to entries in: `inputs_path`, `outputs_path` "
+            "and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
         ),
     )
 
@@ -190,8 +190,6 @@ class PathMappingsLabel(BaseModel):
                 raise ValueError(
                     f"Provided size='{size_str}' contains invalid charactes: {str(e)}"
                 )
-
-            # TODO: add a test that uses docker-cli to create the volume!
 
             inputs_path: Optional[Path] = values.get("inputs_path")
             outputs_path: Optional[Path] = values.get("outputs_path")
@@ -220,12 +218,23 @@ class PathMappingsLabel(BaseModel):
                 {
                     "outputs_path": "/t_out",
                     "inputs_path": "/t_inp",
-                    "state_paths": [f"/s{x}" for x in range(4)] + ["/s"],
+                    "state_paths": [
+                        "/s",
+                        "/s0",
+                        "/s1",
+                        "/s2",
+                        "/s3",
+                        "/i_have_no_limit",
+                    ],
                     "volume_size_limits": {
-                        f"/s{k}": f"1{x}"
-                        for k, x in enumerate(["m", "kib", "TIB", "G"])
-                    }
-                    | {"/s": "1"},
+                        "/s": "1",
+                        "/s0": "1m",
+                        "/s1": "1kib",
+                        "/s2": "1TIB",
+                        "/s3": "1G",
+                        "/t_out": "12",
+                        "/t_inp": "1EIB",
+                    },
                 },
             ]
         }
