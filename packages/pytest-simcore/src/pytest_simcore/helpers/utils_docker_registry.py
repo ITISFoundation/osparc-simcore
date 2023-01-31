@@ -4,6 +4,7 @@
 NOTE: this could be used as draft for https://github.com/ITISFoundation/osparc-simcore/issues/2165
 """
 
+
 import json
 import os
 import re
@@ -108,16 +109,33 @@ class Registry:
         return manifest
 
 
-def get_metadata(image_v1: str) -> dict[str, Any]:
-    """Extracts metadata object from 'io.simcore.*' labels
+def get_labels(image_v1: str) -> dict[str, Any]:
+    """image_v1: v1 compatible string encoded json for each layer"""
+    labels = json.loads(image_v1).get("config", {}).get("Labels", {})
+    return labels
 
-    image_v1: v1 compatible string encoded json for each layer
-    """
-    labels = json.loads(image_v1).get("config", {}).get("Labels", [])
+
+def extract_metadata(labels: dict[str, Any]) -> dict[str, Any]:
+    """Creates a metadata object from 'io.simcore.*' labels"""
     meta = {}
     for key in labels:
         if key.startswith("io.simcore."):
             meta.update(**json.loads(labels[key]))
+    return meta
+
+
+def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
+    """Creates a metadata object 'simcore.service.*' labels"""
+    meta = {}
+    for key in labels:
+        if key.startswith("simcore.service."):
+            value = labels[key].strip()
+            try:
+                value = json.loads(value)
+            except json.decoder.JSONDecodeError:
+                # e.g. key=value where value is a raw name
+                pass
+            meta.update(**{key.removeprefix("simcore.service."): value})
     return meta
 
 
@@ -148,9 +166,13 @@ def download_all_registry_metadata(dest_dir: Path):
                 try:
                     manifest = registry.get_manifest(repo_name=repo, repo_reference=tag)
 
-                    meta = get_metadata(
+                    labels = get_labels(
                         image_v1=manifest["history"][0]["v1Compatibility"]
                     )
+
+                    meta = extract_metadata(labels)
+                    meta.update(extract_extra_service_metadata(labels))
+
                     with path.open("wt") as fh:
                         json.dump(meta, fh, indent=1)
                     print("downloaded", path, SUCCESS)
