@@ -34,38 +34,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
   },
 
   statics: {
-    getNoReadAccess: function() {
-      return {
-        "read": false,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getReadAccess: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getWriteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getDeleteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    },
-
     sortByAccessRights: function(a, b) {
       const aAccessRights = a["accessRights"];
       const bAccessRights = b["accessRights"];

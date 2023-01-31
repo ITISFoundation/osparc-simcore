@@ -49,63 +49,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     "organizationSelected": "qx.event.type.Data"
   },
 
-  statics: {
-    getNoReadAccess: function() {
-      return {
-        "read": false,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getReadAccess: function() {
-      return {
-        "read": true,
-        "write": false,
-        "delete": false
-      };
-    },
-
-    getWriteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": false
-      };
-    },
-
-    getDeleteAccess: function() {
-      return {
-        "read": true,
-        "write": true,
-        "delete": true
-      };
-    },
-
-    sortByAccessRights: function(a, b) {
-      const aAccessRights = a["accessRights"];
-      const bAccessRights = b["accessRights"];
-      if (aAccessRights["delete"] !== bAccessRights["delete"]) {
-        return bAccessRights["delete"] - aAccessRights["delete"];
-      }
-      if (aAccessRights["write"] !== bAccessRights["write"]) {
-        return bAccessRights["write"] - aAccessRights["write"];
-      }
-      if (aAccessRights["read"] !== bAccessRights["read"]) {
-        return bAccessRights["read"] - aAccessRights["read"];
-      }
-      if (("label" in a) && ("label" in b)) {
-        // orgs
-        return a["label"].localeCompare(b["label"]);
-      }
-      if (("login" in a) && ("login" in b)) {
-        // members
-        return a["login"].localeCompare(b["login"]);
-      }
-      return 0;
-    }
-  },
-
   members: {
     __orgsModel: null,
 
@@ -202,7 +145,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
             return org;
           });
           const orgsList = await Promise.all(promises);
-          orgsList.sort(this.self().sortByAccessRights);
+          orgsList.sort(osparc.desktop.preferences.pages.BasePage.sortByAccessRights);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
         });
     },

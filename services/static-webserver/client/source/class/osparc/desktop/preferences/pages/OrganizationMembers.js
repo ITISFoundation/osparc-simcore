@@ -73,29 +73,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         "write": true,
         "delete": true
       };
-    },
-
-    sortByAccessRights: function(a, b) {
-      const aAccessRights = a["accessRights"];
-      const bAccessRights = b["accessRights"];
-      if (aAccessRights["delete"] !== bAccessRights["delete"]) {
-        return bAccessRights["delete"] - aAccessRights["delete"];
-      }
-      if (aAccessRights["write"] !== bAccessRights["write"]) {
-        return bAccessRights["write"] - aAccessRights["write"];
-      }
-      if (aAccessRights["read"] !== bAccessRights["read"]) {
-        return bAccessRights["read"] - aAccessRights["read"];
-      }
-      if (("label" in a) && ("label" in b)) {
-        // orgs
-        return a["label"].localeCompare(b["label"]);
-      }
-      if (("login" in a) && ("login" in b)) {
-        // members
-        return a["login"].localeCompare(b["login"]);
-      }
-      return 0;
     }
   },
 
@@ -225,7 +202,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
             member["showOptions"] = canWrite;
             membersList.push(member);
           });
-          membersList.sort(this.self().sortByAccessRights);
+          membersList.sort(osparc.desktop.preferences.pages.BasePage.sortByAccessRights);
           membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
         });
     },
