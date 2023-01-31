@@ -125,13 +125,13 @@ def dynamic_sidecar_network_name() -> str:
             "services": {
                 "first-box": {
                     "image": "busybox:latest",
-                    "networks": [
-                        _get_dynamic_sidecar_network_name(),
-                    ],
+                    "networks": {
+                        _get_dynamic_sidecar_network_name(): None,
+                    },
                 },
                 "second-box": {"image": "busybox:latest"},
             },
-            "networks": {_get_dynamic_sidecar_network_name(): {}},
+            "networks": {_get_dynamic_sidecar_network_name(): None},
         },
         {
             "version": "3",
@@ -349,6 +349,7 @@ async def _debug_progress(message: str, percent: float, task_id: TaskId) -> None
 
 
 async def test_create_containers_task(
+    docker_swarm: None,
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,

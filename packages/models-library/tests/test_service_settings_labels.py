@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
@@ -9,11 +10,18 @@ from typing import Any
 
 import pytest
 from models_library.service_settings_labels import (
+    DEFAULT_DNS_SERVER_ADDRESS,
+    DEFAULT_DNS_SERVER_PORT,
+    DNSResolver,
+    DynamicSidecarServiceLabels,
+    NATRule,
     PathMappingsLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
+    _PortRange,
 )
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from pydantic import BaseModel, ValidationError
 
 SimcoreServiceExample = namedtuple(
@@ -147,3 +155,206 @@ def test_raises_error_wrong_restart_policy() -> None:
 
     with pytest.raises(ValueError):
         SimcoreServiceLabels(**simcore_service_labels)
+
+
+def test_port_range():
+    with pytest.raises(ValidationError):
+        _PortRange(lower=1, upper=1)
+
+    with pytest.raises(ValidationError):
+        _PortRange(lower=20, upper=1)
+
+    assert _PortRange(lower=1, upper=2)
+
+
+def test_host_permit_list_policy():
+    host_permit_list_policy = NATRule(
+        hostname="hostname",
+        tcp_ports=[
+            _PortRange(lower=1, upper=3),
+            99,
+        ],
+    )
+
+    assert set(host_permit_list_policy.iter_tcp_ports()) == {1, 2, 3, 99}
+
+
+@pytest.mark.parametrize(
+    "container_permit_list, expected_host_permit_list_policy",
+    [
+        pytest.param(
+            [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                }
+            ],
+            NATRule(
+                hostname="a-host",
+                tcp_ports=[12132, _PortRange(lower=12, upper=2334)],
+                dns_resolver=DNSResolver(
+                    address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
+                ),
+            ),
+            id="default_dns_resolver",
+        ),
+        pytest.param(
+            [
+                {
+                    "hostname": "a-host",
+                    "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    "dns_resolver": {"address": "ns1.example.com", "port": 123},
+                }
+            ],
+            NATRule(
+                hostname="a-host",
+                tcp_ports=[12132, _PortRange(lower=12, upper=2334)],
+                dns_resolver=DNSResolver(address="ns1.example.com", port=123),
+            ),
+            id="with_dns_resolver",
+        ),
+    ],
+)
+def test_container_outgoing_permit_list_and_container_allow_internet_with_compose_spec(
+    container_permit_list: dict[str, Any],
+    expected_host_permit_list_policy: NATRule,
+):
+    container_name_1 = "test_container_1"
+    container_name_2 = "test_container_2"
+    compose_spec: dict[str, Any] = {
+        "services": {container_name_1: None, container_name_2: None}
+    }
+
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {container_name_1: container_permit_list}
+        ),
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+            [container_name_2]
+        ),
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+        "simcore.service.container-http-entrypoint": container_name_1,
+    }
+
+    instance = DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    assert (
+        instance.containers_allowed_outgoing_permit_list[container_name_1][0]
+        == expected_host_permit_list_policy
+    )
+
+
+def test_container_outgoing_permit_list_and_container_allow_internet_without_compose_spec():
+    for dict_data in (
+        # singles service with outgoing-permit-list
+        {
+            "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+                {
+                    DEFAULT_SINGLE_SERVICE_NAME: [
+                        {
+                            "hostname": "a-host",
+                            "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                        }
+                    ]
+                }
+            )
+        },
+        # singles service with allowed-outgoing-internet
+        {
+            "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+                [DEFAULT_SINGLE_SERVICE_NAME]
+            )
+        },
+    ):
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+
+def test_container_allow_internet_no_compose_spec_not_ok():
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+    assert "Expected only 1 entry 'container' not '{'hoho'}" in f"{exec_info.value}"
+
+
+def test_container_allow_internet_compose_spec_not_ok():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+    dict_data = {
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+    assert f"container='hoho' not found in {compose_spec=}" in f"{exec_info.value}"
+
+
+def test_container_outgoing_permit_list_no_compose_spec_not_ok():
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {
+                "container_name": [
+                    {
+                        "hostname": "a-host",
+                        "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    }
+                ]
+            }
+        ),
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    assert (
+        f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not 'container_name'"
+        in f"{exec_info.value}"
+    )
+
+
+def test_container_outgoing_permit_list_compose_spec_not_ok():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {
+                "container_name": [
+                    {
+                        "hostname": "a-host",
+                        "tcp_ports": [12132, {"lower": 12, "upper": 2334}],
+                    }
+                ]
+            }
+        ),
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+    }
+    with pytest.raises(ValidationError) as exec_info:
+        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    assert (
+        f"Trying to permit list container='container_name' which was not found in {compose_spec=}"
+        in f"{exec_info.value}"
+    )
+
+
+def test_not_allowed_in_both_permit_list_and_outgoing_internet():
+    container_name = "test_container"
+    compose_spec: dict[str, Any] = {"services": {container_name: None}}
+
+    dict_data = {
+        "simcore.service.containers-allowed-outgoing-permit-list": json.dumps(
+            {container_name: [{"hostname": "a-host", "tcp_ports": [4]}]}
+        ),
+        "simcore.service.containers-allowed-outgoing-internet": json.dumps(
+            [container_name]
+        ),
+        "simcore.service.compose-spec": json.dumps(compose_spec),
+        "simcore.service.container-http-entrypoint": container_name,
+    }
+
+    with pytest.raises(ValidationError) as exec_info:
+        DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+
+    assert (
+        f"Not allowed common_containers={{'{container_name}'}} detected"
+        in f"{exec_info.value}"
+    )

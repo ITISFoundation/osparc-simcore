@@ -180,6 +180,7 @@ def expected_dynamic_sidecar_spec(run_id: RunID) -> dict[str, Any]:
                         ["/tmp/save_1", "/tmp_save_2"]
                     ),
                     "DY_SIDECAR_USER_ID": "234",
+                    "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "POSTGRES_DB": "test",
@@ -361,6 +362,7 @@ def test_get_dynamic_proxy_spec(
             swarm_network_id=swarm_network_id,
             settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
             app_settings=minimal_app.state.settings,
+            allow_internet_access=False,
         )
 
         # NOTE:
@@ -431,6 +433,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         swarm_network_id=swarm_network_id,
         settings=cast(SimcoreServiceSettingsLabel, simcore_service_labels.settings),
         app_settings=minimal_app.state.settings,
+        allow_internet_access=False,
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()

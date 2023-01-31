@@ -7,7 +7,6 @@ run sequentially by this service
 """
 import logging
 from copy import deepcopy
-from pprint import pformat
 from typing import Optional
 
 from fastapi import FastAPI
@@ -62,8 +61,14 @@ async def _write_file_and_spawn_process(
             command=cmd,
             timeout=process_termination_timeout,
         )
-
-        logger.debug("Done %s", pformat(deepcopy(result._asdict())))
+        debug_message = deepcopy(result._asdict())
+        logger.debug(
+            "Finished executing docker-compose command '%s' finished_ok='%s' elapsed='%s'\n%s",
+            debug_message["command"],
+            debug_message["success"],
+            debug_message["elapsed"],
+            debug_message["message"],
+        )
         return result
 
 
