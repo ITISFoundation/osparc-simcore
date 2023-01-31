@@ -105,6 +105,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("right-items");
 
       this.getChildControl("logo");
+      if (!osparc.utils.Utils.isProduct("osparc")) {
+        this.getChildControl("logo-powered");
+      }
 
       this.getChildControl("dashboard-button");
       this.getChildControl("dashboard-label");
@@ -170,6 +173,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "logo":
           control = osparc.component.widget.LogoOnOff.getInstance();
+          this.getChildControl("left-items").add(control);
+          break;
+        case "logo-powered":
+          control = new osparc.ui.basic.PoweredByOsparc().set({
+            width: 50,
+            height: 50
+          });
           this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
