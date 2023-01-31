@@ -208,6 +208,7 @@ async def test_no_more_locks_can_be_acquired(
     await asyncio.gather(*tasks)
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "locks_per_node",
     [

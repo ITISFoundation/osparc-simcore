@@ -3,7 +3,7 @@
 import json
 import logging
 from asyncio import Lock
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
@@ -162,7 +162,11 @@ async def get_containers_name(
     Searches for the container's name given the network
     on which the proxy communicates with it.
     Supported filters:
-        network: name of the network
+        network: matches against the exact network name
+            assigned to the container; `will include`
+            containers
+        exclude: matches if contained in the name of the
+            container; `will exclude` containers
     """
     assert request  # nosec
 
@@ -172,7 +176,8 @@ async def get_containers_name(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Provided filters, could not parsed {filters_dict}",
         )
-    network_name = filters_dict.get("network", None)
+    network_name: Optional[str] = filters_dict.get("network", None)
+    exclude: Optional[str] = filters_dict.get("exclude", None)
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
@@ -189,6 +194,9 @@ async def get_containers_name(
     for service in spec_services:
         service_content = spec_services[service]
         if network_name in service_content.get("networks", {}):
+            if exclude is not None and exclude in service_content["container_name"]:
+                # removing this container from results
+                continue
             container_name = service_content["container_name"]
             break
 

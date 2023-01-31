@@ -49,6 +49,18 @@ CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
 _MINUTE: Final[int] = 60
 
 
+def _raise_for_errors(
+    command_result: CommandResult, docker_compose_command: str
+) -> None:
+    if not command_result.success:
+        logger.warning(
+            "docker-compose %s command finished with errors\n%s",
+            docker_compose_command,
+            command_result.message,
+        )
+        raise RuntimeError(command_result.message)
+
+
 @retry(
     wait=wait_random_exponential(max=30),
     stop=stop_after_delay(5 * _MINUTE),
@@ -73,7 +85,8 @@ async def _retry_docker_compose_start(
 async def _retry_docker_compose_create(
     compose_spec: str, settings: ApplicationSettings
 ) -> bool:
-    await docker_compose_create(compose_spec, settings)
+    result = await docker_compose_create(compose_spec, settings)
+    _raise_for_errors(result, "up")
 
     compose_spec_dict = parse_compose_spec(compose_spec)
     container_names = list(compose_spec_dict["services"].keys())
@@ -112,7 +125,8 @@ async def task_create_service_containers(
     with outputs_watcher_disabled(app):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
-        await docker_compose_rm(shared_store.compose_spec, settings)
+        result = await docker_compose_rm(shared_store.compose_spec, settings)
+        _raise_for_errors(result, "rm")
 
         progress.update(message="pulling images", percent=0.01)
         await post_sidecar_log_message(app, "pulling service images")
@@ -154,19 +168,15 @@ async def task_runs_docker_compose_down(
 
     progress.update(message="running docker-compose-down", percent=0.1)
     result = await docker_compose_down(shared_store.compose_spec, settings)
-    if not result.success:
-        logger.warning(
-            "docker-compose down command finished with errors\n%s",
-            result.message,
-        )
-        raise RuntimeError(result.message)
+    _raise_for_errors(result, "down")
 
     progress.update(message="stopping logs", percent=0.9)
     for container_name in shared_store.container_names:
         await stop_log_fetching(app, container_name)
 
     progress.update(message="removing pending resources", percent=0.95)
-    await docker_compose_rm(shared_store.compose_spec, settings)
+    result = await docker_compose_rm(shared_store.compose_spec, settings)
+    _raise_for_errors(result, "rm")
 
     # removing compose-file spec
     await shared_store.clear()
@@ -357,12 +367,7 @@ async def task_containers_restart(
         progress.update(message="stopped log fetching", percent=0.1)
 
         result = await docker_compose_restart(shared_store.compose_spec, settings)
-
-        if not result.success:
-            logger.warning(
-                "docker-compose restart finished with errors\n%s", result.message
-            )
-            raise RuntimeError(result.message)
+        _raise_for_errors(result, "restart")
 
         progress.update(message="containers restarted", percent=0.8)
 

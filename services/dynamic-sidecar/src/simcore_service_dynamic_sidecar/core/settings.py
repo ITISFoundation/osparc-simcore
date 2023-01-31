@@ -97,6 +97,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
     DY_SIDECAR_RUN_ID: RunID
+    DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS: bool
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 

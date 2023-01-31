@@ -23,6 +23,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "DY_SIDECAR_STATE_EXCLUDE",
     "DY_SIDECAR_STATE_PATHS",
     "DY_SIDECAR_USER_ID",
+    "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS",
     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE",
     "DYNAMIC_SIDECAR_LOG_LEVEL",
     "POSTGRES_DB",
@@ -49,8 +50,8 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "S3_SECRET_KEY",
     "S3_SECURE",
     "SC_BOOT_MODE",
-    "SSL_CERT_FILE",
     "SIMCORE_HOST_NAME",
+    "SSL_CERT_FILE",
     "STORAGE_HOST",
     "STORAGE_PORT",
 }
@@ -64,7 +65,7 @@ def test_dynamic_sidecar_env_vars(
     app_settings = AppSettings.create_from_envs()
 
     dynamic_sidecar_env_vars = _get_environment_variables(
-        "compose_namespace", scheduler_data_from_http_request, app_settings
+        "compose_namespace", scheduler_data_from_http_request, app_settings, False
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
