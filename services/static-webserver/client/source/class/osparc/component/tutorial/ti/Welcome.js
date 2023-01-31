@@ -19,8 +19,7 @@ qx.Class.define("osparc.component.tutorial.ti.Welcome", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
-    const product = osparc.utils.Utils.getProductName();
-    const title = product + this.tr(" Quick Start Guide");
+    const title = this.tr("Quick Start Guide");
     this.base(arguments, title);
   },
 
