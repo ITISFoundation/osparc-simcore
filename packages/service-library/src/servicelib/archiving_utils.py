@@ -169,15 +169,15 @@ async def unarchive_dir(
 
     ::raise ArchiveError
     """
-    async with AsyncExitStack() as stack:
-        zip_file_handler = stack.enter_context(
+    async with AsyncExitStack() as zip_stack:
+        zip_file_handler = zip_stack.enter_context(
             zipfile.ZipFile(  # pylint: disable=consider-using-with
                 archive_to_extract,
                 mode="r",
             )
         )
-        stack.enter_context(logging_redirect_tqdm())
-        process_pool = stack.enter_context(
+        zip_stack.enter_context(logging_redirect_tqdm())
+        process_pool = zip_stack.enter_context(
             non_blocking_process_pool_executor(max_workers=max_workers)
         )
 
@@ -208,21 +208,26 @@ async def unarchive_dir(
             total_file_size = sum(
                 zip_entry.file_size for zip_entry in zip_file_handler.infolist()
             )
-            async with progress_bar.sub_progress(steps=total_file_size) as sub_prog:
-                with tqdm.tqdm(
-                    desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
-                    f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
-                    total=total_file_size,
-                    **_TQDM_MULTI_FILES_OPTIONS,
-                ) as tqdm_progress:
-                    for future in asyncio.as_completed(futures):
-                        extracted_path = await future
-                        extracted_file_size = extracted_path.stat().st_size
-                        if tqdm_progress.update(extracted_file_size) and log_cb:
-                            with log_catch(log, reraise=False):
-                                await log_cb(f"{tqdm_progress}")
-                        await sub_prog.update(extracted_file_size)
-                        extracted_paths.append(extracted_path)
+            async with AsyncExitStack() as progress_stack:
+                sub_prog = await progress_stack.enter_async_context(
+                    progress_bar.sub_progress(steps=total_file_size)
+                )
+                tqdm_progress = progress_stack.enter_context(
+                    tqdm.tqdm(
+                        desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
+                        f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                        total=total_file_size,
+                        **_TQDM_MULTI_FILES_OPTIONS,
+                    )
+                )
+                for future in asyncio.as_completed(futures):
+                    extracted_path = await future
+                    extracted_file_size = extracted_path.stat().st_size
+                    if tqdm_progress.update(extracted_file_size) and log_cb:
+                        with log_catch(log, reraise=False):
+                            await log_cb(f"{tqdm_progress}")
+                    await sub_prog.update(extracted_file_size)
+                    extracted_paths.append(extracted_path)
 
         except Exception as err:
             for f in futures:
