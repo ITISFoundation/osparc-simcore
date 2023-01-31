@@ -21,7 +21,7 @@ qx.Class.define("osparc.About", {
   type: "singleton",
 
   construct: function() {
-    this.base(arguments, this.tr("About"));
+    this.base(arguments, this.tr("About oSPARC"));
     this.set({
       layout: new qx.ui.layout.VBox(5),
       maxWidth: this.self().MAX_WIDTH,
@@ -53,12 +53,9 @@ qx.Class.define("osparc.About", {
         wrap: true
       });
       this.add(introText);
-      osparc.store.StaticInfo.getInstance().getDisplayName()
-        .then(displayName => {
-          const aboutText = this.tr(" is built upon a number of open-source \
-          resources - we can't do it all alone! Some of the technologies that we leverage include:");
-          introText.setValue(displayName + aboutText);
-        });
+      const aboutText = this.tr("oSPARC is built upon a number of open-source \
+      resources - we can't do it all alone! Some of the technologies that we leverage include:");
+      introText.setValue(aboutText);
 
       const tabView = new qx.ui.tabview.TabView().set({
         contentPaddingTop: 10,
