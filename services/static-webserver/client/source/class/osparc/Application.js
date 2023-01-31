@@ -128,7 +128,7 @@ qx.Class.define("osparc.Application", {
             const w = document.documentElement.clientWidth;
             const h = document.documentElement.clientHeight;
             if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
-              const product = osparc.utils.Utils.getProductName();
+              const product = this.tr("This app");
               const baseTextMsg = this.tr(`
                 performs better for larger window size. A minimum window size \
                of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended.<br>\
