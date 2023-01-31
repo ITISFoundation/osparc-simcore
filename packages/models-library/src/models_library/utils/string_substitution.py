@@ -20,6 +20,11 @@ LEGACY_FULL_IDENTIFIER_PATTERN = re.compile(r"%{1,2}([_a-z][_a-z0-9\.\-]*)%{1,2}
 
 
 def substitute_all_legacy_identifiers(text: str):
+    """Substitutes all legacy identifiers found in the text by the new format expected in TemplateText
+
+    For instance:  '%%this-identifier%%' will be substituted by '$OSPARC_ENVIRONMENT_THIS_IDENTIFIER'
+    """
+
     def _upgrade(match):
         legacy_id = match.group(1)
         legacy_id = upgrade_identifier(legacy_id)
@@ -66,8 +71,18 @@ class TemplatePy311Mixin:
 
 
 class TemplateText(Template, TemplatePy311Mixin):
-    # SEE https://docs.python.org/3/library/string.html#template-strings
-    ...
+    """Template strings support `$`-based substitutions, using the following rules:
+
+    - `$$` is an escape; it is replaced with a single `$`.
+    - `$identifier` names a substitution placeholder matching a mapping key of `"identifier"`.
+        By default, `"identifier"` is restricted to any case-insensitive ASCII alphanumeric string
+        (including underscores) that starts with an underscore or ASCII letter.
+        The first non-identifier character after the `$` character terminates this placeholder specification.
+    - `${identifier}` is equivalent to `$identifier`. It is required when valid identifier characters follow the
+        placeholder but are not part of the placeholder, such as `"${noun}ification"`.
+
+    SEE https://docs.python.org/3/library/string.html#template-strings
+    """
 
 
 class SubstitutionsDict(UserDict):

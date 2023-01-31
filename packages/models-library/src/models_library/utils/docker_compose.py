@@ -1,5 +1,6 @@
 import yaml
-from models_library.utils.string_substitution import SubstitutionsDict, TemplateText
+
+from .string_substitution import SubstitutionsDict, TemplateText
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
