@@ -161,10 +161,10 @@ def test_path_mappings_label_unsupported_size_constraints():
     with pytest.raises(ValidationError) as exec_into:
         PathMappingsLabel.parse_obj(
             {
-                "outputs_path": "/so",
-                "inputs_path": "/si",
+                "outputs_path": "/ok_input_path",
+                "inputs_path": "/ok_output_path",
                 "state_paths": [],
-                "volume_size_limits": {"/si": "1d"},
+                "volume_size_limits": {"/ok_input_path": "1d"},
             },
         )
     assert "Provided size='1d' contains invalid charactes:" in f"{exec_into.value}"
@@ -174,13 +174,16 @@ def test_path_mappings_label_defining_constraing_on_missing_path():
     with pytest.raises(ValidationError) as exec_into:
         PathMappingsLabel.parse_obj(
             {
-                "outputs_path": "/so",
-                "inputs_path": "/si",
+                "outputs_path": "/ok_input_path",
+                "inputs_path": "/ok_output_path",
                 "state_paths": [],
-                "volume_size_limits": {"/missing": "1"},
+                "volume_size_limits": {"/path_is_missing_from_above": "1"},
             },
         )
-    assert "path=PosixPath('/missing') not found in" in f"{exec_into.value}"
+    assert (
+        "path=PosixPath('/path_is_missing_from_above') not found in"
+        in f"{exec_into.value}"
+    )
 
 
 def test_port_range():
