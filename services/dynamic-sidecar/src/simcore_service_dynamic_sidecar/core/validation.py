@@ -143,7 +143,6 @@ def _connect_user_services(
     networks = parsed_compose_spec["networks"]
 
     networks[DEFAULT_USER_SERVICES_NETWORK_NAME] = {
-        "driver": "overlay",
         "internal": not allow_internet_access,
     }
 
