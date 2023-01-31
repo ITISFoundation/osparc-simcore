@@ -219,10 +219,10 @@ async def unarchive_dir(
                         extracted_path = await future
                         extracted_file_size = extracted_path.stat().st_size
                         if tqdm_progress.update(extracted_file_size):
-                            await sub_prog.update(extracted_file_size)
                             if log_cb:
                                 with log_catch(log, reraise=False):
                                     await log_cb(f"{tqdm_progress}")
+                        await sub_prog.update(extracted_file_size)
                         extracted_paths.append(extracted_path)
 
         except Exception as err:
@@ -321,9 +321,11 @@ def _add_to_archive(
 async def archive_dir(
     dir_to_compress: Path,
     destination: Path,
+    *,
     compress: bool,
     store_relative_path: bool,
     exclude_patterns: Optional[set[str]] = None,
+    progress_bar: ProgressBarData,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
@@ -339,10 +341,8 @@ async def archive_dir(
     ::raise ArchiveError
     """
     with non_blocking_process_pool_executor(max_workers=1) as process_pool:
-        event_loop = asyncio.get_event_loop()
-
         try:
-            await event_loop.run_in_executor(
+            await asyncio.get_event_loop().run_in_executor(
                 process_pool,
                 # ---------
                 _add_to_archive,
@@ -352,6 +352,8 @@ async def archive_dir(
                 store_relative_path,
                 exclude_patterns,
             )
+            # NOTE: this happens in a separate process. we need a communication channel to update the progress bar
+            await progress_bar.update()
         except Exception as err:
             if destination.is_file():
                 destination.unlink(missing_ok=True)
