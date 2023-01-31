@@ -111,8 +111,8 @@ qx.Class.define("osparc.Application", {
       osparc.store.StaticInfo.getInstance().getPlatformName()
         .then(platformName => {
           const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-          if (platformName !== "master" && preferencesSettings.getConfirmWindowSize()) {
-            const title = this.tr("Oops, the window is a bit too small!");
+          if (platformName !== "as-master" && preferencesSettings.getConfirmWindowSize()) {
+            const title = this.tr("Oops, your window size is a bit small!");
             const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
               height: 100,
               width: 400,
@@ -128,14 +128,14 @@ qx.Class.define("osparc.Application", {
             const w = document.documentElement.clientWidth;
             const h = document.documentElement.clientHeight;
             if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
-              const product = this.tr("This app");
+              const product = osparc.utils.Utils.getProductName();
               const baseTextMsg = this.tr(`
-                 is designed for slightly bigger window size.<br>\
-                A mininum window size of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
-                Touch devices are not fully supported.
+                performs better for larger window size. A minimum window size \
+               of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended.<br>\
+               Touchscreen devices are not supported yet.
               `);
               const label = new qx.ui.basic.Label().set({
-                value: product+ baseTextMsg,
+                value: product + baseTextMsg,
                 rich: true
               });
               osparc.store.StaticInfo.getInstance().getDisplayName()

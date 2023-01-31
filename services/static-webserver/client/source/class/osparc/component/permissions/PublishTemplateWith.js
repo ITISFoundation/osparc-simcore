@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
       },
       "productAll": {
         contextId: 2,
-        label: "Public for Product users"
+        label: "Public for Product users" // OM TODO: prodcut label
       },
       "all": {
         contextId: 3,
@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
 
     __buildLayout: function() {
       this._add(new qx.ui.basic.Label().set({
-        value: this.tr("Make accessible to:"),
+        value: this.tr("Make the ") + osparc.utils.Utils.getStudyLabel() + this.tr(" accessible to:"),
         font: "text-14"
       }));
 

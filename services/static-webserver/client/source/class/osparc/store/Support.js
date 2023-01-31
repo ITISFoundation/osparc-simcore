@@ -131,8 +131,9 @@ qx.Class.define("osparc.store.Support", {
       message += "<br>";
       osparc.store.VendorInfo.getInstance().getVendor()
         .then(vendor => {
+          const productName = osparc.utils.Utils.getProductName();
           if ("invitation_url" in vendor) {
-            message += qx.locale.Manager.tr("Please request:");
+            message += qx.locale.Manager.tr("Please request access to ") + productName + ":";
             message += "<br>";
             createAccountWindow.setMessage(message);
             const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
@@ -142,7 +143,6 @@ qx.Class.define("osparc.store.Support", {
             createAccountWindow.setMessage(message);
             osparc.store.VendorInfo.getInstance().getSupportEmail()
               .then(supportEmail => {
-                const productName = osparc.utils.Utils.getProductName();
                 const mailto = this.getMailToLabel(supportEmail, "Request Account " + productName);
                 createAccountWindow.addWidget(mailto);
               });
