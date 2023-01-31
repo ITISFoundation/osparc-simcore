@@ -6,7 +6,16 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    Extra,
+    Field,
+    Json,
+    PrivateAttr,
+    parse_obj_as,
+    validator,
+)
 
 from .generics import ListModel
 
@@ -132,11 +141,6 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
-_BASE_DOCKER_SIZE: set[str] = {"b", "k", "m", "g", "t", "p"}
-ALLOWED_DOCKER_SIZE: set[str] = _BASE_DOCKER_SIZE | {
-    x.upper() for x in _BASE_DOCKER_SIZE
-}
-
 
 class PathMappingsLabel(BaseModel):
     inputs_path: Path = Field(
@@ -171,13 +175,10 @@ class PathMappingsLabel(BaseModel):
             return v
 
         for path_str, size_str in v.items():
-            last_char = size_str[-1]
-            if not last_char.isnumeric():
-                if last_char not in ALLOWED_DOCKER_SIZE:
-                    raise ValueError(
-                        f"Provided size='{size_str}' contains unsupported '{last_char}' "
-                        f"docker size. Supported values are: {ALLOWED_DOCKER_SIZE}."
-                    )
+            # checks that format is correct
+            parse_obj_as(ByteSize, size_str)
+
+            # TODO: add a test that uses docker-cli to create the volume!
 
             inputs_path: Optional[Path] = values.get("inputs_path")
             outputs_path: Optional[Path] = values.get("outputs_path")
