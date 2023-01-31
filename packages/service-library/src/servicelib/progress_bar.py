@@ -26,6 +26,7 @@ class ProgressBarData:
 
     def __post_init__(self) -> None:
         self._lock = asyncio.Lock()
+        self.steps = max(1, self.steps)
 
     async def __aenter__(self) -> "ProgressBarData":
         await self.start()
@@ -45,7 +46,7 @@ class ProgressBarData:
         with log_catch(logger, reraise=False):
             # NOTE: only report if at least a percent was increased
             if (force and value != self._last_report_value) or (
-                (value - self._last_report_value) / self.steps > 0.01
+                ((value - self._last_report_value) / self.steps) > 0.01
             ):
                 await self.progress_report_cb(value / self.steps)
                 self._last_report_value = value
@@ -59,9 +60,11 @@ class ProgressBarData:
             if new_progress_value > self.steps:
                 new_progress_value = round(new_progress_value)
             if new_progress_value > self.steps:
-                raise ValueError(
-                    f"Progress cannot be updated by {value} as it cannot be higher than {self.steps}"
+                logger.warning(
+                    "%s",
+                    f"Progress {self._continuous_progress} is updated by {value} and the current max value {self.steps}",
                 )
+                new_progress_value = self.steps
             self._continuous_progress = new_progress_value
         await self._update_parent(value)
         await self._report_external(new_progress_value)
