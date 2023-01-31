@@ -258,7 +258,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
 
-      const title = this.tr("Sharing"); // OM TODO: add resource label
+      let resourceLabel = "";
+      if (osparc.utils.Resources.isService(resourceData)) {
+        resourceLabel = this.tr("service");
+      } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+        resourceLabel = osparc.utils.Utils.getTemplateLabel();
+      } else if (osparc.utils.Resources.isStudy(resourceData)) {
+        resourceLabel = osparc.utils.Utils.getStudyLabel();
+      }
+      const title = this.tr("Share ") + resourceLabel;
       const icon = "@FontAwesome5Solid/share-alt";
       let permissionsView = null;
       if (osparc.utils.Resources.isService(resourceData)) {

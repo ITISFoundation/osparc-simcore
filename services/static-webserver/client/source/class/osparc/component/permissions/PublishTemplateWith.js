@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.permissions.PublishTemplateWith", {
 
     __buildLayout: function() {
       this._add(new qx.ui.basic.Label().set({
-        value: this.tr("Make the ") + osparc.utils.Utils.getStudyLabel() + this.tr(" accessible to:"),
+        value: this.tr("Make the ") + osparc.utils.Utils.getTemplateLabel() + this.tr(" accessible to:"),
         font: "text-14"
       }));
 
