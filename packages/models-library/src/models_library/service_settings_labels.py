@@ -13,6 +13,7 @@ from pydantic import (
     Field,
     Json,
     PrivateAttr,
+    ValidationError,
     parse_obj_as,
     root_validator,
     validator,
@@ -183,7 +184,12 @@ class PathMappingsLabel(BaseModel):
 
         for path_str, size_str in v.items():
             # checks that format is correct
-            parse_obj_as(ByteSize, size_str)
+            try:
+                parse_obj_as(ByteSize, size_str)
+            except ValidationError as e:
+                raise ValueError(
+                    f"Provided size='{size_str}' contains invalid charactes: {str(e)}"
+                )
 
             # TODO: add a test that uses docker-cli to create the volume!
 
@@ -214,13 +220,10 @@ class PathMappingsLabel(BaseModel):
                 {
                     "outputs_path": "/t_out",
                     "inputs_path": "/t_inp",
-                    "state_paths": [
-                        f"/s{x}" for x in range(len([]))
-                    ]  # TODO: this was broken
-                    + ["/s"],
+                    "state_paths": [f"/s{x}" for x in range(4)] + ["/s"],
                     "volume_size_limits": {
                         f"/s{k}": f"1{x}"
-                        for k, x in enumerate([])  # TODO: this was broken
+                        for k, x in enumerate(["m", "kib", "TIB", "G"])
                     }
                     | {"/s": "1"},
                 },

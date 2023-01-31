@@ -167,10 +167,7 @@ def test_path_mappings_label_unsupported_size_constraints():
                 "volume_size_limits": {"/si": "1d"},
             },
         )
-    assert (
-        "Provided size='1d' contains unsupported 'd' docker size."
-        in f"{exec_into.value}"
-    )
+    assert "Provided size='1d' contains invalid charactes:" in f"{exec_into.value}"
 
 
 def test_path_mappings_label_defining_constraing_on_missing_path():
