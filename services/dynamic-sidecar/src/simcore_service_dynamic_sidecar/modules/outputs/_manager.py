@@ -10,6 +10,7 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
+from servicelib import progress_bar
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -124,11 +125,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
         async def _upload_ports() -> None:
             with log_context(logger, logging.INFO, f"Uploading port keys: {port_keys}"):
-                await upload_outputs(
-                    outputs_path=self.outputs_context.outputs_path,
-                    port_keys=port_keys,
-                    io_log_redirect_cb=self.io_log_redirect_cb,
-                )
+                async with progress_bar.ProgressBarData(steps=1) as root_progress:
+                    await upload_outputs(
+                        outputs_path=self.outputs_context.outputs_path,
+                        port_keys=port_keys,
+                        io_log_redirect_cb=self.io_log_redirect_cb,
+                        progress_bar=root_progress,
+                    )
 
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
         self._task_uploading = create_task(_upload_ports(), name=task_name)

@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from typing import Optional, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
@@ -15,7 +15,6 @@ from pydantic import NonNegativeFloat
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
-from simcore_sdk.node_ports_common.file_io_utils import ProgressData
 
 from ..core.settings import ApplicationSettings
 
@@ -27,15 +26,13 @@ async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None
         await get_rabbitmq_client(app).publish(message.channel_name, message.json())
 
 
-async def post_log_message(
-    app: FastAPI, msg: str, _: Optional[ProgressData] = None
-) -> None:
+async def post_log_message(app: FastAPI, logs: str) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = LoggerRabbitMessage(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
-        messages=[msg],
+        messages=[logs],
         log_level=logging.INFO,
     )
 
@@ -43,7 +40,7 @@ async def post_log_message(
 
 
 async def post_progress_message(
-    app: FastAPI, progress_value: NonNegativeFloat, progress_type: ProgressType
+    app: FastAPI, progress_type: ProgressType, progress_value: NonNegativeFloat
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = ProgressRabbitMessage(

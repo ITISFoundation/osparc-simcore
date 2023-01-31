@@ -1,4 +1,5 @@
 import logging
+from contextlib import AsyncExitStack
 from pathlib import Path
 from shutil import move
 from tempfile import TemporaryDirectory
@@ -34,6 +35,7 @@ async def _push_file(
     rename_to: Optional[str],
     io_log_redirect_cb: Optional[LogRedirectCB],
     r_clone_settings: Optional[RCloneSettings] = None,
+    progress_bar: ProgressBarData,
 ) -> None:
     store_id = SIMCORE_LOCATION
     s3_object = _create_s3_object(
@@ -48,6 +50,7 @@ async def _push_file(
         file_to_upload=file_path,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar,
     )
     log.info("%s successfuly uploaded", file_path)
 
@@ -57,10 +60,12 @@ async def push(
     project_id: str,
     node_uuid: str,
     file_or_folder: Path,
+    *,
     io_log_redirect_cb: Optional[LogRedirectCB],
     rename_to: Optional[str] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
     archive_exclude_patterns: Optional[set[str]] = None,
+    progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
         return await _push_file(
@@ -70,11 +75,19 @@ async def push(
             file_or_folder,
             rename_to=rename_to,
             io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
         )
     # we have a folder, so we create a compressed file
-    with log_catch(log), log_context(
-        log, logging.INFO, "pushing %s", file_or_folder
-    ), TemporaryDirectory() as tmp_dir_name:
+    async with AsyncExitStack() as stack:
+        stack.enter_context(log_catch(log))
+        stack.enter_context(
+            log_context(log, logging.INFO, "pushing %s", file_or_folder)
+        )
+        tmp_dir_name = stack.enter_context(TemporaryDirectory())
+        sub_progress = await stack.enter_async_context(
+            progress_bar.sub_progress(steps=2)
+        )
+
         # compress the files
         archive_file_path = (
             Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
@@ -89,6 +102,7 @@ async def push(
             compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
             exclude_patterns=archive_exclude_patterns,
+            progress_bar=sub_progress,
         )
         if io_log_redirect_cb:
             await io_log_redirect_cb(
@@ -102,6 +116,7 @@ async def push(
             rename_to=None,
             r_clone_settings=r_clone_settings,
             io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=sub_progress,
         )
 
 

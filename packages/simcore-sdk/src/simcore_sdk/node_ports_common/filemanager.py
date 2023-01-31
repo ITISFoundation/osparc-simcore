@@ -290,6 +290,7 @@ async def upload_file(
     io_log_redirect_cb: Optional[LogRedirectCB],
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
+    progress_bar: ProgressBarData,
 ) -> tuple[LocationID, ETag]:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -350,6 +351,7 @@ async def upload_file(
                     file_to_upload,
                     num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
                     io_log_redirect_cb=io_log_redirect_cb,
+                    progress_bar=progress_bar,
                 )
 
             # complete the upload

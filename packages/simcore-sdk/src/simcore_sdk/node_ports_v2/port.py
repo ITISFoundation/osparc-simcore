@@ -8,6 +8,7 @@ from typing import Any, Callable, Optional
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
 from pydantic.tools import parse_obj_as
+from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.storage_client import LinkType
 
 from ..node_ports_common.exceptions import (
@@ -220,7 +221,9 @@ class Port(BaseServiceIOModel):
             self.value_item = v
         return v
 
-    async def get(self) -> Optional[ItemConcreteValue]:
+    async def get(
+        self, progress_bar: Optional[ProgressBarData] = None
+    ) -> Optional[ItemConcreteValue]:
         """
         Transforms DataItemValue value -> ItemConcreteValue
 
@@ -247,6 +250,7 @@ class Port(BaseServiceIOModel):
                     value=self.value,
                     fileToKeyMap=self.file_to_key_map,
                     node_port_creator=self._node_ports._node_ports_creator_cb,
+                    progress_bar=progress_bar,
                 )
                 value = other_port_concretevalue
 
@@ -258,6 +262,7 @@ class Port(BaseServiceIOModel):
                     fileToKeyMap=self.file_to_key_map,
                     value=self.value,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
+                    progress_bar=progress_bar,
                 )
                 value = path_concrete_value
 
@@ -269,6 +274,7 @@ class Port(BaseServiceIOModel):
                         fileToKeyMap=self.file_to_key_map,
                         value=self.value,
                         io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
+                        progress_bar=progress_bar,
                     )
                 )
                 value = path_concrete_value
@@ -293,7 +299,9 @@ class Port(BaseServiceIOModel):
     async def _set(
         self,
         new_concrete_value: Optional[ItemConcreteValue],
+        *,
         set_kwargs: Optional[SetKWargs] = None,
+        progress_bar: ProgressBarData,
     ) -> None:
         """
         :raises InvalidItemTypeError
@@ -333,6 +341,7 @@ class Port(BaseServiceIOModel):
                     r_clone_settings=self._node_ports.r_clone_settings,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
                     file_base_path=base_path,
+                    progress_bar=progress_bar,
                 )
             else:
                 new_value = converted_value
@@ -342,13 +351,23 @@ class Port(BaseServiceIOModel):
         self.value_concrete = None
         self._used_default_value = False
 
-    async def set(self, new_value: ItemConcreteValue, **set_kwargs) -> None:
+    async def set(
+        self,
+        new_value: ItemConcreteValue,
+        *,
+        progress_bar: Optional[ProgressBarData] = None,
+        **set_kwargs,
+    ) -> None:
         """sets a value to the port, by default it is also stored in the database
 
         :raises InvalidItemTypeError
         :raises ValidationError
         """
-        await self._set(new_concrete_value=new_value, **set_kwargs)
+        await self._set(
+            new_concrete_value=new_value,
+            **set_kwargs,
+            progress_bar=progress_bar or ProgressBarData(steps=1),
+        )
         await self._node_ports.save_to_db_cb(self._node_ports)
 
     async def set_value(self, new_item_value: Optional[ItemValue]) -> None:
