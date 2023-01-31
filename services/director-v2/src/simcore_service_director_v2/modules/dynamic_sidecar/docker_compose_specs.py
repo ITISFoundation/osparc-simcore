@@ -181,14 +181,11 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-def _update_service_quotas(service_spec: ComposeSpecLabel, has_quota_support: bool):
+def _strip_service_quotas(service_spec: ComposeSpecLabel):
     """
-    When disk quotas are not supported by the node need to remove any reference
-    from the docker-compose spec.
+    When disk quotas are not supported by the node, it is required to remove
+    any reference from the docker-compose spec.
     """
-    if has_quota_support:
-        return
-
     for spec in service_spec["services"].values():
         spec.pop("storage_opt", None)
 
@@ -256,7 +253,9 @@ def assemble_spec(
         service_resources=service_resources, service_spec=service_spec
     )
 
-    _update_service_quotas(service_spec, has_quota_support)
+    if not has_quota_support:
+        _strip_service_quotas(service_spec)
+
     if not allow_internet_access:
         # NOTE: when service has no access to the internet,
         # there could be some components that still require access
