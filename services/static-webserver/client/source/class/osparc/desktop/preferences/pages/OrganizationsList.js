@@ -49,6 +49,19 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     "organizationSelected": "qx.event.type.Data"
   },
 
+  statics: {
+    sortByAccessRights: function(a, b) {
+      const sorted = osparc.desktop.preferences.pages.BasePage.sortByAccessRights(a, b);
+      if (sorted !== 0) {
+        return sorted;
+      }
+      if (("label" in a) && ("label" in b)) {
+        return a["label"].localeCompare(b["label"]);
+      }
+      return 0;
+    }
+  },
+
   members: {
     __orgsModel: null,
 
@@ -145,7 +158,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
             return org;
           });
           const orgsList = await Promise.all(promises);
-          orgsList.sort(osparc.desktop.preferences.pages.BasePage.sortByAccessRights);
+          orgsList.sort(this.self().sortByAccessRights);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
         });
     },

@@ -73,6 +73,17 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
         "write": true,
         "delete": true
       };
+    },
+
+    sortByAccessRights: function(a, b) {
+      const sorted = osparc.desktop.preferences.pages.BasePage.sortByAccessRights(a, b);
+      if (sorted !== 0) {
+        return sorted;
+      }
+      if (("login" in a) && ("login" in b)) {
+        return a["login"].localeCompare(b["login"]);
+      }
+      return 0;
     }
   },
 
@@ -202,7 +213,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembers", {
             member["showOptions"] = canWrite;
             membersList.push(member);
           });
-          membersList.sort(osparc.desktop.preferences.pages.BasePage.sortByAccessRights);
+          membersList.sort(this.self().sortByAccessRights);
           membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
         });
     },

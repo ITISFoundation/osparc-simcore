@@ -46,14 +46,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       if (aAccessRights["read"] !== bAccessRights["read"]) {
         return bAccessRights["read"] - aAccessRights["read"];
       }
-      if (("label" in a) && ("label" in b)) {
-        // orgs
-        return a["label"].localeCompare(b["label"]);
-      }
-      if (("login" in a) && ("login" in b)) {
-        // members
-        return a["login"].localeCompare(b["login"]);
-      }
       return 0;
     }
   },
