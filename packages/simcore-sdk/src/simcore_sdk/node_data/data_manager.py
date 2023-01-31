@@ -179,6 +179,7 @@ async def pull(
                 archive_to_extract=archive_file,
                 destination_folder=destination_folder,
                 progress_bar=sub_prog,
+                log_cb=io_log_redirect_cb,
             )
             if io_log_redirect_cb:
                 await io_log_redirect_cb(

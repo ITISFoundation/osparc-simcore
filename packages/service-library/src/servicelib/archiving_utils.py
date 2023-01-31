@@ -3,14 +3,14 @@ import fnmatch
 import logging
 import types
 import zipfile
-from contextlib import contextmanager
+from contextlib import AsyncExitStack, contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Final, Iterator, Optional
+from typing import Awaitable, Callable, Final, Iterator, Optional
 
+import tqdm
+from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
-from tqdm import tqdm
-from tqdm.asyncio import tqdm_asyncio
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
 from .file_utils import remove_directory
@@ -156,6 +156,7 @@ async def unarchive_dir(
     *,
     max_workers: int = _MAX_UNARCHIVING_WORKER_COUNT,
     progress_bar: ProgressBarData,
+    log_cb: Optional[Callable[[str], Awaitable[None]]] = None,
 ) -> set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
@@ -168,76 +169,93 @@ async def unarchive_dir(
 
     ::raise ArchiveError
     """
-    with zipfile.ZipFile(
-        archive_to_extract, mode="r"
-    ) as zip_file_handler, logging_redirect_tqdm():
-        with non_blocking_process_pool_executor(
-            max_workers=max_workers
-        ) as process_pool:
-            event_loop = asyncio.get_event_loop()
-
-            # running in process poll is not ideal for concurrency issues
-            # to avoid race conditions all subdirectories where files will be extracted need to exist
-            # creating them before the extraction is under way avoids the issue
-            # the following avoids race conditions while unzippin in parallel
-            _ensure_destination_subdirectories_exist(
-                zip_file_handler=zip_file_handler,
-                destination_folder=destination_folder,
+    async with AsyncExitStack() as stack:
+        zip_file_handler = stack.enter_context(
+            zipfile.ZipFile(  # pylint: disable=consider-using-with
+                archive_to_extract,
+                mode="r",
             )
+        )
+        stack.enter_context(logging_redirect_tqdm())
+        process_pool = stack.enter_context(
+            non_blocking_process_pool_executor(max_workers=max_workers)
+        )
 
-            futures: list[asyncio.Future] = [
-                event_loop.run_in_executor(
-                    process_pool,
-                    # ---------
-                    _zipfile_single_file_extract_worker,
-                    archive_to_extract,
-                    zip_entry,
-                    destination_folder,
-                    zip_entry.is_dir(),
-                )
-                for zip_entry in zip_file_handler.infolist()
-            ]
+        # running in process poll is not ideal for concurrency issues
+        # to avoid race conditions all subdirectories where files will be extracted need to exist
+        # creating them before the extraction is under way avoids the issue
+        # the following avoids race conditions while unzippin in parallel
+        _ensure_destination_subdirectories_exist(
+            zip_file_handler=zip_file_handler,
+            destination_folder=destination_folder,
+        )
 
-            try:
-                extracted_paths: list[Path] = await tqdm_asyncio.gather(
-                    *futures,
+        futures: list[asyncio.Future] = [
+            asyncio.get_event_loop().run_in_executor(
+                process_pool,
+                # ---------
+                _zipfile_single_file_extract_worker,
+                archive_to_extract,
+                zip_entry,
+                destination_folder,
+                zip_entry.is_dir(),
+            )
+            for zip_entry in zip_file_handler.infolist()
+        ]
+
+        try:
+            extracted_paths: list[Path] = []
+            total_file_size = sum(
+                zip_entry.file_size for zip_entry in zip_file_handler.infolist()
+            )
+            async with progress_bar.sub_progress(steps=total_file_size) as sub_prog:
+                with tqdm.tqdm(
                     desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
                     f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
-                    total=len(futures),
+                    total=total_file_size,
                     **_TQDM_MULTI_FILES_OPTIONS,
-                )
+                ) as tqdm_progress:
+                    for future in asyncio.as_completed(futures):
+                        extracted_path = await future
+                        extracted_file_size = extracted_path.stat().st_size
+                        if tqdm_progress.update(extracted_file_size):
+                            await sub_prog.update(extracted_file_size)
+                            if log_cb:
+                                with log_catch(log, reraise=False):
+                                    await log_cb(f"{tqdm_progress}")
+                        extracted_paths.append(extracted_path)
 
-            except Exception as err:
-                for f in futures:
-                    f.cancel()
+        except Exception as err:
+            for f in futures:
+                f.cancel()
 
-                # wait until all tasks are cancelled
-                await asyncio.wait(
-                    futures, timeout=2 * _MIN, return_when=asyncio.ALL_COMPLETED
-                )
+            # wait until all tasks are cancelled
+            await asyncio.wait(
+                futures, timeout=2 * _MIN, return_when=asyncio.ALL_COMPLETED
+            )
 
-                # now we can cleanup
-                if destination_folder.exists() and destination_folder.is_dir():
-                    await remove_directory(destination_folder, ignore_errors=True)
+            # now we can cleanup
+            if destination_folder.exists() and destination_folder.is_dir():
+                await remove_directory(destination_folder, ignore_errors=True)
 
-                raise ArchiveError(
-                    f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
-                    f"Details: {err}"
-                ) from err
+            raise ArchiveError(
+                f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
+                f"Details: {err}"
+            ) from err
 
-            else:
+        else:
 
-                # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
-                return {
-                    p
-                    for p in extracted_paths
-                    if p.is_file() or (p.is_dir() and not any(p.glob("*")))
-                }
+            # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
+            return {
+                p
+                for p in extracted_paths
+                if p.is_file() or (p.is_dir() and not any(p.glob("*")))
+            }
 
 
 @contextmanager
 def _progress_enabled_zip_write_handler(
-    zip_file_handler: zipfile.ZipFile, progress_bar: tqdm
+    zip_file_handler: zipfile.ZipFile, progress_bar: tqdm.tqdm
 ) -> Iterator[zipfile.ZipFile]:
     """This function overrides the default zip write fct to allow to get progress using tqdm library"""
 

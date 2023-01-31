@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -27,6 +28,7 @@ from aiohttp import (
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from pydantic import AnyUrl
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
@@ -147,12 +149,14 @@ async def _file_chunk_writer(
     response: ClientResponse,
     pbar: tqdm,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: ProgressBarData,
 ):
     async with aiofiles.open(file, "wb") as file_pointer:
         while chunk := await response.content.read(CHUNK_SIZE):
             await file_pointer.write(chunk)
             if io_log_redirect_cb and pbar.update(len(chunk)):
                 await io_log_redirect_cb(f"{pbar}", ProgressData(pbar.n, pbar.total))
+                await progress_bar.update(len(chunk))
 
 
 log = logging.getLogger(__name__)
@@ -172,6 +176,7 @@ async def download_link_to_file(
     *,
     num_retries: int,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: ProgressBarData,
 ):
     log.debug("Downloading from %s to %s", url, file_path)
     async for attempt in AsyncRetrying(
@@ -183,7 +188,8 @@ async def download_link_to_file(
         after=after_log(log, log_level=logging.ERROR),
     ):
         with attempt:
-            async with session.get(url) as response:
+            async with AsyncExitStack() as stack:
+                response = await stack.enter_async_context(session.get(url))
                 if response.status == 404:
                     raise exceptions.InvalidDownloadLinkError(url)
                 if response.status > 299:
@@ -192,22 +198,32 @@ async def download_link_to_file(
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
                 file_size = int(response.headers.get("Content-Length", 0)) or None
                 try:
-                    with tqdm_logging_redirect(
-                        desc=f"downloading {url.path} --> {file_path.name}\n",
-                        total=file_size,
-                        **(
-                            _TQDM_FILE_OPTIONS
-                            | dict(
-                                miniters=_compute_tqdm_miniters(file_size)
-                                if file_size
-                                else 1
-                            )
-                        ),
-                    ) as pbar:
-                        await _file_chunk_writer(
-                            file_path, response, pbar, io_log_redirect_cb
+                    tqdm_progress = stack.enter_context(
+                        tqdm_logging_redirect(
+                            desc=f"downloading {url.path} --> {file_path.name}\n",
+                            total=file_size,
+                            **(
+                                _TQDM_FILE_OPTIONS
+                                | dict(
+                                    miniters=_compute_tqdm_miniters(file_size)
+                                    if file_size
+                                    else 1
+                                )
+                            ),
                         )
-                        log.debug("Download complete")
+                    )
+                    sub_progress = await stack.enter_async_context(
+                        progress_bar.sub_progress(steps=file_size)
+                    )
+
+                    await _file_chunk_writer(
+                        file_path,
+                        response,
+                        tqdm_progress,
+                        io_log_redirect_cb,
+                        sub_progress,
+                    )
+                    log.debug("Download complete")
                 except ClientPayloadError as exc:
                     raise exceptions.TransferError(url) from exc
 
