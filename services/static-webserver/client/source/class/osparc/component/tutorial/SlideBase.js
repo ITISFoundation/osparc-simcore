@@ -30,6 +30,7 @@ qx.Class.define("osparc.component.tutorial.SlideBase", {
 
     if (title) {
       this._add(new qx.ui.basic.Label(title).set({
+        rich: true,
         font: "title-14"
       }));
     }

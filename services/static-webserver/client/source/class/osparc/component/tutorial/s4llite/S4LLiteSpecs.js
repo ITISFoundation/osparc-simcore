@@ -19,38 +19,36 @@ qx.Class.define("osparc.component.tutorial.s4llite.S4LLiteSpecs", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
-    const title = this.tr("Sim4Life Lite: Features and Limitations");
+    const title = this.tr("Sim4Life:web <i>lite</i>: Features and Limitations");
     this.base(arguments, title);
   },
 
   members: {
     _populateCard: function() {
       const introText = this.tr("\
-      Sim4Life Lite is a student edition of Sim4Life and offers a tailored solution for students to to gain insight into the world of \
-      computational modeling and simulation. The software is free of charge and can be used to simulate various applications using different \
-      physics solvers..\
+      Sim4Life:web <i>lite</i> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to \
+      design complex technical devices in a validated environment. Sim4Life:web <i>lite</i> has been created specifically for students to \
+      facilitate their understanding of computational modeling and simulations for various topics, ranging from wireless communication \
+      to medical applications. The access to Sim4Life:web <i>lite</i> is available free of charge to students enrolled at registered universities.\
       ");
       const intro = osparc.component.tutorial.Utils.createLabel(introText);
       this._add(intro);
 
       const featuresText = this.tr("\
-      <b>Features</b><br>\
-      This special edition of Sim4Life includes the following features:<br>\
-      - Sim4Life framework (GUI, Modeling, Postprocessing)<br>\
+      <b>Sim4Life:web <i>lite</i> offers</b><br>\
+      - Framework (GUI, Modeling, Postprocessing)<br>\
       - 3D modeling environment (based on the ACIS toolkit) and CAD translators<br>\
       - Postprocessing and visualization of the simulation results (2D and 3D viewers, 2D planar slice, volume rendering, streamlines, surface fields on arbitrary 3D structures, radiation and far-field data)<br>\
       - No restrictions on number of modeling objects<br>\
-      - Solvers and tissue Models<br>\
-      - This special edition of Sim4Life includes the following features:<br>\
+      - Solvers & Tissue Models:<br>\
       &emsp;- P-EM-FDTD: Electromagnetics Full-Wave Solver<br>\
       &emsp;- P-EM-QS: Quasi-Static Electromagnetics Solver<br>\
       &emsp;- P-Thermal: Thermodynamic Solver<br>\
       &emsp;- P-Acoustics: Acoustics Solver<br>\
       &emsp;- T-Neuro: Neuronal Tissue Models<br>\
-      - Multi-parameter and multi-goal optimization framework<br>\
-      - Computational anatomical model Yoon-sun, the first Korean phantom of the IT’IS Virtual Population<br>\
+      - Computational anatomical model Yoon-sun, the first Korean model of the IT’IS Virtual Population<br>\
       - Material database<br>\
-      - Python scripting framework\
+      - Python and Jupyter Notebook scripting\
       ");
       const features = osparc.component.tutorial.Utils.createLabel(featuresText);
       this._add(features);
@@ -59,8 +57,17 @@ qx.Class.define("osparc.component.tutorial.s4llite.S4LLiteSpecs", {
       <b>Limitations</b><br>\
       The following limitations apply:<br>\
       - Grid size of each simulation is limited to a maximum of <b>20 million grid cells</b><br>\
-      - 3rd-party tools are not available (e.g. MUSAIK, SYSSIM, IMAnalytics, etc…)<br>\
-      - Additional ViP models cannot be added\
+      - High-Performance Computing is not supported:<br>\
+      &emsp;- GPU acceleration is not available<br>\
+      &emsp;- MPI multicore acceleration is not available<br>\
+      - 3rd-party tools are not available (e.g., MUSAIK, SYSSIM, IMAnalytics, etc…)<br>\
+      - Additional ViP models cannot be added<br>\
+      - 30 minutes idle time before logout<br>\
+      - Hardware resource limits<br>\
+      &emsp;- 3 CPUs<br>\
+      &emsp;- 3 GB of GPU RAM<br>\
+      &emsp;- 5 GB disk space<br>\
+      &emsp;- 16 GB RAM<br>\
       ");
       const limitations = osparc.component.tutorial.Utils.createLabel(limitationsText);
       this._add(limitations);
