@@ -29,6 +29,7 @@ qx.Class.define("osparc.AboutProduct", {
 
     this.set({
       layout: new qx.ui.layout.VBox(5),
+      minWidth: this.self().MIN_WIDTH,
       maxWidth: this.self().MAX_WIDTH,
       contentPadding: this.self().PADDING,
       showMaximize: false,
@@ -43,6 +44,7 @@ qx.Class.define("osparc.AboutProduct", {
   },
 
   statics: {
+    MIN_WIDTH: 200,
     MAX_WIDTH: 400,
     PADDING: 15
   },
@@ -58,8 +60,7 @@ qx.Class.define("osparc.AboutProduct", {
       this.add(introText);
       osparc.store.StaticInfo.getInstance().getDisplayName()
         .then(displayName => {
-          const aboutText = this.tr("");
-          introText.setValue(displayName + aboutText);
+          introText.setValue(displayName);
         });
     }
   }
