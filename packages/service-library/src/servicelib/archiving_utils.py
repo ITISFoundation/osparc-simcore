@@ -1,5 +1,6 @@
 import asyncio
 import fnmatch
+import functools
 import logging
 import types
 import zipfile
@@ -291,6 +292,7 @@ def _add_to_archive(
     compress: bool,
     store_relative_path: bool,
     update_progress,
+    loop,
     exclude_patterns: Optional[set[str]] = None,
 ) -> None:
     compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
@@ -325,8 +327,12 @@ def _add_to_archive(
 
             zip_file_handler.write(file_to_add, escaped_file_name_in_archive)
             asyncio.run_coroutine_threadsafe(
-                update_progress(file_to_add.stat().st_size), asyncio.get_event_loop()
+                update_progress(file_to_add.stat().st_size), loop
             )
+
+
+async def _update_progress(prog: ProgressBarData, delta: float) -> None:
+    await prog.update(delta)
 
 
 async def archive_dir(
@@ -364,24 +370,17 @@ async def archive_dir(
             progress_bar.sub_progress(folder_size_bytes)
         )
 
-        global update_progress  # NOTE: needed to be able to call it from the separate process
-
-        async def update_progress(delta: float) -> None:
-            await sub_progress.update(delta)
-
-        process_pool = stack.enter_context(
-            non_blocking_process_pool_executor(max_workers=1)
-        )
         try:
             await asyncio.get_event_loop().run_in_executor(
-                process_pool,
+                None,
                 # ---------
                 _add_to_archive,
                 dir_to_compress,
                 destination,
                 compress,
                 store_relative_path,
-                update_progress if progress_bar else None,
+                functools.partial(_update_progress, sub_progress),
+                asyncio.get_event_loop(),
                 exclude_patterns,
             )
         except Exception as err:
