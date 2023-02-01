@@ -13,7 +13,6 @@ from aiohttp.test_utils import TestClient
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
-    DB_EXCLUSIVE_COLUMNS,
     ProjectDBAPI,
 )
 from simcore_service_webserver.projects.projects_db_utils import DB_EXCLUSIVE_COLUMNS
