@@ -91,6 +91,7 @@ async def test_push_folder(
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
+        progress_bar=progress_bar._children[0],
     )
 
     archive_file = test_compression_folder / f"{test_folder.stem}.zip"
@@ -148,6 +149,7 @@ async def test_push_file(
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
+        progress_bar=progress_bar,
     )
     mock_filemanager.reset_mock()
 
@@ -217,6 +219,7 @@ async def test_pull_folder(
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
+        progress_bar=progress_bar._children[0],
     )
 
     matchs, mismatchs, errors = cmpfiles(
@@ -272,4 +275,5 @@ async def test_pull_file(
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
+        progress_bar=progress_bar,
     )
