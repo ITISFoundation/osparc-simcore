@@ -92,6 +92,10 @@ class ProjectDBAPI(ProjectDBMixin):
         assert self._engine  # nosec
         return self._engine
 
+    #
+    # Project CRUDs
+    #
+
     async def insert_project(
         self,
         project: dict[str, Any],
@@ -266,6 +270,15 @@ class ProjectDBAPI(ProjectDBMixin):
                 total_number_of_projects,
             )
 
+    async def list_projects_by_uuid_for_user(self, user_id: int) -> list[str]:
+        result = deque()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
+            ):
+                result.append(row[projects.c.uuid])
+            return list(result)
+
     async def get_project(
         self,
         user_id: UserID,
@@ -302,34 +315,148 @@ class ProjectDBAPI(ProjectDBMixin):
                 project_type,
             )
 
-    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
-            # pylint: disable=no-value-for-parameter
-            query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
-            user_email = await self._get_user_email(conn, user_id)
-            async with conn.execute(query) as result:
-                if result.rowcount == 1:
-                    project["tags"].append(tag_id)
-                    return _convert_to_schema_names(project, user_email)
-                raise ProjectsException()
+    async def replace_user_project(
+        self,
+        new_project_data: dict[str, Any],
+        user_id: UserID,
+        *,
+        product_name: str,
+        project_uuid: str,
+    ) -> dict[str, Any]:
+        """replaces a project from a user
+        this method completely replaces a user project with new_project_data only keeping
+        the old entries from the project workbench if they exists in the new project workbench.
 
-    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+        :raises ProjectInvalidRightsError
+        """
+        log.info("Updating project %s for user %s", project_uuid, user_id)
+
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
-            user_email = await self._get_user_email(conn, user_id)
-            # pylint: disable=no-value-for-parameter
-            query = study_tags.delete().where(
-                and_(
-                    study_tags.c.study_id == project["id"],
-                    study_tags.c.tag_id == tag_id,
+            async with conn.begin() as _transaction:
+                current_project: dict = await self._get_project(
+                    conn,
+                    user_id,
+                    project_uuid,
+                    exclude_foreign=["tags"],
+                    for_update=True,
                 )
-            )
-            async with conn.execute(query):
-                if tag_id in project["tags"]:
-                    project["tags"].remove(tag_id)
-                return _convert_to_schema_names(project, user_email)
+                user_groups: list[RowProxy] = await self._list_user_groups(
+                    conn, user_id
+                )
+                _check_project_permissions(
+                    current_project, user_id, user_groups, "write"
+                )
+                # uuid can ONLY be set upon creation
+                if current_project["uuid"] != new_project_data["uuid"]:
+                    raise ProjectInvalidRightsError(user_id, new_project_data["uuid"])
+                # ensure the prj owner is always in the access rights
+                owner_primary_gid = await self._get_user_primary_group_gid(
+                    conn, current_project[projects.c.prj_owner.key]
+                )
+                new_project_data.setdefault("accessRights", {}).update(
+                    _create_project_access_rights(
+                        owner_primary_gid, ProjectAccessRights.OWNER
+                    )
+                )
 
+                # update the workbench
+                def _update_workbench(
+                    old_project: ProjectDict, new_project: ProjectDict
+                ) -> None:
+                    # any non set entry in the new workbench is taken from the old one if available
+                    old_workbench = old_project["workbench"]
+                    new_workbench = new_project["workbench"]
+                    for node_key, node in new_workbench.items():
+                        old_node = old_workbench.get(node_key)
+                        if not old_node:
+                            continue
+                        for prop in old_node:
+                            # check if the key is missing in the new node
+                            if prop not in node:
+                                # use the old value
+                                node[prop] = old_node[prop]
+
+                _update_workbench(current_project, new_project_data)
+                # update timestamps
+                new_project_data["lastChangeDate"] = now_str()
+
+                # now update it
+
+                log.debug(
+                    "DB updating with new_project_data=%s", json_dumps(new_project_data)
+                )
+                result = await conn.execute(
+                    # pylint: disable=no-value-for-parameter
+                    projects.update()
+                    .values(**_convert_to_db_names(new_project_data))
+                    .where(projects.c.id == current_project[projects.c.id.key])
+                    .returning(literal_column("*"))
+                )
+                project = await result.fetchone()
+                assert project  # nosec
+                await self.upsert_project_linked_product(
+                    ProjectID(project_uuid), product_name, conn=conn
+                )
+                log.debug(
+                    "DB updated returned row project=%s",
+                    json_dumps(dict(project.items())),
+                )
+                user_email = await self._get_user_email(conn, project.prj_owner)
+
+                tags = await self._get_tags_by_project(
+                    conn, project_id=project[projects.c.id]
+                )
+                return _convert_to_schema_names(project, user_email, tags=tags)
+
+    async def update_project_without_checking_permissions(
+        self,
+        project_data: dict,
+        project_uuid: ProjectIDStr,
+        *,
+        hidden: Optional[bool] = None,
+    ) -> bool:
+        """The garbage collector needs to alter the row without passing through the
+        permissions layer."""
+        async with self.engine.acquire() as conn:
+            # update timestamps
+            project_data["lastChangeDate"] = now_str()
+            # now update it
+            updated_values = _convert_to_db_names(project_data)
+            if hidden is not None:
+                updated_values["hidden"] = hidden
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**updated_values)
+                .where(projects.c.uuid == project_uuid)
+            )
+            return result.rowcount == 1
+
+    async def delete_user_project(self, user_id: int, project_uuid: str):
+        log.info(
+            "Deleting project with %s for user with %s",
+            f"{project_uuid=}",
+            f"{user_id}",
+        )
+
+        async with self.engine.acquire() as conn:
+            async with conn.begin() as _transaction:
+                project = await self._get_project(
+                    conn, user_id, project_uuid, for_update=True
+                )
+                # if we have delete access we delete the project
+                user_groups: list[RowProxy] = await self._list_user_groups(
+                    conn, user_id
+                )
+                _check_project_permissions(project, user_id, user_groups, "delete")
+                await conn.execute(
+                    # pylint: disable=no-value-for-parameter
+                    projects.delete().where(projects.c.uuid == project_uuid)
+                )
+
+    #
+    # Project WORKBENCH / NODES
+    #
     async def patch_user_project_workbench(
         self,
         partial_workbench_data: dict[str, Any],
@@ -449,120 +576,51 @@ class ProjectDBAPI(ProjectDBMixin):
                     changed_entries,
                 )
 
-    async def replace_user_project(
-        self,
-        new_project_data: dict[str, Any],
-        user_id: UserID,
-        *,
-        product_name: str,
-        project_uuid: str,
-    ) -> dict[str, Any]:
-        """replaces a project from a user
-        this method completely replaces a user project with new_project_data only keeping
-        the old entries from the project workbench if they exists in the new project workbench.
+    async def node_id_exists(self, node_id: str) -> bool:
+        """Returns True if the node id exists in any of the available projects"""
+        async with self.engine.acquire() as conn:
+            num_entries = await conn.scalar(
+                sa.select([func.count()])
+                .select_from(projects)
+                .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
+            )
+        assert num_entries is not None  # nosec
+        assert isinstance(num_entries, int)  # nosec
+        return bool(num_entries > 0)
 
-        :raises ProjectInvalidRightsError
+    async def get_node_ids_from_project(self, project_uuid: str) -> set[str]:
+        """Returns a set containing all the node_ids from project with project_uuid"""
+        result = set()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([sa.func.json_object_keys(projects.c.workbench)])
+                .select_from(projects)
+                .where(projects.c.uuid == f"{project_uuid}")
+            ):
+                result.update(row.as_tuple())  # type: ignore
+        return result
+
+    #
+    # Project ACCESS RIGHTS/PERMISSIONS
+    #
+    async def has_permission(
+        self, user_id: UserID, project_uuid: str, permission: Permission
+    ) -> bool:
         """
-        log.info("Updating project %s for user %s", project_uuid, user_id)
+        NOTE: this function should never raise
+        NOTE: if user_id does not exist it is not an issue
+        """
 
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
-                current_project: dict = await self._get_project(
-                    conn,
-                    user_id,
-                    project_uuid,
-                    exclude_foreign=["tags"],
-                    for_update=True,
-                )
+            try:
+                project = await self._get_project(conn, user_id, project_uuid)
                 user_groups: list[RowProxy] = await self._list_user_groups(
                     conn, user_id
                 )
-                _check_project_permissions(
-                    current_project, user_id, user_groups, "write"
-                )
-                # uuid can ONLY be set upon creation
-                if current_project["uuid"] != new_project_data["uuid"]:
-                    raise ProjectInvalidRightsError(user_id, new_project_data["uuid"])
-                # ensure the prj owner is always in the access rights
-                owner_primary_gid = await self._get_user_primary_group_gid(
-                    conn, current_project[projects.c.prj_owner.key]
-                )
-                new_project_data.setdefault("accessRights", {}).update(
-                    _create_project_access_rights(
-                        owner_primary_gid, ProjectAccessRights.OWNER
-                    )
-                )
-
-                # update the workbench
-                def _update_workbench(
-                    old_project: ProjectDict, new_project: ProjectDict
-                ) -> None:
-                    # any non set entry in the new workbench is taken from the old one if available
-                    old_workbench = old_project["workbench"]
-                    new_workbench = new_project["workbench"]
-                    for node_key, node in new_workbench.items():
-                        old_node = old_workbench.get(node_key)
-                        if not old_node:
-                            continue
-                        for prop in old_node:
-                            # check if the key is missing in the new node
-                            if prop not in node:
-                                # use the old value
-                                node[prop] = old_node[prop]
-
-                _update_workbench(current_project, new_project_data)
-                # update timestamps
-                new_project_data["lastChangeDate"] = now_str()
-
-                # now update it
-
-                log.debug(
-                    "DB updating with new_project_data=%s", json_dumps(new_project_data)
-                )
-                result = await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    projects.update()
-                    .values(**_convert_to_db_names(new_project_data))
-                    .where(projects.c.id == current_project[projects.c.id.key])
-                    .returning(literal_column("*"))
-                )
-                project = await result.fetchone()
-                assert project  # nosec
-                await self.upsert_project_linked_product(
-                    ProjectID(project_uuid), product_name, conn=conn
-                )
-                log.debug(
-                    "DB updated returned row project=%s",
-                    json_dumps(dict(project.items())),
-                )
-                user_email = await self._get_user_email(conn, project.prj_owner)
-
-                tags = await self._get_tags_by_project(
-                    conn, project_id=project[projects.c.id]
-                )
-                return _convert_to_schema_names(project, user_email, tags=tags)
-
-    async def delete_user_project(self, user_id: int, project_uuid: str):
-        log.info(
-            "Deleting project with %s for user with %s",
-            f"{project_uuid=}",
-            f"{user_id}",
-        )
-
-        async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
-                project = await self._get_project(
-                    conn, user_id, project_uuid, for_update=True
-                )
-                # if we have delete access we delete the project
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                _check_project_permissions(project, user_id, user_groups, "delete")
-                await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    projects.delete().where(projects.c.uuid == project_uuid)
-                )
+                _check_project_permissions(project, user_id, user_groups, permission)
+                return True
+            except (ProjectInvalidRightsError, ProjectNotFoundError):
+                return False
 
     async def check_delete_project_permission(self, user_id: int, project_uuid: str):
         """
@@ -578,6 +636,69 @@ class ProjectDBAPI(ProjectDBMixin):
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
+
+    #
+    # Project TAGS
+    #
+
+    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+        async with self.engine.acquire() as conn:
+            project = await self._get_project(conn, user_id, project_uuid)
+            # pylint: disable=no-value-for-parameter
+            query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
+            user_email = await self._get_user_email(conn, user_id)
+            async with conn.execute(query) as result:
+                if result.rowcount == 1:
+                    project["tags"].append(tag_id)
+                    return _convert_to_schema_names(project, user_email)
+                raise ProjectsException()
+
+    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+        async with self.engine.acquire() as conn:
+            project = await self._get_project(conn, user_id, project_uuid)
+            user_email = await self._get_user_email(conn, user_id)
+            # pylint: disable=no-value-for-parameter
+            query = study_tags.delete().where(
+                and_(
+                    study_tags.c.study_id == project["id"],
+                    study_tags.c.tag_id == tag_id,
+                )
+            )
+            async with conn.execute(query):
+                if tag_id in project["tags"]:
+                    project["tags"].remove(tag_id)
+                return _convert_to_schema_names(project, user_email)
+
+    #
+    # Project HIDDEN column
+    #
+
+    async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
+        async with self.engine.acquire() as conn:
+            stmt = (
+                projects.update()
+                .values(hidden=enabled)
+                .where(projects.c.uuid == f"{project_uuid}")
+            )
+            await conn.execute(stmt)
+
+    #
+    # Project TYPE column
+    #
+
+    async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([projects.c.type]).where(projects.c.uuid == f"{project_uuid}")
+            )
+            row = await result.first()
+            if row:
+                return row[projects.c.type]
+        raise ProjectNotFoundError(project_uuid=project_uuid)
+
+    #
+    # MISC
+    #
 
     async def check_project_has_only_one_product(self, project_uuid: ProjectID) -> None:
         async with self.engine.acquire() as conn:
@@ -619,101 +740,6 @@ class ProjectDBAPI(ProjectDBMixin):
                 if not found:
                     break
         return project_uuid
-
-    async def node_id_exists(self, node_id: str) -> bool:
-        """Returns True if the node id exists in any of the available projects"""
-        async with self.engine.acquire() as conn:
-            num_entries = await conn.scalar(
-                sa.select([func.count()])
-                .select_from(projects)
-                .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
-            )
-        assert num_entries is not None  # nosec
-        assert isinstance(num_entries, int)  # nosec
-        return bool(num_entries > 0)
-
-    async def get_node_ids_from_project(self, project_uuid: str) -> set[str]:
-        """Returns a set containing all the node_ids from project with project_uuid"""
-        result = set()
-        async with self.engine.acquire() as conn:
-            async for row in conn.execute(
-                sa.select([sa.func.json_object_keys(projects.c.workbench)])
-                .select_from(projects)
-                .where(projects.c.uuid == f"{project_uuid}")
-            ):
-                result.update(row.as_tuple())  # type: ignore
-        return result
-
-    async def list_all_projects_by_uuid_for_user(self, user_id: int) -> list[str]:
-        result = deque()
-        async with self.engine.acquire() as conn:
-            async for row in conn.execute(
-                sa.select([projects.c.uuid]).where(projects.c.prj_owner == user_id)
-            ):
-                result.append(row[projects.c.uuid])
-            return list(result)
-
-    async def update_project_without_checking_permissions(
-        self,
-        project_data: dict,
-        project_uuid: ProjectIDStr,
-        *,
-        hidden: Optional[bool] = None,
-    ) -> bool:
-        """The garbage collector needs to alter the row without passing through the
-        permissions layer."""
-        async with self.engine.acquire() as conn:
-            # update timestamps
-            project_data["lastChangeDate"] = now_str()
-            # now update it
-            updated_values = _convert_to_db_names(project_data)
-            if hidden is not None:
-                updated_values["hidden"] = hidden
-            result = await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                projects.update()
-                .values(**updated_values)
-                .where(projects.c.uuid == project_uuid)
-            )
-            return result.rowcount == 1
-
-    async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
-        async with self.engine.acquire() as conn:
-            stmt = (
-                projects.update()
-                .values(hidden=enabled)
-                .where(projects.c.uuid == f"{project_uuid}")
-            )
-            await conn.execute(stmt)
-
-    async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select([projects.c.type]).where(projects.c.uuid == f"{project_uuid}")
-            )
-            row = await result.first()
-            if row:
-                return row[projects.c.type]
-        raise ProjectNotFoundError(project_uuid=project_uuid)
-
-    async def has_permission(
-        self, user_id: UserID, project_uuid: str, permission: Permission
-    ) -> bool:
-        """
-        NOTE: this function should never raise
-        NOTE: if user_id does not exist it is not an issue
-        """
-
-        async with self.engine.acquire() as conn:
-            try:
-                project = await self._get_project(conn, user_id, project_uuid)
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                _check_project_permissions(project, user_id, user_groups, permission)
-                return True
-            except (ProjectInvalidRightsError, ProjectNotFoundError):
-                return False
 
 
 def setup_projects_db(app: web.Application):
