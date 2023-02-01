@@ -37,11 +37,11 @@ from .projects_db_utils import (
     Permission,
     ProjectAccessRights,
     ProjectDBMixin,
-    _assemble_array_groups,
-    _check_project_permissions,
-    _convert_to_db_names,
-    _convert_to_schema_names,
-    _create_project_access_rights,
+    assemble_array_groups,
+    check_project_permissions,
+    convert_to_db_names,
+    convert_to_schema_names,
+    create_project_access_rights,
 )
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -126,7 +126,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 }
             )
 
-            project_db_values = _convert_to_db_names(project)
+            project_db_values = convert_to_db_names(project)
             project_db_values.update(
                 {
                     "type": ProjectType.TEMPLATE
@@ -143,9 +143,7 @@ class ProjectDBAPI(ProjectDBMixin):
             if user_id:
                 primary_gid = await self._get_user_primary_group_gid(conn, user_id)
                 project_db_values.setdefault("access_rights", {}).update(
-                    _create_project_access_rights(
-                        primary_gid, ProjectAccessRights.OWNER
-                    )
+                    create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
                 )
             # ensure we have the minimal amount of data here
             project_db_values.setdefault("name", "New Study")
@@ -182,7 +180,7 @@ class ProjectDBAPI(ProjectDBMixin):
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
-            api_project = _convert_to_schema_names(project_db_values, user_email)
+            api_project = convert_to_schema_names(project_db_values, user_email)
             if not "tags" in api_project:
                 api_project["tags"] = []
             return api_project
@@ -240,7 +238,7 @@ class ProjectDBAPI(ProjectDBMixin):
                     & (
                         (projects.c.prj_owner == user_id)
                         | sa.text(
-                            f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
+                            f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
                         )
                     )
                     & (
@@ -311,7 +309,7 @@ class ProjectDBAPI(ProjectDBMixin):
             user_email = await self._get_user_email(conn, project["prj_owner"])
             project_type = ProjectType(project[projects.c.type.name])
             return (
-                _convert_to_schema_names(project, user_email),
+                convert_to_schema_names(project, user_email),
                 project_type,
             )
 
@@ -343,7 +341,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 user_groups: list[RowProxy] = await self._list_user_groups(
                     conn, user_id
                 )
-                _check_project_permissions(
+                check_project_permissions(
                     current_project, user_id, user_groups, "write"
                 )
                 # uuid can ONLY be set upon creation
@@ -354,7 +352,7 @@ class ProjectDBAPI(ProjectDBMixin):
                     conn, current_project[projects.c.prj_owner.key]
                 )
                 new_project_data.setdefault("accessRights", {}).update(
-                    _create_project_access_rights(
+                    create_project_access_rights(
                         owner_primary_gid, ProjectAccessRights.OWNER
                     )
                 )
@@ -388,7 +386,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 result = await conn.execute(
                     # pylint: disable=no-value-for-parameter
                     projects.update()
-                    .values(**_convert_to_db_names(new_project_data))
+                    .values(**convert_to_db_names(new_project_data))
                     .where(projects.c.id == current_project[projects.c.id.key])
                     .returning(literal_column("*"))
                 )
@@ -406,7 +404,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 tags = await self._get_tags_by_project(
                     conn, project_id=project[projects.c.id]
                 )
-                return _convert_to_schema_names(project, user_email, tags=tags)
+                return convert_to_schema_names(project, user_email, tags=tags)
 
     async def update_project_without_checking_permissions(
         self,
@@ -421,7 +419,7 @@ class ProjectDBAPI(ProjectDBMixin):
             # update timestamps
             project_data["lastChangeDate"] = now_str()
             # now update it
-            updated_values = _convert_to_db_names(project_data)
+            updated_values = convert_to_db_names(project_data)
             if hidden is not None:
                 updated_values["hidden"] = hidden
             result = await conn.execute(
@@ -448,7 +446,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 user_groups: list[RowProxy] = await self._list_user_groups(
                     conn, user_id
                 )
-                _check_project_permissions(project, user_id, user_groups, "delete")
+                check_project_permissions(project, user_id, user_groups, "delete")
                 await conn.execute(
                     # pylint: disable=no-value-for-parameter
                     projects.delete().where(projects.c.uuid == project_uuid)
@@ -457,6 +455,7 @@ class ProjectDBAPI(ProjectDBMixin):
     #
     # Project WORKBENCH / NODES
     #
+
     async def patch_user_project_workbench(
         self,
         partial_workbench_data: dict[str, Any],
@@ -490,7 +489,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 user_groups: list[RowProxy] = await self._list_user_groups(
                     conn, user_id
                 )
-                _check_project_permissions(
+                check_project_permissions(
                     current_project, user_id, user_groups, "write"
                 )
 
@@ -552,7 +551,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 result = await conn.execute(
                     # pylint: disable=no-value-for-parameter
                     projects.update()
-                    .values(**_convert_to_db_names(new_project_data))
+                    .values(**convert_to_db_names(new_project_data))
                     .where(projects.c.id == current_project[projects.c.id.key])
                     .returning(literal_column("*"))
                 )
@@ -572,7 +571,7 @@ class ProjectDBAPI(ProjectDBMixin):
                     conn, project_id=project[projects.c.id]
                 )
                 return (
-                    _convert_to_schema_names(project, user_email, tags=tags),
+                    convert_to_schema_names(project, user_email, tags=tags),
                     changed_entries,
                 )
 
@@ -603,6 +602,7 @@ class ProjectDBAPI(ProjectDBMixin):
     #
     # Project ACCESS RIGHTS/PERMISSIONS
     #
+
     async def has_permission(
         self, user_id: UserID, project_uuid: str, permission: Permission
     ) -> bool:
@@ -617,7 +617,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 user_groups: list[RowProxy] = await self._list_user_groups(
                     conn, user_id
                 )
-                _check_project_permissions(project, user_id, user_groups, permission)
+                check_project_permissions(project, user_id, user_groups, permission)
                 return True
             except (ProjectInvalidRightsError, ProjectNotFoundError):
                 return False
@@ -635,7 +635,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 user_groups: list[RowProxy] = await self._list_user_groups(
                     conn, user_id
                 )
-                _check_project_permissions(project, user_id, user_groups, "delete")
+                check_project_permissions(project, user_id, user_groups, "delete")
 
     #
     # Project TAGS
@@ -650,7 +650,7 @@ class ProjectDBAPI(ProjectDBMixin):
             async with conn.execute(query) as result:
                 if result.rowcount == 1:
                     project["tags"].append(tag_id)
-                    return _convert_to_schema_names(project, user_email)
+                    return convert_to_schema_names(project, user_email)
                 raise ProjectsException()
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
@@ -667,7 +667,7 @@ class ProjectDBAPI(ProjectDBMixin):
             async with conn.execute(query):
                 if tag_id in project["tags"]:
                     project["tags"].remove(tag_id)
-                return _convert_to_schema_names(project, user_email)
+                return convert_to_schema_names(project, user_email)
 
     #
     # Project HIDDEN column

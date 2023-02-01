@@ -27,7 +27,7 @@ from .project_models import ProjectDict, ProjectProxy
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
@@ -36,12 +36,13 @@ Permission = Literal["read", "write", "delete"]
 
 
 class ProjectAccessRights(Enum):
+    # NOTE: PC->SAN: enum with dict as values is unual. need to review
     OWNER = {"read": True, "write": True, "delete": True}
     COLLABORATOR = {"read": True, "write": True, "delete": False}
     VIEWER = {"read": True, "write": False, "delete": False}
 
 
-def _check_project_permissions(
+def check_project_permissions(
     project: Union[ProjectProxy, ProjectDict],
     user_id: int,
     user_groups: list[RowProxy],
@@ -93,14 +94,14 @@ def _check_project_permissions(
         raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
 
-def _create_project_access_rights(
+def create_project_access_rights(
     gid: int, access: ProjectAccessRights
 ) -> dict[str, dict[str, bool]]:
     return {f"{gid}": access.value}
 
 
 # TODO: check here how schema to model db works!?
-def _convert_to_db_names(project_document_data: dict) -> dict:
+def convert_to_db_names(project_document_data: dict) -> dict:
     converted_args = {}
     exclude_keys = [
         "tags",
@@ -112,7 +113,7 @@ def _convert_to_db_names(project_document_data: dict) -> dict:
     return converted_args
 
 
-def _convert_to_schema_names(
+def convert_to_schema_names(
     project_database_data: Mapping, user_email: str, **kwargs
 ) -> dict:
     converted_args = {}
@@ -134,16 +135,12 @@ def _convert_to_schema_names(
     return converted_args
 
 
-def _assemble_array_groups(user_groups: list[RowProxy]) -> str:
+def assemble_array_groups(user_groups: list[RowProxy]) -> str:
     return (
         "array[]::text[]"
         if len(user_groups) == 0
         else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
     )
-
-
-# NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
-# pylint: disable=too-many-public-methods
 
 
 class ProjectDBMixin:
@@ -211,7 +208,7 @@ class ProjectDBMixin:
         project_types: list[ProjectType] = []
         async for row in conn.execute(select_projects_query):
             try:
-                _check_project_permissions(row, user_id, user_groups, "read")
+                check_project_permissions(row, user_id, user_groups, "read")
 
                 await asyncio.get_event_loop().run_in_executor(
                     None, ProjectAtDB.from_orm, row
@@ -221,7 +218,7 @@ class ProjectDBMixin:
                 continue
 
             except ValidationError as exc:
-                log.warning(
+                logger.warning(
                     "project  %s  failed validation, please check. error: %s",
                     f"{row.id=}",
                     exc,
@@ -236,7 +233,7 @@ class ProjectDBMixin:
                 and row[projects_to_products.c.product_name] is None
                 and not await project_uses_available_services(prj, filter_by_services)
             ):
-                log.warning(
+                logger.warning(
                     "Project %s will not be listed for user %s since it has no access rights"
                     " for one or more of the services that includes.",
                     f"{row.id=}",
@@ -252,7 +249,7 @@ class ProjectDBMixin:
                 conn, project_id=db_prj["id"]
             )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
-            api_projects.append(_convert_to_schema_names(db_prj, user_email))
+            api_projects.append(convert_to_schema_names(db_prj, user_email))
             project_types.append(db_prj["type"])
 
         return (api_projects, project_types)
@@ -285,7 +282,7 @@ class ProjectDBMixin:
             sa.or_(
                 projects.c.prj_owner == user_id,
                 sa.text(
-                    f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
+                    f"jsonb_exists_any(projects.access_rights, {assemble_array_groups(user_groups)})"
                 ),
                 sa.case(
                     [
@@ -310,7 +307,7 @@ class ProjectDBMixin:
 
         # now carefuly check the access rights
         if only_published is False:
-            _check_project_permissions(
+            check_project_permissions(
                 project_row, user_id, user_groups, check_permissions
             )
 

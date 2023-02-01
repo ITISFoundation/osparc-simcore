@@ -33,10 +33,10 @@ from simcore_service_webserver.projects.projects_db import (
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
-    _check_project_permissions,
-    _convert_to_db_names,
-    _convert_to_schema_names,
-    _create_project_access_rights,
+    check_project_permissions,
+    convert_to_db_names,
+    convert_to_schema_names,
+    create_project_access_rights,
 )
 from simcore_service_webserver.projects.projects_db_utils import (
     DB_EXCLUSIVE_COLUMNS,
@@ -53,7 +53,7 @@ from sqlalchemy.engine.result import Row
 
 
 def test_convert_to_db_names(fake_project: dict[str, Any]):
-    db_entries = _convert_to_db_names(fake_project)
+    db_entries = convert_to_db_names(fake_project)
     assert "tags" not in db_entries
     assert "prjOwner" not in db_entries
 
@@ -62,9 +62,9 @@ def test_convert_to_db_names(fake_project: dict[str, Any]):
 
 
 def test_convert_to_schema_names(fake_project: dict[str, Any]):
-    db_entries = _convert_to_db_names(fake_project)
+    db_entries = convert_to_db_names(fake_project)
 
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     fake_project.pop("tags")
     expected_project = deepcopy(fake_project)
     expected_project.pop("prjOwner")
@@ -72,28 +72,28 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
 
     # if there is a prj_owner, it should be replaced with the email of the owner
     db_entries["prj_owner"] = 321
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     expected_project = deepcopy(fake_project)
     assert schema_entries == expected_project
 
     # test DB exclusive columns
     for col in DB_EXCLUSIVE_COLUMNS:
         db_entries[col] = "some fake stuff"
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     for col in DB_EXCLUSIVE_COLUMNS:
         assert col not in schema_entries
 
     # test non null keys
     for col in SCHEMA_NON_NULL_KEYS:
         db_entries[col] = None
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     for col in SCHEMA_NON_NULL_KEYS:
         assert col is not None
 
     # test date time conversion
     date = datetime.datetime.utcnow()
     db_entries["creation_date"] = date
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries
     assert schema_entries["creationDate"] == "{}Z".format(
         date.isoformat(timespec="milliseconds")
@@ -114,9 +114,7 @@ def user_id() -> int:
 def test_project_access_rights_creation(
     group_id: int, project_access_rights: ProjectAccessRights
 ):
-    git_to_access_rights = _create_project_access_rights(
-        group_id, project_access_rights
-    )
+    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
     assert str(group_id) in git_to_access_rights
     assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
@@ -141,11 +139,11 @@ def test_check_project_permissions(
     project = {"access_rights": {}}
 
     # this should not raise as needed permissions is empty
-    _check_project_permissions(project, user_id, user_groups=[], permission="")
+    check_project_permissions(project, user_id, user_groups=[], permission="")
 
     # this should raise cause we have no user groups defined and we want permission
     with pytest.raises(ProjectInvalidRightsError):
-        _check_project_permissions(
+        check_project_permissions(
             project, user_id, user_groups=[], permission=wanted_permissions
         )
 
@@ -169,7 +167,7 @@ def test_check_project_permissions(
         {"type": GroupType.PRIMARY, "gid": group_id},
         {"type": GroupType.EVERYONE, "gid": 2},
     ]
-    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # primary group does not have access, it should raise
     project = {
@@ -180,7 +178,7 @@ def test_check_project_permissions(
         }
     }
     with pytest.raises(ProjectInvalidRightsError):
-        _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+        check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # if no primary group, we rely on standard groups and the most permissive access are used. so this should not raise
     project = {
@@ -202,7 +200,7 @@ def test_check_project_permissions(
         {"type": GroupType.STANDARD, "gid": group_id + 1},
         {"type": GroupType.STANDARD, "gid": group_id + 2},
     ]
-    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # if both primary and standard do not have rights it should raise
     project = {
@@ -225,7 +223,7 @@ def test_check_project_permissions(
         {"type": GroupType.STANDARD, "gid": group_id + 2},
     ]
     with pytest.raises(ProjectInvalidRightsError):
-        _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+        check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # the everyone group has access so it should not raise
     project = {
@@ -243,7 +241,7 @@ def test_check_project_permissions(
         }
     }
 
-    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
 
 async def test_setup_projects_db(client: TestClient):
