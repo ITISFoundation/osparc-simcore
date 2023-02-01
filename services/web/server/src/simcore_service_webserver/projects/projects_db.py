@@ -18,7 +18,7 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.users import UserID
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
@@ -112,6 +112,7 @@ class ProjectDBAPI(ProjectDBMixin):
         invalid uuid will raise an exception.
 
         :raises ProjectInvalidRightsError: assigning project to an unregistered user
+        :raises ValidationError
         :return: inserted project
         """
         # pylint: disable=no-value-for-parameter
@@ -126,6 +127,8 @@ class ProjectDBAPI(ProjectDBMixin):
                 }
             )
 
+            # NOTE: tags are removed in convert_to_db_names so we keep it
+            project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
             project_db_values = convert_to_db_names(project)
             project_db_values.update(
                 {
@@ -187,10 +190,11 @@ class ProjectDBAPI(ProjectDBMixin):
                 )
 
                 # associate tags to project: study_tags
-                for tag_id in project_db_values.setdefault("tags", []):
+                for tag_id in project_tags:
                     await self._upsert_tag_in_project(
                         conn=conn, project_id=project_id, tag_id=tag_id
                     )
+                project_db_values["tags"] = project_tags
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)

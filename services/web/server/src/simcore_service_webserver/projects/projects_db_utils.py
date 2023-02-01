@@ -100,8 +100,9 @@ def create_project_access_rights(
     return {f"{gid}": access.value}
 
 
-# TODO: check here how schema to model db works!?
 def convert_to_db_names(project_document_data: dict) -> dict:
+    # NOTE: this has to be moved to a proper model. check here how schema to model db works!?
+    # SEE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
     exclude_keys = [
         "tags",
@@ -116,6 +117,7 @@ def convert_to_db_names(project_document_data: dict) -> dict:
 def convert_to_schema_names(
     project_database_data: Mapping, user_email: str, **kwargs
 ) -> dict:
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
     for key, value in project_database_data.items():
         if key in DB_EXCLUSIVE_COLUMNS:
