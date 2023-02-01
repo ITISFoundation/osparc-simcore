@@ -51,8 +51,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
-        title: "Start Sim4Life lite",
-        description: "New Sim4Life lite project",
+        title: "Start Sim4Life:web <i>lite</i>",
+        description: "New project",
         idToWidget: "startS4LButton"
       }
     }
@@ -579,7 +579,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       selectButton.bind("value", this, "multiSelection");
       selectButton.bind("value", selectButton, "label", {
-        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.getStudyLabel(true))
+        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.utils.Utils.capitalize(osparc.utils.Utils.getStudyLabel(true)))
       });
       this.bind("multiSelection", selectButton, "value");
       return selectButton;
