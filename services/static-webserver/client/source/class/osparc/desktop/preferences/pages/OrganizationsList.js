@@ -37,7 +37,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     });
     this._add(intro);
 
-    this._add(this.__getOrganizationsList());
+    this._add(this.__getOrganizationsList(), {
+      flex: 1
+    });
 
     if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
       this._add(this.__getCreateOrganizationSection());
@@ -127,7 +129,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
         }
       });
 
-      return orgsUIList;
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(orgsUIList);
+
+      return scrollContainer;
     },
 
     __organizationSelected: function(data) {
