@@ -111,7 +111,7 @@ class ProjectDBAPI(ProjectDBMixin):
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
         invalid uuid will raise an exception.
 
-        :raises ProjectInvalidRightsError: ssigning project to an unregistered user
+        :raises ProjectInvalidRightsError: assigning project to an unregistered user
         :return: inserted project
         """
         # pylint: disable=no-value-for-parameter
@@ -141,7 +141,9 @@ class ProjectDBAPI(ProjectDBMixin):
 
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
-                primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+                primary_gid = await self._get_user_primary_group_gid(
+                    conn, user_id=user_id
+                )
                 project_db_values.setdefault("access_rights", {}).update(
                     create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
                 )
@@ -157,36 +159,38 @@ class ProjectDBAPI(ProjectDBMixin):
                     raise
                 project_db_values["uuid"] = f"{uuidlib.uuid1()}"
 
-            # insert project
-            retry = True
-            while retry:
-                try:
-                    query = projects.insert().values(**project_db_values)
-                    await conn.execute(query)
-                    retry = False
-                except UniqueViolation as err:
-                    if (
-                        err.diag.constraint_name != "projects_uuid_key"
-                        or force_project_uuid
-                    ):
-                        raise
-                    project_db_values["uuid"] = f"{uuidlib.uuid1()}"
-                    retry = True
+            async with conn.begin():
+                # atomic transaction: insert project and update relations
+                retry = True
+                while retry:
+                    try:
+                        await conn.execute(
+                            projects.insert().values(**project_db_values)
+                        )
+                        retry = False
+                    except UniqueViolation as err:
+                        if (
+                            err.diag.constraint_name != "projects_uuid_key"
+                            or force_project_uuid
+                        ):
+                            raise
+                        project_db_values["uuid"] = f"{uuidlib.uuid1()}"
+                        retry = True
 
-            project_id = ProjectID(f"{project_db_values['uuid']}")
+                project_id = ProjectID(f"{project_db_values['uuid']}")
 
-            # associate product to project: projects_to_product
-            await self.upsert_project_linked_product(
-                project_id=project_id,
-                product_name=product_name,
-                conn=conn,
-            )
-
-            # associate tags to project: study_tags
-            for tag_id in project_db_values.setdefault("tags", []):
-                await self._upsert_tag_in_project(
-                    conn=conn, project_id=project_id, tag_id=tag_id
+                # associate product to project: projects_to_product
+                await self.upsert_project_linked_product(
+                    project_id=project_id,
+                    product_name=product_name,
+                    conn=conn,
                 )
+
+                # associate tags to project: study_tags
+                for tag_id in project_db_values.setdefault("tags", []):
+                    await self._upsert_tag_in_project(
+                        conn=conn, project_id=project_id, tag_id=tag_id
+                    )
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
