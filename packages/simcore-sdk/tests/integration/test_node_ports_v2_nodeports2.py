@@ -18,6 +18,7 @@ import np_helpers
 import pytest
 import sqlalchemy as sa
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
+from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
@@ -741,15 +742,24 @@ async def test_batch_update_inputs_outputs(
     )
     await check_config_valid(PORTS, config_dict)
 
-    await PORTS.set_multiple(
-        {port.key: (k, None) for k, port in enumerate((await PORTS.outputs).values())}
-    )
-    await PORTS.set_multiple(
-        {
-            port.key: (k, None)
-            for k, port in enumerate((await PORTS.inputs).values(), start=1000)
-        }
-    )
+    async with ProgressBarData(steps=2) as progress_bar:
+        await PORTS.set_multiple(
+            {
+                port.key: (k, None)
+                for k, port in enumerate((await PORTS.outputs).values())
+            },
+            progress_bar=progress_bar,
+        )
+        # pylint: disable=protected-access
+        assert progress_bar._continuous_progress == pytest.approx(1)
+        await PORTS.set_multiple(
+            {
+                port.key: (k, None)
+                for k, port in enumerate((await PORTS.inputs).values(), start=1000)
+            },
+            progress_bar=progress_bar,
+        )
+        assert progress_bar._continuous_progress == pytest.approx(2)
 
     ports_outputs = await PORTS.outputs
     ports_inputs = await PORTS.inputs
@@ -765,4 +775,7 @@ async def test_batch_update_inputs_outputs(
 
     # test missing key raises error
     with pytest.raises(UnboundPortError):
-        await PORTS.set_multiple({"missing_key_in_both": (123132, None)})
+        async with ProgressBarData(steps=1) as progress_bar:
+            await PORTS.set_multiple(
+                {"missing_key_in_both": (123132, None)}, progress_bar=progress_bar
+            )

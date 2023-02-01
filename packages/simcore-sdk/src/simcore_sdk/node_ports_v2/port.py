@@ -345,6 +345,9 @@ class Port(BaseServiceIOModel):
                 )
             else:
                 new_value = converted_value
+                await progress_bar.update()
+        else:
+            await progress_bar.update()
 
         self.value = new_value
         self.value_item = None

@@ -149,25 +149,28 @@ class Nodeports(BaseModel):
         raises ValidationError
         """
         tasks = deque()
-        for port_key, (value, set_kwargs) in port_values.items():
-            # pylint: disable=protected-access
-            try:
-                tasks.append(
-                    self.internal_outputs[port_key]._set(
-                        value, progress_bar=progress_bar, set_kwargs=set_kwargs
+        async with progress_bar.sub_progress(
+            steps=len(port_values.items())
+        ) as sub_progress:
+            for port_key, (value, set_kwargs) in port_values.items():
+                # pylint: disable=protected-access
+                try:
+                    tasks.append(
+                        self.internal_outputs[port_key]._set(
+                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                        )
                     )
-                )
-            except UnboundPortError:
-                # not available try inputs
-                # if this fails it will raise another exception
-                tasks.append(
-                    self.internal_inputs[port_key]._set(
-                        value, set_kwargs=set_kwargs, progress_bar=progress_bar
+                except UnboundPortError:
+                    # not available try inputs
+                    # if this fails it will raise another exception
+                    tasks.append(
+                        self.internal_inputs[port_key]._set(
+                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                        )
                     )
-                )
 
-        results = await logged_gather(*tasks)
-        await self.save_to_db_cb(self)
+            results = await logged_gather(*tasks)
+            await self.save_to_db_cb(self)
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
         if errors := [
