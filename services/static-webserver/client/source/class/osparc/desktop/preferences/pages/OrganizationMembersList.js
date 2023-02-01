@@ -23,8 +23,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this._add(this.__getTitleLayout());
-
     const msg = this.tr("\
       This is the list of members in the organization.\
       Here if you are a manager or administrator you can add new members and promote or demote existing ones.\
@@ -37,6 +35,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     });
     this._add(intro);
 
+    this._add(this.__getTitleLayout());
     this._add(this.__getMemberInvitation());
     this._add(this.__getMembersList(), {
       flex: 1
@@ -99,6 +98,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     __membersModel: null,
 
     setCurrentOrg: function(currentOrg) {
+      if (currentOrg === null) {
+        return;
+      }
       this.__currentOrg = currentOrg;
       this.__organizationListItem.set({
         key: currentOrg.getKey(),

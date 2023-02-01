@@ -64,6 +64,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
   },
 
   members: {
+    __orgsUIList: null,
     __orgsModel: null,
 
     __getCreateOrganizationSection: function() {
@@ -88,7 +89,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     },
 
     __getOrganizationsList: function() {
-      const orgsUIList = new qx.ui.form.List().set({
+      const orgsUIList = this.__orgsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
         height: 150,
@@ -102,8 +103,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
       orgsCtrl.setDelegate({
         createItem: () => new osparc.ui.list.OrganizationListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("gid", "key", null, item, id);
+          ctrl.bindProperty("gid", "model", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
@@ -139,12 +140,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
       if (data && data.length>0) {
         const orgId = data[0];
         this.fireDataEvent("organizationSelected", orgId);
-      } else {
-        this.fireDataEvent("organizationSelected", null);
       }
     },
 
     reloadOrganizations: function() {
+      this.__orgsUIList.resetSelection();
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
 
