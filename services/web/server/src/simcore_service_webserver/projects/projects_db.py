@@ -319,7 +319,7 @@ class ProjectDBAPI:
         limit: Optional[int] = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
-            user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
+            user_groups: list[RowProxy] = await self.__list_user_groups(conn, user_id)
 
             query = (
                 sa.select([projects, projects_to_products.c.product_name])
@@ -359,11 +359,11 @@ class ProjectDBAPI:
             )
             assert total_number_of_projects is not None  # nosec
 
-            prjs, prj_types = await self.__load_projects(
+            prjs, prj_types = await self.__execute_with_permission_check(
                 conn,
-                query.offset(offset).limit(limit),
-                user_id,
-                user_groups,
+                select_projects_query=query.offset(offset).limit(limit),
+                user_id=user_id,
+                user_groups=user_groups,
                 filter_by_services=filter_by_services,
             )
 
@@ -374,7 +374,7 @@ class ProjectDBAPI:
             )
 
     @staticmethod
-    async def __load_user_groups(conn: SAConnection, user_id: int) -> list[RowProxy]:
+    async def __list_user_groups(conn: SAConnection, user_id: int) -> list[RowProxy]:
         user_groups: list[RowProxy] = []
         query = (
             select([groups])
@@ -385,10 +385,11 @@ class ProjectDBAPI:
             user_groups.append(row)
         return user_groups
 
-    async def __load_projects(
+    async def __execute_with_permission_check(
         self,
         conn: SAConnection,
-        query: str,
+        *,
+        select_projects_query: str,
         user_id: int,
         user_groups: list[RowProxy],
         filter_by_services: Optional[list[dict]] = None,
@@ -396,7 +397,7 @@ class ProjectDBAPI:
         api_projects: list[dict] = []  # API model-compatible projects
         db_projects: list[dict] = []  # DB model-compatible projects
         project_types: list[ProjectType] = []
-        async for row in conn.execute(query):
+        async for row in conn.execute(select_projects_query):
             try:
                 _check_project_permissions(row, user_id, user_groups, "read")
 
@@ -461,7 +462,7 @@ class ProjectDBAPI:
         exclude_foreign = exclude_foreign or []
 
         # this retrieves the projects where user is owner
-        user_groups: list[RowProxy] = await self.__load_user_groups(connection, user_id)
+        user_groups: list[RowProxy] = await self.__list_user_groups(connection, user_id)
 
         # NOTE: ChatGPT helped in producing this entry
         conditions = sa.and_(
@@ -605,7 +606,7 @@ class ProjectDBAPI:
                     exclude_foreign=["tags"],
                     for_update=True,
                 )
-                user_groups: list[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__list_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(
@@ -719,7 +720,7 @@ class ProjectDBAPI:
                     exclude_foreign=["tags"],
                     for_update=True,
                 )
-                user_groups: list[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__list_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(
@@ -800,7 +801,7 @@ class ProjectDBAPI:
                     conn, user_id, project_uuid, for_update=True
                 )
                 # if we have delete access we delete the project
-                user_groups: list[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__list_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
@@ -819,7 +820,7 @@ class ProjectDBAPI:
                     conn, user_id, project_uuid, for_update=True
                 )
                 # if we have delete access we delete the project
-                user_groups: list[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__list_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, "delete")
@@ -990,7 +991,7 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             try:
                 project = await self._get_project(conn, user_id, project_uuid)
-                user_groups: list[RowProxy] = await self.__load_user_groups(
+                user_groups: list[RowProxy] = await self.__list_user_groups(
                     conn, user_id
                 )
                 _check_project_permissions(project, user_id, user_groups, permission)
