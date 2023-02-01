@@ -257,7 +257,7 @@ async def test_setup_projects_db(client: TestClient):
 @pytest.fixture()
 def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[ProjectDBAPI]:
     assert client.app
-    db_api = client.app[APP_PROJECT_DBAPI]
+    db_api = ProjectDBAPI.get_from_app_context(app=client.app)
 
     yield db_api
 
@@ -341,7 +341,7 @@ def _assert_project_db_row(
         (UserRole.USER),
     ],
 )
-async def test_add_project_to_db(
+async def test_insert_project_to_db(
     fake_project: dict[str, Any],
     postgres_db: sa.engine.Engine,
     logged_user: dict[str, Any],
@@ -349,7 +349,9 @@ async def test_add_project_to_db(
     db_api: ProjectDBAPI,
     osparc_product_name: str,
 ):
+
     original_project = deepcopy(fake_project)
+
     # add project without user id -> by default creates a template
     new_project = await db_api.insert_project(
         project=fake_project, user_id=None, product_name=osparc_product_name
@@ -362,6 +364,7 @@ async def test_add_project_to_db(
     )
     _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
+
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):

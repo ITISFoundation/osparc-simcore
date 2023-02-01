@@ -11,7 +11,7 @@ from typing import Any, Literal, Mapping, Optional, Union
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
@@ -187,11 +187,14 @@ class ProjectDBMixin:
 
     @staticmethod
     async def _upsert_tag_in_project(
-        conn: SAConnection, project_id: ProjectID, tag_id: int
+        conn: SAConnection, project_index_id: int, tag_id: int
     ) -> int:
         await conn.execute(
             pg_insert(study_tags)
-            .values(study_id=f"{project_id}", tag_id=tag_id)
+            .values(
+                study_id=project_index_id,
+                tag_id=tag_id,
+            )
             .on_conflict_do_nothing()
         )
         return tag_id

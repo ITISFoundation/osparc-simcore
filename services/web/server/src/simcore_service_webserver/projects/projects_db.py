@@ -163,12 +163,15 @@ class ProjectDBAPI(ProjectDBMixin):
                 project_db_values["uuid"] = f"{uuidlib.uuid1()}"
 
             async with conn.begin():
-                # atomic transaction: insert project and update relations
+                # atomic transaction to insert project and update relations
+                project_index = None
                 retry = True
                 while retry:
                     try:
-                        await conn.execute(
-                            projects.insert().values(**project_db_values)
+                        project_index = await conn.scalar(
+                            projects.insert()
+                            .values(**project_db_values)
+                            .returning(projects.c.id)
                         )
                         retry = False
                     except UniqueViolation as err:
@@ -177,22 +180,24 @@ class ProjectDBAPI(ProjectDBMixin):
                             or force_project_uuid
                         ):
                             raise
+                        # tries new uuid
                         project_db_values["uuid"] = f"{uuidlib.uuid1()}"
                         retry = True
 
-                project_id = ProjectID(f"{project_db_values['uuid']}")
+                project_uuid = ProjectID(f"{project_db_values['uuid']}")
 
                 # associate product to project: projects_to_product
                 await self.upsert_project_linked_product(
-                    project_id=project_id,
+                    project_id=project_uuid,
                     product_name=product_name,
                     conn=conn,
                 )
 
                 # associate tags to project: study_tags
+                assert project_index is not None  # nosec
                 for tag_id in project_tags:
                     await self._upsert_tag_in_project(
-                        conn=conn, project_id=project_id, tag_id=tag_id
+                        conn=conn, project_index_id=project_index, tag_id=tag_id
                     )
                 project_db_values["tags"] = project_tags
 
