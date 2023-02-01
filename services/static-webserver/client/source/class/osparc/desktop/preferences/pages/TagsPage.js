@@ -16,9 +16,11 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     const title = this.tr("Tags");
     this.base(arguments, title, iconSrc);
 
+    const studiesLabel = osparc.utils.Utils.getStudyLabel(true);
+    const studyLabel = osparc.utils.Utils.getStudyLabel();
     const msg = this.tr("\
-    Tags are annotations to help users with grouping reources in the Dashboard. \
-    Once you have created the tags, you may assign them by accessing 'More options...' on the resource card.");
+    Tags are annotations to help users with grouping ") + studiesLabel + this.tr(" in the Dashboard. \
+    Once the tags are created, they can be assigned to the ") + studyLabel + this.tr("  via 'More options...' on the ") + studyLabel + this.tr(" cards.");
     const intro = this._createHelpLabel(msg);
     this._add(intro);
 
@@ -58,15 +60,17 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     __renderLayout: function() {
       this.__container.removeAll();
+
+      // Print tag items
+      this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
+
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "center"
       }));
+      buttonContainer.add(new qx.ui.core.Spacer(null, 10));
       buttonContainer.add(this.__addTagButton);
       this.__container.add(buttonContainer);
-
-      // Print tag items
-      this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
     },
 
     __attachEventHandlers: function() {

@@ -92,7 +92,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
 
-      const label = new qx.ui.basic.Label(this.tr("Select from the following list"));
+      const label = new qx.ui.basic.Label(this.tr("Select from the dropdown list below and click Add to share"));
       vBox.add(label);
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
