@@ -94,16 +94,17 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
   members: {
     __currentOrg: null,
-    __currentOrgAtom: null,
+    __organizationListItem: null,
     __memberInvitation: null,
     __membersModel: null,
 
     setCurrentOrg: function(currentOrg) {
       this.__currentOrg = currentOrg;
-      this.__currentOrgAtom.set({
+      this.__organizationListItem.set({
         key: currentOrg.getKey(),
+        thumbnail: currentOrg.getThumbnail(),
         title: currentOrg.getTitle(),
-        thumbnail: currentOrg.getThumbnail()
+        subtitle: currentOrg.getSubtitle()
       });
       this.__reloadOrgMembers();
     },
@@ -119,8 +120,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       prevBtn.addListener("execute", () => this.fireEvent("backToOrganizations"));
       titleLayout.add(prevBtn);
 
-      const currentOrgAtom = this.__currentOrgAtom = new osparc.ui.list.OrganizationListItem();
-      titleLayout.add(currentOrgAtom);
+      const organizationListItem = this.__organizationListItem = new osparc.ui.list.OrganizationListItem();
+      titleLayout.add(organizationListItem);
 
       return titleLayout;
     },
