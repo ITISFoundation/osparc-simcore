@@ -27,14 +27,14 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
     this._setLayout(new qx.ui.layout.VBox(2));
 
     this.set({
-      toolTipText: this.tr("powered by oSPARC"),
+      toolTipText: this.tr("powered by ") + osparc.About.OSPARC_OFFICIAL,
       alignX: "center",
       alignY: "middle",
       cursor: "pointer",
       padding: 3
     });
 
-    this.addListener("tap", () => this.__popUpAboutOsparc());
+    this.addListener("tap", () => osparc.About.getInstance().open());
 
     this.getChildControl("powered-by");
     this.getChildControl("logo");
@@ -82,10 +82,6 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
       this.getChildControl("logo").set({
         source: lightLogo ? "osparc/osparc-o-white.svg" : "osparc/osparc-o-black.svg"
       });
-    },
-
-    __popUpAboutOsparc: function() {
-      console.log("hey there");
     }
   }
 });
