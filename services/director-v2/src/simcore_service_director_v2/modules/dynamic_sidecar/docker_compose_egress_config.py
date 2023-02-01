@@ -170,16 +170,15 @@ def _add_egress_proxy_network(
 
 def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
-    swarm_network_name: str,
+    network_with_internet: str,
     egress_proxy_settings: DynamicSidecarEgressSettings,
     egress_proxy_name: str,
 ) -> dict[str, Any]:
-
     network_aliases: set[str] = {x[0].hostname for x in egress_proxy_rules}
 
     envoy_config: dict[str, Any] = _get_envy_config(egress_proxy_rules)
     yaml_str_envy_config: str = yaml.safe_dump(envoy_config, default_style='"')
-    logger.debug("ENVOY CONFIG\n%s", yaml_str_envy_config)
+    logger.error("ENVOY CONFIG\n%s", yaml_str_envy_config)
 
     command: str = " ".join(
         [
@@ -197,12 +196,15 @@ def _get_egress_proxy_service_config(
         "command": command,
         "networks": {
             # allows the proxy to access the internet
-            swarm_network_name: None,
+            network_with_internet: None,
             # allows containers to contact proxy via these aliases
             _get_egress_proxy_network_name(egress_proxy_name): {
                 "aliases": list(network_aliases)
             },
         },
+        "extra_hosts": [
+            "license.speag.com:172.16.8.8",  # TODO: make DNS resovlve here
+        ],
     }
     return egress_proxy_config
 
@@ -270,15 +272,19 @@ def add_egress_configuration(
         allowed to have complete access to the internet
     """
 
-    # NOTE: swarm_network_name is an existing network with internet access
-
-    # allow complete internet access to single container
-    if simcore_service_labels.containers_allowed_outgoing_internet:
+    # creating a network with internet access
+    if (
+        simcore_service_labels.containers_allowed_outgoing_internet
+        or simcore_service_labels.containers_allowed_outgoing_permit_list
+    ):
         # placing containers with internet access in an isolated network
         service_networks = service_spec.setdefault("networks", {})
         service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {
             "internal": False
         }
+
+    # allow complete internet access to single container
+    if simcore_service_labels.containers_allowed_outgoing_internet:
         # attach to network
         for (
             container_name
@@ -317,7 +323,7 @@ def add_egress_configuration(
 
             egress_proxy_config = _get_egress_proxy_service_config(
                 egress_proxy_rules=proxy_rules,
-                swarm_network_name=swarm_network_name,
+                network_with_internet=_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME,
                 egress_proxy_settings=egress_proxy_settings,
                 egress_proxy_name=egress_proxy_name,
             )
@@ -345,5 +351,6 @@ def add_egress_configuration(
             service_networks = service_spec["services"][container_name].get(
                 "networks", {}
             )
-            service_networks[_get_egress_proxy_network_name(egress_proxy_name)] = None
-            service_spec["services"][container_name]["networks"] = service_networks
+            for proxy_name in proxy_names:
+                service_networks[_get_egress_proxy_network_name(proxy_name)] = None
+                service_spec["services"][container_name]["networks"] = service_networks
