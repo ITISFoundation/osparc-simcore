@@ -259,7 +259,6 @@ def _allow_outgoing_internet(
 
 def add_egress_configuration(
     service_spec: ComposeSpecLabel,
-    swarm_network_name: str,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: DynamicSidecarEgressSettings,
 ) -> None:
