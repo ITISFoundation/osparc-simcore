@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
     const msg = this.tr("\
       This is the list of members in the organization.\
-      Here you can see the list of members, add new ones and promote or demote existing members.\
+      Here if you are a manager or administrator you can add new members and promote or demote existing ones.\
     ");
     const intro = new qx.ui.basic.Label().set({
       value: msg,
@@ -104,8 +104,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         key: currentOrg.getKey(),
         thumbnail: currentOrg.getThumbnail(),
         title: currentOrg.getTitle(),
-        subtitle: currentOrg.getSubtitle()
+        subtitle: currentOrg.getSubtitle(),
+        accessRights: currentOrg.getAccessRights()
       });
+      this.__organizationListItem.getChildControl("options").exclude();
       this.__reloadOrgMembers();
     },
 
@@ -134,7 +136,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
       const userEmail = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("New Member's email")
+        placeholder: this.tr(" New Member's email")
       });
       hBox.add(userEmail, {
         flex: 1
@@ -224,9 +226,9 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       }
 
       const canWrite = orgModel.getAccessRights().getWrite();
-      if (canWrite) {
-        this.__memberInvitation.show();
-      }
+      this.__memberInvitation.set({
+        visibility: canWrite ? "visible" : "excluded"
+      });
 
       const params = {
         url: {
