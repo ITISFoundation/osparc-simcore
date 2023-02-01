@@ -29,8 +29,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     this.base(arguments, title, iconSrc);
 
     this.__createPages();
-
-    this.__orgsPage.reloadOrganizations();
   },
 
   statics: {
@@ -51,13 +49,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
   },
 
   members: {
-    __orgsPage: null,
-    __membersPage: null,
-
     __createPages: function() {
       const pages = new qx.ui.container.Stack();
-      const orgsPage = this.__orgsPage = new osparc.desktop.preferences.pages.OrganizationsList();
-      const membersPage = this.__memebersPage = new osparc.desktop.preferences.pages.OrganizationMembersList();
+      const orgsPage = new osparc.desktop.preferences.pages.OrganizationsList();
+      const membersPage = new osparc.desktop.preferences.pages.OrganizationMembersList();
       pages.add(orgsPage);
       pages.add(membersPage);
       this.add(pages, {
@@ -69,6 +64,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         membersPage.setCurrentOrg(currentOrg);
         pages.setSelection([membersPage]);
       });
+
+      membersPage.addListener("backToOrganizations", () => {
+        // orgsPage.reloadOrganizations();
+        pages.setSelection([orgsPage]);
+      });
+
+      orgsPage.reloadOrganizations();
     }
   }
 });

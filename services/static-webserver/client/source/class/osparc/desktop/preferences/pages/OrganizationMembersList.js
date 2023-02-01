@@ -23,10 +23,12 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this._add(this.__getTitleLayout());
+
     const msg = this.tr("\
-    This is the list of members in the organization.\
-    Here you may review the organizations you are a part of, create new ones, \
-    or manage the membership and access rights of the members.\
+      This is the list of members in the organization.\
+      Here you may review the organizations you are a part of, create new ones, \
+      or manage the membership and access rights of the members.\
     ");
     const intro = new qx.ui.basic.Label().set({
       value: msg,
@@ -40,6 +42,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     this._add(this.__getMembersList(), {
       flex: 1
     });
+  },
+
+  events: {
+    "backToOrganizations": "qx.event.type.Event"
   },
 
   statics: {
@@ -89,12 +95,35 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
   members: {
     __currentOrg: null,
+    __currentOrgAtom: null,
     __memberInvitation: null,
     __membersModel: null,
 
     setCurrentOrg: function(currentOrg) {
       this.__currentOrg = currentOrg;
+      this.__currentOrgAtom.set({
+        key: currentOrg.getKey(),
+        title: currentOrg.getTitle(),
+        thumbnail: currentOrg.getThumbnail()
+      });
       this.__reloadOrgMembers();
+    },
+
+    __getTitleLayout: function() {
+      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const prevBtn = new qx.ui.form.Button().set({
+        toolTipText: this.tr("Back to Organizations list"),
+        icon: "@FontAwesome5Solid/arrow-left/20",
+        backgroundColor: "transparent"
+      });
+      prevBtn.addListener("execute", () => this.fireEvent("backToOrganizations"));
+      titleLayout.add(prevBtn);
+
+      const currentOrgAtom = this.__currentOrgAtom = new osparc.ui.list.OrganizationListItem();
+      titleLayout.add(currentOrgAtom);
+
+      return titleLayout;
     },
 
     __getMemberInvitation: function() {

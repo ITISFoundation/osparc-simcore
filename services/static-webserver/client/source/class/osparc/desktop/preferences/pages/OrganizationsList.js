@@ -37,13 +37,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
     });
     this._add(intro);
 
+    this._add(this.__getOrganizationsList());
+
     if (osparc.data.Permissions.getInstance().canDo("user.organizations.create")) {
       this._add(this.__getCreateOrganizationSection());
     }
-
-    this._add(this.__getOrganizationsList(), {
-      flex: 1
-    });
   },
 
   events: {
