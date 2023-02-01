@@ -63,7 +63,9 @@ class ProgressBarData:
                 logger.warning(
                     "%s",
                     f"Progress {self._continuous_progress} is updated by {value} and the current max value {self.steps}",
+                    stack_info=True,
                 )
+
                 new_progress_value = self.steps
             self._continuous_progress = new_progress_value
         await self._update_parent(value)
