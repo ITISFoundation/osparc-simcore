@@ -313,7 +313,7 @@ class ProjectDBAPI(ProjectDBMixin):
                 project_type,
             )
 
-    async def replace_user_project(
+    async def replace_project(
         self,
         new_project_data: dict[str, Any],
         user_id: UserID,
@@ -430,7 +430,7 @@ class ProjectDBAPI(ProjectDBMixin):
             )
             return result.rowcount == 1
 
-    async def delete_user_project(self, user_id: int, project_uuid: str):
+    async def delete_project(self, user_id: int, project_uuid: str):
         log.info(
             "Deleting project with %s for user with %s",
             f"{project_uuid=}",
@@ -456,7 +456,7 @@ class ProjectDBAPI(ProjectDBMixin):
     # Project WORKBENCH / NODES
     #
 
-    async def patch_user_project_workbench(
+    async def patch_project_workbench(
         self,
         partial_workbench_data: dict[str, Any],
         user_id: int,

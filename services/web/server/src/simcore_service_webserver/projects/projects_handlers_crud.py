@@ -614,7 +614,7 @@ async def replace_project(request: web.Request):
                     reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
                 )
 
-        new_project = await db.replace_user_project(
+        new_project = await db.replace_project(
             new_project,
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",

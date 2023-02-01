@@ -502,7 +502,7 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
         }
     }
     with pytest.raises(ProjectNotFoundError):
-        await db_api.patch_user_project_workbench(
+        await db_api.patch_project_workbench(
             partial_workbench_data,
             logged_user["id"],
             fake_project["uuid"],
@@ -538,7 +538,7 @@ async def test_patch_user_project_workbench_creates_nodes(
         }
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
-    patched_project, changed_entries = await db_api.patch_user_project_workbench(
+    patched_project, changed_entries = await db_api.patch_project_workbench(
         partial_workbench_data,
         logged_user["id"],
         new_project["uuid"],
@@ -579,7 +579,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
     with pytest.raises(NodeNotFoundError):
-        await db_api.patch_user_project_workbench(
+        await db_api.patch_project_workbench(
             partial_workbench_data,
             logged_user["id"],
             new_project["uuid"],
@@ -653,7 +653,7 @@ async def test_patch_user_project_workbench_concurrently(
         tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
-            db_api.patch_user_project_workbench(
+            db_api.patch_project_workbench(
                 {node_uuids[n]: randomly_created_outputs[n]},
                 logged_user["id"],
                 new_project["uuid"],
@@ -694,7 +694,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.patch_user_project_workbench(
+            db_api.patch_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
@@ -726,7 +726,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.patch_user_project_workbench(
+            db_api.patch_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
@@ -796,7 +796,7 @@ async def lots_of_projects_and_nodes(
     # cleanup
     await asyncio.gather(
         *[
-            db_api.delete_user_project(logged_user["id"], f"{p_uuid}")
+            db_api.delete_project(logged_user["id"], f"{p_uuid}")
             for p_uuid in all_created_projects
         ]
     )
@@ -854,7 +854,7 @@ async def test_replace_user_project(
     PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
     original_project = user_project
     # replace the project with the same should do nothing
-    working_project = await db_api.replace_user_project(
+    working_project = await db_api.replace_project(
         original_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -884,7 +884,7 @@ async def test_replace_user_project(
         "runHash"
     ] = "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
     # replacing with the new entries shall return the very same data
-    replaced_project = await db_api.replace_user_project(
+    replaced_project = await db_api.replace_project(
         working_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -905,7 +905,7 @@ async def test_replace_user_project(
         if "frontend" not in node_data["key"]:
             for field in FRONTEND_EXCLUDED_FIELDS:
                 node_data.pop(field, None)
-    replaced_project = await db_api.replace_user_project(
+    replaced_project = await db_api.replace_project(
         incoming_frontend_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
