@@ -10,6 +10,10 @@ qx.Class.define("osparc.ui.window.Window", {
   construct: function(caption, icon) {
     this.base(arguments, caption, icon);
 
+    this.getChildControl("title").set({
+      rich: true
+    });
+
     this.set({
       appearance: "service-window",
       backgroundColor: "background-main-2"
