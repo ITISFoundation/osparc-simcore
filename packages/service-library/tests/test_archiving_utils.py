@@ -14,10 +14,11 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Optional
+from typing import Callable, Iterable, Iterator, Optional
 
 import pytest
 from faker import Faker
+from pydantic import ByteSize, parse_obj_as
 from servicelib import archiving_utils
 from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
 
@@ -538,3 +539,54 @@ async def test_unarchive_dir_raises_error(
 
     with pytest.raises(ArchiveError, match=r"^.*raised as requested.*$"):
         await archiving_utils.unarchive_dir(archive_file, temp_dir_two)
+
+
+file_suffix = 0
+
+
+async def _archive_dir_performance(
+    input_path: Path, destination_path: Path, compress: bool
+):
+    global file_suffix  # pylint: disable=global-statement
+
+    await archive_dir(
+        input_path,
+        destination_path / f"archive_{file_suffix}.zip",
+        compress=compress,
+        store_relative_path=True,
+    )
+    file_suffix += 1
+
+
+@pytest.mark.performance_test
+@pytest.mark.parametrize(
+    "compress, file_size, num_files", [(False, parse_obj_as(ByteSize, "1Mib"), 10000)]
+)
+def test_archive_dir_performance(
+    benchmark,
+    create_file_of_size: Callable[[ByteSize, str], Path],
+    tmp_path: Path,
+    compress: bool,
+    file_size: ByteSize,
+    num_files: int,
+):
+    # create a bunch of different files
+    files_to_compress = [
+        create_file_of_size(file_size, f"inputs/test_file_{n}")
+        for n in range(num_files)
+    ]
+    assert len(files_to_compress) == num_files
+    parent_path = files_to_compress[0].parent
+    assert all(f.parent == parent_path for f in files_to_compress)
+
+    destination_path = tmp_path / "archive_performance"
+    assert not destination_path.exists()
+    destination_path.mkdir(parents=True)
+    assert destination_path.exists()
+
+    def run_async_test(*args, **kwargs):
+        asyncio.get_event_loop().run_until_complete(
+            _archive_dir_performance(parent_path, destination_path, compress)
+        )
+
+    benchmark(run_async_test)
