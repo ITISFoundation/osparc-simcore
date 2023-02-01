@@ -30,9 +30,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
-    DB_EXCLUSIVE_COLUMNS,
-    SCHEMA_NON_NULL_KEYS,
-    Permission,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -40,6 +37,11 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
+)
+from simcore_service_webserver.projects.projects_db_utils import (
+    DB_EXCLUSIVE_COLUMNS,
+    SCHEMA_NON_NULL_KEYS,
+    Permission,
 )
 from simcore_service_webserver.projects.projects_exceptions import (
     NodeNotFoundError,

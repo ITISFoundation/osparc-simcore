@@ -16,6 +16,7 @@ from simcore_service_webserver.projects.projects_db import (
     DB_EXCLUSIVE_COLUMNS,
     ProjectDBAPI,
 )
+from simcore_service_webserver.projects.projects_db_utils import DB_EXCLUSIVE_COLUMNS
 from simcore_service_webserver.utils import now_str
 
 from .utils_assert import assert_status
