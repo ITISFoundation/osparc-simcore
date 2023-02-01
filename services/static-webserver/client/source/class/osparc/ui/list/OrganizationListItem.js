@@ -63,11 +63,13 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     },
 
     __applyAccessRights: function(accessRights) {
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.exclude();
       if (accessRights === null) {
         return;
       }
       if (accessRights.getWrite()) {
-        const optionsMenu = this.getChildControl("options");
+        optionsMenu.show();
         const menu = this.__getOptionsMenu(accessRights);
         optionsMenu.setMenu(menu);
       }
