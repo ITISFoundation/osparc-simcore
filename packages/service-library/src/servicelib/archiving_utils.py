@@ -170,6 +170,8 @@ async def unarchive_dir(
 
     ::raise ArchiveError
     """
+    if not progress_bar:
+        progress_bar = ProgressBarData(steps=1)
     async with AsyncExitStack() as zip_stack:
         zip_file_handler = zip_stack.enter_context(
             zipfile.ZipFile(  # pylint: disable=consider-using-with
@@ -210,11 +212,9 @@ async def unarchive_dir(
                 zip_entry.file_size for zip_entry in zip_file_handler.infolist()
             )
             async with AsyncExitStack() as progress_stack:
-                sub_prog = None
-                if progress_bar:
-                    sub_prog = await progress_stack.enter_async_context(
-                        progress_bar.sub_progress(steps=total_file_size)
-                    )
+                sub_prog = await progress_stack.enter_async_context(
+                    progress_bar.sub_progress(steps=total_file_size)
+                )
                 tqdm_progress = progress_stack.enter_context(
                     tqdm.tqdm(
                         desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
@@ -229,8 +229,7 @@ async def unarchive_dir(
                     if tqdm_progress.update(extracted_file_size) and log_cb:
                         with log_catch(log, reraise=False):
                             await log_cb(f"{tqdm_progress}")
-                    if sub_prog:
-                        await sub_prog.update(extracted_file_size)
+                    await sub_prog.update(extracted_file_size)
                     extracted_paths.append(extracted_path)
 
         except Exception as err:
