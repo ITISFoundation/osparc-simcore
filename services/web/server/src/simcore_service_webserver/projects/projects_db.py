@@ -162,7 +162,7 @@ class ProjectDBAPI(ProjectDBMixin):
                     raise
                 project_db_values["uuid"] = f"{uuidlib.uuid1()}"
 
-            async with conn.begin():
+            async with conn.begin() as transaction:
                 # atomic transaction to insert project and update relations
                 project_index = None
                 retry = True
@@ -180,7 +180,10 @@ class ProjectDBAPI(ProjectDBMixin):
                             or force_project_uuid
                         ):
                             raise
-                        # tries new uuid
+                        # tries new uuid, but before rolls back
+                        # previous execution from transaction since it should
+                        # not execute at the end
+                        await transaction.rollback()
                         project_db_values["uuid"] = f"{uuidlib.uuid1()}"
                         retry = True
 
