@@ -6,20 +6,26 @@ from collections import UserDict
 from string import Template
 from typing import Any
 
-
-def upgrade_identifier(legacy_id):
-    legacy_id = re.sub(r"[{}%]", "", legacy_id)
-    legacy_id = re.sub(r"[.-]", "_", legacy_id)
-    legacy_id = legacy_id.upper()
-    if not legacy_id.startswith("OSPARC_ENVIRONMENT_"):
-        legacy_id = f"OSPARC_ENVIRONMENT_{legacy_id}"
-    return legacy_id
+OSPARC_IDENTIFIER_PREFIX = "OSPARC_ENVIRONMENT"
 
 
-LEGACY_FULL_IDENTIFIER_PATTERN = re.compile(r"%{1,2}([_a-z][_a-z0-9\.\-]*)%{1,2}")
+def upgrade_identifier(identifier: str) -> str:
+    """
+    Converts legacy or incompatible identifiers into official replacement identifier
+    """
+    identifier = re.sub(r"[{}%]", "", identifier)
+    identifier = re.sub(r"[.-]", "_", identifier)
+    identifier = identifier.upper()
+    if not identifier.startswith(OSPARC_IDENTIFIER_PREFIX):
+        identifier = f"{OSPARC_IDENTIFIER_PREFIX}_{identifier}"
+    return identifier
 
 
-def substitute_all_legacy_identifiers(text: str):
+# NOTE: includes % or %%
+_LEGACY_IDENTIFIER_RE_PATTERN = re.compile(r"%{1,2}([_a-z][_a-z0-9\.\-]*)%{1,2}")
+
+
+def substitute_all_legacy_identifiers(text: str) -> str:
     """Substitutes all legacy identifiers found in the text by the new format expected in TemplateText
 
     For instance:  '%%this-identifier%%' will be substituted by '$OSPARC_ENVIRONMENT_THIS_IDENTIFIER'
@@ -30,7 +36,7 @@ def substitute_all_legacy_identifiers(text: str):
         legacy_id = upgrade_identifier(legacy_id)
         return f"${legacy_id}"
 
-    return re.sub(LEGACY_FULL_IDENTIFIER_PATTERN, _upgrade, text)
+    return re.sub(_LEGACY_IDENTIFIER_RE_PATTERN, _upgrade, text)
 
 
 class TemplatePy311Mixin:
