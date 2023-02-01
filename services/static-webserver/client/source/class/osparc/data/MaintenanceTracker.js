@@ -81,7 +81,12 @@ qx.Class.define("osparc.data.MaintenanceTracker", {
 
       let text = osparc.utils.Utils.formatDateAndTime(this.getStart());
       if (this.getEnd()) {
-        text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
+        if (osparc.utils.Utils.formatDate(this.getStart()) === osparc.utils.Utils.formatDate(this.getEnd())) {
+          // do not print the same day twice
+          text += " - " + osparc.utils.Utils.formatTime(this.getEnd());
+        } else {
+          text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
+        }
       }
       if (this.getReason()) {
         text += ": " + this.getReason();
