@@ -155,7 +155,7 @@ class ProjectDBAPI(ProjectDBMixin):
             except ValueError:
                 if force_project_uuid:
                     raise
-                project_db_values["uuid"] = str(uuidlib.uuid1())
+                project_db_values["uuid"] = f"{uuidlib.uuid1()}"
 
             # insert project
             retry = True
@@ -173,16 +173,22 @@ class ProjectDBAPI(ProjectDBMixin):
                     project_db_values["uuid"] = f"{uuidlib.uuid1()}"
                     retry = True
 
+            project_id = ProjectID(f"{project_db_values['uuid']}")
+
             # insert projects_to_product entry
             await self.upsert_project_linked_product(
-                ProjectID(f"{project_db_values['uuid']}"), product_name, conn=conn
+                project_id, product_name, conn=conn
             )
+
+            # Associate tags to project
+            for tag_id in project_db_values.setdefault("tags", []):
+                await self._upsert_tag_in_project(
+                    conn, project_id=project_id, tag_id=tag_id
+                )
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
             api_project = convert_to_schema_names(project_db_values, user_email)
-            if not "tags" in api_project:
-                api_project["tags"] = []
             return api_project
 
     async def upsert_project_linked_product(

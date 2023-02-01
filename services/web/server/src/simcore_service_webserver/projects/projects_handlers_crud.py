@@ -182,6 +182,7 @@ async def _prepare_project_copy(
         forced_copy_project_id=None,
         clean_output_data=(deep_copy is False),
     )
+
     # remove template/study access rights
     new_project["accessRights"] = {}
     if not as_template:
