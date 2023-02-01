@@ -35,15 +35,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     });
     this._add(intro);
 
-    const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-    const rolesText = new qx.ui.basic.Label(this.tr("Roles")).set({
-      alignX: "left",
-      font: "text-13"
-    });
-    rolesLayout.add(rolesText);
-    const infoHint = new osparc.ui.hint.InfoHint("asdf");
-    rolesLayout.add(infoHint);
-    this._add(rolesLayout);
+    this._add(osparc.ui.list.CollaboratorListItem.createRolesInfo());
 
     this._add(this.__getTitleLayout());
     this._add(this.__getMemberInvitation());
