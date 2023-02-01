@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 
+import asyncio
 from collections import deque
+from ipaddress import IPv4Address
 from pathlib import Path
 from typing import Any, Final
 
@@ -16,6 +18,7 @@ from models_library.service_settings_labels import (
 from orderedset import OrderedSet
 from pydantic import NonNegativeInt
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_compose_egress_config import (
+    _dns_query,
     _get_egress_proxy_dns_port_rules,
     _get_envy_config,
     _HostData,
@@ -151,3 +154,22 @@ def test_get_envy_config(envoy_conf: dict[str, Any]):
     envy_proxy_config = _get_envy_config(proxy_rules)
 
     assert envy_proxy_config == envoy_conf
+
+
+async def test_dns_query_ok():
+    ip_address = await _dns_query("google.com", "1.1.1.1", 53)
+    assert type(ip_address) == IPv4Address
+
+
+async def test_dns_query_cannot_resolve():
+    not_existing_dns = "dummy-domain-dns-that-is-missing.example.com"
+    with pytest.raises(RuntimeError) as exec_info:
+        await _dns_query(not_existing_dns, "1.1.1.1", 53)
+    assert (
+        f"Could not resolve '{not_existing_dns}' with server 1.1.1.1:53."
+        in f"{exec_info}"
+    )
+
+
+async def test_parallel_dns_queries():
+    await asyncio.gather(*[_dns_query("google.com", "1.1.1.1", 53) for _ in range(10)])

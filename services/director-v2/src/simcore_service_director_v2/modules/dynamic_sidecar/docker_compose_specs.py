@@ -20,6 +20,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
+from .dns import get_simple_dns_resolver
 from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
@@ -181,7 +182,7 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-def assemble_spec(
+async def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
@@ -246,10 +247,11 @@ def assemble_spec(
     if not allow_internet_access:
         # NOTE: when service has no access to the internet,
         # there could be some components that still require access
-        add_egress_configuration(
+        await add_egress_configuration(
             service_spec=service_spec,
             simcore_service_labels=simcore_service_labels,
             egress_proxy_settings=egress_proxy_settings,
+            simple_dns_resolver=get_simple_dns_resolver(app),
         )
 
     stringified_service_spec = replace_env_vars_in_compose_spec(
