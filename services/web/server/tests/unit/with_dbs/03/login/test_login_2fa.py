@@ -279,7 +279,6 @@ async def test_register_phone_fails_with_used_number(
     assert "phone" in error["message"]
 
 
-@pytest.mark.testit
 async def test_send_email_code(
     client: TestClient, faker: Faker, capsys: CaptureFixture
 ):

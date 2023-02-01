@@ -15,7 +15,6 @@ from models_library.utils.string_substitution import (
 )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "legacy,expected",
     [

@@ -60,7 +60,6 @@ def test_export_by_alias_produces_smaller_strings(
     assert len(raw_data) < len(content.json())
 
 
-@pytest.mark.testit
 def test_create_and_decrypt_invitation(
     invitation_data: InvitationInputs, faker: Faker, secret_key: str
 ):
