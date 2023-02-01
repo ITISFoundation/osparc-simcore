@@ -27,8 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
     const msg = this.tr("\
       This is the list of members in the organization.\
-      Here you may review the organizations you are a part of, create new ones, \
-      or manage the membership and access rights of the members.\
+      Here you can see the list of members, add new ones and promote or demote existing members.\
     ");
     const intro = new qx.ui.basic.Label().set({
       value: msg,
