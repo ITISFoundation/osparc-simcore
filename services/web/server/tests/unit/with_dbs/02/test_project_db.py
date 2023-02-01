@@ -351,8 +351,8 @@ async def test_add_project_to_db(
 ):
     original_project = deepcopy(fake_project)
     # add project without user id -> by default creates a template
-    new_project = await db_api.add_project(
-        prj=fake_project, user_id=None, product_name=osparc_product_name
+    new_project = await db_api.insert_project(
+        project=fake_project, user_id=None, product_name=osparc_product_name
     )
 
     _assert_added_project(
@@ -365,12 +365,14 @@ async def test_add_project_to_db(
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
-        await db_api.add_project(
-            prj=fake_project, user_id=fake_user_id, product_name=osparc_product_name
+        await db_api.insert_project(
+            project=fake_project,
+            user_id=fake_user_id,
+            product_name=osparc_product_name,
         )
         # adding a project with a fake user but forcing as template should still raise
-        await db_api.add_project(
-            prj=fake_project,
+        await db_api.insert_project(
+            project=fake_project,
             user_id=fake_user_id,
             force_as_template=True,
             product_name=osparc_product_name,
@@ -378,8 +380,10 @@ async def test_add_project_to_db(
 
     # adding a project with a logged user does not raise and creates a STANDARD project
     # since we already have a project with that uuid, it shall be updated
-    new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], product_name=osparc_product_name
+    new_project = await db_api.insert_project(
+        project=fake_project,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert new_project["uuid"] != original_project["uuid"]
     _assert_added_project(
@@ -404,8 +408,8 @@ async def test_add_project_to_db(
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
-    new_project = await db_api.add_project(
-        prj=fake_project,
+    new_project = await db_api.insert_project(
+        project=fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         force_as_template=True,
@@ -434,8 +438,8 @@ async def test_add_project_to_db(
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
-        await db_api.add_project(
-            prj=fake_project,
+        await db_api.insert_project(
+            project=fake_project,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             force_project_uuid=True,
@@ -444,16 +448,16 @@ async def test_add_project_to_db(
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
     fake_project["uuid"] = "some bad uuid"
     with pytest.raises(ValueError):
-        await db_api.add_project(
-            prj=fake_project,
+        await db_api.insert_project(
+            project=fake_project,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             force_project_uuid=True,
         )
 
     # add a project with a bad uuid that is already present, shall not raise
-    new_project = await db_api.add_project(
-        prj=fake_project,
+    new_project = await db_api.insert_project(
+        project=fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         force_project_uuid=False,
@@ -521,8 +525,8 @@ async def test_patch_user_project_workbench_creates_nodes(
     assert isinstance(workbench, dict)
     workbench.clear()
 
-    new_project = await db_api.add_project(
-        prj=empty_fake_project,
+    new_project = await db_api.insert_project(
+        project=empty_fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -562,8 +566,8 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     assert isinstance(workbench, dict)
     workbench.clear()
 
-    new_project = await db_api.add_project(
-        prj=empty_fake_project,
+    new_project = await db_api.insert_project(
+        project=empty_fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -613,8 +617,10 @@ async def test_patch_user_project_workbench_concurrently(
 
     # add the project
     original_project = deepcopy(fake_project)
-    new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], product_name=osparc_product_name
+    new_project = await db_api.insert_project(
+        project=fake_project,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     _assert_added_project(
         original_project,
@@ -776,8 +782,8 @@ async def lots_of_projects_and_nodes(
         new_project.update(uuid=project_uuid, name=f"project {p}", workbench=workbench)
         # add the project
         project_creation_tasks.append(
-            db_api.add_project(
-                prj=new_project,
+            db_api.insert_project(
+                project=new_project,
                 user_id=logged_user["id"],
                 product_name=osparc_product_name,
             )
@@ -803,7 +809,6 @@ async def lots_of_projects_and_nodes(
 async def test_node_id_exists(
     db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
-
     # create a node uuid that does not exist from an existing project
     existing_project_id = choice(list(lots_of_projects_and_nodes.keys()))
     not_existing_node_id_in_existing_project = uuid5(
@@ -936,8 +941,8 @@ async def test_has_permission(
         access_rights={second_user["primary_gid"]: access_rights},
     )
 
-    await db_api.add_project(
-        prj=new_project,
+    await db_api.insert_project(
+        project=new_project,
         user_id=owner_id,
         product_name=osparc_product_name,
     )

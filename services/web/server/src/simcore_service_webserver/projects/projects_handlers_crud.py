@@ -284,7 +284,7 @@ async def _create_projects(
             await projects_api.validate_project(app, new_project)
 
         # 3. save new project in DB
-        new_project = await db.add_project(
+        new_project = await db.insert_project(
             new_project,
             request_context.user_id,
             product_name=request_context.product_name,

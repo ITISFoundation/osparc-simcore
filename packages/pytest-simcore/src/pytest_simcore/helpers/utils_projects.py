@@ -65,7 +65,7 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    new_project = await db.add_project(
+    new_project = await db.insert_project(
         project_data,
         user_id,
         product_name=product_name,

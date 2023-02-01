@@ -14,7 +14,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal, Mapping, Optional, Union
 
-import psycopg2.errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
@@ -200,9 +199,9 @@ class ProjectDBAPI:
         assert self._engine  # nosec
         return self._engine
 
-    async def add_project(
+    async def insert_project(
         self,
-        prj: dict[str, Any],
+        project: dict[str, Any],
         user_id: Optional[int],
         *,
         product_name: str,
@@ -223,14 +222,15 @@ class ProjectDBAPI:
             # TODO: check security of this query with args. Hard-code values?
             # TODO: check best rollback design. see transaction.begin...
             # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
-            prj.update(
+            project.update(
                 {
                     "creationDate": now_str(),
                     "lastChangeDate": now_str(),
                 }
             )
-            kargs = _convert_to_db_names(prj)
-            kargs.update(
+
+            project_db_values = _convert_to_db_names(project)
+            project_db_values.update(
                 {
                     "type": ProjectType.TEMPLATE
                     if (force_as_template or user_id is None)
@@ -240,33 +240,33 @@ class ProjectDBAPI:
             )
 
             if hidden:
-                kargs["hidden"] = True
+                project_db_values["hidden"] = True
 
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
                 primary_gid = await self._get_user_primary_group_gid(conn, user_id)
-                kargs.setdefault("access_rights", {}).update(
+                project_db_values.setdefault("access_rights", {}).update(
                     _create_project_access_rights(
                         primary_gid, ProjectAccessRights.OWNER
                     )
                 )
             # ensure we have the minimal amount of data here
-            kargs.setdefault("name", "New Study")
-            kargs.setdefault("description", "")
-            kargs.setdefault("workbench", {})
+            project_db_values.setdefault("name", "New Study")
+            project_db_values.setdefault("description", "")
+            project_db_values.setdefault("workbench", {})
             # must be valid uuid
             try:
-                uuidlib.UUID(str(kargs.get("uuid")))
+                uuidlib.UUID(str(project_db_values.get("uuid")))
             except ValueError:
                 if force_project_uuid:
                     raise
-                kargs["uuid"] = str(uuidlib.uuid1())
+                project_db_values["uuid"] = str(uuidlib.uuid1())
 
             # insert project
             retry = True
             while retry:
                 try:
-                    query = projects.insert().values(**kargs)
+                    query = projects.insert().values(**project_db_values)
                     await conn.execute(query)
                     retry = False
                 except UniqueViolation as err:
@@ -275,20 +275,20 @@ class ProjectDBAPI:
                         or force_project_uuid
                     ):
                         raise
-                    kargs["uuid"] = f"{uuidlib.uuid1()}"
+                    project_db_values["uuid"] = f"{uuidlib.uuid1()}"
                     retry = True
 
             # insert projects_to_product entry
             await self.upsert_project_linked_product(
-                ProjectID(f"{kargs['uuid']}"), product_name, conn=conn
+                ProjectID(f"{project_db_values['uuid']}"), product_name, conn=conn
             )
 
-            # Updated values
+            # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
-            prj = _convert_to_schema_names(kargs, user_email)
-            if not "tags" in prj:
-                prj["tags"] = []
-            return prj
+            api_project = _convert_to_schema_names(project_db_values, user_email)
+            if not "tags" in api_project:
+                api_project["tags"] = []
+            return api_project
 
     async def upsert_project_linked_product(
         self,
@@ -501,7 +501,7 @@ class ProjectDBAPI:
                 project_row, user_id, user_groups, check_permissions
             )
 
-        project = dict(project_row.items())
+        project: dict[str, Any] = dict(project_row.items())
 
         if "tags" not in exclude_foreign:
             tags = await self._get_tags_by_project(
@@ -891,6 +891,17 @@ class ProjectDBAPI:
             study_tags.c.study_id == project_id
         )
         return [row.tag_id async for row in conn.execute(query)]
+
+    @staticmethod
+    async def _upsert_tag_in_project(
+        conn: SAConnection, project_id: ProjectID, tag_id: int
+    ) -> int:
+        await conn.execute(
+            pg_insert(study_tags)
+            .values(study_id=f"{project_id}", tag_id=tag_id)
+            .on_conflict_do_nothing()
+        )
+        return tag_id
 
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
