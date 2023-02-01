@@ -79,7 +79,7 @@ async def test_valid_upload_download(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress == pytest.approx(0.5)
+        assert progress_bar._continuous_progress == pytest.approx(1)
         assert store_id == s3_simcore_location
         assert e_tag
         get_store_id, get_e_tag = await filemanager.get_file_metadata(
@@ -98,7 +98,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress == pytest.approx(1)
+        assert progress_bar._continuous_progress == pytest.approx(2)
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"
     assert filecmp.cmp(download_file_path, file_path)

@@ -347,6 +347,7 @@ async def upload_file(
                     r_clone_settings,
                     upload_links,
                 )
+                await progress_bar.update()
             else:
                 uploaded_parts = await upload_file_to_presigned_links(
                     session,
