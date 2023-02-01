@@ -175,7 +175,8 @@ rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
 	# Building service$(if $(target),,s) $(target)
 	@$(_docker_compose_build)
-
+	# List production images
+	@docker images --filter="reference=local/*:production"
 
 load-images: guard-local-src ## loads images from local-src
 	# loading from images from $(local-src)...
@@ -188,7 +189,7 @@ load-images: guard-local-src ## loads images from local-src
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
-	$(_docker_compose_build)
+	@$(_docker_compose_build)
 else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
@@ -197,6 +198,8 @@ endif
 	# Building service $(target)
 	@$(_docker_compose_build)
 endif
+	# List development images
+	@docker images --filter="reference=local/*:development"
 
 
 $(CLIENT_WEB_OUTPUT):
