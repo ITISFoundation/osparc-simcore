@@ -405,7 +405,7 @@ async def list_projects(request: web.Request):
         request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
     )
 
-    projects, project_types, total_number_projects = await db.load_projects(
+    projects, project_types, total_number_projects = await db.list_projects(
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
@@ -458,7 +458,6 @@ async def get_active_project(request: web.Request) -> web.Response:
             # get user's projects
             user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
-
             project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
@@ -592,7 +591,6 @@ async def replace_project(request: web.Request):
         if await director_v2_api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
         ):
-
             if any_node_inputs_changed(new_project, current_project):
                 # NOTE:  This is a conservative measure that we take
                 #  until nodeports logic is re-designed to tackle with this

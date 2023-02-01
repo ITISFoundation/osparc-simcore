@@ -29,6 +29,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
+from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
@@ -268,13 +269,13 @@ class ProjectDBAPI:
                     query = projects.insert().values(**kargs)
                     await conn.execute(query)
                     retry = False
-                except psycopg2.errors.UniqueViolation as err:  # pylint: disable=no-member
+                except UniqueViolation as err:
                     if (
                         err.diag.constraint_name != "projects_uuid_key"
                         or force_project_uuid
                     ):
                         raise
-                    kargs["uuid"] = str(uuidlib.uuid1())
+                    kargs["uuid"] = f"{uuidlib.uuid1()}"
                     retry = True
 
             # insert projects_to_product entry
@@ -305,7 +306,7 @@ class ProjectDBAPI:
                 .on_conflict_do_nothing()
             )
 
-    async def load_projects(
+    async def list_projects(
         self,
         user_id: PositiveInt,
         *,
@@ -317,7 +318,6 @@ class ProjectDBAPI:
         offset: Optional[int] = 0,
         limit: Optional[int] = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
-
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self.__load_user_groups(conn, user_id)
 
