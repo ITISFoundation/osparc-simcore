@@ -47,14 +47,15 @@ qx.Class.define("osparc.About", {
 
   members: {
     __buildLayout: function() {
-      const aboutText = this.self().OSPARC_OFFICIAL + qx.locale.Manager.tr(`
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      const aboutText = this.self().OSPARC_OFFICIAL + this.tr(`
          is an online-accessible, cloud-based, and collaborative computational modeling platform 
         that was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions 
         (SPARC) program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable) 
         computational modeling in the field of bioelectronic medicine – from neural interfaces to peripheral nerve recruitment 
         and the resulting effects on organ function.<br><br>
         For more information about SPARC and the services offered, visit the 
-        <a href='https://sparc.science/' style='color: ${qx.theme.manager.Color.getInstance().resolve("text")}' target='_blank'>SPARC Portal</a>.
+        <a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.
       `);
       const aboutLabel = new qx.ui.basic.Label().set({
         value: aboutText,
@@ -86,58 +87,69 @@ qx.Class.define("osparc.About", {
         flex: 1
       });
 
-      const layout = new qx.ui.layout.Grid(5, 5);
-      layout.setColumnFlex(0, 1);
-      layout.setColumnFlex(1, 1);
-      layout.setColumnAlign(0, "right", "middle");
-      layout.setColumnAlign(1, "left", "middle");
-      const frontendPage = new qx.ui.tabview.Page(this.tr("Front-end")).set({
-        layout,
-        backgroundColor: "background-main-2"
-      });
-      const backendPage = new qx.ui.tabview.Page(this.tr("Back-end")).set({
-        layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "background-main-2"
-      });
+      const frontendPage = this.__createTabPage(this.tr("Front-end"));
       tabView.add(frontendPage);
-      tabView.add(backendPage);
       this.__populateFrontendEntries(frontendPage);
+
+      const backendPage = this.__createTabPage(this.tr("Back-end"));
+      tabView.add(backendPage);
       this.__populateBackendEntries(backendPage);
     },
 
+    __createTabPage: function(title) {
+      const layout = new qx.ui.layout.Grid(5, 5);
+      layout.setColumnFlex(0, 1);
+      layout.setColumnFlex(1, 1);
+      const tabPage = new qx.ui.tabview.Page(title).set({
+        layout,
+        backgroundColor: "background-main-2"
+      });
+      return tabPage;
+    },
+
     __populateFrontendEntries: function(page) {
-      [
+      const entries = [
         this.__createFrontendEntries([osparc.utils.LibVersions.getPlatformVersion()]),
         this.__createFrontendEntries([osparc.utils.LibVersions.getUIVersion()]),
-        [new qx.ui.core.Spacer(null, 10)],
         this.__createFrontendEntries([osparc.utils.LibVersions.getQxCompiler()]),
         this.__createFrontendEntries(osparc.utils.LibVersions.getQxLibraryInfoMap()),
         this.__createFrontendEntries(osparc.utils.LibVersions.get3rdPartyLibs())
-      ].forEach(entries => {
-        entries.forEach((entry, idx) => {
-          if (entry.length) {
-            page.add(entry, {
-              row: idx,
-              col: 0
-            });
-            if (entry.length>1) {
-              page.add(entry, {
-                row: idx,
-                col: 1
-              });
-            }
-          }
-        });
-      });
+      ].flat();
+      for (let i=0; i<entries.length; i++) {
+        const entry = entries[i];
+        if (entry.length) {
+          page.add(entry[0], {
+            row: i,
+            column: 0
+          });
+        }
+        if (entry.length>1) {
+          page.add(entry[1], {
+            row: i,
+            column: 1
+          });
+        }
+      }
     },
 
     __populateBackendEntries: function(page) {
       osparc.utils.LibVersions.getBackendLibs()
         .then(libs => {
-          libs.forEach(lib => {
-            const entry = this.__createEntry(lib);
-            page.add(entry);
-          });
+          for (let i=0; i<libs.length; i++) {
+            const entry = this.__createEntry(libs[i]);
+            if (entry.length) {
+              page.add(entry[0], {
+                row: i,
+                column: 0
+              });
+            }
+            if (entry.length>1) {
+              page.add(entry[1], {
+                row: i,
+                column: 1
+              });
+            }
+          }
         });
     },
 
@@ -175,8 +187,17 @@ qx.Class.define("osparc.About", {
         return [image];
       }
 
-      const entryLabel = url ? new osparc.ui.basic.LinkLabel(label, url) : new qx.ui.basic.Label(label);
-      entryLabel.setFont("text-14");
+      let entryLabel;
+      if (url) {
+        entryLabel = new osparc.ui.basic.LinkLabel(label, url).set({
+          font: "link-label-14"
+        });
+      } else {
+        entryLabel = new qx.ui.basic.Label(label);
+        entryLabel.set({
+          font: "text-14"
+        });
+      }
       const entryVersion = new qx.ui.basic.Label(version);
       entryVersion.setFont("text-14");
       return [entryLabel, entryVersion];
