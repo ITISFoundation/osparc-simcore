@@ -48,6 +48,21 @@ qx.Class.define("osparc.About", {
   members: {
     __buildLayout: function() {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
+
+      const poweredByLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+        rich: true,
+        wrap: true
+      });
+      this.add(poweredByLabel);
+      osparc.store.StaticInfo.getInstance().getDisplayName()
+        .then(displayName => {
+          const aboutText = this.tr(` 
+          is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`);
+          poweredByLabel.setValue(displayName + aboutText);
+        });
+
       const aboutText = this.self().OSPARC_OFFICIAL + this.tr(`
          is an online-accessible, cloud-based, and collaborative computational modeling platform 
         that was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions 

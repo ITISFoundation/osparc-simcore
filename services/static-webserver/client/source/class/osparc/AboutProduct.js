@@ -58,9 +58,7 @@ qx.Class.define("osparc.AboutProduct", {
       this.add(introText);
       osparc.store.StaticInfo.getInstance().getDisplayName()
         .then(displayName => {
-          const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const aboutText = this.tr(` 
-          is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL} platform</a>.<br><br>`);
+          const aboutText = this.tr("");
           introText.setValue(displayName + aboutText);
         });
     }
