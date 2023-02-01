@@ -175,15 +175,17 @@ class ProjectDBAPI(ProjectDBMixin):
 
             project_id = ProjectID(f"{project_db_values['uuid']}")
 
-            # insert projects_to_product entry
+            # associate product to project: projects_to_product
             await self.upsert_project_linked_product(
-                project_id, product_name, conn=conn
+                project_id=project_id,
+                product_name=product_name,
+                conn=conn,
             )
 
-            # Associate tags to project
+            # associate tags to project: study_tags
             for tag_id in project_db_values.setdefault("tags", []):
                 await self._upsert_tag_in_project(
-                    conn, project_id=project_id, tag_id=tag_id
+                    conn=conn, project_id=project_id, tag_id=tag_id
                 )
 
             # Returns created project with names as in the project schema
