@@ -62,7 +62,9 @@ class ProgressBarData:
             if new_progress_value > self.steps:
                 logger.warning(
                     "%s",
-                    f"Progress {self._continuous_progress} is updated by {value} and the current max value {self.steps}",
+                    f"Progress already reached maximum of {self.steps=}, "
+                    f"cause: {self._continuous_progress=} is updated by {value=}"
+                    "TIP: sub progresses are not created correctly please check the stack trace",
                     stack_info=True,
                 )
 

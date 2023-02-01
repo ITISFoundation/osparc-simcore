@@ -57,10 +57,13 @@ async def test_too_many_sub_progress_bars_raises():
                     await sub.update()
 
 
-async def test_too_many_updates_raises():
+async def test_too_many_updates_does_not_raise_but_show_warning_with_stack(
+    caplog: pytest.LogCaptureFixture,
+):
     async with ProgressBarData(steps=2) as root:
         assert root.steps == 2
         await root.update()
         await root.update()
-        with pytest.raises(ValueError):
-            await root.update()
+        await root.update()
+        assert "already reached maximum" in caplog.messages[0]
+        assert "TIP:" in caplog.messages[0]
