@@ -266,34 +266,6 @@ class ProjectDBAPI(ProjectDBMixin):
                 total_number_of_projects,
             )
 
-    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
-            # pylint: disable=no-value-for-parameter
-            query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
-            user_email = await self._get_user_email(conn, user_id)
-            async with conn.execute(query) as result:
-                if result.rowcount == 1:
-                    project["tags"].append(tag_id)
-                    return _convert_to_schema_names(project, user_email)
-                raise ProjectsException()
-
-    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
-            user_email = await self._get_user_email(conn, user_id)
-            # pylint: disable=no-value-for-parameter
-            query = study_tags.delete().where(
-                and_(
-                    study_tags.c.study_id == project["id"],
-                    study_tags.c.tag_id == tag_id,
-                )
-            )
-            async with conn.execute(query):
-                if tag_id in project["tags"]:
-                    project["tags"].remove(tag_id)
-                return _convert_to_schema_names(project, user_email)
-
     async def get_project(
         self,
         user_id: UserID,
@@ -329,6 +301,34 @@ class ProjectDBAPI(ProjectDBMixin):
                 _convert_to_schema_names(project, user_email),
                 project_type,
             )
+
+    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+        async with self.engine.acquire() as conn:
+            project = await self._get_project(conn, user_id, project_uuid)
+            # pylint: disable=no-value-for-parameter
+            query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
+            user_email = await self._get_user_email(conn, user_id)
+            async with conn.execute(query) as result:
+                if result.rowcount == 1:
+                    project["tags"].append(tag_id)
+                    return _convert_to_schema_names(project, user_email)
+                raise ProjectsException()
+
+    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+        async with self.engine.acquire() as conn:
+            project = await self._get_project(conn, user_id, project_uuid)
+            user_email = await self._get_user_email(conn, user_id)
+            # pylint: disable=no-value-for-parameter
+            query = study_tags.delete().where(
+                and_(
+                    study_tags.c.study_id == project["id"],
+                    study_tags.c.tag_id == tag_id,
+                )
+            )
+            async with conn.execute(query):
+                if tag_id in project["tags"]:
+                    project["tags"].remove(tag_id)
+                return _convert_to_schema_names(project, user_email)
 
     async def patch_user_project_workbench(
         self,
