@@ -77,7 +77,7 @@ class ProgressBarData:
         await self.update(self.steps - self._continuous_progress)
         await self._report_external(self.steps, force=True)
 
-    def sub_progress(self, steps) -> "ProgressBarData":
+    def sub_progress(self, steps: int) -> "ProgressBarData":
         if len(self._children) == self.steps:
             raise RuntimeError(
                 "Too many sub progresses created already. Wrong usage of the progress bar"
