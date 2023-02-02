@@ -29,6 +29,7 @@ qx.Class.define("osparc.AboutProduct", {
 
     this.set({
       layout: new qx.ui.layout.VBox(5),
+      minWidth: this.self().MIN_WIDTH,
       maxWidth: this.self().MAX_WIDTH,
       contentPadding: this.self().PADDING,
       showMaximize: false,
@@ -43,6 +44,7 @@ qx.Class.define("osparc.AboutProduct", {
   },
 
   statics: {
+    MIN_WIDTH: 200,
     MAX_WIDTH: 400,
     PADDING: 15
   },
@@ -58,16 +60,7 @@ qx.Class.define("osparc.AboutProduct", {
       this.add(introText);
       osparc.store.StaticInfo.getInstance().getDisplayName()
         .then(displayName => {
-          const color = qx.theme.manager.Color.getInstance().resolve("text");
-          const aboutText = this.tr(` 
-          is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>o2S2PARC platform</a> 
-          for online-accessible, cloud-based, and collaborative computational modeling.<br><br>
-          o2S2PARC was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions 
-          (SPARC) program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable) 
-          computational modeling in the field of bioelectronic medicine – from neural interfaces to peripheral nerve recruitment 
-          and the resulting effects on organ function.<br><br>
-          For more information about SPARC and the services offered, visit the <a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.`);
-          introText.setValue(displayName + aboutText);
+          introText.setValue(displayName);
         });
     }
   }
