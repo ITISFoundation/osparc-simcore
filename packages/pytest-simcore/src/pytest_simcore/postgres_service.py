@@ -191,7 +191,7 @@ def postgres_db(
 ) -> Iterator[sa.engine.Engine]:
     """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
 
-    with migrated_pg_tables_context(postgres_dsn.copy()):
+    with migrated_pg_tables_context(postgres_engine, postgres_dsn.copy()):
         yield postgres_engine
 
 
