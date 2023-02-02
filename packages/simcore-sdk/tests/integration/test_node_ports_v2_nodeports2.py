@@ -3,6 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=protected-access
 
 
 import filecmp
@@ -264,7 +265,6 @@ async def test_port_file_accessors(
     e_tag: str,
     option_r_clone_settings: Optional[RCloneSettings],
 ):  # pylint: disable=W0613, W0621
-
     config_value["path"] = f"{project_id}/{node_uuid}/{Path(config_value['path']).name}"
 
     config_dict, _project_id, _node_uuid = create_special_configuration(
@@ -779,3 +779,4 @@ async def test_batch_update_inputs_outputs(
             await PORTS.set_multiple(
                 {"missing_key_in_both": (123132, None)}, progress_bar=progress_bar
             )
+            assert progress_bar._continuous_progress == pytest.approx(0)
