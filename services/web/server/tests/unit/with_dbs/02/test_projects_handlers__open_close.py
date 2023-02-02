@@ -591,7 +591,6 @@ def one_max_open_studies_per_user(
         )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     one_max_open_studies_per_user: None,
