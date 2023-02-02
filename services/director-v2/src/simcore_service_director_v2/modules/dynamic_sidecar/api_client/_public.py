@@ -395,10 +395,10 @@ class DynamicSidecarClient:
         )
 
     async def has_quota_support(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> bool:
-        response = await self._thin_client.post_docker_quotas_supported(
+        response = await self._thin_client.supported_docker_quotas(
             dynamic_sidecar_endpoint
         )
-        return response.status_code == status.HTTP_204_NO_CONTENT
+        return response.json()["are_quotas_supported"]
 
 
 async def setup(app: FastAPI) -> None:

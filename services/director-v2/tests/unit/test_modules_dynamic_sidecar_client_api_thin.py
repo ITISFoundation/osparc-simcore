@@ -318,10 +318,7 @@ async def test_post_containers_tasks(
     assert_responses(mock_response, response)
 
 
-@pytest.mark.parametrize(
-    "expected_response",
-    [Response(status.HTTP_204_NO_CONTENT), Response(status.HTTP_204_NO_CONTENT)],
-)
+@pytest.mark.parametrize("expected_response", [Response(status.HTTP_200_OK)])
 async def test_post_docker_quotas_supported(
     thin_client: ThinDynamicSidecarClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -330,9 +327,9 @@ async def test_post_docker_quotas_supported(
 ) -> None:
     mock_request(
         "POST",
-        f"/{thin_client.API_VERSION}/docker/quotas:supported",
+        f"/{thin_client.API_VERSION}/docker/quotas",
         expected_response,
         None,
     )
-    response = await thin_client.post_docker_quotas_supported(dynamic_sidecar_endpoint)
+    response = await thin_client.supported_docker_quotas(dynamic_sidecar_endpoint)
     assert_responses(expected_response, response)

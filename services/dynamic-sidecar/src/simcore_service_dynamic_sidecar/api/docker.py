@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, status
 
 from ..core.docker_utils import supports_volumes_with_quota
 
@@ -6,14 +6,11 @@ router = APIRouter()
 
 
 @router.post(
-    "/docker/quotas:supported",
-    summary="Checks if node where sidecar is running quotas for disk and volume space",
-    response_class=Response,
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={status.HTTP_404_NOT_FOUND: {"description": "quotas are not supported"}},
+    "/docker/quotas",
+    summary="Checks if docker daemon on the node has supports for volume and disk quotas",
+    status_code=status.HTTP_200_OK,
 )
-async def are_quotas_supported() -> None:
+async def are_quotas_supported() -> dict[str, bool]:
     # NOTE: if volumes with quotas are not supported we can say
     # that no quotas for limiting disk space are supported
-    if not await supports_volumes_with_quota():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return dict(are_quotas_supported=await supports_volumes_with_quota())
