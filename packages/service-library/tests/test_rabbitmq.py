@@ -200,23 +200,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     await _assert_message_received(mocked_message_parser, 3, message)
 
 
-async def test_rabbit_client_lose_connection(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
-    docker_client: docker.client.DockerClient,
-):
-    rabbit_client = rabbitmq_client("pinger")
-    assert await rabbit_client.ping() is True
-    # now let's put down the rabbit service
-    for rabbit_docker_service in (
-        docker_service
-        for docker_service in docker_client.services.list()
-        if "rabbit" in docker_service.name  # type: ignore
-    ):
-        rabbit_docker_service.remove()  # type: ignore
-    await asyncio.sleep(10)  # wait for the client to disconnect
-    assert await rabbit_client.ping() is False
-
-
 @pytest.mark.parametrize("num_subs", [10])
 async def test_pub_sub_with_non_exclusive_queue(
     rabbitmq_client: Callable[[str], RabbitMQClient],
@@ -278,3 +261,20 @@ def test_rabbit_pub_sub_performance(
         asyncio.get_event_loop().run_until_complete(async_fct_to_test())
 
     benchmark.pedantic(run_test_async, iterations=1, rounds=10)
+
+
+async def test_rabbit_client_lose_connection(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    docker_client: docker.client.DockerClient,
+):
+    rabbit_client = rabbitmq_client("pinger")
+    assert await rabbit_client.ping() is True
+    # now let's put down the rabbit service
+    for rabbit_docker_service in (
+        docker_service
+        for docker_service in docker_client.services.list()
+        if "rabbit" in docker_service.name  # type: ignore
+    ):
+        rabbit_docker_service.remove()  # type: ignore
+    await asyncio.sleep(10)  # wait for the client to disconnect
+    assert await rabbit_client.ping() is False
