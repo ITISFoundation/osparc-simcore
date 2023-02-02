@@ -147,9 +147,11 @@ class ProjectDBAPI(BaseProjectDB):
                 primary_gid = await self._get_user_primary_group_gid(
                     conn, user_id=user_id
                 )
-                project_db_values.setdefault("access_rights", {}).update(
+                project_db_values.setdefault("access_rights", {})
+                project_db_values["access_rights"].update(
                     create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
                 )
+
             # ensure we have the minimal amount of data here
             project_db_values.setdefault("name", "New Study")
             project_db_values.setdefault("description", "")
@@ -164,6 +166,13 @@ class ProjectDBAPI(BaseProjectDB):
 
             # Atomic transaction to insert project and update relations
             #  - Retries insert if UUID collision
+            def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
+                if (
+                    err.diag.constraint_name != "projects_uuid_key"
+                    or force_project_uuid
+                ):
+                    raise err
+
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
                     async with conn.begin():
@@ -178,11 +187,7 @@ class ProjectDBAPI(BaseProjectDB):
                             )
 
                         except UniqueViolation as err:
-                            if (  # nosec
-                                err.diag.constraint_name != "projects_uuid_key"
-                                or force_project_uuid
-                            ):
-                                raise
+                            _reraise_if_not_unique_uuid_error(err)
 
                             # Tries new uuid
                             project_db_values["uuid"] = f"{uuidlib.uuid1()}"

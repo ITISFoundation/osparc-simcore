@@ -29,7 +29,6 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
-    APP_PROJECT_DBAPI,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -246,7 +245,7 @@ def test_check_project_permissions(
 
 async def test_setup_projects_db(client: TestClient):
     assert client.app
-    db_api = client.app[APP_PROJECT_DBAPI]
+    db_api = ProjectDBAPI.get_from_app_context(app=client.app)
     assert db_api
     assert isinstance(db_api, ProjectDBAPI)
 
