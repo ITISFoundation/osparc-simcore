@@ -456,7 +456,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     # fetch all projects for the user
     user_project_uuids = await ProjectDBAPI.get_from_app_context(
         app
-    ).list_projects_by_uuid_for_user(user_id=user_id)
+    ).list_projects_uuids(user_id=user_id)
 
     logger.info(
         "Removing or transferring projects of user with %s, %s: %s",

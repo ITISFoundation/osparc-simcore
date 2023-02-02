@@ -295,7 +295,7 @@ class ProjectDBAPI(BaseProjectDB):
                 total_number_of_projects,
             )
 
-    async def list_projects_by_uuid_for_user(self, user_id: int) -> list[str]:
+    async def list_projects_uuids(self, user_id: int) -> list[str]:
         result = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
