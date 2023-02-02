@@ -86,9 +86,12 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     __createIntoFromRoles: function(roles) {
-      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignX: "right"
+      })).set({
+        paddingRight: 10
+      });
       const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
-        alignX: "left",
         font: "text-13"
       });
       rolesLayout.add(rolesText);
