@@ -41,11 +41,7 @@ def non_blocking_process_pool_executor(**kwargs) -> Iterator[ProcessPoolExecutor
     try:
         yield executor
     finally:
-        # due to an issue in cpython https://bugs.python.org/issue34073
-        # bypassing shutdown and using a shared pool
-        # remove call to get_shared_process_pool_executor and replace with
-        # a new instance when the issue is fixed
-        # FIXME: uncomment below line when the issue is fixed
+        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3829
         # executor.shutdown(wait=False)
         pass
 
@@ -60,4 +56,6 @@ def non_blocking_thread_pool_executor(**kwargs) -> Iterator[ThreadPoolExecutor]:
     try:
         yield executor
     finally:
-        executor.shutdown(wait=False)
+        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3829
+        # executor.shutdown(wait=False)
+        pass

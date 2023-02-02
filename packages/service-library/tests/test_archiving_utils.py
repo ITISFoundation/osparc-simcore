@@ -559,7 +559,7 @@ async def _archive_dir_performance(
     file_suffix += 1
 
 
-@pytest.mark.performance_test
+@pytest.mark.skip(reason="manual testing")
 @pytest.mark.parametrize(
     "compress, file_size, num_files", [(False, parse_obj_as(ByteSize, "1Mib"), 10000)]
 )
