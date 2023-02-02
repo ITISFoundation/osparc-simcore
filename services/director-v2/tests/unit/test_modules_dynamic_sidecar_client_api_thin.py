@@ -327,7 +327,7 @@ async def test_post_docker_quotas_supported(
 ) -> None:
     mock_request(
         "POST",
-        f"/{thin_client.API_VERSION}/docker/quotas",
+        f"/{thin_client.API_VERSION}/docker/quotas:check",
         expected_response,
         None,
     )

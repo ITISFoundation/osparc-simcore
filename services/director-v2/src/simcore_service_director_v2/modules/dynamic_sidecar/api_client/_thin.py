@@ -234,5 +234,5 @@ class ThinDynamicSidecarClient(BaseThinClient):
     async def supported_docker_quotas(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/docker/quotas")
+        url = self._get_url(dynamic_sidecar_endpoint, "/docker/quotas:check")
         return await self.client.post(url)

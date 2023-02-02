@@ -15,6 +15,6 @@ def test_client(test_client: TestClient) -> TestClient:
 async def test_are_quotas_supported(
     mock_docker_volume: None, test_client: TestClient, volume_has_quota_support: bool
 ):
-    response = await test_client.post(f"/{API_VTAG}/docker/quotas")
+    response = await test_client.post(f"/{API_VTAG}/docker/quotas:check")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"are_quotas_supported": volume_has_quota_support}
