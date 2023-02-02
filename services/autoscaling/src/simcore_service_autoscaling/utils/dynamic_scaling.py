@@ -94,7 +94,7 @@ async def try_assigning_task_to_pending_instances(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     instance_max_time_to_start = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
     for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
         instance_type = type_to_instance_map[instance.type]

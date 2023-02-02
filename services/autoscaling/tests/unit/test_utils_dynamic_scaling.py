@@ -5,6 +5,7 @@
 # pylint: disable=too-many-arguments
 
 
+from datetime import timedelta
 from typing import Callable
 
 import pytest
@@ -141,6 +142,9 @@ async def test_try_assigning_task_to_pending_instances(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     fake_app = mocker.Mock()
+    fake_app.state.settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME = (
+        timedelta(minutes=1)
+    )
     pending_task = fake_task(
         Spec={"Resources": {"Reservations": {"NanoCPUs": 2 * 1e9}}}
     )
