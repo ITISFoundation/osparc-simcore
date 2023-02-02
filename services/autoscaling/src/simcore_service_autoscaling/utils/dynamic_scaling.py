@@ -5,9 +5,9 @@ from typing import Final
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, Task
-from services.autoscaling.src.simcore_service_autoscaling.core.settings import get_application_settings
 
 from ..core.errors import Ec2InvalidDnsNameError
+from ..core.settings import get_application_settings
 from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
@@ -85,7 +85,6 @@ def try_assigning_task_to_instances(
     return False
 
 
-
 async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
@@ -93,8 +92,10 @@ async def try_assigning_task_to_pending_instances(
     type_to_instance_map: dict[str, EC2InstanceType],
 ) -> bool:
     app_settings = get_application_settings(app)
-    assert app_settings.AUTOSCALING_EC2_INSTANCES # nosec
-    instance_max_time_to_start = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    instance_max_time_to_start = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+    )
     for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
         instance_type = type_to_instance_map[instance.type]
         instance_total_resources = Resources(
