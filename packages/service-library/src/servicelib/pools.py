@@ -1,7 +1,6 @@
-import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator
+from typing import Iterator
 
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application
@@ -62,10 +61,3 @@ def non_blocking_thread_pool_executor(**kwargs) -> Iterator[ThreadPoolExecutor]:
         yield executor
     finally:
         executor.shutdown(wait=False)
-
-
-async def async_on_threadpool(callable_function: Callable, *args: Any) -> Any:
-    """Ensures blocking operation runs on shared thread pool"""
-    return await asyncio.get_event_loop().run_in_executor(
-        None, callable_function, *args
-    )

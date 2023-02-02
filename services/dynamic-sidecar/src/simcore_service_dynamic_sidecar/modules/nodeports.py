@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Coroutine, Optional, cast
 
 import magic
+from aiofiles.os import wrap as sync_to_async
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
@@ -19,7 +20,6 @@ from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_di
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.file_utils import remove_directory
 from servicelib.logging_utils import log_context
-from servicelib.pools import async_on_threadpool
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
@@ -190,6 +190,9 @@ def _is_zip_file(file_path: Path) -> bool:
     return f"{mime_type}" == "application/zip"
 
 
+_shutil_move = sync_to_async(shutil.move)
+
+
 async def _get_data_from_port(
     port: Port, *, target_dir: Path, progress_bar: ProgressBarData
 ) -> tuple[Port, Optional[ItemConcreteValue], ByteSize]:
@@ -236,10 +239,7 @@ async def _get_data_from_port(
             else:
                 logger.debug("moving %s", downloaded_file)
                 final_path = final_path / Path(downloaded_file).name
-                await async_on_threadpool(
-                    # pylint: disable=cell-var-from-loop
-                    lambda: shutil.move(str(downloaded_file), final_path)
-                )
+                await _shutil_move(str(downloaded_file), final_path)
 
                 # NOTE: after the download the current value of the port
                 # makes sure previously downloaded files are removed

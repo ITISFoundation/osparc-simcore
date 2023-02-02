@@ -2,7 +2,6 @@ from asyncio import BaseEventLoop
 from concurrent.futures import ProcessPoolExecutor
 
 from servicelib.pools import (
-    async_on_threadpool,
     non_blocking_process_pool_executor,
     non_blocking_thread_pool_executor,
 )
@@ -52,7 +51,3 @@ async def test_different_thread_pool_instances() -> None:
         max_workers=1
     ) as first, non_blocking_thread_pool_executor() as second:
         assert first != second
-
-
-async def test_run_on_thread_pool() -> None:
-    assert await async_on_threadpool(return_int_one) == 1
