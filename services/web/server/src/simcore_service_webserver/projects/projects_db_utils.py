@@ -145,7 +145,7 @@ def assemble_array_groups(user_groups: list[RowProxy]) -> str:
     )
 
 
-class ProjectDBMixin:
+class BaseProjectDB:
     @staticmethod
     async def _list_user_groups(conn: SAConnection, user_id: int) -> list[RowProxy]:
         user_groups: list[RowProxy] = []

@@ -29,14 +29,15 @@ from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
+from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
 from ..db_models import study_tags
 from ..utils import now_str
 from .project_models import ProjectDict
 from .projects_db_utils import (
+    BaseProjectDB,
     Permission,
     ProjectAccessRights,
-    ProjectDBMixin,
     assemble_array_groups,
     check_project_permissions,
     convert_to_db_names,
@@ -61,7 +62,7 @@ APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
 
 
-class ProjectDBAPI(ProjectDBMixin):
+class ProjectDBAPI(BaseProjectDB):
     def __init__(self, app: web.Application):
         # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
@@ -162,47 +163,49 @@ class ProjectDBAPI(ProjectDBMixin):
                     raise
                 project_db_values["uuid"] = f"{uuidlib.uuid1()}"
 
-            async with conn.begin() as transaction:
-                # atomic transaction to insert project and update relations
-                project_index = None
-                retry = True
-                while retry:
-                    try:
-                        project_index = await conn.scalar(
-                            projects.insert()
-                            .values(**project_db_values)
-                            .returning(projects.c.id)
+            # Atomic transaction to insert project and update relations
+            #  - Retries insert if UUID collision
+            async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
+                with attempt:
+                    async with conn.begin():
+                        project_index = None
+                        project_uuid = ProjectID(f"{project_db_values['uuid']}")
+
+                        try:
+                            project_index = await conn.scalar(
+                                projects.insert()
+                                .values(**project_db_values)
+                                .returning(projects.c.id)
+                            )
+
+                        except UniqueViolation as err:
+                            if (
+                                err.diag.constraint_name != "projects_uuid_key"
+                                or force_project_uuid
+                            ):
+                                raise
+
+                            # Tries new uuid
+                            project_db_values["uuid"] = f"{uuidlib.uuid1()}"
+
+                            # NOTE: Retry is over transaction context
+                            # to rollout when a new insert is required
+                            raise TryAgain() from err
+
+                        # Associate product to project: projects_to_product
+                        await self.upsert_project_linked_product(
+                            project_id=project_uuid,
+                            product_name=product_name,
+                            conn=conn,
                         )
-                        retry = False
-                    except UniqueViolation as err:
-                        if (
-                            err.diag.constraint_name != "projects_uuid_key"
-                            or force_project_uuid
-                        ):
-                            raise
-                        # tries new uuid, but before rolls back
-                        # previous execution from transaction since it should
-                        # not execute at the end
-                        await transaction.rollback()
-                        project_db_values["uuid"] = f"{uuidlib.uuid1()}"
-                        retry = True
 
-                project_uuid = ProjectID(f"{project_db_values['uuid']}")
-
-                # associate product to project: projects_to_product
-                await self.upsert_project_linked_product(
-                    project_id=project_uuid,
-                    product_name=product_name,
-                    conn=conn,
-                )
-
-                # associate tags to project: study_tags
-                assert project_index is not None  # nosec
-                for tag_id in project_tags:
-                    await self._upsert_tag_in_project(
-                        conn=conn, project_index_id=project_index, tag_id=tag_id
-                    )
-                project_db_values["tags"] = project_tags
+                        # Associate tags to project: study_tags
+                        assert project_index is not None  # nosec
+                        for tag_id in project_tags:
+                            await self._upsert_tag_in_project(
+                                conn=conn, project_index_id=project_index, tag_id=tag_id
+                            )
+                        project_db_values["tags"] = project_tags
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
