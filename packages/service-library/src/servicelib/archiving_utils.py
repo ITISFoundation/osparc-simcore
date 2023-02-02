@@ -15,7 +15,7 @@ from servicelib.progress_bar import ProgressBarData
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
 from .file_utils import remove_directory
-from .pools import non_blocking_process_pool_executor
+from .pools import non_blocking_process_pool_executor, non_blocking_thread_pool_executor
 
 _MIN: Final[int] = 60  # secs
 _MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
@@ -368,10 +368,12 @@ async def archive_dir(
         sub_progress = await stack.enter_async_context(
             progress_bar.sub_progress(folder_size_bytes)
         )
-
+        thread_pool = stack.enter_context(
+            non_blocking_thread_pool_executor(max_workers=1)
+        )
         try:
             await asyncio.get_event_loop().run_in_executor(
-                None,
+                thread_pool,
                 # ---------
                 _add_to_archive,
                 dir_to_compress,
