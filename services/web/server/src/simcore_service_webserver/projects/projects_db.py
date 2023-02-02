@@ -320,8 +320,6 @@ class ProjectDBAPI(BaseProjectDB):
             - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
-        :return: schema-compliant project
-        :rtype: dict
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(

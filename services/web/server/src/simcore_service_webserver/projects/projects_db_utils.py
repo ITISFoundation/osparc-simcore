@@ -188,7 +188,7 @@ class BaseProjectDB:
     @staticmethod
     async def _upsert_tags_in_project(
         conn: SAConnection, project_index_id: int, project_tags: list[int]
-    ) -> int:
+    ) -> None:
         for tag_id in project_tags:
             await conn.execute(
                 pg_insert(study_tags)
