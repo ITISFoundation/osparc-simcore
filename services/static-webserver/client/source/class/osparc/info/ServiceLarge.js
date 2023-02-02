@@ -252,29 +252,27 @@ qx.Class.define("osparc.info.ServiceLarge", {
         });
       }
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        if (this.getNodeId()) {
-          extraInfo.splice(0, 0, {
-            label: this.tr("Service ID"),
-            view: this.__createNodeId(),
-            action: {
-              button: osparc.utils.Utils.getCopyButton(),
-              callback: this.__copyNodeIdToClipboard,
-              ctx: this
-            }
-          });
-        }
-
-        extraInfo.splice(1, 0, {
-          label: this.tr("Key"),
-          view: this.__createKey(),
+      if (this.getNodeId()) {
+        extraInfo.splice(0, 0, {
+          label: this.tr("Service ID"),
+          view: this.__createNodeId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyKeyToClipboard,
+            callback: this.__copyNodeIdToClipboard,
             ctx: this
           }
         });
       }
+
+      extraInfo.splice(1, 0, {
+        label: this.tr("Key"),
+        view: this.__createKey(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyKeyToClipboard,
+          ctx: this
+        }
+      });
 
       return extraInfo;
     },

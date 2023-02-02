@@ -112,7 +112,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         flex: 1
       });
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().canDo("services.all.reupdate")) {
         const reloadBtn = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/12");
         reloadBtn.addListener("execute", () => this.__populateList(true), this);
         layout.add(reloadBtn);
