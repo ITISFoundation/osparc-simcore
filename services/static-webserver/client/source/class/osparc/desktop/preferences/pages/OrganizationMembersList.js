@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this._add(this.__createIntroText());
-    this._add(this.__createRolesInfo());
+    this._add(osparc.data.Roles.createRolesOrgInfo());
     this._add(this.__getTitleLayout());
     this._add(this.__getMemberInvitation());
     this._add(this.__getMembersList(), {
@@ -116,26 +116,6 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         font: "text-13"
       });
       return intro;
-    },
-
-    __createRolesInfo: function() {
-      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
-        alignX: "left",
-        font: "text-13"
-      });
-      rolesLayout.add(rolesText);
-      let text = "";
-      for (let roleId in osparc.data.Roles.ORG) {
-        text += osparc.data.Roles.ORG[roleId].longLabel + ":<br>";
-        osparc.data.Roles.ORG[roleId].canDo.forEach(can => {
-          text += can + "<br>";
-        });
-        text += "<br>";
-      }
-      const infoHint = new osparc.ui.hint.InfoHint(text);
-      rolesLayout.add(infoHint);
-      return rolesLayout;
     },
 
     __getTitleLayout: function() {

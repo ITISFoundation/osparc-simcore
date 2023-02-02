@@ -62,18 +62,67 @@ qx.Class.define("osparc.data.Roles", {
       1: {
         id: "read",
         label: qx.locale.Manager.tr("Viewer"),
-        longLabel: qx.locale.Manager.tr("Viewer: Read access")
+        longLabel: qx.locale.Manager.tr("Viewer: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- can open it")
+        ]
       },
       2: {
         id: "write",
         label: qx.locale.Manager.tr("Collaborator"),
-        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access")
+        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- can make changes")
+        ]
       },
       3: {
         id: "delete",
         label: qx.locale.Manager.tr("Owner"),
-        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access")
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
+        canDo: [
+          qx.locale.Manager.tr("- can delete it")
+        ]
       }
+    },
+
+    createRolesOrgInfo: function() {
+      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
+        alignX: "left",
+        font: "text-13"
+      });
+      rolesLayout.add(rolesText);
+      let text = "";
+      for (let roleId in osparc.data.Roles.ORG) {
+        text += osparc.data.Roles.ORG[roleId].longLabel + ":<br>";
+        osparc.data.Roles.ORG[roleId].canDo.forEach(can => {
+          text += can + "<br>";
+        });
+        text += "<br>";
+      }
+      const infoHint = new osparc.ui.hint.InfoHint(text);
+      rolesLayout.add(infoHint);
+      return rolesLayout;
+    },
+
+    createRolesResourceInfo: function() {
+      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
+        alignX: "left",
+        font: "text-13"
+      });
+      rolesLayout.add(rolesText);
+      let text = "";
+      for (let roleId in osparc.data.Roles.RESOURCE) {
+        text += osparc.data.Roles.RESOURCE[roleId].longLabel + ":<br>";
+        osparc.data.Roles.RESOURCE[roleId].canDo.forEach(can => {
+          text += can + "<br>";
+        });
+        text += "<br>";
+      }
+      const infoHint = new osparc.ui.hint.InfoHint(text);
+      rolesLayout.add(infoHint);
+      return rolesLayout;
     }
   }
 });
