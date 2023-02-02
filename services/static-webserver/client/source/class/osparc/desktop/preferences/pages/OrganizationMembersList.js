@@ -95,6 +95,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
   members: {
     __currentOrg: null,
+    __titleLayout: null,
     __organizationListItem: null,
     __memberInvitation: null,
     __membersModel: null,
@@ -104,19 +105,19 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         return;
       }
       this.__currentOrg = currentOrg;
-      this.__organizationListItem.set({
+      const organizationListItem = this.__addOrganizationListItem();
+      organizationListItem.set({
         key: currentOrg.getKey(),
         thumbnail: currentOrg.getThumbnail(),
         title: currentOrg.getTitle(),
         subtitle: currentOrg.getSubtitle(),
         accessRights: currentOrg.getAccessRights()
       });
-      this.__organizationListItem.getChildControl("options").exclude();
       this.__reloadOrgMembers();
     },
 
     __getTitleLayout: function() {
-      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Back to Organizations list"),
@@ -126,10 +127,19 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       prevBtn.addListener("execute", () => this.fireEvent("backToOrganizations"));
       titleLayout.add(prevBtn);
 
-      const organizationListItem = this.__organizationListItem = new osparc.ui.list.OrganizationListItem();
-      titleLayout.add(organizationListItem);
+      this.__addOrganizationListItem();
 
       return titleLayout;
+    },
+
+    __addOrganizationListItem: function() {
+      if (this.__organizationListItem) {
+        this.__titleLayout.remove(this.__organizationListItem);
+      }
+      const organizationListItem = this.__organizationListItem = new osparc.ui.list.OrganizationListItem();
+      organizationListItem.getChildControl("options").exclude();
+      this.__titleLayout.add(organizationListItem);
+      return organizationListItem;
     },
 
     __getMemberInvitation: function() {
