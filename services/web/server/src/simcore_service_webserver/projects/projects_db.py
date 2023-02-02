@@ -611,7 +611,7 @@ class ProjectDBAPI(ProjectDBMixin):
         assert isinstance(num_entries, int)  # nosec
         return bool(num_entries > 0)
 
-    async def get_node_ids_from_project(self, project_uuid: str) -> set[str]:
+    async def list_node_ids_in_project(self, project_uuid: str) -> set[str]:
         """Returns a set containing all the node_ids from project with project_uuid"""
         result = set()
         async with self.engine.acquire() as conn:

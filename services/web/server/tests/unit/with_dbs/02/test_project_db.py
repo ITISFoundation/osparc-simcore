@@ -835,7 +835,7 @@ async def test_get_node_ids_from_project(
     db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
     for project_id in lots_of_projects_and_nodes:
-        node_ids_inside_project: set[str] = await db_api.get_node_ids_from_project(
+        node_ids_inside_project: set[str] = await db_api.list_node_ids_in_project(
             f"{project_id}"
         )
         assert node_ids_inside_project == {

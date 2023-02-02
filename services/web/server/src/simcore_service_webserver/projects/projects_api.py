@@ -461,7 +461,7 @@ async def get_workbench_node_ids_from_project_uuid(
 ) -> set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.get_node_ids_from_project(project_uuid)
+    return await db.list_node_ids_in_project(project_uuid)
 
 
 async def is_node_id_present_in_any_project_workbench(
