@@ -26,6 +26,10 @@ from models_library.utils.string_substitution import (
             "%service_uuid%",
             "OSPARC_ENVIRONMENT_SERVICE_UUID",
         ),
+        (
+            "$SERVICE_VERSION",
+            "OSPARC_ENVIRONMENT_SERVICE_VERSION",
+        ),
     ],
 )
 def test_upgrade_identifiers(legacy: str, expected: str):

@@ -14,7 +14,7 @@ def upgrade_identifier(identifier: str) -> str:
     """
     Converts legacy or incompatible identifiers into official replacement identifier
     """
-    identifier = re.sub(r"[{}%]", "", identifier)
+    identifier = re.sub(r"[${}%]", "", identifier)
     identifier = re.sub(r"[.-]", "_", identifier)
     identifier = identifier.upper()
     if not identifier.startswith(OSPARC_IDENTIFIER_PREFIX):
