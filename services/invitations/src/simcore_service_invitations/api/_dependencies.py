@@ -1,6 +1,6 @@
 import logging
 import secrets
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 #
 # DEPENDENCIES
 #
-get_basic_credentials = HTTPBasic()
 
 
 def get_reverse_url_mapper(request: Request) -> Callable:
@@ -30,14 +29,17 @@ def get_settings(request: Request) -> ApplicationSettings:
     return app_settings
 
 
-def get_current_username(
-    credentials: HTTPBasicCredentials = Depends(get_basic_credentials),
+_get_basic_credentials = HTTPBasic()
+
+
+def get_validated_credentials(
+    credentials: Optional[HTTPBasicCredentials] = Depends(_get_basic_credentials),
     settings: ApplicationSettings = Depends(get_settings),
-) -> str:
+) -> HTTPBasicCredentials:
     def _is_valid(current: str, expected: str) -> bool:
         return secrets.compare_digest(current.encode("utf8"), expected.encode("utf8"))
 
-    if not (
+    if not credentials or not (
         _is_valid(
             credentials.username,
             expected=settings.INVITATIONS_USERNAME,
@@ -53,5 +55,4 @@ def get_current_username(
             headers={"WWW-Authenticate": "Basic"},
         )
 
-    assert isinstance(credentials.username, str)  # nosec
-    return credentials.username
+    return credentials

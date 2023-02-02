@@ -27,7 +27,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # @Dockerfile
     SC_BOOT_TARGET: Optional[BuildTargetEnum] = None
     SC_HEALTHCHECK_TIMEOUT: Optional[PositiveInt] = Field(
-        None,
+        default=None,
         description="If a single run of the check takes longer than timeout seconds "
         "then the check is considered to have failed."
         "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
@@ -38,7 +38,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # RUNTIME  -----------------------------------------------------------
 
     INVITATIONS_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
     @cached_property

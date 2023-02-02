@@ -2,7 +2,7 @@
 
 import pytest
 import yaml
-from servicelib.docker_compose import (
+from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
     MATCH_SIMCORE_REGISTRY,
     replace_env_vars_in_compose_spec,

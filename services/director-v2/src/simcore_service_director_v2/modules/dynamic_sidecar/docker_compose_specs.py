@@ -15,7 +15,7 @@ from models_library.services_resources import (
     ResourceValue,
     ServiceResourcesDict,
 )
-from servicelib.docker_compose import replace_env_vars_in_compose_spec
+from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
