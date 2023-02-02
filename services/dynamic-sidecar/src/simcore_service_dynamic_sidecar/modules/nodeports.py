@@ -10,8 +10,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Coroutine, Optional, cast
 
+import aiofiles.os
 import magic
-from aiofiles.os import wrap as sync_to_async
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
@@ -190,7 +190,7 @@ def _is_zip_file(file_path: Path) -> bool:
     return f"{mime_type}" == "application/zip"
 
 
-_shutil_move = sync_to_async(shutil.move)
+_shutil_move = aiofiles.os.wrap(shutil.move)  # type: ignore
 
 
 async def _get_data_from_port(
