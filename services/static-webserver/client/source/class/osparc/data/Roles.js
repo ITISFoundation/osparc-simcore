@@ -56,6 +56,24 @@ qx.Class.define("osparc.data.Roles", {
           qx.locale.Manager.tr("- can Delete the Organization")
         ]
       }
+    },
+
+    RESOURCE: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("Viewer"),
+        longLabel: qx.locale.Manager.tr("Viewer: Read access")
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Collaborator"),
+        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access")
+      },
+      3: {
+        id: "delete",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access")
+      }
     }
   }
 });

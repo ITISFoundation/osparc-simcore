@@ -68,24 +68,6 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       let canRead = accessRights.getRead ? accessRights.getRead() : false;
       canRead = canRead || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
       return canRead;
-    },
-
-    ROLES_RESOURCE: {
-      1: {
-        id: "read",
-        label: qx.locale.Manager.tr("Viewer"),
-        longLabel: qx.locale.Manager.tr("Viewer: Read access")
-      },
-      2: {
-        id: "write",
-        label: qx.locale.Manager.tr("Collaborator"),
-        longLabel: qx.locale.Manager.tr("Collaborator: Read/Write access")
-      },
-      3: {
-        id: "delete",
-        label: qx.locale.Manager.tr("Owner"),
-        longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access")
-      }
     }
   },
 
@@ -150,11 +132,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
       if (this.self().canDelete(accessRights)) {
-        subtitle.setValue(this.self().ROLES_RESOURCE[3].longLabel);
+        subtitle.setValue(osparc.data.Roles.RESOURCE[3].longLabel);
       } else if (this.self().canWrite(accessRights)) {
-        subtitle.setValue(this.self().ROLES_RESOURCE[2].longLabel);
+        subtitle.setValue(osparc.data.Roles.RESOURCE[2].longLabel);
       } else {
-        subtitle.setValue(this.self().ROLES_RESOURCE[1].longLabel);
+        subtitle.setValue(osparc.data.Roles.RESOURCE[1].longLabel);
       }
     },
 
@@ -164,17 +146,17 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      let currentRole = this.self().ROLES_RESOURCE[1];
+      let currentRole = osparc.data.Roles.RESOURCE[1];
       if (this.self().canDelete(accessRights)) {
-        currentRole = this.self().ROLES_RESOURCE[3];
+        currentRole = osparc.data.Roles.RESOURCE[3];
       } else if (this.self().canWrite(accessRights)) {
-        currentRole = this.self().ROLES_RESOURCE[2];
+        currentRole = osparc.data.Roles.RESOURCE[2];
       }
 
       // promote/demote actions
       switch (currentRole.id) {
         case "read": {
-          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES_RESOURCE[2].label);
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.RESOURCE[2].label);
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToCollaborator", {
               gid: this.getKey(),
@@ -185,7 +167,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
-          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES_RESOURCE[3].label);
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.RESOURCE[3].label);
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToOwner", {
               gid: this.getKey(),
@@ -193,7 +175,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
             });
           });
           menu.add(promoteButton);
-          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES_RESOURCE[1].label);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.RESOURCE[1].label);
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToViewer", {
               gid: this.getKey(),
@@ -204,7 +186,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "delete": {
-          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES_RESOURCE[2].label);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.RESOURCE[2].label);
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToCollaborator", {
               gid: this.getKey(),
