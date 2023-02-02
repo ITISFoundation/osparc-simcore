@@ -16,7 +16,7 @@ class AsyncReportCB(Protocol):
 
 @dataclass
 class ProgressBarData:
-    steps: int
+    steps: int = field(metadata={"description": "Defines the number of steps in the progress bar"})
     progress_report_cb: Optional[AsyncReportCB] = None
     _continuous_progress: float = 0
     _children: list = field(default_factory=list)
