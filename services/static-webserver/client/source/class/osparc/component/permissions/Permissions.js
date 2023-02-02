@@ -129,6 +129,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const label = new qx.ui.basic.Label(this.tr("Shared with"));
       vBox.add(label);
 
+      const rolesLayout = osparc.data.Roles.createRolesResourceInfo();
+      vBox.add(rolesLayout);
+
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 3,
