@@ -110,6 +110,14 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     return ProfileGet.parse_obj(user_profile)
 
 
+#
+# NOTE: Instead of having first and last name in the database
+# we collapse it in the column name as 'first_name.lastname'.
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/1574
+#
+_NAME_SEPARATOR = "."
+
+
 async def update_user_profile(
     app: web.Application, user_id: int, profile_update: ProfileUpdate
 ) -> None:
@@ -133,8 +141,10 @@ async def update_user_profile(
                 first_name = name
 
         # update name
+        # NOTE: this is the convention
+        #
         name = f"{profile_update.first_name or first_name}"
-        name += f".{profile_update.last_name or last_name}"
+        name += f"{_NAME_SEPARATOR}{profile_update.last_name or last_name}"
         resp = await conn.execute(
             # pylint: disable=no-value-for-parameter
             users.update()
@@ -209,8 +219,12 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
         )
         if not user_name:
             raise UserNotFoundError(uid=user_id)
-        parts = user_name.split(".") + [""]
-        return UserNameDict(first_name=parts[0], last_name=parts[1])
+
+        first_name, last_name = user_name, ""
+        if _NAME_SEPARATOR in user_name:
+            first_name, last_name = user_name.split(_NAME_SEPARATOR, maxplit=1)
+
+        return UserNameDict(first_name, last_name)
 
 
 async def get_user(app: web.Application, user_id: int) -> dict:
