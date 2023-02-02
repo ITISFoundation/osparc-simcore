@@ -125,7 +125,7 @@ def _get_tcp_cluster(
     }
 
 
-def _get_envy_config(proxy_rules: OrderedSet[_ProxyRule]) -> dict[str, Any]:
+def _get_envoy_config(proxy_rules: OrderedSet[_ProxyRule]) -> dict[str, Any]:
     listeners: deque[_TCPListener] = deque()
     clusters: deque[_TCPCluster] = deque()
 
@@ -201,18 +201,18 @@ async def _get_egress_proxy_service_config(
 ) -> dict[str, Any]:
     network_aliases: set[str] = {x[0].hostname for x in egress_proxy_rules}
 
-    envoy_config: dict[str, Any] = _get_envy_config(egress_proxy_rules)
-    yaml_str_envy_config: str = yaml.safe_dump(envoy_config, default_style='"')
-    logger.error("ENVOY CONFIG\n%s", yaml_str_envy_config)
+    envoy_config: dict[str, Any] = _get_envoy_config(egress_proxy_rules)
+    yaml_str_envoy_config: str = yaml.safe_dump(envoy_config, default_style='"')
+    logger.error("ENVOY CONFIG\n%s", yaml_str_envoy_config)
 
     command: str = " ".join(
         [
             "envoy",
             "--log-level",
             egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL.to_log_level(),
-            # add envy proxy config
+            # add envoy proxy config
             "--config-yaml",
-            f"'{yaml_str_envy_config}'",
+            f"'{yaml_str_envoy_config}'",
         ],
     )
 
