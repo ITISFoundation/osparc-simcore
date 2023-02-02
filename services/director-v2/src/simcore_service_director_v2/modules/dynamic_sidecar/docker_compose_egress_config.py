@@ -170,13 +170,13 @@ def _add_egress_proxy_network(
     service_spec["networks"] = networks
 
 
-async def _get_extra_hosts(
+async def _get_proxy_extra_hosts(
     egress_proxy_rules: OrderedSet[_ProxyRule],
     simple_dns_resolver: SimpleDNSResolver,
 ) -> list[str]:
-
     host_names: deque[str] = deque()
     queries: deque[Awaitable] = deque()
+
     for proxy_rule in egress_proxy_rules:
         data: _HostData = proxy_rule[0]
         host_names.append(data.hostname)
@@ -227,7 +227,11 @@ async def _get_egress_proxy_service_config(
                 "aliases": list(network_aliases)
             },
         },
-        "extra_hosts": await _get_extra_hosts(egress_proxy_rules, simple_dns_resolver),
+        # NOTE: there as some issues with ho DNS in house
+        # this will make Envy never fail it's internal DNS resolution
+        "extra_hosts": await _get_proxy_extra_hosts(
+            egress_proxy_rules, simple_dns_resolver
+        ),
     }
     return egress_proxy_config
 

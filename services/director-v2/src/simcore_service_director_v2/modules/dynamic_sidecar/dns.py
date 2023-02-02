@@ -26,11 +26,8 @@ class SimpleDNSResolver:
         It does not use any caching.
         """
 
-        logger.error(  # TODO:downgrade to debug
-            "dns=%s, resolver_address=%s, resolver_port=%s",
-            dns,
-            resolver_address,
-            resolver_port,
+        logger.debug(
+            "Resolving: dns='%s' via '%s:%s'", dns, resolver_address, resolver_port
         )
 
         query_reply = await DNSClient(timeout=self.timeout).query(
