@@ -49,7 +49,6 @@ from .projects_exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
-    ProjectsException,
 )
 from .projects_utils import find_changed_node_keys
 
@@ -668,19 +667,33 @@ class ProjectDBAPI(BaseProjectDB):
     # Project TAGS
     #
 
-    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+    async def add_tag(
+        self, user_id: int, project_uuid: str, tag_id: int
+    ) -> ProjectDict:
+        """Creates a tag and associates it to this project"""
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
-            # pylint: disable=no-value-for-parameter
-            query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
+            project = await self._get_project(
+                conn, user_id=user_id, project_uuid=project_uuid, exclude_foreign=None
+            )
             user_email = await self._get_user_email(conn, user_id)
-            async with conn.execute(query) as result:
-                if result.rowcount == 1:
-                    project["tags"].append(tag_id)
-                    return convert_to_schema_names(project, user_email)
-                raise ProjectsException()
 
-    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> dict:
+            project_tags: list[int] = project["tags"]
+
+            # pylint: disable=no-value-for-parameter
+            if tag_id not in project_tags:
+                await conn.execute(
+                    study_tags.insert().values(
+                        study_id=project["id"],
+                        tag_id=tag_id,
+                    )
+                )
+                project_tags.append(tag_id)
+
+            return convert_to_schema_names(project, user_email)
+
+    async def remove_tag(
+        self, user_id: int, project_uuid: str, tag_id: int
+    ) -> ProjectDict:
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
