@@ -16,7 +16,40 @@ class AsyncReportCB(Protocol):
 
 @dataclass
 class ProgressBarData:
-    steps: int = field(metadata={"description": "Defines the number of steps in the progress bar"})
+    """A progress bar data allows to keep track of multiple progress(es) even in deeply nested processes.
+
+    - Simple example:
+    async def main_fct():
+        async with ProgressBarData(steps=3) as root_progress_bar:
+            first_step()
+            await root_progress_bar.update()
+            second_step()
+            await root_progress_bar.update()
+            third_step()
+            # Note that the last update is not necessary as the context manager ensures the progress bar is complete
+
+    - nested example:
+
+    async def first_step(progress_bar: ProgressBarData):
+        async with progress_bar.sub_progress(steps=50) as sub_progress_bar:
+            # we create a sub progress bar of 50 steps, that will be stacked into the root progress bar.
+            # i.e. when the sub progress bar reaches 50, it will be equivalent of 1 step in the root progress bar.
+            for n in range(50):
+                await asyncio.sleep(0.01)
+                await sub_progress_bar.update()
+
+
+    async def main_fct():
+        async with ProgressBarData(steps=3) as root_progress_bar:
+            await first_step(root_progress_bar)
+            await second_step()
+            await root_progress_bar.update()
+            await third_step()
+    """
+
+    steps: int = field(
+        metadata={"description": "Defines the number of steps in the progress bar"}
+    )
     progress_report_cb: Optional[AsyncReportCB] = None
     _continuous_progress: float = 0
     _children: list = field(default_factory=list)
