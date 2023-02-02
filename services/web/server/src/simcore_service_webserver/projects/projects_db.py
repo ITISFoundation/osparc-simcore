@@ -178,7 +178,7 @@ class ProjectDBAPI(BaseProjectDB):
                             )
 
                         except UniqueViolation as err:
-                            if (
+                            if (  # nosec
                                 err.diag.constraint_name != "projects_uuid_key"
                                 or force_project_uuid
                             ):
@@ -193,17 +193,18 @@ class ProjectDBAPI(BaseProjectDB):
 
                         # Associate product to project: projects_to_product
                         await self.upsert_project_linked_product(
-                            project_id=project_uuid,
+                            project_uuid=project_uuid,
                             product_name=product_name,
                             conn=conn,
                         )
 
                         # Associate tags to project: study_tags
                         assert project_index is not None  # nosec
-                        for tag_id in project_tags:
-                            await self._upsert_tag_in_project(
-                                conn=conn, project_index_id=project_index, tag_id=tag_id
-                            )
+                        await self._upsert_tags_in_project(
+                            conn=conn,
+                            project_index_id=project_index,
+                            project_tags=project_tags,
+                        )
                         project_db_values["tags"] = project_tags
 
             # Returns created project with names as in the project schema
@@ -213,7 +214,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def upsert_project_linked_product(
         self,
-        project_id: ProjectID,
+        project_uuid: ProjectID,
         product_name: str,
         conn: Optional[SAConnection] = None,
     ) -> None:
@@ -223,7 +224,7 @@ class ProjectDBAPI(BaseProjectDB):
                 assert conn  # nosec
             await conn.execute(
                 pg_insert(projects_to_products)
-                .values(project_uuid=f"{project_id}", product_name=product_name)
+                .values(project_uuid=f"{project_uuid}", product_name=product_name)
                 .on_conflict_do_nothing()
             )
 

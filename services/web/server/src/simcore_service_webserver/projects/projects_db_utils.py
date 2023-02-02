@@ -186,18 +186,18 @@ class BaseProjectDB:
         return [row.tag_id async for row in conn.execute(query)]
 
     @staticmethod
-    async def _upsert_tag_in_project(
-        conn: SAConnection, project_index_id: int, tag_id: int
+    async def _upsert_tags_in_project(
+        conn: SAConnection, project_index_id: int, project_tags: list[int]
     ) -> int:
-        await conn.execute(
-            pg_insert(study_tags)
-            .values(
-                study_id=project_index_id,
-                tag_id=tag_id,
+        for tag_id in project_tags:
+            await conn.execute(
+                pg_insert(study_tags)
+                .values(
+                    study_id=project_index_id,
+                    tag_id=tag_id,
+                )
+                .on_conflict_do_nothing()
             )
-            .on_conflict_do_nothing()
-        )
-        return tag_id
 
     async def _execute_with_permission_check(
         self,
