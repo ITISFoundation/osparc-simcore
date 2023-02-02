@@ -215,7 +215,6 @@ async def test_invalid_invitation_if_guest_is_already_registered(
             )
 
 
-@pytest.mark.testit
 async def test_invatlid_invitation_if_not_guest(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,

@@ -12,8 +12,12 @@ services:
       # app specific
       - TZ=Europe/Zurich
       # app specific BUT from a framework configuration
-      - EMAIL=%%OSPARC_SETTINGS.USER_EMAIL%%
-      - PASSWORD=%%OSPARC_SETTINGS.somehting%%
+      - USER_ROLE=${OSPARC_SETTINGS_USER_ROLE}
+      - EMAIL=${OSPARC_SETTINGS_USER_EMAIL}
+      - OSPARC_API_URL=${OSPARC_SETTINGS_USER_EMAIL}
+      - MY_API_KEY=${OSPARC_SETTINGS_USER_API_KEY}
+      - MY_API_SECRET=${OSPARC_SETTINGS_USER_API_SECRET}
+      - SPEAG_LICENSE_FILE=${OSPARC_SETTINGS_SPEAG_LICENSE_FILE}
       - HASHED_PASSWORD= #optional
       - SUDO_PASSWORD=password #optional
       - SUDO_PASSWORD_HASH= #optional

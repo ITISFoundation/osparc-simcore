@@ -17,8 +17,8 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import parse_obj_as, parse_raw_as
-from servicelib.docker_compose import replace_env_vars_in_compose_spec
 
 from ...db.repositories.services import ServicesRepository
 from ...models.domain.group import GroupAtDB
