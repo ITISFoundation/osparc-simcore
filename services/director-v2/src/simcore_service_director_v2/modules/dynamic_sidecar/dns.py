@@ -48,7 +48,7 @@ class SimpleDNSResolver:
 
         return parse_obj_as(IPv4Address, str_ipv4)
 
-    def shutdown(self):
+    def shutdown(self):  # pylint: disable=no-self-use
         clean()
 
 
