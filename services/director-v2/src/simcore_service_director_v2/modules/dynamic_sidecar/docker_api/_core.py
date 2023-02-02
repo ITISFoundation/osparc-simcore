@@ -488,7 +488,7 @@ async def constrain_service_to_node(service_name: str, docker_node_id: str) -> N
         service_name,
         update_in_service_spec={
             "TaskTemplate": {
-                "Placement": {"Constraints": [f"node.id == {docker_node_id}"]}
+                "Placement": {"Constraints": [f"node.id=={docker_node_id}"]}
             }
         },
     )
