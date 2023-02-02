@@ -18,7 +18,7 @@ from models_library.services_resources import (
     MEMORY_1GB,
     ServiceResourcesDict,
 )
-from servicelib.docker_compose import (
+from models_library.utils.docker_compose import (
     MATCH_IMAGE_END,
     MATCH_IMAGE_START,
     MATCH_SERVICE_VERSION,
