@@ -49,8 +49,8 @@ def test_substitution_with_new_and_legacy_identifiers():
                 - MY_EMAIL=$OSPARC_ENVIRONMENT_USER_EMAIL
                 - S4L_LITE_PRODUCT=yes
                 - AS_VOILA=1
-                - DISPLAY1=$${KEEP_DISPLAY}
-                - DISPLAY2=${SKIP_DISPLAY}
+                - DISPLAY1=$${KEEP_SINCE_IT_USES_DOLLAR_ESCAPE_SIGN}
+                - DISPLAY2=${KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS}
     containers-allowed-outgoing-permit-list:
         s4l-core:
             - hostname: $OSPARC_ENVIRONMENT_LICENSE_SERVER_HOST
@@ -79,7 +79,7 @@ def test_substitution_with_new_and_legacy_identifiers():
         "OSPARC_ENVIRONMENT_SPEAG_LICENSE_FILE",
         "OSPARC_ENVIRONMENT_CURRENT_PRODUCT",
         "OSPARC_ENVIRONMENT_USER_EMAIL",
-        "SKIP_DISPLAY",
+        "KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS",
         "OSPARC_ENVIRONMENT_LICENSE_SERVER_HOST",
         "OSPARC_ENVIRONMENT_LICENSE_SERVER_PRIMARY_PORT",
         "OSPARC_ENVIRONMENT_LICENSE_SERVER_SECONDARY_PORT",
@@ -88,7 +88,7 @@ def test_substitution_with_new_and_legacy_identifiers():
     ]
 
     # prepare substitutions map {id: value, ...}
-    exclude = {"SKIP_DISPLAY"}
+    exclude = {"KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS"}
     substitutions = SubstitutionsDict(
         {idr: "VALUE" for idr in identifiers if idr not in exclude}
     )
@@ -118,8 +118,8 @@ def test_substitution_with_new_and_legacy_identifiers():
                 - MY_EMAIL=VALUE
                 - S4L_LITE_PRODUCT=yes
                 - AS_VOILA=1
-                - DISPLAY1=${KEEP_DISPLAY}
-                - DISPLAY2=${SKIP_DISPLAY}
+                - DISPLAY1=${KEEP_SINCE_IT_USES_DOLLAR_ESCAPE_SIGN}
+                - DISPLAY2=${KEEP_SINCE_IT_WAS_EXCLUDED_FROM_SUBSTITUTIONS}
     containers-allowed-outgoing-permit-list:
         s4l-core:
             - hostname: VALUE
