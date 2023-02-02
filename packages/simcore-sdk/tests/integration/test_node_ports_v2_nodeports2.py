@@ -751,7 +751,7 @@ async def test_batch_update_inputs_outputs(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress == pytest.approx(1)
+        assert progress_bar._continuous_progress_value == pytest.approx(1)
         await PORTS.set_multiple(
             {
                 port.key: (k, None)
@@ -759,7 +759,7 @@ async def test_batch_update_inputs_outputs(
             },
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress == pytest.approx(2)
+        assert progress_bar._continuous_progress_value == pytest.approx(2)
 
     ports_outputs = await PORTS.outputs
     ports_inputs = await PORTS.inputs
@@ -779,4 +779,4 @@ async def test_batch_update_inputs_outputs(
             await PORTS.set_multiple(
                 {"missing_key_in_both": (123132, None)}, progress_bar=progress_bar
             )
-            assert progress_bar._continuous_progress == pytest.approx(0)
+            assert progress_bar._continuous_progress_value == pytest.approx(0)

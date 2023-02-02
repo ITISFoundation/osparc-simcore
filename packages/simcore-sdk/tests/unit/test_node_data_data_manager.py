@@ -80,7 +80,7 @@ async def test_push_folder(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
@@ -139,7 +139,7 @@ async def test_push_file(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_file.assert_called_once_with(
         r_clone_settings=None,
@@ -210,7 +210,7 @@ async def test_pull_folder(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
@@ -266,7 +266,7 @@ async def test_pull_file(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.download_file_from_s3.assert_called_once_with(
         local_folder=file_path.parent,

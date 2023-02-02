@@ -51,14 +51,14 @@ class ProgressBarData:
         metadata={"description": "Defines the number of steps in the progress bar"}
     )
     progress_report_cb: Optional[AsyncReportCB] = None
-    _continuous_progress: float = 0
+    _continuous_progress_value: float = 0
     _children: list = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
-    _lock: asyncio.Lock = field(init=False)
+    _continuous_value_lock: asyncio.Lock = field(init=False)
     _last_report_value: float = 0
 
     def __post_init__(self) -> None:
-        self._lock = asyncio.Lock()
+        self._continuous_value_lock = asyncio.Lock()
         self.steps = max(1, self.steps)
 
     async def __aenter__(self) -> "ProgressBarData":
@@ -88,26 +88,26 @@ class ProgressBarData:
         await self._report_external(0, force=True)
 
     async def update(self, value: float = 1) -> None:
-        async with self._lock:
-            new_progress_value = self._continuous_progress + value
+        async with self._continuous_value_lock:
+            new_progress_value = self._continuous_progress_value + value
             if new_progress_value > self.steps:
                 new_progress_value = round(new_progress_value)
             if new_progress_value > self.steps:
                 logger.warning(
                     "%s",
                     f"Progress already reached maximum of {self.steps=}, "
-                    f"cause: {self._continuous_progress=} is updated by {value=}"
+                    f"cause: {self._continuous_progress_value=} is updated by {value=}"
                     "TIP: sub progresses are not created correctly please check the stack trace",
                     stack_info=True,
                 )
 
                 new_progress_value = self.steps
-            self._continuous_progress = new_progress_value
+            self._continuous_progress_value = new_progress_value
         await self._update_parent(value)
         await self._report_external(new_progress_value)
 
     async def finish(self) -> None:
-        await self.update(self.steps - self._continuous_progress)
+        await self.update(self.steps - self._continuous_progress_value)
         await self._report_external(self.steps, force=True)
 
     def sub_progress(self, steps: int) -> "ProgressBarData":

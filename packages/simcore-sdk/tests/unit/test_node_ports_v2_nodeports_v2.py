@@ -137,7 +137,7 @@ async def test_node_ports_accessors(
             },
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
 
 
 @pytest.fixture(scope="session")

@@ -144,7 +144,7 @@ async def test_valid_upload_download(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress == pytest.approx(1.0)
+        assert progress_bar._continuous_progress_value == pytest.approx(1.0)
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -158,7 +158,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress == pytest.approx(2.0)
+        assert progress_bar._continuous_progress_value == pytest.approx(2.0)
 
     downloaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -192,7 +192,7 @@ async def test_valid_upload_download_saved_to(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress == pytest.approx(1)
+        assert progress_bar._continuous_progress_value == pytest.approx(1)
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -209,7 +209,7 @@ async def test_valid_upload_download_saved_to(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress == pytest.approx(2)
+        assert progress_bar._continuous_progress_value == pytest.approx(2)
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)
 

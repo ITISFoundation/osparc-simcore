@@ -228,5 +228,5 @@ async def test_upload_file_to_presigned_links(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
     assert uploaded_parts
