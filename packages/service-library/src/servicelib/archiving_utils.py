@@ -392,7 +392,6 @@ async def archive_dir(
             ) from err
 
         except BaseException:
-            # NOTE: Why is this here? a BaseException, really?
             if destination.is_file():
                 destination.unlink(missing_ok=True)
             raise
