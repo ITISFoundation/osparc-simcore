@@ -85,7 +85,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
-    createRolesOrgInfo: function() {
+    __createIntoFromRoles: function(roles) {
       const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
         alignX: "left",
@@ -93,9 +93,9 @@ qx.Class.define("osparc.data.Roles", {
       });
       rolesLayout.add(rolesText);
       let text = "";
-      for (let roleId in osparc.data.Roles.ORG) {
-        text += osparc.data.Roles.ORG[roleId].longLabel + ":<br>";
-        osparc.data.Roles.ORG[roleId].canDo.forEach(can => {
+      for (let roleId in roles) {
+        text += roles[roleId].longLabel + ":<br>";
+        roles[roleId].canDo.forEach(can => {
           text += can + "<br>";
         });
         text += "<br>";
@@ -105,24 +105,12 @@ qx.Class.define("osparc.data.Roles", {
       return rolesLayout;
     },
 
+    createRolesOrgInfo: function() {
+      return this.__createIntoFromRoles(osparc.data.Roles.ORG);
+    },
+
     createRolesResourceInfo: function() {
-      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
-        alignX: "left",
-        font: "text-13"
-      });
-      rolesLayout.add(rolesText);
-      let text = "";
-      for (let roleId in osparc.data.Roles.RESOURCE) {
-        text += osparc.data.Roles.RESOURCE[roleId].longLabel + ":<br>";
-        osparc.data.Roles.RESOURCE[roleId].canDo.forEach(can => {
-          text += can + "<br>";
-        });
-        text += "<br>";
-      }
-      const infoHint = new osparc.ui.hint.InfoHint(text);
-      rolesLayout.add(infoHint);
-      return rolesLayout;
+      return this.__createIntoFromRoles(osparc.data.Roles.RESOURCE);
     }
   }
 });

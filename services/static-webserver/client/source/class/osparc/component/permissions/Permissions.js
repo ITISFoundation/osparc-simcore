@@ -126,11 +126,12 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __createCollaboratorsListSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const label = new qx.ui.basic.Label(this.tr("Shared with"));
-      vBox.add(label);
-
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const label = new qx.ui.basic.Label(this.tr("Shared with:"));
+      hBox.add(label);
       const rolesLayout = osparc.data.Roles.createRolesResourceInfo();
-      vBox.add(rolesLayout);
+      hBox.add(rolesLayout);
+      vBox.add(hBox);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
