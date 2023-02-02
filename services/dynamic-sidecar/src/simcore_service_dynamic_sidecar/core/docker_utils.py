@@ -245,17 +245,23 @@ async def _pull_image_with_progress(
 async def supports_volumes_with_quota() -> bool:
     async with docker_client() as docker:
         docker_volume: Optional[DockerVolume] = None
+        volume_name = f"check-quota-{uuid4()}"
         try:
             docker_volume = await docker.volumes.create(
                 {
-                    "name": f"check-quota-{uuid4()}",
+                    "name": volume_name,
                     "Driver": "local",
                     "DriverOpts": {"size": "1m"},
                 }
             )
-        except aiodocker.DockerError:
-            logger.debug("No support for volume with quota")
-            return False
+        except aiodocker.DockerError as e:
+            if (
+                f"create {volume_name}: quota size requested but no quota support"
+                == e.message
+            ):
+                logger.debug("No support for volume with quota")
+                return False
+            raise e
         if docker_volume:
             await docker_volume.delete()
         return True
