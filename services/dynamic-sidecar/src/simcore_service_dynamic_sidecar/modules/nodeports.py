@@ -286,12 +286,12 @@ async def download_target_ports(
                 )
                 for port in ports_to_get
             ],
-            max_concurrency=4,
+            max_concurrency=2,
         )
     # parse results
     data = {
         port.key: {"key": port.key, "value": port_data}
-        for (port, port_data, port_transferred_bytes) in results
+        for (port, port_data, _) in results
     }
     total_transfered_bytes = ByteSize(
         sum(port_transferred_bytes for *_, port_transferred_bytes in results)
