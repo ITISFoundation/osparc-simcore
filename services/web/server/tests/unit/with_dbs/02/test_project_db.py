@@ -505,7 +505,7 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
         }
     }
     with pytest.raises(ProjectNotFoundError):
-        await db_api.patch_project_workbench(
+        await db_api.update_project_workbench(
             partial_workbench_data,
             logged_user["id"],
             fake_project["uuid"],
@@ -541,7 +541,7 @@ async def test_patch_user_project_workbench_creates_nodes(
         }
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
-    patched_project, changed_entries = await db_api.patch_project_workbench(
+    patched_project, changed_entries = await db_api.update_project_workbench(
         partial_workbench_data,
         logged_user["id"],
         new_project["uuid"],
@@ -582,7 +582,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
     with pytest.raises(NodeNotFoundError):
-        await db_api.patch_project_workbench(
+        await db_api.update_project_workbench(
             partial_workbench_data,
             logged_user["id"],
             new_project["uuid"],
@@ -656,7 +656,7 @@ async def test_patch_user_project_workbench_concurrently(
         tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
-            db_api.patch_project_workbench(
+            db_api.update_project_workbench(
                 {node_uuids[n]: randomly_created_outputs[n]},
                 logged_user["id"],
                 new_project["uuid"],
@@ -697,7 +697,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.patch_project_workbench(
+            db_api.update_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
@@ -729,7 +729,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.patch_project_workbench(
+            db_api.update_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],

@@ -483,7 +483,7 @@ class ProjectDBAPI(BaseProjectDB):
     # Project WORKBENCH / NODES
     #
 
-    async def patch_project_workbench(
+    async def update_project_workbench(
         self,
         partial_workbench_data: dict[str, Any],
         user_id: int,
