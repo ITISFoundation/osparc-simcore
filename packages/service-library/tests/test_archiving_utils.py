@@ -19,6 +19,7 @@ from typing import Callable, Iterable, Iterator, Optional
 import pytest
 from faker import Faker
 from pydantic import ByteSize, parse_obj_as
+from pytest_benchmark.plugin import BenchmarkFixture
 from servicelib import archiving_utils
 from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
 
@@ -563,7 +564,7 @@ async def _archive_dir_performance(
     "compress, file_size, num_files", [(False, parse_obj_as(ByteSize, "1Mib"), 10000)]
 )
 def test_archive_dir_performance(
-    benchmark,
+    benchmark: BenchmarkFixture,
     create_file_of_size: Callable[[ByteSize, str], Path],
     tmp_path: Path,
     compress: bool,
