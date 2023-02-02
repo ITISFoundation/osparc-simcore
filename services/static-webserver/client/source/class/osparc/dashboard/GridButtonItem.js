@@ -55,7 +55,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TSR);
           break;
         }
-        case "ui-mode": {
+        case "workbench-mode": {
           control = new qx.ui.basic.Image().set({
             alignY: "middle"
           });
@@ -130,7 +130,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           control.exclude();
           this._add(control, {
             bottom: 2,
-            right: 2
+            right: 12
           });
           break;
         }

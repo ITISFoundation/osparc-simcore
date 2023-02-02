@@ -114,7 +114,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           break;
         }
-        case "ui-mode":
+        case "workbench-mode":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
             alignY: "middle"
