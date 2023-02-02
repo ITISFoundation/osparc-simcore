@@ -5,25 +5,7 @@ import asyncio
 from ipaddress import IPv4Address
 
 import pytest
-from fastapi import FastAPI
-from simcore_service_director_v2.modules.dynamic_sidecar.dns import (
-    SimpleDNSResolver,
-    get_simple_dns_resolver,
-    setup,
-    shutdown,
-)
-
-
-@pytest.fixture
-def app() -> FastAPI:
-    return FastAPI()
-
-
-@pytest.fixture
-async def simple_dns_resolver(app: FastAPI) -> SimpleDNSResolver:
-    await setup(app)
-    yield get_simple_dns_resolver(app)
-    await shutdown(app)
+from simcore_service_director_v2.modules.dynamic_sidecar.dns import SimpleDNSResolver
 
 
 @pytest.mark.parametrize(

@@ -17,10 +17,10 @@ from models_library.service_settings_labels import (
 )
 from orderedset import OrderedSet
 from pydantic import NonNegativeInt
+from simcore_service_director_v2.modules.dynamic_sidecar.dns import SimpleDNSResolver
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_compose_egress_config import (
-    _dns_query,
     _get_egress_proxy_dns_port_rules,
-    _get_envy_config,
+    _get_envoy_config,
     _HostData,
     _ProxyRule,
 )
@@ -55,7 +55,7 @@ def _u(list_of_ordered_sets: list[OrderedSet[_ProxyRule]]) -> OrderedSet[_ProxyR
 
 @pytest.fixture
 def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
-    envoy_conf = mocks_dir / "working_envy_proxy_config.yaml"
+    envoy_conf = mocks_dir / "working_envoy_proxy_config.yaml"
     assert envoy_conf.exists()
     return yaml.safe_load(envoy_conf.read_text())
 
@@ -117,7 +117,7 @@ def test_get_egress_proxy_dns_port_rules(
     assert sorted_grouped_proxy_rules == sorted_expected_grouped_proxy_rules
 
 
-def test_get_envy_config(envoy_conf: dict[str, Any]):
+def test_get_envoy_config(envoy_conf: dict[str, Any]):
     proxy_rules: OrderedSet[_ProxyRule] = OrderedSet()
 
     proxy_rules.add(
@@ -151,25 +151,27 @@ def test_get_envy_config(envoy_conf: dict[str, Any]):
         )
     )
 
-    envy_proxy_config = _get_envy_config(proxy_rules)
+    envoy_proxy_config = _get_envoy_config(proxy_rules)
 
-    assert envy_proxy_config == envoy_conf
+    assert envoy_proxy_config == envoy_conf
 
 
-async def test_dns_query_ok():
-    ip_address = await _dns_query("google.com", "1.1.1.1", 53)
+async def test_dns_query_ok(simple_dns_resolver: SimpleDNSResolver):
+    ip_address = await simple_dns_resolver.dns_query("google.com", "1.1.1.1", 53)
     assert type(ip_address) == IPv4Address
 
 
-async def test_dns_query_cannot_resolve():
+async def test_dns_query_cannot_resolve(simple_dns_resolver: SimpleDNSResolver):
     not_existing_dns = "dummy-domain-dns-that-is-missing.example.com"
     with pytest.raises(RuntimeError) as exec_info:
-        await _dns_query(not_existing_dns, "1.1.1.1", 53)
+        await simple_dns_resolver.dns_query(not_existing_dns, "1.1.1.1", 53)
     assert (
         f"Could not resolve '{not_existing_dns}' with server 1.1.1.1:53."
         in f"{exec_info}"
     )
 
 
-async def test_parallel_dns_queries():
-    await asyncio.gather(*[_dns_query("google.com", "1.1.1.1", 53) for _ in range(10)])
+async def test_parallel_dns_queries(simple_dns_resolver: SimpleDNSResolver):
+    await asyncio.gather(
+        *[simple_dns_resolver.dns_query("google.com", "1.1.1.1", 53) for _ in range(10)]
+    )
