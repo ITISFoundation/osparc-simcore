@@ -2,6 +2,7 @@
 
 """
 import re
+import sys
 from collections import UserDict
 from string import Template
 from typing import Any
@@ -39,44 +40,7 @@ def substitute_all_legacy_identifiers(text: str) -> str:
     return re.sub(_LEGACY_IDENTIFIER_RE_PATTERN, _upgrade, text)
 
 
-class TemplatePy311Mixin:
-    # NOTE: Remove these two in py3.11
-    # SEE https://github.com/python/cpython/blob/main/Lib/string.py#L144
-    #
-
-    def is_valid(self):
-        for mo in self.pattern.finditer(self.template):
-            if mo.group("invalid") is not None:
-                return False
-            if (
-                mo.group("named") is None
-                and mo.group("braced") is None
-                and mo.group("escaped") is None
-            ):
-                # If all the groups are None, there must be
-                # another group we're not expecting
-                raise ValueError("Unrecognized named group in pattern", self.pattern)
-        return True
-
-    def get_identifiers(self):
-        ids = []
-        for mo in self.pattern.finditer(self.template):
-            named = mo.group("named") or mo.group("braced")
-            if named is not None and named not in ids:
-                # add a named group only the first time it appears
-                ids.append(named)
-            elif (
-                named is None
-                and mo.group("invalid") is None
-                and mo.group("escaped") is None
-            ):
-                # If all the groups are None, there must be
-                # another group we're not expecting
-                raise ValueError("Unrecognized named group in pattern", self.pattern)
-        return ids
-
-
-class TemplateText(Template, TemplatePy311Mixin):
+class TemplateText(Template):
     """Template strings support `$`-based substitutions, using the following rules:
 
     - `$$` is an escape; it is replaced with a single `$`.
@@ -90,12 +54,52 @@ class TemplateText(Template, TemplatePy311Mixin):
     SEE https://docs.python.org/3/library/string.html#template-strings
     """
 
+    if sys.version_info < (3, 11):
+        # Backports methods added in py 3.11
+        # NOTE: Keep it compatible with multiple version
+
+        def is_valid(self):
+            for mo in self.pattern.finditer(self.template):
+                if mo.group("invalid") is not None:
+                    return False
+                if (
+                    mo.group("named") is None
+                    and mo.group("braced") is None
+                    and mo.group("escaped") is None
+                ):
+                    # If all the groups are None, there must be
+                    # another group we're not expecting
+                    raise ValueError(
+                        "Unrecognized named group in pattern", self.pattern
+                    )
+            return True
+
+        def get_identifiers(self):
+            ids = []
+            for mo in self.pattern.finditer(self.template):
+                named = mo.group("named") or mo.group("braced")
+                if named is not None and named not in ids:
+                    # add a named group only the first time it appears
+                    ids.append(named)
+                elif (
+                    named is None
+                    and mo.group("invalid") is None
+                    and mo.group("escaped") is None
+                ):
+                    # If all the groups are None, there must be
+                    # another group we're not expecting
+                    raise ValueError(
+                        "Unrecognized named group in pattern", self.pattern
+                    )
+            return ids
+
 
 class SubstitutionsDict(UserDict):
     """Map of keys to be substituded in Template"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # NOTE: Consider using a counter here. Could be useful to implement a replace first/once policy.
         self.used = set()  # used keys
 
     def __getitem__(self, key) -> Any:
