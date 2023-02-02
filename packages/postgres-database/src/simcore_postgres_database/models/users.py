@@ -6,6 +6,7 @@
 """
 from enum import Enum
 from functools import total_ordering
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.sql import func
@@ -159,6 +160,31 @@ users = sa.Table(
         # NOTE: that cannot use same phone for two user accounts
     ),
 )
+
+
+# CONVENTION: Instead of having first and last name in the database
+# we collapse it in the column name as 'first_name.lastname'.
+# There is a plan to change this in
+# https://github.com/ITISFoundation/osparc-simcore/issues/1574
+#
+_NAME_SEPARATOR = "."
+
+
+class FullNameTuple(NamedTuple):
+    first_name: str
+    last_name: str
+
+
+def safe_get_full_name(name: str) -> FullNameTuple:
+    first_name, last_name = name, ""
+    if _NAME_SEPARATOR in name:
+        first_name, last_name = name.split(_NAME_SEPARATOR, maxplit=1)
+    return FullNameTuple(first_name, last_name)
+
+
+def safe_get_user_name(first_name: str, last_name: str) -> str:
+    return f"{first_name}.{last_name}"
+
 
 # ------------------------ TRIGGERS
 
