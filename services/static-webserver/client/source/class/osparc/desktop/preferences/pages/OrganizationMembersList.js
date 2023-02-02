@@ -23,20 +23,8 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const msg = this.tr("\
-      This is the list of members in the organization.\
-      Here if you are a manager or administrator you can add new members and promote or demote existing ones.\
-    ");
-    const intro = new qx.ui.basic.Label().set({
-      value: msg,
-      alignX: "left",
-      rich: true,
-      font: "text-13"
-    });
-    this._add(intro);
-
-    this._add(osparc.ui.list.CollaboratorListItem.createRolesInfo());
-
+    this._add(this.__createIntroText());
+    this._add(this.__createRolesInfo());
     this._add(this.__getTitleLayout());
     this._add(this.__getMemberInvitation());
     this._add(this.__getMembersList(), {
@@ -114,6 +102,40 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
         accessRights: currentOrg.getAccessRights()
       });
       this.__reloadOrgMembers();
+    },
+
+    __createIntroText: function() {
+      const msg = this.tr("\
+        This is the list of members in the organization.\
+        Here if you are a manager or administrator you can add new members and promote or demote existing ones.\
+      ");
+      const intro = new qx.ui.basic.Label().set({
+        value: msg,
+        alignX: "left",
+        rich: true,
+        font: "text-13"
+      });
+      return intro;
+    },
+
+    __createRolesInfo: function() {
+      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
+        alignX: "left",
+        font: "text-13"
+      });
+      rolesLayout.add(rolesText);
+      let text = "";
+      for (let roleId in osparc.data.Roles.ORG) {
+        text += osparc.data.Roles.ORG[roleId].longLabel + ":<br>";
+        osparc.data.Roles.ORG[roleId].canDo.forEach(can => {
+          text += can + "<br>";
+        });
+        text += "<br>";
+      }
+      const infoHint = new osparc.ui.hint.InfoHint(text);
+      rolesLayout.add(infoHint);
+      return rolesLayout;
     },
 
     __getTitleLayout: function() {

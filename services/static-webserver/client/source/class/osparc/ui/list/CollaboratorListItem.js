@@ -70,7 +70,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       return canRead;
     },
 
-    ROLES: {
+    ROLES_RESOURCE: {
       1: {
         id: "read",
         label: qx.locale.Manager.tr("Viewer"),
@@ -86,18 +86,6 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         label: qx.locale.Manager.tr("Owner"),
         longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access")
       }
-    },
-
-    createRolesInfo: function() {
-      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
-        alignX: "left",
-        font: "text-13"
-      });
-      rolesLayout.add(rolesText);
-      const infoHint = new osparc.ui.hint.InfoHint("asdf");
-      rolesLayout.add(infoHint);
-      return rolesLayout;
     }
   },
 
@@ -162,11 +150,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
       if (this.self().canDelete(accessRights)) {
-        subtitle.setValue(this.self().ROLES[3].longLabel);
+        subtitle.setValue(this.self().ROLES_RESOURCE[3].longLabel);
       } else if (this.self().canWrite(accessRights)) {
-        subtitle.setValue(this.self().ROLES[2].longLabel);
+        subtitle.setValue(this.self().ROLES_RESOURCE[2].longLabel);
       } else {
-        subtitle.setValue(this.self().ROLES[1].longLabel);
+        subtitle.setValue(this.self().ROLES_RESOURCE[1].longLabel);
       }
     },
 
@@ -176,17 +164,17 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      let currentRole = this.self().ROLES[1];
+      let currentRole = this.self().ROLES_RESOURCE[1];
       if (this.self().canDelete(accessRights)) {
-        currentRole = this.self().ROLES[3];
+        currentRole = this.self().ROLES_RESOURCE[3];
       } else if (this.self().canWrite(accessRights)) {
-        currentRole = this.self().ROLES[2];
+        currentRole = this.self().ROLES_RESOURCE[2];
       }
 
       // promote/demote actions
       switch (currentRole.id) {
         case "read": {
-          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[2].label);
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES_RESOURCE[2].label);
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToCollaborator", {
               gid: this.getKey(),
@@ -197,7 +185,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
-          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES[3].label);
+          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + this.self().ROLES_RESOURCE[3].label);
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToOwner", {
               gid: this.getKey(),
@@ -205,7 +193,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
             });
           });
           menu.add(promoteButton);
-          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[1].label);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES_RESOURCE[1].label);
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToViewer", {
               gid: this.getKey(),
@@ -216,7 +204,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "delete": {
-          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES[2].label);
+          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + this.self().ROLES_RESOURCE[2].label);
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToCollaborator", {
               gid: this.getKey(),
