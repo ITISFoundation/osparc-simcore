@@ -248,7 +248,6 @@ def assemble_spec(
         # there could be some components that still require access
         add_egress_configuration(
             service_spec=service_spec,
-            swarm_network_name=swarm_network_name,
             simcore_service_labels=simcore_service_labels,
             egress_proxy_settings=egress_proxy_settings,
         )
