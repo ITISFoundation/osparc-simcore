@@ -88,6 +88,8 @@ packaging==21.3
     #   pytest-sugar
 pluggy==1.0.0
     # via pytest
+py-cpuinfo==9.0.0
+    # via pytest-benchmark
 pyparsing==3.0.9
     # via packaging
 pyrsistent==0.19.2
@@ -99,6 +101,7 @@ pytest==7.2.0
     #   -r requirements/_test.in
     #   pytest-aiohttp
     #   pytest-asyncio
+    #   pytest-benchmark
     #   pytest-cov
     #   pytest-docker
     #   pytest-instafail
@@ -109,6 +112,8 @@ pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.20.2
     # via pytest-aiohttp
+pytest-benchmark==4.0.0
+    # via -r requirements/_test.in
 pytest-cov==4.0.0
     # via -r requirements/_test.in
 pytest-docker==1.0.1

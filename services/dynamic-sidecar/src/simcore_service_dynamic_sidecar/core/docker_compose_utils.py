@@ -105,8 +105,8 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     async def _progress_cb(current: int, total: int) -> None:
         await post_progress_message(
             app,
-            float(current / (total or 1)),
             ProgressType.SERVICE_IMAGES_PULLING,
+            float(current / (total or 1)),
         )
 
     async def _log_cb(msg: str) -> None:

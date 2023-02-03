@@ -1,11 +1,13 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=protected-access
 
 from pathlib import Path
 from typing import Any, Callable
 
 import pytest
+from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_mapping
@@ -126,12 +128,16 @@ async def test_node_ports_accessors(
         await node_ports.set(port.key, port.value)
 
     # test batch add
-    await node_ports.set_multiple(
-        {
-            port.key: (port.value, None)
-            for port in list(original_inputs.values()) + list(original_outputs.values())
-        }
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await node_ports.set_multiple(
+            {
+                port.key: (port.value, None)
+                for port in list(original_inputs.values())
+                + list(original_outputs.values())
+            },
+            progress_bar=progress_bar,
+        )
+    assert progress_bar._continuous_progress_value == pytest.approx(1)
 
 
 @pytest.fixture(scope="session")

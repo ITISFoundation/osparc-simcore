@@ -21,6 +21,7 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
+from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -190,6 +191,7 @@ async def download_file_from_s3(
     local_folder: Path,
     io_log_redirect_cb: Optional[LogRedirectCB],
     client_session: Optional[ClientSession] = None,
+    progress_bar: ProgressBarData,
 ) -> Path:
     """Downloads a file from S3
 
@@ -227,15 +229,18 @@ async def download_file_from_s3(
             local_folder,
             client_session=session,
             io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
         )
 
 
 async def download_file_from_link(
     download_link: URL,
     destination_folder: Path,
+    *,
     io_log_redirect_cb: Optional[LogRedirectCB],
     file_name: Optional[str] = None,
     client_session: Optional[ClientSession] = None,
+    progress_bar: ProgressBarData,
 ) -> Path:
     # a download link looks something like:
     # http://172.16.9.89:9001/simcore-test/269dec55-6d18-4901-a767-b567db23d425/4ccf4e2e-a6cd-4f77-a255-4c36fa1b1c72/test.test?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=s3access/20190719/us-east-1/s3/aws4_request&X-Amz-Date=20190719T142431Z&X-Amz-Expires=259200&X-Amz-SignedHeaders=host&X-Amz-Signature=90268f3b580b38c1aad128475936c6f5fd335d11d01ec143cca1056d92a724b5
@@ -254,6 +259,7 @@ async def download_file_from_link(
             local_file_path,
             num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
             io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
         )
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"download of {local_file_path} complete.")
@@ -284,6 +290,7 @@ async def upload_file(
     io_log_redirect_cb: Optional[LogRedirectCB],
     client_session: Optional[ClientSession] = None,
     r_clone_settings: Optional[RCloneSettings] = None,
+    progress_bar: Optional[ProgressBarData] = None,
 ) -> tuple[LocationID, ETag]:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -301,6 +308,9 @@ async def upload_file(
         f"{store_name=}",
         f"{s3_object=}",
     )
+
+    if not progress_bar:
+        progress_bar = ProgressBarData(steps=1)
 
     use_rclone = (
         await r_clone.is_r_clone_available(r_clone_settings)
@@ -337,6 +347,7 @@ async def upload_file(
                     r_clone_settings,
                     upload_links,
                 )
+                await progress_bar.update()
             else:
                 uploaded_parts = await upload_file_to_presigned_links(
                     session,
@@ -344,6 +355,7 @@ async def upload_file(
                     file_to_upload,
                     num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
                     io_log_redirect_cb=io_log_redirect_cb,
+                    progress_bar=progress_bar,
                 )
 
             # complete the upload

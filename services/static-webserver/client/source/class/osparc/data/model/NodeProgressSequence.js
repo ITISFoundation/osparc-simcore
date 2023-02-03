@@ -18,7 +18,7 @@
 /**
  * The progress sequence of a dynamic service is as follows:
  * - CLUSTER_UP_SCALING      (1)
- * - SIDECAR_PULLING         (2)
+ * - SIDECARS_PULLING        (2)
  * - SERVICE_INPUTS_PULLING  (3a)
  * - SERVICE_OUTPUTS_PULLING (3b)
  * - SERVICE_STATE_PULLING   (3c)
@@ -158,7 +158,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         case "CLUSTER_UP_SCALING":
           this.setClusterUpScaling(progress);
           break;
-        case "SIDECAR_PULLING":
+        case "SIDECARS_PULLING":
           this.setSidecarPulling(progress);
           break;
         case "SERVICE_INPUTS_PULLING":
