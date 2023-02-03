@@ -97,6 +97,7 @@ class RabbitMQClient:
         self,
         exchange_name: str,
         message_handler: MessageHandler,
+        *,
         exclusive_queue: bool = True,
     ) -> None:
         """subscribe to exchange_name calling message_handler for every incoming message

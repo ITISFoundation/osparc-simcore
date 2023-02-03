@@ -37,4 +37,5 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
     with log_context(log, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"):
         connection = await aio_pika.connect(url)
         await connection.close()
+        log.info("rabbitmq connection established")
         return True

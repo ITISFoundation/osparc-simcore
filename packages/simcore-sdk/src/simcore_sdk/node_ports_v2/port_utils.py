@@ -7,6 +7,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
+from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from yarl import URL
 
@@ -42,6 +43,8 @@ async def get_value_from_link(
     value: PortLink,
     fileToKeyMap: Optional[dict[str, str]],
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
+    *,
+    progress_bar: Optional[ProgressBarData],
 ) -> Optional[ItemConcreteValue]:
     log.debug("Getting value %s", value)
     # create a node ports for the other node
@@ -49,7 +52,9 @@ async def get_value_from_link(
     # get the port value through that guy
     log.debug("Received node from DB %s, now returning value", other_nodeports)
 
-    other_value: Optional[ItemConcreteValue] = await other_nodeports.get(value.output)
+    other_value: Optional[ItemConcreteValue] = await other_nodeports.get(
+        value.output, progress_bar
+    )
     if isinstance(other_value, Path):
         file_name = other_value.name
         # move the file to the right final location
@@ -170,6 +175,7 @@ async def pull_file_from_store(
     fileToKeyMap: Optional[dict[str, str]],
     value: FileLink,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: Optional[ProgressBarData],
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
@@ -181,6 +187,7 @@ async def pull_file_from_store(
         s3_object=value.path,
         local_folder=local_path,
         io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar or ProgressBarData(steps=1),
     )
     # if a file alias is present use it to rename the file accordingly
     if fileToKeyMap:
@@ -195,6 +202,7 @@ async def pull_file_from_store(
 
 
 async def push_file_to_store(
+    *,
     file: Path,
     user_id: UserID,
     project_id: str,
@@ -202,6 +210,7 @@ async def push_file_to_store(
     io_log_redirect_cb: Optional[LogRedirectCB],
     r_clone_settings: Optional[RCloneSettings] = None,
     file_base_path: Optional[Path] = None,
+    progress_bar: ProgressBarData,
 ) -> FileLink:
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.create_simcore_file_id(
@@ -215,6 +224,7 @@ async def push_file_to_store(
         file_to_upload=file,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar,
     )
     log.debug("file path %s uploaded, received ETag %s", file, e_tag)
     return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
@@ -225,6 +235,7 @@ async def pull_file_from_download_link(
     fileToKeyMap: Optional[dict[str, str]],
     value: DownloadLink,
     io_log_redirect_cb: Optional[LogRedirectCB],
+    progress_bar: Optional[ProgressBarData],
 ) -> Path:
     log.debug(
         "Getting value from download link [%s] with label %s",
@@ -234,7 +245,10 @@ async def pull_file_from_download_link(
 
     local_path = data_items_utils.create_folder_path(key)
     downloaded_file = await filemanager.download_file_from_link(
-        URL(f"{value.download_link}"), local_path, io_log_redirect_cb=io_log_redirect_cb
+        URL(f"{value.download_link}"),
+        local_path,
+        io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar or ProgressBarData(steps=1),
     )
 
     # if a file alias is present use it to rename the file accordingly

@@ -20,6 +20,7 @@ flaky
 openapi-spec-validator
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-benchmark
 pytest-cov
 pytest-docker
 pytest-instafail

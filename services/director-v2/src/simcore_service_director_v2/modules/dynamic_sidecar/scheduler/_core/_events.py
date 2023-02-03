@@ -10,7 +10,11 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    ProgressRabbitMessage,
+    ProgressType,
+)
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -221,7 +225,16 @@ class CreateSidecars(DynamicSchedulerEvent):
                 include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
-
+        await rabbitmq_client.publish(
+            ProgressRabbitMessage.get_channel_name(),
+            ProgressRabbitMessage(
+                user_id=scheduler_data.user_id,
+                project_id=scheduler_data.project_id,
+                node_id=scheduler_data.node_uuid,
+                progress_type=ProgressType.SIDECARS_PULLING,
+                progress=0,
+            ).json(),
+        )
         dynamic_sidecar_id = await create_service_and_get_id(
             dynamic_sidecar_service_final_spec
         )
@@ -231,6 +244,17 @@ class CreateSidecars(DynamicSchedulerEvent):
                 dynamic_sidecar_id, dynamic_sidecar_settings
             )
         )
+        await rabbitmq_client.publish(
+            ProgressRabbitMessage.get_channel_name(),
+            ProgressRabbitMessage(
+                user_id=scheduler_data.user_id,
+                project_id=scheduler_data.project_id,
+                node_id=scheduler_data.node_uuid,
+                progress_type=ProgressType.SIDECARS_PULLING,
+                progress=1,
+            ).json(),
+        )
+
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
             docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,

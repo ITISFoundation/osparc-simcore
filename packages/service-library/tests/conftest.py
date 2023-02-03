@@ -14,6 +14,7 @@ from faker import Faker
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.file_extra",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",

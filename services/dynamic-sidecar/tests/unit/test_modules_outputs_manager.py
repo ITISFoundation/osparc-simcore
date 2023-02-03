@@ -7,7 +7,7 @@ import inspect
 from dataclasses import dataclass
 from inspect import FullArgSpec
 from pathlib import Path
-from typing import AsyncIterator, Iterator, Optional
+from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -19,7 +19,7 @@ from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
-from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB, ProgressData
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs._context import (
@@ -171,6 +171,7 @@ async def outputs_manager(
         outputs_context=outputs_context,
         io_log_redirect_cb=None,
         task_monitor_interval_s=0.01,
+        progress_cb=None,
     )
     await outputs_manager.start()
     yield outputs_manager
@@ -396,31 +397,29 @@ async def test_regression_io_log_redirect_cb(
         assert inspect.getfullargspec(
             outputs_manager.io_log_redirect_cb.func
         ) == FullArgSpec(
-            args=["app", "msg", "_"],
+            args=["app", "logs"],
             varargs=None,
             varkw=None,
-            defaults=(None,),
+            defaults=None,
             kwonlyargs=[],
             kwonlydefaults=None,
             annotations={
                 "return": None,
                 "app": FastAPI,
-                "msg": str,
-                "_": Optional[ProgressData],
+                "logs": str,
             },
         )
 
         # ensure logger used in nodeports deos not change
         assert inspect.getfullargspec(LogRedirectCB.__call__) == FullArgSpec(
-            args=["self", "msg", "progress_data"],
+            args=["self", "logs"],
             varargs=None,
             varkw=None,
-            defaults=(None,),
+            defaults=None,
             kwonlyargs=[],
             kwonlydefaults=None,
             annotations={
                 "return": None,
-                "msg": str,
-                "progress_data": Optional[ProgressData],
+                "logs": str,
             },
         )

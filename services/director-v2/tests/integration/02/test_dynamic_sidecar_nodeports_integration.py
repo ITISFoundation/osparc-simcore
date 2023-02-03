@@ -53,6 +53,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskId,
     periodic_task_result,
 )
+from servicelib.progress_bar import ProgressBarData
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from shared_comp_utils import (
@@ -623,14 +624,16 @@ async def _fetch_data_via_data_manager(
         is True
     )
 
-    await data_manager.pull(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=service_uuid,
-        file_or_folder=DY_SERVICES_STATE_PATH,
-        save_to=save_to,
-        io_log_redirect_cb=None,
-    )
+    async with ProgressBarData(steps=1) as progress_bar:
+        await data_manager.pull(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=service_uuid,
+            file_or_folder=DY_SERVICES_STATE_PATH,
+            save_to=save_to,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+        )
 
     return save_to
 
