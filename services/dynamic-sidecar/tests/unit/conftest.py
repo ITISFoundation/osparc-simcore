@@ -11,7 +11,6 @@ import aiodocker
 import pytest
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
-from faker import Faker
 from fastapi import FastAPI
 from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
@@ -20,7 +19,10 @@ from simcore_service_dynamic_sidecar.core.application import AppState, create_ap
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_down,
 )
-from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
+from simcore_service_dynamic_sidecar.core.docker_utils import (
+    EXPECTED_NO_QUOTAS_ERROR_MESSAGE,
+    docker_client,
+)
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_delay
@@ -193,26 +195,15 @@ def volume_has_quota_support(request: FixtureRequest) -> bool:
 
 @pytest.fixture
 def mock_docker_volume(
-    mocker: MockerFixture,
-    monkeypatch: MonkeyPatch,
-    volume_has_quota_support: bool,
-    faker: Faker,
+    mocker: MockerFixture, monkeypatch: MonkeyPatch, volume_has_quota_support: bool
 ) -> None:
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
-
-    mock_uuid = faker.uuid4()
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.docker_utils.uuid4",
-        return_value=mock_uuid,
-    )
 
     async def _mock_create(*args, **kwargs) -> AsyncMock:
         if volume_has_quota_support is False:
             raise aiodocker.DockerError(
                 status=404,
-                data={
-                    "message": f"create check-quota-{mock_uuid}: quota size requested but no quota support"
-                },
+                data={"message": f"testmessage {EXPECTED_NO_QUOTAS_ERROR_MESSAGE}"},
             )
         return AsyncMock()
 

@@ -19,6 +19,10 @@ from .errors import UnexpectedDockerError, VolumeNotFoundError
 
 logger = logging.getLogger(__name__)
 
+EXPECTED_NO_QUOTAS_ERROR_MESSAGE: Final[
+    str
+] = "quota size requested but no quota support"
+
 
 @asynccontextmanager
 async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
@@ -258,10 +262,9 @@ async def supports_volumes_with_quota() -> bool:
                 }
             )
         except aiodocker.DockerError as e:
-            if (
-                f"create {volume_name}: quota size requested but no quota support"
-                == e.message
-            ):
+            # NOTE: below message comes from docker source code
+            # https://github.com/tiborvass/docker/blob/master/volume/local/local_unix.go#L86
+            if EXPECTED_NO_QUOTAS_ERROR_MESSAGE in e.message:
                 logger.debug("No support for volume with quota")
                 return False
             raise e
