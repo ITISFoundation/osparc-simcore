@@ -13,9 +13,9 @@ from aiohttp.test_utils import TestClient
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
-    DB_EXCLUSIVE_COLUMNS,
     ProjectDBAPI,
 )
+from simcore_service_webserver.projects.projects_db_utils import DB_EXCLUSIVE_COLUMNS
 from simcore_service_webserver.utils import now_str
 
 from .utils_assert import assert_status
@@ -65,7 +65,7 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    new_project = await db.add_project(
+    new_project = await db.insert_project(
         project_data,
         user_id,
         product_name=product_name,
