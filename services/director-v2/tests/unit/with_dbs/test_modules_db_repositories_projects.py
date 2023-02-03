@@ -96,3 +96,12 @@ async def test_is_node_present_in_workbench(
         )
         is False
     )
+
+    not_existing_project = faker.uuid4(cast_to=None)
+    assert not_existing_project != project.uuid
+    assert (
+        await project_repository.is_node_present_in_workbench(
+            project_id=not_existing_project, node_uuid=not_existing_node
+        )
+        is False
+    )
