@@ -48,8 +48,6 @@ anyio==3.6.1
     #   watchgod
 asgiref==3.5.2
     # via uvicorn
-async-dns==2.0.0
-    # via -r requirements/_base.in
 async-timeout==4.0.2
     # via
     #   aiohttp
