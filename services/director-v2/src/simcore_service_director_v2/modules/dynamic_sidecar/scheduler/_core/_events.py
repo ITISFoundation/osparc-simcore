@@ -440,7 +440,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             user_id=scheduler_data.user_id
         )
 
-        compose_spec = await assemble_spec(
+        compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
             service_version=scheduler_data.version,

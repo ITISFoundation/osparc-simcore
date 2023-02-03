@@ -181,7 +181,7 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
-async def assemble_spec(
+def assemble_spec(
     *,
     app: FastAPI,
     service_key: ServiceKey,
@@ -246,7 +246,7 @@ async def assemble_spec(
     if not allow_internet_access:
         # NOTE: when service has no access to the internet,
         # there could be some components that still require access
-        await add_egress_configuration(
+        add_egress_configuration(
             service_spec=service_spec,
             simcore_service_labels=simcore_service_labels,
             egress_proxy_settings=egress_proxy_settings,

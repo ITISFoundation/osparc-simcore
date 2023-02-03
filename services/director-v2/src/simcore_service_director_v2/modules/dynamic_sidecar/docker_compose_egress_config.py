@@ -168,7 +168,7 @@ def _add_egress_proxy_network(
     service_spec["networks"] = networks
 
 
-async def _get_egress_proxy_service_config(
+def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
     network_with_internet: str,
     egress_proxy_settings: DynamicSidecarEgressSettings,
@@ -254,7 +254,7 @@ def _allow_outgoing_internet(
     service_spec["services"][container_name]["networks"] = networks
 
 
-async def add_egress_configuration(
+def add_egress_configuration(
     service_spec: ComposeSpecLabel,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: DynamicSidecarEgressSettings,
@@ -317,7 +317,7 @@ async def add_egress_configuration(
             # add new network for each proxy where it can be reached
             _add_egress_proxy_network(service_spec, egress_proxy_name)
 
-            egress_proxy_config = await _get_egress_proxy_service_config(
+            egress_proxy_config = _get_egress_proxy_service_config(
                 egress_proxy_rules=proxy_rules,
                 network_with_internet=_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME,
                 egress_proxy_settings=egress_proxy_settings,
