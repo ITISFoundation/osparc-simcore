@@ -266,7 +266,7 @@ async def add_project_node(
     }
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.patch_user_project_workbench(
+    await db.update_project_workbench(
         partial_workbench_data, user_id, project["uuid"], product_name
     )
     # also ensure the project is updated by director-v2 since services
@@ -338,7 +338,7 @@ async def delete_project_node(
     }
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.patch_user_project_workbench(
+    await db.update_project_workbench(
         partial_workbench_data, user_id, f"{project_uuid}"
     )
     # also ensure the project is updated by director-v2 since services
@@ -375,7 +375,7 @@ async def update_project_node_state(
         partial_workbench_data[node_id]["progress"] = 100
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, _ = await db.patch_user_project_workbench(
+    updated_project, _ = await db.update_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
         project_uuid=project_id,
@@ -400,7 +400,7 @@ async def update_project_node_progress(
         node_id: {"progress": int(100.0 * float(progress) + 0.5)},
     }
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, _ = await db.patch_user_project_workbench(
+    updated_project, _ = await db.update_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
         project_uuid=project_id,
@@ -437,7 +437,7 @@ async def update_project_node_outputs(
     }
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, changed_entries = await db.patch_user_project_workbench(
+    updated_project, changed_entries = await db.update_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
         project_uuid=project_id,
@@ -463,7 +463,7 @@ async def get_workbench_node_ids_from_project_uuid(
 ) -> set[str]:
     """Returns a set with all the node_ids from a project's workbench"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.get_node_ids_from_project(project_uuid)
+    return await db.list_node_ids_in_project(project_uuid)
 
 
 async def is_node_id_present_in_any_project_workbench(

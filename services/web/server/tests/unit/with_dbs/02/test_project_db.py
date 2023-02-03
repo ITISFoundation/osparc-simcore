@@ -29,17 +29,18 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
-    APP_PROJECT_DBAPI,
-    DB_EXCLUSIVE_COLUMNS,
-    SCHEMA_NON_NULL_KEYS,
-    Permission,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
-    _check_project_permissions,
-    _convert_to_db_names,
-    _convert_to_schema_names,
-    _create_project_access_rights,
+    check_project_permissions,
+    convert_to_db_names,
+    convert_to_schema_names,
+    create_project_access_rights,
+)
+from simcore_service_webserver.projects.projects_db_utils import (
+    DB_EXCLUSIVE_COLUMNS,
+    SCHEMA_NON_NULL_KEYS,
+    Permission,
 )
 from simcore_service_webserver.projects.projects_exceptions import (
     NodeNotFoundError,
@@ -51,7 +52,7 @@ from sqlalchemy.engine.result import Row
 
 
 def test_convert_to_db_names(fake_project: dict[str, Any]):
-    db_entries = _convert_to_db_names(fake_project)
+    db_entries = convert_to_db_names(fake_project)
     assert "tags" not in db_entries
     assert "prjOwner" not in db_entries
 
@@ -60,9 +61,9 @@ def test_convert_to_db_names(fake_project: dict[str, Any]):
 
 
 def test_convert_to_schema_names(fake_project: dict[str, Any]):
-    db_entries = _convert_to_db_names(fake_project)
+    db_entries = convert_to_db_names(fake_project)
 
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     fake_project.pop("tags")
     expected_project = deepcopy(fake_project)
     expected_project.pop("prjOwner")
@@ -70,28 +71,28 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
 
     # if there is a prj_owner, it should be replaced with the email of the owner
     db_entries["prj_owner"] = 321
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     expected_project = deepcopy(fake_project)
     assert schema_entries == expected_project
 
     # test DB exclusive columns
     for col in DB_EXCLUSIVE_COLUMNS:
         db_entries[col] = "some fake stuff"
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     for col in DB_EXCLUSIVE_COLUMNS:
         assert col not in schema_entries
 
     # test non null keys
     for col in SCHEMA_NON_NULL_KEYS:
         db_entries[col] = None
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     for col in SCHEMA_NON_NULL_KEYS:
         assert col is not None
 
     # test date time conversion
     date = datetime.datetime.utcnow()
     db_entries["creation_date"] = date
-    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries
     assert schema_entries["creationDate"] == "{}Z".format(
         date.isoformat(timespec="milliseconds")
@@ -112,9 +113,7 @@ def user_id() -> int:
 def test_project_access_rights_creation(
     group_id: int, project_access_rights: ProjectAccessRights
 ):
-    git_to_access_rights = _create_project_access_rights(
-        group_id, project_access_rights
-    )
+    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
     assert str(group_id) in git_to_access_rights
     assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
@@ -139,11 +138,11 @@ def test_check_project_permissions(
     project = {"access_rights": {}}
 
     # this should not raise as needed permissions is empty
-    _check_project_permissions(project, user_id, user_groups=[], permission="")
+    check_project_permissions(project, user_id, user_groups=[], permission="")
 
     # this should raise cause we have no user groups defined and we want permission
     with pytest.raises(ProjectInvalidRightsError):
-        _check_project_permissions(
+        check_project_permissions(
             project, user_id, user_groups=[], permission=wanted_permissions
         )
 
@@ -167,7 +166,7 @@ def test_check_project_permissions(
         {"type": GroupType.PRIMARY, "gid": group_id},
         {"type": GroupType.EVERYONE, "gid": 2},
     ]
-    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # primary group does not have access, it should raise
     project = {
@@ -178,7 +177,7 @@ def test_check_project_permissions(
         }
     }
     with pytest.raises(ProjectInvalidRightsError):
-        _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+        check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # if no primary group, we rely on standard groups and the most permissive access are used. so this should not raise
     project = {
@@ -200,7 +199,7 @@ def test_check_project_permissions(
         {"type": GroupType.STANDARD, "gid": group_id + 1},
         {"type": GroupType.STANDARD, "gid": group_id + 2},
     ]
-    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # if both primary and standard do not have rights it should raise
     project = {
@@ -223,7 +222,7 @@ def test_check_project_permissions(
         {"type": GroupType.STANDARD, "gid": group_id + 2},
     ]
     with pytest.raises(ProjectInvalidRightsError):
-        _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+        check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
     # the everyone group has access so it should not raise
     project = {
@@ -241,12 +240,12 @@ def test_check_project_permissions(
         }
     }
 
-    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
 
 async def test_setup_projects_db(client: TestClient):
     assert client.app
-    db_api = client.app[APP_PROJECT_DBAPI]
+    db_api = ProjectDBAPI.get_from_app_context(app=client.app)
     assert db_api
     assert isinstance(db_api, ProjectDBAPI)
 
@@ -257,7 +256,7 @@ async def test_setup_projects_db(client: TestClient):
 @pytest.fixture()
 def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[ProjectDBAPI]:
     assert client.app
-    db_api = client.app[APP_PROJECT_DBAPI]
+    db_api = ProjectDBAPI.get_from_app_context(app=client.app)
 
     yield db_api
 
@@ -341,7 +340,7 @@ def _assert_project_db_row(
         (UserRole.USER),
     ],
 )
-async def test_add_project_to_db(
+async def test_insert_project_to_db(
     fake_project: dict[str, Any],
     postgres_db: sa.engine.Engine,
     logged_user: dict[str, Any],
@@ -349,10 +348,12 @@ async def test_add_project_to_db(
     db_api: ProjectDBAPI,
     osparc_product_name: str,
 ):
+
     original_project = deepcopy(fake_project)
+
     # add project without user id -> by default creates a template
-    new_project = await db_api.add_project(
-        prj=fake_project, user_id=None, product_name=osparc_product_name
+    new_project = await db_api.insert_project(
+        project=fake_project, user_id=None, product_name=osparc_product_name
     )
 
     _assert_added_project(
@@ -362,15 +363,18 @@ async def test_add_project_to_db(
     )
     _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
+
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
-        await db_api.add_project(
-            prj=fake_project, user_id=fake_user_id, product_name=osparc_product_name
+        await db_api.insert_project(
+            project=fake_project,
+            user_id=fake_user_id,
+            product_name=osparc_product_name,
         )
         # adding a project with a fake user but forcing as template should still raise
-        await db_api.add_project(
-            prj=fake_project,
+        await db_api.insert_project(
+            project=fake_project,
             user_id=fake_user_id,
             force_as_template=True,
             product_name=osparc_product_name,
@@ -378,8 +382,10 @@ async def test_add_project_to_db(
 
     # adding a project with a logged user does not raise and creates a STANDARD project
     # since we already have a project with that uuid, it shall be updated
-    new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], product_name=osparc_product_name
+    new_project = await db_api.insert_project(
+        project=fake_project,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     assert new_project["uuid"] != original_project["uuid"]
     _assert_added_project(
@@ -404,8 +410,8 @@ async def test_add_project_to_db(
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
-    new_project = await db_api.add_project(
-        prj=fake_project,
+    new_project = await db_api.insert_project(
+        project=fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         force_as_template=True,
@@ -434,8 +440,8 @@ async def test_add_project_to_db(
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
-        await db_api.add_project(
-            prj=fake_project,
+        await db_api.insert_project(
+            project=fake_project,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             force_project_uuid=True,
@@ -444,16 +450,16 @@ async def test_add_project_to_db(
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
     fake_project["uuid"] = "some bad uuid"
     with pytest.raises(ValueError):
-        await db_api.add_project(
-            prj=fake_project,
+        await db_api.insert_project(
+            project=fake_project,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             force_project_uuid=True,
         )
 
     # add a project with a bad uuid that is already present, shall not raise
-    new_project = await db_api.add_project(
-        prj=fake_project,
+    new_project = await db_api.insert_project(
+        project=fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         force_project_uuid=False,
@@ -498,7 +504,7 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
         }
     }
     with pytest.raises(ProjectNotFoundError):
-        await db_api.patch_user_project_workbench(
+        await db_api.update_project_workbench(
             partial_workbench_data,
             logged_user["id"],
             fake_project["uuid"],
@@ -521,8 +527,8 @@ async def test_patch_user_project_workbench_creates_nodes(
     assert isinstance(workbench, dict)
     workbench.clear()
 
-    new_project = await db_api.add_project(
-        prj=empty_fake_project,
+    new_project = await db_api.insert_project(
+        project=empty_fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -534,7 +540,7 @@ async def test_patch_user_project_workbench_creates_nodes(
         }
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
-    patched_project, changed_entries = await db_api.patch_user_project_workbench(
+    patched_project, changed_entries = await db_api.update_project_workbench(
         partial_workbench_data,
         logged_user["id"],
         new_project["uuid"],
@@ -562,8 +568,8 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     assert isinstance(workbench, dict)
     workbench.clear()
 
-    new_project = await db_api.add_project(
-        prj=empty_fake_project,
+    new_project = await db_api.insert_project(
+        project=empty_fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -575,7 +581,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
     with pytest.raises(NodeNotFoundError):
-        await db_api.patch_user_project_workbench(
+        await db_api.update_project_workbench(
             partial_workbench_data,
             logged_user["id"],
             new_project["uuid"],
@@ -613,8 +619,10 @@ async def test_patch_user_project_workbench_concurrently(
 
     # add the project
     original_project = deepcopy(fake_project)
-    new_project = await db_api.add_project(
-        prj=fake_project, user_id=logged_user["id"], product_name=osparc_product_name
+    new_project = await db_api.insert_project(
+        project=fake_project,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     _assert_added_project(
         original_project,
@@ -647,7 +655,7 @@ async def test_patch_user_project_workbench_concurrently(
         tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
-            db_api.patch_user_project_workbench(
+            db_api.update_project_workbench(
                 {node_uuids[n]: randomly_created_outputs[n]},
                 logged_user["id"],
                 new_project["uuid"],
@@ -688,7 +696,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.patch_user_project_workbench(
+            db_api.update_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
@@ -720,7 +728,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.patch_user_project_workbench(
+            db_api.update_project_workbench(
                 {node_uuids[n]: {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
@@ -776,8 +784,8 @@ async def lots_of_projects_and_nodes(
         new_project.update(uuid=project_uuid, name=f"project {p}", workbench=workbench)
         # add the project
         project_creation_tasks.append(
-            db_api.add_project(
-                prj=new_project,
+            db_api.insert_project(
+                project=new_project,
                 user_id=logged_user["id"],
                 product_name=osparc_product_name,
             )
@@ -790,7 +798,7 @@ async def lots_of_projects_and_nodes(
     # cleanup
     await asyncio.gather(
         *[
-            db_api.delete_user_project(logged_user["id"], f"{p_uuid}")
+            db_api.delete_project(logged_user["id"], f"{p_uuid}")
             for p_uuid in all_created_projects
         ]
     )
@@ -803,7 +811,6 @@ async def lots_of_projects_and_nodes(
 async def test_node_id_exists(
     db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
-
     # create a node uuid that does not exist from an existing project
     existing_project_id = choice(list(lots_of_projects_and_nodes.keys()))
     not_existing_node_id_in_existing_project = uuid5(
@@ -827,7 +834,7 @@ async def test_get_node_ids_from_project(
     db_api: ProjectDBAPI, lots_of_projects_and_nodes: dict[ProjectID, list[NodeID]]
 ):
     for project_id in lots_of_projects_and_nodes:
-        node_ids_inside_project: set[str] = await db_api.get_node_ids_from_project(
+        node_ids_inside_project: set[str] = await db_api.list_node_ids_in_project(
             f"{project_id}"
         )
         assert node_ids_inside_project == {
@@ -849,7 +856,7 @@ async def test_replace_user_project(
     PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
     original_project = user_project
     # replace the project with the same should do nothing
-    working_project = await db_api.replace_user_project(
+    working_project = await db_api.replace_project(
         original_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -879,7 +886,7 @@ async def test_replace_user_project(
         "runHash"
     ] = "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
     # replacing with the new entries shall return the very same data
-    replaced_project = await db_api.replace_user_project(
+    replaced_project = await db_api.replace_project(
         working_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -900,7 +907,7 @@ async def test_replace_user_project(
         if "frontend" not in node_data["key"]:
             for field in FRONTEND_EXCLUDED_FIELDS:
                 node_data.pop(field, None)
-    replaced_project = await db_api.replace_user_project(
+    replaced_project = await db_api.replace_project(
         incoming_frontend_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -936,8 +943,8 @@ async def test_has_permission(
         access_rights={second_user["primary_gid"]: access_rights},
     )
 
-    await db_api.add_project(
-        prj=new_project,
+    await db_api.insert_project(
+        project=new_project,
         user_id=owner_id,
         product_name=osparc_product_name,
     )

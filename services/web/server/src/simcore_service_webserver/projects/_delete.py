@@ -102,7 +102,7 @@ async def delete_project(
         await delete_data_folders_of_project(app, project_uuid, user_id)
 
         # rm project from database
-        await db.delete_user_project(user_id, f"{project_uuid}")
+        await db.delete_project(user_id, f"{project_uuid}")
 
     except ProjectLockError as err:
         raise ProjectDeleteError(

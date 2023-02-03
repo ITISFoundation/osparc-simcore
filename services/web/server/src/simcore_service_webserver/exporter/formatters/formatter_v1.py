@@ -183,7 +183,6 @@ async def upload_file_to_storage(
     user_id: int,
     session: ClientSession,
 ) -> tuple[LinkAndPath2, ETag]:
-
     try:
         _, e_tag = await upload_file(
             user_id=user_id,
@@ -219,7 +218,7 @@ async def add_new_project(
     )
 
     # update metadata (uuid, timestamps, ownership) and save
-    _project_db: dict = await db.add_project(
+    _project_db: dict = await db.insert_project(
         project_in, user_id, force_as_template=False, product_name=product_name
     )
     if _project_db["uuid"] != str(project.uuid):

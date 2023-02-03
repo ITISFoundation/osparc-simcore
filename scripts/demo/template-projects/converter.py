@@ -2,9 +2,8 @@ import csv
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List
 
-from simcore_service_webserver.projects.projects_db import _convert_to_schema_names
+from simcore_service_webserver.projects.projects_db_utils import convert_to_schema_names
 
 SEPARATOR = ","
 
@@ -12,9 +11,9 @@ current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve
 current_dir = current_file.parent
 
 
-def load_csv(csv_filepath: Path) -> List[Dict]:
+def load_csv(csv_filepath: Path) -> list[dict]:
     headers, items = [], []
-    with open(csv_filepath, mode="r", encoding="utf-8-sig") as fhandler:
+    with open(csv_filepath, encoding="utf-8-sig") as fhandler:
         reader = csv.reader(fhandler, delimiter=",", quotechar='"')
         for row in reader:
             if row:
@@ -27,9 +26,7 @@ def load_csv(csv_filepath: Path) -> List[Dict]:
 
 
 def load_projects(csv_path: Path):
-    """ Returns schema-compatible projects
-
-    """
+    """Returns schema-compatible projects"""
     db_projects = load_csv(csv_path)
     _projects = []
 
@@ -37,7 +34,7 @@ def load_projects(csv_path: Path):
     # process
     for db_prj in db_projects:
         if int(db_prj.get("published", 0) or 0) == 1:
-            prj = _convert_to_schema_names(db_prj, fake_email)
+            prj = convert_to_schema_names(db_prj, fake_email)
 
             # jsonifies
             dump = prj["workbench"]
@@ -63,7 +60,7 @@ def load_projects(csv_path: Path):
 
 def main():
     """
-        Converts csv exported from db into project schema-compatible json files
+    Converts csv exported from db into project schema-compatible json files
     """
     for db_csv_export in current_dir.glob("template*.csv"):
         data_projects = load_projects(db_csv_export)

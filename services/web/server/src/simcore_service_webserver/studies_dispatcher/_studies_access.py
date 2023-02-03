@@ -184,7 +184,7 @@ async def copy_study_to_account(
                 substitute_parameterized_inputs(project, template_parameters) or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
-        await db.add_project(
+        await db.insert_project(
             project,
             user["id"],
             product_name=get_product_name(request),

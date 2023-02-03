@@ -33,12 +33,21 @@ projects = sa.Table(
         sa.Enum(ProjectType),
         nullable=False,
         default=ProjectType.STANDARD,
-        doc="",
+        doc="Either standard or template types",
     ),
     sa.Column(
-        "uuid", sa.String, nullable=False, unique=True, doc="Unique global identifier"
+        "uuid",
+        sa.String,
+        nullable=False,
+        unique=True,
+        doc="Unique global identifier",
     ),
-    sa.Column("name", sa.String, nullable=False, doc="Display name"),
+    sa.Column(
+        "name",
+        sa.String,
+        nullable=False,
+        doc="Display name",
+    ),
     sa.Column(
         "description",
         sa.String,
