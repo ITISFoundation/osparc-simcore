@@ -83,7 +83,7 @@ services:
         simcore.service.container-http-entrypoint: rt-web-dy
         simcore.service.containers-allowed-outgoing-permit-list: '{"rocket-core": [{"hostname": "${rocket_LICENSE_SERVER}", "tcp_ports": [27000, 56625], "dns_resolver": {"address": "172.16.8.15", "port": 53}}]}'
         simcore.service.containers-allowed-outgoing-internet: '["sym-server"]'
-        simcore.service.paths-mapping: '{"outputs_path": "/home/smu/work/outputs", "inputs_path": "/home/smu/work/inputs", "state_paths": ["/home/smu/work/workspace"], "volume_size_limits": {"/home/smu/work/workspace": "5G", "/home/smu/work/outputs": "10m", "/home/smu/work/inputs": "1k"}}'
+        simcore.service.paths-mapping: '{"outputs_path": "/home/smu/work/outputs", "inputs_path": "/home/smu/work/inputs", "state_paths": ["/home/smu/work/workspace"], "volume_size_limits": {"/home/smu/work/workspace": "5G", "/home/smu/work/outputs": "10m", "/home/smu/work/inputs": "10M"}}'
         simcore.service.settings: '[{"name": "ports", "type": "int", "value": 80}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000}, "Reservations": {"NanoCPUs": 1000000000}}}, {"name": "env", "type": "string", "value": ["rocket_CORE_HOSTNAME=%%container_name.rocket-core%%"]}]'
 
 version: '3.7'
