@@ -50,6 +50,7 @@ def clone_project_document(
 
     assert project_copy_uuid  # nosec
 
+    # Change UUID
     project_copy["uuid"] = str(project_copy_uuid)
 
     # Workbench nodes shall be unique within the project context
