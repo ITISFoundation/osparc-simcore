@@ -180,7 +180,7 @@ qx.Class.define("osparc.file.FilePicker", {
       this.self().getOutputFileMetadata(node)
         .then(fileMetadata => {
           for (let [key, value] of Object.entries(fileMetadata)) {
-            if (osparc.data.Permissions.getInstance().isTester() || showFields.includes(key)) {
+            if (osparc.data.Permissions.getInstance().canDo("services.filePicker.read.all") || showFields.includes(key)) {
               const entry = new qx.ui.form.TextField();
               form.add(entry, key, null, key);
               if (value) {

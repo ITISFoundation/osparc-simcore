@@ -109,7 +109,7 @@ ImageName = str
 _ImagesInfoDict = dict[ImageName, _LayersInfoDict]
 
 
-class _ProgressDetailDict(TypedDict, total=False):
+class _ProgressDetailDict(TypedDict, total=True):
     current: int
     total: int
 
@@ -119,13 +119,6 @@ class _DockerProgressDict(TypedDict, total=False):
     progressDetail: _ProgressDetailDict
     progress: str
     id: str
-
-
-# Examples
-# {'status': 'Pulling fs layer', 'progressDetail': {}, 'id': '6e3729cf69e0'}
-# {'status': 'Downloading', 'progressDetail': {'current': 309633, 'total': 30428708}, 'progress': '[>       ]  309.6kB/30.43MB', 'id': '6e3729cf69e0'}
-# {'status': 'Digest: sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9'}
-# {'status': 'Status: Downloaded newer image for ubuntu:latest'}
 
 
 class _TargetPullStatus(str, Enum):
@@ -139,10 +132,20 @@ class _TargetPullStatus(str, Enum):
 def _parse_docker_pull_progress(
     docker_pull_progress: _DockerProgressDict, image_pulling_data: _LayersInfoDict
 ) -> bool:
+    # Example of docker_pull_progress with status in _TargetPullStatus
+    # {'status': 'Pulling fs layer', 'progressDetail': {}, 'id': '6e3729cf69e0'}
+    # {'status': 'Downloading', 'progressDetail': {'current': 309633, 'total': 30428708}, 'progress': '[>  ]  309.6kB/30.43MB', 'id': '6e3729cf69e0'}
+    #
+    # Examples of docker_pull_progress with status NOT in _TargetPullStatus
+    # {'status': 'Digest: sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9'}
+    # {'status': 'Status: Downloaded newer image for ubuntu:latest'}
 
     status: Optional[str] = docker_pull_progress.get("status")
 
     if status in list(_TargetPullStatus):
+        assert "id" in docker_pull_progress  # nosec
+        assert "progressDetail" in docker_pull_progress  # nosec
+
         layer_id: LayerId = docker_pull_progress["id"]
         # inits (read/write order is not guaranteed)
         image_pulling_data.setdefault(layer_id, (0, 0))

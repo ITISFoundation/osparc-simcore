@@ -852,9 +852,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__studyOptionsPage.add(this.__getSlideshowSection());
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        this.__studyOptionsPage.add(this.__getAnnotationsSection());
-      }
+      this.__studyOptionsPage.add(this.__getAnnotationsSection());
 
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();

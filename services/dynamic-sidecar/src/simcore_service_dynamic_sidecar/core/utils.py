@@ -26,8 +26,6 @@ from tenacity.wait import wait_fixed
 
 from ..modules.mounted_fs import MountedVolumes
 
-TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
-
 HIDDEN_FILE_NAME = ".hidden_do_not_remove"
 
 logger = logging.getLogger(__name__)
