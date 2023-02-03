@@ -84,7 +84,7 @@ async def docker_compose_config(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_convert/)
     [SEE compose-file](https://docs.docker.com/compose/compose-file/)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927
+    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command='export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker-compose --file "{file_path}" config',
@@ -124,7 +124,7 @@ async def docker_compose_create(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927
+    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     # building is a security risk hence is disabled via "--no-build" parameter
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
@@ -143,7 +143,7 @@ async def docker_compose_start(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_start/)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927
+    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=f'export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker-compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
@@ -161,7 +161,7 @@ async def docker_compose_restart(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_restart/)
     """
     default_compose_restart_timeout = 10
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927
+    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
@@ -186,7 +186,7 @@ async def docker_compose_down(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_down/)
     """
     default_compose_down_timeout = 10
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927
+    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
@@ -209,7 +209,7 @@ async def docker_compose_rm(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_rm)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927
+    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
