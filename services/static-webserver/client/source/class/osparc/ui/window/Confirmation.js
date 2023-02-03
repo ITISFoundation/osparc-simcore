@@ -62,6 +62,10 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       return this.__confirmButton;
     },
 
+    getCancelButton: function() {
+      return this.getChildControl("cancel-button");
+    },
+
     __applyConfirmText: function(confirmText) {
       this.__confirmButton.setLabel(confirmText);
     },
