@@ -1134,8 +1134,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     startDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
+        this.getStatus().getProgressSequence().resetSequence();
 
+        const metaData = this.getMetaData();
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
@@ -1150,8 +1151,9 @@ qx.Class.define("osparc.data.model.Node", {
 
     stopDynamicService: function() {
       if (this.isDynamic()) {
-        const metaData = this.getMetaData();
+        this.getStatus().getProgressSequence().resetSequence();
 
+        const metaData = this.getMetaData();
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
