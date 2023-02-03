@@ -1,14 +1,14 @@
 import functools
 import logging
-from collections import deque
-from typing import Any, Awaitable, Final, Optional
+from pathlib import Path
+from typing import Final, Optional
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
-from simcore_sdk.node_ports_common.file_io_utils import ProgressData
 from tenacity import retry
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
@@ -130,8 +130,10 @@ async def task_create_service_containers(
 
         progress.update(message="pulling images", percent=0.01)
         await post_sidecar_log_message(app, "pulling service images")
+        await post_progress_message(app, ProgressType.SERVICE_IMAGES_PULLING, 0)
         await docker_compose_pull(app, shared_store.compose_spec)
         await post_sidecar_log_message(app, "service images ready")
+        await post_progress_message(app, ProgressType.SERVICE_IMAGES_PULLING, 1)
 
         progress.update(message="creating and starting containers", percent=0.90)
         await post_sidecar_log_message(app, "starting service containers")
@@ -183,21 +185,6 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=0.99)
 
 
-async def _logs_cb(
-    app: FastAPI,
-    progress_type: ProgressType,
-    msg: str,
-    progress_data: Optional[ProgressData] = None,
-) -> None:
-    await post_sidecar_log_message(app, msg)
-    if progress_data:
-        await post_progress_message(
-            app,
-            float(progress_data.current / (progress_data.total or 1.0)),
-            progress_type,
-        )
-
-
 async def task_restore_state(
     progress: TaskProgress,
     settings: ApplicationSettings,
@@ -206,7 +193,7 @@ async def task_restore_state(
 ) -> None:
     progress.update(message="checking files", percent=0.0)
     # first check if there are files (no max concurrency here, these are just quick REST calls)
-    existing_files: list[bool] = await logged_gather(
+    paths_exists: list[bool] = await logged_gather(
         *(
             data_manager.exists(
                 user_id=settings.DY_SIDECAR_USER_ID,
@@ -218,30 +205,38 @@ async def task_restore_state(
         ),
         reraise=True,
     )
+    effective_paths: list[Path] = [
+        path
+        for path, exists in zip(mounted_volumes.disk_state_paths(), paths_exists)
+        if exists
+    ]
 
     progress.update(message="Downloading state", percent=0.05)
     await post_sidecar_log_message(
         app,
-        f"Downloading state files for {existing_files}...",
+        f"Downloading state files for {effective_paths}...",
     )
-
-    await logged_gather(
-        *(
-            data_manager.pull(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                file_or_folder=path,
-                io_log_redirect_cb=functools.partial(
-                    _logs_cb, app, ProgressType.SERVICE_STATE_PULLING
-                ),
-            )
-            for path, exists in zip(mounted_volumes.disk_state_paths(), existing_files)
-            if exists
+    async with ProgressBarData(
+        steps=len(effective_paths),
+        progress_report_cb=functools.partial(
+            post_progress_message, app, ProgressType.SERVICE_STATE_PULLING
         ),
-        max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
-        reraise=True,  # this should raise if there is an issue
-    )
+    ) as root_progress:
+        await logged_gather(
+            *(
+                data_manager.pull(
+                    user_id=settings.DY_SIDECAR_USER_ID,
+                    project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                    node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                    file_or_folder=path,
+                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+                    progress_bar=root_progress,
+                )
+                for path in effective_paths
+            ),
+            max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
+            reraise=True,  # this should raise if there is an issue
+        )
 
     await post_sidecar_log_message(app, "Finished state downloading")
     progress.update(message="state restored", percent=0.99)
@@ -253,28 +248,29 @@ async def task_save_state(
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> None:
-    awaitables: deque[Awaitable[Optional[Any]]] = deque()
-
     progress.update(message="starting state save", percent=0.0)
-
-    for state_path in mounted_volumes.disk_state_paths():
-        await post_sidecar_log_message(app, f"Saving state for {state_path}")
-        awaitables.append(
-            data_manager.push(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                file_or_folder=state_path,
-                r_clone_settings=settings.rclone_settings_for_nodeports,
-                archive_exclude_patterns=mounted_volumes.state_exclude,
-                io_log_redirect_cb=functools.partial(
-                    _logs_cb, app, ProgressType.SERVICE_STATE_PUSHING
-                ),
-            )
+    async with ProgressBarData(
+        steps=len([mounted_volumes.disk_state_paths()]),
+        progress_report_cb=functools.partial(
+            post_progress_message, app, ProgressType.SERVICE_STATE_PUSHING
+        ),
+    ) as root_progress:
+        await logged_gather(
+            *[
+                data_manager.push(
+                    user_id=settings.DY_SIDECAR_USER_ID,
+                    project_id=str(settings.DY_SIDECAR_PROJECT_ID),
+                    node_uuid=str(settings.DY_SIDECAR_NODE_ID),
+                    file_or_folder=state_path,
+                    r_clone_settings=settings.rclone_settings_for_nodeports,
+                    archive_exclude_patterns=mounted_volumes.state_exclude,
+                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+                    progress_bar=root_progress,
+                )
+                for state_path in mounted_volumes.disk_state_paths()
+            ],
+            max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         )
-
-    progress.update(message="saving state", percent=0.1)
-    await logged_gather(*awaitables, max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE)
 
     await post_sidecar_log_message(app, "Finished state saving")
     progress.update(message="finished state saving", percent=0.99)
@@ -288,17 +284,21 @@ async def task_ports_inputs_pull(
 ) -> int:
     progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
-
     await post_sidecar_log_message(app, f"Pulling inputs for {port_keys}")
     progress.update(message="pulling inputs", percent=0.1)
-    transferred_bytes = await nodeports.download_target_ports(
-        nodeports.PortTypeName.INPUTS,
-        mounted_volumes.disk_inputs_path,
-        port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(
-            _logs_cb, app, ProgressType.SERVICE_INPUTS_PULLING
+    async with ProgressBarData(
+        steps=1,
+        progress_report_cb=functools.partial(
+            post_progress_message, app, ProgressType.SERVICE_INPUTS_PULLING
         ),
-    )
+    ) as root_progress:
+        transferred_bytes = await nodeports.download_target_ports(
+            nodeports.PortTypeName.INPUTS,
+            mounted_volumes.disk_inputs_path,
+            port_keys=port_keys,
+            io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+            progress_bar=root_progress,
+        )
     await post_sidecar_log_message(app, "Finished pulling inputs")
     progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
@@ -312,16 +312,20 @@ async def task_ports_outputs_pull(
 ) -> int:
     progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
-
     await post_sidecar_log_message(app, f"Pulling output for {port_keys}")
-    transferred_bytes = await nodeports.download_target_ports(
-        nodeports.PortTypeName.OUTPUTS,
-        mounted_volumes.disk_outputs_path,
-        port_keys=port_keys,
-        io_log_redirect_cb=functools.partial(
-            _logs_cb, app, ProgressType.SERVICE_OUTPUTS_PULLING
+    async with ProgressBarData(
+        steps=1,
+        progress_report_cb=functools.partial(
+            post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PULLING
         ),
-    )
+    ) as root_progress:
+        transferred_bytes = await nodeports.download_target_ports(
+            nodeports.PortTypeName.OUTPUTS,
+            mounted_volumes.disk_outputs_path,
+            port_keys=port_keys,
+            io_log_redirect_cb=functools.partial(post_sidecar_log_message, app),
+            progress_bar=root_progress,
+        )
     await post_sidecar_log_message(app, "Finished pulling outputs")
     progress.update(message="finished outputs pulling", percent=0.99)
     return int(transferred_bytes)
@@ -331,7 +335,6 @@ async def task_ports_outputs_push(
     progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
 ) -> None:
     progress.update(message="starting outputs pushing", percent=0.0)
-
     await post_sidecar_log_message(
         app,
         f"waiting for outputs {outputs_manager.outputs_context.file_type_port_keys} to be pushed",
@@ -340,7 +343,6 @@ async def task_ports_outputs_push(
     await outputs_manager.wait_for_all_uploads_to_finish()
 
     await post_sidecar_log_message(app, "finished outputs pushing")
-
     progress.update(message="finished outputs pushing", percent=0.99)
 
 

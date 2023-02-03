@@ -96,6 +96,7 @@ async def outputs_manager(
         outputs_context=outputs_context,
         io_log_redirect_cb=None,
         task_monitor_interval_s=TICK_INTERVAL,
+        progress_cb=None,
     )
     await outputs_manager.start()
     yield outputs_manager

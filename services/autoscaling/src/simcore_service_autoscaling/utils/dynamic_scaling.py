@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, Task
 
 from ..core.errors import Ec2InvalidDnsNameError
+from ..core.settings import get_application_settings
 from ..models import AssociatedInstance, EC2InstanceData, EC2InstanceType, Resources
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
@@ -84,17 +85,17 @@ def try_assigning_task_to_instances(
     return False
 
 
-_MAX_TIME_TO_START_EC2_INSTANCE: Final[datetime.timedelta] = datetime.timedelta(
-    minutes=3
-)
-
-
 async def try_assigning_task_to_pending_instances(
     app: FastAPI,
     pending_task: Task,
     list_of_pending_instance_to_tasks: list[tuple[EC2InstanceData, list[Task]]],
     type_to_instance_map: dict[str, EC2InstanceType],
 ) -> bool:
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    instance_max_time_to_start = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    )
     for instance, instance_assigned_tasks in list_of_pending_instance_to_tasks:
         instance_type = type_to_instance_map[instance.type]
         instance_total_resources = Resources(
@@ -110,7 +111,7 @@ async def try_assigning_task_to_pending_instances(
             now = datetime.datetime.now(datetime.timezone.utc)
             time_since_launch = now - instance.launch_time
             estimated_time_to_completion = (
-                instance.launch_time + _MAX_TIME_TO_START_EC2_INSTANCE - now
+                instance.launch_time + instance_max_time_to_start - now
             )
             await log_tasks_message(
                 app,
@@ -121,7 +122,7 @@ async def try_assigning_task_to_pending_instances(
                 app,
                 [pending_task],
                 time_since_launch.total_seconds()
-                / _MAX_TIME_TO_START_EC2_INSTANCE.total_seconds(),
+                / instance_max_time_to_start.total_seconds(),
             )
             return True
     return False

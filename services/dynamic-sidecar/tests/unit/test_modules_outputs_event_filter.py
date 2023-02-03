@@ -59,7 +59,7 @@ async def outputs_manager(
     outputs_context: OutputsContext,
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_context=outputs_context, io_log_redirect_cb=None
+        outputs_context=outputs_context, io_log_redirect_cb=None, progress_cb=None
     )
     await outputs_manager.start()
     yield outputs_manager
