@@ -203,7 +203,7 @@ async def _get_egress_proxy_service_config(
 
     envoy_config: dict[str, Any] = _get_envoy_config(egress_proxy_rules)
     yaml_str_envoy_config: str = yaml.safe_dump(envoy_config, default_style='"')
-    logger.error("ENVOY CONFIG\n%s", yaml_str_envoy_config)
+    logger.debug("ENVOY CONFIG\n%s", yaml_str_envoy_config)
 
     command: str = " ".join(
         [
