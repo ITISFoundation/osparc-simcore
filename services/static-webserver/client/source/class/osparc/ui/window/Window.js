@@ -93,11 +93,11 @@ qx.Class.define("osparc.ui.window.Window", {
     open: function() {
       if (this.__recenter) {
         // avoid flickering
-        // this.setOpacity(0.1);
+        this.setOpacity(0);
         this.base(arguments);
         setTimeout(() => {
           this.center();
-          // this.setOpacity(1);
+          this.setOpacity(1);
         }, 1);
       } else {
         this.base(arguments);
