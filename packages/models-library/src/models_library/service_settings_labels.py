@@ -189,7 +189,7 @@ class PathMappingsLabel(BaseModel):
             except ValidationError as e:
                 raise ValueError(
                     f"Provided size='{size_str}' contains invalid charactes: {str(e)}"
-                )
+                ) from e
 
             inputs_path: Optional[Path] = values.get("inputs_path")
             outputs_path: Optional[Path] = values.get("outputs_path")
