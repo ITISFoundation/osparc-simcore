@@ -1,4 +1,4 @@
-""" Subsystem that renders and sends emails
+""" Plugin to send emails and render email templates
 
 """
 import logging
@@ -17,6 +17,9 @@ log = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_EMAIL", logger=log
 )
 def setup_email(app: web.Application):
+    """
+    Email template and helper functions to send emails
+    """
 
     templates_dir = resources.get_path("templates")
     if not templates_dir.exists():
