@@ -58,20 +58,20 @@ qx.Class.define("osparc.About", {
       this.add(poweredByLabel);
       osparc.store.StaticInfo.getInstance().getDisplayName()
         .then(displayName => {
-          const aboutText = this.tr(` 
-          is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`);
+          const aboutText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
           poweredByLabel.setValue(displayName + aboutText);
         });
 
-      const aboutText = this.self().OSPARC_OFFICIAL + this.tr(`
-         is an online-accessible, cloud-based, and collaborative computational modeling platform 
-        that was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions 
-        (SPARC) program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable) 
-        computational modeling in the field of bioelectronic medicine – from neural interfaces to peripheral nerve recruitment 
-        and the resulting effects on organ function.<br><br>
-        For more information about SPARC and the services offered, visit the 
-        <a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.
-      `);
+      const text = this.tr("\
+         is an online-accessible, cloud-based, and collaborative computational modeling platform \
+        that was developed under the Common Fund’s Stimulating Peripheral Activity to Relieve Conditions \
+        (SPARC) program to ensure sustainable, reproducible, and FAIR (findable, accessible, interoperable, reusable) \
+        computational modeling in the field of bioelectronic medicine – from neural interfaces to peripheral nerve recruitment \
+        and the resulting effects on organ function.<br><br>\
+        For more information about SPARC and the services offered, visit the \
+      ");
+      const portalLink = `<a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.`;
+      const aboutText = this.self().OSPARC_OFFICIAL + text + portalLink;
       const aboutLabel = new qx.ui.basic.Label().set({
         value: aboutText,
         font: "text-14",

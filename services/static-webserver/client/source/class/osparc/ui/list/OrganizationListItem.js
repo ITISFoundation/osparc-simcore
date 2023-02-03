@@ -63,11 +63,13 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     },
 
     __applyAccessRights: function(accessRights) {
+      const optionsMenu = this.getChildControl("options");
+      optionsMenu.exclude();
       if (accessRights === null) {
         return;
       }
       if (accessRights.getWrite()) {
-        const optionsMenu = this.getChildControl("options");
+        optionsMenu.show();
         const menu = this.__getOptionsMenu(accessRights);
         optionsMenu.setMenu(menu);
       }
@@ -105,13 +107,15 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       } else {
         thumbnail.setSource(osparc.utils.Icons.organization(this.self().ICON_SIZE));
       }
-      const store = osparc.store.Store.getInstance();
-      store.getProductEveryone()
-        .then(groupProductEveryone => {
-          if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
-            thumbnail.setSource(osparc.utils.Icons.everyone(this.self().ICON_SIZE));
-          }
-        });
+      if (this.isPropertyInitialized("key")) {
+        const store = osparc.store.Store.getInstance();
+        store.getProductEveryone()
+          .then(groupProductEveryone => {
+            if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
+              thumbnail.setSource(osparc.utils.Icons.everyone(this.self().ICON_SIZE));
+            }
+          });
+      }
     }
   }
 });
