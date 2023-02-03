@@ -78,6 +78,8 @@ class EC2InstancesSettings(BaseCustomSettings):
         "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
     )
 
+    EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(default=datetime.timedelta(minutes=3), description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode")
+
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
     def ensure_time_is_in_range(cls, value):

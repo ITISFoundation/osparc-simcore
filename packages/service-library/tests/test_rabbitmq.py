@@ -73,8 +73,11 @@ async def rabbitmq_client(
 
 
 @pytest.fixture
-def random_exchange_name(faker: Faker) -> str:
-    return f"pytest_fake_exchange_{faker.pystr()}"
+def random_exchange_name(faker: Faker) -> Callable[[], str]:
+    def _creator() -> str:
+        return f"pytest_fake_exchange_{faker.pystr()}"
+
+    return _creator
 
 
 async def _assert_message_received(
@@ -102,7 +105,7 @@ async def _assert_message_received(
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: str,
+    random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
     faker: Faker,
 ):
@@ -112,14 +115,16 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     message = faker.text()
 
     mocked_message_parser = mocker.AsyncMock(return_value=True)
-    await publisher.publish(random_exchange_name, message)
-    await consumer.subscribe(random_exchange_name, mocked_message_parser)
+    exchange_name = random_exchange_name()
+    await publisher.publish(exchange_name, message)
+    await asyncio.sleep(0)  # ensure context switch
+    await consumer.subscribe(exchange_name, mocked_message_parser)
     await _assert_message_received(mocked_message_parser, 0, "")
 
 
 async def test_rabbit_client_pub_sub(
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: str,
+    random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
     faker: Faker,
 ):
@@ -129,35 +134,36 @@ async def test_rabbit_client_pub_sub(
     message = faker.text()
 
     mocked_message_parser = mocker.AsyncMock(return_value=True)
-    await consumer.subscribe(random_exchange_name, mocked_message_parser)
-    await publisher.publish(random_exchange_name, message)
+    exchange_name = random_exchange_name()
+    await consumer.subscribe(exchange_name, mocked_message_parser)
+    await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 1, message)
 
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_rabbit_client_pub_many_subs(
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: str,
+    random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
     faker: Faker,
     num_subs: int,
 ):
     consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
-    mocked_message_parsers = (
+    mocked_message_parsers = [
         mocker.AsyncMock(return_value=True) for _ in range(num_subs)
-    )
+    ]
 
     publisher = rabbitmq_client("publisher")
     message = faker.text()
-
+    exchange_name = random_exchange_name()
     await asyncio.gather(
         *(
-            consumer.subscribe(random_exchange_name, parser)
+            consumer.subscribe(exchange_name, parser)
             for consumer, parser in zip(consumers, mocked_message_parsers)
         )
     )
 
-    await publisher.publish(random_exchange_name, message)
+    await publisher.publish(exchange_name, message)
     await asyncio.gather(
         *(
             _assert_message_received(parser, 1, message)
@@ -168,7 +174,7 @@ async def test_rabbit_client_pub_many_subs(
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: str,
+    random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
     faker: Faker,
 ):
@@ -186,11 +192,75 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
             return False
         return True
 
+    exchange_name = random_exchange_name()
     _raise_once_then_true.calls = 0
     mocked_message_parser = mocker.AsyncMock(side_effect=_raise_once_then_true)
-    await consumer.subscribe(random_exchange_name, mocked_message_parser)
-    await publisher.publish(random_exchange_name, message)
+    await consumer.subscribe(exchange_name, mocked_message_parser)
+    await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 3, message)
+
+
+@pytest.mark.parametrize("num_subs", [10])
+async def test_pub_sub_with_non_exclusive_queue(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocker: MockerFixture,
+    faker: Faker,
+    num_subs: int,
+):
+    consumers = (rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
+    mocked_message_parsers = [
+        mocker.AsyncMock(return_value=True) for _ in range(num_subs)
+    ]
+
+    publisher = rabbitmq_client("publisher")
+    message = faker.text()
+    exchange_name = random_exchange_name()
+    await asyncio.gather(
+        *(
+            consumer.subscribe(exchange_name, parser, exclusive_queue=False)
+            for consumer, parser in zip(consumers, mocked_message_parsers)
+        )
+    )
+
+    await publisher.publish(exchange_name, message)
+    # only one consumer should have gotten the message here and the others not
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            total_call_count = 0
+            for parser in mocked_message_parsers:
+                total_call_count += parser.call_count
+            assert total_call_count == 1, "too many messages"
+
+
+def test_rabbit_pub_sub_performance(
+    benchmark,
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    async def async_fct_to_test():
+        consumer = rabbitmq_client("consumer")
+        publisher = rabbitmq_client("publisher")
+
+        message = faker.text()
+
+        mocked_message_parser = mocker.AsyncMock(return_value=True)
+        exchange_name = random_exchange_name()
+        await consumer.subscribe(exchange_name, mocked_message_parser)
+        await publisher.publish(exchange_name, message)
+        await _assert_message_received(mocked_message_parser, 1, message)
+
+    def run_test_async():
+        asyncio.get_event_loop().run_until_complete(async_fct_to_test())
+
+    benchmark.pedantic(run_test_async, iterations=1, rounds=10)
 
 
 async def test_rabbit_client_lose_connection(
