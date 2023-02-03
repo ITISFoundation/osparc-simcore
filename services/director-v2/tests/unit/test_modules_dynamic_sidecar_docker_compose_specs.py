@@ -180,9 +180,8 @@ def test_update_service_quotas_storage(
     compose_spec: ComposeSpecLabel, storage_opt_count: int, has_quota_support: bool
 ):
     assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
-    docker_compose_specs._update_service_quotas(
-        service_spec=compose_spec, has_quota_support=has_quota_support
-    )
+    if not has_quota_support:
+        docker_compose_specs._strip_service_quotas(service_spec=compose_spec)
 
     if has_quota_support:
         assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
