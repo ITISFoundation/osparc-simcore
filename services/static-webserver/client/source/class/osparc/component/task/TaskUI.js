@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.task.TaskUI", {
           confirmText: this.tr("Cancel"),
           confirmAction: "delete"
         });
-        win.getChildControl("cancel-button").setLabel(this.tr("Ignore"));
+        win.getCancelButton().setLabel(this.tr("Ignore"));
         win.center();
         win.open();
         win.addListener("close", () => {
