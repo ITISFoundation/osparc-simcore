@@ -162,7 +162,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
 
 class DynamicSidecarEgressSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
-        "envoyproxy/envoy:v1.24-latest",
+        "envoyproxy/envoy:v1.25-latest",
         description="envoy image to use",
     )
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
@@ -479,7 +479,6 @@ class ComputationalBackendSettings(BaseCustomSettings):
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
-
     # docker environs
     SC_BOOT_MODE: BootModeEnum
     SC_BOOT_TARGET: Optional[BuildTargetEnum]
