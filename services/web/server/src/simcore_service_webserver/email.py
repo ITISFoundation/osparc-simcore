@@ -1,5 +1,9 @@
 """ Plugin to send emails and render email templates
 
+
+ SMTP: Simple Mail Transfer Protocol
+ MIME: Multipurpose Internet Mail Extensions
+
 """
 import logging
 

@@ -31,13 +31,9 @@ def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
 
 
 async def _do_send_mail(
-    *, mime_message: Union[MIMEText, MIMEMultipart], settings: SMTPSettings
-):
-    """
-    Simple Mail Transfer Protocol
-
-    MIME: Multipurpose Internet Mail Extensions
-    """
+    *, message: Union[MIMEText, MIMEMultipart], settings: SMTPSettings
+) -> None:
+    # WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
 
     logger.debug("Email configuration %s", settings)
 
@@ -65,7 +61,7 @@ async def _do_send_mail(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
 
-            await smtp.send_message(mime_message)
+            await smtp.send_message(message)
         finally:
             await smtp.quit()
     else:
@@ -75,10 +71,10 @@ async def _do_send_mail(
                 await smtp.login(
                     settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
                 )
-            await smtp.send_message(mime_message)
+            await smtp.send_message(message)
 
 
-async def _compose_mime(
+def _compose_mime(
     message: Union[MIMEText, MIMEMultipart],
     *,
     sender: str,
@@ -129,7 +125,7 @@ async def send_email(
         recipient=recipient,
         subject=subject,
     )
-    await _do_send_mail(settings=settings, mime_message=message)
+    await _do_send_mail(settings=settings, message=message)
 
 
 class AttachmentTuple(NamedTuple):
@@ -176,7 +172,7 @@ async def send_email_with_attachements(
         encoders.encode_base64(part)
         message.attach(part)
 
-    await _do_send_mail(settings=settings, mime_message=message)
+    await _do_send_mail(settings=settings, message=message)
 
 
 def render_template(
