@@ -697,7 +697,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QutasCheckResponse"
+                  "$ref": "#/components/schemas/QuotasCheckResponse"
                 }
               }
             }
@@ -814,8 +814,8 @@
           }
         }
       },
-      "QutasCheckResponse": {
-        "title": "QutasCheckResponse",
+      "QuotasCheckResponse": {
+        "title": "QuotasCheckResponse",
         "required": [
           "are_quotas_supported"
         ],
