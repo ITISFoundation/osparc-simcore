@@ -100,16 +100,16 @@ qx.Class.define("osparc.desktop.MainPage", {
             msg += "<br>";
             msg += this.tr("- current <b>notebooks</b> (<b>jupyterlab</b> session will be terminated)");
             win.set({
-              maxWidth: 400,
-              message: msg,
+              maxWidth: 460,
               caption: this.tr("Close"),
+              message: msg,
               confirmText: this.tr("Yes")
             });
           } else {
             const msg = this.tr("Do you want to save and close ") + "<b>" + studyName + "</b>?";
             win.set({
-              message: msg,
               caption: this.tr("Save & Close"),
+              message: msg,
               confirmText: this.tr("Yes")
             });
           }
