@@ -60,8 +60,8 @@ async def test_logged_gather(event_loop, coros, mock_logger):
     with pytest.raises(ValueError) as excinfo:
         await logged_gather(*coros, reraise=True, log=mock_logger)
 
-    # NOTE: #4 fails first, the one raised in #1
-    assert "task#1" in str(excinfo.value)
+    # NOTE: #4 fails first
+    assert "task#4" in str(excinfo.value)
 
     # NOTE: only first error in the list is raised, since it is not RuntimeError, that task
     assert isinstance(excinfo.value, ValueError)

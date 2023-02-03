@@ -5,6 +5,7 @@ IMPORTANT: lowest level module
    DO NOT IMPORT ANYTHING from .
 """
 import asyncio
+import contextlib
 import logging
 import os
 from pathlib import Path
@@ -142,23 +143,24 @@ async def _worker(
     log: logging.Logger,
     reraise: bool,
 ):
-    while True:
-        task_id, task = await queue_in.get()
-        try:
-            result = await task
-            await queue_out.put((task, result))
-        except Exception as exc:
-            log.warning(
-                "Error in %i-th concurrent task %s: %s",
-                task_id,
-                f"{task}",
-                f"{exc}",
-            )
-            await queue_out.put((task, exc))
-            if reraise:
-                raise exc
-        finally:
-            queue_in.task_done()
+    with contextlib.suppress(asyncio.QueueEmpty):
+        while task_input := queue_in.get_nowait():
+            task_id, task = task_input
+            try:
+                result = await task
+                await queue_out.put((task, result))
+            except Exception as exc:
+                log.warning(
+                    "Error in %i-th concurrent task %s: %s",
+                    task_id,
+                    f"{task}",
+                    f"{exc}",
+                )
+                await queue_out.put((task, exc))
+                if reraise:
+                    raise exc
+            finally:
+                queue_in.task_done()
 
 
 async def logged_gather(
@@ -170,12 +172,14 @@ async def logged_gather(
 ) -> list[Any]:
     queue_in = asyncio.Queue()
     queue_out = asyncio.Queue()
-    workers = [
-        asyncio.create_task(_worker(queue_in, queue_out, log, fail_fast))
-        for _ in range(max_concurrency)
-    ]
+
+    # distribute the tasks
     for task_index, task in enumerate(tasks):
         await queue_in.put((task_index, task))
+    workers = [
+        asyncio.create_task(_worker(queue_in, queue_out, log, reraise))
+        for _ in range(max_concurrency)
+    ]
     try:
         # if reraise:
         done, pending = await asyncio.wait(
@@ -184,9 +188,9 @@ async def logged_gather(
         )
         if reraise:
             for t in done:
-                if t.exception():
-                    raise t.exception()
-        assert not pending
+                if exc := t.exception():
+                    raise exc
+        assert not pending  # nosec
         await queue_in.join()
     finally:
         for w in workers:
