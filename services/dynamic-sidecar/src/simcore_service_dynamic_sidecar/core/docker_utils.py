@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from asyncio import Task
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Awaitable, Callable, Final, Optional, TypedDict
@@ -13,6 +14,7 @@ from aiodocker.volumes import DockerVolume
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.services import RunID
 from pydantic import PositiveInt
+from servicelib.utils import fire_and_forget_task
 from settings_library.docker_registry import RegistrySettings
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
@@ -248,6 +250,13 @@ async def _pull_image_with_progress(
         await log_cb(f"pulling {shorter_image_name}: {pull_progress}...")
 
 
+_fire_and_forget_tasks_collection: set[Task] = set()
+
+
+async def _volume_cleanup(docker_volume: DockerVolume) -> None:
+    await docker_volume.delete()
+
+
 @cached()
 async def supports_volumes_with_quota() -> bool:
     async with docker_client() as docker:
@@ -269,5 +278,10 @@ async def supports_volumes_with_quota() -> bool:
                 return False
             raise e
         if docker_volume:
-            await docker_volume.delete()
+            fire_and_forget_task(
+                _volume_cleanup(docker_volume),
+                task_suffix_name=f"remove-{volume_name}",
+                fire_and_forget_tasks_collection=_fire_and_forget_tasks_collection,
+            )
+
         return True
