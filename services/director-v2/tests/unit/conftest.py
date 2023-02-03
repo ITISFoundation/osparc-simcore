@@ -25,7 +25,6 @@ from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
-from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
@@ -49,12 +48,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
     ServiceState,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.dns import (
-    SimpleDNSResolver,
-    get_simple_dns_resolver,
-    setup,
-    shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
     DockerVersion,
@@ -448,15 +441,3 @@ async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion
         )
     )
     return parse_obj_as(DockerVersion, version_request["Version"])
-
-
-@pytest.fixture
-def mock_app() -> FastAPI:
-    return FastAPI()
-
-
-@pytest.fixture
-async def simple_dns_resolver(mock_app: FastAPI) -> SimpleDNSResolver:
-    await setup(mock_app)
-    yield get_simple_dns_resolver(mock_app)
-    await shutdown(mock_app)

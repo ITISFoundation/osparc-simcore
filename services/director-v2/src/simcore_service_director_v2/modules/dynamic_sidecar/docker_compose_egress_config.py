@@ -1,8 +1,7 @@
 import logging
-from asyncio import gather
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Awaitable, Final
+from typing import Any, Final
 
 import yaml
 from models_library.basic_types import PortInt
@@ -15,7 +14,6 @@ from orderedset import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ...core.settings import DynamicSidecarEgressSettings
-from .dns import SimpleDNSResolver
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
 
@@ -98,7 +96,7 @@ def _get_tcp_cluster(
                     }
                 ],
                 "dns_resolver_options": {
-                    "use_tcp_for_dns_lookups": True,
+                    "use_tcp_for_dns_lookups": False,
                     "no_default_search_domain": True,
                 },
             },
@@ -170,34 +168,11 @@ def _add_egress_proxy_network(
     service_spec["networks"] = networks
 
 
-async def _get_proxy_extra_hosts(
-    egress_proxy_rules: OrderedSet[_ProxyRule],
-    simple_dns_resolver: SimpleDNSResolver,
-) -> list[str]:
-    host_names: deque[str] = deque()
-    queries: deque[Awaitable] = deque()
-
-    for proxy_rule in egress_proxy_rules:
-        data: _HostData = proxy_rule[0]
-        host_names.append(data.hostname)
-        queries.append(
-            simple_dns_resolver.dns_query(
-                dns=data.hostname,
-                resolver_address=data.dns_resolver_address,
-                resolver_port=data.dns_resolver_port,
-            )
-        )
-
-    resolved_ips: list[str] = await gather(*queries)
-    return list({f"{host}:{ip}" for host, ip in zip(host_names, resolved_ips)})
-
-
 async def _get_egress_proxy_service_config(
     egress_proxy_rules: OrderedSet[_ProxyRule],
     network_with_internet: str,
     egress_proxy_settings: DynamicSidecarEgressSettings,
     egress_proxy_name: str,
-    simple_dns_resolver: SimpleDNSResolver,
 ) -> dict[str, Any]:
     network_aliases: set[str] = {x[0].hostname for x in egress_proxy_rules}
 
@@ -227,11 +202,6 @@ async def _get_egress_proxy_service_config(
                 "aliases": list(network_aliases)
             },
         },
-        # NOTE: there as some issues with ho DNS in house
-        # this will make Envy never fail it's internal DNS resolution
-        "extra_hosts": await _get_proxy_extra_hosts(
-            egress_proxy_rules, simple_dns_resolver
-        ),
     }
     return egress_proxy_config
 
@@ -288,7 +258,6 @@ async def add_egress_configuration(
     service_spec: ComposeSpecLabel,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: DynamicSidecarEgressSettings,
-    simple_dns_resolver: SimpleDNSResolver,
 ) -> None:
     """
     Each service defines rules to allow certain containers to gain access
@@ -353,7 +322,6 @@ async def add_egress_configuration(
                 network_with_internet=_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME,
                 egress_proxy_settings=egress_proxy_settings,
                 egress_proxy_name=egress_proxy_name,
-                simple_dns_resolver=simple_dns_resolver,
             )
             logger.debug(
                 "EGRESS PROXY '%s' CONFIG:\n%s",

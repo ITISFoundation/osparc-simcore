@@ -20,7 +20,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
-from .dns import get_simple_dns_resolver
 from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
@@ -251,7 +250,6 @@ async def assemble_spec(
             service_spec=service_spec,
             simcore_service_labels=simcore_service_labels,
             egress_proxy_settings=egress_proxy_settings,
-            simple_dns_resolver=get_simple_dns_resolver(app),
         )
 
     stringified_service_spec = replace_env_vars_in_compose_spec(
