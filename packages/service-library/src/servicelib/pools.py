@@ -5,6 +5,7 @@ from typing import Iterator
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application
 __shared_process_pool_executor = {}
+__shared_thread_pool_executor = {}
 
 
 def _get_shared_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
@@ -24,11 +25,11 @@ def _get_shared_thread_pool_executor(**kwargs) -> ThreadPoolExecutor:
     # the key helps to distinguish between them in the same application
     key = "".join(sorted("_".join((k, str(v))) for k, v in kwargs.items()))
 
-    if key not in __shared_process_pool_executor:
+    if key not in __shared_thread_pool_executor:
         # pylint: disable=consider-using-with
-        __shared_process_pool_executor[key] = ThreadPoolExecutor(**kwargs)
+        __shared_thread_pool_executor[key] = ThreadPoolExecutor(**kwargs)
 
-    return __shared_process_pool_executor[key]
+    return __shared_thread_pool_executor[key]
 
 
 @contextmanager
