@@ -10,6 +10,7 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
 from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
@@ -66,6 +67,7 @@ def _raise_for_errors(
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result.success is False),
     reraise=False,
+    before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
 )
 async def _retry_docker_compose_start(
     compose_spec: str, settings: ApplicationSettings
@@ -81,6 +83,7 @@ async def _retry_docker_compose_start(
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result is False),
     reraise=True,
+    before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
 )
 async def _retry_docker_compose_create(
     compose_spec: str, settings: ApplicationSettings
