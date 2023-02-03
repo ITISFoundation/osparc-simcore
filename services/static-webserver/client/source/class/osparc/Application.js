@@ -153,7 +153,6 @@ qx.Class.define("osparc.Application", {
               });
               okBtn.addListener("execute", () => tooSmallWindow.close());
               tooSmallWindow.add(okBtn);
-              setTimeout(() => tooSmallWindow.center(), 100);
               tooSmallWindow.center();
               tooSmallWindow.open();
             } else {
