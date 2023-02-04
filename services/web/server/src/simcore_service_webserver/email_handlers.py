@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class TestEmail(BaseModel):
     from_: Optional[EmailStr] = Field(None, description="Email sender")
-    to: EmailStr = Field(..., description="Email destination")
+    to: EmailStr = Field(..., description="Email receiver")
     template_name: Literal[
         "change_email_email.jinja2",
         "new_2fa_code.jinja2",

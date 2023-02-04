@@ -50,7 +50,7 @@ tags:
   - name: viewer
   - name: repository
 paths:
-  /email:
+  '/email:test':
     post:
       tags:
         - admin
@@ -108,7 +108,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/paths/~1email/post/requestBody/content/application~1json/schema'
+                    $ref: '#/paths/~1email%3Atest/post/requestBody/content/application~1json/schema'
                   error:
                     title: Error
   /:
