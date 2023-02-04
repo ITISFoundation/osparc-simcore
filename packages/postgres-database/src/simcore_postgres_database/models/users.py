@@ -183,7 +183,7 @@ class UserNameConverter:
         """Parses value from users.name and returns separated full and last name in a tuple"""
         first_name, last_name = name, ""
         if _NAME_SEPARATOR in name:
-            first_name, last_name = name.split(_NAME_SEPARATOR, maxplit=1)
+            first_name, last_name = name.split(_NAME_SEPARATOR, maxsplit=1)
         return FullNameTuple(first_name, last_name)
 
     @staticmethod
