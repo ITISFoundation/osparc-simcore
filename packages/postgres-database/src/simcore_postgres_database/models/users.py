@@ -164,8 +164,8 @@ users = sa.Table(
 
 # CONVENTION: Instead of having first and last name in the database
 # we collapse it in the column name as 'first_name.lastname'.
-# There is a plan to change this in
-# https://github.com/ITISFoundation/osparc-simcore/issues/1574
+#
+# NOTE: there is a plan to change this https://github.com/ITISFoundation/osparc-simcore/issues/1574
 #
 _NAME_SEPARATOR = "."
 
@@ -175,15 +175,21 @@ class FullNameTuple(NamedTuple):
     last_name: str
 
 
-def safe_get_full_name(name: str) -> FullNameTuple:
-    first_name, last_name = name, ""
-    if _NAME_SEPARATOR in name:
-        first_name, last_name = name.split(_NAME_SEPARATOR, maxplit=1)
-    return FullNameTuple(first_name, last_name)
+class UserNameConverter:
+    """Helper functions to convert full-name to name in both directions"""
 
+    @staticmethod
+    def get_full_name(name: str) -> FullNameTuple:
+        """Parses value from users.name and returns separated full and last name in a tuple"""
+        first_name, last_name = name, ""
+        if _NAME_SEPARATOR in name:
+            first_name, last_name = name.split(_NAME_SEPARATOR, maxplit=1)
+        return FullNameTuple(first_name, last_name)
 
-def safe_get_user_name(first_name: str, last_name: str) -> str:
-    return f"{first_name}.{last_name}"
+    @staticmethod
+    def get_name(first_name: str, last_name: str) -> str:
+        """Composes value for users.name column"""
+        return first_name + _NAME_SEPARATOR + last_name
 
 
 # ------------------------ TRIGGERS

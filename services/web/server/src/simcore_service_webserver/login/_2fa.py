@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
-from simcore_postgres_database.models.users import safe_get_full_name
+from simcore_postgres_database.models.users import UserNameConverter
 from twilio.rest import Client
 
 from ..redis import get_redis_validation_code_client
@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 
 def _get_human_readable_first_name(user_name: str) -> str:
-    full_name = safe_get_full_name(user_name)
+    full_name = UserNameConverter.get_full_name(user_name)
     first_name = full_name.first_name.strip()[:20]  # security strip
     return first_name.capitalize()
 
