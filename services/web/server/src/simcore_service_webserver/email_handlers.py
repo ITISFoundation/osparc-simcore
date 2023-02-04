@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Literal, Optional
 
 from aiohttp import web
@@ -5,13 +6,22 @@ from pydantic import BaseModel, EmailStr, Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from ._meta import API_VTAG
-from .email_core import send_email_from_template
+from .email_core import (
+    check_email_server,
+    get_plugin_settings,
+    send_email_from_template,
+)
 from .login.decorators import login_required
 from .products import Product, get_current_product, get_product_template_path
 from .security_decorators import permission_required
 from .utils_aiohttp import envelope_json_response
 
-routes = web.RouteTableDef()
+logger = logging.getLogger(__name__)
+
+
+#
+# API schema models
+#
 
 
 class TestEmail(BaseModel):
@@ -26,6 +36,12 @@ class TestEmail(BaseModel):
         "service_submission.jinja2",
     ] = "registration_email.jinja2"
     template_context: dict[str, Any] = {}
+
+
+#
+# API routes
+#
+routes = web.RouteTableDef()
 
 
 @routes.post(f"/{API_VTAG}/email:test")
@@ -46,12 +62,24 @@ async def test_email(request: web.Request):
         "support_email": product.support_email,
     } | body.template_context
 
-    await send_email_from_template(
-        request,
-        from_=body.from_ or product.support_email,
-        to=body.to,
-        template=template_path,
-        context=context,
-    )
+    settings = get_plugin_settings(request.app)
+    try:
+        mail_server_info = check_email_server(settings)
+        logger.info("%s", f"{mail_server_info=}")
+
+        await send_email_from_template(
+            request,
+            from_=body.from_ or product.support_email,
+            to=body.to,
+            template=template_path,
+            context=context,
+        )
+    except Exception as err:
+        # FIXME: Failing tests should note marked as http errors but returned as part of the test results
+        # Distinguish between test failure and error of e.g. inputs, etc
+        logger.exception("test_email failed for %s", f"{settings.json(indent=1)}")
+        raise web.HTTPInternalServerError(
+            reason="Test failed. Check server logs for further info."
+        ) from err
 
     return envelope_json_response(body)
