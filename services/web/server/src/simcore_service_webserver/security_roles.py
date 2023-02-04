@@ -90,6 +90,7 @@ ROLES_PERMISSIONS = {
     },
     UserRole.ADMIN: {
         "can": [
+            "admin.*",
             "storage.files.sync",
         ],
         "inherits": [UserRole.TESTER],
@@ -98,6 +99,6 @@ ROLES_PERMISSIONS = {
 
 
 # static test
-assert set(e for e in ROLES_PERMISSIONS) == set(  # nosec
+assert {e for e in ROLES_PERMISSIONS} == {  # nosec
     e for e in UserRole
-), "All user rols must be part define permissions"  # nosec
+}, "All user rols must be part define permissions"  # nosec
