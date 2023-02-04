@@ -175,7 +175,7 @@ async def send_email_with_attachements(
     await _do_send_mail(settings=settings, message=message)
 
 
-def render_template(
+def _render_template(
     request: web.Request,
     template: Path,
     context: Mapping[str, Any],
@@ -200,7 +200,7 @@ async def send_email_from_template(
 ):
     """Render template in context and send email w/ or w/o attachments"""
     settings: SMTPSettings = get_plugin_settings(request.app)
-    subject, body = render_template(request, template, context)
+    subject, body = _render_template(request, template, context)
 
     if attachments:
         await send_email_with_attachements(

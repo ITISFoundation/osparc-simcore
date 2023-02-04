@@ -21,6 +21,8 @@ async def get_template_path(request: web.Request, filename: str) -> Path:
 
 # legacy alias
 render_and_send_mail = send_email_from_template
+
+# prevents auto-removal by pycln
 assert AttachmentTuple  # nosec
 
 

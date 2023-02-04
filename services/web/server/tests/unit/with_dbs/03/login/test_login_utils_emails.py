@@ -52,7 +52,7 @@ def http_request(app: web.Application, product_name: str) -> web.Request:
 
 
 @pytest.fixture
-def mocked_core_do_send_email(mocker: MockerFixture) -> MagicMock:
+def mocked_core_do_send_email(mocker: MockerFixture) -> MockerFixture:
     async def print_mail(*, message, settings):
         print("EMAIL----------")
         print(message)
