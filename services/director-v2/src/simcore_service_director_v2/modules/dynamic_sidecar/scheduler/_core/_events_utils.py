@@ -33,6 +33,7 @@ from .....models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
+from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....director_v0 import DirectorV0Client
 from ....node_rights import NodeRightsManager, ResourceName
@@ -242,10 +243,21 @@ async def attempt_pod_removal_and_data_saving(
         # only try to save the status if :
         # - it is requested to save the state
         # - the dynamic-sidecar has finished booting correctly
-        if (
-            scheduler_data.dynamic_sidecar.service_removal_state.can_save
-            and scheduler_data.dynamic_sidecar.were_containers_created
-        ):
+
+        can_really_save: bool = False
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+            # if node is not present in the workbench it makes no sense
+            # to try and save the data, nodeports will raise errors
+            # and sidecar will hang
+
+            projects_repository = cast(
+                ProjectsRepository, get_repository(app, ProjectsRepository)
+            )
+            can_really_save = await projects_repository.is_node_present_in_workbench(
+                project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
+            )
+
+        if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
             dynamic_sidecar_client = get_dynamic_sidecar_client(app)
 
             logger.info("Calling into dynamic-sidecar to save: state and output ports")
