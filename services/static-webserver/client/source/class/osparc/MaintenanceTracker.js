@@ -81,7 +81,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
       let text = osparc.utils.Utils.formatDateAndTime(this.getStart());
       if (this.getEnd()) {
-        if (osparc.utils.Utils.formatDate(this.getStart()) === osparc.utils.Utils.formatDate(this.getEnd())) {
+        if (this.getStart().getDate() === this.getEnd().getDate()) {
           // do not print the same day twice
           text += " - " + osparc.utils.Utils.formatTime(this.getEnd());
         } else {
