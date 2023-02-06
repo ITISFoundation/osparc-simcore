@@ -52,16 +52,18 @@ def http_request(app: web.Application, product_name: str) -> web.Request:
 
 
 @pytest.fixture
-def mocked_core_do_send_email(mocker: MockerFixture) -> MockerFixture:
+def mocked_core_do_send_email(mocker: MockerFixture) -> MagicMock:
     async def print_mail(*, message, settings):
         print("EMAIL----------")
         print(message)
         print("---------------")
-        return mocker.patch(
-            "simcore_service_webserver.email_core._do_send_mail",
-            spec=True,
-            side_effect=print_mail,
-        )
+
+    mock = mocker.patch(
+        "simcore_service_webserver.email_core._do_send_mail",
+        spec=True,
+        side_effect=print_mail,
+    )
+    return mock
 
 
 @pytest.fixture
