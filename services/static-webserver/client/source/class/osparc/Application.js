@@ -95,9 +95,6 @@ qx.Class.define("osparc.Application", {
       this.__updateFavicon();
       this.__updateSocial();
 
-      // Some resources request before building the main stack
-      osparc.WindowSizeTracker.getInstance().startTracker();
-
       this.__startupChecks();
     },
 

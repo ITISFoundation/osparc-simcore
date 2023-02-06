@@ -51,6 +51,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     this._add(navBar);
 
     // Some resources request before building the main stack
+    osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
