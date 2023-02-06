@@ -54,50 +54,26 @@ qx.Class.define("osparc.WindowSizeTracker", {
     },
 
     __applyTooSmall: function(tooSmall) {
+      this.__removeRibbonMessage();
+
       if (tooSmall) {
         const width = document.documentElement.clientWidth;
         const text = this.__getText(width > 400);
-        this.setText(text);
-      } else {
-        this.setText();
+        const notification = new osparc.component.notification.Notification(text, "smallWindow", true);
+        osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+        this.__lastRibbonMessage = notification;
       }
     },
 
     __getText: function(longVersion = true) {
-      let text = this.tr("Oops, your window is a bit small!");
+      let text = qx.locale.Manager.tr("Oops, your window is a bit small!");
       if (longVersion) {
-        text += this.tr(" This app performs better for minimum ");
+        text += qx.locale.Manager.tr(" This app performs better for at least ");
         text += this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT;
-        text += this.tr(" window size.");
-        text += this.tr(" Touchscreen devices are not supported yet.");
+        text += qx.locale.Manager.tr(" window size.");
+        text += qx.locale.Manager.tr(" Touchscreen devices are not supported yet.");
       }
       return text;
-    },
-
-    __scheduleRibbonMessage: function() {
-      this.__removeRibbonMessage();
-
-      const now = new Date();
-      const diffClosable = this.getStart().getTime() - now.getTime() - this.self().CLOSABLE_WARN_IN_ADVANCE;
-      const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
-
-      const messageToRibbon = closable => {
-        this.__removeRibbonMessage();
-        const text = this.__getText();
-        const notification = new osparc.component.notification.Notification(text, "maintenance", closable);
-        osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
-        this.__lastRibbonMessage = notification;
-      };
-      if (diffClosable < 0) {
-        messageToRibbon(true);
-      } else {
-        setTimeout(() => messageToRibbon(true), diffClosable);
-      }
-      if (diffPermanent < 0) {
-        messageToRibbon(false);
-      } else {
-        setTimeout(() => messageToRibbon(false), diffPermanent);
-      }
     },
 
     __removeRibbonMessage: function() {

@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.notification.Notification", {
 
   properties: {
     type: {
-      check: ["maintenance"],
+      check: ["maintenance", "smallWindow"],
       init: null,
       nullable: false
     },
@@ -51,18 +51,29 @@ qx.Class.define("osparc.component.notification.Notification", {
 
   members: {
     getFullText: function(wLineBreak = false) {
-      let fullText = "";
+      let text = "";
       switch (this.getType()) {
         case "maintenance": {
-          fullText += qx.locale.Manager.tr("Maintenance scheduled.");
-          fullText += wLineBreak ? "<br>" : " ";
-          fullText += this.getText() + ".";
-          fullText += wLineBreak ? "<br>" : " ";
-          fullText += qx.locale.Manager.tr("Please save your work and logout.");
+          text += qx.locale.Manager.tr("Maintenance scheduled.");
+          text += wLineBreak ? "<br>" : " ";
+          text += this.getText() + ".";
+          text += wLineBreak ? "<br>" : " ";
+          text += qx.locale.Manager.tr("Please save your work and logout.");
+          break;
+        }
+        case "smallWindow": {
+          text += qx.locale.Manager.tr("Oops, your window is a bit small!");
+          const width = document.documentElement.clientWidth;
+          if (width > 400) {
+            text += qx.locale.Manager.tr(" This app performs better for minimum ");
+            text += osparc.WindowSizeTracker.MIN_WIDTH + "x" + osparc.WindowSizeTracker.MIN_HEIGHT;
+            text += qx.locale.Manager.tr(" window size.");
+            text += qx.locale.Manager.tr(" Touchscreen devices are not supported yet.");
+          }
           break;
         }
       }
-      return fullText;
+      return text;
     }
   }
 });
