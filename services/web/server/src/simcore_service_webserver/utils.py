@@ -6,6 +6,7 @@ import hashlib
 import logging
 import os
 import sys
+import traceback
 import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
@@ -151,6 +152,12 @@ def compose_support_error_msg(
 #
 # FORMATTING
 #
+
+
+def get_traceback_string(exc: BaseException) -> str:
+    return "".join(
+        traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
+    )
 
 
 # -----------------------------------------------
