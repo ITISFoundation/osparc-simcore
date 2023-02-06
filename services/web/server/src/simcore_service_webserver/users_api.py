@@ -14,7 +14,7 @@ from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.models.users import UserNameConverter, UserRole
 from sqlalchemy import and_, literal_column
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
@@ -133,8 +133,10 @@ async def update_user_profile(
                 first_name = name
 
         # update name
-        name = f"{profile_update.first_name or first_name}"
-        name += f".{profile_update.last_name or last_name}"
+        name = UserNameConverter.get_name(
+            first_name=profile_update.first_name or first_name,
+            last_name=profile_update.last_name or last_name,
+        )
         resp = await conn.execute(
             # pylint: disable=no-value-for-parameter
             users.update()
@@ -209,8 +211,12 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
         )
         if not user_name:
             raise UserNotFoundError(uid=user_id)
-        parts = user_name.split(".") + [""]
-        return UserNameDict(first_name=parts[0], last_name=parts[1])
+
+        full_name = UserNameConverter.get_full_name(user_name)
+        return UserNameDict(
+            first_name=full_name.first_name,
+            last_name=full_name.last_name,
+        )
 
 
 async def get_user(app: web.Application, user_id: int) -> dict:
