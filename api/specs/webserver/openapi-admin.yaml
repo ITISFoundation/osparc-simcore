@@ -24,15 +24,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_TestEmail_'
+                $ref: '#/components/schemas/Envelope_Union_TestFailed__TestPassed__'
 components:
   schemas:
-    Envelope_TestEmail_:
-      title: Envelope[TestEmail]
+    Envelope_Union_TestFailed__TestPassed__:
+      title: Envelope[Union[TestFailed, TestPassed]]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/TestEmail'
+          title: Data
+          anyOf:
+          - $ref: '#/components/schemas/TestFailed'
+          - $ref: '#/components/schemas/TestPassed'
         error:
           title: Error
     HTTPValidationError:
@@ -58,7 +61,7 @@ components:
         to:
           title: To
           type: string
-          description: Email destination
+          description: Email receiver
           format: email
         template_name:
           title: Template Name
@@ -75,6 +78,40 @@ components:
           title: Template Context
           type: object
           default: {}
+    TestFailed:
+      title: TestFailed
+      required:
+      - test_name
+      - error_type
+      - error_message
+      - traceback
+      type: object
+      properties:
+        test_name:
+          title: Test Name
+          type: string
+        error_type:
+          title: Error Type
+          type: string
+        error_message:
+          title: Error Message
+          type: string
+        traceback:
+          title: Traceback
+          type: string
+    TestPassed:
+      title: TestPassed
+      required:
+      - fixtures
+      - info
+      type: object
+      properties:
+        fixtures:
+          title: Fixtures
+          type: object
+        info:
+          title: Info
+          type: object
     ValidationError:
       title: ValidationError
       required:

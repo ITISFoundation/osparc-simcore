@@ -12,7 +12,7 @@ from typing import Union
 
 from fastapi import FastAPI, Header
 from models_library.generics import Envelope
-from simcore_service_webserver.email_handlers import TestEmail
+from simcore_service_webserver.email_handlers import TestEmail, TestFailed, TestPassed
 
 app = FastAPI(redoc_url=None)
 
@@ -23,7 +23,7 @@ TAGS: list[Union[str, Enum]] = [
 
 @app.post(
     "/email:test",
-    response_model=Envelope[TestEmail],
+    response_model=Envelope[Union[TestFailed, TestPassed]],
     tags=TAGS,
     operation_id="test_email",
 )
