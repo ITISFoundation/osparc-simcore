@@ -37,7 +37,7 @@ class DynamicServiceCreate(ServiceDetails):
 
     service_resources: ServiceResourcesDict
 
-    product_name: str
+    product_name: str = Field(..., description="Current product name")
 
     class Config:
         schema_extra = {

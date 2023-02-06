@@ -187,8 +187,10 @@ def get_delete_project_task(
 
 async def _start_dynamic_service(
     request: web.Request,
+    *,
     service_key: str,
     service_version: str,
+    product_name: str,
     user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
@@ -220,8 +222,10 @@ async def _start_dynamic_service(
         },
         node_id=node_uuid,
     )
+
     await director_v2_api.run_dynamic_service(
         request.app,
+        product_name=product_name,
         project_id=f"{project_uuid}",
         user_id=user_id,
         service_key=service_key,
@@ -280,18 +284,23 @@ async def add_project_node(
             # NOTE: we do not start the service if there are already too many
             await _start_dynamic_service(
                 request,
-                service_key,
-                service_version,
-                user_id,
-                ProjectID(project["uuid"]),
-                NodeID(node_uuid),
+                service_key=service_key,
+                service_version=service_version,
+                product_name=product_name,
+                user_id=user_id,
+                project_uuid=ProjectID(project["uuid"]),
+                node_uuid=NodeID(node_uuid),
             )
 
     return node_uuid
 
 
 async def start_project_node(
-    request: web.Request, user_id: UserID, project_id: ProjectID, node_id: NodeID
+    request: web.Request,
+    product_name: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
 ):
     project = await get_project_for_user(request.app, f"{project_id}", user_id)
     workbench = project.get("workbench", {})
@@ -301,11 +310,12 @@ async def start_project_node(
 
     await _start_dynamic_service(
         request,
-        node_details.key,
-        node_details.version,
-        user_id,
-        project_id,
-        node_id,
+        service_key=node_details.key,
+        service_version=node_details.version,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_id,
+        node_uuid=node_id,
     )
 
 
@@ -930,11 +940,12 @@ async def run_project_dynamic_services(
         *(
             _start_dynamic_service(
                 request,
-                project_missing_services[service_uuid]["key"],
-                project_missing_services[service_uuid]["version"],
-                user_id,
-                project["uuid"],
-                NodeID(service_uuid),
+                service_key=project_missing_services[service_uuid]["key"],
+                service_version=project_missing_services[service_uuid]["version"],
+                product_name=product_name,
+                user_id=user_id,
+                project_uuid=project["uuid"],
+                node_uuid=NodeID(service_uuid),
             )
             for service_uuid, is_deprecated in zip(
                 project_missing_services, deprecated_services
