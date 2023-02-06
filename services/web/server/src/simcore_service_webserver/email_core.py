@@ -86,7 +86,6 @@ def _compose_mime(
     message["To"] = recipient
     message["Subject"] = subject
     message["Date"] = formatdate(localtime=True)
-    return message
 
 
 class SMTPServerInfo(TypedDict):
