@@ -276,9 +276,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const sortCollaborators = (a, b) => {
-        const aAccessRights = a.getAccessRights();
-        const bAccessRights = b.getAccessRights();
+      const sortByAccessRights = (a, b) => {
+        const aAccessRights = a["accessRights"];
+        const bAccessRights = b["accessRights"];
         if (osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights)) {
           return osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights) - osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights);
         }
@@ -294,6 +294,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         return 0;
       };
       const aceessRights = this._serializedData["accessRights"];
+      const collaboratorsList = [];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collaborator = this.__collaborators[gid];
@@ -303,11 +304,11 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           }
           collaborator["accessRights"] = aceessRights[gid];
           collaborator["showOptions"] = this._canIWrite();
-          const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
-          this.__collaboratorsModel.append(collaboratorModel);
+          collaboratorsList.push(collaborator);
         }
       });
-      this.__collaboratorsModel.sort(sortCollaborators);
+      collaboratorsList.sort(sortByAccessRights);
+      collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
     },
 
     _canIWrite: function() {
