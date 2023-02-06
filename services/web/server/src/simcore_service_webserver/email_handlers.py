@@ -1,5 +1,4 @@
 import logging
-import traceback
 from typing import Any, Literal, Optional
 
 from aiohttp import web
