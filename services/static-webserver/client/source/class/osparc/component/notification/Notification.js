@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.notification.Notification", {
           break;
         }
         case "smallWindow": {
-          fullText += qx.locale.Manager.tr("Oops, your window is a bit small!");
+          fullText += qx.locale.Manager.tr("Oops, your window size is a bit small!");
           const longText = this.getText();
           if (longText) {
             fullText += " " + longText;

@@ -72,9 +72,9 @@ qx.Class.define("osparc.WindowSizeTracker", {
     },
 
     __getLongText: function() {
-      let text = qx.locale.Manager.tr("This app performs better for at least ");
-      text += this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT;
-      text += qx.locale.Manager.tr(" window size. Touchscreen devices are not supported yet.");
+      let text = qx.locale.Manager.tr("This app performs better for larger window size, min ");
+      text += " " + this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT + (".");
+      text += " " + qx.locale.Manager.tr("Touchscreen devices are not supported yet.");
       return text;
     },
 
