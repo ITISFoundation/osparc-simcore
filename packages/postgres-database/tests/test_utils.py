@@ -1,3 +1,8 @@
+# pylint: disable=no-value-for-parameter
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from simcore_postgres_database.utils import hide_dict_pass, hide_url_pass
 from yarl import URL
 
