@@ -6,6 +6,7 @@ import asyncio
 import re
 from dataclasses import dataclass
 from typing import Final, Iterator
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -211,9 +212,26 @@ def mock_remove_calls(mocker: MockerFixture) -> None:
     mocker.patch.object(_events_utils, "remove_volumes_from_node")
 
 
+@pytest.fixture(params=[True, False])
+def node_present_in_db(request: FixtureRequest) -> bool:
+    return request.param
+
+
+@pytest.fixture
+def mock_projects_repository(mocker: MockerFixture, node_present_in_db: bool) -> None:
+    mocked_obj = AsyncMock()
+    mocked_obj.is_node_present_in_workbench(return_value=node_present_in_db)
+
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
+    mocker.patch(
+        f"{module_base}._core._events_utils.get_repository", return_value=mocked_obj
+    )
+
+
 async def test_skip_observation_cycle_after_error(
     docker_swarm: None,
     minimal_app: FastAPI,
+    mock_projects_repository: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: ACounter,
@@ -221,6 +239,7 @@ async def test_skip_observation_cycle_after_error(
     use_case: UseCase,
     mock_remove_calls: None,
 ):
+
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
