@@ -479,7 +479,7 @@ qx.Class.define("osparc.Application", {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
 
       osparc.data.PollTasks.getInstance().removeTasks();
-      osparc.data.MaintenanceTracker.getInstance().stopTracker();
+      osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();

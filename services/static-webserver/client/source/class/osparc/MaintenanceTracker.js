@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.data.MaintenanceTracker", {
+qx.Class.define("osparc.MaintenanceTracker", {
   extend: qx.core.Object,
   type: "singleton",
 
