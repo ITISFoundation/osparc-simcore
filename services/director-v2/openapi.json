@@ -2438,7 +2438,8 @@
           },
           "product_name": {
             "title": "Product Name",
-            "type": "string"
+            "type": "string",
+            "description": "Current product name"
           }
         },
         "example": {
