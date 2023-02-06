@@ -10,10 +10,10 @@ services_environments = sa.Table(
     "services_environments",
     metadata,
     sa.Column(
-        "service_key",
+        "service_key_prefix",
         sa.String,
         nullable=False,
-        doc="Service Key Identifier or a glob of it",
+        doc="Used to identify a single or a group or services (e.g. all services of a given vendor)",
     ),
     sa.Column(
         "gid",
@@ -24,8 +24,9 @@ services_environments = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        server_default=_EVERYONE_GROUP_ID,
-        doc="Sets to which group these environment applies",
+        server_default=sa.text(f"{_EVERYONE_GROUP_ID}"),
+        doc="Sets to which group these environment applies."
+        "Note that a product is also associated to a group",
     ),
     sa.Column(
         "osparc_environments",
@@ -35,7 +36,7 @@ services_environments = sa.Table(
         doc="OSPARC_ENVIRONMENT_* identifiers and associated value",
     ),
     sa.PrimaryKeyConstraint(
-        "service_key",
+        "service_key_prefix",
         "gid",
         name="services_environments_pk",
     ),
