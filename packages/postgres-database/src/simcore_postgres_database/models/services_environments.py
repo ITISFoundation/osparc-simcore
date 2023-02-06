@@ -10,10 +10,17 @@ services_environments = sa.Table(
     "services_environments",
     metadata,
     sa.Column(
-        "service_key_prefix",
+        "service_key",
         sa.String,
+        # FIXME: for some reason, this does not work!? help!
+        # sa.ForeignKey(
+        #     "services_meta_data.key",
+        #     name="fk_services_environments_service_key",
+        #     onupdate="CASCADE",
+        #     ondelete="CASCADE",
+        # ),
         nullable=False,
-        doc="Used to identify a single or a group or services (e.g. all services of a given vendor)",
+        doc="Identifies the services that can have access to these environments",
     ),
     sa.Column(
         "gid",
@@ -33,10 +40,10 @@ services_environments = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="OSPARC_ENVIRONMENT_* identifiers and associated value",
+        doc="OSPARC_ENVIRONMENT_* identifiers and associated values provided at runtime to the associated service and group",
     ),
     sa.PrimaryKeyConstraint(
-        "service_key_prefix",
+        "service_key",
         "gid",
         name="services_environments_pk",
     ),
