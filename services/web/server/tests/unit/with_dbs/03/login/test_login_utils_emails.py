@@ -72,7 +72,6 @@ def destination_email(faker: Faker) -> str:
     return email
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)
 async def test_render_and_send_mail_for_registration(
     faker: Faker,
