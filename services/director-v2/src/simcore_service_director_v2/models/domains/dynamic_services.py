@@ -34,7 +34,10 @@ class RetrieveDataOutEnveloped(BaseModel):
 
 
 class DynamicServiceCreate(ServiceDetails):
+
     service_resources: ServiceResourcesDict
+
+    product_name: str
 
     class Config:
         schema_extra = {
@@ -45,6 +48,7 @@ class DynamicServiceCreate(ServiceDetails):
                 "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                "product_name": "osparc",
                 "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
                     "examples"
                 ][0],
