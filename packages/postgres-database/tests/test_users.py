@@ -1,3 +1,8 @@
+# pylint: disable=no-value-for-parameter
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from datetime import datetime, timedelta
 from typing import Optional
 
