@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient, Response, Timeout
+from httpx import Response, Timeout
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
@@ -26,8 +26,6 @@ class ThinDynamicSidecarClient(BaseThinClient):
         settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-
-        self.client = AsyncClient()
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
