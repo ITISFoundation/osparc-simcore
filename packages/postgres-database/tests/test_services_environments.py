@@ -6,6 +6,7 @@
 from typing import Callable
 
 from aiopg.sa.connection import SAConnection
+from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_environments import services_environments
 from sqlalchemy.sql import select
 
@@ -14,13 +15,23 @@ async def test_services_environments_table(
     connection: SAConnection, create_fake_group: Callable
 ):
 
-    vendor_services_prefix = "simcore/services/dynamic/vendor-x"
+    vendor_service = "simcore/services/dynamic/vendor/some_service"
+
+    await connection.execute(
+        services_meta_data.insert().values(
+            key=vendor_service,
+            version="1.0.0",
+            name="some-service",
+            description="Vendor's Some Service",
+        )
+    )
+
     product_group = await create_fake_group(connection, name="product_a")
 
     await connection.execute(
         # a vendor exposes these environs to its services to everybody
         services_environments.insert().values(
-            service_key_prefix=vendor_services_prefix,
+            service_key=vendor_service,
             # everybody
             osparc_environments={
                 "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "everybody",
@@ -32,7 +43,7 @@ async def test_services_environments_table(
     await connection.execute(
         # same vendor exposes different environs to its services for a given product
         services_environments.insert().values(
-            service_key_prefix=vendor_services_prefix,
+            service_key=vendor_service,
             gid=product_group["gid"],  # product's group
             osparc_environments={
                 "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "product_a-server",
@@ -50,9 +61,8 @@ async def test_services_environments_table(
             (
                 services_environments.c.gid == product_group["gid"]
             )  # current product's group
-            & services_environments.c.service_key_prefix.like(
-                f"{vendor_services_prefix}%"
-            )
+            & (services_environments.c.service_key == vendor_service)
+            # & services_environments.c.service_key.like(f"{vendor_service}%")
         )
     )
 
