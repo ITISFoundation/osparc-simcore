@@ -4,6 +4,7 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from simcore_postgres_database.models.services_environments import services_environments
+from sqlalchemy.sql import select, text
 
 
 @pytest.fixture
@@ -30,3 +31,18 @@ async def test_it(connection: SAConnection, create_fake_group: Callable):
             },
         )
     )
+
+    substitutions = await connection.scalar(
+        select([services_environments.c.osparc_environments]).where(
+            services_environments.c.service_key.like(text("sim4life%"))
+            & (services_environments.c.gid == group["gid"])
+        )
+    )
+    assert substitutions == {
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_HOST": "foo",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_PRIMARY_PORT": 1,
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_SERVER_SECONDARY_PORT": 2,
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_DNS_RESOLVER_PORT": 21,
+        "OSPARC_ENVIRONMENT_VENDOR_LICENSE_FILE": "license.txt",
+    }
