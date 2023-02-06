@@ -51,29 +51,26 @@ qx.Class.define("osparc.component.notification.Notification", {
 
   members: {
     getFullText: function(wLineBreak = false) {
-      let text = "";
+      let fullText = "";
       switch (this.getType()) {
         case "maintenance": {
-          text += qx.locale.Manager.tr("Maintenance scheduled.");
-          text += wLineBreak ? "<br>" : " ";
-          text += this.getText() + ".";
-          text += wLineBreak ? "<br>" : " ";
-          text += qx.locale.Manager.tr("Please save your work and logout.");
+          fullText += qx.locale.Manager.tr("Maintenance scheduled.");
+          fullText += wLineBreak ? "<br>" : " ";
+          fullText += this.getText() + ".";
+          fullText += wLineBreak ? "<br>" : " ";
+          fullText += qx.locale.Manager.tr("Please save your work and logout.");
           break;
         }
         case "smallWindow": {
-          text += qx.locale.Manager.tr("Oops, your window is a bit small!");
-          const width = document.documentElement.clientWidth;
-          if (width > 400) {
-            text += qx.locale.Manager.tr(" This app performs better for minimum ");
-            text += osparc.WindowSizeTracker.MIN_WIDTH + "x" + osparc.WindowSizeTracker.MIN_HEIGHT;
-            text += qx.locale.Manager.tr(" window size.");
-            text += qx.locale.Manager.tr(" Touchscreen devices are not supported yet.");
+          fullText += qx.locale.Manager.tr("Oops, your window is a bit small!");
+          const orginalText = this.getText();
+          if (orginalText) {
+            fullText += orginalText;
           }
           break;
         }
       }
-      return text;
+      return fullText;
     }
   }
 });
