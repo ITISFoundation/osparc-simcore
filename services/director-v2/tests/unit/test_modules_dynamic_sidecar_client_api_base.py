@@ -30,11 +30,11 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
 class FakeThickClient(BaseThinClient):
     @retry_on_errors
     async def get_provided_url(self, provided_url: str) -> Response:
-        return await self._client.get(provided_url)
+        return await self.client.get(provided_url)
 
     @retry_on_errors
     async def get_retry_for_status(self) -> Response:
-        return await self._client.get("http://missing-host:1111")
+        return await self.client.get("http://missing-host:1111")
 
 
 def _assert_messages(messages: list[str]) -> None:
@@ -119,7 +119,10 @@ async def test_retry_on_errors_by_error_type(
     if error_class == PoolTimeout:
         _assert_messages(caplog_info_level.messages[:-1])
         connections_message = caplog_info_level.messages[-1]
-        assert connections_message == "Requests while event 'POOL TIMEOUT': []"
+        assert (
+            connections_message
+            == "Pool status @ 'POOL TIMEOUT': requests=[], connections=[]"
+        )
     else:
         _assert_messages(caplog_info_level.messages)
 
@@ -177,11 +180,11 @@ async def test_expect_state_decorator(
     class ATestClient(BaseThinClient):
         @expect_status(codes.OK)
         async def get_200_ok(self) -> Response:
-            return await self._client.get(url_get_200_ok)
+            return await self.client.get(url_get_200_ok)
 
         @expect_status(error_status)
         async def get_wrong_state(self) -> Response:
-            return await self._client.get(get_wrong_state)
+            return await self.client.get(get_wrong_state)
 
     respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
