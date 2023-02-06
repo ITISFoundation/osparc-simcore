@@ -21,9 +21,9 @@ qx.Class.define("osparc.WindowSizeTracker", {
 
   properties: {
     tooSmall: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
+      check: [null, "shortText", "longText"], // display short message, long one or none
+      init: null,
+      nullable: true,
       apply: "__applyTooSmall"
     }
   },
@@ -47,31 +47,34 @@ qx.Class.define("osparc.WindowSizeTracker", {
       const width = document.documentElement.clientWidth;
       const height = document.documentElement.clientHeight;
       if (width < this.self().MIN_WIDTH || height < this.self().MIN_HEIGHT) {
-        this.setTooSmall(true);
+        this.setTooSmall(width < 1000 ? "shortText" : "longText");
       } else {
-        this.setTooSmall(false);
+        this.setTooSmall(null);
       }
     },
 
     __applyTooSmall: function(tooSmall) {
       this.__removeRibbonMessage();
 
-      if (tooSmall) {
-        const width = document.documentElement.clientWidth;
-        const text = this.__getText(width > 400);
-        const notification = new osparc.component.notification.Notification(text, "smallWindow", true);
-        osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
-        this.__lastRibbonMessage = notification;
+      if (tooSmall === null) {
+        return;
       }
+
+      let notification = null;
+      if (tooSmall === "shortText") {
+        notification = new osparc.component.notification.Notification(null, "smallWindow", true);
+      } else if (tooSmall === "longText") {
+        const text = this.__getLongText(true);
+        notification = new osparc.component.notification.Notification(text, "smallWindow", true);
+      }
+      osparc.component.notification.NotificationsRibbon.getInstance().addNotification(notification);
+      this.__lastRibbonMessage = notification;
     },
 
-    __getText: function(longVersion = true) {
-      let text = "";
-      if (longVersion) {
-        text += qx.locale.Manager.tr("This app performs better for at least ");
-        text += this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT;
-        text += qx.locale.Manager.tr(" window size. Touchscreen devices are not supported yet.");
-      }
+    __getLongText: function() {
+      let text = qx.locale.Manager.tr("This app performs better for at least ");
+      text += this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT;
+      text += qx.locale.Manager.tr(" window size. Touchscreen devices are not supported yet.");
       return text;
     },
 
