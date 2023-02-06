@@ -38,6 +38,10 @@ class TestEmail(BaseModel):
     template_context: dict[str, Any] = {}
 
 
+class TestResult(TestEmail):
+    pass
+
+
 #
 # API routes
 #
@@ -52,8 +56,10 @@ async def test_email(request: web.Request):
 
     body = await parse_request_body_as(TestEmail, request)
 
-    template_path = get_product_template_path(request, filename=body.template_name)
     product: Product = get_current_product(request)
+    template_path = await get_product_template_path(
+        request, filename=body.template_name
+    )
 
     context = {
         "host": request.host,
