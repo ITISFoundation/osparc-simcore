@@ -52,8 +52,8 @@ async def _do_send_mail(
                 await smtp.connect(use_tls=True, port=settings.SMTP_PORT)
 
             elif settings.SMTP_PROTOCOL == EmailProtocol.UNENCRYPTED:
-                await smtp.connect(use_tls=False, port=settings.SMTP_PORT)
                 logger.info("Unencrypted connection attempt to mailserver ...")
+                await smtp.connect(use_tls=False, port=settings.SMTP_PORT)
 
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 logger.info("Attempting a login into the email server ...")
@@ -96,7 +96,7 @@ class SMTPServerInfo(TypedDict):
     use_tls: bool
 
 
-async def check_email_server(settings: SMTPSettings) -> SMTPServerInfo:
+async def check_email_server_responsiveness(settings: SMTPSettings) -> SMTPServerInfo:
     """Raises SMTPException if cannot connect otherwise settings"""
     async with _create_smtp_client(settings) as smtp:
         return SMTPServerInfo(
