@@ -22,7 +22,7 @@ qx.Class.define("osparc.component.notification.NotificationsRibbon", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
     this.__notifications = new qx.data.Array();
 

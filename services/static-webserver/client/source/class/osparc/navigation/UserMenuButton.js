@@ -128,6 +128,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("About Product"));
           osparc.store.StaticInfo.getInstance().getDisplayName()
             .then(displayName => {
+              control.getChildControl("label").setRich(true);
               control.setLabel(this.tr("About ") + displayName);
             });
           control.addListener("execute", () => osparc.AboutProduct.getInstance().open());
