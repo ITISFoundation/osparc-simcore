@@ -22,6 +22,7 @@ from uuid import uuid4
 import pytest
 import redis
 import redis.asyncio as aioredis
+from settings_library.email import SMTPSettings
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
@@ -50,7 +51,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login.settings import LoginOptions
+
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -123,6 +124,21 @@ def app_environment(
     return monkeypatch_setenv_from_app_config(cfg)
 
 
+def _patch_send_email(monkeypatch):
+    async def print_mail_to_stdout(
+        settings: SMTPSettings, *, sender: str, recipient: str, subject: str, body: str
+    ):
+        print(
+            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
+        )
+
+    monkeypatch.setattr(
+        simcore_service_webserver.email_core,
+        "send_email",
+        print_mail_to_stdout,
+    )
+
+
 @pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
@@ -138,7 +154,7 @@ def web_server(
     app = create_application()
 
     # with patched email
-    _patch_compose_mail(monkeypatch)
+    _patch_send_email(monkeypatch)
 
     disable_static_webserver(app)
 
@@ -371,6 +387,17 @@ def create_dynamic_service_mock(
 # POSTGRES CORE SERVICE ---------------------------------------------------
 
 
+def _is_postgres_responsive(url):
+    """Check if something responds to url"""
+    try:
+        engine = sa.create_engine(url)
+        conn = engine.connect()
+        conn.close()
+    except sa.exc.OperationalError:
+        return False
+    return True
+
+
 @pytest.fixture(scope="session")
 def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -423,6 +450,11 @@ def postgres_db(
 # REDIS CORE SERVICE ------------------------------------------------------
 
 
+def _is_redis_responsive(host: str, port: int) -> bool:
+    r = redis.Redis(host=host, port=port)
+    return r.ping() == True
+
+
 @pytest.fixture(scope="session")
 def redis_service(docker_services, docker_ip) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
@@ -465,13 +497,7 @@ async def redis_locks_client(
     await client.close(close_connection_pool=True)
 
 
-def _is_redis_responsive(host: str, port: int) -> bool:
-    r = redis.Redis(host=host, port=port)
-    return r.ping() == True
-
-
 # SOCKETS FIXTURES  --------------------------------------------------------
-
 # Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
 
 
@@ -555,32 +581,3 @@ async def all_group(
 ) -> dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
-
-
-# GENERIC HELPER FUNCTIONS ----------------------------------------------------
-
-
-def _patch_compose_mail(monkeypatch):
-    async def print_mail_to_stdout(
-        cfg: LoginOptions, *, sender: str, recipient: str, subject: str, body: str
-    ):
-        print(
-            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
-        )
-
-    monkeypatch.setattr(
-        simcore_service_webserver.login.utils_email,
-        "_compose_mail",
-        print_mail_to_stdout,
-    )
-
-
-def _is_postgres_responsive(url):
-    """Check if something responds to ``url``"""
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
-    return True
