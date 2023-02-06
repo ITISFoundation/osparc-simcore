@@ -87,31 +87,30 @@ qx.Class.define("osparc.desktop.MainPage", {
         return;
       }
       if (this.__studyEditor) {
+        const studyName = this.__studyEditor.getStudy().getName();
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
         if (preferencesSettings.getConfirmBackToDashboard()) {
           const win = new osparc.ui.window.Confirmation();
           if (osparc.utils.Utils.isProduct("s4llite")) {
-            let msg = this.tr("Do you really want to close the project?");
-            msg += "<br>";
+            let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
+            msg += "<br><br>";
             msg += this.tr("Save your changes to:");
             msg += "<br>";
             msg += this.tr("- current <b>smash file</b> (running <b>simulations</b>, if any, will be terminated)");
             msg += "<br>";
             msg += this.tr("- current <b>notebooks</b> (<b>jupyterlab</b> session will be terminated)");
-            const confirmText = this.tr("Close");
             win.set({
-              maxWidth: 400,
+              maxWidth: 460,
+              caption: this.tr("Close"),
               message: msg,
-              caption: confirmText,
-              confirmText
+              confirmText: this.tr("Yes")
             });
           } else {
-            const msg = this.tr("Do you really want to save and close the study?");
-            const confirmText = this.tr("Save & Close");
+            const msg = this.tr("Do you want to save and close ") + "<b>" + studyName + "</b>?";
             win.set({
+              caption: this.tr("Save & Close"),
               message: msg,
-              caption: confirmText,
-              confirmText
+              confirmText: this.tr("Yes")
             });
           }
           const confirmButton = win.getConfirmButton();

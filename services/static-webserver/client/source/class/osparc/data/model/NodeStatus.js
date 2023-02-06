@@ -161,7 +161,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
     __applyInteractive: function(value) {
       if (value === "failed") {
-        // ask why it failed
+        this.getProgressSequence().resetSequence();
       }
     },
 

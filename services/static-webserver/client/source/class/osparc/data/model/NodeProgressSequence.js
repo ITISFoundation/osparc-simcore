@@ -151,6 +151,16 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       return this.__sequenceLoadingPage;
     },
 
+    resetSequence: function() {
+      // reverted setting
+      this.setImagesPulling(0);
+      this.setStatePulling(0);
+      this.setOutputsPulling(0);
+      this.setInputsPulling(0);
+      this.setSidecarPulling(0);
+      this.setClusterUpScaling(0);
+    },
+
     addProgressMessage: function(progressType, progress) {
       console.log(progressType, progress);
 

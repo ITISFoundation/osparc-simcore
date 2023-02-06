@@ -58,7 +58,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       this.__form = new qx.ui.form.Form();
 
       const email = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Your email address"),
+        placeholder: this.tr(" Your email address"),
         required: true
       });
       this.add(email);
@@ -70,7 +70,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         email.activate();
       });
       const pass = new qx.ui.form.PasswordField().set({
-        placeholder: this.tr("Your password"),
+        placeholder: this.tr(" Your password"),
         required: true
       });
       pass.getContentElement().setAttribute("autocomplete", "current-password");

@@ -96,13 +96,16 @@ qx.Class.define("osparc.data.Roles", {
       });
       rolesLayout.add(rolesText);
       let text = "";
-      for (let roleId in roles) {
-        text += roles[roleId].longLabel + ":<br>";
-        roles[roleId].canDo.forEach(can => {
+      const values = Object.values(roles);
+      values.forEach((role, idx) => {
+        text += role.longLabel + ":<br>";
+        role.canDo.forEach(can => {
           text += can + "<br>";
         });
-        text += "<br>";
-      }
+        if (idx !== values.length-1) {
+          text += "<br>";
+        }
+      });
       const infoHint = new osparc.ui.hint.InfoHint(text);
       rolesLayout.add(infoHint);
       return rolesLayout;
