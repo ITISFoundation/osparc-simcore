@@ -6,6 +6,7 @@
 """
 from enum import Enum
 from functools import total_ordering
+from typing import Final, NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.sql import func
@@ -159,6 +160,51 @@ users = sa.Table(
         # NOTE: that cannot use same phone for two user accounts
     ),
 )
+
+
+class FullNameTuple(NamedTuple):
+    first_name: str
+    last_name: str
+
+
+class UserNameConverter:
+    """Helper functions to convert full-name to name in both directions"""
+
+    #
+    # CONVENTION: Instead of having first and last name in the database
+    # we collapse it in the column name as 'first_name.lastname'.
+    #
+    # NOTE: there is a plan to change this https://github.com/ITISFoundation/osparc-simcore/issues/1574
+    SEPARATOR: Final[str] = "."
+    TOKEN: Final[str] = "#"
+
+    @classmethod
+    def get_full_name(cls, name: str) -> FullNameTuple:
+        """Parses value from users.name and returns separated full and last name in a tuple"""
+        first_name, last_name = name, ""
+
+        if cls.SEPARATOR in name:
+            first_name, last_name = name.split(cls.SEPARATOR, maxsplit=1)
+
+        return FullNameTuple(
+            first_name.replace(cls.TOKEN, cls.SEPARATOR),
+            last_name.replace(cls.TOKEN, cls.SEPARATOR),
+        )
+
+    @classmethod
+    def _safe_string(cls, value: str) -> str:
+        # removes any possible token in value (unlikely)
+        value = value.replace(cls.TOKEN, "")
+        # substitutes matching separators symbol with an alternative
+        return value.replace(cls.SEPARATOR, cls.TOKEN)
+
+    @classmethod
+    def get_name(cls, first_name: str, last_name: str) -> str:
+        """Composes value for users.name column"""
+        return (
+            cls._safe_string(first_name) + cls.SEPARATOR + cls._safe_string(last_name)
+        )
+
 
 # ------------------------ TRIGGERS
 
