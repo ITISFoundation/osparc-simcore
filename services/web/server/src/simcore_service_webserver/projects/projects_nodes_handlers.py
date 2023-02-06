@@ -222,7 +222,11 @@ async def start_node(request: web.Request) -> web.Response:
     try:
 
         await projects_api.start_project_node(
-            request, req_ctx.user_id, path_params.project_id, path_params.node_id
+            request,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
         )
 
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
