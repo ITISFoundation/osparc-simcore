@@ -239,7 +239,6 @@ async def test_skip_observation_cycle_after_error(
     use_case: UseCase,
     mock_remove_calls: None,
 ):
-
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
