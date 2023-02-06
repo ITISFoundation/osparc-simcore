@@ -66,7 +66,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
     },
 
     __getText: function(longVersion = true) {
-      let text = qx.locale.Manager.tr("Oops, your window is a bit small!");
+      let text = "";
       if (longVersion) {
         text += qx.locale.Manager.tr(" This app performs better for at least ");
         text += this.self().MIN_WIDTH + "x" + this.self().MIN_HEIGHT;
