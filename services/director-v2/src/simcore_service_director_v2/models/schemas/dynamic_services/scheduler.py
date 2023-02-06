@@ -399,6 +399,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
+    product_name: str = Field(
+        ..., description="Current product upon which this service is scheduled"
+    )
+
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
@@ -416,12 +420,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             service_name=names_helper.service_name_dynamic_sidecar,
             hostname=names_helper.service_name_dynamic_sidecar,
             port=port,
+            # CommonServiceDetails
             node_uuid=service.node_uuid,
             project_id=service.project_id,
             user_id=service.user_id,
             key=service.key,
             version=service.version,
             service_resources=service.service_resources,
+            product_name=service.product_name,
             paths_mapping=simcore_service_labels.paths_mapping,
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
