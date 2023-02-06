@@ -30,11 +30,6 @@ qx.Class.define("osparc.Application", {
     qx.locale.MTranslation
   ],
 
-  statics: {
-    MIN_WIDTH: 1240,
-    MIN_HEIGHT: 700
-  },
-
   members: {
     __current: null,
     __themeSwitcher: null,
@@ -101,65 +96,6 @@ qx.Class.define("osparc.Application", {
       this.__updateSocial();
 
       this.__startupChecks();
-
-      // onload, load, DOMContentLoaded, appear... didn't work
-      // bit of a hack
-      setTimeout(() => this.__checkScreenSize(), 100);
-      window.addEventListener("resize", () => this.__checkScreenSize());
-    },
-
-    __checkScreenSize: function() {
-      osparc.store.StaticInfo.getInstance().getPlatformName()
-        .then(platformName => {
-          const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-          if (platformName !== "master" && preferencesSettings.getConfirmWindowSize()) {
-            const title = this.tr("Oops, your window size is a bit small!");
-            const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
-              height: 100,
-              width: 400,
-              layout: new qx.ui.layout.VBox(),
-              appearance: "service-window",
-              showMinimize: false,
-              showMaximize: false,
-              showClose: false,
-              resizable: false,
-              modal: true,
-              contentPadding: 10
-            });
-            const w = document.documentElement.clientWidth;
-            const h = document.documentElement.clientHeight;
-            if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
-              const product = this.tr("This app");
-              const baseTextMsg = this.tr(`
-                performs better for larger window size. A minimum window size \
-               of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended.<br>\
-               Touchscreen devices are not supported yet.
-              `);
-              const label = new qx.ui.basic.Label().set({
-                value: product + baseTextMsg,
-                rich: true
-              });
-              osparc.store.StaticInfo.getInstance().getDisplayName()
-                .then(displayName => {
-                  label.setValue(displayName + baseTextMsg);
-                });
-              tooSmallWindow.add(label, {
-                flex: 1
-              });
-              const okBtn = new qx.ui.form.Button(this.tr("Got it")).set({
-                allowGrowX: false,
-                allowGrowY: false,
-                alignX: "right"
-              });
-              okBtn.addListener("execute", () => tooSmallWindow.close());
-              tooSmallWindow.add(okBtn);
-              tooSmallWindow.center();
-              tooSmallWindow.open();
-            } else {
-              tooSmallWindow.close();
-            }
-          }
-        });
     },
 
     __initRouting: function() {
@@ -479,7 +415,7 @@ qx.Class.define("osparc.Application", {
       osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
 
       osparc.data.PollTasks.getInstance().removeTasks();
-      osparc.data.MaintenanceTracker.getInstance().stopTracker();
+      osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
