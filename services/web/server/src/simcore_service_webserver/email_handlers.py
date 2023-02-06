@@ -1,4 +1,5 @@
 import logging
+import traceback
 from typing import Any, Literal, Optional
 
 from aiohttp import web
@@ -7,13 +8,14 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from ._meta import API_VTAG
 from .email_core import (
-    check_email_server,
+    check_email_server_responsiveness,
     get_plugin_settings,
     send_email_from_template,
 )
 from .login.decorators import login_required
 from .products import Product, get_current_product, get_product_template_path
 from .security_decorators import permission_required
+from .utils import get_traceback_string
 from .utils_aiohttp import envelope_json_response
 
 logger = logging.getLogger(__name__)
@@ -38,8 +40,25 @@ class TestEmail(BaseModel):
     template_context: dict[str, Any] = {}
 
 
-class TestResult(TestEmail):
-    pass
+class TestFailed(BaseModel):
+    test_name: str
+    error_type: str
+    error_message: str
+    traceback: str
+
+    @classmethod
+    def create_from_exception(cls, error: Exception, test_name: str):
+        return cls(
+            test_name=test_name,
+            error_type=f"{type(error)}",
+            error_message=f"{error}",
+            traceback=get_traceback_string(error),
+        )
+
+
+class TestPassed(BaseModel):
+    fixtures: dict[str, Any]
+    info: dict[str, Any]
 
 
 #
@@ -57,6 +76,7 @@ async def test_email(request: web.Request):
     body = await parse_request_body_as(TestEmail, request)
 
     product: Product = get_current_product(request)
+
     template_path = await get_product_template_path(
         request, filename=body.template_name
     )
@@ -67,11 +87,10 @@ async def test_email(request: web.Request):
         "name": "Mr. Smith",
         "support_email": product.support_email,
     } | body.template_context
-
     settings = get_plugin_settings(request.app)
+
     try:
-        mail_server_info = check_email_server(settings)
-        logger.info("%s", f"{mail_server_info=}")
+        info = await check_email_server_responsiveness(settings)
 
         await send_email_from_template(
             request,
@@ -80,12 +99,19 @@ async def test_email(request: web.Request):
             template=template_path,
             context=context,
         )
-    except Exception as err:
-        # FIXME: Failing tests should note marked as http errors but returned as part of the test results
-        # Distinguish between test failure and error of e.g. inputs, etc
-        logger.exception("test_email failed for %s", f"{settings.json(indent=1)}")
-        raise web.HTTPInternalServerError(
-            reason="Test failed. Check server logs for further info."
-        ) from err
 
-    return envelope_json_response(body)
+        return envelope_json_response(
+            TestPassed(
+                fixtures=body.dict(),
+                info={"email-server": info},
+            )
+        )
+
+    except Exception as err:  # pylint: disable=broad-except
+        logger.exception(
+            "test_email failed for %s",
+            f"{settings.json(indent=1)}",
+        )
+        return envelope_json_response(
+            TestFailed.create_from_exception(error=err, test_name="test_email")
+        )

@@ -3,15 +3,22 @@
 # pylint: disable=unused-variable
 
 
+from unittest.mock import MagicMock
+
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import MockerFixture, MonkeyPatch
+from pydantic import ValidationError
+from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
+from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.email_handlers import TestFailed, TestPassed
 
 
 @pytest.fixture
@@ -56,35 +63,40 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     return {**app_environment, **envs_plugins, **envs_email}
 
 
-def mock_smtp(mocker: MockerFixture) -> MockerFixture:
+@pytest.fixture
+def mock_smtp(mocker: MockerFixture, app_environment: EnvVarsDict) -> MagicMock:
+
+    settings = SMTPSettings.create_from_envs()
+
     mock = mocker.patch("aiosmtplib.SMTP")
-    instance = mock.return_value
-    return instance
+    instance = mock.return_value.__aenter__.return_value
+    instance.hostname = settings.SMTP_HOST
+    instance.port = settings.SMTP_PORT
+    instance.timeout = 100
+    instance.use_tls = settings.SMTP_PROTOCOL == EmailProtocol.TLS
+
+    return mock
 
 
-async def test_email(client: TestClient, faker: Faker, mock_smtp: MockerFixture):
+async def test_email_handlers(client: TestClient, faker: Faker, mock_smtp: MagicMock):
 
-    # TODO: test access by roles
-    # TODO: test ping
-    # TODO: test send
-    async with LoggedUser(client, params={"role": UserRole.ADMIN}) as user:
+    async with LoggedUser(client, params={"role": UserRole.ADMIN.value}) as user:
 
         assert user
+        destination_email = faker.email()
+
         response = await client.post(
-            f"/{API_VTAG}/email:test", data={"to": faker.email()}
+            f"/{API_VTAG}/email:test", json={"to": destination_email}
         )
 
-        mock_smtp.send_message.assert_called_once_with(
-            "from@example.com", ["to@example.com"], "Subject\n\nBody"
-        )
-        # mock_smtp.assert_called_once_with("localhost")
+        data, error = await assert_status(response, expected_cls=web.HTTPOk)
+        print(data)
 
-        # TODO:
-        # mock_message.assert_called_once_with()
-        # message.__setitem__.assert_any_call("From", "from@example.com")
-        ##message.__setitem__.assert_any_call("To", "to@example.com")
-        # message.__setitem__.assert_any_call("Subject", "Subject")
-        # message.set_content.assert_called_once_with("Body")
-        # instance.send_message.assert_called_once_with(message)
+        assert data
+        assert error is None
 
-        assert response.status == 200
+        with pytest.raises(ValidationError):
+            failed = TestFailed.parse_obj(data)
+
+        passed = TestPassed.parse_obj(data)
+        print(passed.json(indent=1))
