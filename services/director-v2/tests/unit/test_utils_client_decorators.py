@@ -39,3 +39,21 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
                 data=dict(kettle_number="royal_01"),
             )
         assert status.HTTP_503_SERVICE_UNAVAILABLE == exec_info.value.status_code
+
+        # ERROR    test_utils_client_decorators:client_decorators.py:76 AService service error:
+        # |Request|
+        # <Request('POST', 'https://tea.org/?kettle=boiling')>
+        # host: tea.org
+        # accept: */*
+        # accept-encoding: gzip, deflate
+        # connection: keep-alive
+        # user-agent: python-httpx/0.23.0
+        # content-length: 22
+        # content-type: application/x-www-form-urlencoded
+        # kettle_number=royal_01
+        # |Response|
+        # <Response [500 Internal Server Error]>
+        # content-length: 43
+        # content-type: text/plain; charset=utf-8
+        # this kettle is currently
+        # serving the empire
