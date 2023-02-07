@@ -449,7 +449,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             service_name=names_helper.service_name_dynamic_sidecar,
             hostname=names_helper.service_name_dynamic_sidecar,
             port=port,
-            # CommonServiceDetails
             node_uuid=service.node_uuid,
             project_id=service.project_id,
             user_id=service.user_id,
