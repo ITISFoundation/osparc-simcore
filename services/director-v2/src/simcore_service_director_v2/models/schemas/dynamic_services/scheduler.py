@@ -399,8 +399,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     proxy_service_name: str = Field(None, description="service name given to the proxy")
 
-    product_name: str = Field(
-        ..., description="Current product upon which this service is scheduled"
+    product_name: Optional[str] = Field(
+        None,
+        description="Current product upon which this service is scheduled. "
+        "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
 
     @classmethod
@@ -414,13 +416,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_scheme: str,
         run_id: Optional[UUID] = None,
     ) -> "SchedulerData":
+        # This constructor method sets current product
+        assert service.product_name is not None  # nosec
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
         obj_dict = dict(
             service_name=names_helper.service_name_dynamic_sidecar,
             hostname=names_helper.service_name_dynamic_sidecar,
             port=port,
-            # CommonServiceDetails
             node_uuid=service.node_uuid,
             project_id=service.project_id,
             user_id=service.user_id,
