@@ -382,7 +382,7 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
         ),
         wait=wait_fixed(1),
         retry_error_cls=EntrypointContainerNotFoundError,
-        before_sleep=before_sleep_log(logger, logging.WARNING),
+        before_sleep=before_sleep_log(logger, logging.DEBUG),
     ):
         with attempt:
             if not await get_dynamic_sidecar_service_health(
