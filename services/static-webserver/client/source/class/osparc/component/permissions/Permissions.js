@@ -315,7 +315,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const collaboratorsList = [];
       Object.keys(aceessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
-          const collaborator = this.__collaborators[gid];
+          const collab = this.__collaborators[gid];
+          // Do not override collaborator object
+          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
