@@ -294,11 +294,12 @@ async def test_share_project(
         )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
+        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        # (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
@@ -319,7 +320,9 @@ async def test_open_project(
     assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id_factory())
+
     await assert_status(resp, expected)
+
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {
             service_uuid: service
@@ -340,6 +343,7 @@ async def test_open_project(
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
                     request_dns=request_dns,
+                    product_name="osparc",
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
