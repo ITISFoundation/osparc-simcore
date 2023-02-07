@@ -74,7 +74,7 @@ def handle_errors(service_name: str, logger: logging.Logger):
 
                 if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
                     logger.error(
-                        "%s service error:\nRequest:\n%s\n%s\n%s\nResponse:\n%s\n%s\n%s",
+                        "%s service error:\n|Request|\n%s\n%s\n%s\n|Response|\n%s\n%s\n%s",
                         service_name,
                         resp.request,
                         _format_headers(resp.request.headers),
