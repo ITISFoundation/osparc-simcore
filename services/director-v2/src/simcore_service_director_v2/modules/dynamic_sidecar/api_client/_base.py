@@ -18,15 +18,16 @@ from ._errors import ClientHttpError, UnexpectedStatusError, _WrongReturnType
 logger = logging.getLogger(__name__)
 
 
-def _log_requests_in_pool(client: AsyncClient, event_name: str) -> None:
+def _log_pool_status(client: AsyncClient, event_name: str) -> None:
     # pylint: disable=protected-access
     logger.warning(
-        "Requests while event '%s': %s",
+        "Pool status @ '%s': requests=%s, connections=%s",
         event_name.upper(),
         [
             (r.request.method, r.request.url, r.request.headers)
             for r in client._transport._pool._requests
         ],
+        client._transport._pool.connections,
     )
 
 
@@ -77,7 +78,7 @@ def retry_on_errors(
                     return r
         except HTTPError as e:
             if isinstance(e, PoolTimeout):
-                _log_requests_in_pool(zelf._client, "pool timeout")
+                _log_pool_status(zelf.client, "pool timeout")
             raise ClientHttpError(e) from e
 
     return request_wrapper
@@ -129,7 +130,7 @@ class BaseThinClient:
             client_args["base_url"] = base_url
         if timeout:
             client_args["timeout"] = timeout
-        self._client = AsyncClient(**client_args)
+        self.client = AsyncClient(**client_args)
 
         # ensure all user defined public methods return `httpx.Response`
         # NOTE: ideally these checks should be ran at import time!
@@ -145,8 +146,8 @@ class BaseThinClient:
                 raise _WrongReturnType(method, signature.return_annotation)
 
     async def close(self) -> None:
-        _log_requests_in_pool(self._client, "closing")
-        await self._client.aclose()
+        _log_pool_status(self.client, "closing")
+        await self.client.aclose()
 
     async def __aenter__(self):
         return self

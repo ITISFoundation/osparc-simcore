@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.14.1
+  version: 0.15.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -24,6 +24,7 @@ servers:
           - v0
         default: v0
 tags:
+  - name: admin
   - name: authentication
   - name: user
   - name: project
@@ -50,6 +51,10 @@ tags:
   - name: repository
 
 paths:
+  # ADMIN -------------
+  /email:test:
+    $ref: "./openapi-admin.yaml#/paths/~1email:test"
+
   # DIAGNOSTICS ---------------------------------------------------------
   /:
     $ref: "./openapi-diagnostics.yaml#/paths/~1"
