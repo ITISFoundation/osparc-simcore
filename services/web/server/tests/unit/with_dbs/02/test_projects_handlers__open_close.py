@@ -294,12 +294,11 @@ async def test_share_project(
         )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        # (UserRole.GUEST, web.HTTPOk),
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
@@ -314,6 +313,7 @@ async def test_open_project(
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
+    osparc_product_name: str,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -343,7 +343,7 @@ async def test_open_project(
                     user_id=logged_user["id"],
                     request_scheme=request_scheme,
                     request_dns=request_dns,
-                    product_name="osparc",
+                    product_name=osparc_product_name,
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
@@ -373,6 +373,7 @@ async def test_open_template_project_for_edition(
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services: mock.Mock,
     mock_catalog_api: dict[str, mock.Mock],
+    osparc_product_name: str,
 ):
     # POST /v0/projects/{project_id}:open
     # open project
@@ -409,7 +410,7 @@ async def test_open_template_project_for_edition(
                     service_resources=ServiceResourcesDictHelpers.create_jsonable(
                         mock_service_resources
                     ),
-                    product_name="osparc",
+                    product_name=osparc_product_name,
                 )
             )
         mocked_director_v2_api["director_v2_api.run_dynamic_service"].assert_has_calls(
