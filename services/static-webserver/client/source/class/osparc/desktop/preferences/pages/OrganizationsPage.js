@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
   extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/sitemap/24";
+    const iconSrc = "@FontAwesome5Solid/users/24";
     const title = this.tr("Organizations");
     this.base(arguments, title, iconSrc);
 
