@@ -76,7 +76,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       let sorted = null;
       if ("delete" in aAccessRights) {
         // study & templates
-        sorted = osparc.desktop.preferences.pages.OrganizationsPage.sortByAccessRights(a, b);
+        osparc.component.permissions.Permissions.sortByAccessRights(a, b);
       } else if ("write_access" in aAccessRights) {
         // services
         if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {

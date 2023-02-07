@@ -38,6 +38,23 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     this.__getCollaborators();
   },
 
+  statics: {
+    sortByAccessRights: function(a, b) {
+      const aAccessRights = a["accessRights"];
+      const bAccessRights = b["accessRights"];
+      if (aAccessRights["delete"] !== bAccessRights["delete"]) {
+        return bAccessRights["delete"] - aAccessRights["delete"];
+      }
+      if (aAccessRights["write"] !== bAccessRights["write"]) {
+        return bAccessRights["write"] - aAccessRights["write"];
+      }
+      if (aAccessRights["read"] !== bAccessRights["read"]) {
+        return bAccessRights["read"] - aAccessRights["read"];
+      }
+      return 0;
+    }
+  },
+
   members: {
     _serializedData: null,
     __organizationsAndMembers: null,
@@ -276,23 +293,6 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
-      const sortByAccessRights = (a, b) => {
-        const aAccessRights = a["accessRights"];
-        const bAccessRights = b["accessRights"];
-        if (osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights)) {
-          return osparc.ui.list.CollaboratorListItem.canDelete(bAccessRights) - osparc.ui.list.CollaboratorListItem.canDelete(aAccessRights);
-        }
-        if (osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights)) {
-          return osparc.ui.list.CollaboratorListItem.canWrite(bAccessRights) - osparc.ui.list.CollaboratorListItem.canWrite(aAccessRights);
-        }
-        if (osparc.ui.list.CollaboratorListItem.canRead(aAccessRights) !== osparc.ui.list.CollaboratorListItem.canRead(bAccessRights)) {
-          return osparc.ui.list.CollaboratorListItem.canRead(bAccessRights) - osparc.ui.list.CollaboratorListItem.canRead(aAccessRights);
-        }
-        if (a.getLogin && b.getLogin) {
-          return a.getLogin().localeCompare(b.getLogin());
-        }
-        return 0;
-      };
       const aceessRights = this._serializedData["accessRights"];
       const collaboratorsList = [];
       Object.keys(aceessRights).forEach(gid => {
@@ -307,7 +307,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           collaboratorsList.push(collaborator);
         }
       });
-      collaboratorsList.sort(sortByAccessRights);
+      collaboratorsList.sort(osparc.ui.list.CollaboratorListItem.sortByAccessRights);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
     },
 
