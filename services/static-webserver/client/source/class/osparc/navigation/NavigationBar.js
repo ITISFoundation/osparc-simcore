@@ -124,24 +124,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this.setPageContext("dashboard");
 
-      setTimeout(() => this.__checkScreenSize(), 100);
-      window.addEventListener("resize", () => this.__checkScreenSize());
-    },
-
-    __checkScreenSize: function() {
-      const h = document.documentElement.clientHeight;
-      this.setHeight(h > 900 ? 60 : 50);
-
       const logo = this.getChildControl("logo");
-
       logo.getChildControl("off-logo").set({
-        width: h > 900 ? 110 : 100,
-        height: h > 900 ? 45 : 35
+        width: 100,
+        height: 35
       });
-
       logo.getChildControl("on-logo").setSize({
-        width: h > 900 ? 110 : 100,
-        height: h > 900 ? 60 : 50
+        width: 100,
+        height: 50
       });
     },
 
