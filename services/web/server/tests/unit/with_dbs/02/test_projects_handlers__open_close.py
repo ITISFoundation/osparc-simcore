@@ -296,6 +296,7 @@ async def test_share_project(
         )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected, save_state",
     [
