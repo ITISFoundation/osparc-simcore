@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.14.1
+  version: 0.15.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -24,6 +24,7 @@ servers:
           - v0
         default: v0
 tags:
+  - name: admin
   - name: authentication
   - name: user
   - name: project
@@ -49,6 +50,100 @@ tags:
   - name: viewer
   - name: repository
 paths:
+  '/email:test':
+    post:
+      tags:
+        - admin
+      summary: Test Email
+      operationId: test_email
+      parameters:
+        - required: false
+          schema:
+            title: X-Simcore-Products-Name
+            type: string
+          name: x-simcore-products-name
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: TestEmail
+              required:
+                - to
+              type: object
+              properties:
+                from_:
+                  title: 'From '
+                  type: string
+                  description: Email sender
+                  format: email
+                to:
+                  title: To
+                  type: string
+                  description: Email receiver
+                  format: email
+                template_name:
+                  title: Template Name
+                  enum:
+                    - change_email_email.jinja2
+                    - new_2fa_code.jinja2
+                    - registration_email.jinja2
+                    - reset_password_email_failed.jinja2
+                    - reset_password_email.jinja2
+                    - service_submission.jinja2
+                  type: string
+                  default: registration_email.jinja2
+                template_context:
+                  title: Template Context
+                  type: object
+                  default: {}
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Union[TestFailed, TestPassed]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    anyOf:
+                      - title: TestFailed
+                        required:
+                          - test_name
+                          - error_type
+                          - error_message
+                          - traceback
+                        type: object
+                        properties:
+                          test_name:
+                            title: Test Name
+                            type: string
+                          error_type:
+                            title: Error Type
+                            type: string
+                          error_message:
+                            title: Error Message
+                            type: string
+                          traceback:
+                            title: Traceback
+                            type: string
+                      - title: TestPassed
+                        required:
+                          - fixtures
+                          - info
+                        type: object
+                        properties:
+                          fixtures:
+                            title: Fixtures
+                            type: object
+                          info:
+                            title: Info
+                            type: object
+                  error:
+                    title: Error
   /:
     get:
       tags:
@@ -158,38 +253,6 @@ paths:
                   error:
                     nullable: true
                     default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /scheduled_maintenance:
-    get:
-      tags:
-        - maintenance
-      summary: Get Scheduled Maintenance
-      operationId: get_scheduled_maintenance
-      responses:
-        '200':
-          description: Maintenance scheduled
-          content:
-            application/json:
-              schema:
-                title: ScheduledMaintenance
-                type: object
-                properties:
-                  start:
-                    title: Start
-                    type: string
-                    description: At what time the Maintenance starts (UTC)
-                  end:
-                    title: End
-                    type: string
-                    description: At what time the Maintenance ends (UTC)
-                  reason:
-                    title: Reason
-                    type: string
-                    description: What the purpose of the Maintenance is
-                additionalProperties: false
-        '204':
-          description: No maintenance scheduled
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /auth/register:

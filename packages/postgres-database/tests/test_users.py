@@ -108,7 +108,6 @@ async def test_trial_accounts(pg_engine: Engine):
         )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "first_name,last_name",
     [

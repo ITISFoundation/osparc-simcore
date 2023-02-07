@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.notification.Notification", {
 
   properties: {
     type: {
-      check: ["maintenance"],
+      check: ["maintenance", "smallWindow"],
       init: null,
       nullable: false
     },
@@ -59,6 +59,14 @@ qx.Class.define("osparc.component.notification.Notification", {
           fullText += this.getText() + ".";
           fullText += wLineBreak ? "<br>" : " ";
           fullText += qx.locale.Manager.tr("Please save your work and logout.");
+          break;
+        }
+        case "smallWindow": {
+          fullText += qx.locale.Manager.tr("Oops, your window size is a bit small!");
+          const longText = this.getText();
+          if (longText) {
+            fullText += " " + longText;
+          }
           break;
         }
       }
