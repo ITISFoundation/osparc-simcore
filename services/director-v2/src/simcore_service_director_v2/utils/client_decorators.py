@@ -14,6 +14,7 @@ from typing import Callable, Coroutine
 
 import httpx
 from fastapi import HTTPException
+from httpx import Headers
 from starlette import status
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -35,6 +36,10 @@ def handle_retry(logger: logging.Logger):
         reraise=True,
         before_sleep=before_sleep_log(logger, logging.DEBUG),
     )
+
+
+def _format_headers(headers: Headers) -> str:
+    return "\n".join([": ".join(x) for x in headers.multi_items()])
 
 
 def handle_errors(service_name: str, logger: logging.Logger):
@@ -69,10 +74,13 @@ def handle_errors(service_name: str, logger: logging.Logger):
 
                 if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
                     logger.error(
-                        "%s service error %s [%s]: %s",
+                        "%s service error:\nRequest:\n%s\n%s\n%s\nResponse:\n%s\n%s\n%s",
                         service_name,
-                        resp.reason_phrase,
-                        f"{resp.status_code=}",
+                        resp.request,
+                        _format_headers(resp.request.headers),
+                        resp.request.content.decode(),
+                        resp,
+                        _format_headers(resp.headers),
                         resp.text,
                     )
                     raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
