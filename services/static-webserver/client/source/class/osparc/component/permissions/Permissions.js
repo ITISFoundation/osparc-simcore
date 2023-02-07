@@ -52,6 +52,24 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         return bAccessRights["read"] - aAccessRights["read"];
       }
       return 0;
+    },
+
+    sortStudyOrServiceCollabs: function(a, b) {
+      const aAccessRights = a["accessRights"];
+      const bAccessRights = b["accessRights"];
+      let sorted = null;
+      if ("delete" in aAccessRights) {
+        // studies
+        sorted = this.self().sortByAccessRights(a, b);
+      } else if ("write_access" in aAccessRights) {
+        // services
+        if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {
+          sorted = bAccessRights["write_access"] - aAccessRights["write_access"];
+        } else if (aAccessRights["read_access"] !== bAccessRights["read_access"]) {
+          sorted = bAccessRights["read_access"] - aAccessRights["read_access"];
+        }
+      }
+      return sorted;
     }
   },
 
@@ -307,7 +325,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
           collaboratorsList.push(collaborator);
         }
       });
-      collaboratorsList.sort(osparc.ui.list.CollaboratorListItem.sortByAccessRights);
+      collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
     },
 

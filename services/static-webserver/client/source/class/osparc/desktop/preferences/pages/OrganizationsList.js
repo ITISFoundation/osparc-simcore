@@ -51,7 +51,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
   },
 
   statics: {
-    sortByAccessRights: function(a, b) {
+    sortOrganizations: function(a, b) {
       const sorted = osparc.component.permissions.Permissions.sortByAccessRights(a, b);
       if (sorted !== 0) {
         return sorted;
@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsList", {
             return org;
           });
           const orgsList = await Promise.all(promises);
-          orgsList.sort(this.self().sortByAccessRights);
+          orgsList.sort(this.self().sortOrganizations);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
         });
     },

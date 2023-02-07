@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
       };
     },
 
-    sortByAccessRights: function(a, b) {
+    sortOrgMembers: function(a, b) {
       const sorted = osparc.component.permissions.Permissions.sortByAccessRights(a, b);
       if (sorted !== 0) {
         return sorted;
@@ -260,7 +260,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationMembersList", {
             member["showOptions"] = canWrite;
             membersList.push(member);
           });
-          membersList.sort(this.self().sortByAccessRights);
+          membersList.sort(this.self().sortOrgMembers);
           membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
         });
     },

@@ -68,24 +68,6 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       let canRead = accessRights.getRead ? accessRights.getRead() : false;
       canRead = canRead || (accessRights.getExecute_access ? accessRights.getExecute_access() : false);
       return canRead;
-    },
-
-    sortByAccessRights: function(a, b) {
-      const aAccessRights = a["accessRights"];
-      const bAccessRights = b["accessRights"];
-      let sorted = null;
-      if ("delete" in aAccessRights) {
-        // study & templates
-        osparc.component.permissions.Permissions.sortByAccessRights(a, b);
-      } else if ("write_access" in aAccessRights) {
-        // services
-        if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {
-          sorted = bAccessRights["write_access"] - aAccessRights["write_access"];
-        } else if (aAccessRights["read_access"] !== bAccessRights["read_access"]) {
-          sorted = bAccessRights["read_access"] - aAccessRights["read_access"];
-        }
-      }
-      return sorted;
     }
   },
 
