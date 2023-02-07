@@ -51,7 +51,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     EXPECTED_S4L_LIGHT_SERVICE_KEYS: {
       "simcore/services/dynamic/sim4life-lite": {
-        title: "Start Sim4Life:web <i>lite</i>",
+        title: "Start S4L lite",
         description: "New project",
         idToWidget: "startS4LButton"
       }

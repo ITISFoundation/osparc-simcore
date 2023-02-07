@@ -19,23 +19,23 @@ qx.Class.define("osparc.component.tutorial.s4llite.S4LLiteSpecs", {
   extend: osparc.component.tutorial.SlideBase,
 
   construct: function() {
-    const title = this.tr("Sim4Life:web <i>lite</i>: Features and Limitations");
+    const title = this.tr("S4L lite: Features and Limitations");
     this.base(arguments, title);
   },
 
   members: {
     _populateCard: function() {
       const introText = this.tr("\
-      Sim4Life:web <i>lite</i> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to \
-      design complex technical devices in a validated environment. Sim4Life:web <i>lite</i> has been created specifically for students to \
+      S4L lite is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to \
+      design complex technical devices in a validated environment. S4L lite has been created specifically for students to \
       facilitate their understanding of computational modeling and simulations for various topics, ranging from wireless communication \
-      to medical applications. The access to Sim4Life:web <i>lite</i> is available free of charge to students enrolled at registered universities.\
+      to medical applications. The access to S4L lite is available free of charge to students enrolled at registered universities.\
       ");
       const intro = osparc.component.tutorial.Utils.createLabel(introText);
       this._add(intro);
 
       const featuresText = this.tr("\
-      <b>Sim4Life:web <i>lite</i> offers</b><br>\
+      <b>S4L lite offers</b><br>\
       - Framework (GUI, Modeling, Postprocessing)<br>\
       - 3D modeling environment (based on the ACIS toolkit) and CAD translators<br>\
       - Postprocessing and visualization of the simulation results (2D and 3D viewers, 2D planar slice, volume rendering, streamlines, surface fields on arbitrary 3D structures, radiation and far-field data)<br>\
