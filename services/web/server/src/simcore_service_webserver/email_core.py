@@ -87,7 +87,7 @@ def _compose_mime(
     message["From"] = sender
     message["To"] = recipient
     message["Subject"] = subject
-    message["Date"] = formatdate(localtime=True)
+    message["Date"] = formatdate()
     message["Message-ID"] = make_msgid(domain=settings.SMTP_HOST)
 
 
