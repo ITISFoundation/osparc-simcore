@@ -31,10 +31,9 @@ qx.Class.define("osparc.ui.basic.LoadingPageHandler", {
       this._showMainLayout(false);
 
       if (this._loadingPage === null) {
-        this._loadingPage = new osparc.ui.message.Loading(label);
-      } else {
-        this._loadingPage.setHeader(label);
+        this._loadingPage = new osparc.ui.message.Loading();
       }
+      this._loadingPage.setHeader(label);
       this._add(this._loadingPage, {
         flex: 1
       });

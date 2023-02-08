@@ -9,7 +9,7 @@ MSG_AUTH_FAILED: Final[str] = "Authorization failed"
 MSG_CANT_SEND_MAIL: Final[str] = "Can't send email, try a little later"
 MSG_CHANGE_EMAIL_REQUESTED: Final[
     str
-] = "Please, click on the verification link we sent to your new email address"
+] = "Please click on the verification link we sent to your new email address"
 MSG_EMAIL_CHANGED: Final[str] = "Your email is changed"
 MSG_EMAIL_EXISTS: Final[str] = "This email is already registered"
 MSG_EMAIL_SENT: Final[
@@ -18,7 +18,7 @@ MSG_EMAIL_SENT: Final[
 MSG_LOGGED_IN: Final[str] = "You are logged in"
 MSG_LOGGED_OUT: Final[str] = "You are logged out"
 MSG_OFTEN_RESET_PASSWORD: Final[str] = (
-    "You can not request of restoring your password so often. Please, use"
+    "You can not request of restoring your password so often. Please use"
     " the link we sent you recently"
 )
 MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = (
