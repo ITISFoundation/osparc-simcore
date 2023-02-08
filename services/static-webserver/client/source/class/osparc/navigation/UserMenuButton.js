@@ -154,7 +154,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       }
       this.getMenu().addSeparator();
       this.getChildControl("about");
-      if (!osparc.utils.Utils.isProduct("osparc")) {
+      if (osparc.utils.Utils.isProduct("s4llite")) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
