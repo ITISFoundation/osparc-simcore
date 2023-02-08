@@ -76,6 +76,9 @@ paths:
 
   # AUTHENTICATION & AUTHORIZATION --------------------------------------
 
+  /auth/register/invitations:check:
+    $ref: "./openapi-auth.yaml#/paths/~1auth~1register~1invitations:check"
+
   /auth/register:
     $ref: "./openapi-auth.yaml#/paths/~1auth~1register"
 
