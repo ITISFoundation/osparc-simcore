@@ -460,3 +460,7 @@ async def test_check_registration_invitation(
     response = await client.get(f"{url}", invitation="123")
     data, _ = await assert_status(response, web.HTTPOk)
     assert data["email"] is None
+
+    # TODO: LOGIN_REGISTRATION_INVITATION_REQUIRED = True
+
+    # TODO: use `mock_invitations_service_http_api` already in test_invitations.py!
